@@ -4,8 +4,12 @@ OPTS=-f xml \
 	-o untranslated="<version> <date> <author> <mail> <values> <key>" \
 	-o placeholder="<license>"
 
+SCRIPTS_DIR=scripts
 PO4A_UPDATEPO=po4a-updatepo -f xml $(OPTS)
 PO4A_TRANSLATE=po4a-translate -f xml $(OPTS) -L UTF-8
+GET_TRANSLATORS=$(SCRIPTS_DIR)/get_translators.pl
+GET_ORIGREV=$(SCRIPTS_DIR)/get_rev.pl
+
 XMLFILES=$(wildcard ja/*.xml ja/*/*.xml)
 TMPBUILD=_build
 
@@ -19,7 +23,15 @@ pofiles/%.po: en/%.xml
 
 ja/%.xml: pofiles/%.po
 	-@mkdir -p $(TMPBUILD)/`dirname $@`
-	$(PO4A_TRANSLATE) -m $(subst ja/,en/,$@) -p $< -l $(TMPBUILD)/$@
+	-@touch $(TMPBUILD)/$@.author
+	echo "PO4A-HEADER:mode=before;position=<abstract>" \
+		> $(TMPBUILD)/$@.author
+	$(GET_TRANSLATORS) < $@ >> $(TMPBUILD)/$@.author
+	echo "PO4A-HEADER:mode=after;position=<date>;endboundary=</date>" \
+		> $(TMPBUILD)/$@.origrev
+	$(GET_ORIGREV) < $(subst ja/,en/,$@) >> $(TMPBUILD)/$@.origrev
+	$(PO4A_TRANSLATE) -m $(subst ja/,en/,$@) -p $< -l $(TMPBUILD)/$@ \
+		-a $(TMPBUILD)/$@.author -a $(TMPBUILD)/$@.origrev
 	@test -e $(TMPBUILD)/$@ && mv _build/$@ $@
 
 clean:
