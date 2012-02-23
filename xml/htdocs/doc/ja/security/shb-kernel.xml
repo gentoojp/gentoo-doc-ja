@@ -1,0 +1,239 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/security/shb-kernel.xml,v 1.5 2008/06/21 14:07:06 shindo Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.2</version>
+<date>2008-04-15</date>
+
+<!-- Original revision: 1.4 -->
+
+<section>
+<title>機能を削除する</title>
+<body>
+
+<p>
+カーネルビルド時の基本原則は、必要でないものは全て削除することです。
+これにより、軽量なカーネルをビルドできる他、
+ドライバや他の機能に潜んでいるかもしれない脆弱性を排除できます。
+</p>
+
+<p>
+また、ローダブルモジュールのサポートを組み込まないことを検討して下さい。
+この機能が組み込まれていなくても、rootkitを仕掛けるのは可能ですが、
+平凡なアタッカーにとって、カーネルモジュールを使用したrootkitのインストールは困難になります。
+</p>
+
+</body>
+</section>
+<section>
+<title>procファイルシステム</title>
+<body>
+
+<p>
+多くのカーネルパラメータは、
+<path>/proc</path>ファイルシステムか<c>sysctl</c>を使用して編集できます。
+</p>
+
+<p>
+カーネルパラメータや変数をすぐさま動的に切り替えるには、
+<c>CONFIG_SYSCTL</c>がカーネルで定義されている必要があります。
+これは、通常の2.4カーネルだとデフォルトで有効になっています。
+</p>
+
+<pre caption="IPフォワーディングを無効にする">
+# <i>/bin/echo "0" &gt; /proc/sys/net/ipv4/ip_forward</i>
+</pre>
+
+<p>
+必ずIPフォワーディングを無効にするようにして下さい。本機能は、
+マルチホームホストの場合のみ、必要になります。なお、
+このフラグは他の全てのフラグが設定される前に、オンもしくはオフにしておくのが良いでしょう。
+なぜなら、このフラグにより、有効無効が決定される他のフラグもあるためです。
+</p>
+
+<pre caption="pingパケットをドロップする">
+# <i>/bin/echo "1" > /proc/sys/net/ipv4/icmp_echo_ignore_all</i>
+</pre>
+
+<p>
+これにより、カーネルは、全てのpingメッセージ(すなわち、
+ICMPタイプ0メッセージ)を単に無視するようになります。
+なぜこのようにするのかというと、ICMPメッセージを運ぶIPパケットは、
+想像以上に情報をペイロードに含んでいる可能性があるためです。
+管理者はpingを診断ツールとして使用するため、
+無効になっていれば、よく不満を言いますが、
+部外者のためにpingを使用可能にしておく理由など全くありません。
+しかしながら、部内者にとってはpingが使用可能になっていると、
+時として便利な場合もありますので、
+ファイアーウォールでICMPタイプ0メッセージを無効にしておくのも良いでしょう。
+(ローカル管理者には、このツールを継続して使用することを許可します)
+</p>
+
+<pre caption="ブロードキャストpingを無視する">
+# <i>/bin/echo "1" &gt; /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts</i>
+</pre>
+
+<p>
+これにより、ICMPブロードキャストへのレスポンスが無効になり、
+Smurfアタックを防ぎます。Smurfアタックは、
+ICMPタイプ0(ping)メッセージをネットワークのブロードキャストアドレス宛に送信することで、
+実現します。その時、アタッカーは通常、送信元アドレスを偽装します。
+結果、ネットワークに属する全マシンが、そのpingメッセージにレスポンスするため、
+偽装された送信元アドレスに実在するホストが、フラッディングを受けるという具合になります。
+</p>
+
+<pre caption="ソースルーティングされたパケットを無効にする">
+# <i>/bin/echo "0" &gt; /proc/sys/net/ipv4/conf/all/accept_source_route</i>
+</pre>
+
+<p>
+ソースルーティングされたパケットを受信してはいけません。
+ソースルーティングを用い、実際には経路を逆順に辿るにも関わらず、
+送信元を内部ネットワークに装うトラフィックを、アタッカーは生成できます。
+その結果、アタッカーによりネットワークを侵害されることがあります。
+ソースルーティングは、正当な目的に用いられることはめったにありませんので、
+無効にしてしまって構いません。
+</p>
+
+<pre caption="リダイレクトの受信を無効にする">
+# <i>/bin/echo "0" &gt; /proc/sys/net/ipv4/conf/all/accept_redirects</i>
+</pre>
+
+<p>
+ICMPリダイレクトパケットを受信してはいけません。ICMPリダイレクトは、
+ルーティングテーブルを変更するのに使用できますが、
+悪意目的に使用される可能性もあります。
+</p>
+
+<pre caption="ボーガスエラーメッセージからの防御">
+# <i>/bin/echo "1" &gt; /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses</i>
+</pre>
+
+<note>
+訳注:ボーガス(bogus)には、"偽物の"、"いんちきの"、といった意味があります。
+</note>
+
+<p>
+ボーガスエラーメッセージへのレスポンスをしないようにして下さい。
+</p>
+
+<pre caption="リバースパスフィルタリングを有効にする">
+# <i>for i in /proc/sys/net/ipv4/conf/*; do
+        /bin/echo "1" &gt; $i/rp_filter
+done</i>
+</pre>
+
+<p>
+リバースパスフィルタリングを有効にして下さい。本機能により、
+正当な送信元アドレスを使用しているパケットであるかを確認できるようになります。
+これは、送信元アドレスに対応するルーティングテーブルのエントリが、
+パケットの到着したネットワークインターフェースに一致しないと、
+自動でその着信パケットを拒否することで、動作します。
+この機能により、IPスプーフィングを防ぐことができるため、
+セキュリティ上の利点になります。なお、動作させるには、
+各<path>net/ipv4/conf/*</path>に対して、フラグをセットする必要があります。
+そうしなければ、送信元検証は十分に機能しません。
+</p>
+
+<warn>
+但し、非対称ルーティング(行きと帰りで異なる経路をとるパケット)を使用している場合、
+もしくは異なるインターフェースに複数のIPアドレスを割り当てている非ルーティングホストの場合では、
+リバースパスフィルタリングは問題になる可能性があります。
+</warn>
+
+<pre caption="偽装、ソースルーティング、リダイレクトされたパケットに関して、全てのログを取得する">
+# <i>/bin/echo "1" &gt; /proc/sys/net/ipv4/conf/all/log_martians</i>
+</pre>
+
+<p>
+これにより、送信元アドレスの偽装パケット、ソースルーティングされたパケット、
+リダイレクトされたパケットに関して、ログを取得するようになります。
+</p>
+
+<p>
+これらの全ての設定は、マシンがリブートされるとリセットされます。
+そのため、<path>/etc/sysctl.conf</path>に追加し、
+<path>/etc/init.d/bootmisc</path> initスクリプトにより、
+設定が自動で読み込まれるようにしておくことをお勧めします。
+</p>
+
+<p>
+<path>/etc/sysctl.conf</path>の構文は、本当に単純です。
+上記で述べている絶対パスから、<path>/proc/sys/</path>を取り除き、
+<path>/</path>を<path>.</path>で置き換えて下さい。
+</p>
+
+<pre caption="sysctl.conf用に書き換える">
+<comment>(echoを使用して、手動で有効にする)</comment>
+/bin/echo "0" &gt; /proc/sys/net/ipv4/ip_forward
+
+<comment>(sysctl.confを使用して、自動で有効にする)</comment>
+net.ipv4.ip_forward = 0
+</pre>
+
+</body>
+</section>
+<section>
+<title>Grsecurity</title>
+<body>
+
+<p>
+<uri link="http://grsecurity.net">Grsecurity</uri>により開発されているパッチは、
+<c>sys-kernel/hardened-sources</c>では標準のものですが、デフォルトでは無効になっています。
+通常の方法でカーネルをビルドし、Grsecurityオプションを構成して下さい。
+利用可能なGrsecurityオプションに関しては、
+<uri link="/proj/en/hardened">Gentoo Hardened</uri>プロジェクトページにおいて詳細な説明がされています。
+</p>
+
+<p>
+最近の<c>hardened-sources</c>では、Grsecurityの2.*バージョンを提供しています。
+この改善されたGrsecurityパッチセットに関するより多くの情報は、
+<uri link="http://www.grsecurity.net/">Grsecurityホームページ</uri>で入手可能なドキュメントを参照して下さい。
+</p>
+
+</body>
+</section>
+<section>
+<title>Kerneli</title>
+<body>
+
+<p>
+<uri link="http://www.Kerneli.org">Kerneli</uri>は、
+既存のカーネルに暗号機能を組み込むパッチです。カーネルにパッチをあてることにより、
+"cryptographic ciphers"、"digest algorithms"、
+"cryptographic loop filters"といった新しいオプションが現れます。
+</p>
+
+<warn>
+kerneliパッチは、最新カーネル用のStableバージョンには、現状取り込まれていません。
+従って、使用する場合はよく注意して下さい。
+</warn>
+
+</body>
+</section>
+<section>
+<title>他のカーネルパッチ</title>
+<body>
+
+<ul>
+<li><uri link="http://www.openwall.com">The OpenWall Project</uri></li>
+<li><uri link="http://www.lids.org">Linux Intrusion Detection System</uri></li>
+<li><uri link="http://www.rsbac.org">Rule Set Based Access Control</uri></li>
+<li>
+  <uri link="http://www.nsa.gov/selinux">NSA's security enhanced kernel</uri>
+</li>
+<li><uri link="http://sourceforge.net/projects/wolk/">Wolk</uri></li>
+</ul>
+
+<p>
+おそらくは、もっとあるでしょう。 
+</p>
+
+</body>
+</section>
+</sections>

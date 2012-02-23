@@ -1,0 +1,618 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/security/shb-services.xml,v 1.4 2008/08/24 13:57:36 shindo Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.5</version>
+<date>2008-06-13</date>
+
+<!-- Original revision: 1.9 -->
+
+<section>
+<title>Apache</title>
+<body>
+
+<p>
+Apacheには、非常に親切な設定ファイルが付属しています。但し、
+Apacheに対しアドレス1つをバインドする、情報の漏えいを防ぐ等の改善が必要です。
+以下は、設定ファイルに適用すべきオプションです。
+</p>
+
+<p>
+もし、Apacheのインストール前に、
+<path>/etc/make.conf</path>において<c>ssl</c>を無効にしていなかったら、
+sslサービスにアクセスできるようにすべきです。
+<path>/etc/apache2/vhosts.d</path>の中に設定ファイルの例があります。
+動作例がありますので、最も良いのはそれらを確認するか、sslを無効にすることです。
+</p>
+
+<p>
+ある特定のIPアドレス（システムで利用可能なすべてのIPアドレスではなく）をlistenするよう設定することが重要です。
+例えば、<path>00_default_vhost.conf</path>は次のようになります。
+</p>
+
+<pre caption="/etc/apache2/vhosts.d/00_default_vhost.conf">
+<comment># あなたのIPで、それをlistenするようにしてください</comment>
+Listen 127.0.0.1
+</pre>
+
+<p>
+また、Apacheのインストール情報を公開しないことを推奨します。
+デフォルトの設定では、サーバのバージョン、サーバによって生成されたページのバーチャルホスト名が追加されます。
+これを無効にするため、<c>ServerSignature</c>変数を<c>Off</c>に変更してください。
+</p>
+
+<pre caption="/etc/apache2/modules.d/00_default_settings.conf">
+ServerSignature Off
+</pre>
+
+<p>
+Apacheは、<c>--enable-shared=max</c>と<c>--enable-module=all</c>と共にコンパイルされています。
+これにより、デフォルトでは全てのモジュールが有効になります。
+そのため、メインの設定ファイル<path>/etc/apache2/httpd.conf</path>で使用しないモジュールはすべて<c>LoadModule</c>セクション(<c>LoadModule</c>と<c>AddModule</c>)からコメントアウトして下さい。
+その後、<c>/etc/init.d/apache2 restart</c>を実行し、サービスを再起動します。
+</p>
+
+<p>
+ドキュメントは、<uri>http://www.apache.org</uri>で参照できます。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>BIND</title>
+<body>
+
+<p>
+ドキュメントは、
+<uri link="http://www.isc.org/products/BIND/bind9.html">Internet Software Consortium</uri>で参照できます。
+また、BIND 9 Administrator Reference Manualが、<path>doc/arm</path>にあります。
+</p>
+
+<p>
+比較的新しいBINDのebuildは、初期状態でchrootをサポートしています。
+<c>BIND</c>をemergeした後、以下の簡単な手順に従って下さい。
+</p>
+
+<pre caption="BINDをchrootする">
+# <i>emerge --config bind</i>
+<comment>(上記コマンドの実行前、chrootするディレクトリを/etc/conf.d/namedで変更すると良いでしょう。
+変更しなければ、/chroot/dnsが使用されます。)</comment>
+</pre>
+</body>
+</section>
+<section>
+<title>Djbdns</title>
+<body>
+
+<p>
+Djbdnsとは、
+開発者が<uri link="http://cr.yp.to/djbdns/guarantee.html">賞金</uri>を掛けるほどセキュリティを意識したDNSの実装です。
+Bind 9の動作とは非常に異なりますが、試してみる価値はあります。より詳細な情報は、
+<uri>http://www.djbdns.org</uri>から入手できます。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>FTP</title>
+<body>
+
+<p>
+一般的には、FTP(File Transfer Protocol)を使用するのは悪い考えです。
+FTPでは、暗号化されていないデータを使用し(つまり、パスワードが平文で送信されます)、
+2つのポートをリッスンします(通常、20番ポートと21番ポート)。
+アタッカーは不法コピーしたソフトウェアを取引するため、たびたび匿名ログインを探します。
+FTPプロトコルは、セキュリティ上いくつか問題を抱えているため、代わりに
+<c>sftp</c>やHTTPを使用するべきです。それが無理なら、
+サービスのセキュリティを強化するよう努めてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>MySQL</title>
+<body>
+
+<p>
+ローカルのアプリケーションしか<c>MySQL</c>データベースにアクセスする必要がなければ、
+<path>/etc/mysql/my.cnf</path>において下記ラインのコメントをはずして下さい。
+</p>
+
+<pre caption="ネットワークアクセスを無効にする">
+skip-networking
+</pre>
+
+<p>
+それから、LOAD DATA LOCAL INFILEコマンドの使用を無効にします。
+これにより、ローカルファイルからの不正な読み取りを防ぐことができます。
+また、SQLインジェクションの脆弱性がPHPアプリケーションにおいて新しく発見された際にも、
+これは役立ちます。
+</p>
+
+<pre caption="[mysqld]セクションにおいて、LOAD DATA LOCAL INFILEを無効にする">
+set-variable=local-infile=0
+</pre>
+
+<p>
+次に、サンプルのデータベース(test)とローカルの<c>root</c>アカウントを除く全てのアカウントを削除します。
+</p>
+
+<pre caption="サンプルのデータベースと全ての必要でないユーザを削除する">
+mysql> <i>drop database test;</i>
+mysql> <i>use mysql;</i>
+mysql> <i>delete from db;</i>
+mysql> <i>delete from user where not (host="localhost" and user="root");</i>
+mysql> <i>flush privileges;</i>
+</pre>
+
+<warn>
+ユーザアカウントを既に構成している際は、上記を行う際は注意して下さい。
+</warn>
+
+<note>
+MySQLのプロンプトからパスワードを変更していた場合は、
+<path>~/.mysql_history</path>と<path>/var/log/mysql/mysql.log</path>の内容を必ず消去するべきです。
+なぜなら、そのファイルには実行されたSQLコマンドが平文のパスワードと共に保存されているからです。
+</note>
+
+</body>
+</section>
+<section>
+<title>ProFTPD</title>
+<body>
+
+<p>
+ProFTPDは、セキュリティ上の問題を抱えてきましたが、多くは修正されているようです。
+とはいえ、機能強化を適用するのは良い考えです。
+</p>
+
+<pre caption="/etc/proftpd/proftpd.conf">
+ServerName "My ftp daemon"
+#Don't show the ident of the server
+ServerIdent on "Go away"
+
+#Makes it easier to create virtual users
+RequireValidShell off
+
+#Use alternative password and group file (passwd uses crypt format)
+AuthUserFile "/etc/proftpd/passwd"
+AuthGroupFile "/etc/proftpd/group"
+
+# Permissions
+Umask 077
+
+# Timeouts and limitations
+MaxInstances 30
+MaxClients 10 "Only 10 connections allowed"
+MaxClientsPerHost 1 "You have already logged on once"
+MaxClientsPerUser 1 "You have already logged on once"
+TimeoutStalled 10
+TimeoutNoTransfer 20
+TimeoutLogin 20
+
+#Chroot everyone
+DefaultRoot ~
+
+#don't run as root
+User  nobody
+Group nogroup
+
+#Log every transfer
+TransferLog /var/log/transferlog
+
+#Problems with globbing
+DenyFilter \*.*/
+</pre>
+
+<p>
+ドキュメントは、<uri>http://www.proftpd.org</uri>で参照できます。
+</p>
+
+</body>
+</section>
+<section>
+<title>Pure-FTPd</title>
+<body>
+
+<p>
+Pure-FTPdとは、オリジナルであるTrollFTPDのブランチで、
+セキュリティと機能性を理由にFrank Dennis氏により修正が加えられています。
+</p>
+
+<p>
+<c>AUTH</c>オプションを有効にし、(システムアカウントではなく)バーチャルユーザを使用して下さい。
+また、設定するには<c>-lpuredb:/etc/pureftpd.pdb</c>を実行し、
+<c>/usr/bin/pure-pw</c>でユーザを作成して下さい。 
+</p>
+
+<pre caption="/etc/conf.d/pure-ftpd">
+AUTH="-lpuredb:/etc/pureftpd.pdb"
+
+## Misc. Others ##
+MISC_OTHER="-A -E -X -U 177:077 -d -4 -L100:5 -I 15"
+</pre>
+
+<p>
+<c>MISC_OTHER</c>を構成して、匿名ログインを拒否する(<c>-E</c>)、
+全ての人をchrootする(<c>-A</c>)、.(ドット)で始まるファイルに対しユーザの読み取り書き込みを防ぐ(<c>-X</c>)、
+最大アイドルタイム(<c>-I</c>)、再起呼び出しの制限(<c>-L</c>)、妥当な<c>umask</c>になるようして下さい。
+</p>
+
+<warn>
+<c>-w</c>もしくは<c>-W</c>オプションを使用<e>しない</e>で下さい。
+不法コピーしたソフトウェアの取引サイトを運用したいのであれば、
+このガイドを読むのを止めて下さい!
+</warn>
+
+<p>
+ドキュメントは、<uri>http://www.pureftpd.org</uri>から入手できます。
+</p>
+
+</body>
+</section>
+<section>
+<title>Vsftpd</title>
+<body>
+
+<p>
+Vsftpd(very secure ftpの略)は軽量なFTPデーモンで、デフォルトでも合理的な設定で動作します。
+シンプルですが、PureFTPdやProFTPDほど多機能ではありません。
+</p>
+
+<pre caption="/etc/vsftpd">
+anonymous_enable=NO
+local_enable=YES
+
+#read only
+write_enable=NO
+
+#enable logging of transfers
+xferlog_std_format=YES
+
+idle_session_timeout=20
+data_connection_timeout=20
+nopriv_user=nobody
+
+chroot_list_enable=YES
+chroot_list_file=/etc/vsftpd/chrootlist
+
+ls_recurse_enable=NO
+</pre>
+
+<p>
+ご覧のように、このサービスではユーザ毎にパーミッションを設定できませんが、
+匿名設定に関しては非常に良くできています。時として、
+匿名FTPサーバがあると便利ですが(オープンソースを共有する等)、
+これに関してvsftpdは非常に良い仕事をします。
+</p>
+
+</body>
+</section>
+<section>
+<title>Netqmail</title>
+<body>
+
+<p>
+Netqmailは、多くの場合、セキュリティに優れたメールサーバだと考えられています。
+これは、セキュリティを(偏執なほど)念頭においてかかれています。
+デフォルトではリレーを許可せず、また1996年以降セキュリティホールはありません。
+単に<c>emerge netqmail</c>を実行し、設定を行って下さい!
+</p>
+</body>
+</section>
+<section>
+<title>Samba</title>
+<body>
+
+<p>
+Sambaとは、Microsoft/Novellネットワークとファイル共有を行えるプロトコルで、
+インターネット上で使用されるべきでは<e>ありません</e>。使用せざるを得ない場合は、
+セキュリティを確保しなくてはいけません。
+</p>
+
+<pre caption="/etc/samba/smb.conf">
+[global]
+  #Bind to an interface
+  interfaces = eth0 10.0.0.1/32
+
+  #Make sure to use encrypted password
+  encrypt passwords = yes
+  directory security mask = 0700
+
+  #allow traffic from 10.0.0.*
+  hosts allow = 10.0.0.
+
+  #Enables user authentication 
+  #(don't use the share mode)
+  security = user
+
+  #Disallow privileged accounts
+  invalid users = root @wheel
+
+  #Maximum size smb shows for a share (not a limit)
+  max disk size = 102400
+
+  #Uphold the password policy
+  min password length = 8
+  null passwords = no
+
+  #Use PAM (if added support)
+  obey pam restrictions = yes
+  pam password change = yes
+</pre>
+
+<p>
+全ての共有に対しパーミッションを適切に設定し、
+忘れずに<uri link="http://www.samba.org">ドキュメント</uri>を読んで下さい。
+</p>
+
+<p>
+それでは、サーバを再起動しこのサービスにアクセスできるユーザを追加します。
+これは、<path>/usr/bin/smbpasswd</path>コマンドに引数<c>-a</c>を加えて行います。
+</p>
+
+</body>
+</section>
+<section>
+<title>ssh</title>
+<body>
+
+<p>
+OpenSSHでセキュリティを確保するには、
+公開鍵暗号ベースのより強固な認証を行うようにするしかありません。
+非常に多くのサイト(<uri>http://www.sourceforge.net</uri>、<uri>http://www.php.net</uri>、
+そして<uri>http://www.apache.org</uri>等)が、
+パスワード漏えいもしくは強度のないパスワードのせいで、不正侵入に苦しんできました。
+</p>
+
+<pre caption="/etc/ssh/sshd_config">
+#Only enable version 2
+Protocol 2
+
+#Disable root login. Users have to su to root
+PermitRootLogin no
+
+#Turn on Public key authentication
+PubkeyAuthentication yes
+AuthorizedKeysFile      .ssh/authorized_keys
+
+#Disable .rhost and normal password authentication
+HostbasedAuthentication no
+PasswordAuthentication no
+PermitEmptyPasswords no
+
+#Only allow userin the wheel or admin group to login
+AllowGroups wheel admin
+
+#In those groups only allow the following users
+#The @&lt;domainname&gt; is optional but replaces the 
+#older AllowHosts directive
+AllowUsers kn@gentoo.org bs@gentoo.org
+
+#Logging 
+SyslogFacility AUTH
+LogLevel INFO
+
+<comment>（これをあなたのアドレスに変更してください）</comment>
+ListenAddress 127.0.0.1
+</pre>
+
+<p>
+また、<c>UsePAM yes</c>が設定ファイルにないことを確認して下さい。
+なぜなら、これにより公開鍵認証メカニズムが上書きされてしまうためです。
+もしくは、<c>PasswordAuthentication</c>と<c>ChallengeResponseAuthentication</c>
+のどちらかを無効にしてしまうこともできます。
+これらのオプションに関するより多くの情報が、<path>sshd_config</path>のマニュアルページにあります。
+</p>
+
+<p>
+それでは以下のコマンドにより、(ログイン元にしたいマシン上で)ユーザは鍵を生成するだけです。
+</p>
+
+<pre caption="1組のDSA Keyを作成する">
+# <i>/usr/bin/ssh-keygen -t dsa</i>
+</pre>
+
+<p>
+そして、パスフレーズを入力して下さい。
+</p>
+
+<pre caption="ssh-keygenの出力">
+Generating public/private dsa key pair.
+Enter file in which to save the key (/home/kn/.ssh/id_dsa):<i>[Press enter]</i>
+Created directory '/home/kn/.ssh'.
+Enter passphrase (empty for no passphrase): <i>[Enter passphrase]</i>
+Enter same passphrase again: <i>[Enter passphrase again]</i>
+Your identification has been saved in /home/kn/.ssh/id_dsa.
+Your public key has been saved in /home/kn/.ssh/id_dsa.pub.
+The key fingerprint is:
+07:24:a9:12:7f:83:7e:af:b8:1f:89:a3:48:29:e2:a4 kn@knielsen
+</pre>
+
+<p>
+これにより、<path>id_dsa</path>と<path>id_dsa.pub</path>の2つのファイルが、
+<path>~/.ssh/</path>ディレクトリに追加されます。
+<path>id_dsa</path>ファイルは、秘密鍵になりますので、
+他の人々に見せないようにして下さい。もう一方のファイル<path>id_dsa.pub</path>は、
+アクセス先となる全てのサーバに配布することになります。
+鍵をユーザホームディレクトリ下の<path>~/.ssh/authorized_keys</path>に追加すれば、
+ユーザはログインできるはずです。
+</p>
+
+<pre caption="id_dsa.pubファイルを、authorized_keysファイルに追加する">
+$ <i>scp id_dsa.pub other-host:/var/tmp/currenthostname.pub</i>
+$ <i>ssh other-host</i>
+password: 
+$ <i>cat /var/tmp/currenthostname.pub >> ~/.ssh/authorized_keys</i>
+</pre>
+
+<p>
+そして、ユーザはこの秘密鍵を慎重に管理するようにしなくてはいけません。
+秘密鍵は常時携帯するメディアに保存するか、もしくはワークステーション上に保管しておきましょう。
+(また、<uri link="?part=1&amp;chap=1#security_policies">パスワード</uri>ポリシーに、これを含めておきましょう)
+</p>
+
+<p>
+より詳細な情報は、<uri link="http://www.openssh.org">OpenSSH</uri>のウェブサイトで入手して下さい。
+</p>
+
+</body>
+</section>
+<section>
+<title>xinetdを使う</title>
+<body>
+
+<p>
+xinetdとは、<c>inetd</c>(Gentooでは含まれていません)の置き換えで、
+インターネットサービスデーモンです。xinetdは、
+リモートホストアドレスとアクセス時間をベースにしたアクセス制御をサポートします。
+また、サーバの起動時間、リモートホストアドレス、リモートユーザ名、
+サーバの稼動時間、要求されたアクションを含む拡張ロギング機能も提供します。
+</p>
+
+<p>
+xinetdでは、他の全てのサービス同様、優れたデフォルト設定を行うことが重要です。
+但し、<c>xinetd</c>はrootとして実行され、あなたが精通していないかもしれないプロトコルをサポートします。
+従って、使用しないことをお勧めします。それでも使用したい場合は、
+以下のようにしてセキュリティを強化できます。
+</p>
+
+<pre caption="xinetdをインストールする">
+# <i>emerge xinetd tcp-wrappers</i>
+</pre>
+
+<p>
+そして、設定ファイルを編集します。
+</p>
+
+<pre caption="/etc/xinetd.conf">
+defaults
+{
+ only_from = localhost
+ instances = 10
+ log_type = SYSLOG authpriv info
+ log_on_success = HOST PID
+ log_on_failure = HOST
+ cps = 25 30
+}
+
+# This will setup pserver (cvs) via xinetd with the following settings:
+# max 10 instances (10 connections at a time)
+# limit the pserver to tcp only
+# use the user cvs to run this service
+# bind the interfaces to only 1 ip
+# allow access from 10.0.0.*
+# limit the time developers can use cvs from 8am to 5pm
+# use tpcd wrappers (access control controlled in 
+# <i>/etc/hosts.allow</i> and <i>/etc/hosts.deny</i>)
+# max_load on the machine set to 1.0
+# The disable flag is per default set to no but I like having 
+# it in case of it should be disabled
+service cvspserver
+{
+ socket_type = stream
+ protocol = tcp
+ instances = 10
+ protocol = tcp
+ wait = no
+ user = cvs
+ bind = 10.0.0.2
+ only_from = 10.0.0.0
+ access_times = 8:00-17:00
+ server = /usr/sbin/tcpd
+ server_args = /usr/bin/cvs --allow-root=/mnt/cvsdisk/cvsroot pserver
+ max_load = 1.0
+ log_on_failure += RECORD
+ disable = no
+}
+</pre>
+
+<p>
+より詳しい情報は、<c>man 5 xinetd.conf</c>を参照して下さい。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>X</title>
+<body>
+
+<p>
+デフォルトでは、XorgはXサーバとして動作するよう構成されています。
+Xは暗号化されていないTCPコネクションを使用し、
+Xクライアント用にポートを開くため、これは危険かもしれません。
+</p>
+
+<impo>
+もし、このサービスが必要でなければ、無効にして下さい! 
+</impo>
+
+<p>
+しかし、使用するワークステーションをXサーバとして使用する場合があれば、
+慎重に<c>/usr/X11R6/bin/xhost</c>コマンドを使用して下さい。
+このコマンドにより、他のホストからの接続とディスプレイの使用をクライアントが制御できるようになります。
+Xアプリケーションを異なるマシンから必要とし、ネットワーク経由がその唯一の方法であれば、
+これは手ごろな手段になりますが、アタッカーに悪用される可能性もあります。このコマンドの構文は、
+<c>/usr/X11R6/bin/xhost +hostname</c>です。
+</p>
+
+<warn>
+<c>xhost +</c>機能を絶対に使用しないで下さい。これにより、
+どのクライアントにも接続されXを制御されてしまうでしょう。もし、
+アタッカーがXにアクセスできれば、あなたのキー入力を記録し、
+デスクトップのアクセス権をのっとるかもしれません。
+もし、Xを使用せざるをえないのであれば、ホストを忘れずに指定して下さい。
+</warn>
+
+<p>
+よりセキュリティ上優れた解決方法としては、Xを<c>startx -- -nolisten tcp</c>で起動し、
+この機能を完全に無効にしてしまうか、設定において常時無効にしてしまうことです。 
+</p>
+
+<pre caption="/usr/X11R6/bin/startx">
+defaultserverargs="-nolisten tcp"
+</pre>
+
+<p>
+Xorgの新しいバージョンをemergeした際、<path>startx</path>が上書きされないように、
+<path>startx</path>を保護しなくてはいけません。それには、
+以下のラインを<path>/etc/make.conf</path>に加えて下さい。
+</p>
+
+<pre caption = "/etc/make.conf">
+CONFIG_PROTECT_MASK="/usr/X11R6/bin/startx"
+</pre>
+
+<p>
+グラフィカルログインマネージャを使用しているのであれば、異なったアプローチが必要です。
+</p>
+
+<p>
+<c>gdm</c>(Gnome Display Manager)用
+</p>
+
+<pre caption="/etc/X11/gdm/gdm.conf">
+[server-Standard]
+command=/usr/X11R6/bin/X -nolisten tcp
+</pre>
+
+<p>
+<c>xdm</c>(X Display Manager)と<c>kdm</c>(Kde Display Manager)用
+</p>
+
+<pre caption="/etc/X11/xdm/Xservers">
+:0 local /usr/bin/X11/X -nolisten tcp 
+</pre>
+
+</body>
+</section>
+
+</sections>

@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/mysql-upgrade-slotted.xml,v 1.12 2011/09/04 17:53:40 swift Exp $ -->
+
+<guide>
+<title>"Unslotting" a slotted MySQL Installation</title>
+
+<author title="Author">
+  <mail link="vivo@gentoo.org">Francesco Riosa</mail>
+</author>
+<author title="Editor">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+
+<abstract>
+This document describes how to go back to an unslotted MySQL.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>6</version>
+<date>2006-03-10</date>
+
+<chapter>
+<title>Upgrading to an unslotted MySQL version from a slotted one</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+Due to the negative response from our user base, the MySQL team has decided to
+go back to unslotted MySQL. In other words, installing different versions of
+MySQL on the same system is not supported anymore.
+</p>
+
+<p>
+If you had upgraded to the slotted version, this guide should help you upgrade
+to the unslotted version.
+</p>
+
+</body>
+</section>
+<section>
+<title>"Unslotting"</title>
+<body>
+
+<p>
+The following script should do most of the work:
+</p>
+
+<pre caption='"Unslotting" script'>
+<i>echo " building an unslotted copy of mysql "
+emerge --buildpkgonly '=dev-db/mysql-5.0.18-r60'
+
+echo " stopping the server  "
+/etc/init.d/mysql stop
+
+echo " removing most of symlinks "
+eselect mysql remove
+
+echo " config files "
+mv /etc/mysql /etc/mysql.old
+mv /etc/mysql-500 /etc/mysql
+
+echo " removal of remaining symlinks, and eselect stuff "
+rm /usr/lib/mysql /usr/include/mysql /usr/bin/mysql_config /usr/lib/libmysql*
+rm -rf /var/lib/eselect/mysql/ /usr/lib/mysql-[45]0[01]
+
+echo " unmerge slotted mysql "
+emerge -C \
+=dev-db/mysql-4.0.26-r30 \
+=dev-db/mysql-4.1.15-r30 \
+=dev-db/mysql-4.1.16-r30 \
+=dev-db/mysql-4.1.18-r30 \
+=dev-db/mysql-5.0.15-r30 \
+=dev-db/mysql-5.0.16-r30 \
+=dev-db/mysql-5.0.17-r30 \
+=dev-db/mysql-5.0.18-r30 \
+=dev-db/mysql-5.1.3_alpha-r30 \
+=dev-db/mysql-5.1.4_alpha-r30 \
+=dev-db/mysql-5.1.6_alpha-r30 \
+app-admin/eselect-mysql
+
+echo " ready to merge again MySQL "
+emerge --usepkgonly '=dev-db/mysql-5.0.18-r60'</i>
+</pre>
+
+<p>
+It is also recommended that you move data directories listed in
+<path>/etc/mysql/my.cnf</path>. If you do that, don't forget to edit
+<path>/etc/mysql/my.cnf</path> as well.
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

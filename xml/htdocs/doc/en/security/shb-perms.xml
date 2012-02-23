@@ -1,0 +1,175 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/security/shb-perms.xml,v 1.4 2006/09/18 09:22:48 neysx Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.1</version>
+<date>2006-09-16</date>
+
+<section>
+<title>World readable</title>
+<body>
+
+<p>
+Normal users should not have access to configuration files or passwords. An
+attacker can steal passwords from databases or web sites and use them to
+deface--or even worse, delete--data. This is why it is important that your file
+permissions are correct. If you are sure that a file is only used by root,
+assign it with the permissions <c>0600</c> and assign the file to the correct
+user with <c>chown</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>World/Group writable</title>
+<body>
+
+<pre caption="Finding world-writable files and directories">
+# <i>find / -type f \( -perm -2 -o -perm -20 \) -exec ls -lg {} \; 2>/dev/null >writable.txt</i>
+# <i>find / -type d \( -perm -2 -o -perm -20 \) -exec ls -ldg {} \; 2>/dev/null >>writable.txt</i>
+</pre>
+
+<p>
+This will create a huge file with permission of all files having either write
+permission set to the group or everybody. Check the permissions and eliminate
+world writable files to everyone, by executing <c>/bin/chmod o-w</c> on the
+files.
+</p>
+
+</body>
+</section>
+<section>
+<title>SUID/SGID files</title>
+<body>
+
+<p>
+Files with the SUID or SGID bit set execute with privileges of the <e>owning</e>
+user or group and not the user executing the file. Normally these bits are used
+on files that must run as root in order to do what they do. These files can lead
+to local root compromises (if they contain security holes). This is dangerous
+and files with the SUID or SGID bits set should be avoided at any cost. If you
+do not use these files, use <c>chmod 0</c> on them or unmerge the package that
+they came from (check which package they belong to by using <c>equery</c>; if
+you do not already have it installed simply type <c>emerge
+gentoolkit</c>). Otherwise just turn the SUID bit off with <c>chmod -s</c>.
+</p>
+
+<pre caption="Finding setuid files">
+# <i>find / -type f \( -perm -004000 -o -perm -002000 \) -exec ls -lg {} \; 2>/dev/null >suidfiles.txt</i>
+</pre>
+
+<p>
+This will create a file containing a list of all the SUID/SGID files.
+</p>
+
+<pre caption="List of setuid binaries">
+/bin/su
+/bin/ping
+/bin/mount
+/bin/umount
+/var/qmail/bin/qmail-queue
+/usr/bin/chfn
+/usr/bin/chsh
+/usr/bin/crontab
+/usr/bin/chage
+/usr/bin/expiry
+/usr/bin/sperl5.6.1
+/usr/bin/newgrp
+/usr/bin/passwd
+/usr/bin/gpasswd
+/usr/bin/procmail
+/usr/bin/suidperl
+/usr/lib/misc/pt_chown
+/usr/sbin/unix_chkpwd
+/usr/sbin/traceroute
+/usr/sbin/pwdb_chkpwd
+</pre>
+
+<p>
+By default Gentoo Linux does not have a lot of SUID files (though this depends
+on what you installed), but you might get a list like the one above. Most of
+the commands should not be used by normal users, only root. Switch off the SUID
+bit on <c>ping</c>, <c>mount</c>, <c>umount</c>, <c>chfn</c>, <c>chsh</c>,
+<c>newgrp</c>, <c>suidperl</c>, <c>pt_chown</c> and <c>traceroute</c> by
+executing <c>chmod -s</c> on every file. Don't remove the bit on <c>su</c>,
+<c>qmail-queue</c> or <c>unix_chkpwd</c>. Removing setuid from those files will
+prevent you from <c>su</c>'ing and receiving mail. By removing the bit (where
+it is safe to do so) you remove the possibility of a normal user (or an
+attacker) gaining root access through any of these files.
+</p>
+
+<p>
+The only SUID files that I have on my system are <c>su</c>, <c>passwd</c>,
+<c>gpasswd</c>, <c>qmail-queue</c>, <c>unix_chkpwd</c> and <c>pwdb_chkpwd</c>.
+But if you are running X, you might have some more, since X needs the elevated
+access afforded by SUID.
+</p>
+
+</body>
+</section>
+<section>
+<title>SUID/SGID binaries and Hard links</title>
+<body>
+
+<p>
+A file is only considered deleted when there are no more links pointing to it.
+This might sound like a strange concept, but consider that a filename like
+<path>/usr/bin/perl</path> is actually a link to the inode where the data is
+stored. Any number of links can point to the file, and until all of them are
+gone, the file still exists.
+</p>
+
+<p>
+If your users have access to a partition that isn't mounted with <c>nosuid</c>
+or <c>noexec</c> (for example, if <path>/tmp</path>, <path>/home</path>, or
+<path>/var/tmp</path> are not separate partitions) you should take care to
+ensure your users don't create hard links to SUID or SGID binaries, so that
+after Portage updates they still have access to the old versions.
+</p>
+
+<warn>
+if you have received a warning from portage about remaining hard links, and your
+users can write to a partition that allows executing SUID/SGID files, you
+should read this section carefully. One of your users may be attempting to
+circumvent your update by keeping an outdated version of a program. If your
+users cannot create their own SUID files, or can only execute programs using
+the dynamic loader (partitions mounted <c>noexec</c>), you do not have to
+worry.
+</warn>
+
+<note>
+Users do not need read access to a file to create a link to it, they only need
+read permission to the directory that contains it.
+</note>
+
+<p>
+To check how many links a file has, you can use the <c>stat</c> command.
+</p>
+
+<pre caption="Stat command">
+$ stat /bin/su
+  File: `/bin/su'
+  Size: 29350           Blocks: 64         IO Block: 131072 regular file
+Device: 900h/2304d      Inode: 2057419     Links: 1
+Access: (4711/-rws--x--x)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2005-02-07 01:59:35.000000000 +0000
+Modify: 2004-11-04 01:46:17.000000000 +0000
+Change: 2004-11-04 01:46:17.000000000 +0000
+</pre>
+
+<p>
+To find the SUID and SGID files with multiple links, you can use <c>find</c>.
+</p>
+
+<pre caption="Finding multiply linked suid/sgid binaries">
+$ find / -type f \( -perm -004000 -o -perm -002000 \) -links +1 -ls
+</pre>
+
+</body>
+</section>
+</sections>

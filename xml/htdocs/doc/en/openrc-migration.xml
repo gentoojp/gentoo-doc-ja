@@ -1,0 +1,598 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/openrc-migration.xml,v 1.35 2011/11/15 18:18:14 swift Exp $ -->
+
+<guide>
+<title>Baselayout and OpenRC Migration Guide</title>
+
+<author title="Author">
+  <mail link="cardoe"/>
+</author>
+<author title="Author">
+  <mail link="nightmorph"/>
+</author>
+<author title="Author">
+  <mail link="robbat2"/>
+</author>
+<author title="Contributor">
+  <mail link="uberlord"/>
+</author>
+
+<abstract>
+This guide shows you how to migrate from baselayout-1 to baselayout-2 and
+OpenRC.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>14</version>
+<date>2011-11-15</date>
+
+<chapter>
+<title>Background</title>
+
+<section>
+<title>What's baselayout?</title>
+<body>
+
+<p>
+Baselayout provides a basic set of files that are necessary for all systems to
+function properly, such as <path>/etc/hosts</path>. It also provides the basic
+filesystem layout used by Gentoo (i.e. <path>/etc</path>, <path>/var</path>,
+<path>/usr</path>, <path>/home</path> directories).
+</p>
+
+</body>
+</section>
+
+<section>
+<title>What's OpenRC?</title>
+<body>
+
+<p>
+OpenRC is a dependency-based rc system that works with whatever init is provided
+by the system, normally <path>/sbin/init</path>. However, it is <e>not</e> a
+replacement for <path>/sbin/init</path>. The default init used by Gentoo Linux
+is <c>sys-apps/sysvinit</c>, while Gentoo/FreeBSD uses the FreeBSD init provided
+by <c>sys-freebsd/freebsd-sbin</c>.
+</p>
+
+</body>
+</section>
+
+<section>
+<title>So why migrate?</title>
+<body>
+
+<p>
+Originally Gentoo's rc system was built into baselayout 1 and written entirely
+in bash. This led to several limitations. For example, certain system calls need
+to be accessed during boot and this required C-based callouts to be added. These
+callouts were each statically linked, causing the rc system to bloat over time.
+</p>
+
+<p>
+Additionally, as Gentoo expanded to other platforms like
+Gentoo/FreeBSD and Gentoo Embedded, it became impossible to require a bash-based
+rc system. This led to a development of baselayout 2, which is written in
+C and only requires a POSIX-compliant shell. During the development of
+baselayout 2, it was determined that it was a better fit if baselayout merely
+provided the base files and filesystem layout for Gentoo and the rc system
+was broken off into its own package. Thus we have OpenRC.
+</p>
+
+<p>
+OpenRC was initially developed by <uri link="http://roy.marples.name/openrc">Roy
+Marples</uri> until 2010, and is now maintained by the <uri
+link="/proj/en/base/openrc/">Gentoo OpenRC Project</uri>. OpenRC supports all
+current Gentoo variations (i.e. Gentoo Linux, Gentoo/FreeBSD, Gentoo Embedded,
+and Gentoo Vserver) and other platforms such as FreeBSD and NetBSD.
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>Migration to OpenRC</title>
+<section>
+<body>
+
+<p>
+Migration to OpenRC is fairly straightforward; it will be pulled in as part of
+your regular upgrade process by your package manager. The most important step
+actually comes after you install the new <c>>=sys-apps/baselayout-2</c> and
+<c>sys-apps/openrc</c> packages. It is <e>critical</e> that you run
+<c>dispatch-conf</c> and ensure your <path>/etc</path> is up to date before
+rebooting. <brite>Failure to do so will result in an unbootable system</brite>
+and will require the use of the Gentoo LiveCD to perform the steps below to
+repair your system.
+</p>
+
+<p>
+Once you've finished updating your config files, there are a few things to
+verify prior to rebooting.
+</p>
+	
+</body>
+</section>
+<section id="rc_conf">
+<title>/etc/conf.d/rc</title>
+<body>
+
+<p>
+<path>/etc/conf.d/rc</path> has been deprecated and any settings you have in
+there will need to be migrated to the appropriate settings in
+<path>/etc/rc.conf</path>. Please read through <path>/etc/rc.conf</path> and
+<path>/etc/conf.d/rc</path> and migrate the settings. Once you are complete,
+delete <path>/etc/conf.d/rc</path>.
+</p>
+
+</body>
+</section>
+<section id="modules">
+<title>Kernel modules</title>
+<body>
+
+<p>
+Normally, when you want certain kernel modules automatically loaded at boot, you
+place them into <path>/etc/modules.autoload.d/kernel-2.6</path> along with any
+parameters you wanted to pass to them. In baselayout-2, this file is not used
+anymore. Instead, autoloaded modules and module parameters are placed in one
+file, <path>/etc/conf.d/modules</path>, no matter the kernel version.
+</p>
+
+<p>
+An example old style configuration would be:
+</p>
+
+<pre caption="/etc/modules.autoload.d/kernel-2.6">
+ivtv
+cx88_dvb video_br=2
+</pre>
+
+<p>
+Converting the above example would result in the following:
+</p>
+
+<pre caption="/etc/conf.d/modules">
+<comment># Modules autoloaded at boot</comment>
+modules_2_6="ivtv cx88_dvb"
+<comment># Module parameters</comment>
+module_cx88_dvb_args_2_6="video_br=2"
+</pre>
+
+<p>
+In the above examples, the modules and their parameters would only be passed
+to 2.6.x series kernels. The new configuration allows for fine grained
+control over the modules and parameters based on kernel version.
+</p>
+
+<impo>
+The <b>module*</b> variables are not cumulative. The more version-specific
+variables will override the more general variables.
+</impo>
+
+<note>
+Please note the difference between <b>module_</b> and <b>modules_</b>.
+</note>
+
+<p>
+An in-depth example would be:
+</p>
+
+<pre caption="detailed example of /etc/conf.d/modules">
+<comment># Only load ivtv for 2.6.23-gentoo-r5</comment>
+modules_2_6_23_gentoo_r5="ivtv"
+<comment># Only load cx88_dvb for 2.6.23 kernels (other than -gentoo-r5)</comment>
+modules_2_6_23="cx88_dvb"
+<comment># Only load tun and usbserial for 2.6.x series kernels where x != 23</comment>
+modules_2_6="tun usbserial"
+<comment># Otherwise load ochi1394 and ieee1394</comment>
+modules="ohci1394 ieee1394"
+
+<comment># For 2.6.23-gentoo-r5, pass video_br=2 to cx88_dvb</comment>
+module_cx88_dvb_args_2_6_23_gentoo_r5="video_br=2"
+<comment># For 2.6.x series kernels, always pass vendor and product</comment>
+module_usbserial_args_2_6="vendor=0x1410 product=0x2110"
+<comment># Always pass debug to ieee1394</comment>
+module_ieee1394_args="debug" 
+</pre>
+
+</body>
+</section>
+<section id="boot">
+<title>Boot runlevel</title>
+<body>
+
+<p>
+The <c>boot</c> runlevel performs several important steps for every machine. For
+example, making sure your root filesystem is mounted read/write, that your
+filesystems are checked for errors, that your mountpoints are available, and
+that the <path>/proc</path> pseudo-filesystem is started at boot.
+</p>
+
+<p>
+With OpenRC, volume management services for your block storage devices are no
+longer run automatically at boot. This includes lvm, raid, swap, device-mapper
+(dm), dm-crypt, and the like. You must ensure the appropriate initscript
+for these services is in the <c>boot</c> runlevel, otherwise it's possible that
+your system will not boot!
+</p>
+
+<p>
+While the OpenRC ebuild will attempt to do this migration for you, you should
+verify that it migrated all the volume management services properly:
+</p>
+
+<pre caption="Display all services in boot runlevel">
+# <i>ls -l /etc/runlevels/boot/</i>
+</pre>
+
+<p>
+If you don't see root, procfs, mtab, swap, and fsck in the above listing,
+perform the following to add them to the <c>boot</c> runlevel:
+</p>
+
+<pre caption="Adding critical services to the boot runlevel">
+# <i>rc-update add root boot</i>
+# <i>rc-update add procfs boot</i>
+# <i>rc-update add mtab boot</i>
+# <i>rc-update add fsck boot</i>
+# <i>rc-update add swap boot</i>
+</pre>
+
+<p>
+If you know you use mdraid and lvm but do not see them above, you would run
+the following to add initscripts to the <c>boot</c> runlevel:
+</p>
+
+<pre caption="Adding mdraid and lvm to the boot runlevel">
+# <i>rc-update add mdraid boot</i>
+# <i>rc-update add lvm boot</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Udev</title>
+<body>
+
+<p>
+OpenRC no longer starts <c>udev</c> by default, but it does need to be present
+in the <c>sysinit</c> runlevel to be started. The OpenRC ebuild should detect if
+<c>udev</c> was previously enabled and add it to the <c>sysinit</c> runlevel.
+However, to be safe, check if <c>udev</c> is present:
+</p>
+
+<pre caption="Verifying udev">
+# <i>ls -l /etc/runlevels/sysinit</i>
+lrwxrwxrwx 1 root root 14 2009-01-29 08:00 /etc/runlevels/sysinit/udev -> \
+/etc/init.d/udev
+</pre>
+
+<p>
+If <c>udev</c> is not listed, add it to the correct runlevel:
+</p>
+
+<pre caption="Adding udev to the sysinit runlevel">
+# <i>rc-update add udev sysinit</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Network</title>
+<body>
+
+<p>
+Due to baselayout and OpenRC being broken into two different packages, your
+net.eth0 initscript may disappear during the upgrade process. To replace this
+initscript and re-add it to the default runlevel, please perform the
+following:
+</p>
+
+<pre caption="Adding back missing net.eth0 script">
+# <i>cd /etc/init.d</i>
+# <i>ln -s net.lo net.eth0</i>
+# <i>rc-update add net.eth0 default</i>
+</pre>
+
+<p>
+If you are missing any other network initscripts, follow the instructions above
+to re-add them. Simply replace <c>eth0</c> with the name of your network
+device.
+</p>
+
+<p>
+Also, <path>/etc/conf.d/net</path> (oldnet) no longer uses bash-style arrays
+for configuration. Please review
+<path>/usr/share/doc/openrc-&lt;version&gt;/net.example</path> for configuration
+instructions. Conversion should be relatively straight-forward, converting to
+newlines for seperate entries, for example a static IP assignment would change
+as follows:
+</p>
+
+<pre caption="Old /etc/conf.d/net style">
+config_eth0=( "192.168.1.37 netmask 255.255.255.0 brd 192.168.1.255" )
+routes_eth0=( "default via 192.168.1.100" "10.0.0.0/8 via 192.168.1.2" )
+</pre> 
+
+<pre caption="New /etc/conf.d/net style">
+config_eth0="192.168.1.37 netmask 255.255.255.0 brd 192.168.1.255"
+routes_eth0="default via 192.168.1.100
+10.0.0.0/8 via 192.168.1.2"
+</pre>
+
+</body>
+</section>
+<section>
+<title>Clock</title>
+<body>
+
+<p>
+Clock settings have been renamed from <path>/etc/conf.d/clock</path> to your
+system's native tool for adjusting the clock. This means on Linux it will be
+<path>/etc/conf.d/hwclock</path> and on FreeBSD it will be
+<path>/etc/conf.d/adjkerntz</path>. Systems without a working real time clock
+(RTC) chip should use <path>/etc/init.d/swclock</path>, which sets the system
+time based on the mtime of a file which is created at system shutdown. The
+initscripts in <path>/etc/init.d/</path> have also been renamed accordingly, so
+make sure the appropriate script for your system has been added to the boot
+runlevel.
+</p>
+
+<p>
+Additionally, the <c>TIMEZONE</c> variable is no longer in this file. Its
+contents are instead found in the <path>/etc/timezone</path> file. If it
+doesn't exist, you will of course have to create it with your timezone. Please
+review both of these files to ensure their correctness.
+</p>
+
+<p>
+The proper value for this file is the path relative to your timezone from
+<path>/usr/share/zoneinfo</path>. For example, for someone living on the east
+coast of the United States, the following would be a correct setting:
+</p>
+
+<pre caption="/etc/timezone">
+America/New_York
+</pre>
+
+</body>
+</section>
+<section>
+<title>XSESSION</title>
+<body>
+
+<p>
+The XSESSION variable is no longer found in <path>/etc/rc.conf</path>. Instead,
+you can set the XSESSION variable per-user in <path>~/.bashrc</path> (or
+equivalent), or system-wide in <path>/etc/env.d/</path>.
+</p>
+
+<p>
+Here's an example of setting XSESSION for the whole system:
+</p>
+
+<pre caption="Setting XSESSION system-wide">
+# <i>echo 'XSESSION="Xfce4"' > /etc/env.d/90xsession</i>
+</pre>
+
+<impo>
+You must run <c>env-update</c> after creating a file in <path>/etc/env.d</path>,
+and then logout and login for it to take effect. If you set the variable in
+<path>~/.bashrc</path>, you can re-source the file with <c>source
+~/.bashrc</c>.
+</impo>
+
+</body>
+</section>
+<section>
+<title>EDITOR and PAGER</title>
+<body>
+
+<p>
+The EDITOR variable is no longer found in <path>/etc/rc.conf</path>.  Both
+EDITOR and PAGER are set by default in <path>/etc/profile</path>.  You should
+change this as needed in your <path>~/.bashrc</path> (or equivalent) file or
+create <path>/etc/env.d/99editor</path> and set the system default there.
+</p>
+
+<impo>
+You must run <c>env-update</c> after creating a file in <path>/etc/env.d</path>,
+and then logout and login for it to take effect. If you set the variable in
+<path>~/.bashrc</path>, you can re-source the file with <c>source
+~/.bashrc</c>.
+</impo>
+
+</body>
+</section>
+<section>
+<title>Boot log</title>
+<body>
+
+<p>
+Previously, you could log the boot process by using
+<c>app-admin/showconsole</c>. However, OpenRC now handles all logging
+internally, so there's no need for the hacks that <c>showconsole</c> employed.
+You can safely unmerge <c>showconsole</c>. To continue logging boot messages,
+just set the appropriate variable in <path>/etc/rc.conf</path>. Logs will appear
+in <path>/var/log/rc.log</path>.
+</p>
+
+<pre caption="Enabling boot logging in /etc/rc.conf">
+rc_logger="YES"
+</pre>
+
+</body>
+</section>
+<section id="rc_local">
+<title>local.start and local.stop</title>
+<body>
+
+<p>
+With OpenRC, <path>/etc/conf.d/local.start</path> and <path>local.stop</path>
+are deprecated. During the migration to OpenRC, the files are moved to
+<path>/etc/local.d</path> and gain the suffix <path>.start</path> or
+<path>.stop</path>. OpenRC then executes those in alphabetic order.
+</p>
+
+</body>
+</section>
+<section id="rc_sys">
+<title>System sub-types: Virtualization special cases</title>
+<body>
+
+<p>
+In the early versions of OpenRC, we explictly detected multiple types of
+virtualization, and used that detection to note when certain init scripts
+should be skipped, using the <b>keyword</b> call in the <b>depend</b>
+functions.
+</p>
+
+<p>
+However, as of the 0.7.0 release, you are required to explicitly configure the
+sub-type using the <b>rc_sys</b> variable in <path>/etc/rc.conf</path>. The
+sub-type should be set to match the virtualization environment that the given
+root is in. In general, the non-empty <b>rc_sys</b> value should be within the
+virtual containers; The host node will have <b>rc_sys=""</b>.
+</p>
+
+<impo>
+If you do not have any specific sub-type, please use the default of an empty
+string <b>""</b>. If the variable is unset, you will be given a warning and we
+will attempt to use the old detection algorithm.
+</impo>
+
+<note>
+If you do not know what value your system was using with the automatic
+detection, you should temporarily comment out the <b>rc_sys</b> variable and
+run the detection command, <c>rc -S</c>.
+</note>
+
+<pre caption="Setting system sub-type to none in /etc/rc.conf">
+rc_sys=""
+</pre>
+
+<p>
+The detection algorithm had to be replaced with manual configuration due to
+the introduction of new sub-types and changes to the kernel that made prior
+detection unreliable.
+</p>
+
+<table>
+<tr>
+  <th>Subtype</th>
+  <th>Description</th>
+  <th>Notes</th>
+</tr>
+<tr>
+  <ti></ti>
+  <ti>Default, no sub-type</ti>
+  <ti>Not the same as unset; FreeBSD, Linux &amp; NetBSD</ti>
+</tr>
+<tr>
+  <ti>jail</ti>
+  <ti>FreeBSD jails</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>lxc</ti>
+  <ti>Linux Containers</ti>
+  <ti>Not auto-detected</ti>
+</tr>
+<tr>
+  <ti>openvz</ti>
+  <ti>Linux OpenVZ</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>prefix</ti>
+  <ti>Prefix</ti>
+  <ti>Not auto-detected; FreeBSD, Linux &amp; NetBSD</ti>
+</tr>
+<tr>
+  <ti>vserver</ti>
+  <ti>Linux vserver</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>xen0</ti>
+  <ti>Xen0 Domain</ti>
+  <ti>Linux &amp; NetBSD</ti>
+</tr>
+<tr>
+  <ti>xenU</ti>
+  <ti>XenU Domain</ti>
+  <ti>Linux &amp; NetBSD</ti>
+</tr>
+</table>
+
+</body>
+</section>
+<section>
+<title>Cleaning up stale configuration files</title>
+<body>
+
+<p>
+After migration, there will be files left on your file system that are not
+cleaned up by Portage. Those are configuration files which are protected by
+Portage' configuration file protection feature.
+</p>
+
+<p>
+The most notable example would be <path>/etc/conf.d/net.example</path> which is
+superseded by <path>/usr/share/doc/openrc-*/net.example.bz2</path>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Finishing up</title>
+<body>
+
+<p>
+Once you've finished updating your config files and initscripts, the last thing
+to do is <b>reboot</b>. This is necessary because system state information is
+not preserved during the upgrade, so you'll need to provide it with a fresh
+boot.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Changed functionality</title>
+<section>
+<title>The pause action</title>
+<body>
+
+<p>
+Previously it was possible to temporarily stop a service without taking down all
+the depending services by using <c>/etc/init.d/service pause</c>. In OpenRC, the
+<c>pause</c> action was removed; this functionality is supported by the
+<c>/etc/init.d/service --nodeps stop</c>, which also works in the old
+baselayout.
+</p>
+
+</body>
+</section>
+<section>
+<title>rootfs entry in /etc/mtab</title>
+<body>
+
+<p>
+Previously, the initial <b>rootfs</b> entry was removed from
+<path>/etc/mtab</path>, and only the real root <path>/</path> entry was
+present. The duplicate rootfs item was actually added back during shutdown.
+In OpenRC, both entries must be present for full support of initramfs and
+tmpfs-on-root. This also means that less writing is required during shutdown.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,452 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2005.1/hb-install-amd64-bootloader.xml,v 1.12 2006/02/02 21:36:10 neysx Exp $ -->
+
+<sections>
+
+<version>5.9</version>
+<date>2006-02-02</date>
+
+<section>
+<title>Making your Choice</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Now that your kernel is configured and compiled and the necessary system
+configuration files are filled in correctly, it is time to install a
+program that will fire up your kernel when you start the system. Such a
+program is called a <e>bootloader</e>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Optional: Framebuffer</title>
+<body>
+
+<!--
+Verbatim copy from x86 bootloader framebuffer explanation, minus the section on
+vesafb-tng
+-->
+
+<p>
+<e>If</e> you have configured your kernel with framebuffer support (or you used
+<c>genkernel</c>'s default kernel configuration), you can activate it by adding
+a <c>vga</c> and/or a <c>video</c> statement to your bootloader configuration 
+file.
+</p>
+
+<p>
+64-bit systems must use the the <c>vesafb</c> driver, and so will need to set
+the <c>vga</c> statement. The <c>vga</c> statement controls the resolution and
+color depth of your framebuffer screen for <c>vesafb</c>. As stated in
+<path>/usr/src/linux/Documentation/fb/vesafb.txt</path> (which gets installed
+when you install a kernel source package), you need to pass the VESA number 
+corresponding to the requested resolution and color depth to it.
+</p>
+
+<p>
+The following table lists the available resolutions and colordepths and matches
+those against the value that you need to pass on to the <c>vga</c> statement.
+</p>
+
+<table>
+<tr>
+  <ti></ti>
+  <th>640x480</th>
+  <th>800x600</th>
+  <th>1024x768</th>
+  <th>1280x1024</th>
+</tr>
+<tr>
+  <th>256</th>
+  <ti>0x301</ti>
+  <ti>0x303</ti>
+  <ti>0x305</ti>
+  <ti>0x307</ti>
+</tr>
+<tr>
+  <th>32k</th>
+  <ti>0x310</ti>
+  <ti>0x313</ti>
+  <ti>0x316</ti>
+  <ti>0x319</ti>
+</tr>
+<tr>
+  <th>64k</th>
+  <ti>0x311</ti>
+  <ti>0x314</ti>
+  <ti>0x317</ti>
+  <ti>0x31A</ti>
+</tr>
+<tr>
+  <th>16M</th>
+  <ti>0x312</ti>
+  <ti>0x315</ti>
+  <ti>0x318</ti>
+  <ti>0x31B</ti>
+</tr>
+</table>
+
+<p>
+The <c>video</c> statement controls framebuffer display options. It needs to be
+given the framebuffer driver (<c>vesafb</c> for 2.6 kernels, or <c>vesa</c> for
+2.4 kernels) followed by the control statements you wish to enable. All
+variables are listed in <path>/usr/src/linux/Documentation/fb/vesafb.txt</path>,
+but we'll inform you about three most-used options:
+</p>
+
+<table>
+<tr>
+  <th>Control</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti>ywrap</ti>
+  <ti>
+    Assume that the graphical card can wrap around its memory (i.e. continue at
+    the beginning when it has approached the end)
+  </ti>
+</tr>
+<tr>
+  <ti>mtrr</ti>
+  <ti>
+    Setup MTRR registers
+  </ti>
+</tr>
+</table>
+
+<p>
+The result of those two statements could be something like <c>vga=0x318
+video=vesafb:mtrr,ywrap</c> or <c>video=vesafb:mtrr,ywrap,1024x768-32@85</c>. 
+Remember (or write down) this setting; you will need it shortly.
+</p>
+
+<p>
+While LILO does work on AMD64, Gentoo only supports using GRUB. Now continue by
+its installation.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Using GRUB</title>
+<subsection>
+<title>Understanding GRUB's terminology</title>
+<body>
+
+<p>
+The most critical part of understanding GRUB is getting comfortable with
+how GRUB refers to hard drives and partitions. Your Linux partition
+<path>/dev/hda1</path> will most likely be called <path>(hd0,0)</path> under 
+GRUB. Notice the parenthesis around the <path>hd0,0</path> - they are required.
+</p>
+
+<p>
+Hard drives count from zero rather than "a" and partitions start at zero 
+rather than one. Be aware too that with the hd devices, only hard drives are 
+counted, not atapi-ide devices such as cdrom players and burners.  Also, the 
+same construct is used with SCSI drives. (Normally they get higher numbers 
+than IDE drives except when the BIOS is configured to boot from SCSI devices.)
+When you ask the BIOS to boot from a different hard disk (for instance your
+primary slave), <e>that</e> harddisk is seen as <path>hd0</path>.
+</p>
+
+<p>
+Assuming you have a hard drive on <path>/dev/hda</path>, a cdrom player on 
+<path>/dev/hdb</path>, a burner on <path>/dev/hdc</path>, a second hard drive 
+on <path>/dev/hdd</path> and no SCSI hard drive, <path>/dev/hdd7</path> gets 
+translated to <path>(hd1,6)</path>. It might sound tricky and tricky it is 
+indeed, but as we will see, GRUB offers a tab completion mechanism
+that comes handy for those of you having a lot of hard drives and
+partitions and who are a little lost in the GRUB numbering scheme.
+</p>
+
+<p>
+Having gotten the feel for that, it is time to install GRUB.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Installing GRUB</title>
+<body>
+
+<p>
+To install GRUB, let's first emerge it. 
+</p>
+
+<pre caption="Installing GRUB">
+# <i>emerge grub</i>
+</pre>
+
+<p>
+Although GRUB is now installed, we still need to write up a
+configuration file for it and install GRUB in the MBR so that GRUB 
+automatically boots your newly created kernel. Create 
+<path>/boot/grub/grub.conf</path> with <c>nano</c> (or, if applicable, another 
+editor):
+</p>
+
+<pre caption="Creating /boot/grub/grub.conf">
+# <i>nano -w /boot/grub/grub.conf</i>
+</pre>
+
+<p>
+Now we are going to write up a <path>grub.conf</path>. Below you'll
+find two possible <path>grub.conf</path> for the partitioning example we use 
+in this guide, with kernel image <path>kernel-2.6.12-gentoo-r10</path>. We've 
+only extensively commented the first <path>grub.conf</path>. 
+</p>
+
+<ul>
+  <li>
+    The first <path>grub.conf</path> is for people who have not used 
+    <c>genkernel</c> to build their kernel
+  </li>
+  <li>
+    The second <path>grub.conf</path> is for people who have used
+    <c>genkernel</c> to build their kernel
+  </li>
+</ul>
+
+<note>
+If your root filesystem is JFS, you <e>must</e> add " ro" to the <c>kernel</c>
+line since JFS needs to replay its log before it allows read-write mounting.
+</note>
+
+<pre caption="grub.conf for non-genkernel users">
+<comment># Which listing to boot as default. 0 is the first, 1 the second etc.</comment>
+default 0
+<comment># How many seconds to wait before the default listing is booted.</comment>
+timeout 30
+<comment># Nice, fat splash-image to spice things up :)
+# Comment out if you don't have a graphics card installed</comment>
+splashimage=(hd0,0)/boot/grub/splash.xpm.gz
+
+title=Gentoo Linux 2.6.12
+<comment># Partition where the kernel image (or operating system) is located</comment>
+root (hd0,0)
+kernel /boot/kernel-2.6.12-gentoo-r10 root=/dev/hda3
+
+<comment># The next four lines are only if you dualboot with a Windows system.</comment>
+<comment># In this case, Windows is hosted on /dev/hda6.</comment>
+title=Windows XP
+rootnoverify (hd0,5)
+makeactive
+chainloader +1
+</pre>
+
+<pre caption="grub.conf for genkernel users">
+default 0
+timeout 30
+splashimage=(hd0,0)/boot/grub/splash.xpm.gz
+
+title=Gentoo Linux 2.6.12
+root (hd0,0)
+kernel /boot/kernel-2.6.12-gentoo-r10 root=/dev/ram0 init=/linuxrc ramdisk=8192 real_root=/dev/hda3 udev
+initrd /boot/initramfs-genkernel-amd64-2.6.12-gentoo-r10
+
+<comment># Only in case you want to dual-boot</comment>
+title=Windows XP
+rootnoverify (hd0,5)
+makeactive
+chainloader +1
+</pre>
+
+<p>
+If you used a different partitioning scheme and/or kernel image, adjust
+accordingly. However, make sure that anything that follows a GRUB-device (such
+as <path>(hd0,0)</path>) is relative to the mountpoint, not the root. In other
+words, <path>(hd0,0)/grub/splash.xpm.gz</path> is in reality
+<path>/boot/grub/splash.xpm.gz</path> since <path>(hd0,0)</path> is
+<path>/boot</path>.
+</p>
+
+<p>
+Besides, if you chose to use a different partitioning scheme and did not put
+<path>/boot</path> in a separate partition, the <path>/boot</path> prefix used
+in the above code samples is really <e>required</e>. If you followed our
+suggested partitioning plan, the <path>/boot</path> prefix it not required, but
+a <path>boot</path> symlink makes it work. In short, the above examples should
+work whether you defined a separate <path>/boot</path> partition or not.
+</p>
+
+<p>
+If you need to pass any additional options to the kernel, simply add
+them to the end of the kernel command. We're already passing one option
+(<c>root=/dev/hda3</c> or <c>real_root=/dev/hda3</c>), but you can pass others 
+as well, such as the <c>video</c> statement for framebuffer as we discussed
+previously.
+</p>
+
+<p>
+<c>genkernel</c> users should know that their kernels use the same boot options
+as is used for the Installation CD. For instance, if you have SCSI devices, you
+should add <c>doscsi</c> as kernel option.
+</p>
+
+<p>
+Now save the <path>grub.conf</path> file and exit. We still need to install GRUB
+in the MBR (Master Boot Record) though.
+</p>
+
+<p>
+The GRUB developers recommend the use of <c>grub-install</c>. However, if for
+some reason <c>grub-install</c> fails to work correctly you still have the
+option to manually install GRUB.
+</p>
+
+<p>
+Continue with <uri link="#grub-install-auto">Default: Setting up GRUB using
+grub-install</uri> or <uri link="#grub-install-manual">Alternative: Setting up
+GRUB using manual instructions</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection id="grub-install-auto">
+<title>Default: Setting up GRUB using grub-install</title>
+<body>
+
+<p>
+To install GRUB you will need to issue the <c>grub-install</c> command.
+However, <c>grub-install</c> won't work off-the-shelf since we are inside a
+chrooted environment. We need to create <path>/etc/mtab</path> which lists all
+mounted filesystems. Fortunately, there is an easy way to accomplish this -
+just copy over <path>/proc/mounts</path> to <path>/etc/mtab</path>, excluding
+the <c>rootfs</c> line if you haven't created a separate boot partition. The
+following command will work in both cases:
+</p>
+
+<pre caption="Creating /etc/mtab">
+# <i>grep -v rootfs /proc/mounts &gt; /etc/mtab</i>
+</pre>
+
+<p>
+Now we can install GRUB using <c>grub-install</c>:
+</p>
+
+<pre caption="Running grub-install">
+# <i>grub-install /dev/hda</i>
+</pre>
+
+<p>
+If you have more questions regarding GRUB, please consult the <uri
+link="http://www.gnu.org/software/grub/grub-faq.html">GRUB FAQ</uri> or the <uri
+link="http://www.gnu.org/software/grub/manual/">GRUB Manual</uri>.
+</p>
+
+<p>
+Continue with <uri link="#reboot">Rebooting the System</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection id="grub-install-manual">
+<title>Alternative: Setting up GRUB using manual instructions</title>
+<body>
+
+<p>
+To start configuring GRUB, you type in <c>grub</c>. You'll be presented
+with the <path>grub&gt;</path> grub command-line prompt. Now, you need to type 
+in the right commands to install the GRUB boot record onto your hard drive.
+</p>
+
+<pre caption=" Starting the GRUB shell">
+# <i>grub</i>
+</pre>
+
+<note>
+If your system does not have any floppy drives, add the <c>--no-floppy</c>
+option to the above command to prevent grub from probing the (non-existing) 
+floppy drives.
+</note>
+
+<p>
+In the example configuration we want to install GRUB so that it reads its 
+information from the boot-partition <path>/dev/hda1</path>, and installs the 
+GRUB boot record on the hard drive's MBR (master boot record) so that the first
+thing we see when we turn on the computer is the GRUB prompt. Of course, if you
+haven't followed the example configuration during the installation,
+change the commands accordingly.
+</p>
+
+<p>
+The tab completion mechanism of GRUB can be used from within GRUB.
+For instance, if you type in "<c>root (</c>" followed by a TAB, you will
+be presented with a list of devices (such as <path>hd0</path>). If you
+type in "<c>root (hd0,</c>" followed by a TAB, you will receive a list
+of available partitions to choose from (such as <path>hd0,0</path>).
+</p>
+
+<p>
+By using the tab completion, setting up GRUB should be not that hard.
+Now go on, configure GRUB, shall we? :-)
+</p>
+
+<pre caption=" Installing GRUB in the MBR">
+grub&gt; <i>root (hd0,0)</i>          <comment>(Specify where your /boot partition resides)</comment>
+grub&gt; <i>setup (hd0)</i>           <comment>(Install GRUB in the MBR)</comment>
+grub&gt; <i>quit</i>                  <comment>(Exit the GRUB shell)</comment>
+</pre>
+
+<note>
+If you want to install GRUB in a certain partition instead of the MBR,
+you have to alter the <c>setup</c> command so it points to the right
+partition. For instance, if you want GRUB installed in
+<path>/dev/hda3</path>, then the command becomes <c>setup (hd0,2)</c>.
+Few users however want to do this.
+</note>
+
+<p>
+If you have more questions regarding GRUB, please consult the <uri
+link="http://www.gnu.org/software/grub/grub-faq.html">GRUB FAQ</uri> or the <uri
+link="http://www.gnu.org/software/grub/manual/">GRUB Manual</uri>.
+</p>
+
+<p>
+Continue with <uri link="#reboot">Rebooting the System</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="reboot">
+<title>Rebooting the System</title>
+<subsection>
+<body>
+
+<p>
+Exit the chrooted environment and unmount all mounted partitions. Then type in 
+that one magical command you have been waiting for: <c>reboot</c>.
+</p>
+
+<pre caption="Unmounting all partitions and rebooting">
+# <i>exit</i>
+# <i>cd</i>
+# <i>umount /mnt/gentoo/boot /mnt/gentoo/dev /mnt/gentoo/proc /mnt/gentoo</i>
+# <i>reboot</i>
+</pre>
+
+<p>
+Of course, don't forget to remove the bootable CD, otherwise the CD will be
+booted again instead of your new Gentoo system.
+</p>
+
+<p>
+Once rebooted in your Gentoo installation, finish up with <uri
+link="?part=1&amp;chap=11">Finalizing your Gentoo Installation</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

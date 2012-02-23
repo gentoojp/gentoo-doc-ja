@@ -1,0 +1,525 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-net-wireless.xml,v 1.20 2011/08/14 16:12:13 swift Exp $ -->
+
+<sections>
+
+<abstract>
+Wireless configuration can be tricky. Hopefully we'll get you working!
+</abstract>
+
+<version>10</version>
+<date>2011-08-13</date>
+
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+Wireless networking on Linux is usually pretty straightforward. There are two
+ways of configuring wifi: graphical clients, or the command line.
+</p>
+
+<p>
+The <e>easiest</e> way is to use a graphical client once you've installed a <uri
+link="/doc/en/?catid=desktop">desktop environment</uri>. Most graphical clients,
+such as <uri link="http://wicd.sourceforge.net">wicd</uri> and <uri
+link="http://www.gnome.org/projects/NetworkManager">NetworkManager</uri>, are
+pretty self-explanatory. They offer a handy point-and-click interface that gets
+you on a network in just a few seconds.
+</p>
+
+<note>
+<c>wicd</c> offers a command line utility <e>in addition</e> to the main
+graphical interface. You can get it by emerging <c>wicd</c> with the
+<c>ncurses</c> USE flag set. This <c>wicd-curses</c> utility is particularly
+useful for folks who don't use a gtk-based desktop environment, but still want
+an easy command line tool that doesn't require hand-editing configuration
+files.
+</note>
+
+<p>
+However, if you don't want to use a graphical client, then you can configure
+wifi on the command line by editing a few configuration files. This takes a bit
+more time to setup, but it also requires the fewest packages to download and
+install. Since the graphical clients are mostly self-explanatory (with helpful
+screenshots at their homepages), we'll focus on the command line alternatives.
+</p>
+
+<p>
+You can setup wireless networking on the command line by installing
+<c>wireless-tools</c> or <c>wpa_supplicant</c>. The important thing to remember
+is that you configure wireless networks on a global basis and not an interface
+basis.
+</p>
+
+<p>
+<c>wpa_supplicant</c> is the best choice. For a list of supported drivers, <uri
+link="http://hostap.epitest.fi/wpa_supplicant">read the wpa_supplicant
+site</uri>.
+</p>
+
+<p>
+<c>wireless-tools</c> supports nearly all cards and drivers, but it cannot
+connect to WPA-only Access Points. If your networks only offer WEP encryption or
+are completely open, you may prefer the simplicity of <c>wireless-tools</c>.
+</p>
+
+<warn>
+The <c>linux-wlan-ng</c> driver is not supported by baselayout at this time.
+This is because <c>linux-wlan-ng</c> have its own setup and configuration which
+is completely different to everyone else's. The <c>linux-wlan-ng</c> developers
+are rumoured to be changing their setup over to <c>wireless-tools</c>, so when
+this happens you may use <c>linux-wlan-ng</c> with baselayout.
+</warn>
+
+</body>
+</section>
+<section>
+<title>WPA Supplicant</title>
+<body>
+
+<p>
+<uri link="http://hostap.epitest.fi/wpa_supplicant">WPA Supplicant</uri> is a
+package that allows you to connect to WPA enabled access points.
+</p>
+
+<pre caption="Install wpa_supplicant">
+# <i>emerge net-wireless/wpa_supplicant</i>
+</pre>
+
+<impo>
+You have to have <c>CONFIG_PACKET</c> enabled in your kernel for
+<c>wpa_supplicant</c> to work. Try running <c>grep CONFIG_PACKET
+/usr/src/linux/.config</c> to see if you have it enabled in your kernel.
+</impo>
+
+<note>
+Depending on your USE flags, <c>wpa_supplicant</c> can install a graphical
+interface written in Qt4, which will integrate nicely with KDE. To get it, run
+<c>echo "net-wireless/wpa_supplicant qt4" >> /etc/portage/package.use</c> as
+root before emerging <c>wpa_supplicant</c>.
+</note>
+
+<p>
+Now we have to configure <path>/etc/conf.d/net</path> to so that we prefer
+<c>wpa_supplicant</c> over <c>wireless-tools</c> (if both are installed,
+<c>wireless-tools</c> is the default).
+</p>
+
+<pre caption="configure /etc/conf.d/net for wpa_supplicant">
+<comment># Prefer wpa_supplicant over wireless-tools</comment>
+modules="wpa_supplicant"
+
+<comment># It's important that we tell wpa_supplicant which driver we should
+# be using as it's not very good at guessing yet</comment>
+wpa_supplicant_eth0="-Dmadwifi"
+</pre>
+
+<note>
+If you're using the host-ap driver you will need to put the card in <e>Managed
+mode</e> before it can be used with <c>wpa_supplicant</c> correctly. You can use
+<c>iwconfig_eth0="mode managed"</c> to achieve this in
+<path>/etc/conf.d/net</path>.
+</note>
+
+<p>
+That was simple, wasn't it? However, we still have to configure
+<c>wpa_supplicant</c> itself which is a bit more tricky depending on how secure
+the Access Points are that you are trying to connect to. The below example is
+taken and simplified from
+<path>/usr/share/doc/wpa_supplicant-&lt;version&gt;/wpa_supplicant.conf.gz</path>
+which ships with <c>wpa_supplicant</c>.
+</p>
+
+<pre caption="An example /etc/wpa_supplicant/wpa_supplicant.conf">
+<comment># The below line not be changed otherwise we refuse to work</comment>
+ctrl_interface=/var/run/wpa_supplicant
+
+<comment># Ensure that only root can read the WPA configuration</comment>
+ctrl_interface_group=0
+
+<comment># Let wpa_supplicant take care of scanning and AP selection</comment>
+ap_scan=1
+
+<comment># Simple case: WPA-PSK, PSK as an ASCII passphrase, allow all valid ciphers</comment>
+network={
+  ssid="simple"
+  psk="very secret passphrase"
+  <comment># The higher the priority the sooner we are matched</comment>
+  priority=5
+}
+
+<comment># Same as previous, but request SSID-specific scanning (for APs that reject
+# broadcast SSID)</comment>
+network={
+  ssid="second ssid"
+  scan_ssid=1
+  psk="very secret passphrase"
+  priority=2
+}
+
+<comment># Only WPA-PSK is used. Any valid cipher combination is accepted</comment>
+network={
+  ssid="example"
+  proto=WPA
+  key_mgmt=WPA-PSK
+  pairwise=CCMP TKIP
+  group=CCMP TKIP WEP104 WEP40
+  psk=06b4be19da289f475aa46a33cb793029d4ab3db7a23ee92382eb0106c72ac7bb
+  priority=2
+}
+
+<comment># Plaintext connection (no WPA, no IEEE 802.1X)</comment>
+network={
+  ssid="plaintext-test"
+  key_mgmt=NONE
+}
+
+<comment># Shared WEP key connection (no WPA, no IEEE 802.1X)</comment>
+network={
+  ssid="static-wep-test"
+  key_mgmt=NONE
+  <comment># Keys in quotes are ASCII keys</comment>
+  wep_key0="abcde"
+  <comment># Keys specified without quotes are hex keys</comment>
+  wep_key1=0102030405
+  wep_key2="1234567890123"
+  wep_tx_keyidx=0
+  priority=5
+}
+
+<comment># Shared WEP key connection (no WPA, no IEEE 802.1X) using Shared Key
+# IEEE 802.11 authentication</comment>
+network={
+  ssid="static-wep-test2"
+  key_mgmt=NONE
+  wep_key0="abcde"
+  wep_key1=0102030405
+  wep_key2="1234567890123"
+  wep_tx_keyidx=0
+  priority=5
+  auth_alg=SHARED
+}
+
+<comment># IBSS/ad-hoc network with WPA-None/TKIP</comment>
+network={
+  ssid="test adhoc"
+  mode=1
+  proto=WPA
+  key_mgmt=WPA-NONE
+  pairwise=NONE
+  group=TKIP
+  psk="secret passphrase"
+}
+</pre>                  
+
+</body>
+</section>
+<section>
+<title>Wireless Tools</title>
+
+<subsection>
+<title>Initial setup and Managed Mode</title>
+<body>
+
+<p>
+<uri
+link="http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html">Wireless
+Tools</uri> provide a generic way to configure basic wireless interfaces up to
+the WEP security level. While WEP is a weak security method it's also the most
+prevalent.
+</p>
+
+<p>
+Wireless Tools configuration is controlled by a few main variables. The sample
+configuration file below should describe all you need. One thing to bear in mind
+is that no configuration means "connect to the strongest unencrypted Access
+Point" - we will always try and connect you to something.
+</p>
+
+<pre caption="Install wireless-tools">
+# <i>emerge net-wireless/wireless-tools</i>
+</pre>
+
+<note>
+Although you can store your wireless settings in
+<path>/etc/conf.d/wireless</path> this guide recommends you store them in
+<path>/etc/conf.d/net</path>.
+</note>
+
+<impo>
+You <e>will</e> need to consult the <uri
+link="?part=4&amp;chap=2#variable_name">variable name</uri> documentation.
+</impo>
+
+<pre caption="sample iwconfig setup in /etc/conf.d/net">
+<comment># Prefer iwconfig over wpa_supplicant</comment>
+modules="iwconfig"
+
+<comment># Configure WEP keys for Access Points called ESSID1 and ESSID2</comment>
+<comment># You may configure up to 4 WEP keys, but only 1 can be active at
+# any time so we supply a default index of [1] to set key [1] and then
+# again afterwards to change the active key to [1]
+# We do this incase you define other ESSID's to use WEP keys other than 1
+#
+# Prefixing the key with s: means it's an ASCII key, otherwise a HEX key
+#
+# enc open specified open security (most secure)
+# enc restricted specified restricted security (least secure)</comment>
+key_ESSID1="[1] s:yourkeyhere key [1] enc open"
+key_ESSID2="[1] aaaa-bbbb-cccc-dd key [1] enc restricted"
+
+<comment># The below only work when we scan for available Access Points</comment>
+
+<comment># Sometimes more than one Access Point is visible so we need to
+# define a preferred order to connect in</comment>
+preferred_aps="'ESSID1' 'ESSID2'"
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Fine tune Access Point Selection</title>
+<body>
+
+<p>
+You can add some extra options to fine-tune your Access Point selection, but
+these are not normally required.
+</p>
+
+<p>
+You can decide whether we only connect to preferred Access Points or not. By
+default if everything configured has failed and we can connect to an unencrypted
+Access Point then we will. This can be controlled by the <c>associate_order</c>
+variable. Here's a table of values and how they control this.
+</p>
+
+<table>
+<tr>
+  <th>Value</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><c>any</c></ti>
+  <ti>Default behaviour</ti>
+</tr>
+<tr>
+  <ti><c>preferredonly</c></ti>
+  <ti>We will only connect to visible APs in the preferred list</ti>
+</tr>
+<tr>
+  <ti><c>forcepreferred</c></ti>
+  <ti>
+    We will forceably connect to APs in the preferred order if they are not
+    found in a scan
+  </ti>
+</tr>
+<tr>
+  <ti><c>forcepreferredonly</c></ti>
+  <ti>
+    Do not scan for APs - instead just try to connect to each one in order
+  </ti>
+</tr>
+<tr>
+  <ti><c>forceany</c></ti>
+  <ti>Same as <c>forcepreferred</c> + connect to any other available AP</ti>
+</tr>
+</table>
+
+<p>
+Finally we have some <c>blacklist_aps</c> and <c>unique_ap</c> selection.
+<c>blacklist_aps</c> works in a similar way to <c>preferred_aps</c>.
+<c>unique_ap</c> is a <c>yes</c> or <c>no</c> value that says if a second
+wireless interface can connect to the same Access Point as the first interface.
+</p>
+
+<pre caption="blacklist_aps and unique_ap example">
+<comment># Sometimes you never want to connect to certain access points</comment>
+blacklist_aps="'ESSID3' 'ESSID4'"
+
+<comment># If you have more than one wireless card, you can say if you want
+# to allow each card to associate with the same Access Point or not
+# Values are "yes" and "no"
+# Default is "yes"</comment>
+unique_ap="yes"
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Ad-Hoc and Master Modes</title>
+<body>
+
+<p>
+If you want to set yourself up as an Ad-Hoc node if you fail to connect to any
+Access Point in managed mode, you can do that too.
+</p>
+
+<pre caption="fallback to ad-hoc mode">
+adhoc_essid_eth0="This Adhoc Node"
+</pre>
+
+<p>
+What about connecting to Ad-Hoc networks or running in Master mode to become an
+Access Point? Here's a configuration just for that! You may need to specify WEP
+keys as shown above.
+</p>
+
+<pre caption="sample ad-hoc/master configuration">
+<comment># Set the mode - can be managed (default), ad-hoc or master
+# Not all drivers support all modes</comment>
+mode_eth0="ad-hoc"
+
+<comment># Set the ESSID of the interface
+# In managed mode, this forces the interface to try and connect to the
+# specified ESSID and nothing else</comment>
+essid_eth0="This Adhoc Node"
+
+<comment># We use channel 3 if you don't specify one</comment>
+channel_eth0="9"
+</pre>
+
+<impo>
+The below is taken verbatim from the BSD wavelan documentation found at <uri
+link="http://www.netbsd.org/Documentation/network/wavelan.html">the NetBSD
+documentation</uri>. There are 14 channels possible; We are told that channels
+1-11 are legal for North America, channels 1-13 for most of Europe, channels
+10-13 for France, and only channel 14 for Japan. If in doubt, please refer to
+the documentation that came with your card or access point. Make sure that the
+channel you select is the same channel your access point (or the other card in
+an ad-hoc network) is on. The default for cards sold in North America and most
+of Europe is 3; the default for cards sold in France is 11, and the default for
+cards sold in Japan is 14.
+</impo>
+
+</body>
+</subsection>
+<subsection>
+<title>Troubleshooting Wireless Tools</title>
+<body>
+
+<p>
+There are some more variables you can use to help get your wireless up and
+running due to driver or environment problems. Here's a table of other things
+you can try.
+</p>
+
+<table>
+<tr>
+  <th>Variable</th>
+  <th>Default Value</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><c>iwconfig_eth0</c></ti>
+  <ti/>
+  <ti>See the iwconfig man page for details on what to send <c>iwconfig</c></ti>
+</tr>
+<tr>
+  <ti><c>iwpriv_eth0</c></ti>
+  <ti/>
+  <ti>See the iwpriv man page for details on what to send <c>iwpriv</c></ti>
+</tr>
+<tr>
+  <ti><c>sleep_scan_eth0</c></ti>
+  <ti><c>0</c></ti>
+  <ti>
+    The number of seconds to sleep before attempting to scan. This is needed
+    when the driver/firmware needs more time to active before it can be used.
+  </ti>
+</tr>
+<tr>
+  <ti><c>sleep_associate_eth0</c></ti>
+  <ti><c>5</c></ti>
+  <ti>
+    The number of seconds to wait for the interface to associate with the
+    Access Point before moving onto the next one
+  </ti>
+</tr>
+<tr>
+  <ti><c>associate_test_eth0</c></ti>
+  <ti><c>MAC</c></ti>
+  <ti>
+    Some drivers do not reset the MAC address associated with an invalid one
+    when they lose or attempt association. Some drivers do not reset the
+    quality level when they lose or attempt association. Valid settings are
+    <c>MAC</c>, <c>quality</c> and <c>all</c>.
+  </ti>
+</tr>
+<tr>
+  <ti><c>scan_mode_eth0</c></ti>
+  <ti/>
+  <ti>
+    Some drivers have to scan in ad-hoc mode, so if scanning fails
+    try setting <c>ad-hoc</c> here
+  </ti>
+</tr>
+<tr>
+  <ti><c>iwpriv_scan_pre_eth0</c></ti>
+  <ti/>
+  <ti>
+    Sends some <c>iwpriv</c> commands to the interface before scanning.
+    See the iwpriv man page for more details.
+  </ti>
+</tr>
+<tr>
+  <ti><c>iwpriv_scan_post_eth0</c></ti>
+  <ti/>
+  <ti>
+    Sends some <c>iwpriv</c> commands to the interface after scanning.
+    See the iwpriv man page for more details.
+  </ti>
+</tr>
+</table>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Defining network configuration per ESSID</title>
+<body>
+
+<p>
+Sometimes, you need a static IP when you connect to <e>ESSID1</e> and you need
+DHCP when you connect to <e>ESSID2</e>. In fact, most module variables can be
+defined per ESSID. Here's how we do this.
+</p>
+
+<note>
+These work if you're using WPA Supplicant or Wireless Tools.
+</note>
+
+<impo>
+You <e>will</e> need to consult the <uri
+link="?part=4&amp;chap=2#variable_name">variable name</uri> documentation.
+</impo>
+
+<pre caption="override network settings per ESSID">
+config_ESSID1="192.168.0.3/24 brd 192.168.0.255"
+routes_ESSID1="default via 192.168.0.1"
+
+config_ESSID2="dhcp"
+fallback_ESSID2="192.168.3.4/24"
+fallback_route_ESSID2="default via 192.168.3.1"
+
+<comment># We can define nameservers and other things too</comment>
+<comment># NOTE: DHCP will override these unless it's told not too</comment>
+dns_servers_ESSID1="192.168.0.1 192.168.0.2"
+dns_domain_ESSID1="some.domain"
+dns_search_domains_ESSID1="search.this.domain search.that.domain"
+
+<comment># You override by the MAC address of the Access Point
+# This handy if you goto different locations that have the same ESSID</comment>
+config_001122334455="dhcp"
+dhcpcd_001122334455="-t 10"
+dns_servers_001122334455="192.168.0.1 192.168.0.2"
+</pre>
+
+</body>
+</section>
+</sections>

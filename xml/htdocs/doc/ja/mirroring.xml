@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/mirroring.xml,v 1.7 2003/11/16 21:54:19 nakano Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/mirroring.xml">
+
+<title>Gentoo Linux ミラーリング・ガイド</title>
+
+<author title="Chief Architect">
+<mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<author title="Editor">
+<mail link="peitolm@gentoo.org">Colin Morey</mail>
+</author>
+<author title="翻訳"><mail link="hagi@p1d.com">萩原佳明</mail>
+</author>
+
+<abstract>
+このドキュメントでは、Gentoo Linuxのrsyncミラーをセットアップする方法を説明します。
+</abstract>
+
+<license/>
+
+<version>1.0</version>
+<date>04 May 2002</date>
+<!-- Original revision: 1.7 -->
+
+<chapter>
+<title>rsyncミラーをセットアップする</title>
+<section>
+<body>
+
+<p>原稿執筆時点では、Portage treeのミラーリングに必要な容量は約130MBです。
+ですので、それほどシビアなスペースが要求されるわけではありません。今後のことを考えても、少くとも200MBぐらい空きがあれば大丈夫だと思います。
+Portage treeのミラーをセットアップするのは簡単です ―― まずは、ミラーをしようと思っているマシンにrsyncがインストールされていることを確認してください。
+次に<path>rsyncd.conf</path>を以下のような感じで設定します: </p>
+
+<pre>
+pid file = /var/run/rsyncd.pid
+motd file = /etc/rsync/rsyncd.motd
+syslog facility = local3
+timeout = 150
+[gentoo-x86-portage]
+        path = /space/gentoo/rsync
+        comment = Gentoo Linux Portage tree
+[gentoo-portage]
+        path = /space/gentoo/rsync
+        comment = Gentoo Linux Portage tree 
+</pre>
+
+<p>上の例では、<c>gentoo-x86-portage</c>のミラーは<c>gentoo-portage</c>のミラーと同じ場所を参照しています。
+最近私たちはミラーの名前を<c>gentoo-portage</c>に変更したんですが、<c>gentoo-x86-portage</c>も後方互換性のために依然として必要なので両方のエントリを記述しています。
+rsyncサーバのmotdは妥当なものであればどんなものでも良いです。
+たとえば、Portageをミラーしているホストの情報と管理者への連絡方法を入れるとか。
+</p>
+
+<p>ここまで終わったら、Gentoo LinuxのPortage treeをミラーしなくてはいけません。
+それには、以下のようなコマンドを実行してください: </p> <pre>rsync -rlptDvz --delete
+rsync://rsync.gentoo.org/gentoo-portage/ /space/gentoo/rsync/</pre> <p>古くなってしまったebuildがあなたのミラーから削除されるように、<c>--delete</c>オプションを有効にするのを忘れずに。
+次にrsyncを30分ごと、:00と:30に実行するように、cronジョブの設定を行ってください。
+それから<mail link="admin_[at]_gentoo.org">The Admin Team</mail>にメールを送り、私たちにあなたのミラーが準備オーケーだということを知らせてください。
+連絡を受けて、私たちはオフィシャルなrsync[num].[countrycode].gentoo.orgのDNSエントリを設定し、あなたのミラーをrsync.gentoo.orgとrsync.[countrycode].gentoo.orgへのDNSラウンドロビンに追加します。
+それからあなたのミラーが「優先的に」私たちのrsyncサーバへ接続できるよう、cvs.gentoo.orgのQoSも設定します。
+しばらくするとあなたのミラーは私たちのDNSに追加され、rsyncのトラフィックを確認することができるでしょう。
+そうしたらcronジョブを変更して、メインのミラーサーバ ―― rsync://rsync1.us.gentoo.org (この部分以外は変更しないでください) ―― を参照するようにしてください。
+-- Gentoo Linuxのユーザーと開発者へのご協力感謝します！ :)</p>
+
+</body>
+</section>
+</chapter>
+</guide>
+

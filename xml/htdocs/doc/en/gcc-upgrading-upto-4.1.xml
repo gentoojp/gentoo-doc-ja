@@ -1,0 +1,525 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gcc-upgrading-upto-4.1.xml,v 1.1 2011/10/13 15:11:55 swift Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoo GCC Upgrade Guide for GCC Up To 4.1</title>
+
+<author title="Author">
+  <mail link="amne@gentoo.org">Wernfried Haas</mail>
+</author>
+<author title="Author">
+  <mail link="jkt@gentoo.org">Jan Kundrát</mail>
+</author>
+<author title="Editor">
+  <mail link="halcy0n"/>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This document will guide the user through the process of upgrading GCC.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>23</version>
+<date>2008-07-19</date>
+
+<chapter id="intro">
+<title>Introduction</title>
+<section>
+<title>GCC Upgrading</title>
+<body>
+
+<p>
+Why should you upgrade? Well, GCC is quite similar to any other package on your
+system, just a bit more critical. You should upgrade GCC whenever a new version
+fixes some bug that annoys you, new functionality you need is introduced, or if
+you want to keep your system up-to-date. If none of the previous cases apply to
+you, you can safely postpone upgrade as long as your GCC version is supported by
+Gentoo developers.
+</p>
+
+<p>
+If you install a new major version of GCC (such as 3.3.6 to 3.4.5), the system
+will not switch over to use it automatically. You'll have to explicitly request
+the change because the migration process might require some additional steps.
+If you decide not to switch, Portage will continue to use older version of your
+compiler until you change your mind, or remove the old compiler from the system.
+Non-major gcc upgrades are switched automatically for you (such as 3.4.5 to
+3.4.6).
+</p>
+
+<p>
+This guide will document the necessary steps required to perform a seamless
+upgrade of the compiler used by your Gentoo box. A specific section is
+dedicated to the <uri link="#upgrade-3.3-to-3.4">upgrade from GCC 3.3 to
+3.4</uri> and issues with <c>libstdc++</c>. A second specific
+section is for users <uri link="#first-install">first installing</uri> Gentoo
+using a stage3 tarball, after a new GCC major/minor version has been released.
+</p>
+
+<warn>
+It should be noted that upgrading from GCC-3.4 (or 3.3) to GCC-4.1 or greater
+still requires you to follow the <uri link="#upgrade-general">general upgrading
+instructions</uri>, as GCC-3.4 and GCC-4.1 use slightly different ABIs.
+</warn>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="upgrade-general">
+<title>General Upgrade Instructions</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<impo>
+If you're looking for instructions specific to upgrades from GCC-3.3 to GCC-3.4,
+please consult the <uri link="#upgrade-3.3-to-3.4">dedicated
+section</uri>.
+</impo>
+
+<impo>
+If you're looking for instructions specific to upgrades in GCC for new
+installs, please consult the <uri link="#first-install">dedicated
+section</uri>.
+</impo>
+
+<p>
+Generally speaking, upgrades to <e>bug fix releases</e>, like from 3.3.5 to
+3.3.6, should be quite safe -- just emerge new version, switch your system to
+use it and rebuild the only affected package, <c>libtool</c>. However, some GCC
+upgrades break binary compatibility; in such cases a rebuild of the affected
+packages (or even whole toolchain and system) might be required.
+</p>
+
+<p>
+When we spoke about the need to switch your compiler to the newer version by
+hand, we said it won't happen automatically. However, there is one exception --
+upgrades to bug fix releases, like from 3.3.5 to 3.3.6 in case you don't use the
+"multislot" feature allowing them to coexist on one system. Multislot is
+disabled by default as the majority of users won't benefit from it.
+</p>
+
+<pre caption="Upgrading GCC">
+# <i>emerge -uav gcc</i>
+
+<comment>(Please substitute "i686-pc-linux-gnu-4.1.1" with the GCC
+version and CHOST settings you've upgraded to:)</comment>
+# <i>gcc-config i686-pc-linux-gnu-4.1.1</i>
+# <i>env-update &amp;&amp; source /etc/profile</i>
+
+<comment>If you upgraded from gcc 3 to 4 (e.g. from 3.4.6 to 4.1.1 in this
+example) you will have to run fix_libtool_files.sh manually</comment>
+<comment>(Replace $CHOST with your actual CHOST, found in /etc/make.conf)</comment>
+<comment>(Replace &lt;gcc-version&gt; with your new, updated GCC version)</comment>
+# <i>/usr/share/gcc-data/$CHOST/&lt;gcc-version&gt;/fix_libtool_files.sh 3.4.6</i>
+
+<comment>(Rebuilding libtool)</comment>
+# <i>emerge --oneshot -av libtool</i>
+</pre>
+
+<p>
+To be completely safe that your system is in a sane state, you <e>must</e>
+rebuild the toolchain and then world to make use of the new compiler.
+</p>
+
+<pre caption="Rebuilding system">
+# <i>emerge -eav system</i>
+# <i>emerge -eav world</i>
+</pre>
+
+<p>
+It is safe to remove the older GCC version at this time. If you feel the need,
+please issue the following command (as usual, substitute
+<c>=sys-devel/gcc-3.4*</c> with the version you want to uninstall):
+</p>
+
+<pre caption="Removing older GCC version">
+# <i>emerge -aC =sys-devel/gcc-3.4*</i>
+</pre>
+
+<impo>
+Please note that the GCC 4.1 and newer can compile only kernels newer than
+2.4.34. Don't remove your old GCC version if you want to use an older kernel.
+</impo>
+
+<impo> <!-- FIXME: do we really want to keep it here? -->
+In case you're upgrading from GCC-3.3, you should run <c>emerge --oneshot
+sys-libs/libstdc++-v3</c> to provide compatibility with older binary C++
+applications.
+</impo>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="upgrade-3.3-to-3.4">
+<title>Upgrading from GCC-3.3 to 3.4</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+The upgrade from GCC-3.3 to 3.4 is not seamless as the C++ ABI
+changed between these two versions. There is an issue with the <c>libstdc++</c>
+library which must be taken care of, as well.
+</p>
+
+</body>
+</section>
+<section id="upgrade-3.3-to-3.4-choices">
+<title>The Choices</title>
+<body>
+
+<impo>
+If you upgrade from gcc 3.4 to 4.1, please consult the <uri
+link="#upgrade-general">General Update instructions</uri>.
+</impo>
+
+<impo>
+If you're upgrading on a SPARC machine, you will have to take the way of
+<uri link="#upgrade-3.3-to-3.4-emerge-e">complete system rebuild</uri> due to
+some internal <uri link="http://gcc.gnu.org/gcc-3.4/sparc-abi.html">ABI
+changes</uri> in GCC's parameter passing.
+</impo>
+
+<p>
+If you upgrade from gcc 3.3 to 3.4, you have two possibilities on how to
+upgrade your system. The <uri link="#upgrade-3.3-to-3.4-revdep-rebuild">first
+method</uri> is faster and requires use of the <c>revdep-rebuild</c> tool from
+package <c>gentoolkit</c> while the <uri
+link="#upgrade-3.3-to-3.4-emerge-e">second one</uri> rebuilds the entire
+system from scratch so it will make use of new GCC features. It's up to you to
+decide which of these two ways you will choose. In most cases, the first
+method is sufficient.
+</p>
+
+<p>
+If you upgrade from gcc 3.3 to 4.1, do not use the method based on
+revdep-rebuild, but do a <uri link="#upgrade-3.3-to-3.4-emerge-e">complete
+system rebuild</uri>.
+</p>
+
+</body>
+</section>
+<section id="upgrade-3.3-to-3.4-revdep-rebuild">
+<title>Using revdep-rebuild</title>
+<body>
+
+<p>
+This method requires that you first install <c>gentoolkit</c> if you have not
+already done so. Then we will upgrade GCC and switch to the new compiler. We
+will also rebuild the <c>libtool</c> package to ensure that toolchain is in
+healthy state.
+</p>
+
+<pre caption="Installing gentoolkit and upgrading GCC">
+# <i>emerge -an gentoolkit</i>
+# <i>emerge -uav gcc</i>
+<comment>(Please substitute "i686-pc-linux-gnu-3.4.5" with the GCC
+version and CHOST settings you've upgraded to:)</comment>
+# <i>gcc-config i686-pc-linux-gnu-3.4.5</i>
+# <i>source /etc/profile</i>
+
+<comment>(Rebuilding libtool)</comment>
+# <i>emerge --oneshot -av libtool</i>
+</pre>
+
+<p>
+Now, we want to see which packages that revdep-rebuild will want to rebuild.
+Then we will tell revdep-rebuild to actually rebuild the packages. This may take
+some time, so have some patience.
+</p>
+
+<pre caption="Using revdep-rebuild">
+# <i>revdep-rebuild --library libstdc++.so.5 -- -p -v</i>
+# <i>revdep-rebuild --library libstdc++.so.5</i>
+</pre>
+
+<note>
+It is possible that you might have problems with non-existing package versions
+due to them being outdated or masked. If this is the case, you will want to use
+the <c>--package-names</c> option to <c>revdep-rebuild</c>. This causes packages
+to be recompiled based on the package name, rather than the exact name and
+version.
+</note>
+
+<p>
+To provide compatibility with older binary C++ applications and any packages
+that revdep-rebuild might have missed, <c>sys-libs/libstdc++-v3</c> needs to be
+merged before you unmerge GCC 3.3 from your system.
+</p>
+
+<pre caption="Installing libstdc++-v3 and cleaning up">
+# <i>emerge --oneshot sys-libs/libstdc++-v3</i>
+# <i>emerge -aC =sys-devel/gcc-3.3*</i>
+</pre>
+
+</body>
+</section>
+<section id="upgrade-3.3-to-3.4-emerge-e">
+<title>Using emerge -e</title>
+<body>
+
+<p>
+This method, while much slower, will rebuild your whole system to ensure that
+everything has been rebuilt with your new compiler, and therefore safer. At
+first, you will upgrade GCC and libtool and switch to your new compiler.
+</p>
+
+<pre caption="Upgrading GCC">
+# <i>emerge -uav gcc</i>
+<comment>(Please substitute "i686-pc-linux-gnu-3.4.5" with the GCC
+version and CHOST settings you've upgraded to:)</comment>
+# <i>gcc-config i686-pc-linux-gnu-3.4.5</i>
+# <i>source /etc/profile</i>
+
+<comment>If you upgraded from gcc 3 to 4 (e.g. from 3.3.6 to 4.1.1 in this
+example) you will have to run fix_libtool_files.sh manually</comment>
+<comment>(Replace $CHOST with your actual CHOST, found in /etc/make.conf)</comment>
+<comment>(Replace &lt;gcc-version&gt; with your new, updated GCC version)</comment>
+# <i>/usr/share/gcc-data/$CHOST/&lt;gcc-version&gt;/fix_libtool_files.sh 3.3.6</i>
+
+<comment>(Rebuilding libtool)</comment>
+# <i>emerge --oneshot -av libtool</i>
+</pre>
+
+<p>
+To provide compatibility with older binary C++ applications,
+<c>sys-libs/libstdc++-v3</c> needs to be merged onto your system.
+</p>
+
+<pre caption="Installing libstdc++-v3">
+# <i>emerge --oneshot sys-libs/libstdc++-v3</i>
+</pre>
+
+<p>
+Now we will go about first rebuilding the system target, then the world target.
+This will take a very long time, depending on the number of packages that you
+have installed, as it will rebuild your entire toolchain and supporting system
+files, followed by every package on your system, including the toolchain. This
+is necessary to ensure that all packages have been compiled with the new
+toolchain, including the toolchain itself.
+</p>
+
+<pre caption="Rebuilding system and world">
+# <i>emerge -e system</i>
+# <i>emerge -e world</i>
+</pre>
+
+<p>
+It is also safe to remove older GCC versions at this time:
+</p>
+
+<pre caption="Cleaning up">
+# <i>emerge -aC =sys-devel/gcc-3.3*</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="first-install">
+<title>Upgrading to GCC on a First Install</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+A GCC upgrade on a system after installation from a stage3 tarball is a simple
+affair. One advantage users of new installations have is they do not have a
+plethora of software installed that links against the older version of GCC.
+The following example is for a GCC-3.3 to 3.4 upgrade. Certain parts
+will be different if upgrading from other versions of GCC. For example, the
+library names used for <c>revdep-rebuild</c> below are GCC 3.3 specific, as
+well as the need to install <c>libstdc++-v3</c>.
+</p>
+
+<p>
+If a user has not made any customizations to their system yet, then there are
+very few steps to get their system upgraded to a new GCC version. As with the
+GCC-3.3 to 3.4 upgrade, the user has a couple options. However, unlike the
+GCC-3.3 to 3.4 upgrade, this one is less complicated as there are fewer
+differences between the methods. The <uri
+link="#first-install-revdep-rebuild">first method</uri> is faster and makes use
+of the <c>revdep-rebuild</c> tool from <c>gentoolkit</c>, similar to the above
+procedure. Using revdep-rebuild causes only packages which actually link
+against GCC libraries to be rebuilt, while the <uri
+link="#first-install-emerge-e">second method</uri> causes your entire new
+install to be recompiled with the new GCC version and takes much longer. This
+second method is never required and only documented for completeness.
+</p>
+
+<p>
+These first steps are common between both methods, and should be completed by
+everyone.
+</p>
+
+<pre caption="Upgrading GCC">
+# <i>emerge -uav gcc</i>
+<comment>(Please substitute "i686-pc-linux-gnu-3.4.5" with the GCC
+version and CHOST settings you've upgraded to:)</comment>
+# <i>gcc-config i686-pc-linux-gnu-3.4.5</i>
+# <i>source /etc/profile</i>
+
+<comment>(Rebuilding libtool)</comment>
+# <i>emerge --oneshot -av libtool</i>
+</pre>
+
+<p>
+To provide compatibility with older binary C++ applications,
+<c>sys-libs/libstdc++-v3</c> needs to be merged onto your system.
+</p>
+
+<pre caption="Installing libstdc++-v3">
+# <i>emerge --oneshot sys-libs/libstdc++-v3</i>
+</pre>
+
+</body>
+</section>
+
+<section id="first-install-revdep-rebuild">
+<title>Using revdep-rebuild</title>
+<body>
+
+<p>
+This method requires that you first install <c>gentoolkit</c> if you have not
+already done so.  We will then run <c>revdep-rebuild</c> to actually scan the
+installed packages for ones we need to rebuild, then rebuild them.
+</p>
+
+<pre caption="Installing gentoolkit and running revdep-rebuild">
+# <i>emerge -an gentoolkit</i>
+# <i>revdep-rebuild --library libstdc++.so.5 -- -p -v</i>
+# <i>revdep-rebuild --library libstdc++.so.5</i>
+</pre>
+
+<note>
+It is possible that you might have problems with non-existing package versions
+due to them being outdated or masked. If this is the case, you will want to use
+the <c>--package-names</c> option to <c>revdep-rebuild</c>. This causes packages
+to be recompiled based on the package name, rather than the exact name and
+version.
+</note>
+
+</body>
+</section>
+<section id="first-install-emerge-e">
+<title>Using emerge -e</title>
+<body>
+
+<p>
+This method, while much slower, will rebuild the system target to ensure that
+everything has been rebuilt with your new compiler.  This is not necessary, but
+is valid if you are also making changes to CFLAGS or other make.conf variables
+that will affect the system compile.
+</p>
+
+<p>
+Since we are performing these actions after an initial installation, we do not
+need to recompile the <c>world</c> target as we would when doing an upgrade on
+an already installed system.  However, you may choose to perform a world update
+in place of the system update, to ensure that all packages are updated.
+</p>
+
+<pre caption="Rebuilding system">
+# <i>emerge -e system</i>
+</pre>
+
+</body>
+</section>
+<section id="first-install-cleaning-up">
+<title>Cleaning up</title>
+<body>
+
+<p>
+It is also safe to remove older GCC versions at this time. Please substitute
+<c>YOUR-NEW-GCC-VERSION</c> with the actual version you've upgraded to:
+</p>
+
+<pre caption="Cleaning up">
+# <i>emerge -aC "&lt;sys-devel/gcc-YOUR-NEW-GCC-VERSION"</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="common-pitfalls">
+<title>Common Pitfalls</title>
+<section>
+<body>
+
+<p>
+It's important to disable <c>distcc</c> during upgrade. Mixing compiler versions
+on your nodes <e>will</e> cause build issues. This is not required for ccache,
+as the cache objects will be invalidated anyway.
+</p>
+
+<p>
+Always use same GCC version for your kernel and additional kernel modules. Once
+you rebuild your world with new GCC, external modules (like
+<c>app-emulation/qemu-softmmu</c>) will fail to load. Please rebuild your
+kernel with the new GCC to fix that.
+</p>
+
+<p>
+If you're upgrading on a SPARC machine, make sure to rerun <c>silo -f</c> after
+re-emerging world to avoid possible issues.
+</p>
+
+</body>
+</section>
+<section>
+<title>Frequent Error Messages</title>
+<body>
+
+<p>
+If your system complains about something like <e>libtool: link:
+`/usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.6/libstdc++.la' is not a valid libtool
+archive</e>, please run
+<c>/usr/share/gcc-data/$CHOST/&lt;gcc-version&gt;/fix_libtool_files.sh 3.3.6</c>
+(substitute "3.3.6" with the version numbers from the error message, and $CHOST
+and &lt;gcc-version&gt; with your actual CHOST and GCC version).
+</p>
+
+<p>
+If you see <e>error: /usr/bin/gcc-config: line 632:
+/etc/env.d/gcc/i686-pc-linux-gnu-3.3.5: No such file or directory</e>, then try
+deleting <path>/etc/env.d/gcc/config-i686-pc-linux-gnu</path> and running
+<c>gcc-config</c> again, followed by <c>source /etc/profile</c>. Only do this
+if you do not have any cross-compilers set up, though.
+</p>
+
+<p>
+If a package fails during <c>emerge -e system</c> or <c>emerge -e world</c>,
+you can resume operation with <c>emerge --resume</c>.  If a package fails
+repeatedly, skip it with <c>emerge --resume --skipfirst</c>.  Don't run any
+other instances of emerge in between or you will lose the resume information.
+</p>
+
+<p>
+If you get an error message <e>spec failure: unrecognized spec option</e> while
+upgrading your compiler, try to switch back to your default compiler, unset the
+<c>GCC_SPECS</c> variable and upgrade GCC again:
+</p>
+
+<pre caption="Restoring primary specs">
+# <i>gcc-config 1</i>
+# <i>source /etc/profile</i>
+# <i>unset GCC_SPECS</i>
+# <i>emerge -uav gcc</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+</guide>

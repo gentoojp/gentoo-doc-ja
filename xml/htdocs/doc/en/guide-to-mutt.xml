@@ -1,0 +1,340 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/guide-to-mutt.xml,v 1.21 2011/08/18 20:56:40 swift Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+
+<title>QuickStart Guide to Mutt E-Mail</title>
+
+<author title="Author">
+  <mail link="grobian@gentoo.org">Fabian Groffen</mail>
+</author>
+
+<abstract>
+This guide shows you how to begin using the powerful command line e-mail
+client mutt.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>3</version>
+<date>2011-08-18</date>
+
+<chapter>
+<title>The Mutt e-mail client</title>
+<section>
+<body>
+
+<p>
+If you're not a fan of e-mail clients with fancy graphical user interfaces, or
+you just like to be able to quickly read some mail over an SSH connection, the
+class of console-based mail clients might be for you.
+</p>
+
+<p>
+Mutt is one of the current console-based mail clients that's still under active
+development and has a vast crowd of active supporters (and users). It is
+powerful, highly customisable, small and efficient.
+</p>
+
+<p>
+While Mutt was originally designed to read mail from the local mbox mail spool
+(e.g. <path>/var/spool/mail/</path>), nowadays it comes with full support for
+Maildir stored folders, remote fetching from POP3 servers and complete
+management of IMAP accounts. For a full description of what Mutt can do, please
+read the Mutt manual and Mutt website at <uri>http://www.mutt.org/</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Acquiring Mutt</title>
+<section>
+<body>
+
+<p>
+Starting your Mutt adventure simply requires you to emerge it.
+Unfortunately, Mutt has a lots of options, which enable or disable certain
+functionalities of Mutt. We now briefly discuss the most important USE-flags
+that you may want to enable based on your intended usage of Mutt. Please note
+that enabling most of them won't harm your Mutt, but may make it do more than an
+experienced Mutt user would like.
+</p>
+
+<pre caption="Mutt's USE-flags">
+% <i>emerge -pv mutt</i>
+[ebuild     N ] mail-client/mutt-1.5.21-r1 USE="gdbm gpg imap mbox nls nntp \
+                  sidebar smime smtp ssl -berkdb -crypt -debug -doc -gnutls \
+                  -idn -pop -qdbm -sasl -tokyocabinet"
+</pre>
+
+<p>
+First off, for newcomers, the <c>imap</c> USE-flag is most probably the most
+important one. Enabling it won't hurt anything, so if you're unsure what
+account you're going to use Mutt with, just enable it. Most email providers,
+even free ones such as GMail, use IMAP these days, for it is the most convenient
+way to store email that is accessed from multiple clients at the same time
+and/or different locations. Because IMAP keeps all mail at the server, Mutt
+just downloads the messages that you want to view.
+</p>
+
+<p>
+Often you happen to jump through a couple of messages a couple of times shortly
+after each other, which would require to download the same message over and
+over again. Since this simply is a waste, Mutt uses a so-called header cache
+(hcache) to keep the most important bits of messages that it needs. This
+hcache is backed by a db-library, of which four flavours exist: <c>gdbm</c>,
+<c>berkdb</c>, <c>qdbm</c> and <c>tokyocabinet</c>. If you don't have any
+preference yourself, pick gdbm or berkdb. Most likely you will have both
+already installed on your system. Enabling the USE-flags for more than one
+hcache backend will make Mutt choose one it likes best. It will always use
+at most one.
+</p>
+
+<p>
+While IMAP is important for reading mail, sending mail requires a mail server.
+Mutt can talk to a mail server that exists on the local system, but often that's
+not the case, or simply not a good solution for e.g. laptop users that often
+travel around. Mutt comes with SMTP support which gets enabled by the <c>smtp</c>
+USE-flag. Again, enabling it if you're not sure doesn't harm. Mutt's SMTP
+support allows you just to send mail over a mail server of your choice; usually
+the one that you are given by your email provider.
+</p>
+
+<p>
+Both IMAP and SMTP mostly go over encrypted channels these days, hence if you
+enabled any of both, it is wise to also enable either of the <c>ssl</c> or
+<c>gnutls</c> USE-flags. Both just add the secure variants (imaps and smtps) to
+Mutt's list of supported protocols using either OpenSSL's or GNUTLS'
+implementation. If you don't have a strong preference for either, just go for
+<c>ssl</c>. Most likely this is in your global USE already anyway. If you intend
+to authenticate yourself when sending e-mail, be sure to also include
+<c>sasl</c> in your USE-flags, since that's a prerequisite for that.
+</p>
+
+<p>
+Last but not least, there is the <c>sidebar</c> USE-flag. It enables an
+extension to Mutt that can show a navigation pane of available mailboxes on the
+left hand side of the screen. While this is not a recommended feature for
+absolute newcomers (it is nowhere mentioned in any official docs, since it
+simply isn't official), more experienced users might like its functionality.
+Luckily, just enabling the USE-flag doesn't make it visible at all, meaning you
+don't even notice it's enabled.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring Mutt</title>
+<section>
+<body>
+
+<p>
+After you emerged mutt with your USE-flags of choice, the only necessary step is
+to create a <path>.muttrc</path> file in your home directory. Muttrc's are to
+be found in many places on the web and in Mutt's documentation. In
+<path>/usr/share/doc/mutt-&lt;version&gt;/samples</path> you can find some
+muttrc samples that are from the official distribution. We discuss a very
+minimal <path>.muttrc</path> for an IMAP based account with SMTP mail delivery
+below.
+</p>
+
+<pre caption="A .muttrc example file">
+# character set on messages that we send
+set send_charset="utf-8"
+# if there is no character set given on incoming messages, it is probably windows
+set assumed_charset="iso-8859-1"
+
+# make sure Vim knows mutt is a mail client and that we compose an UTF-8 encoded message
+set editor="vim -c 'set syntax=mail ft=mail enc=utf-8'"
+
+# just scroll one line instead of full page
+set menu_scroll=yes
+
+# we want to see some MIME types inline, see below this code listing for explanation
+auto_view application/msword
+auto_view application/pdf
+
+# make default search pattern to search in To, Cc and Subject
+set simple_search="~f %s | ~C %s | ~s %s"
+
+# threading preferences, sort by threads
+set sort=threads
+set strict_threads=yes
+
+# show spam score (from SpamAssassin only) when reading a message
+spam "X-Spam-Score: ([0-9\\.]+).*" "SA: %1"
+set pager_format = " %C - %[%H:%M] %.20v, %s%* %?H? [%H] ?"
+
+# do not show all headers, just a few
+ignore          *
+unignore        From To Cc Bcc Date Subject
+# and in this order
+unhdr_order     *
+hdr_order       From: To: Cc: Bcc: Date: Subject:
+
+# brighten up stuff with colours, for more colouring examples see:
+# http://aperiodic.net/phil/configs/mutt/colors
+color normal      white          black
+color hdrdefault  green          default
+color quoted      green          default
+color quoted1     yellow         default
+color quoted2     red            default
+color signature   cyan           default
+color indicator   brightyellow   red
+color error       brightred      default
+color status      brightwhite    blue
+color tree        brightmagenta  black
+color tilde       blue           default
+color attachment  brightyellow   default
+color markers     brightred      default
+color message     white          black
+color search      brightwhite    magenta
+color bold        brightyellow   default
+# if you don't like the black progress bar at the bottom of the screen,
+# comment out the following line
+color progress    white          black
+
+# personality settings
+set realname = "Andrew Dalziel"
+set from = "andy@mail.server"
+alternates "andrew@mail.server|andrew.dalziel@mail.server"
+# this file must exist, and contains your signature, comment it out if
+# you don't want a signature to be used
+set signature = ~/.signature
+
+# aliases (sort of address book)
+source ~/.aliases
+
+# IMAP connection settings
+set mail_check=60
+set imap_keepalive=300
+
+# IMAP account settings
+set folder=imaps://andy@imap.mail.server/
+set spoolfile=imaps://andy@imap.mail.server/
+set record=imaps://andy@imap.mail.server/Sent
+set postponed=imaps://andy@imap.mail.server/Drafts
+
+# use headercache for IMAP (make sure this is a directory for performance!)
+set header_cache=/var/tmp/.mutt
+
+# mailboxes we want to monitor for new mail
+mailboxes "="
+mailboxes "=Lists"
+
+# mailing lists we are on (these are regexps!)
+subscribe "gentoo-.*@gentoo\\.org"
+
+# SMTP mailing configuration (for sending mail)
+set smtp_url=smtp://mail.server/
+</pre>
+
+<note>
+It is good practice to review all settings from the example above. There are
+many more, and some preferences may actually not match yours. Keep that in mind
+when you feel that Mutt at first doesn't really work the way you like.
+</note>
+
+<p>
+The example <path>.muttrc</path> above sets up an IMAP account, uses an SMTP
+server to send mail, stores its cache in <path>/var/tmp/.mutt</path>, reads the
+known address aliases (think of it as an address book) from
+<path>~/.aliases</path> and appends the signature from <path>~/.signature</path>
+when composing new mail. For some IMAP servers it may be necessary to change the
+spool, record and postponed directories, as the folders <path>Sent</path> and
+<path>Drafts</path> may be under a folder called <path>INBOX</path>. Simply
+trying this out with Mutt is the simplest way to figure this out.
+</p>
+
+<p>
+Once your <path>.muttrc</path> is setup, you are ready to launch Mutt by just
+running <c>mutt</c>. If you entered a valid IMAP server url, Mutt will prompt
+you for your password and afterwards load all messages for you. Note that the
+first time entering your mailbox may take a while if you have quite some
+messages, since Mutt's header cache is still empty. If this succeeds you're in
+your IMAP mailbox ready to go.
+</p>
+
+<p>
+Navigation is intuitive, as is reading messages by just pressing the enter key
+or space bar. Mutt is quite Vim alike in that it uses key strokes to perform
+most of its actions. You best read Mutt's manual on the web to get yourself
+known with all existing functions (or press ? in Mutt) and what key they are
+bound to, or better, what key you like it to be bound to. Some essential keys
+are <c>m</c> (for message) to start composing a new message, <c>q</c> for quit,
+<c>r</c> for reply, <c>s</c> for save and <c>p</c> for print.
+</p>
+
+<p>
+One of the features that Mutt has that is still not in today's most savvy email
+clients is the ability to display attachments inline through some viewer. The
+auto_view directive in the .muttrc file tells Mutt which attachments (based on
+their MIME-type) it should view inline. To figure out how to do that, Mutt uses
+mailcap files to lookup how to display a certain MIME-type. Usually the system
+wide mailcap file isn't sufficient here, so you better start a
+<path>~/.mailcap</path> file to put items in there for <c>copiousoutput</c> that
+Mutt can display inline.
+</p>
+
+<p>
+In the example <path>.muttrc</path> above <c>auto_view</c> is enabled for
+<c>application/msword</c> and <c>application/pdf</c> files. These two show
+the extreme usefulness of this capability, because it means meeting notes sent
+as doc file now are perfectly fine readable without having to save the
+attachment and open it in OpenOffice. Instead the text just shows up in the
+message reader, that is, if you have a matching entry in your
+<path>~/.mailcap</path> file.
+</p>
+
+<pre caption="Example .mailcap file">
+application/msword; antiword '%s'; copiousoutput; description=Word Document;
+nametemplate=%s.doc
+application/pdf; pdftotext '%s' -; copiousoutput; description=PDF Document;
+nametemplate=%s.pdf
+</pre>
+
+<p>
+The above <path>.mailcap</path> example tells mutt what to do to "view"
+<c>msword</c> and <c>pdf</c> files. For the former it should run a program
+called <c>antiword</c> (emerge <c>app-text/antiword</c>), for the latter the
+program <c>pdftotext</c> (emerge <c>app-text/poppler</c>). You can go wild with
+these to for example display rendered HTML (give <c>app-text/vilistextum</c> a
+try), render vcards, or show ASCII representation of attached images. All you
+need to do is define how to call the program in your <path>.mailcap</path>, and
+tell Mutt to try to view it inline using the <c>auto_view</c> directive.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Conclusions</title>
+<section>
+<body>
+
+<p>
+Mutt is a very versatile console email client. If you like the concept, Mutt
+can be altered to behave in nearly any way through its configuration. Search
+the web to find others explaining how they did "it", or find one of the many
+patches that exist to make Mutt do even more. Gentoo applies a couple of very
+popular patches to Mutt, so make sure to check <c>mutt -v</c> if you want
+something more to make sure it is not yet already at your disposal. While
+learning Mutt is not necessarily easy, once it is in your fingers, it can make
+your mail experience much faster and efficient than with other clients.
+Searching for example is quite powerful if you know how to hit the right flags
+and know which regular expression narrows your search down. Enjoy Mutting!
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

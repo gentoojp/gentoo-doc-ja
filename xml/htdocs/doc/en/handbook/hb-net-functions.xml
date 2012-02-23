@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-net-functions.xml,v 1.13 2011/10/30 11:56:08 swift Exp $ -->
+
+<sections>
+
+<abstract>
+If you're feeling adventurous, you can add your own functions to networking.
+</abstract>
+
+<version>9</version>
+<date>2011-10-30</date>
+
+<section>
+<title>Standard function hooks</title>
+<body>
+
+<p>
+Four functions can be defined in <path>/etc/conf.d/net</path> which will be
+called surrounding the <c>start</c>/<c>stop</c> operations.  The functions are
+called with the interface name first so that one function can control multiple
+adapters.
+</p>
+
+<p>
+The return values for the <c>preup()</c> and <c>predown()</c> functions should
+be 0 (success) to indicate that configuration or deconfiguration of the
+interface can continue. If <c>preup()</c> returns a non-zero value, then
+interface configuration will be aborted. If <c>predown()</c> returns a non-zero
+value, then the interface will not be allowed to continue deconfiguration.
+</p>
+
+<p>
+The return values for the <c>postup()</c> and <c>postdown()</c> functions are
+ignored since there's nothing to do if they indicate failure.
+</p>
+
+<p>
+<c>${IFACE}</c> is set to the interface being brought up/down. <c>${IFVAR}</c>
+is <c>${IFACE}</c> converted to variable name bash allows.
+</p>
+
+<pre caption="pre/post up/down function examples in /etc/conf.d/net">
+preup() {
+  <comment># Test for link on the interface prior to bringing it up.  This
+  # only works on some network adapters and requires the ethtool
+  # package to be installed.</comment>
+  if ethtool ${IFACE} | grep -q 'Link detected: no'; then
+    ewarn "No link on ${IFACE}, aborting configuration"
+    return 1
+  fi
+
+  <comment># Remember to return 0 on success</comment>
+  return 0
+}
+
+predown() {
+  <comment># The default in the script is to test for NFS root and disallow
+  # downing interfaces in that case.  Note that if you specify a
+  # predown() function you will override that logic.  Here it is, in
+  # case you still want it...</comment>
+  if is_net_fs /; then
+    eerror "root filesystem is network mounted -- can't stop ${IFACE}"
+    return 1
+  fi
+
+  <comment># Remember to return 0 on success</comment>
+  return 0
+}
+
+postup() {
+  <comment># This function could be used, for example, to register with a
+  # dynamic DNS service.  Another possibility would be to
+  # send/receive mail once the interface is brought up.</comment>
+       return 0
+}
+
+postdown() {
+  <comment># This function is mostly here for completeness... I haven't
+  # thought of anything nifty to do with it yet ;-)</comment>
+  return 0
+}
+</pre>
+
+<note>
+For more information on writing your own functions, please read
+<path>/usr/share/doc/openrc-*/net.example.bz2</path>.
+</note>
+
+</body>
+</section>
+<section>
+<title>Wireless Tools function hooks</title>
+<body>
+
+<note>
+This will not work with WPA Supplicant - but the <c>${ESSID}</c> and
+<c>${ESSIDVAR}</c> variables are available in the <c>postup()</c> function.
+</note>
+
+<p>
+Two functions can be defined in <path>/etc/conf.d/net</path> which will be
+called surrounding the associate function. The functions are called with the
+interface name first so that one function can control multiple adapters.
+</p>
+
+<p>
+The return values for the <c>preassociate()</c> function should be 0 (success)
+to indicate that configuration or deconfiguration of the interface can continue.
+If <c>preassociate()</c> returns a non-zero value, then interface configuration
+will be aborted.
+</p>
+
+<p>
+The return value for the <c>postassociate()</c> function is ignored since
+there's nothing to do if it indicates failure.
+</p>
+
+<p>
+<c>${ESSID}</c> is set to the exact ESSID of the AP you're connecting to. 
+<c>${ESSIDVAR}</c> is <c>${ESSID}</c> converted to a variable name bash allows.
+</p>
+
+<pre caption="pre/post association functions in /etc/conf.d/net">
+preassociate() {
+  <comment># The below adds two configuration variables leap_user_ESSID
+  # and leap_pass_ESSID. When they are both configured for the ESSID
+  # being connected to then we run the CISCO LEAP script</comment>
+
+  local user pass
+  eval user=\"\$\{leap_user_${ESSIDVAR}\}\"
+  eval pass=\"\$\{leap_pass_${ESSIDVAR}\}\"
+
+  if [[ -n ${user} &amp;&amp; -n ${pass} ]]; then
+    if [[ ! -x /opt/cisco/bin/leapscript ]]; then
+      eend "For LEAP support, please emerge net-misc/cisco-aironet-client-utils"
+      return 1
+    fi
+    einfo "Waiting for LEAP Authentication on \"${ESSID//\\\\//}\""
+    if /opt/cisco/bin/leapscript ${user} ${pass} | grep -q 'Login incorrect'; then
+      ewarn "Login Failed for ${user}"
+      return 1
+    fi
+  fi
+
+  return 0
+}
+
+postassociate() {
+  <comment># This function is mostly here for completeness... I haven't
+  # thought of anything nifty to do with it yet ;-)</comment>
+
+  return 0
+}
+</pre>
+
+<note>
+<c>${ESSID}</c> and <c>${ESSIDVAR}</c> are unavailable in <c>predown()</c> and
+<c>postdown()</c> functions.
+</note>
+
+<note>
+For more information on writing your own functions, please read
+<path>/usr/share/doc/openrc-*/net.example.bz2</path>.
+</note>
+
+</body>
+</section>
+
+</sections>

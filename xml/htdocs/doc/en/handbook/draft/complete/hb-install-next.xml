@@ -1,0 +1,285 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/draft/complete/hb-install-next.xml,v 1.1 2006/01/06 20:05:07 swift Exp $ -->
+
+<sections>
+
+<version>0.0</version>
+<date>2005-06-19</date>
+
+<section>
+<title>Rebooting the system</title>
+<subsection>
+<title>Exiting the chrooted environment</title>
+<body>
+
+<p>
+The base Gentoo installation is almost finished. Right now, you'll need to exit
+from the chrooted environment, unmount all mounted file systems from the system
+and reboot. Then we'll find out if the boot procedure settings are correct: if
+you can log on to your system, great. If not, well, no worries - you don't need
+to redo everything all over again :)
+</p>
+
+<p>
+To exit the chrooted environment, type <c>exit</c>. When you get back at the
+installation CD environment, find out what file systems are mounted at the
+<path>/mnt/gentoo</path> location and unmount them one by one. You can't unmount
+a file system that still has mounted file systems in it, meaning that you can't
+unmount <path>/mnt/gentoo</path> before <path>/mnt/gentoo/proc</path> and others
+are unmounted.
+</p>
+
+<pre caption="Exiting the chrooted environment and unmounting the file systems">
+# <i>exit</i>
+# <i>mount | grep '/mnt/gentoo'</i>
+/dev/sda3 on /mnt/gentoo type ext3 (rw,noatime)
+proc on /mnt/gentoo/proc type proc (rw)
+/dev/sda1 on /mnt/gentoo/boot type ext2 (rw,noatime)
+# <i>umount /mnt/gentoo/boot /mnt/gentoo/proc /mnt/gentoo</i>
+</pre>
+
+<p>
+Next, reboot the system and hope for the best...
+</p>
+
+<pre caption="Rebooting the system">
+# <i>reboot</i>
+</pre>
+
+<p>
+Don't forget to remove the installation media from the system, otherwise you'll
+boot right into the installation environment again.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Boot failed?</title>
+<body>
+
+<p>
+If the reboot failed, you need to dig through the error messages you receive to
+find out what went wrong. You'll find that the <uri
+link="http://forums.gentoo.org">Gentoo Forums</uri> represent a wonderful
+Knowledge Base with solutions to many problems. 
+</p>
+
+<p>
+To help you get back, we'll explain how to return to the installation
+environment so that you can fix whatever fault is causing the error.
+</p>
+
+<ol>
+  <li>
+    Reinsert the installation medium and reboot your system so that you are back
+    inside the installation environment, just like you were in the beginning of
+    the Gentoo installation.
+  </li>
+  <li>
+    Load up any drivers you need and configure your network just like you did
+    with the Gentoo installation.
+  </li>
+  <li>
+    Instead of taking a stab at the storage configuration, immediately mount all
+    your file systems at <path>/mnt/gentoo</path>. Don't forget to mount the
+    <c>proc</c> file system as well. You never know when you'll need it and it
+    is often forgotten.
+  </li>
+  <li>
+    Chroot into the Gentoo installation (<c>chroot /mnt/gentoo</c>), run
+    <c>env-update</c> and <c>source /etc/profile</c> so that your session
+    environment is configured correctly.
+  </li>
+  <li>
+    Now fix whatever needs to be fixed.
+  </li>
+  <li>
+    Exit the chrooted environment, unmount the partitions and reboot to retry.
+  </li>
+</ol>
+</body>
+</subsection>
+</section>
+
+<section>
+<title>Finishing off the base installation</title>
+<subsection>
+<title>USE flag changes and rebuilding</title>
+<body>
+
+<p>
+If you didn't alter your USE flags during the installation, this is a good time
+to do it. Log onto your system as root (using the password you supplied
+previously) and edit the <c>USE</c> variable inside <path>/etc/make.conf</path>
+using your favorite editor (<c>nano</c> is available by default) and reread the
+information we gave you about USE flags earlier in this book in the chapter on
+<e>Building the System</e>.
+</p>
+
+<p>
+Once you've updated your USE flags, we'll tell Portage that it needs to rebuild
+the tools that are affected by your USE flag change. To verify what Portage
+wants to do, we'll first ask it to show it to us without actually performing the
+rebuild. The <c>emerge</c> command has an option called <c>--pretend</c> (or
+<c>-p</c> in short) that does exactly that. When we add the <c>--verbose</c> (or
+<c>-v</c> in short) option we'll also ask it to display <e>why</e> it wants to
+rebuild the packages. And of course, we need to ask Portage to do all that just
+for the packages that are affected by the USE flag change (<c>--newuse</c>, or
+<c>-N</c> in short):
+</p>
+
+<pre caption="Rebuilding packages affected by USE flag change">
+<comment>(In this example, we've changed the nls USE flag:)</comment>
+# <i>emerge --pretend --verbose --newuse world</i>
+
+These are the packages that I would merge, in order:
+
+Calculating world dependencies ...done!
+[ebuild   R   ] sys-apps/man-pages-2.11  <i>-nls*</i> 0 kB 
+[ebuild   R   ] sys-apps/grep-2.5.1-r8  -build <i>-nls*</i> +pcre -static 0 kB 
+[ebuild   R   ] media-sound/alsa-utils-1.0.10_rc3  <i>-nls*</i> 0 kB 
+<comment>(...)</comment>
+</pre>
+
+<p>
+If you are okay with whatever Portage proposes, drop the <c>--pretend</c> so
+that the packages can be rebuilt.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Orphaned packages</title>
+<body>
+
+<p>
+Some packages are installed on your system as dependencies of a tool if certain
+USE flags are set. When you unset the affecting USE flag, Portage will
+<e>not</e> unmerge the dependency even though the original package is rebuilt.
+Such dependencies which aren't needed by any package on the system anymore but
+are stil present are called <e>orphaned packages</e>.
+</p>
+
+<p>
+You can ask Portage to find such orphaned packages and remove them from the
+system. The method is called <e>depclean</e> (which stands for dependency
+cleaning):
+</p>
+
+<pre caption="Running depclean on the system">
+# <i>emerge --pretend --depclean</i>
+</pre>
+
+<p>
+Take a look at the packages Portage wants to remove. If you want to scroll
+through the list, try pressing <c>Ctrl-PgUp</c> or filter the list through the
+<c>less</c> utility:
+</p>
+
+<pre caption="Using 'less' for the depclean output">
+# <i>emerge --pretend --depclean | less</i>
+</pre>
+
+<p>
+If you're satisfied with the list, drop the <c>--pretend</c> and let Portage
+sort the packages out.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Updating the system</title>
+<body>
+
+<p>
+Finally, update your system so it uses the latest versions of all packages.
+First, let Portage obtain a more recent snapshot of the Portage tree:
+</p>
+
+<pre caption="Updating the Portage tree">
+# <i>emerge --sync</i>
+</pre>
+
+<p>
+Next, ask Portage to update the packages that have a more recent version
+available. We'll use the <c>--update</c> argument for <c>emerge</c> to inform
+Portage that we want to update them, but also the <c>--deep</c> argument so that
+not only those packages you have installed (using
+<c>emerge&nbsp;&lt;packagename&gt;</c>) and their immediate dependencies are
+updated, but also the dependencies of the dependencies. You'll also notice we
+use the <c>--newuse</c> argument again. That is because Gentoo might add a USE
+flag to the default USE set, either because of a profile update, or because you
+installed a package that "provides" a USE flag.
+</p>
+
+<pre caption="Updating the packages on the system">
+# <i>emerge --update --deep --newuse world</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+
+<section>
+<title>Installing additional software</title>
+<subsection>
+<title>Some recommendations...</title>
+<body>
+
+<p>
+Now that your base system is available, you'll still left in the dark as you
+don't have many tools at your disposal. No graphical environment for the desktop
+users, no services for the servers, so development tools (apart from the
+toolchain) for the developers.
+</p>
+
+<p>
+Your next stop should be to investigate the Portage tree for software you want
+to have. You can just browse through <path>/usr/portage</path> and use
+<c>emerge</c> for every tool you want, but better would be to follow one or
+more <uri link="http://www.gentoo.org/doc/en/index.xml">guides</uri> from our
+web site that help you install <e>and</e> configure the tool.
+</p>
+
+<p>
+For instance, Gentoo has a nice <uri
+link="http://www.gentoo.org/doc/en/xorg-config.xml">Xorg Configuration
+Guide</uri> for those who want to set up their Gentoo installation as a
+graphical environment desktop or workstation. The <c>xorg-x11</c> tool is the
+service that provides windowing features and other graphical possibilities to
+the various desktop environments.
+</p>
+
+<p>
+Possible desktop environments are KDE, GNOME or fluxbox who also have
+configuration guides at the Gentoo web site (<uri
+link="http://www.gentoo.org/doc/en/kde-config.xml">KDE Configuration
+Guide</uri>, <uri link="http://www.gentoo.org/doc/en/gnome-config.xml">GNOME
+Configuration Guide</uri> and <uri
+link="http://www.gentoo.org/doc/en/fluxbox-config.xml">Fluxbox Configuration
+Guide</uri>).
+</p>
+
+<p>
+For those interested more in services should take a look at the <uri
+link="http://www.gentoo.org/doc/en/security">Gentoo Security Guide</uri> which
+helps you harden your system configuration.
+</p>
+
+<p>
+Other interesting resources are the <uri link="http://forums.gentoo.org">Gentoo
+Forums</uri>, <uri link="http://www.gentoo.org/main/en/irc.xml">Gentoo IRC
+channels</uri> and <uri
+link="http://www.gentoo.org/main/en/lists.xml">mailinglists</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+
+</sections>

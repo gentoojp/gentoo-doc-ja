@@ -1,0 +1,400 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-portage-files.xml,v 1.21 2011/03/02 09:25:49 nightmorph Exp $ -->
+
+<sections>
+
+<abstract>
+Once you want to know Portage in-depth you need to know where it stores its
+files and data.
+</abstract>
+
+<version>2</version>
+<date>2011-03-02</date>
+
+<section>
+<title>Portage Files</title>
+<subsection>
+<title>Configuration Directives</title>
+<body>
+
+<p>
+Portage comes with a default configuration stored in
+<path>/etc/make.globals</path>. When you take a look at it, you'll notice that
+all Portage configuration is handled through variables. What variables Portage
+listens to and what they mean are described later.
+</p>
+
+<p>
+Since many configuration directives differ between architectures, Portage also
+has default configuration files which are part of your profile. Your profile is
+pointed to by the <path>/etc/make.profile</path> symlink; Portage'
+configurations are set in the <path>make.defaults</path> files of your profile
+and all parent profiles. We'll explain more about profiles
+and the <path>/etc/make.profile</path> directory later on.
+</p>
+
+<p>
+If you're planning on changing a configuration variable, <e>don't</e> alter
+<path>/etc/make.globals</path> or <path>make.defaults</path>.  Instead use
+<path>/etc/make.conf</path> which has precedence over the previous files. You'll
+also find a <path>/usr/share/portage/config/make.conf.example</path>. As the
+name implies, this is merely an example file - Portage does not read in this
+file.
+</p>
+
+<p>
+You can also define a Portage configuration variable as an environment variable,
+but we don't recommend this.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Profile-Specific Information</title>
+<body>
+
+<p>
+We've already encountered the <path>/etc/make.profile</path> directory. Well, 
+this isn't exactly a directory but a symbolic link to a profile, by default one
+inside <path>/usr/portage/profiles</path> although you can create your own 
+profiles elsewhere and point to them. The profile this symlink points to is the
+profile to which your system adheres.
+</p>
+
+<p>
+A profile contains architecture-specific information for Portage, such as a 
+list of packages that belong to the system corresponding with that profile,
+a list of packages that don't work (or are masked-out) for that profile, etc.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>User-Specific Configuration</title>
+<body>
+
+<p>
+When you need to override Portage's behaviour regarding the installation of
+software, you will end up editing files within <path>/etc/portage</path>. You
+are <e>highly recommended</e> to use files within <path>/etc/portage</path> and
+<e>highly discouraged</e> to override the behaviour through environment
+variables!
+</p>
+
+<p>
+Within <path>/etc/portage</path> you can create the following files:
+</p>
+
+<ul>
+  <li>
+    <path>package.mask</path> which lists the packages you never want Portage to
+    install
+  </li>
+  <li>
+    <path>package.unmask</path> which lists the packages you want to be able to
+    install even though the Gentoo developers highly discourage you from
+    emerging them
+  </li>
+  <li>
+    <path>package.accept_keywords</path> which lists the packages you want to be
+    able to install even though the package hasn't been found suitable for your
+    system or architecture (yet)
+  </li>
+  <li>
+    <path>package.use</path> which lists the USE flags you want to use for
+    certain packages without having the entire system use those USE flags
+  </li>
+</ul>
+
+<p>
+These don't have to be files; they can also be directories that contain one file
+per package. More information about the <path>/etc/portage</path> directory and
+a full list of possible files you can create can be found in the Portage man
+page:
+</p>
+
+<pre caption="Reading the Portage man page">
+$ <i>man portage</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Changing Portage File &amp; Directory Locations</title>
+<body>
+
+<p>
+The previously mentioned configuration files cannot be stored elsewhere -
+Portage will always look for those configuration files at those exact locations.
+However, Portage uses many other locations for various purposes: build
+directory, source code storage, Portage tree location, ...
+</p>
+
+<p>
+All these purposes have well-known default locations but can be altered to your
+own taste through <path>/etc/make.conf</path>. The rest of this chapter explains
+what special-purpose locations Portage uses and how to alter their placement on
+your filesystem.
+</p>
+
+<p>
+This document isn't meant to be used as a reference though. If you need 100%
+coverage, please consult the Portage and <path>make.conf</path> man pages:
+</p>
+
+<pre caption="Reading the Portage and make.conf man pages">
+$ <i>man portage</i>
+$ <i>man make.conf</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Storing Files</title>
+<subsection>
+<title>The Portage Tree</title>
+<body>
+
+<p>
+The Portage tree default location is <path>/usr/portage</path>. This is defined
+by the PORTDIR variable. When you store the Portage tree elsewhere (by altering
+this variable), don't forget to change the <path>/etc/make.profile</path>
+symbolic link accordingly.
+</p>
+
+<p>
+If you alter the PORTDIR variable, you might want to alter the following
+variables as well since they will not notice the PORTDIR change. This is due to
+how Portage handles variables: PKGDIR, DISTDIR, RPMDIR.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Prebuilt Binaries</title>
+<body>
+
+<p>
+Even though Portage doesn't use prebuilt binaries by default, it has extensive
+support for them. When you ask Portage to work with prebuilt packages, it will
+look for them in <path>/usr/portage/packages</path>. This location is defined by
+the PKGDIR variable. 
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Source Code</title>
+<body>
+
+<p>
+Application source code is stored in <path>/usr/portage/distfiles</path> by
+default. This location is defined by the DISTDIR variable.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Portage Database</title>
+<body>
+
+<p>
+Portage stores the state of your system (what packages are installed, what files
+belong to which package, ...) in <path>/var/db/pkg</path>. Do <e>not</e> alter
+these files manually! It might break Portage's knowledge of your system.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Portage Cache</title>
+<body>
+
+<p>
+The Portage cache (with modification times, virtuals, dependency tree
+information, ...) is stored in <path>/var/cache/edb</path>. This location really
+is a cache: you can clean it if you are not running any portage-related
+application at that moment.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Building Software</title>
+<subsection>
+<title>Temporary Portage Files</title>
+<body>
+
+<p>
+Portage's temporary files are stored in <path>/var/tmp</path> by default. This 
+is defined by the PORTAGE_TMPDIR variable.
+</p>
+
+<p>
+If you alter the PORTAGE_TMPDIR variable, you might want to alter the following
+variables as well since they will not notice the PORTAGE_TMPDIR change. This 
+is due to how Portage handles variables: BUILD_PREFIX.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Building Directory</title>
+<body>
+
+<p>
+Portage creates specific build directories for each package it emerges inside
+<path>/var/tmp/portage</path>. This location is defined by the BUILD_PREFIX
+variable.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Live Filesystem Location</title>
+<body>
+
+<p>
+By default Portage installs all files on the current filesystem 
+(<path>/</path>), but you can change this by setting the ROOT environment 
+variable. This is useful when you want to create new build images.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Logging Features</title>
+<subsection>
+<title>Ebuild Logging</title>
+<body>
+
+<p>
+Portage can create per-ebuild logfiles, but only when the PORT_LOGDIR variable
+is set to a location that is writable by Portage (the portage user). By default
+this variable is unset. If you don't set PORT_LOGDIR, then you won't receive
+any build logs with the current logging system, though you may receive some
+logs from the new <c>elog</c>. If you do have PORT_LOGDIR defined and you use
+elog, you will receive build logs and any logs saved by elog, as explained
+below.
+</p>
+
+<p>
+Portage offers fine-grained control over logging through the use of
+<c>elog</c>:
+</p>
+
+<ul>
+  <li>
+    PORTAGE_ELOG_CLASSES: This is where you set what kinds of messages to be
+    logged. You can use any space-separated combination of <c>info</c>,
+    <c>warn</c>, <c>error</c>, <c>log</c>, and <c>qa</c>.
+    <ul>
+      <li><c>info</c>: Logs "einfo" messages printed by an ebuild</li>
+      <li><c>warn</c>: Logs "ewarn" messages printed by an ebuild</li>
+      <li><c>error</c>: Logs "eerror" messages printed by an ebuild</li>
+      <li><c>log</c>: Logs the "elog" messages found in some ebuilds</li>
+      <li><c>qa</c>: Logs the "QA Notice" messages printed by an ebuild</li>
+    </ul>
+  </li>
+  <li>
+    PORTAGE_ELOG_SYSTEM: This selects the module(s) to process the log messages.
+    If left empty, logging is disabled. You can use any space-separated
+    combination of <c>save</c>, <c>custom</c>, <c>syslog</c>, <c>mail</c>,
+    <c>save_summary</c>, and <c>mail_summary</c>. You must select at least one
+    module in order to use elog.
+    <ul>
+      <li>
+	<c>save</c>: This saves one log per package in
+	<path>$PORT_LOGDIR/elog</path>, or <path>/var/log/portage/elog</path> if
+	$PORT_LOGDIR is not defined.
+      </li>
+      <li>
+	<c>custom</c>: Passes all messages to a user-defined command in
+	$PORTAGE_ELOG_COMMAND; this will be discussed later.
+      </li>
+      <li>
+	<c>syslog</c>: Sends all messages to the installed system logger.
+      </li>
+      <li>
+	<c>mail</c>: Passes all messages to a user-defined mailserver in
+	$PORTAGE_ELOG_MAILURI; this will be discussed later. The mail features
+	of elog require &gt;=<c>portage-2.1.1</c>.
+      </li>
+      <li>
+	<c>save_summary</c>: Similar to <c>save</c>, but it merges all messages
+	in <path>$PORT_LOGDIR/elog/summary.log</path>, or
+	<path>/var/log/portage/elog/summary.log</path> if $PORT_LOGDIR is not
+	defined.
+      </li>
+      <li>
+	<c>mail_summary</c>: Similar to <c>mail</c>, but it sends all messages
+	in a single mail when emerge exits.
+      </li>
+    </ul>
+  </li>
+  <li>
+    PORTAGE_ELOG_COMMAND: This is only used when the <c>custom</c> module is
+    enabled. Here is where you specify a command to process log messages. Note
+    that you can make use of two variables: ${PACKAGE} is the package name and
+    version, while ${LOGFILE} is the absolute path to the logfile. Here's one
+    possible usage:
+    <ul>
+      <li>
+        PORTAGE_ELOG_COMMAND="/path/to/logger -p '\${PACKAGE}' -f '\${LOGFILE}'"
+      </li>
+    </ul>
+  </li>
+  <li>
+    PORTAGE_ELOG_MAILURI: This contains settings for the <c>mail</c> module
+    such as address, user, password, mailserver, and port number. The default
+    setting is "root@localhost localhost".
+  </li>
+  <li>
+    Here's an example for an smtp server that requires username and
+    password-based authentication on a particular port (the default is port
+    25):
+    <ul>
+      <li>
+	PORTAGE_ELOG_MAILURI="user@some.domain
+	username:password@smtp.some.domain:995"
+      </li>
+    </ul>
+  </li>
+  <li>
+    PORTAGE_ELOG_MAILFROM: Allows you to set the "from" address of log mails;
+    defaults to "portage" if unset.
+  </li>
+  <li>
+    PORTAGE_ELOG_MAILSUBJECT: Allows you to create a subject line for log
+    mails. Note that you can make use of two variables: ${PACKAGE} will display
+    the package name and version, while ${HOST} is the fully qualified domain
+    name of the host Portage is running on.
+  </li>
+  <li>
+    Here's one possible use:
+    <ul>
+      <li>
+	PORTAGE_ELOG_MAILSUBJECT="package \${PACKAGE} was merged on \${HOST}
+	with some messages"
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<impo>
+If you used <c>enotice</c> with Portage-2.0.*, you must completely remove
+enotice, as it is incompatible with elog.
+</impo>
+
+</body>
+</subsection>
+</section>
+</sections>

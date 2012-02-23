@@ -1,0 +1,394 @@
+<?xml version='1.0' encoding="UTF-8"?>
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/fluxbox-config.xml,v 1.2 2005/08/23 15:49:02 idani Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/fluxbox-config.xml">
+
+<title>Fluxbox設定ガイド</title>
+
+<author title="Author">
+  <mail link="smith.jonathan@gmail.com">Jonathan Smith</mail>
+</author>
+<author title="翻訳">
+    <mail link="ikeda@cs.comp.kyutech.ac.jp">池田 健吾</mail>
+</author>
+
+<abstract>
+このガイドでは、X11向けのFluxboxウインドウマネージャのセットアップ方法を見ていきます。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.0 -->
+<license/>
+
+<version>1.0.4</version>
+<date>2005-04-16</date>
+<!-- Original revision: 1.5 -->
+<chapter>
+<title>はじめに</title>
+<section>
+<title>Fluxboxウインドウマネージャの紹介</title>
+<body>
+
+<p>
+ウインドウマネージャは、Linuxのデスクトップモデルに慣れていない人向けに他のグラフィカルプログラムを管理するため、X11で動作しているアプリケーションです。
+これは決して必要というわけではありませんが、ウインドウマネージャが無いX11セッションはひどく醜く、一般に現代のデスクトップに関連した多くの機能が含まれていません。
+</p>
+
+<p>
+Fluxboxは、最も人気のあるKDEやGNOMEなどと比べ、機能を必要最低限にすることに重点を置いたウインドウマネージャです。
+同じ基本目的は提供しますが、グラフィカルファイルマネージャ、アイコン、「スタートメニュー」風の構成、その他のユーティリティがありません。
+でも、これらの機能を追加することは十分可能ですし、望めばさらに追加できます。
+だから究極のカスタマイズ能力があるわけです。要するにGentooと同じですね。
+</p>
+
+<p>
+このガイドは、Fluxboxを初めて使う人、好奇心のある人、GentooのFluxboxでより多くのことを体験したいだけの人が対象です。
+また、Fluxboxでうまく動作するサードパーティ製プログラムを使って機能を増やす方法(完全に自由選択)も説明します。
+</p>
+
+<p>
+2005年の始めから、XFree86がGentoo Portageから廃止されていることにも注目しましょう。
+これを受けて、このガイドでは読者がXorgユーザであることを想定しています。
+そうでない場合にもこのガイドは的確かもしれませんが、XFreeとの両立はしないほうがいいでしょう。
+Gentooでは、<c>emerge xorg-x11</c>してXorgに変えることをお勧めします。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Fluxboxのインストール</title>
+<section>
+<title>標準インストール</title>
+<body>
+
+<p>
+Gentooは、Fluxboxを素早く簡単にインストールできるようebuildを提供しています。
+GnomeやKDE、Fluxboxといったウインドウマネージャに「互換性」を提供する<c>gnome</c>や<c>kde</c>のようなUSEフラグをGentooは提供していますが、
+著者の経験ではこれらが必要になったことはありません。
+qt、gtk+、あるいはKDE/GNOMEユーティリティをお望みなら、自由にemergeして独立に設定できます。
+例えば、著者はFluxboxでk3b KDE CD-R(W)焼きユーティリティを使っています。
+</p>
+
+<p>
+また、認証されていないアクセスを防ぐためにXディスプレイをロックするプログラムも必要になるので、<c>xlock</c>をemergeするのが賢明でしょう。
+圧倒的大多数のユーザは自分用の背景を設定できる機能も欲しいでしょうから、X11ターミナルの二倍良い<c>eterm</c>もemergeしましょう。
+</p>
+
+<pre caption="Fluxboxをemergeする">
+# <i>emerge fluxbox xlockmore x11-terms/eterm</i>
+</pre>
+
+<p>
+というわけで、Fluxboxがインストールされました！
+でも、これらのツールだけではFluxboxを効果的に利用できそうにありません。
+次のセクションでは、そのうち必要になるような他のパッケージのインストールを支援し、Fluxboxやサードパーティ製プログラムを設定しましょう。
+これらすべてのステップは自由選択であることを心に留め、自由に選りすぐってください。
+</p>
+
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>Fluxboxの設定</title>
+<section>
+<title>X11の準備</title>
+<body>
+
+<p>
+Fluxboxは、X11上で動作する単純なプログラムです。
+もしお望みなら、<c>startx</c>し、それからxtermで<c>fluxbox</c>とタイプしてください。
+でも、これは何と言っても煩わしいです。
+GUIでブートせずにX11を手動で起動したいなら、(rootでない)一般ユーザとして実行するとXが自動的にFluxboxをロードすることができます。
+</p>
+
+<pre caption="xinitの編集">
+$ <i>echo fluxbox > ~/.xinitrc</i>
+</pre>
+
+<p>
+日常的にデスクトップ環境を使いたい大多数のユーザにとって、これは理想的ではありません。
+ブートするたびにGUIを使いたいなら、<c>startx</c>するのは面倒でしょう。
+また、セキュリティの危険性もはらんでいます。
+<c>xlock</c>を使ってX11ディスプレイをロックしたものの、コンソールからX11を実行していたなら、
+誰かがコンピュータに直接触ってコンソールを切り替え、X11を終了できるので、あなたのアカウントが使われてしまいます。
+これを防ぐ唯一の方法は、X11をバックグラウンドあるいは画面で実行し、その画面を切り離してからコンソールをログアウトするというせいぜい退屈な仕事です。
+グラフィカルログインマネージャを使う場合、この問題はありません。
+しかし、rootとしてX11を実行する場合には悪い面が出るかもしれません。
+このガイドの執筆時には、現在のバージョンに関する脆弱性について著者は存じておりませんが、もし何か関連があれば、X11を使用しないもしくは画面で上記の方法を利用してください。
+これはFluxboxの問題ではなく、X11自身の問題であることに注意してください。
+</p>
+
+<!--
+thanks to Josh Nichols for helping cleanup this section. see comment #4 on bug
+87330
+-->
+
+<p>
+選べるグラフィカルログインマネージャはたくさんありますが、その中でもgdmを使うことになるでしょう。
+他のログインマネージャを使うのも自由ですが、他のあらゆるウインドウマネージャ(GNOME、KDE、xfceなど)と同様に、Fluxboxにはgdmを使うとよいです。
+</p>
+
+<pre caption="ログインマネージャ">
+# <i>emerge gdm</i>
+# <i>rc-update add xdm default</i>
+</pre>
+
+<impo>
+必ずgdmをemergeし、起動スクリプトにxdmを追加してください。
+この逆にはしないでください。逆にすると不具合が起きるでしょう。
+システム全体の設定ファイルを一部変更する必要もでてきます。
+</impo>
+
+<pre caption="/etc/rc.confの編集">
+DISPLAYMANAGER="gdm"
+</pre>
+
+</body>
+</section>
+<section>
+<title>テーマとアートワーク</title>
+<body>
+
+<p>
+単に速見表として使うならこのセクションは飛ばしてかまいません。
+でも、ウインドウマネージャの見た目をユーザがカスタマイズできるのは素晴らしいですよね。
+Fluxbox固有のテーマ、あらゆるウインドウマネージャ用のGentooアートワーク、あらゆる「～box」ウインドウズマネージャで使えるテーマをインストールしましょう。
+</p>
+
+<pre caption="スタイルとアートワークのインストール">
+# <i>emerge commonbox-styles commonbox-styles-extra \
+  fluxbox-styles-fluxmod gentoo-artwork</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Vim用のFluxbox構文配色設定</title>
+<body>
+
+<p>
+次に、<c>vim</c>用の特別なFluxbox配色設定をインストールしてください。
+これで、ユーザは入力した内容がさらに読みやすくなります。
+これはvimのごく小さな拡張ですので強くお勧めします。
+(もちろんemacsユーザでない限り、<c>emerge -C emacs &amp;&amp; emerge vim gvim</c>を勧めます ;-)
+</p>
+
+<pre caption="Fluxbox構文配色設定をemergeする">
+# <i>emerge fluxbox-syntax</i>
+</pre>
+
+
+</body>
+</section>
+<section>
+<title>Fluxboxキー</title>
+<body>
+
+<p>
+Flubboxの初期キー設定はかなり貧弱です。
+ユーザは、ウインドウやデスクトップを切り替えることしかできません。
+キー設定を変更する前に、知らなければならないことがいくつかあります。
+Fluxboxのキー設定ファイルに、見慣れない修飾キーがあるのです。
+Mod1は"Alt"キーとして一般に知られており、Mod4は口にするのも恐ろしい(windows)キーです。
+コントロールキーとシフトキーはControlとShiftです。
+しかし、他のX11プログラムはショートカットにコントロールキーやシフトキーを使う傾向があるので、
+通常AltやWindowsキーを使うのがベストです。
+</p>
+
+<p>
+これらの設定はすべて独立しているので、要らないものは省いたり、必要に応じて変更したりしてもかまいません。
+このガイドでは、最も普及していると著者が思っているプログラムを使っているので、異なれば利用しているパッケージの名前に置き換えてください。
+詳しい情報は、Fluxboxのmanページを読んでください。
+</p>
+
+<p>
+さて、違う方法もあります。テキストエディタを(非rootユーザで)起動して<path>~/.fluxbox/keys</path>を開き、ショートカットをアップグレードしましょう。
+</p>
+
+<pre caption="キーボードのショートカットを変更する">
+<comment># 現在のユーザのX11ディスプレイをロックします</comment>
+Mod4 l   :ExecCommand xlock
+
+<comment># クイックキーでたくさんのプログラムを開きます。これらはあくまでも例です。
+# あなたにはきっと伝わっているでしょう…</comment>
+Mod1 f   :ExecCommand firefox
+Mod1 t   :ExecCommand thunderbird
+Mod1 o   :ExecCommand oowriter
+Mod1 v   :ExecCommand gvim
+
+<comment># Fluxboxには音声コントロールがないので、そのためにハックする必要があります
+# (alsaを利用するとします。ossを使う場合については自力でお願いします)</comment>
+Mod1 e   :ExecCommand Eterm -name alsa -e alsamixer
+
+<comment># プログラムの制御をさらに簡単にするだけです…。</comment>
+Mod1 4   :Close
+Mod1 m   :Minimize
+
+<comment># atermがあれば(emerge x11-terms/aterm)、これで
+# 本当に素晴らしい透過したatermを境界無しで開きます。
+# 1024x768の解像度できれいに収まり、torsmoの余地が残っています。
+# もう一度、自由に変更してください。</comment>
+Mod1 a   :ExecCommand aterm -name aterm -sl 3000 -tr +sb -sr -sk -bg black -fg\
+white -fade 90 -bl -tn xterm -fn\
+-misc-fixed-medium-r-normal-*-*-120-*-*-c-*-iso8859-15 -g 116x57
+
+<comment># 上記と同じようですが、透過したrootターミナルを開きます。
+# もちろん、これを使うにはrootパスワードを知っていなければいけません。</comment>
+Mod1 s   :ExecCommand aterm -name aterm -sl 3000 -tr +sb -sr -sk -bg black -fg\
+white -fade 90 -bl -tn xterm -fn\
+-misc-fixed-medium-r-normal-*-*-120-*-*-c-*-iso8859-15 -g 116x57 -e su -
+</pre>
+
+</body>
+</section>
+<section>
+<title>システムモニタ</title>
+<body>
+
+<p>
+デスクトップシステムでX11用のシステムモニタをセットアップするのは共通の願いです。
+一般によく使われるモニタはGkrellmですが、Fluxboxの最小化の精神から、さらにシンプルなモニタであるTorsmoを使うつもりです。
+お望みなら、別のモニタを使ってください。
+手引きは、そこらじゅうにいくらでもあります。
+</p>
+
+<pre caption="torsmoのインストール">
+# <i>emerge torsmo</i>
+</pre>
+
+<p>
+Torsmoのデフォルトの設定ファイルはかなり貧弱です。詳しい情報はmanを読むか、この<uri link="http://torsmo.sourceforge.net/readme.php">readme</uri>で見つけてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>アイコン</title>
+<body>
+
+<p>
+Fluxboxは、デスクトップにアイコンを描画するユーティリティやプログラムを搭載していません。
+キーボードのショートカットか、右クリックメニューですべての処理を行います。
+そこで、アイコンを生成するプログラムが利用できます。
+ideskは、その名にもかかわらずAppleやMacとは関係ありません(著者の知る限りですが)。
+</p>
+
+<pre caption="ideskのインストール">
+# <i>emerge idesk</i>
+</pre>
+
+<!--
+if someone wants to write a better description of idesk, feel free. it would be
+appreciated!
+-->
+
+<p>
+インストールが完了すると、このプログラムにアイコンを追加する必要があるでしょう。
+ideskのアイコンは、<path>~/.ideskrc</path>という設定ファイルで処理します。
+設定はかなり長い仕事になりますので、このガイドの範囲に収めることはできません。
+詳しい情報は、<c>man idesk</c>とするか、<uri link="http://idesk.sourceforge.net/usage.html">利用ガイド</uri>を見てください。
+</p>
+
+</body>
+</section>
+<section>
+<title>テーマ、背景、起動スクリプトの設定</title>
+<body>
+
+<p>
+Fluxboxは、右クリックメニューの"Fluxbox menu"や"System Styles"でたくさんのテーマにアクセスできます。
+これらのテーマは通常、単一色か自分用の背景を設定します。
+大多数の人は、自分用の背景を設定し、選んだテーマで管理したいものです。
+そのためには、Fluxboxの別のファイルを編集する必要があります。
+このファイルは、起動に関わる動作を管理します。
+そこでテキストエディタを再び起動し、<path>~/.fluxbox/startup</path>を開いてください。
+</p>
+
+<p>
+このファイルが存在する場合は消してください。
+新しく作成したファイルに以下を追加し、必要であればコメントを外してCAPSの値を入れてください。
+</p>
+
+<pre caption="Fluxbox用の起動スクリプトを編集する">
+<comment># GentooのFluxbox起動スクリプト
+
+# 一時的に実行するだけではなく、継続的に実行する必要があるプログラムは
+# コマンドの終わりに"&amp;"が必要です
+
+# Fluxboxのスプラッシュ画面を表示
+#fbsetbg -C /usr/share/fluxbox/splash.jpg
+
+# ここで背景を設定します。これを行うためのプログラムを設定しなければいけません
+# (x11-terms/etermが推奨されています)
+#bsetbg -f PATH_TO_IMAGE
+
+# カスタムフォントディレクトリ
+#xset +fp PATH_TO_FONT_DIRECTORY
+
+# アイコンプログラムの起動
+#idesk &amp;
+
+# Torsmoシステムモニタの起動
+#torsmo &amp;
+
+# このコマンドを最後に実行しなければいけません！</comment>
+exec /usr/bin/fluxbox -log ~/.fluxbox/log
+</pre>
+
+</body>
+</section>
+<section>
+<title>メニュー生成</title>
+<body>
+
+<p>
+著者は、メニューの作成にテキストエディタを使います。
+というのも、menumakerは大変ややこしく、重要なパッケージを読み落とすことが良くあり、Gentooのインストールしたスタイルがうまく動くとは限らないと思っているからです。
+しかし、この意見にはあまり賛同してもらえません。そこで以降、より一般的なメニュー生成プログラムの使用方法を説明します。
+</p>
+
+<p>
+これらのプログラムは、よく整理されたシステムを提供し、利用後に<path>~/.fluxbox/menu</path>を手動で編集し、パッケージの追加あるいは使われていないパッケージの削除が可能です。
+このメニューから削除されたパッケージはシステムからは削除されておらず、個別のユーザのメニューから削除されただけであることに注意してください。
+そのプログラムはその後もコマンドラインで実行できます。
+</p>
+  	 
+<p>
+既にシステムにあるプログラムで<c>fluxbox-generate_menu</c>というものがあります。
+これは、<c>mmaker</c>と似たような動作をします。
+このプログラムは、さらによいジョブ処理スタイルですが、検出できないプログラムが多いです。
+これを使うには、単にコマンドを実行してください。
+<c>mmaker</c>をインストールして使用するには以下を見てください。
+</p>
+
+<pre caption="menumakerのインストール">
+# <i>emerge menumaker</i>
+</pre>
+
+<p>
+それから、単に<c>mmaker Fluxbox</c>を実行します。
+ただし、<c>fluxbox-generate_menu</c>を使う場合よりは検出されるプログラムが多いですが、主要なプログラムの多くが未だに検出されないことに十分注意してください。
+例えば、gaimもxchatも検出されません。
+</p>
+
+</body>
+</section>
+<section>
+<title>まとめ</title>
+<body>
+
+<p>
+おめでとうございます！Fluxboxをインストールし、設定し、使う準備ができました。
+疑問や提案がありましたら何でも、著者にメールするか、Gentooの<uri link="http://bugs.gentoo.org">Bugzilla</uri>にバグレポートを報告してください。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,242 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/mysql-upgrading.xml,v 1.3 2006/05/05 11:26:16 idani Exp $ -->
+
+<guide link="/doc/ja/mysql-upgrading.xml" lang="ja">
+<title>MySQl 4.1.xへのアップグレードガイド</title>
+
+<author title="Author">
+  <mail link="citizen428@gentoo.org">Michael Kohl</mail>
+</author>
+<author title="Author">
+  <mail link="vivo@gentoo.org">Francesco Riosa</mail>
+</author>
+<author title="翻訳">
+  <mail link="shindo@gentoo.gr.jp">シンドウ</mail>
+</author>
+
+<abstract>
+MySQLチームはMySQL 4.1がGentooのUnstableツリー(~arch)に取り込まれたことお知らせでき、
+光栄に思っています。チームの目標としては、早くこのebuildを安定化したいと考えており、
+この文書は希望するテスターの皆さんに向けたアップグレード手順です。
+
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.7</version>
+<date>2006-03-11</date>
+<!-- Original revision: 1.8 -->
+
+<chapter>
+<title>以前のMySQLバージョンからのアップグレード</title>
+<section>
+<body>
+
+<p>
+4.0.24以前のバージョンからアップグレードするユーザーは、まずMySQL 4.0.25をインストールしてください。
+もし、すでに4.0.25を稼動させている場合は、このセクションをスキップし、次のセクションに進んでください。
+</p>
+
+<pre caption="単純アップグレード">
+# <i>emerge -av --buildpkg "&lt;mysql-4.1"</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>現行データのバックアップ</title>
+<section>
+<body>
+
+<p>
+どのデータベース管理者にとっても、もっとも重要な作業の一つにデータのバックアップがあります。
+では、やってみましょう。
+</p>
+
+<pre caption="すべてのデータベースをダンプする">
+# <i>mysqldump \</i>
+  <i>-uroot \</i>
+  <i>--password=</i><comment>'あなたのパスワード'</comment><i> \</i>
+  <i>-hlocalhost \</i>
+  <i>--all-databases \</i>
+  <i>--opt \</i>
+  <i>--allow-keywords \</i>
+  <i>--flush-logs \</i>
+  <i>--hex-blob \</i>
+  <i>--master-data \</i>
+  <i>--max_allowed_packet=16M \</i>
+  <i>--quote-names \</i>
+  <i>--result-file=BACKUP_MYSQL_4.0.SQL</i>
+</pre>
+
+<p>
+コマンドを実行すると<path>BACKUP_MYSQL_4.0.SQL</path>というファイルが存在しているはずで、
+これが後でデータを復元するのに使われます。このデータはSQL(the Standard Query Language)の
+MySQL方言で書かれています。
+</p>
+
+<p>
+また、取得したバックアップが稼動するかどうか見ておいたほうがよいでしょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>最新のバージョンからのアップグレード</title>
+<section>
+<body>
+
+<p>
+もし、ステップ#1をスキップしたならば、現在インストールされているバージョンのバックアップパッケージ
+(データではなく、データベースサーバーのもの)を作成します。
+</p>
+
+<pre caption="バイナリーパッケージバックアップ">
+# <i>quickpkg dev-db/mysql</i>
+</pre>
+
+<p>
+今度は現在のバージョンと全てのデータをきれいに削除します。
+</p>
+
+<pre caption="MySQLのアンインストール">
+# <i>/etc/init.d/mysql stop</i>
+# <i>emerge -C mysql</i>
+# <i>tar cjpvf ~/mysql.$(date +%F_%H-%M).tar.bz2 /etc/mysql/my.cnf /var/lib/mysql/</i>
+# <i>ls -l ~/mysql.*</i>
+# <i>rm -rf /var/lib/mysql/ /var/log/mysql</i>
+</pre>
+
+<note>
+ここでは二つの異なるバックアップがなければなりません。
+一つはSQLのバックアップでMySQLの各バージョン間で互換性があるものと、
+もう一つはデータベースを素早く戻すためのものです。
+これについてはこのドキュメントの後半でより詳しく触れます。
+</note>
+
+<p>
+古いMySQLを削除した後に新しいバージョンをインストールできます。
+MySQLに対してリンクしているパッケージのリビルドのため<c>revdep-rebuild</c>が必要です。
+</p>
+
+<pre caption="バイナリーのアップデート">
+# <i>emerge -av "&gt;mysql-4.1"</i>
+# <i>dispatch-conf</i>
+# <i>revdep-rebuild</i>
+</pre>
+
+<p>
+インストールした新バージョンのMySQLを設定し、デーモンをリスタートさせましょう。
+</p>
+
+<pre caption="MySQL 4.1ベースの設定">
+# <i>emerge --config =mysql-4.1.&lt;micro_version&gt;</i>
+# <i>/etc/init.d/mysql start</i>
+</pre>
+
+<p>
+最後にステップ2で作成したバックアップをインポートすることができます。
+</p>
+
+<impo>
+標準の<path>/etc/mysql/my.cnf</path>ファイルでは、標準でバイナリでのログ出力(<c>log-bin</c>)が設定されています。これは、データを更新する単一トランザクション毎に記録します。もしとても大きなデータベース(たとえば1GB)を扱った場合、これはとても早くディスクスペースを消費する、きわめて大きなファイルを作成することになります。ディスクスペースがあまりないのでしたら、バイナリでのログ出力を無効にした方がよいでしょう。
+</impo>
+
+<pre caption="SQLバックアップをインポートする">
+# <i>cat BACKUP_MYSQL_4.0.SQL \</i>
+     <i>| mysql \</i>
+     <i>-uroot \</i>
+     <i>--password=</i><comment>'あなたのパスワード'</comment><i> \</i>
+     <i>-hlocalhost \</i>
+     <i>--max_allowed_packet=16M</i>
+
+# <i>mysql_fix_privilege_tables \</i>
+     <i>--defaults-file=/etc/mysql/my.cnf \</i>
+     <i>--user=root \</i>
+     <i>--password=</i><comment>'あなたのパスワード'</comment><i></i>
+</pre>
+
+<p>
+MySQLをリスタートし、期待どおり万事うまくいって、4.1.x バージョンでの稼動が可能です。
+</p>
+
+<pre caption="MySQL インスタンスのリスタート">
+# <i>/etc/init.d/mysql restart</i>
+</pre>
+
+<p>
+アップグレード手順のなかで何か問題が生じた場合、
+Gentooの<uri link="https://bugs.gentoo.org">Bugzilla</uri>に問題を報告してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>古いMySQL 4.0に戻すには</title>
+<section>
+<body>
+
+<p>
+MySQL 4.1 に何か不満があれば、MySQL 4.0 に戻すことが可能です。
+</p>
+
+<pre caption="以前の状態に戻す">
+# <i>/etc/init.d/mysql stop</i>
+# <i>emerge -C mysql</i>
+# <i>rm -rf /var/lib/mysql/ /var/log/mysql</i>
+# <i>emerge --usepkgonly "&lt;mysql-4.1"</i>
+# <i>tar -xjpvf mysql.[tag] -C /</i>
+# <i>/etc/init.d/mysql start</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>直接アップグレードの方法、ただしサポートされおらず危険</title>
+<section>
+<body>
+
+<p>
+ある条件によっては次メジャーバージョンにそのままアップグレードすることができます。
+以下で何をしているのか理解し、あなたのシステムに適するか考えた上であれば、
+ちょっとした要領で、MySQL 4.1 に直接アップグレードできます。
+
+</p>
+
+<pre caption="直接アップグレード">
+# <i>quickpkg dev-db/mysql</i>
+# <i>/etc/init.d/mysql stop</i>
+# <i>tar -cjpvf ~/mysql.$(date +%F_%H-%M).tar.bz2 /etc/mysql/my.cnf /var/lib/mysql/</i>
+# <i>ls -l ~/mysql.*</i>
+# <i>export MYSQL_STRAIGHT_UPGRADE=1</i>
+# <i>emerge -av "&gt;mysql-4.1"</i>
+# <i>unset MYSQL_STRAIGHT_UPGRADE</i>
+# <i>dispatch-conf</i>
+# <i>revdep-rebuild</i>
+# <i>/etc/init.d/mysql start</i>
+# <i>mysql_fix_privilege_tables --defaults-file=/etc/mysql/my.cnf \</i>
+     <i>-uroot --password=</i><comment>'あなたのパスワード'</comment><i></i>
+# <i>mysql --database=mysql -uroot --password=</i><comment>'あなたのパスワード'</comment><i> &lt; /tmp/new_pieces.sql</i>
+# <i>/etc/init.d/mysql restart</i> # just to be sure
+</pre>
+
+<p>
+グッドラック！何かあっても、私たちが何も注意してない、なんていわないでね;-)
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

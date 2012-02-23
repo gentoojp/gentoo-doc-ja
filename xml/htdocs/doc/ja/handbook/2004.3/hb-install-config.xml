@@ -1,0 +1,392 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-install-config.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+
+<!-- Original revision: 1.52 -->
+<sections>
+
+<version>1.49</version>
+<date>2004-10-23</date>
+
+<section>
+<title>ファイルシステム情報</title>
+<subsection>
+<title>fstabって何</title>
+<body>
+
+<p>
+Linuxにおいて、システムに使用されている全パーティションは<path>/etc/fstab</path>に記述されていなければなりません。このファイルにはそれぞれのパーティションのマウントポイント(ファイルシステムの構築のときに出てきた)、どのように、どんな特別なオプションでマウントされるか(自動的にマウントするか否か、ユーザーがマウントできるかどうか等)の情報が含まれます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>/etc/fstabの作成</title>
+<body>
+
+<p>
+<path>/etc/fstab</path>は特別な構文を使います。各々のラインは6つのフィールドから成り、空白(スペース、タブもしくはその両方)で分けられています。各々のフィールドにはそれぞれの意味があります。
+</p>
+
+<ul>
+<li>
+  1番目のフィールドには<b>パーティション</b>が記述されています。(デバイスファイルのパス)
+</li>
+<li>
+  2番目のフィールドにはパーティションがマウントされるべき<b>マウントポイント</b>が記述されています。
+</li>
+<li>
+  3番目のフィールドにはパーティションに使用されている<b>ファイルシステム</b>が記述されています。
+</li>
+<li>
+  4番目のフィールドにはパーティションを<c>マウント</c>するときに適用したい<b>マウントオプション</b>が記述されています。各々のファイルシステムにはそれぞれ独自のマウントオプションがあるので、全てのオプションを見るには頑張ってマウントのマニュアルを読んでください。(<c>man mount</c>)。複数のマウントオプションはコンマで分けられます。
+</li>
+<li>
+  5番目のフィールドは<c>dump</c>に使用され、そのパーティションが<b>dump</b>される必要があるかどうかを記述します。通常ここは<c>0</c>(ゼロ)のままで良いです。
+</li>
+<li>
+  6番目のフィールドは<c>fsck</c>に使用され、システムが正常にシャットダウンしなかったときにどの順序でファイルシステムが<b>チェック</b>されるべきかを記述します。ルートパーティションは<c>1</c>に残りのパーティションは<c>2</c>にすべきでしょう。(もしくはもしファイルシステムのチェックが必要の無い場合は<c>0</c>にしてください)。
+</li>
+</ul>
+
+<p>
+Gentooが提供している元々の<path>/etc/fstab</path><e>有効なfstab</e>ではありません。ということで<c>nano</c>(もしくはお好みのエディタ)を起動して、自分の<path>/etc/fstab</path>を作成しましょう。
+</p>
+
+<pre caption="/etc/fstabを開く">
+# <i>nano -w /etc/fstab</i>
+</pre>
+
+<p>
+では<path>/boot</path>パーティションのオプションをどのように書くかを見てみましょう。これは単なる例ですので、自分のアーキテクチャが<path>/boot</path>パーティションを必要としないなら(例えば<b>PPC</b>等)、そのままコピーしないでください。
+</p>
+
+<p>
+ここでの一般的なx86でのパーティション例では<path>/boot</path>は<path>/dev/hda1</path>で、ファイルシステムとしては<c>ext2</c>です。ブート中にチェックされる必要があります。そこでこう書きます。
+</p>
+
+<pre caption="/etc/fstabでの/boot行の例">
+/dev/hda1   /boot     ext2    defaults        1 2
+</pre>
+
+<p>
+<path>/boot</path>自身のシステムのセキュリティを向上させるためにパーティションが自動的にマウントされたくないユーザーもいます。そういう方々は<c>defaults</c>の代わりに<c>noauto</c>にしてください。これはこのパーティションを使いたいときは毎回手動でマウントする必要があるという事です。
+</p>
+
+<p>
+さて、パフォーマンスを改善するのに多くのユーザーはマウントオプションとして<c>noatime</c>オプションを付け加えたいと思ってるでしょう。アクセス時間が記録されないので、その結果はより高速なシステムになります。(一般的にはその記録の必要はないので)。
+</p>
+
+<pre caption="/etc/fstabの改善された/boot行">
+/dev/hda1   /boot     ext2    defaults,noatime    1 2
+</pre>
+
+<p>
+このまま進めるなら、次の3行で終わりにしましょう。(<path>/boot</path>、<path>/</path>とスワップパーティション用)
+</p>
+
+<pre caption="/etc/fstabの3行">
+/dev/hda1   /boot     ext2    defaults,noatime  1 2
+/dev/hda2   none      swap    sw                0 0
+/dev/hda3   /         ext3    noatime           0 1
+</pre>
+
+<p>
+終了するには、<path>/proc</path>、 <c>tmpfs</c>(要)とCD-ROMドライブ(もちろん他のパーティションやドライブがあればそれらも)のルールも追加しなければなりません。
+</p>
+
+<pre caption="完成した/etc/fstabの例">
+/dev/hda1   /boot     ext2    defaults,noatime     1 2
+/dev/hda2   none      swap    sw		   0 0
+/dev/hda3   /         ext3    noatime		   0 1
+
+none        /proc     proc    defaults		   0 0
+none        /dev/shm  tmpfs   nodev,nosuid,noexec  0 0
+/dev/cdroms/cdrom0    /mnt/cdrom    auto      noauto,user    0 0
+</pre>
+
+<p>
+<c>auto</c>は<c>mount</c>にファイルシステムを推測させ(多数のファイルシステムの内の1つで作成され得るリムーバルメディアに推奨されます)、<c>user</c>は非rootユーザーがCDをマウントできるようにします。
+</p>
+
+<p>
+さあ上記の例を使って、自分の<path>/etc/fstab</path>を作成しましょう。もし<b>SPARC</b>ユーザーなら、自分の<path>/etc/fstab</path>に次の行も追加しなければなりません。
+</p>
+
+<pre caption="/etc/fstabにopenpromファイルシステムを追加">
+none        /proc/openprom  openpromfs    defaults      0 0
+</pre>
+
+<p>
+もし<c>usbfs</c>が必要なら、次の行を<path>/etc/fstab</path>に追加してください。
+</p>
+
+<pre caption="/etc/fstabにusbfsファイルシステムを追加">
+none        /proc/bus/usb   usbfs         defaults      0 0
+</pre>
+
+<p>
+<path>/etc/fstab</path>を再チェックして、保存・終了して次に進んでください。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>ネットワーク情報</title>
+<subsection>
+<title>Host名、Domain名等</title>
+<body>
+
+<p>
+ユーザーが決めなければならない選択の一つは自分のPCの名前です。至極簡単に思えますが<e>多くの</e>ユーザーは自分のLinux-pcに適当な名前を見付けるのに苦労してます。事を早く進めるために、選んだ名前は後で変更できることを知っておいてください。判りやすいように、ここでは単にマシンを<c>tux</c>、Domain名を<c>homenetwork</c>と呼ぶことにします。
+</p>
+
+<p>
+次の例ではこれらの名前を使います。最初にhost名を設定します。
+</p>
+
+<pre caption="host名を設定">
+# <i>echo tux &gt; /etc/hostname</i>
+</pre>
+
+<p>
+次にdomain名を設定します。
+</p>
+
+<pre caption="domain名を設定">
+# <i>echo homenetwork &gt; /etc/dnsdomainname</i>
+</pre>
+
+<p>
+もしNISドメインがあれば(これについてわからなければ、それが無いということです)、それも定義しなければなりません。
+</p>
+
+<pre caption="NISドメイン名を設定">
+# <i>echo nis.homenetwork &gt; /etc/nisdomainname</i>
+</pre>
+
+<p>
+さあ<c>domain名</c>の設定スクリプトをdefaultのランレベルに追加しましょう。
+</p>
+
+<pre caption="domain名の設定スクリプトをdefaultのランレベルに追加l">
+# <i>rc-update add domainname default</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>ネットワークを設定する</title>
+<body>
+
+<p>
+「ねえ、もうそれは済んでるんだけど」って気持ちになる前に、Gentooのインストールの初めに設定したネットワークは単にインストール用のものだったことを思い出してください。今ここで自分のGentooシステムに永続的なネットワーク設定をしていきましょう。
+</p>
+
+<p>
+全てのネットワーク情報は<path>/etc/conf.d/net</path>に集められます。このファイルでは単純な構文が使われているのですが、もしネットワークを手動で設定する方法を知らなれば一見しただけではわからないでしょう。でも恐がらなくてもいいですよ。全て説明しますから。:)
+</p>
+
+<p>
+初めにお好きなエディタで<path>/etc/conf.d/net</path>を開いてください。(この例では<c>nano</c>が使われています)。
+</p>
+
+<pre caption="編集のために/etc/conf.d/netを開く">
+# <i>nano -w /etc/conf.d/net</i>
+</pre>
+
+<p>
+その中にある1番目の項目は<c>iface_eth0</c>です。以下の構文が使われています。
+</p>
+
+<pre caption="iface_eth0の構文">
+iface_eth0="<i>&lt;自分のIPアドレス&gt;</i> broadcast <i>&lt;自分のブロードキャストアドレス&gt;</i> netmask <i>&lt;自分のネットマスク&gt;</i>"
+</pre>
+
+<p>
+もしDHCP(自動IPアドレス取得)を使っているなら、<c>iface_eth0</c>に<c>dhcp</c>と設定するだけでいいです。もしrp-pppoe(例:ADSL用)を使っているなら、<c>up</c>と設定してください。もし自分でネットワークを設定しなければならないのに上記の用語がよく判らなくて、まだ読んでないなら<uri link="?part=1&amp;chap=3#network_term">ネットワークの専門用語を理解する</uri>を一読してください。
+</p>
+
+<p>
+では3つの例を示します。最初の例ではDHCPを使っています。2番目ではネットマスク255.255.255.0、ブロードキャストアドレス192.168.0.255、ゲートウェイ192.168.0.1で静的アドレス(192.168.0.2)を、そして3番目の例ではrp-pppoeを使用のために単にインターフェイスを有効にします。
+</p>
+
+<pre caption="/etc/conf.d/netの例">
+<comment>(DHCP用)</comment>
+iface_eth0="dhcp"
+<comment># DHCPサーバーから提供されたホスト名とドメイン名を</comment>
+<comment># 使うように要求するネットワーク管理者もいます。</comment>
+<comment># この場合、dhcpcdにそれらの名前を使わせるように、次のように追加してください。</comment>
+<comment># これで自分自身が決めたホスト名とドメイン名より優先されます。</comment>
+dhcpcd_eth0="-HD"
+<comment># もし、自分のマシンの時刻同期を保持するためにNTPを使うつもりなら</comment>
+<comment># dhcpcdが/etc/ntp.confを上書きしないようにするために-Nオプションを使ってください。</comment>
+dhcpcd_eth0="-N"
+
+<comment>(静的IP用)</comment>
+iface_eth0="192.168.0.2 broadcast 192.168.0.255 netmask 255.255.255.0"
+gateway="eth0/192.168.0.1"
+
+<comment>(rp-pppoe用)</comment>
+iface_eth0="up"
+</pre>
+
+<p>
+もしいくつかのネットワークインターフェイスがあるなら、<c>iface_eth1</c>、<c>iface_eth2</c>等のような別の<c>iface_eth</c>の設定を作成してください。1マシンにつき一つのゲートウェイしか設定できないので<c>gateway</c>は設定しなおさないでください。
+</p>
+
+<p>
+さあ設定を保存・終了して次に進みましょう。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>ブート時に自動でネットワークを始動させる</title>
+<body>
+
+<p>
+ブート時にネットワークインターフェースを有効にさせるには、それぞれのスクリプトをdefaultのランレベルに追加する必要があります。もしPCMCIAインターフェイスがあるなら、PCMCIAインターフェイスはPCMCIA起動スクリプトによって起動されるのでこの工程を省略してください。
+</p>
+
+<pre caption="defaultのランレベルにnet.eth0を追加">
+# <i>rc-update add net.eth0 default</i>
+</pre>
+
+<p>
+もしいくつかのネットワークインターフェイスがあるなら、適当な<path>net.eth1</path>、<path>net.eth2</path>等の為に起動スクリプトを作成する必要があります。これには<c>ln</c>が使えます。
+</p>
+
+<pre caption="別の起動スクリプトを作成">
+# <i>cd /etc/init.d</i>
+# <i>ln -s net.eth0 net.eth1</i>
+# <i>rc-update add net.eth1 default</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>ネットワーク情報を書き留める</title>
+<body>
+
+<p>
+さてネットワークの情報に関してLinuxシステムに知らせる必要があります。これは<path>/etc/hosts</path>に定義され、自分のネームサーバーでは解決されないホストの為のホスト名とIPアドレスの解決に役立ちます。例えば、内部ネットワークに<c>jenny</c>(192.168.0.5)、<c>benny</c>(192.168.0.6)そして<c>tux</c>(192.168.0.7 - このシステム)という3台のマシンがあるとすると、<path>/etc/hosts</path>を開いて以下の値を書き入れます。
+</p>
+
+<pre caption="/etc/hostsを開く">
+# <i>nano -w /etc/hosts</i>
+</pre>
+
+<pre caption="ネットワーク情報を書き込む">
+127.0.0.1     localhost
+192.168.0.5   jenny.homenetwork jenny
+192.168.0.6   benny.homenetwork benny
+192.168.0.7   tux.homenetwork tux
+</pre>
+
+<p>
+もしシステムが自システムのみ(もしくはネームサーバーが全ての名前解決を処理する)なら、1行だけで結構です。例えば、自分のシステムを<c>tux.homenetwork</c>と呼びたい場合は、以下のように記述します。
+</p>
+
+<pre caption="1台のみもしくは完全な統合マシン群の/etc/hosts">
+127.0.0.1     tux.homenetwork tux localhost
+</pre>
+
+<p>
+保存・終了して次へ進みましょう。
+</p>
+
+<p>
+もしPCMCIAが無ければ、<uri link="#doc_chap3">システム情報</uri>に進むことができます。 PCMCIAのあるユーザーは続くPCMCIAの項目を読んでください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>自由選択:PCMCIAを作動させる</title>
+<body>
+
+<note>
+pcmcia-csはx86、amd64及びppcプラットフォームでのみ有効。
+</note>
+
+<p>
+PCMCIAのあるユーザーは最初に<c>pcmcia-cs</c>パッケージをインストールしなければなりません。これには2.6カーネルで動作させるユーザーも含まれます(たとえこのパッケージのPCMCIAドライバを使わなくとも)。この段階ではxorg-x11のインストールを避けるために<c>USE="-X"</c>が必要となります。
+</p>
+
+<pre caption="pcmcia-csのインストール">
+# <i>USE="-X" emerge pcmcia-cs</i>
+</pre>
+
+<p>
+<c>pcmcia-cs</c>がインストールされたら、<c>pcmcia</c>スクリプトを<e>default</e>のランレベルに追加します。
+</p>
+
+<pre caption="pcmciaスクリプトをdefaultのランレベルに追加">
+# <i>rc-update add pcmcia default</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>システム情報</title>
+<subsection>
+<title>rootのパスワード</title>
+<body>
+
+<p>
+最初にrootのパスワードを入力して設定します。
+</p>
+
+<pre caption="rootのパスワードを設定">
+# <i>passwd</i>
+</pre>
+
+<p>
+もしrootをシリアルコンソール経由でログインさせたければ、<path>/etc/securetty</path>に<c>tts/0</c>を追記してください。
+</p>
+
+<pre caption="/etc/securettyにtts/0を追記">
+# <i>echo "tts/0" &gt;&gt; /etc/securetty</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>システム情報</title>
+<body>
+
+<p>
+Gentooでは<path>/etc/rc.conf</path>を一般的なシステム全般の設定として使用します。<path>/etc/rc.conf</path>を開いて、その中のコメントを読んで楽しんでください。:)
+</p>
+
+<pre caption="/etc/rc.confを開く">
+# <i>nano -w /etc/rc.conf</i>
+</pre>
+
+<p>
+見て判るように、このファイルには必要な設定の値を決めるのに役立つ良いコメントがされてます。<c>KEYMAP</c>の設定には特に注意してください。もし間違った<c>KEYMAP</c>を選ぶとキーボードをタイプするときにとんでもなく変な結果になるでしょう。
+</p>
+
+<note>
+USBベースの<b>SPARC</b>と<b>SPARC</b>互換なシステムのユーザーは"sunkeymap"の代りにi386のキーマップ(例えば"us")を選択する必要があるかも知れません。
+</note>
+
+<p>
+<b>PPC</b>では大抵のシステムでx86キーマップが使われます。ブート時にADBキーマップを使えるようにしたいユーザーはカーネルでADBキーコード送出を有効にし、<path>rc.conf</path>にmac/ppcのキーマップを設定しなければなりません。
+</p>
+
+<p>
+<path>/etc/rc.conf</path>の設定が終われば、保存・終了して<uri link="?part=1&amp;chap=9">必要なシステムツールをインストールする</uri>に進んでください。
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

@@ -1,0 +1,844 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/utf-8.xml,v 1.55 2011/03/08 18:16:32 nightmorph Exp $ -->
+
+<guide>
+<title>Using UTF-8 with Gentoo</title>
+
+<author title="Author">
+  <mail link="slarti@gentoo.org">Thomas Martin</mail>
+</author>
+<author title="Contributor">
+  <mail link="devil@gentoo.org.ua">Alexander Simonov</mail>
+</author>
+<author title="Editor">
+  <mail link="fox2mike@gentoo.org">Shyam Mani</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This guide shows you how to set up and use the UTF-8 Unicode character set with
+your Gentoo Linux system, after explaining the benefits of Unicode and more
+specifically UTF-8.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license />
+
+<version>4</version>
+<date>2011-03-08</date>
+
+<chapter>
+<title>Character Encodings</title>
+<section>
+<title>What is a Character Encoding?</title>
+<body>
+
+<p>
+Computers do not understand text themselves. Instead, every character is
+represented by a number. Traditionally, each set of numbers used to represent
+alphabets and characters (known as a coding system, encoding or character set)
+was limited in size due to limitations in computer hardware.
+</p>
+
+</body>
+</section>
+<section>
+<title>The History of Character Encodings</title>
+<body>
+
+<p>
+The most common (or at least the most widely accepted) character set is
+<b>ASCII</b> (American Standard Code for Information Interchange). It is widely
+held that ASCII is the most successful software standard ever.  Modern ASCII
+was standardised in 1986 (ANSI X3.4, RFC 20, ISO/IEC 646:1991, ECMA-6) by the
+American National Standards Institute.
+</p>
+
+<p>
+ASCII is strictly seven-bit, meaning that it uses bit patterns representable
+with seven binary digits, which provides a range of 0 to 127 in decimal. These
+include 32 non-visible control characters, most between 0 and 31, with the
+final control character, DEL or delete at 127.  Characters 32 to 126 are
+visible characters: a space, punctuation marks, Latin letters and numbers.
+</p>
+
+<p>
+The eighth bit in ASCII was originally used as a parity bit for error checking.
+If this is not desired, it is left as 0. This means that, with ASCII, each
+character is represented by a single byte.
+</p>
+
+<p>
+Although ASCII was enough for communication in modern English, in other
+European languages that include accented characters, things were not so easy.
+The ISO 8859 standards were developed to meet these needs.  They were backwards
+compatible with ASCII, but instead of leaving the eighth bit blank, they used
+it to allow another 127 characters in each encoding. ISO 8859's limitations
+soon came to light, and there are currently 15 variants of the ISO 8859
+standard (8859-1 through to 8859-15).  Outside of the ASCII-compatible byte
+range of these character sets, there is often conflict between the letters
+represented by each byte. To complicate interoperability between character
+encodings further, Windows-1252 is used in some versions of Microsoft Windows
+instead for Western European languages. This is a superset of ISO 8859-1,
+however it is different in several ways. These sets do all retain ASCII
+compatibility, however.
+</p>
+
+<p>
+The necessary development of completely different single-byte encodings for
+non-Latin alphabets, such as EUC (Extended Unix Coding) which is used for
+Japanese and Korean (and to a lesser extent Chinese) created more confusion,
+while other operating systems still used different character sets for the same
+languages, for example, Shift-JIS and ISO-2022-JP.  Users wishing to view
+cyrillic glyphs had to choose between KOI8-R for Russian and Bulgarian or
+KOI8-U for Ukrainian, as well as all the other cyrillic encodings such as the
+unsuccessful ISO 8859-5, and the common Windows-1251 set. All of these
+character sets broke most compatibility with ASCII (although KOI8 encodings
+place cyrillic characters in Latin order, so in case the eighth bit is
+stripped, text is still decipherable on an ASCII terminal through case-reversed
+transliteration.)
+</p>
+
+<p>
+This has led to confusion, and also to an almost total inability for
+multilingual communication, especially across different alphabets. Enter
+Unicode.
+</p>
+
+</body>
+</section>
+<section>
+<title>What is Unicode?</title>
+<body>
+
+<p>
+Unicode throws away the traditional single-byte limit of character sets.  It
+uses 17 "planes" of 65,536 code points to describe a maximum of 1,114,112
+characters. As the first plane, aka. "Basic Multilingual Plane" or BMP,
+contains almost everything you will ever use, many have made the wrong
+assumption that Unicode was a 16-bit character set.
+</p>
+
+<p>
+Unicode has been mapped in many different ways, but the two most common are
+<b>UTF</b> (Unicode Transformation Format) and <b>UCS</b> (Universal Character
+Set). A number after UTF indicates the number of bits in one unit, while the
+number after UCS indicates the number of bytes. UTF-8 has become the most
+widespread means for the interchange of Unicode text as a result of its
+eight-bit clean nature, and it is the subject of this document.
+</p>
+
+</body>
+</section>
+<section>
+<title>UTF-8</title>
+<body>
+
+<p>
+UTF-8 is a variable-length character encoding, which in this instance means
+that it uses 1 to 4 bytes per symbol. So, the first UTF-8 byte is used for
+encoding ASCII, giving the character set full backwards compatibility with
+ASCII. UTF-8 means that ASCII and Latin characters are interchangeable with
+little increase in the size of the data, because only the first bit is used.
+Users of Eastern alphabets such as Japanese, who have been assigned a higher
+byte range are unhappy, as this results in as much as a 50% redundancy in their
+data.
+</p>
+
+</body>
+</section>
+<section>
+<title>What UTF-8 Can Do for You</title>
+<body>
+
+<p>
+UTF-8 allows you to work in a standards-compliant and internationally accepted
+multilingual environment, with a comparatively low data redundancy. UTF-8 is
+the preferred way for transmitting non-ASCII characters over the Internet,
+through Email, IRC or almost any other medium. Despite this, many people regard
+UTF-8 in online communication as abusive. It is always best to be aware of the
+attitude towards UTF-8 in a specific channel, mailing list or Usenet group
+before using <e>non-ASCII</e> UTF-8.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Setting up UTF-8 with Gentoo Linux</title>
+<section>
+<title>Finding or Creating UTF-8 Locales</title>
+<body>
+
+<p>
+Now that you understand the principles behind Unicode, you're ready to start
+using UTF-8 with your system.
+</p>
+
+<p>
+The preliminary requirement for UTF-8 is to have a version of glibc installed
+that has national language support. The recommend means to do this is the
+<path>/etc/locale.gen</path> file. It is beyond the scope of this document to
+explain the usage of this file though. It is explained in the <uri
+link="/doc/en/guide-localization.xml#doc_chap3_sect3">Gentoo Localization
+Guide</uri>.
+</p>
+
+<p>
+Next, we'll need to decide whether a UTF-8 locale is already available for our
+language, or whether we need to create one.
+</p>
+
+<pre caption="Checking for an existing UTF-8 locale">
+<comment>(Replace "en_GB" with your desired locale setting)</comment>
+# <i>locale -a | grep 'en_GB'</i>
+en_GB
+en_GB.UTF-8
+</pre>
+
+<p>
+From the output of this command line, we need to take the result with a suffix
+similar to <c>.UTF-8</c>. If there is no result with a suffix similar to
+<c>.UTF-8</c>, we need to create a UTF-8 compatible locale.
+</p>
+
+<note>
+Only execute the following code listing if you do not have a UTF-8 locale
+available for your language.
+</note>
+
+<pre caption="Creating a UTF-8 locale">
+<comment>(Replace "en_GB" with your desired locale setting)</comment>
+# <i>localedef -i en_GB -f UTF-8 en_GB.UTF-8</i>
+</pre>
+
+<p>
+Another way to include a UTF-8 locale is to add it to the
+<path>/etc/locale.gen</path> file and generate necessary locales with
+<c>locale-gen</c> command.
+</p>
+
+<pre caption="Line in /etc/locale.gen">
+en_GB.UTF-8 UTF-8
+</pre>
+
+</body>
+</section>
+<section>
+<title>Setting the Locale</title>
+<body>
+
+<p>
+There is one environment variable that needs to be set in order to use our new
+UTF-8 locales: <c>LC_CTYPE</c> (or optionally <c>LANG</c>, if you want to change
+the system language as well). There are also many different ways to set it; some
+people prefer to only have a UTF-8 environment for a specific user, in which
+case they set them in their <path>~/.profile</path> (if you use <c>/bin/sh</c>),
+<path>~/.bash_profile</path> or <path>~/.bashrc</path> (if you use
+<c>/bin/bash</c>). More details and best practices can be found in our <uri
+link="/doc/en/guide-localization.xml">Localization Guide</uri>.
+</p>
+
+<p>
+Others prefer to set the locale globally. One specific circumstance where
+the author particularly recommends doing this is when
+<path>/etc/init.d/xdm</path> is in use, because
+this init script starts the display manager and desktop before any of the
+aforementioned shell startup files are sourced, and so before any of the
+variables are in the environment.
+</p>
+
+<p>
+Setting the locale globally should be done using
+<path>/etc/env.d/02locale</path>. The file should look something like the
+following:
+</p>
+
+<pre caption="Demonstration /etc/env.d/02locale">
+<comment>(As always, change "en_GB.UTF-8" to your locale)</comment>
+LANG="en_GB.UTF-8"
+</pre>
+
+<note>
+You can also substitute <c>LC_CTYPE</c> for <c>LANG</c>. For more information on
+the categories affected by using <c>LC_CTYPE</c>, please read the <uri
+link="http://www.gnu.org/software/libc/manual/html_node/Locale-Categories.html#Locale-Categories">GNU
+locale page</uri>.
+</note>
+
+<p>
+Next, the environment must be updated with the change.
+</p>
+
+<pre caption="Updating the environment">
+# <i>env-update</i>
+>>> Regenerating /etc/ld.so.cache...
+ * Caching service dependencies ...
+# <i>source /etc/profile</i>
+</pre>
+
+<p>
+Now, run <c>locale</c> with no arguments to see if we have the correct
+variables in our environment:
+</p>
+
+<pre caption="Checking if our new locale is in the environment">
+# <i>locale</i>
+LANG=en_GB.UTF-8
+LC_CTYPE="en_GB.UTF-8"
+LC_NUMERIC="en_GB.UTF-8"
+LC_TIME="en_GB.UTF-8"
+LC_COLLATE="en_GB.UTF-8"
+LC_MONETARY="en_GB.UTF-8"
+LC_MESSAGES="en_GB.UTF-8"
+LC_PAPER="en_GB.UTF-8"
+LC_NAME="en_GB.UTF-8"
+LC_ADDRESS="en_GB.UTF-8"
+LC_TELEPHONE="en_GB.UTF-8"
+LC_MEASUREMENT="en_GB.UTF-8"
+LC_IDENTIFICATION="en_GB.UTF-8"
+LC_ALL=
+</pre>
+
+<p>
+That's everything. You are now using UTF-8 locales, and the next hurdle is the
+configuration of the applications you use from day to day.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Application Support</title>
+<section>
+<body>
+
+<p>
+When Unicode first started gaining momentum in the software world, multibyte
+character sets were not well suited to languages like C, in which many of the
+day-to-day programs people use are written.  Even today, some programs are not
+able to handle UTF-8 properly.  Fortunately, most are!
+</p>
+
+</body>
+</section>
+<section>
+<title>Filenames, NTFS, and FAT</title>
+<body>
+
+<p>
+There are several NLS options in the Linux kernel configuration menu, but it is
+important to not become confused! For the most part, the only thing you need to
+do is to build UTF-8 NLS support into your kernel, and change the default NLS
+option to utf8.
+</p>
+
+<pre caption="Kernel configuration steps for UTF-8 NLS">
+File Systems --&gt;
+  Native Language Support --&gt;
+    (utf8) Default NLS Option
+    &lt;*&gt; NLS UTF8
+    <comment>(Also &lt;*&gt; other character sets that are in use in
+    your FAT filesystems or Joilet CD-ROMs.)</comment>
+</pre>
+
+<p>
+If you plan on mounting NTFS partitions, you may need to specify an <c>nls=</c>
+option with mount. If you plan on mounting FAT partitions, you may need to
+specify a <c>codepage=</c> option with mount. Optionally, you can also set a
+default codepage for FAT in the kernel configuration. Note that the
+<c>codepage</c> option with mount will override the kernel settings.
+</p>
+
+<pre caption="FAT settings in kernel configuration">
+File Systems --&gt;
+  DOS/FAT/NT Filesystems  --&gt;
+    (437) Default codepage for fat
+</pre>
+
+<p>
+You should avoid setting <c>Default iocharset for fat</c> to UTF-8, as it is
+not recommended. Instead, you may want to pass the option utf8=true when
+mounting your FAT partitions. For further information, see <c>man mount</c> and
+the kernel documentation at
+<path>/usr/src/linux/Documentation/filesystems/vfat.txt</path>.
+</p>
+
+<p>
+For changing the encoding of filenames, <c>app-text/convmv</c> can be used.
+</p>
+
+<pre caption="Example usage of convmv">
+# <i>emerge --ask app-text/convmv</i>
+<comment>(Command format)</comment>
+# <i>convmv -f &lt;current-encoding&gt; -t utf-8 &lt;filename&gt;</i>
+<comment>(Substitute iso-8859-1 with the charset you are converting
+from)</comment>
+# <i>convmv -f iso-8859-1 -t utf-8 filename</i>
+</pre>
+
+<p>
+For changing the <e>contents</e> of files, use the <c>iconv</c> utility,
+bundled with <c>glibc</c>:
+</p>
+
+<pre caption="Example usage of iconv">
+<comment>(substitute iso-8859-1 with the charset you are converting from)</comment>
+<comment>(Check the output is sane)</comment>
+# <i>iconv -f iso-8859-1 -t utf-8 filename</i>
+<comment>(Convert a file, you must create another file)</comment>
+# <i>iconv -f iso-8859-1 -t utf-8 filename > newfile</i>
+</pre>
+
+<p>
+<c>app-text/recode</c> can also be used for this purpose.
+</p>
+
+</body>
+</section>
+<section>
+<title>The System Console</title>
+<body>
+
+<impo>
+You need >=sys-apps/baselayout-1.11.9 for Unicode on the console.
+</impo>
+
+<p>
+To enable UTF-8 on the console, you should edit <path>/etc/rc.conf</path> and
+set <c>UNICODE="yes"</c>, and also read the comments in that file -- it is
+important to have a font that has a good range of characters if you plan on
+making the most of Unicode. For this to work, make sure you have properly
+created a Unicode locale as explained in <uri link="#doc_chap1">Chapter
+1</uri>.
+</p>
+
+<p>
+The <c>KEYMAP</c> variable, set in <path>/etc/conf.d/keymaps</path>, should
+have a Unicode keymap specified.
+</p>
+
+<pre caption="Example /etc/conf.d/keymaps snippet">
+<comment>(Change "uk" to your local layout)</comment>
+KEYMAP="uk"
+</pre>
+
+</body>
+</section>
+<section>
+<title>Ncurses and Slang</title>
+<body>
+
+<note>
+Ignore any mention of Slang in this section if you do not have it installed or
+do not use it.
+</note>
+
+<p>
+It is wise to add <c>unicode</c> to your global USE flags in
+<path>/etc/make.conf</path>, and then to remerge <c>sys-libs/ncurses</c> and
+<c>sys-libs/slang</c> if appropriate. Portage will do this automatically when
+you update your system:
+</p>
+
+<pre caption="Updating your system">
+# <i>emerge --update --deep --newuse world</i>
+</pre>
+
+<p>
+We also need to rebuild packages that link to these, now the USE changes have
+been applied. The tool we use (<c>revdep-rebuild</c>) is part of the
+<c>gentoolkit</c> package.
+</p>
+
+<pre caption="Rebuilding of programs that link to ncurses or slang">
+# <i>revdep-rebuild --soname libncurses.so.5</i>
+# <i>revdep-rebuild --soname libslang.so.1</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>KDE, GNOME and Xfce</title>
+<body>
+
+<p>
+All of the major desktop environments have full Unicode support, and will
+require no further setup than what has already been covered in this guide. This
+is because the underlying graphical toolkits (Qt or GTK+2) are UTF-8 aware.
+Subsequently, all applications running on top of these toolkits should be
+UTF-8-aware out of the box.
+</p>
+
+<p>
+The exceptions to this rule come in Xlib and GTK+1. GTK+1 requires a
+iso-10646-1 FontSpec in the ~/.gtkrc, for example
+<c>-misc-fixed-*-*-*-*-*-*-*-*-*-*-iso10646-1</c>. Also, applications using
+Xlib or Xaw will need to be given a similar FontSpec, otherwise they will not
+work.
+</p>
+
+<note>
+If you have a version of the gnome1 control center around, use that instead.
+Pick any iso10646-1 font from there.
+</note>
+
+<pre caption="Example ~/.gtkrc (for GTK+1) that defines a Unicode compatible font">
+style "user-font"
+{
+    fontset="-misc-fixed-*-*-*-*-*-*-*-*-*-*-iso10646-1"
+}
+widget_class "*" style "user-font"
+</pre>
+
+<p>
+If an application has support for both a Qt and GTK+2 GUI, the GTK+2 GUI will
+generally give better results with Unicode.
+</p>
+
+</body>
+</section>
+<section>
+<title>X11 and Fonts</title>
+<body>
+
+<p>
+TrueType fonts have support for Unicode, and most of the fonts that ship with
+Xorg have impressive character support, although, obviously, not every single
+glyph available in Unicode has been created for that font. To build fonts
+(including the Bitstream Vera set) with support for East Asian letters with X,
+make sure you have the <c>cjk</c> USE flag set. Many other applications utilise
+this flag, so it may be worthwhile to add it as a permanent USE flag.
+</p>
+
+<p>
+Also, several font packages in Portage are Unicode aware.
+</p>
+
+<pre caption="Optional: Install some more Unicode-aware fonts">
+# <i>emerge terminus-font intlfonts freefonts corefonts</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Window Managers and Terminal Emulators</title>
+<body>
+
+<p>
+Window managers not built on GTK or Qt generally have very good Unicode
+support, as they often use the Xft library for handling fonts. If your window
+manager does not use Xft for fonts, you can still use the FontSpec mentioned in
+the previous section as a Unicode font.
+</p>
+
+<p>
+Terminal emulators that use Xft and support Unicode are harder to come by.
+Aside from Konsole and gnome-terminal, the best options in Portage are
+<c>x11-terms/rxvt-unicode</c>, <c>x11-terms/terminal</c>,
+<c>gnustep-apps/terminal</c>, <c>x11-terms/mlterm</c>, or plain
+<c>x11-terms/xterm</c> when built with the <c>unicode</c> USE flag and invoked
+as <c>uxterm</c>. <c>app-misc/screen</c> supports UTF-8 too, when invoked as
+<c>screen -U</c> or the following is put into the <path>~/.screenrc</path>:
+</p>
+
+<pre caption="~/.screenrc for UTF-8">
+defutf8 on
+</pre>
+
+</body>
+</section>
+<section>
+<title>Vim, Emacs, Xemacs and Nano</title>
+<body>
+
+<p>
+Vim provides full UTF-8 support, and also has builtin detection of UTF-8 files.
+For further information in Vim, use <c>:help mbyte.txt</c>.
+</p>
+
+<p>
+Emacs version 23 and Xemacs version 21.5 have full UTF-8 support. Emacs 24 will
+also support editing bidirectional text.
+</p>
+
+<p>
+Nano has provided full UTF-8 support since version 1.3.6.
+</p>
+
+</body>
+</section>
+<section>
+<title>Shells</title>
+<body>
+
+<p>
+Currently, <c>bash</c> provides full Unicode support through the GNU readline
+library. Z Shell (<c>zsh</c>) offers Unicode support with the <c>unicode</c> USE
+flag.
+</p>
+
+<p>
+The C shell, <c>tcsh</c> and <c>ksh</c> do not provide UTF-8 support at all.
+</p>
+
+</body>
+</section>
+<section>
+<title>Irssi</title>
+<body>
+
+<p>
+Irssi has complete UTF-8 support, although it does require a user
+to set an option.
+</p>
+
+<pre caption="Enabling UTF-8 in Irssi">
+/set term_charset UTF-8
+</pre>
+
+<p>
+For channels where non-ASCII characters are often exchanged in non-UTF-8
+charsets, the <c>/recode</c> command may be used to convert the characters.
+Type <c>/help recode</c> for more information.
+</p>
+
+</body>
+</section>
+<section>
+<title>Mutt</title>
+<body>
+
+<p>
+The Mutt mail user agent has very good Unicode support. To use UTF-8 with Mutt,
+you don't need to put anything in your configuration files. Mutt will work
+under unicode enviroment without modification if all your configuration files
+(signature included) are UTF-8 encoded.
+</p>
+
+<note>
+You may still see '?' in mail you read with Mutt. This is a result of people
+using a mail client which does not indicate the used charset. You can't do much
+about this than to ask them to configure their client correctly.
+</note>
+
+<p>
+Further information is available from the <uri
+link="http://wiki.mutt.org/index.cgi?MuttFaq/Charset">Mutt Wiki</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Man</title>
+<body>
+
+<p>
+Man pages are an integral part of any Linux machine. To ensure that any
+unicode in your man pages render correctly, edit <path>/etc/man.conf</path>
+and replace a line as shown below.
+</p>
+
+<pre caption="man.conf changes for Unicode support">
+<comment>(This is the old line)</comment>
+NROFF           /usr/bin/nroff -Tascii -c -mandoc
+<comment>(Replace the one above with this)</comment>
+NROFF           /usr/bin/nroff -mandoc -c
+</pre>
+
+</body>
+</section>
+<section>
+<title>elinks and links</title>
+<body>
+
+<p>
+These are commonly used text-based browsers, and we shall see how we can enable
+UTF-8 support on them. On <c>elinks</c> and <c>links</c>, there are two ways to
+go about this, one using the Setup option from within the browser or editing the
+config file. To set the option through the browser, open a site with
+<c>elinks</c> or <c>links</c> and then <c>Alt+S</c> to enter the Setup Menu then
+select Terminal options, or press <c>T</c>. Scroll down and select the last
+option <c>UTF-8 I/O</c> by pressing Enter. Then Save and exit the menu. On
+<c>links</c> you may have to do a repeat <c>Alt+S</c> and then press <c>S</c> to
+save. The config file option, is shown below.
+</p>
+
+<pre caption="Enabling UTF-8 for elinks/links">
+<comment>(For elinks, edit /etc/elinks/elinks.conf or ~/.elinks/elinks.conf and
+add the following line)</comment>
+set terminal.linux.utf_8_io = 1
+
+<comment>(For links, edit ~/.links/links.cfg and add the following
+line)</comment>
+terminal "xterm" 0 1 0 us-ascii utf-8
+</pre>
+
+</body>
+</section>
+<section>
+<title>Samba</title>
+<body>
+
+<p>
+Samba is a software suite which implements the SMB (Server Message Block)
+protocol for UNIX systems such as Macs, Linux and FreeBSD. The protocol
+is also sometimes referred to as the Common Internet File System (CIFS). Samba
+also includes the NetBIOS system - used for file sharing over windows networks.
+</p>
+
+<pre caption="Enabling UTF-8 for Samba">
+<comment>(Edit /etc/samba/smb.conf and add the following under the [global] section)</comment>
+dos charset = 1255
+unix charset = UTF-8
+display charset = UTF-8
+</pre>
+
+</body>
+</section>
+<section>
+<title>Testing it all out</title>
+<body>
+
+<p>
+There are numerous UTF-8 test websites around.  <c>net-www/w3m</c>,
+<c>net-www/links</c>, <c>net-www/elinks</c>, <c>net-www/lynx</c> and all
+Mozilla based browsers (including Firefox) support UTF-8. Konqueror and Opera
+have full UTF-8 support too.
+</p>
+
+<p>
+When using one of the text-only web browsers, make absolutely sure you are
+using a Unicode-aware terminal.
+</p>
+
+<p>
+If you see certain characters displayed as boxes with letters or numbers
+inside, this means that your font does not have a character for the symbol or
+glyph that the UTF-8 wants. Instead, it displays a box with the hex code of the
+UTF-8 symbol.
+</p>
+
+<ul>
+  <li>
+    <uri link="http://www.w3.org/2001/06/utf-8-test/UTF-8-demo.html">A W3C
+    UTF-8 Test Page</uri>
+  </li>
+  <li>
+    <uri link="http://titus.uni-frankfurt.de/indexe.htm?/unicode/unitest.htm">
+    A UTF-8 test page provided by the University of Frankfurt</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Input Methods</title>
+<body>
+
+<p>
+<e>Dead keys</e> may be used to input characters in X that are not included on
+your keyboard. These work by pressing your right Alt key (or in some countries,
+AltGr) and an optional key from the non-alphabetical section of the keyboard to
+the left of the return key at once, releasing them, and then pressing a letter.
+The dead key should modify it. Input can be further modified by using the Shift
+key at the same time as pressing the AltGr and modifier.
+</p>
+
+<p>
+To enable dead keys in X, you need a layout that supports it. Most European
+layouts already have dead keys with the default variant.  However, this is not
+true of North American layouts. Although there is a degree of inconsistency
+between layouts, the easiest solution seems to be to use a layout in the form
+"en_US" rather than "us", for example. The layout is set in
+<path>/etc/X11/xorg.conf</path> like so:
+</p>
+
+<pre caption="/etc/X11/xorg.conf snippet">
+Section "InputDevice"
+    Identifier "Keyboard0"
+    Driver     "kbd"
+    Option     "XkbLayout" "en_US" <comment># Rather than just "us"</comment>
+    <comment>(Other Xkb options here)</comment>
+EndSection
+</pre>
+
+<note>
+The preceding change only needs to be applied if you are using a North American
+layout, or another layout where dead keys do not seem to be working. European
+users should have working dead keys as is.
+</note>
+
+<p>
+This change will come into effect when your X server is restarted. To apply the
+change now, use the <c>setxkbmap</c> tool, for example, <c>setxkbmap en_US</c>.
+</p>
+
+<p>
+It is probably easiest to describe dead keys with examples. Although the
+results are locale dependent, the concepts should remain the same regardless of
+locale. The examples contain UTF-8, so to view them you need to either tell
+your browser to view the page as UTF-8, or have a UTF-8 locale already
+configured.
+</p>
+
+<p>
+When I press AltGr and [ at once, release them, and then press a, 'ä' is
+produced. When I press AltGr and [ at once, and then press e, 'ë' is produced.
+When I press AltGr and ; at once, 'á' is produced, and when I press AltGr and ;
+at once, release them, and then press e, 'é' is produced.
+</p>
+
+<p>
+By pressing AltGr, Shift and [ at once, releasing them, and then pressing a, a
+Scandinavian 'å' is produced. Similarly, when I press AltGr, Shift and [ at
+once, release <e>only</e> the [, and then press it again, '˚' is produced.
+Although it looks like one, this (U+02DA) is not the same as a degree symbol
+(U+00B0). This works for other accents produced by dead keys — AltGr and [,
+releasing only the [, then pressing it again makes '¨'.
+</p>
+
+<p>
+AltGr can be used with alphabetical keys alone. For example, AltGr and m, a
+Greek lower-case letter mu is produced: 'µ'. AltGr and s produce a
+scharfes s or esszet: 'ß'. As many European users would expect (because
+it is marked on their keyboard), AltGr and 4 (or E depending on the keyboard
+layout) produces a Euro sign, '€'.
+</p>
+
+</body>
+</section>
+<section>
+<title>Resources</title>
+<body>
+
+<ul>
+  <li>
+    <uri link="http://en.wikipedia.org/wiki/Unicode">The Wikipedia entry for
+    Unicode</uri>
+  </li>
+  <li>
+    <uri link="http://en.wikipedia.org/wiki/UTF-8">The Wikipedia entry for
+    UTF-8</uri>
+  </li>
+  <li><uri link="http://www.unicode.org">Unicode.org</uri></li>
+  <li><uri link="http://www.utf-8.com">UTF-8.com</uri></li>
+  <li><uri link="http://www.ietf.org/rfc/rfc3629.txt">RFC 3629</uri></li>
+  <li><uri link="http://www.ietf.org/rfc/rfc2277.txt">RFC 2277</uri></li>
+  <li>
+    <uri
+    link="http://www.tbray.org/ongoing/When/200x/2003/04/26/UTF">Characters vs.
+    Bytes</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,792 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/ipv6.xml,v 1.3 2003/11/15 08:09:51 nakano Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/ipv6.xml">
+
+<title>Gentoo IPv6ルータガイド</title>
+<author title="Developer">
+    <mail link="latexer@gentoo.org">Peter Johanson</mail>
+</author>
+<author title="Editor">
+    <mail link="peesh@gentoo.org">Jorge Paulo</mail>
+</author>
+<author title="Editor, Reviewer">
+    <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="翻訳">
+    <mail link="konno.katsuyuki@nifty.com">今野勝之</mail>
+</author>
+
+<license/>
+
+<abstract>
+このガイドは、GentooシステムでのIPv6のセットアップ方法について書かれています。IPv6トンネル接続サービス事業者を利用したトンネル設定方法や基本的なDNSのちょっとした設定方法、クライアントがIPv6環境に接続できるようにするための設定方法が含まれています。
+</abstract>
+
+<version>1.0.2</version>
+<date>October 4, 2003</date>
+<!-- Original revision: 1.6 -->
+
+<chapter>
+
+<title>カーネルのセットアップ</title>
+
+<section>
+<title>基本的なカーネルの設定</title>
+<body>
+<p>
+Gentooで利用可能な2.4系カーネルの一部は、IPv6による接続を簡単に行うことができます。加えて、<c>sys-kernel/gentoo-sources</c>と<c>sys-kernel/pfeifer-sources</c>については、任意でUSAGIパッチをあてることができます。USAGIパッチは必ずしも必要とされているわけではありませんが、積極的に開発されており、カーネルでは提供していないIPv6の多くの機能を実装しています。USAGIパッチを使用するには、上記ソースをemergeするときに、USEフラグに'usagi'があることを確認しましょう。2.5系の開発カーネルはIPv6をサポートしており、USAGIコードの多くを組み込んでいます。
+</p>
+
+<pre caption="カーネルをemergeする">
+# <i>USE="usagi" emerge gentoo-sources</i>
+<comment>または</comment>
+# <i>USE="usagi" emerge pfeifer-sources</i>
+</pre>
+
+<p>
+カーネルソースが置いてあるディレクトリに移り、実際にカーネルの設定を始めましょう。
+</p>
+
+<pre caption="Linuxカーネルの設定">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<note>
+<path>/usr/src/linux</path>はあなたが使用予定のソースへのシンボリックリンクという前提です。
+</note>
+
+<note>
+カーネル設定で<path>Prompt for development and/or incomplete code/drivers</path>を有効にしているか確認してください。
+</note>
+
+<pre caption = "'make menuconfig'オプション">
+Networking options ---&gt;
+   &lt;*&gt; IP: tunneling
+   ...
+   &lt;*&gt; The IPv6 protocol (EXPERIMENTAL) ---&gt;
+
+<codenote>The IPv6 protocol (EXPERIMENTAL)の配下にあるIPv6オプションは多くのアプリケーションに</codenote>
+<codenote>有用ですが、基本的なセットアップであれば必要ありません</codenote>
+
+Network device support ---&gt;
+   &lt;*&gt; Universal TUN/TAP device driver support
+<codenote>IPv6-IPv4変換用にptrd（後述）を使うのであれば、このオプションだけで十分です</codenote>
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>IPv6動作状況の確認</title>
+<body>
+
+<p>
+上記に示したオプションを有効にしたあと、カーネルをコンパイルし、IPv6を有効にしたカーネルでリブートします。IPv6が正常に動作していれば、ループバックデバイスにIPv6アドレスが表示されるはずです。
+</p>
+
+<pre caption = "ループバックデバイスのチェック">
+# <i>ifconfig lo</i>
+lo    Link encap:Local Loopback 
+      inet addr:127.0.0.1  Mask:255.0.0.0 
+      inet6 addr: ::1/128 Scope:Host
+	  <codenote>上記が表示されればIPv6が動作しています</codenote>
+	  UP LOOPBACK RUNNING  MTU:16436  Metric:1
+	  RX packets:6 errors:0 dropped:0 overruns:0 frame:0
+	  TX packets:6 errors:0 dropped:0 overruns:0 carrier:0
+	  collisions:0 txqueuelen:0
+	  RX bytes:456 (456.0 b)  TX bytes:456 (456.0 b)
+</pre>
+<p>先に進む前に、自分のUSE変数リストに"ipv6"があるか確認しましょう。その後のパッケージのemergeでIPv6サポートが含まれるようになります。
+</p>
+
+</body>
+</section>
+
+</chapter>
+<chapter>
+
+<title>トンネルの設定</title>
+
+<section>
+<title>基本設定</title>
+<body>
+
+<p>
+ほとんどのISPは、まだIPv6のネイティブ接続を提供していません。この制約を回避できる、無料のIPv6トンネル接続を世界中で提供している「IPv6トンネル接続サービス事業者」がいくつかあります。IPv4接続を通してIPv6通信をトンネルさせることが可能です。
+</p>
+
+<table>
+<tr><th>IPv6トンネル接続サービス事業者</th><th>場所</th></tr>
+<tr><ti><uri link="http://tunnelbroker.net">Hurricane Electric</uri></ti><ti>US/Canada</ti></tr>
+<tr><ti><uri link="http://www.freenet6.net">Freenet6</uri></ti><ti>US</ti></tr>
+<tr><ti><uri link="http://ipng.org.uk">IPnG</uri></ti><ti>UK</ti></tr>
+<tr><ti><uri link="http://tb.ipv6.btexact.com">BTExact</uri></ti><ti>Europe</ti></tr>
+</table>
+
+<p>
+以下は、2つのメジャーな北アメリカのIPv6トンネル接続サービス事業者、Hurricane ElectricとFreenet6でトンネル接続をセットアップする例です。
+</p>
+</body>
+</section>
+
+<section>
+<title>Hurricane Electric</title>
+<body>
+
+<p>
+Hurricane Electric（略してHE）は無料のIPv6トンネルを提供し、/64のIPv6アドレスブロックを割り当てます。DNSの逆引き設定も許可しています。HEのトンネル申込みの手間は、<uri>http://www.tunnelbroker.net</uri>に行く手間と変わりません。申込み用のページに記入するだけです。
+</p>
+
+<note>
+登録には、あなたの住所、電話番号といった情報を記入する欄があります。</note>
+
+<warn>
+HEのトンネルは利用可能になるまで24時間かかります。これはサービスの悪用を避けるためです。</warn>
+
+<p>
+トンネルの利用が承認された後、/64のブロックが割り当てられ、Gentooマシンに設定できるようになります。HEはifconfigやiprouteユーティリティでの設定例を提供しています。以下の2つの例は、以下の設定が割り当てられているという前提です：
+</p>
+
+<table>
+<tr><ti>あなたのIPv4アドレス</ti><ti>68.36.91.195</ti></tr>
+<tr><ti>HE側IPv4アドレス</ti><ti>64.71.128.82</ti></tr>
+<tr><ti>あなたのIPv6アドレス</ti><ti>2001:470:1F00:FFFF::189</ti></tr>
+<tr><ti>割り当てられたIPv6ブロック</ti><ti>2001:470:1F00:296::/64</ti></tr>
+</table>
+
+<p>
+net-toolsと<c>ifconfig</c>を使う場合、以下のように設定します：
+</p>
+
+<pre caption="ifconfigでの設定">
+# <i>ifconfig sit0 up</i>
+# <i>ifconfig sit0 inet6 tunnel ::64.71.128.82 </i>
+<codenote>HE側IPv4アドレスへのトンネルを追加します</codenote>
+# <i>ifconfig sit1 up</i>
+# <i>ifconfig sit1 inet6 add 2001:470:1F00:FFFF::189/127</i>
+# <i>route -A inet6 add ::/0 dev sit1</i>
+<codenote>'sit1'デバイスを通るようにIPv6トラフィックをルーティングします</codenote>
+</pre>
+
+<p>
+iprouteパッケージと<c>ip</c>コマンドを使う場合、以下のように設定します：
+</p>
+
+<pre caption="ipでの設定">
+# <i>ip tunnel add sixbone mode sit remote 64.71.128.82 local 68.36.91.195 ttl 255</i>
+<codenote>あなたのIPv4アドレスとHE側IPv4アドレスを結ぶトンネルを作ります</codenote>
+# <i>ip link set sixbone up</i>
+# <i>ip addr add 2001:470:1F00:FFFF::189/127 dev sixbone</i>
+<codenote>トンネルがUPしたら、IPv6アドレスを割り当てます</codenote>
+# <i>ip route add ::/0 dev sixbone</i>
+<codenote>'sixbone'トンネルデバイスを通るようにIPv6トラフィックをルーティングします</codenote>
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>Freenet6</title>
+<body>
+
+<p>
+<uri link="http://www.freenet6.net">Freenet6</uri>も無料のIPv6トンネル接続サービス事業者です。登録に必要なのはユーザ名と有効なメールアドレスのみです。ユーザ名、メールアドレスは、クライアント／サーバのセットアップ時にトンネルマネジメントを参照するときに、また、<c>tspc</c>クライアントを生成する際に使われます。クライアントはPortageで利用可能です。インストールするには、以下を実行します：
+</p>
+
+<pre>
+# <i>emerge freenet6</i>
+</pre>
+
+<p>
+<path>/etc/freenet6/tspc.conf</path>を編集して、freenet6を設定する必要があります。ファイルの<path>userid</path>と<path>passwd</path>のみを編集します。<path>userid</path>と<path>passwd</path>はFreenet6から割り当てられたものを使用してください。以下は設定例です。
+</p>
+
+<pre caption="tspc.confの例">
+tsp_version=1.0.1
+tsp_dir=/etc/freenet6
+auth_method=any
+client_v4=auto
+<i>userid=anonymous</i>
+<i>passwd=foobar</i>
+template=gentoo
+server=tsps1.freenet6.net
+retry_delay=0
+if_tunnel=sit3
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>接続の確認</title>
+<body>
+
+<p>
+トンネルの設定が終わったところで、接続確認をしましょう。接続を確認する一番簡単な方法は、<c>ping6</c>ユーティリティを使ってIPv6のホストにpingしてみることです。
+</p>
+
+<pre caption = "接続の確認">
+# <i>emerge iputils</i>
+# <i>ping6 www.kame.net</i>
+PING www.kame.net(orange.kame.net) 56 data bytes
+64 bytes from orange.kame.net: icmp_seq=1 ttl=52 time=290 ms
+64 bytes from orange.kame.net: icmp_seq=2 ttl=52 time=277 ms
+64 bytes from orange.kame.net: icmp_seq=3 ttl=52 time=280 ms
+64 bytes from orange.kame.net: icmp_seq=4 ttl=52 time=279 ms
+64 bytes from orange.kame.net: icmp_seq=5 ttl=52 time=277 ms
+
+--- www.kame.net ping statistics ---
+5 packets transmitted, 5 received, 0% packet loss, time 4038ms
+rtt min/avg/max/mdev = 277.040/281.041/290.046/4.699 ms
+</pre>
+
+<p>
+networkのinitスクリプトへ、より優れたIPv6サポートを追加するため、現在活動を進めています。状況を知りたい、もしくは手伝いたいという方は、<mail link="latexer@gentoo.org">latexer@gentoo.org</mail>にメールしてください。
+</p>
+
+</body>
+</section>
+
+</chapter>
+<chapter>
+
+<title>アプリケーションでのIPv6サポート</title>
+
+<section>
+<title>パッケージの再emerge</title>
+<body>
+
+<p>
+あらかじめ<path>/etc/make.conf</path>でUSE="ipv6"を設定していないのでしたら、IPv6対応にするためには、おそらくパッケージ群をemergeしなおす必要があるでしょう。インストールしたパッケージで、'ipv6' USEフラグを利用するものすべてをリストするには、下記のコマンドを実行します。
+</p>
+
+<pre caption="IPv6対応パッケージ">
+# <i>emerge -epv world | grep ipv6 | sed "s:^.*\\] ::; s:-[0-9]\\+.*::" | cut -d' ' -f1</i>
+</pre>
+
+<p>
+いくつか選んだパッケージを簡単に再emergeできるように、下記のようにしてIPv6対応パッケージを<path>packages</path>ファイルに書き込みます：
+</p>
+
+<pre caption="IPv6対応パッケージ">
+# <i>emerge -epv world | grep ipv6 | sed "s:^.*\\] ::; s:-[0-9]\\+.*::" | \\</i>
+&gt; <i>cut -d' ' -f1 > packages</i>
+</pre>
+
+<p>
+次に、現時点では再コンパイルしたくないパッケージを<path>packages</path>ファイルを開いて編集します。その後は下記を実行するだけです。
+</p>
+
+<pre>
+# <i>emerge `cat packages`</i>
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>IPv6仕様パッケージ</title>
+<body>
+
+<p>
+IPv6を扱うパッケージがいくつかあります。ほとんどは<path>/usr/portage/net-misc</path>に置かれています。
+</p>
+
+<table>
+<tr><th>Package</th><th>Description</th></tr>
+<tr><ti>net-misc/ipv6calc</ti><ti>IPv6アドレスを圧縮形式に変換します</ti></tr>
+<tr><ti>net-misc/nc6</ti><ti>IPv6とIPv4をサポートするnetcatです</ti></tr>
+<tr><ti>dev-perl/Socket6</ti><ti>Cの socket.h にある定義と構造体操作子（structure manipulators）のIPv6に関係のある部分です</ti></tr>
+</table>
+</body>
+</section>
+
+</chapter>
+<chapter>
+
+<title>DNSのセットアップ</title>
+
+<section>
+<title>IPv6とDNS</title>
+<body>
+
+<p>
+IPv4用のDNSがAレコードを使用するに対し、IPv6用のDNSはAAAAレコードを使用します。（これは、IPv4のアドレススペースが2の32乗であるのに対し、IPv6のアドレススペースは2の128乗であるという理由からです）。DNSの逆引き用としては、INT標準が最も多くサポートされています。ARPAは最近のフォーマットなので、INTのようにそれほど広く使われていません。ここではINTフォーマットで書かれています。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>BINDの設定</title>
+<body>
+
+<p>
+BINDの最近のバージョンはIPv6対応になっています。このセクションは、BINDの利用、および設定について最低限の知識があることを前提としています。また、chrootでbindを実行していないと仮定しています。もしあなたがchrootで実行しているのであれば、以下のセクションで、ほとんどのパスの前に単にchrootするパスを付け加えるだけです。
+</p>
+
+<p>
+最初に、<path>/etc/bind/named.conf</path>の正引き、逆引きの両方のDNSゾーンファイルにエントリを追加する必要があります。
+</p>
+
+<pre caption="named.confのエントリ">
+zone "ipv6-rules.com" IN {
+	type master;
+	file "pri/ipv6-rules.com";
+};
+<codenote>'ipv6-rules.com'ドメインの正引きDNSを提供します</codenote>
+zone "6.9.2.0.0.0.f.1.0.7.4.0.1.0.0.2.ip6.int" {
+	type master;
+	file "pri/rev-ipv6-rules.com.int";
+};
+<codenote>逆引きDNSのフォーマットは「ビット単位」です。IPv6アドレスの並びを逆にし、</codenote>
+<codenote>それぞれの16進数をピリオドで区切ります</codenote>
+</pre>
+
+<p>
+その後ゾーンファイルを作り、全てのホストのエントリを追加しましょう：
+</p>
+
+<pre caption="pri/ipv6-rules.com">
+$TTL    2h
+@       IN      SOA     ipv6-rules.com. webmaster.ipv6-rules.com.  (
+                                2003052501 ; Serial
+				28800      ; Refresh
+				14400      ; Retry
+				3600000    ; Expire
+				86400 )    ; Minimum
+			NS      ns1.ipv6-rules.com
+
+	IN	AAAA	2001:470:1f00:296::1 ; address for ipv6-rules.com
+host1	IN	AAAA	2001:470:1f00:296::2 ; address for host1.ipv6-rules.com
+host2	IN	AAAA	2001:470:1f00:296::3:3 ; address for host2.ipv6-rules.com
+</pre>
+
+<pre caption="pri/rev-ipv6-rules.com.int">
+$TTL 3d ; Default TTL (bind 8 needs this, bind 9 ignores it)
+@       IN SOA ipv6-rules.com. webmaster.ipv6-rules.com. (
+                        2003052501      ; Serial number (YYYYMMdd)
+			24h             ; Refresh time
+			30m             ; Retry time
+			2d              ; Expire time
+			3d )            ; Default TTL
+	IN      NS     ns1.ipv6-rules.com.
+; IPv6 PTR entries
+$ORIGIN 6.9.2.0.0.0.f.1.0.7.4.0.1.0.0.2.ip6.int.
+
+1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0 IN      PTR     ipv6-rules.com.
+2.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0 IN      PTR     host1.ipv6-rules.com.
+3.0.0.0.3.0.0.0.0.0.0.0.0.0.0.0 IN      PTR     host2.ipv6-rules.com.
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>djbdnsの設定</title>
+<body>
+
+<p>
+現在、IPv6のネームサービスが利用でき、<uri link="http://www.fefe.de/dns/">http://www.fefe.de/dns/</uri>から入手可能なdjbdnsのパッチが、サードパーティからいくつか出ています。USEフラグに"ipv6"を加えておくことで、djbdnsをemergeするときにこれらのパッチもあわせてインストールされます。
+</p>
+
+<warn>
+これらのパッチをあてたからといって全てのレコードタイプがサポートされるわけではありません。具体的には、NSとMXレコードはサポートされていません。
+</warn>
+
+<pre>
+# <i>USE="ipv6" emerge djbdns</i>
+</pre>
+
+<p>
+djbdnsをインストール後、<c>tinydns-setup</c>を実行します。どのIPアドレスをバインドするのか、tinydnsをどこにインストールするのかなど、いくつかの質問に答えていくことによってセットアップが完了します。
+</p>
+
+<pre caption = "セットアップ">
+# <i>tinydns-setup</i>
+</pre>
+
+<p>
+<c>tinydns</c>を<path>/var/tinydns</path>にインストールしたという前提で話を進めます。では<path>/var/tinydns/root/data</path>を編集しましょう。このファイルには、tinydnsにIPv6のDNSを処理させる必要がある全てのデータが含まれています。
+</p>
+
+<pre caption="dataファイルの例">
+.ipv6-rules.com:192.168.0.1:a:259200
+<codenote>*.ipv6-rules.comは、192.168.0.1が処理します</codenote>
+.6.9.2.0.0.0.f.1.0.7.4.0.1.0.0.2.ip6.int:192.168.0.1:a
+<codenote>2001:470:1f00:296::/64の逆引きDNS</codenote>
+6host1.ipv6-rules.com:200104701f0002960000000000000001:86400
+6host2.ipv6-rules.com:200104701f0002960000000000000002:86400
+<codenote>host1とhost2のIPアドレスを明示します</codenote>
+3www.ipv6-rules.com:200104701f0002960000000000000002:86400
+<codenote>wwwをhost1に振り向けます</codenote>
+</pre>
+
+<p>
+行頭に<c>6</c>がついている行は、AAAAレコードおよびPTRレコードの両方を生成します。行頭に<c>3</c>がついている行は、AAAAレコードだけを生成します。マニュアルで<path>data</path>ファイルを編集するほかに、新たなエントリを追加する方法として<c>add-host6</c>や<c>add-alias6</c>スクリプトを使うことができます。<path>data</path>ファイルの変更を終えた後、<path>/var/tinydns/root</path>ディレクトリで<c>make</c>する必要があります。この作業で<path>/var/tinydns/root/data.cfb</path>が生成され、DNSリクエストに応えるための情報源として、tinydnsが使用します。
+</p>
+
+</body>
+</section>
+
+</chapter>
+<chapter>
+
+<title>IPv6ルータ</title>
+
+<section>
+<title>ルーティングの設定</title>
+<body>
+
+<p>
+ほかのクライアントにもIPv6で外の世界（Internet）と通信させるためにLinuxをルータとして使いたいと思っているなら、さらなる設定が要求されます。IPv6のパケットをフォワーディング可能にする必要があります。方法は2通りあり、どちらの方法でも実現可能です。
+</p>
+
+<pre caption="フォワーディングを有効にする">
+# <i>echo 1 > /proc/sys/net/ipv6/conf/all/forwarding</i>
+または
+# <i>sysctl -w net.ipv6.conf.all.forwarding=1</i>
+</pre>
+
+<warn>
+radvdのinitスクリプトはフォワーディングをONにするので、次のステップが必要なくなります。
+</warn>
+
+<p>
+ブート時にフォワーディングをONにするには、<path>/etc/sysctl.conf</path>を編集し、以下の行を追加します。
+</p>
+
+<pre caption="sysctl.confへの追加">
+net.ipv6.conf.default.forwarding=1
+</pre>
+
+<p>
+トラフィックは今後、IPv6トンネル接続サービス事業者と自分のマシンを結ぶトンネルを通るようにフォワーディングされるはずです。
+</p>
+
+<p>
+クライアントにIPv6アドレスを割り当てるには、IPv6の仕様により、ステートレスIP割り当てとステートフルIP割り当ての2つがあります。ステートレス割り当てはルータ広告というプロセスを使用し、インタフェースがUPしたときに、クライアントがIPv6アドレスとデフォルトゲートウェイを取得できるようにします。IP割り当ての記録をせずにホストに割り当てを行うので、「ステートレス」と言われています。ステートフル割り当てはDHCPv6によって割り当てが行われます。どのクライアントがIPを要求して受け取ったのかといったクライアントの状態をサーバが保持しておくので、「ステートフル」と言われます。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>ステートレスの設定</title>
+<body>
+
+<p>
+ステートレスの設定は、ルータ広告デーモン、またはradvdを使うことで簡単にできます。
+</p>
+
+<pre caption="radvdのインストール">
+# <i>emerge radvd</i>
+</pre>
+
+<p>
+radvdのemergeが完了した後、<path>/etc/radvd/radvd.conf</path>を作成する必要があります。この設定ファイルには、どのIPアドレスブロックを割り当てるかといった情報を記述します。ここで、IPv6トンネル接続サービス事業者から割り当てられたIPv6アドレスを使った、<path>radvd.conf</path>ファイルの例を紹介しましょう。
+</p>
+
+<pre caption="radvd.confの例">
+interface eth0
+{
+        AdvSendAdvert on;
+	<codenote>広告メッセージを送ります</codenote>
+	AdvLinkMTU 1280;
+	MaxRtrAdvInterval 300;
+	prefix 2001:470:1F00:296::/64
+	<codenote>割り当てるIPアドレスブロック</codenote>
+	{
+		AdvOnLink on;
+		AdvAutonomous on;
+	};
+};
+</pre>
+
+<p>
+さらに細かい情報については、<c>man radvd.conf</c>を見てください。それではradvdを起動し、ブート時にも起動するように設定します。
+</p>
+
+<pre caption = "radvdの起動">
+# <i>/etc/init.d/radvd start</i>
+# <i>rc-update add radvd default</i>
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>ステートフルの設定</title>
+<body>
+
+<p>
+ステートフルを使いたいのであれば、dhcpv6をインストールし、設定する必要があります。
+</p>
+
+<pre caption = "dhcpv6のインストール">
+# <i>emerge dhcpv6</i>
+</pre>
+
+<p>
+次に、<path>/etc/dhcp6s.conf</path>を編集し、DHCPv6サーバの設定を行います。
+</p>
+
+<pre caption="dhcp6s.confの例">
+prefer-life-time 10000;
+valid-life-time 20000;
+renew-time 5000;
+rebind-time 8000;
+interface eth1 {
+	link AAA {
+		allow unicast;
+		send unicast;
+		allow rapid-commit;
+		send server-preference 5;
+		renew-time 1000;
+		rebind-time 2400;
+		prefer-life-time 2000;
+		valid-life-time 3000;
+                pool{
+                        range 2001:470:1f00:296::10 to 2001:470:1f00:296::110/64;
+                        prefix 2001:470:1f00:296::/64;
+                };
+	};
+};
+</pre>
+
+<p>
+それではdhcp6sを起動し、ブート時にも起動するように設定しましょう。
+</p>
+
+<pre caption = "dhcp6sの起動">
+# <i>/etc/init.d/dhcp6s start</i>
+# <i>rc-update add dhcp6s default</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>IPv6クライアント</title>
+<section>
+<title>radvdの使用</title>
+<body>
+
+<p>
+ルータの配下にあるクライアントが、自由にIPv6で通信できるようにします。radvdを使うのであれば、インタフェースがUPしたときに、hostsも設定されるようにすべきでしょう。（たいていの場合、net.ethXのinitスクリプトですでに行われています）。
+</p>
+
+<pre caption = "IPv6による接続">
+# <i>ifconfig eth0 up</i>
+# <i>ifconfig eth0</i>
+eth0      Link encap:Ethernet  HWaddr 00:09:6B:06:B7:B4
+          inet6 addr: fe80::209:6bff:fe06:b7b4/64 Scope:Link
+          inet6 addr: 2001:470:1f00:296:209:6bff:fe06:b7b4 Scope:Global
+          BROADCAST MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:4 errors:0 dropped:0 overruns:0 carrier:0 
+          collisions:0 txqueuelen:100
+          RX bytes:0 (0.0 b)  TX bytes:828 (828.0 b)
+          Interrupt:11 Base address:0x8400 Memory:d0204000-d0204038
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>DHCPv6の使用</title>
+<body>
+
+<p>
+ルータでDHCPv6を使用するようにセットアップするなら、クライアントもdhcpv6パッケージをインストールする必要があります。このインストール作業の後、<path>/etc/dhcp6c.conf</path>を編集してクライアントを設定する必要があります。
+</p>
+
+<pre caption="dhcp6c.confの例">
+interface eth0 {
+	send rapid-commit;
+	request prefix-delegation;
+	request domain-name-servers;
+	request temp-address;
+	iaid 11111;
+	renew-time 11000;
+	rebind-time 21000;
+};
+</pre>
+
+</body>
+</section>
+
+</chapter>
+
+<chapter>
+<title>6to4変換の使用</title>
+<section>
+<title>基本方針</title>
+<body>
+
+<p>
+IPv6のみの接続でIPv4のホストと通信するホストがあるという場合、6to4変換を使用します。全体的に内部ネットワークがIPv6であっても、外部のIPv4／IPv6環境にアクセスすることができます。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>DNSの設定</title>
+<body>
+
+<p>
+6to4変換を可能にするには、Ａレコードしかないサイトに対して、AAAAレコードを返信してくるようにDNSプロキシ（totd)を設定するする必要があります。このAAAAレコードは実際には存在していないIPv6アドレス（以下、フェイクアドレス）を指していますが、6to4プロキシを通してルーティングされます。<c>totd</c>はテスト待ちのため、まだ<c>~x86</c>のマスクがされています。
+</p>
+
+<pre caption = "totdのインストール">
+# <i>ACCEPT_KEYWORDS="~x86" emerge totd</i>
+</pre>
+
+<p>
+次に、基本的な設定情報を<path>/etc/totd.conf</path>に記述する必要があります。
+</p>
+
+<pre caption="/etc/totd.confの例">
+forwarder 192.168.0.2 port 53
+<codenote>実際のDNSネームサーバを指しています</codenote>
+prefix 3ffe:abcd:1234:9876::
+<codenote>AAAAレコードとして公開するフェイクアドレス</codenote>
+port 5005
+<codenote>totdを実行するときのポート番号</codenote>
+pidfile /var/run/totd.pid
+<codenote>PIDファイル</codenote>
+stf
+<codenote>6to4トンネルインタフェース</codenote>
+</pre>
+
+<note>
+ネームサーバが同一マシン上で動いている場合は、<c>totd</c>が使用するポート番号を53以外に設定してください。
+</note>
+
+</body>
+</section>
+
+<section>
+<title>6to4プロキシ</title>
+<body>
+
+<p>
+<c>ptrtd</c>は6to4プロキシとして使われます。6to4プロキシを使用することで、IPv6ホストはIPv4ホストとの通信が可能になります。
+</p>
+
+<pre caption = "ptrtdのインストール">
+# <i>ACCEPT_KEYWORDS="~x86" emerge ptrtd</i>
+</pre>
+
+<p>
+<c>ptrtd</c>の設定では、プロキシのコネクションを作れるように、フェイクアドレス（<c>totd</c>で設定したもの）を教える必要があります。<path>/etc/conf.d/ptrtd</path>を編集し、<c>IPV6_PREFIX</c>を設定します。これは<c>totd</c>で設定したIPv6アドレスと同一のものを設定しなければなりません。
+</p>
+
+<pre caption="/etc/ptrtd.confの例">
+IPV6_PREFIX="3ffe:abcd:1234:9876::"
+</pre>
+
+<p>
+それではtotdを起動し、ブート時にも起動できるようにしましょう。
+</p>
+
+<pre caption = "totdのスタート">
+# <i>/etc/init.d/totd start</i>
+# <i>rc-update add totd default</i>
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>クライアントの設定と確認</title>
+<body>
+
+<p>
+クライアントが、IPv6のみの接続でIPv4、IPv6両方のホストと通信できるように設定します。クライアントがすでにradvdからIPv6アドレスを受け取っている前提であれば、単に、新しいDNSのリゾルバのエントリや「フェイクアドレス」へのデフォルトルートを追加すれば大丈夫です。」最初に<path>/etc/resolv.conf</path>の一番上の行に、<c>totd</c>が起動しているマシンをネームサーバとするエントリを追加します。
+</p>
+
+<pre caption="/etc/resolv.confの例">
+nameserver 2001:470:1f00:296::1
+<codenote>totdが動いているサーバ</codenote>
+</pre>
+
+<p>
+名前解決ができるかをテストするには、IPv4のみのサイトにAAAAレコードをリクエストします。
+</p>
+
+<pre caption = "DNSのテスト">
+# <i>host -t aaaa google.com</i>
+google.com has AAAA address 3ffe:abcd:1234:9876::d8ef:3364
+google.com has AAAA address 3ffe:abcd:1234:9876::d8ef:3564
+</pre>
+
+<p>
+それではフェイクアドレスへのデフォルトルートを追加しましょう。
+</p>
+
+<pre caption="routeユーティリティの使用">
+# <i>route -A inet6 add 3ffe:abcd:1234:9876::/64 gw 2001:470:1f00:296::1</i>
+</pre>
+
+<pre caption="iprouteの使用">
+# <i>ip route add 3ffe:abcd:1234:9876::/64 via 2001:470:1f00:296::1 dev eth0</i>
+</pre>
+
+<p>
+最後に、<c>ping6</c>を使ってgoogle.comにpingします。
+</p>
+
+<pre caption="6to4のテスト">
+# <i>ping6 -c 2 google.com</i>
+PING 3ffe:abcd:1234:9876::d8ef:3364(3ffe:abcd:1234:9876::d8ef:3364) 56 data bytes
+64 bytes from 3ffe:abcd:1234:9876::d8ef:3364: icmp_seq=1 ttl=255 time=0.106 ms
+64 bytes from 3ffe:abcd:1234:9876::d8ef:3364: icmp_seq=2 ttl=255 time=0.090 ms
+
+--- 3ffe:abcd:1234:9876::d8ef:3364 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1000ms
+rtt min/avg/max/mdev = 0.090/0.098/0.106/0.008 ms
+</pre>
+
+<note>
+実際には<c>ptrtd</c>が動いているルータがリプライを返しているのですが、少なくとも正常に動いているのがわかります。
+</note>
+
+</body>
+</section>
+
+</chapter>
+
+<chapter>
+<title>参考情報</title>
+<body>
+
+<p>
+ネット上にはIPv6に関連したすばらしい情報源が数多くあります。
+</p>
+
+<table>
+<tr><th>ウェブサイト</th><th>情報源</th></tr>
+<tr><ti><uri link="http://www.ipv6.org/">www.ipv6.org</uri></ti><ti>一般的なIPv6に関する情報</ti></tr>
+<tr><ti><uri link="http://www.linux-ipv6.org/">www.linux-ipv6.org/</uri></ti><ti>USAGIプロジェクト</ti></tr>
+<tr><ti><uri link="http://www.deepspace6.net/">www.deepspace6.net</uri></ti><ti>Linux/IPv6サイト</ti></tr>
+<tr><ti><uri link="http://www.hs247.com/">www.hs247.com</uri></ti><ti>IPv6のすべて</ti></tr>
+<tr><ti><uri link="http://www.ipv6-net.org/">www.ipv6-net.org</uri></ti><ti>ドイツのIPv6サイト</ti></tr>
+<tr><ti><uri link="http://www.kame.net/">www.kame.net</uri></ti><ti>*BSDの実装</ti></tr>
+</table>
+
+<p>
+IRCを使っているなら、<uri link="http://www.freenode.net">Freenode</uri>で<c>#gentoo-ipv6</c>や<c>#ipv6</c>を試してみてはいかがでしょう。IPv6対応クライアントを使えば、<b>irc.ipv6.freenode.net</b>にアクセスすることでFreenodeサーバに接続できますよ。
+</p>
+
+</body>
+</chapter>
+
+
+</guide>
+

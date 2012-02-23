@@ -1,0 +1,393 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-system.xml,v 1.120 2011/08/22 16:58:02 swift Exp $ -->
+
+<sections>
+
+<abstract>
+After installing and configuring a stage3, the eventual result is that you
+have a Gentoo base system at your disposal. This chapter describes how
+to progress to that state.
+</abstract>
+
+<version>12</version>
+<date>2011-08-22</date>
+
+<section>
+<title>Chrooting</title>
+<subsection>
+<title>Optional: Selecting Mirrors</title>
+<body>
+
+<p>
+In order to download source code quickly it is recommended to select a fast
+mirror. Portage will look in your <path>make.conf</path> file for the
+GENTOO_MIRRORS variable and use the mirrors listed therein. You can surf to
+our <uri link="/main/en/mirrors.xml">mirror list</uri> and search
+for a mirror (or mirrors) close to you (as those are most frequently the 
+fastest ones), but we provide a nice tool called <c>mirrorselect</c> which
+provides you with a nice interface to select the mirrors you want. Just 
+navigate to the mirrors of choice and press spacebar to select one or more
+mirrors.
+</p>
+  
+<pre caption="Using mirrorselect for the GENTOO_MIRRORS variable">
+# <i>mirrorselect -i -o &gt;&gt; /mnt/gentoo/etc/make.conf</i>
+</pre>
+
+<p>
+A second important setting is the SYNC setting in <path>make.conf</path>. This
+variable contains the rsync server you want to use when updating your Portage
+tree (the collection of ebuilds, scripts containing all the information Portage
+needs to download and install software). Although you can manually enter a SYNC
+server for yourself, <c>mirrorselect</c> can ease that operation for you:
+</p>
+
+<pre caption="Selecting an rsync mirror using mirrorselect">
+# <i>mirrorselect -i -r -o &gt;&gt; /mnt/gentoo/etc/make.conf</i>
+</pre>
+
+<p>
+After running <c>mirrorselect</c> it is adviseable to double-check the settings
+in <path>/mnt/gentoo/etc/make.conf</path> !
+</p>
+
+<note>
+If you want to manually set a SYNC server in <path>make.conf</path>, you should
+check out the <uri link="/main/en/mirrors-rsync.xml">community mirrors
+list</uri> for the mirrors closest to you. We recommend choosing a
+<e>rotation</e>, such as <c>rsync.us.gentoo.org</c>, rather than choosing a
+single mirror. This helps spread out the load and provides a failsafe in case a
+specific mirror is offline.
+</note>
+
+</body>
+</subsection>
+<subsection>
+<title>Copy DNS Info</title>
+<body>
+
+<p>
+One thing still remains to be done before we enter the new environment and that
+is copying over the DNS information in <path>/etc/resolv.conf</path>. You need
+to do this to ensure that networking still works even after entering the new
+environment. <path>/etc/resolv.conf</path> contains the nameservers for your
+network.
+</p>
+
+<pre caption="Copy over DNS information">
+<comment>(The "-L" option is needed to make sure we don't copy a symbolic link)</comment>
+# <i>cp -L /etc/resolv.conf /mnt/gentoo/etc/</i>
+</pre>
+
+</body>
+</subsection>
+<subsection test="not(func:keyval('arch')='IA64')">
+<title>Mounting the /proc and /dev Filesystems</title>
+<body>
+
+<p>
+In a few moments, we will change the Linux root towards the new location. To
+make sure that the new environment works properly, we need to make certain file
+systems available there as well.
+</p>
+
+<p>
+Mount the <path>/proc</path> filesystem on <path>/mnt/gentoo/proc</path> to
+allow the installation to use the kernel-provided information within the
+chrooted environment, and then mount-bind the <path>/dev</path> filesystem.
+</p>
+
+<pre caption="Mounting /proc and /dev">
+# <i>mount -t proc none /mnt/gentoo/proc</i>
+# <i>mount --rbind /dev /mnt/gentoo/dev</i>
+</pre>
+
+</body>
+</subsection>
+<subsection test="func:keyval('arch')='IA64'">
+<title>Mounting the /proc, /sys and /dev Filesystems</title>
+<body>
+
+<p>
+Mount the <path>/proc</path> filesystem on <path>/mnt/gentoo/proc</path> to
+allow the installation to use the kernel-provided information within the
+chrooted environment, and then mount-bind the <path>/dev</path> and
+<path>/sys</path> filesystems.
+</p>
+
+<pre caption="Mounting /proc /sys and /dev">
+# <i>mount -t proc none /mnt/gentoo/proc</i>
+# <i>mount --rbind /dev /mnt/gentoo/dev</i>
+# <i>mount --rbind /sys /mnt/gentoo/sys</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Entering the new Environment</title>
+<body>
+
+<p>
+Now that all partitions are initialized and the base environment
+installed, it is time to enter our new installation environment by
+<e>chrooting</e> into it. This means that we change from the current
+installation environment (Installation CD or other installation medium) to your
+installation system (namely the initialized partitions).
+</p>
+
+<p>
+This chrooting is done in three steps. First we will change the root
+from <path>/</path> (on the installation medium) to <path>/mnt/gentoo</path> 
+(on your partitions) using <c>chroot</c>. Then we will create a new environment
+using <c>env-update</c>, which essentially creates environment variables.
+Finally, we load those variables into memory using <c>source</c>.
+</p>
+
+<pre caption = "Chrooting into the new environment">
+# <i>chroot /mnt/gentoo /bin/bash</i>
+# <i>env-update</i>
+>> Regenerating /etc/ld.so.cache...
+# <i>source /etc/profile</i>
+# <i>export PS1="(chroot) $PS1"</i>
+</pre>
+
+<p>
+Congratulations! You are now inside your own Gentoo Linux environment.
+Of course it is far from finished, which is why the installation still
+has some sections left :-)
+</p>
+
+</body>
+</subsection>
+</section>
+
+<section>
+<title>Configuring Portage</title>
+<subsection>
+<title>Updating the Portage tree</title>
+<body>
+
+<p>
+You should now update your Portage tree to the latest version. <c>emerge 
+--sync</c> does this for you.
+</p>
+
+<pre caption="Updating the Portage tree">
+# <i>emerge --sync</i>
+<comment>(If you're using a slow terminal like some framebuffers or a serial
+console, you can add the --quiet option to speed up this process:)</comment>
+# <i>emerge --sync --quiet</i>
+</pre>
+
+<p>
+If you are behind a firewall that blocks rsync traffic, you can use
+<c>emerge-webrsync</c> which will download and install a portage snapshot for
+you.
+</p>
+
+<p>
+If you are warned that a new Portage version is available and that you should
+update Portage, you should do it now using <c>emerge --oneshot portage</c>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Choosing the Right Profile</title>
+<body>
+
+<p>
+First, a small definition is in place.
+</p>
+
+<p>
+A profile is a building block for any Gentoo system. Not only does it specify
+default values for USE, CFLAGS and other important variables, it also locks
+the system to a certain range of package versions. This is all maintained by the
+Gentoo developers.
+</p>
+
+<p>
+Previously, such a profile was untouched by the users. However, there may be
+certain situations in which you may decide a profile change is necessary.
+</p>
+
+<p>
+You can see what profile you are currently using with the following command:
+</p>
+
+<pre caption="Verifying system profile">
+# <i>eselect profile list</i>
+Available profile symlink targets:
+  [1]   <keyval id="profile"/> *
+  [2]   <keyval id="profile"/>/desktop
+  [3]   <keyval id="profile"/>/server
+</pre>
+
+<p>
+The default profile will provide you with a Linux 2.6-based system. This is the
+recommended default, but you have the option of choosing another profile too.
+</p>
+
+<p>
+There are also <c>desktop</c> and <c>server</c> subprofiles available for some
+architectures. Running <c>eselect profile list</c> will show all available
+profiles.
+</p>
+
+<p>
+After viewing the available profiles for your architecture, you can use a
+different one if you wish:
+</p>
+
+<pre caption="Changing profiles">
+# <i>eselect profile set 2</i>
+</pre>
+
+<p test="func:keyval('arch')='AMD64'">
+If you want to have a pure 64-bit environment, with no 32-bit applications or
+libraries, you should use a non-multilib profile:
+</p>
+
+<pre test="func:keyval('arch')='AMD64'" caption="Switching to a non-multilib profile">
+# <i>eselect profile list</i>
+Available profile symlink targets:
+  [1]   <keyval id="profile"/> *
+  [2]   <keyval id="profile"/>/desktop
+  [3]   <keyval id="profile"/>/no-multilib
+  [4]   <keyval id="profile"/>/server
+<comment>(Choose the no-multilib profile)</comment>
+# <i>eselect profile set 3</i>
+<comment>(Verify the change)</comment>
+# <i>eselect profile list</i>
+Available profile symlink targets:
+  [1]   <keyval id="profile"/>
+  [2]   <keyval id="profile"/>/desktop
+  [3]   <keyval id="profile"/>/no-multilib *
+  [4]   <keyval id="profile"/>/server
+</pre>
+
+<note>
+The <c>developer</c> subprofile is specifically for Gentoo Linux development
+tasks. It is <e>not</e> meant to help set up general development environments.
+</note>
+
+</body>
+</subsection>
+<subsection id="configure_USE">
+<title>Configuring the USE variable</title>
+<body>
+
+<p>
+<c>USE</c> is one of the most powerful variables Gentoo provides to its users.
+Several programs can be compiled with or without optional support for certain
+items. For instance, some programs can be compiled with gtk-support, or with
+qt-support. Others can be compiled with or without SSL support. Some programs
+can even be compiled with framebuffer support (svgalib) instead of X11 support
+(X-server).
+</p>
+
+<p>
+Most distributions compile their packages with support for as much as possible,
+increasing the size of the programs and startup time, not to mention an enormous
+amount of dependencies. With Gentoo you can define what options a package 
+should be compiled with. This is where <c>USE</c> comes into play.
+</p>
+
+<p>
+In the <c>USE</c> variable you define keywords which are mapped onto
+compile-options. For instance, <e>ssl</e> will compile ssl-support in the
+programs that support it. <e>-X</e> will remove X-server support (note the
+minus sign in front). <e>gnome gtk -kde -qt4</e> will compile your
+programs with gnome (and gtk) support, and not with kde (and qt) support,
+making your system fully tweaked for GNOME.
+</p>
+
+<p>
+The default <c>USE</c> settings are placed in the <path>make.defaults</path> 
+files of your profile. You will find <path>make.defaults</path> files in the
+directory which <path>/etc/make.profile</path> points to and all parent 
+directories as well. The default <c>USE</c> setting is the sum of all <c>USE</c>
+settings in all <path>make.defaults</path> files. What you place in
+<path>/etc/make.conf</path> is calculated against these defaults settings. If
+you add something to the <c>USE</c> setting, it is added to the default list. If
+you remove something from the <c>USE</c> setting (by placing a minus sign in
+front of it) it is removed from the default list (if it was in the default list
+at all). <e>Never</e> alter anything inside the <path>/etc/make.profile</path>
+directory; it gets overwritten when you update Portage!
+</p>
+
+<p>
+A full description on <c>USE</c> can be found in the second part of the Gentoo
+Handbook, <uri link="?part=2&amp;chap=2">USE flags</uri>. A full description on
+the available USE flags can be found on your system in
+<path>/usr/portage/profiles/use.desc</path>. 
+</p>
+
+<pre caption="Viewing available USE flags">
+# <i>less /usr/portage/profiles/use.desc</i>
+<comment>(You can scroll using your arrow keys, exit by pressing 'q')</comment>
+</pre>
+
+<p>
+As an example we show a <c>USE</c> setting for a KDE-based system with DVD, ALSA
+and CD Recording support:
+</p>
+
+<pre caption="Opening /etc/make.conf">
+# <i>nano -w /etc/make.conf</i>
+</pre>
+
+<pre caption="USE setting">
+USE="-gtk -gnome qt4 kde dvd alsa cdr"
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Optional: glibc Locales</title>
+<body>
+
+<p>
+You will probably only use one or maybe two locales on your system. You can
+specify locales you will need in <path>/etc/locale.gen</path>.
+</p>
+
+<pre caption="Opening /etc/locale.gen">
+# <i>nano -w /etc/locale.gen</i>
+</pre>
+
+<p>
+The following locales are an example to get both English (United States) and
+German (Germany) with the accompanying character formats (like UTF-8).
+</p>
+
+<pre caption="Specify your locales">
+en_US ISO-8859-1
+en_US.UTF-8 UTF-8
+de_DE ISO-8859-1
+de_DE@euro ISO-8859-15
+</pre>
+
+<p>
+The next step is to run <c>locale-gen</c>. It will generate all the locales you
+have specified in the <path>/etc/locale.gen</path> file.
+</p>
+
+<pre caption="Running locale-gen">
+# <i>locale-gen</i>
+</pre>
+
+<p>
+Now continue with <uri link="?part=1&amp;chap=7">Configuring the Kernel</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

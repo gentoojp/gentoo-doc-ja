@@ -1,0 +1,217 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/gnome-config.xml,v 1.6 2006/09/25 14:37:26 idani Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/gnome-config.xml" lang="ja">
+
+<title>GNOME設定ガイド</title>
+
+<author title="Author">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Editor">
+  <mail link="lars@strojny.net">Lars Strojny</mail>
+</author>
+<author title="翻訳"><mail link="ikeda@cs.comp.kyutech.ac.jp">池田健吾</mail>
+</author>
+  <author title="翻訳"><mail link="murakami.taku@gmail.com">Taku Murakami</mail>
+</author>
+
+<abstract>
+よく使われるデスクトップ環境といえばGNOMEです。 
+このガイドでは、インストール、設定、利用法といったGNOMEのすべてを紹介します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.8</version>
+<date>2006-09-09</date>
+<!-- Original revision: 1.9 -->
+<chapter>
+<title>GNOMEとは？</title>
+<section>
+<title>プロジェクト</title>
+<body>
+
+<p>
+<uri link="http://www.gnome.org">GNOME</uri>プロジェクトとは、UnixやLinux用のデスクトップスイートとその開発環境であるGNOMEを開発しているフリーソフトウェアプロジェクトです。
+<uri link="http://foundation.gnome.org">GNOME Foundation</uri>は、GNOMEプロジェクトにおける開発やその他の面の調整を行っています。
+</p>
+
+</body>
+</section>
+<section>
+<title>ソフトウェア</title>
+<body>
+
+<p>
+GNOMEはデスクトップ環境であり、開発環境でもあります。
+このフリーソフトウェアは、何人かの業界リーダーたちが使っているデスクトップ環境です。
+ビジネスユーザやホームユーザと同様に開発者にも興味深いものです。
+</p>
+
+</body>
+</section>
+<section>
+<title>コミュニティ</title>
+<body>
+
+<p>
+他の有名なソフトウェアプロジェクトと同様に、GNOMEにもユーザあるいは開発者のためのコミュニティサイトがあります。
+<uri link="http://www.gnomedesktop.org">Footnotes</uri>には、
+GNOMEデスクトップユーザ向けのニュースが掲載されています。<uri link="http://planet.gnome.org">GnomePlanet</uri>はマニアや貢献者のためのサイトです。また、<uri link="http://developer.gnome.org">Developer.Gnome.Org</uri>はGNOME開発者のためのサイトです。
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>GNOMEのインストール</title>
+<section>
+<title>何が必要?</title>
+<body>
+
+<p>
+GNOMEのインストールを始める前に、USE変数を編集するべきかもしれません。
+<path>/etc/make.conf</path> にリストされているUSE変数の中に<c>gtk</c>や<c>gnome</c>があるか確認してください。
+もし<c>hald</c>（ハードウェア抽象化層デーモン）のサポートが必要なら、<c>hal</c>をUSEフラグに追加しましょう。
+USEフラグ<c>avahi</c>は、GNOMEにDNS検出機能を追加します(Mac OS XにおけるRendevouzと似たものです)。
+あなたがKDE(GNOMEとは別の有名なデスクトップ環境)を必要としないなら、<c>qt*</c>、<c>arts</c>、そして<c>kde</c>を削除してください。
+</p>
+
+<pre caption="/etc/make.confに記述されているUSE変数の例">
+USE="-qt -qt3 -qt4 -arts -kde gtk gnome hal avahi"
+</pre>
+
+<p>
+<c>gnome</c>と<c>xscreensaver</c>をemergeすればGNOMEのインストールが始まります。
+</p>
+
+<pre caption="GNOMEのインストール">
+# <i>emerge gnome xscreensaver</i>
+</pre>
+
+<p>
+また、<c>gnome-light</c>を使ってGNOMEを最小インストールすることもできます。
+</p>
+  	 
+<pre caption="GNOME環境の最小インストール">
+# <i>emerge gnome-light</i>
+</pre>
+
+<p>
+インストールには時間がかかるので、母親が買ってきたけれども全く読んでいないような本を読み始めると良いでしょう。インストールは完了しましたか？
+よろしい、それでは環境変数を更新しましょう。
+</p>
+
+<pre caption="環境変数の更新">
+# <i>env-update &amp;&amp; source /etc/profile</i>
+</pre>
+
+<p>
+前回の<c>emerge</c>の出力を注意深く見ていたならば、
+nautilusやgnome-vfsにファイルの変更を監視させるために<c>gamin</c>の
+使用を勧めるメッセージに気づいたでしょう。
+</p>
+
+<pre caption="ファイルの変更を検知するためにgaminをインストールする">
+# <i>emerge gamin</i>
+</pre>
+
+<impo>
+<c>fam</c>(廃止予定の旧ファイルモニタ)から<c>gamin</c>へ切り替えを行う場合、すべてのrunlevelから<c>famd</c>を削除し、その後unmergeする必要があります。
+</impo>
+
+<pre caption="gaminへ変更する">
+# <i>rc-update del famd default</i>
+# <i>emerge --unmerge fam</i>
+</pre>
+
+<p>
+Next we'll clean up the remaining runlevels.
+次に、残っているrunlevelへの作業を片付けます。
+</p>
+
+<pre caption="hald、avahi-dnsconfdをdefaultランレベルに追加する">
+# <i>/etc/init.d/hald start</i>
+# <i>rc-update add hald default</i>
+
+# <i>/etc/init.d/avahi-dnsconfd start</i>
+# <i>rc-update add avahi-dnsconfd default</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>第一印象</title>
+<body>
+
+<p>
+まず、先ほどインストールしたものを実際に見てみましょう。
+root シェルを終了し、一般ユーザとしてログインしてください。
+  そして<c>startx</c>コマンドを入力するとGNOMEが起動するようにセッションを設定しましょう(<uri link="/doc/en/xorg-config.xml">X Server Configuration Howto</uri><uri link="/doc/ja/xorg-config.xml">(日本語訳)</uri>の<uri link="/doc/en/xorg-config.xml#using_startx">Using startx</uri><uri link="/doc/ja/xorg-config.xml#using_startx">(日本語訳)</uri>も見てください)。
+</p>
+
+<pre caption="GNOMEをデフォルトのデスクトップ環境にする">
+$ <i>echo "exec gnome-session" &gt; ~/.xinitrc</i>
+</pre>
+
+<p>
+では<c>startx</c>を実行してグラフィカル環境を起動してください。
+</p>
+
+<pre caption="GNOMEの起動">
+$ <i>startx</i>
+</pre>
+
+<p>
+すべてがうまくいけば、あなたはGNOMEに迎えられるでしょう。おめでとうございます。
+では、あなた好みにGNOMEを設定する方法について見ていきましょう。
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>GNOMEの設定</title>
+<section>
+<title>GNOMEのグラフィカルログインマネージャ</title>
+<body>
+
+<p>
+ブートしたときに自動的にGNOMEデスクトップマネージャ(GDM)を実行したい場合(これによりグラフィカルにログインできるようになります)、<c>xdm</c>のinitスクリプトをdefaultランレベルに追加しなければなりません。
+</p>
+
+<pre caption="xdmをdefaultランレベルに追加する">
+# <i>rc-update add xdm default</i>
+</pre>
+
+<p>
+では<path>/etc/rc.conf</path>を編集し、DISPLAYMANAGER変数の値を変更しましょう。
+</p>
+
+<pre caption="/etc/rc.confを編集する">
+DISPLAYMANAGER="gdm"
+</pre>
+
+<p>
+リブートすると、
+GNOMEデスクトップマネージャがあなたのユーザ名とパスワードの入力を促し、
+通常のデスクトップ環境としてGNOMEを使うようになるでしょう（もちろん、
+<path>/usr/share/xsessions/</path>内の利用可能な他のセッションを選び、
+違う環境にすることもできます）。
+このように、GDMを使う場合は<path>~./xinitrc</path>を編集する必要がないのです。
+</p>
+
+<p>
+<c>hald</c>の機能を使うためには、<c>gnome-volume-manager</c>を起動してその設定を調整してください。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

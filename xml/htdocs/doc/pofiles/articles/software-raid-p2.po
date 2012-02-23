@@ -1,0 +1,702 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/articles/software-raid-p2.xml:6
+#, no-wrap
+msgid "Software RAID in the new Linux 2.4 kernel, Part 2"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/articles/software-raid-p2.xml:14
+#, no-wrap
+msgid ""
+"In this two-part series, Daniel Robbins introduces you to Linux 2.4 \n"
+"Software RAID, a technology used to increase disk performance and \n"
+"reliability by distributing data over multiple disks. In this article, \n"
+"Daniel explains what software RAID-1, 4, and 5 can and cannot do for \n"
+"you and how you should approach the implementation of these RAID \n"
+"levels in a production environment. In the second half of the article, \n"
+"Daniel walks you through the simulation of a RAID-1 failed drive \n"
+"replacement.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/software-raid-p2.xml:33
+#, no-wrap
+msgid "Setting up RAID-1 in a production environment"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/software-raid-p2.xml:35
+#, no-wrap
+msgid "Real-world RAID"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:39
+#, no-wrap
+msgid ""
+"In my <uri link=\"/doc/en/articles/software-raid-p1.xml\">previous \n"
+"article</uri>, I introduced you to Linux 2.4's software RAID \n"
+"functionality, showing you how to set up linear, RAID-0, and RAID-1 \n"
+"volumes. In this article, we look at what you need to know in order to \n"
+"use RAID-1 to increase availability in a production environment. This \n"
+"requires a lot more understanding and knowledge than just setting up \n"
+"RAID-1 on a test server or at home -- specifically, you'll need to \n"
+"know exactly what RAID-1 will protect you against, and how to keep \n"
+"your RAID volume up and running in case of a disk failure. In this \n"
+"article, we'll cover these topics, starting with an overview of what \n"
+"RAID-1, 4, and 5 can and can't do for you, and ending with a complete \n"
+"test simulation of a failed RAID 1 drive replacement -- something that \n"
+"you should actually do (with this article as your guide) if at all \n"
+"possible. After going through the simulation, you'll have all the \n"
+"experience you need to handle a RAID-1 failure in a real-world \n"
+"environment.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/software-raid-p2.xml:60
+#, no-wrap
+msgid "What RAID doesn't do"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:64
+#, no-wrap
+msgid ""
+"The fault-tolerant features of RAID are designed to protect you from \n"
+"the negative impacts of a spontaneous complete drive failure. That's \n"
+"a good thing. But RAID isn't a perfect fix for every kind of \n"
+"reliability problem. Before implementing a fault-tolerant form of RAID \n"
+"(1,4,5) in a production environment, it's extremely important that you \n"
+"know exactly what RAID will and <b>will not</b> do for you. When we're \n"
+"in a situation where we're depending on RAID to perform, we don't want \n"
+"to make any false assumptions about what it does. Let's start by \n"
+"dispelling common myths about RAID 1, 4, and 5.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:76
+#, no-wrap
+msgid ""
+"A lot of people think that if they place all their important data on a \n"
+"RAID 1/4/5 volume, then they won't have to perform regular backups. \n"
+"This is completely false -- here's why. RAID 1/4/5 helps to protect \n"
+"against unplanned <e>downtime</e> caused by a random drive failure. \n"
+"However, it offers no protection against accidental or malicious \n"
+"<e>data corruption</e>. If you type <c>cd /; rm -rf *</c> as root on a \n"
+"RAID volume, you'll lose a lot of very important data in a matter of \n"
+"seconds, and the fact that you have a 10 drive RAID-5 configuration will \n"
+"be of little significance. Also, RAID won't help you if your server is \n"
+"physically stolen or if there's a fire in your building. And of course, \n"
+"if you don't implement a backup strategy, you won't have an archive of \n"
+"past data -- if someone in your office deletes a bunch of important \n"
+"files, you won't be able to recover them. That alone should be enough \n"
+"to convince you that, in most circumstances, you should plan and \n"
+"implement a backup strategy <e>before</e> even thinking about tackling \n"
+"RAID-1, 4, or 5.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:95
+#, no-wrap
+msgid ""
+"Another mistake is to implement software RAID on a system composed of \n"
+"low-quality hardware. If you're putting together a server that's going \n"
+"to do something important, it makes sense to purchase the \n"
+"highest-quality hardware that's still comfortably within your budget. \n"
+"If your system is unstable or improperly cooled, you'll run into \n"
+"problems that RAID can't solve. On a similar note, RAID obviously can't \n"
+"give you any additional uptime in the case of a power outage. If your \n"
+"server is going to be doing anything relatively important, make sure \n"
+"that it's been equipped with an uninterruptible power supply (UPS).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:107
+#, no-wrap
+msgid ""
+"Next, we move on to filesystem issues. The filesystem exists \"on top\" \n"
+"of your software RAID volume. This means that using software RAID does \n"
+"not allow you to escape filesystem issues, such as long and potentially \n"
+"problematic <c>fsck</c>s if you happen to be using a non-journalled or \n"
+"flaky filesystem. So, software RAID isn't going to make the ext2 \n"
+"filesystem more reliable; that's why it's so important that the Linux \n"
+"community has ReiserFS, as well as JFS and XFS in the works. Software \n"
+"RAID and a reliable journalling filesystem make a great combination.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/software-raid-p2.xml:120
+#, no-wrap
+msgid "RAID - intelligent implementation"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:124
+#, no-wrap
+msgid ""
+"Hopefully, the previous section dispelled any RAID myths that you might \n"
+"have had. When you implement RAID-1, 4, or 5, it's very important that \n"
+"you view the technology as something that will enhance <e>uptime</e>. \n"
+"When you implement one of these RAID levels, you're protecting yourself \n"
+"against a very specific situation -- a spontaneous complete (single or \n"
+"multiple) drive failure. If you experience this situation, software \n"
+"RAID will allow the system to continue running, while you make \n"
+"arrangements to replace the failed drive with a new one. In other words, \n"
+"if you implement RAID 1, 4, or 5, you'll be reducing your risk of \n"
+"having a long, unplanned downtime due to a complete drive failure. \n"
+"Instead, you can have a short planned downtime -- just enough time to \n"
+"replace the dead drive. Obviously, this means that if having a \n"
+"highly-available system isn't a priority for you, then you shouldn't be \n"
+"implementing software RAID, unless you plan to use it primarily as a \n"
+"way to boost file I/O performance.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:142
+#, no-wrap
+msgid ""
+"A smart system administrator uses software RAID for a specific purpose \n"
+"-- to improve the reliability of an already very reliable server. If \n"
+"you're a smart sysadmin, you've already covered the basics. You've \n"
+"protected your organization against catastrophe by implementing a \n"
+"regular backup plan. You've hooked your server up to a UPS, and have \n"
+"the UPS monitoring software up and running so that your server will \n"
+"shut down safely in the case of an extended power outage. Maybe you're \n"
+"using a journalling filesystem such as ReiserFS to reduce <c>fsck</c> \n"
+"time and increase filesystem reliability and performance. And hopefully, \n"
+"your server is well-cooled and is composed of high-quality hardware, \n"
+"and you've paid close attention to security issues. Now, and only now, \n"
+"should you consider implementing software RAID-1, 4 or 5 -- by doing so, \n"
+"you'll potentially give your server a few more percentage points of \n"
+"uptime by guarding it against a complete drive failure. Software RAID \n"
+"is that added layer of protection that makes an already rugged server \n"
+"even better.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/software-raid-p2.xml:165
+#, no-wrap
+msgid "A RAID-1 walkthrough"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:170
+#, no-wrap
+msgid ""
+"Now that you've read about what RAID can and can't do, I hope you have \n"
+"reasonable expectations and the right attitude. In this section, I'll \n"
+"walk you through the process of simulating a disk failure, and then \n"
+"bringing your RAID volume back out of degraded mode. If you're have the \n"
+"ability to set up a RAID-1 volume on a test machine and follow along \n"
+"with me, I highly recommend that you do so. This kind of simulation can \n"
+"be fun. And having a little fun right now will help to ensure that when \n"
+"a drive really fails, you'll be calm and collected, and know exactly \n"
+"what to do.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/articles/software-raid-p2.xml:182
+#, no-wrap
+msgid ""
+"To perform this test, it's essential that you set up your RAID-1 volume \n"
+"so that you can still boot your Linux system with one hard drive \n"
+"unplugged, because this is how we're going to simulate a drive failure.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:188
+#, no-wrap
+msgid ""
+"OK, our first step is to set up a RAID-1 volume; refer to my <uri \n"
+"link=\"/doc/en/articles/software-raid-p1.xml\">previous article</uri> if \n"
+"you need a refresher on how to do this. Once you've set up your volume, \n"
+"you'll see something like this if you <c>cat /proc/mdstat</c>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:194
+#, no-wrap
+msgid "Examining the RAID volume"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:195
+#, no-wrap
+msgid ""
+"# <i>cat /proc/mdstat</i>\n"
+"Personalities : [linear] [raid0] [raid1] [raid5] \n"
+"read_ahead 1024 sectors\n"
+"md0 : active raid1 ide/host2/bus0/target0/lun0/part1[1] ide/host0/bus0/target0/lun0/part5[0]\n"
+"      4610496 blocks [2/2] [UU]\n"
+"      [======&gt;..............]  resync = 34.8% (1606276/4610496) finish=3.2min speed=15382K/sec\n"
+"\n"
+"unused devices: &lt;none&gt;\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:206
+#, no-wrap
+msgid ""
+"Note that I'm using devfs, and that's why you see the extremely long \n"
+"device names listed above. I'm actually using <path>/dev/hda5</path> \n"
+"and <path>/dev/hde1</path> as my RAID-1 disks. At the moment, the \n"
+"kernel software RAID code is synchronizing the drives so that they're \n"
+"exact mirrors of each other. If your RAID-1 volume is at this point, \n"
+"you can go ahead and create a filesystem on the volume, and then \n"
+"mount it somewhere. Copy some files over to it, and then set up your \n"
+"<path>/etc/fstab</path> so that the volume (<path>/dev/md0</path>) \n"
+"will be mounted when your system boots. Here's the line I added to my \n"
+"fstab; yours may differ slightly:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:218
+#, no-wrap
+msgid "fstab information"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:219
+#, no-wrap
+msgid "/dev/md0       /mnt/raid1              reiserfs        defaults            0 0\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:223
+#, no-wrap
+msgid ""
+"OK; we're almost ready to simulate a drive failure, but not quite. \n"
+"First, <c>cat /proc/mdstat</c> again, and wait until all your \n"
+"volume's disks are synchronized. When they are, your \n"
+"<path>/proc/mdstat</path> will look like this:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:229
+#, no-wrap
+msgid "Re-examining the RAID volume"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:230
+#, no-wrap
+msgid ""
+"# cat /proc/mdstat \n"
+"Personalities : [linear] [raid0] [raid1] [raid5] \n"
+"read_ahead 1024 sectors\n"
+"md0 : active raid1 ide/host2/bus0/target0/lun0/part1[1] ide/host0/bus0/target0/lun0/part5[0]\n"
+"      4610496 blocks [2/2] [UU]\n"
+"      \n"
+"unused devices: &lt;none&gt;\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/software-raid-p2.xml:242
+#, no-wrap
+msgid "The simulation begins"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:246
+#, no-wrap
+msgid ""
+"OK, now that the resync is complete, we're ready for the \n"
+"simulation. Go ahead and shut down your machine and power it \n"
+"down. Then, open it up and unplug one of the hard disks that \n"
+"make up your RAID-1 array. Of course, you won't want to unplug \n"
+"the disk that contains your Linux root partition -- we'll need \n"
+"to boot Linux again! OK, now that the hard drive is unplugged, \n"
+"bring the machine back up. Once you log in, you should find that \n"
+"<path>/dev/md0</path> is mounted and that you're still able to \n"
+"use the volume. When you <c>cat /proc/mdstat</c>, you'll see \n"
+"the major change:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:258
+#, no-wrap
+msgid "Missing a disk"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:259
+#, no-wrap
+msgid ""
+"# <i>cat /proc/mdstat</i>\n"
+"Personalities : [linear] [raid0] [raid1] [raid5]\n"
+"read_ahead 1024 sectors\n"
+"md0 : active raid1 ide/host0/bus0/target0/lun0/part5[0]\n"
+"      4610496 blocks [2/1] [U_]\n"
+" \n"
+"unused devices: &lt;none&gt;\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:269
+#, no-wrap
+msgid ""
+"Here, you can see that my <path>/dev/md0</path> volume is running \n"
+"in degraded mode. I unplugged drive <path>/dev/hde</path>, so \n"
+"<path>/dev/hde1</path> wasn't found when the kernel booted and \n"
+"tried to autostart my array. Fortunately, the kernel found \n"
+"<path>/dev/hda5</path>, and <path>/dev/md0</path> was able to \n"
+"start in degraded mode. As you can see, the <path>/dev/hde1</path> \n"
+"partition isn't listed in <path>/proc/mdstat</path>, and one of the \n"
+"RAID disks is marked as \"down\" (<c>[U_]</c> instead of \n"
+"<c>[UU]</c>). But hey, since <path>/dev/md0</path> is still going, \n"
+"software RAID-1 is doing what it's supposed to do: keeping our data \n"
+"available.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/software-raid-p2.xml:285
+#, no-wrap
+msgid "Recovery"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:289
+#, no-wrap
+msgid ""
+"Right now, we're experiencing a simulated drive failure. If the \n"
+"drive that currently doesn't have power actually failed while the \n"
+"system was running, this is the kind of situation we'd be in. Our \n"
+"RAID-1 volume would be running in degraded mode, meaning that our \n"
+"volume is still available but without any redundancy. At a \n"
+"convenient time, we'd want to shut down the system, replace the \n"
+"failed drive, and start the system back up again. Our RAID-1 volume \n"
+"would still be running in degraded mode at this point.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:300
+#, no-wrap
+msgid ""
+"Once we have the new drive in the machine, we'd want to create a \n"
+"RAID autodetect (<c>FD</c>) partition of the appropriate size on our \n"
+"new disk. An additional reboot may be needed so that Linux can reread \n"
+"the disk's partition tables. Once the new partition is visible to the \n"
+"system, we're ready to restore our degraded RAID-1 array -- then, \n"
+"we'll have some redundancy again.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:309
+#, no-wrap
+msgid ""
+"Of course, we're only performing a simulation. To practice adding a \n"
+"partition back into our RAID array, we can do one of two things, \n"
+"depending on what kind of scenario you'd like to prepare or. You can \n"
+"either shut down your machine, plug the drive in, boot it up, and add \n"
+"the old partition back to the array, or you can shut down your \n"
+"machine, plug the drive in, boot up, wipe the drive, create a <e>new</e> \n"
+"RAID autodetect (<c>FD</c>) partition to add the array (of the correct \n"
+"size, of course -- at least as big as the partition it's replacing) \n"
+"and then add this brand-new partition to the array. The second choice \n"
+"would be closer to what would happen in the event of a real drive \n"
+"failure, while the first would simulate something like a failed disk \n"
+"controller or bad cable situation -- where one of your mirror drives \n"
+"was temporarily unavailable, causing <path>/dev/md0</path> to run in \n"
+"degraded mode, and requiring one of the partitions to be added back \n"
+"to the volume after the problem was remedied. Whichever simulation \n"
+"you choose to do, the \"fix\" is the same -- after the new partition is \n"
+"ready, we need to manually add it back to the <path>/dev/md0</path> \n"
+"volume.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/software-raid-p2.xml:332
+#, no-wrap
+msgid "Looking at dmesg"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:336
+#, no-wrap
+msgid ""
+"Before we add the partition back to our array, this would be a good \n"
+"time to take a look at our kernel boot messages. If you type \n"
+"<c>dmesg | more</c>, you'll be able to view the kernel boot \n"
+"messages. You should see a bunch of text similar to this:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:342
+#, no-wrap
+msgid "Kernel boot messages"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:343
+#, no-wrap
+msgid ""
+"linear personality registered\n"
+"raid0 personality registered\n"
+"raid1 personality registered\n"
+"raid5 personality registered\n"
+"raid5: measuring checksumming speed\n"
+"   8regs     :  1291.209 MB/sec\n"
+"   32regs    :  1195.197 MB/sec\n"
+"   pII_mmx   :  2110.740 MB/sec\n"
+"   p5_mmx    :  2652.522 MB/sec\n"
+"raid5: using function: p5_mmx (2652.522 MB/sec)\n"
+"md driver 0.90.0 MAX_MD_DEVS=256, MD_SB_DISKS=27\n"
+"md.c: sizeof(mdp_super_t) = 4096\n"
+"autodetecting RAID arrays\n"
+"(read) ide/host0/bus0/target0/lun0/part5's sb offset: 4610560 [events: 00000004]\n"
+"(read) ide/host2/bus0/target0/lun0/part1's sb offset: 4610496 [events: 00000002]\n"
+"autorun ...\n"
+"considering ide/host2/bus0/target0/lun0/part1 ...\n"
+"  adding ide/host2/bus0/target0/lun0/part1 ...\n"
+"  adding ide/host0/bus0/target0/lun0/part5 ...\n"
+"created md0\n"
+"bind&lt;ide/host0/bus0/target0/lun0/part5,1&gt;\n"
+"bind&lt;ide/host2/bus0/target0/lun0/part1,2&gt;\n"
+"running: &lt;ide/host2/bus0/target0/lun0/part1&gt;&lt;ide/host0/bus0/target0/lun0/part5&gt;\n"
+"now!\n"
+"ide/host2/bus0/target0/lun0/part1's event counter: 00000002\n"
+"ide/host0/bus0/target0/lun0/part5's event counter: 00000004\n"
+"md: superblock update time inconsistency -- using the most recent one\n"
+"freshest: ide/host0/bus0/target0/lun0/part5\n"
+"md: kicking non-fresh ide/host2/bus0/target0/lun0/part1 from array!\n"
+"unbind&lt;ide/host2/bus0/target0/lun0/part1,1&gt;\n"
+"export_rdev(ide/host2/bus0/target0/lun0/part1)\n"
+"md0: max total readahead window set to 124k\n"
+"md0: 1 data-disks, max readahead per data-disk: 124k\n"
+"raid1: device ide/host0/bus0/target0/lun0/part5 operational as mirror 0\n"
+"raid1: md0, not all disks are operational -- trying to recover array\n"
+"raid1: raid set md0 active with 1 out of 2 mirrors\n"
+"md: updating md0 RAID superblock on device\n"
+"ide/host0/bus0/target0/lun0/part5 [events: 00000005](write) ide/host0/bus0/target0/lun0/part5's sb offset: 4610560\n"
+"md: recovery thread got woken up ...\n"
+"md0: no spare disk to reconstruct array! -- continuing in degraded mode\n"
+"md: recovery thread finished ...\n"
+"..\n"
+".... autorun DONE.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:389
+#, no-wrap
+msgid ""
+"Now would be a good time to carefully read these messages, because \n"
+"they'll help you to understand the process that the kernel uses to \n"
+"autostart <path>/dev/md0</path>, giving you another valuable \n"
+"insight into the inner workings of Linux software RAID. If you \n"
+"read the kernel output listed above, you'll find that my kernel \n"
+"found <path>/dev/hda5</path> and <path>/dev/hde1</path>, but \n"
+"<path>hde1</path> was out of sync with <path>hda5</path>. So, the \n"
+"kernel started up <path>/dev/md0</path> in degraded mode, using \n"
+"<path>/dev/hda5</path> and not touching <path>/dev/hde1</path> at \n"
+"all. Now, it's time to add our original (or newly created) \n"
+"partition to our volume. Here's how.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/software-raid-p2.xml:405
+#, no-wrap
+msgid "Restoration continues"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:409
+#, no-wrap
+msgid ""
+"First, if your replacement partition has a new device name, update \n"
+"<path>/etc/raidtab</path> so that it reflects this new information. \n"
+"Then, add the new partition to the volume using the following \n"
+"command, replacing <path>/dev/hde1</path> with the device name of \n"
+"the partition you're adding:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:416
+#, no-wrap
+msgid "Adding the new device"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:417
+#, no-wrap
+msgid "# <i>raidhotadd /dev/md0 /dev/hde1</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:421
+#, no-wrap
+msgid ""
+"Your hard drive lights should begin glowing as reconstruction \n"
+"begins. Go ahead and <c>cat /proc/mdstat</c> to check the status of \n"
+"the RAID-1 reconstruction that's now in progress:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:426
+#, no-wrap
+msgid "Check the status of the RAID-1 reconstruction"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:427
+#, no-wrap
+msgid ""
+"# <i>cat /proc/mdstat</i>\n"
+"Personalities : [linear] [raid0] [raid1] [raid5] \n"
+"read_ahead 1024 sectors\n"
+"md0 : active raid1 ide/host2/bus0/target0/lun0/part1[2] ide/host0/bus0/target0/lun0/part5[0]\n"
+"      4610496 blocks [2/1] [U_]\n"
+"      [&gt;....................]  recovery =  1.8% (84480/4610496) finish=3.5min speed=21120K/sec\n"
+"unused devices: &lt;none&gt;\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:437
+#, no-wrap
+msgid "In a matter of minutes, your RAID-1 volume will be back to normal:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:440
+#, no-wrap
+msgid "The normal RAID volume"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/software-raid-p2.xml:441
+#, no-wrap
+msgid ""
+"# <i>cat /proc/mdstat</i>\n"
+"Personalities : [linear] [raid0] [raid1] [raid5] \n"
+"read_ahead 1024 sectors\n"
+"md0 : active raid1 ide/host2/bus0/target0/lun0/part1[1] ide/host0/bus0/target0/lun0/part5[0]\n"
+"      4610496 blocks [2/2] [UU]\n"
+"      \n"
+"unused devices: &lt;none&gt;\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/software-raid-p2.xml:451
+#, no-wrap
+msgid ""
+"Voila! We've successfully recovered from a simulated drive failure, \n"
+"and you're ready to start using RAID-1 in a production environment. \n"
+"You can now affix your homemade \"RAID-1 certified\" sticker to your \n"
+"forehead and begin flapping your arms and running around the office \n"
+"to the delight of your coworkers. Actually, maybe that isn't such a \n"
+"great idea. See you in the next article.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/software-raid-p2.xml:462
+#, no-wrap
+msgid "Resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/software-raid-p2.xml:467
+#, no-wrap
+msgid ""
+"    Read <uri \n"
+"    link=\"/doc/en/articles/software-raid-p1.xml\">Part 1</uri> in \n"
+"    Daniel's series on RAID, where he introduces Linux 2.4's software \n"
+"    RAID functionality and shows how to set up linear, RAID-0, and \n"
+"    RAID-1 volumes\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/software-raid-p2.xml:474
+#, no-wrap
+msgid ""
+"    The <uri \n"
+"    link=\"http://www.tldp.org/HOWTO/Software-RAID-HOWTO.html\">\n"
+"    Software-RAID HOWTO</uri> is another excellent resource for \n"
+"    information related to Linux Software RAID.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/software-raid-p2.xml:480
+#, no-wrap
+msgid ""
+"    You may want to check out the <uri \n"
+"    link=\"http://www.tldp.org/HOWTO/Boot+Root+Raid+LILO.html\">\n"
+"    Boot+Root+RAID+Lilo Software RAID HOWTO</uri> if you'd like \n"
+"    to learn how to create a root RAID filesystem.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/software-raid-p2.xml:486
+#, no-wrap
+msgid ""
+"    For updated versions of raidtools-0.90, keep an eye on <uri \n"
+"    link=\"http://people.redhat.com/mingo/raid-patches/\">\n"
+"    people.redhat.com</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/software-raid-p2.xml:491
+#, no-wrap
+msgid ""
+"    Find a <uri \n"
+"    link=\"http://www.kernel.org\">recent kernel</uri> in The Linux \n"
+"    Kernel Archives.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/software-raid-p2.xml:496
+#, no-wrap
+msgid ""
+"    Read Daniel's <uri \n"
+"    link=\"/doc/en/articles/linux-kernel-compiling.xml\">tutorial</uri> \n"
+"    on compiling and installing a new kernel from sources.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/software-raid-p2.xml:501
+#, no-wrap
+msgid ""
+"    Find the <uri link=\"http://people.redhat.com/mingo/raidtools/\">\n"
+"    raidtools program</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/software-raid-p2.xml:505
+#, no-wrap
+msgid ""
+"    Snag the <uri link=\"http://people.redhat.com/mingo/raid-patches\">\n"
+"    latest version of raidtools</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/software-raid-p2.xml:509
+#, no-wrap
+msgid ""
+"    Check out <uri link=\"http://linas.org/linux/raid.html\">more tips \n"
+"    on Software Raid solutions for Linux</uri>.\n"
+"  "
+msgstr ""

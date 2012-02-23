@@ -1,0 +1,2024 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/mailfilter-guide.xml,v 1.26 2011/06/19 09:12:09 nightmorph Exp $ -->
+
+<guide>
+<title>Gentoo mailfiltering gateway guide</title>
+
+<author title="Author">
+  <mail link="jaervosz@gentoo.org">Sune Kloppenborg Jeppesen</mail>
+</author>
+<author title="Contributor">
+  <mail link="gentoo@hilli.dk">Jens Hilligsøe</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+
+<abstract>
+This guide is step-by-step guide for installing spam fighting technologies for
+Postfix. Among them Amavisd-new using Spamassassin and ClamAV, greylisting and
+SPF.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>5</version>
+<date>2011-06-19</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<body>
+
+<p>
+This guide describe step by step how to install a spam and virus filtering mail
+gateway. It is quite simple to adopt this to a single server solution.
+</p>
+
+</body>
+</section>
+<section>
+<title>The big picture</title>
+<body>
+
+<p>
+This document describe how to setup a spam filtering mail gateway with
+multiple domains. This server is meant to run in front of the mail
+servers actually keeping the mail accounts i.e. Microsoft Exchange or
+Lotus Notes.
+</p>
+
+<p>
+In this setup applications with good security records and readable
+configuration files have been chosen. The email MTA is postfix which
+has a good security record and is fairly easy to setup right.
+Postfix will listen normally on port 25 for incoming mail. Upon reception it
+will forward it to Amavisd-new on port 10024. Amavisd-new will then filter
+the mail through different filters before passing the mail back to Postfix
+on port 10025 which in turn will forward the mail to the next mail server.
+</p>
+
+<p>
+Amavisd-new is a content filtering framework utilizing helper applications for
+virus filtering and spam filtering. In this setup we will be using two helper
+applications one ClamAV for filtering virus mails and Spamassassin for filtering
+spam. Spamassassin itself can function as yet another layer of content filtering
+framework and utilize the helper applications Vipul's Razor2 and DCC.
+</p>
+
+<p>
+Unlike many other spam fighting technologies like RBLs and others Spamassassin
+does not simply accept or reject a given email based on one single test. It uses
+a lot of internal tests and external helper applications to calculate a spam
+score for every mail passed through. This score is based on the following tests:
+</p>
+
+<ul>
+  <li>Bayesian filtering</li>
+  <li>Static rules based on regular expressions</li>
+  <li>Distributed and collaborative networks:
+  <ul>
+    <li>RBLs</li>
+    <li>Razor2</li>
+    <li>Pyzor</li>
+    <li>DCC</li>
+  </ul>
+  </li>
+</ul>
+
+<p>
+The first part (chapters 1 to 4) of the guide will describe the basic setup
+of a mailfiltering gateway. The next chapters can be implemented individually
+with no dependence between each chapter. These chapters describe how to:
+</p>
+
+<ul>
+  <li>
+    setup special IMAP folders for learning of the Bayesian
+    filter and for delivery of false positives
+  </li>
+<!--
+  <li>setup log analyzers to create daily reports</li>
+-->
+  <li>setup greylisting with Postfix</li>
+  <li>setup Amavisd-new to use a MySQL backend for user preferences</li>
+  <li>setup Spamassassin to use a MySQL backend for AWL and Bayes data</li>
+</ul>
+
+<note>
+The IMAP folders will be using the maildir format. Having each mail in a
+separate file makes handling much simpler. If you're using mbox I propose to
+give maildir a try. If you're not already using maildir emerge the necessary
+tools with <c>emerge courier-imap</c>.
+</note>
+
+<p>
+A planned fifth part will contain various tips regarding performance and things
+you may want to know (running chrooted, postfix restrictions, etc.).
+</p>
+
+<note>
+Delegating responsibility to third parties is not without risks. You have to
+know and trust these third parties. In this setup only the decision to
+quarantine virus mails are based on a single third party. Using Spamassassin's
+scoring system the decision to stop spam mails are not made by a single
+authority except perhaps Spamassassins own static rules.
+</note>
+
+<warn>
+When rejecting spam mails at the MTA level you have to be very careful when
+selecting the RBL's you want to use, i.e. SpamCop is a bad RBL to use at the MTA
+level because you will experience false positives because sometimes their
+listing is just too aggressive. Further info at <uri
+link="http://www.geekcomix.com/cgi-bin/classnotes/wiki.pl?UNIX03/Realtime_Blackhole_Lists_Are_Bad">Realtime
+Blackhole Lists Are Bad</uri> and <uri
+link="http://theory.whirlycott.com/~phil/antispam/rbl-bad/rbl-bad.html">The Spam
+Problem: Moving Beyond RBLs</uri>
+</warn>
+
+</body>
+</section>
+<section>
+<title>Preparations</title>
+<body>
+
+<p>
+Before you start make sure that you have a working Postfix installation where
+you can send and receive mails also you need a backend mailserver. If you're not
+experienced with setting up Postfix it might quickly become too complicated if
+all should be set up at once. If you need help you can find it in the excellent
+<uri link="http://www.gentoo.org/doc/en/virt-mail-howto.xml">Virtual
+Mailhosting System with Postfix Guide</uri> in the Gentoo Documentation.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Installing the programs needed</title>
+<section>
+<body>
+
+<p>
+We start out by installing the most important programs: Amavisd-new,
+Spamassassin and ClamAV.
+</p>
+
+<pre caption="Installing Amavis, Spamassassin and Clamav">
+# <i>emerge amavisd-new spamassassin clamav </i>
+</pre>
+
+<note>
+As previously mentioned you should already have a working <c>postfix</c>
+instance running on the box. Basically this shouldn't be much more than
+<c>emerge postfix</c> <e>and</e> have a basic understanding of how Postfix is
+working.
+</note>
+
+</body>
+</section>
+<section>
+<title>Setting up DNS</title>
+<body>
+
+<note>
+If you're not setting up a gateway server but have the mailboxes on
+the same server you only have to create the MX-Record.
+</note>
+
+<p>
+While the programs are emerging fire up another shell and create the needed DNS
+records.
+</p>
+
+<p>
+Start out by creating a <c>MX</c> record for the mail gateway and an <c>A</c>
+record for the next destination.
+</p>
+
+<pre caption="Setting up DNS">
+<comment>(Create a MX record for the gateway server)</comment>
+                MX      10      mailgateway.mydomain.tld.
+<comment>(Create an A record for the gateway server)</comment>
+mailgateway     A       mgw.ip.add.here
+<comment>(Create an A record for the next hop mail server)</comment>
+mail            A       ms.ip.add.here
+</pre>
+
+<note>
+Some ADSL providers might block port 25 and force you to relay mail through one
+of their servers. Typically you have to create a secondary MX-Record
+like <c>MX      20      backup-mx.some-isp.tld</c>
+</note>
+
+</body>
+</section>
+<section>
+<title>Opening the firewall</title>
+<body>
+
+<p>
+In addition to allowing normal mail traffic you have to allow a
+few services through your firewall to allow the network checks to
+communicate with the servers.
+</p>
+
+<table>
+<tr>
+  <th>Application</th><th>Protocol</th><th>Port</th>
+</tr>
+<tr>
+  <ti>DCC</ti><ti>UDP</ti><ti>6277</ti>
+</tr>
+<tr>
+  <ti>Razor(outgoing ping)</ti><ti>TCP</ti><ti>7</ti>
+</tr>
+<tr>
+  <ti>Razor</ti><ti>TCP</ti><ti>2703</ti>
+</tr>
+</table>
+
+<p>
+Razor uses pings to discover what servers are closest to it.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring Postfix</title>
+<body>
+
+<p>
+First we have to tell <c>postfix</c> to listen on port 10025 and we remove most
+of the restrictions as they have already been applied by the <c>postfix</c>
+instance listening on port 25. Also we ensure that it will only listen for local
+connections on port 10025.  To accomplish this we have to add the following at
+the end of <path>/etc/postfix/master.cf</path>
+</p>
+
+<pre caption="Changing the master.cf file">
+smtp-amavis     unix -        -       n     -       2  smtp
+  -o smtp_data_done_timeout=1200
+  -o smtp_send_xforward_command=yes
+<comment>#Equivalently when using lmtp:
+#lmtp-amavis    unix -        -       n     -       2  lmtp
+#   -o lmtp_data_done_timeout=1200
+#   -o lmtp_send_xforward_command=yes</comment>
+
+127.0.0.1:10025 inet n        -       n     -       -  smtpd
+  -o content_filter=
+  -o local_recipient_maps=
+  -o relay_recipient_maps=
+  -o smtpd_restriction_classes=
+  -o smtpd_client_restrictions=
+  -o smtpd_helo_restrictions=
+  -o smtpd_sender_restrictions=
+  -o smtpd_recipient_restrictions=permit_mynetworks,reject
+  -o mynetworks=127.0.0.0/8
+  -o strict_rfc821_envelopes=yes
+  -o smtpd_error_sleep_time=0
+  -o smtpd_soft_error_limit=1001
+  -o smtpd_hard_error_limit=1000
+
+<comment>#If you want to use proxy filtering instead
+#smtp            inet n         -       n      -       8 smtpd
+# -o smtpd_proxy_filter=127.0.0.1:10024
+# -o smtpd_client_connection_count_limit=4
+#If you don't want to scan outgoing mail use this
+#10.0.0.2:smtp   inet n         -       n       -      - smtpd
+#-o content_filter=</comment>
+</pre>
+
+<note>
+The <c>smtp-amavis</c> line specifies that a maximum of two of these processes
+may run at any time. If you need a greater degree of concurrency tune this
+number to fit your needs. Remember that to match the number with
+<c>$max_servers</c> in <path>amavisd.conf</path>. Keep in mind that
+<c>amavisd-new</c> is quite memory-intensive and raising the amount of
+<c>amavisd-new</c> processes too high can easily lead to memory starvation and
+heavy swapping, which leads to drastically reduced performance.
+</note>
+
+<note>
+If you want to reject spam early on in the process you can use the
+Before-Queue (proxy) method instead of the filter method. If you uncomment
+the three lines you will have to set <c>content_filter=</c> in
+<path>main.cf</path>. This is not recommended for high traffic servers
+as the number of concurrent connections are limited to the number of
+amavisd instances.
+</note>
+
+<warn>
+The Before-Queue(proxy) method is still not properly tested.
+</warn>
+
+<note>
+If you, for any reason whatsoever, want to send mail from this box and don't
+want it scanned, add another postfix instance by uncommenting the last two
+lines and substitute with a proper IP.
+</note>
+
+<p>
+The file <path>master.cf</path> tells the postfix master program how
+to run each individual postfix process. More info with <c>man 8
+master</c>.
+</p>
+
+<p>
+Next we need the main <c>postfix</c> instance listening on port 25 to filter the
+mail through <c>amavisd-new</c> listening on port 10024.
+</p>
+
+<p>
+We also need to set the next hop destination for mail. Tell Postfix to filter
+all mail through an external content filter and enable explicit routing to let
+Postfix know where to forward the mail to.
+</p>
+
+<pre caption="Modifying /etc/postfix/main.cf">
+biff = no
+empty_address_recipient = MAILER-DAEMON
+queue_minfree = 120000000
+
+content_filter = smtp-amavis:[127.0.0.1]:10024
+<comment>#Equivalently when using lmtp:
+#content_filter = lmtp-amavis:[127.0.0.1]:10024
+
+# TRANSPORT MAP
+#
+# Insert text from sample-transport.cf if you need explicit routing.</comment>
+transport_maps = hash:/etc/postfix/transport
+
+relay_domains = $transport_maps
+</pre>
+
+<p>
+Postfix has a lot of options set in <path>main.cf</path>. For further
+explanation of the file please consult <c>man 5 postconf</c> or the
+same online <uri link="http://www.postfix.org/postconf.5.html">Postfix
+Configuration Parameters</uri>.
+</p>
+
+<p>
+The format of the <path>transport</path> file is the normal Postfix hash file.
+Mail to the domain on the left hand side is forwarded to the destination on the
+right hand side.
+</p>
+
+<pre caption="/etc/postfix/transport">
+mydomain.tld                          smtp:mail.mydomain.tld
+</pre>
+
+<p>
+After we have edited the file we need to run the <c>postmap</c> command. Postfix
+does not actually read this file so we have to convert it to the proper format
+with <c>postmap /etc/postfix/transport</c>. This creates the file
+<path>/etc/postfix/transport.db</path>. There is no need to reload Postfix as it
+will automatically pick up the changes.
+</p>
+
+<note>
+If the next hop mail server is not listening on the standard SMTP port 25 you
+can tell postfix to use a given port number, like
+<c>smtp:mail.mydomain.tld:25000</c>.
+</note>
+
+<p>
+If your first attempts to send mail result in messages bouncing, you've likely
+made a configuration error somewhere. Try temporarily enabling
+<c>soft_bounce</c> while you work out your configuration issues. This prevents
+postfix from bouncing mails on delivery errors by treating them as temporary
+errors. It keeps mails in the mail queue until <c>soft_bounce</c> is disabled or
+removed.
+</p>
+
+<pre caption="Enabling soft_bounce">
+# <i>postconf -e "soft_bounce = yes"</i>
+# <i>/etc/init.d/postfix reload</i>
+</pre>
+
+<p>
+Once you've finished creating a working configuration, be sure to disable
+or remove <c>soft_bounce</c> and reload postfix.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring Amavisd-new</title>
+<body>
+
+<p>
+Amavisd-new is used to handle all the filtering and allows you to easily glue
+together severel different technologies. Upon reception of a mail message it
+will extract the mail, filter it through some custom filters, handle white and
+black listing, filter the mail through various virus scanners and finally it
+will filter the mail using SpamAssassin.
+</p>
+
+<p>
+Amavisd-new itself has a number of extra features:
+</p>
+
+<ul>
+  <li>
+    it identifies dangerous file attachments and has policies to handle them
+  </li>
+  <li>
+    per-user, per-domain and system-wide policies for:
+    <ul>
+      <li>whitelists</li>
+      <li>blacklists</li>
+      <li>spam score thresholds</li>
+      <li>virus and spam policies</li>
+    </ul>
+  </li>
+</ul>
+
+<p>
+Apart from <c>postfix</c> and <c>freshclam</c> we will run all applications as
+the user <c>amavis</c>.
+</p>
+
+<!--
+<pre caption="/etc/passwd">
+amavis:x:1010:413:added by portage for amavisd-new:/var/amavis:/bin/bash
+</pre>
+-->
+
+<!--
+<p>
+Create the new home directory and set the proper permissions.
+</p>
+
+<pre caption="Create the new home directory and set the proper permissions">
+# <i>mkdir /var/amavis</i>
+# <i>chown amavis:amavis /var/amavis</i>
+# <i>chmod 750 /var/amavis</i>
+</pre>
+-->
+
+<p>
+Edit the following lines in <path>/etc/amavisd.conf</path>
+</p>
+
+<pre caption="Editing /etc/amavisd.conf">
+<comment>(Insert the domains to be scanned)</comment>
+$mydomain = 'example.com';
+<comment>(Bind only to loopback interface)</comment>
+$inet_socket_bind = '127.0.0.1';
+<comment>(Forward to Postfix on port 10025)</comment>
+$forward_method = 'smtp:127.0.0.1:10025';
+$notify_method = $forward_method;
+<comment>(Define the account to send virus alert emails)</comment>
+$virus_admin = "virusalert\@$mydomain";
+<comment>(Always add spam headers)</comment>
+$sa_tag_level_deflt  = -100;
+<comment>(Add spam detected header aka X-Spam-Status: Yes)</comment>
+$sa_tag2_level_deflt = 5;
+<comment>(Trigger evasive action at this spam level)</comment>
+$sa_kill_level_deflt = $sa_tag2_level_deflt;
+<comment>(Do not send delivery status notification to sender.  It does not affect
+delivery of spam to recipient. To do that, use the kill_level)</comment>
+$sa_dsn_cutoff_level = 10;
+<comment>Don't bounce messages left and right, quarantine
+instead</comment>
+$final_virus_destiny      = D_DISCARD;  # (defaults to D_DISCARD)
+$final_banned_destiny     = D_DISCARD;  # (defaults to D_BOUNCE)
+$final_spam_destiny       = D_DISCARD;  # (defaults to D_BOUNCE)
+</pre>
+
+<note>
+With this line <c>$sa_tag2_level_deflt = 5;</c> you set the Spamassassin spam
+score to 5. This might be a bit low. As you might have noticed the Amavisd-new
+default is <c>6.3</c>. If you don't want to see a single spam mail in your
+mail folder choose <c>5</c>, but if you don't want to deal with false positives
+choose <c>6.3</c>.
+</note>
+
+<p>
+Create a quarantine directory for the virus mails as we don't want these
+delivered to our users.
+</p>
+
+<pre caption="Create a quarantine directory for the virus mails">
+# <i>mkdir /var/amavis/virusmails</i>
+# <i>chown amavis:amavis /var/amavis/virusmails</i>
+# <i>chmod 750 /var/amavis/virusmails</i>
+</pre>
+
+<note>
+Amavisd-new offers finer policy tuning by using policy banks.
+</note>
+
+</body>
+</section>
+<section>
+<title>Configuring ClamAV</title>
+<body>
+
+<p>
+As virus scanner we use ClamAV as it has a fine detection rate comparable with
+commercial offerings, it is very fast and it is Open Source Software.  We love
+log files, so make <c>clamd</c> log using <c>syslog</c> and turn on
+verbose logging. Also do not run <c>clamd</c> as <c>root</c>.  Now edit
+<path>/etc/clamd.conf</path>
+</p>
+
+<pre caption="Edit /etc/clamd.conf">
+<comment>(Verbose logging with syslog)</comment>
+LogSyslog
+LogVerbose
+LogFacility LOG_MAIL
+<comment>(Change pid file location)</comment>
+PidFile /var/run/amavis/clamd.pid
+<comment>(Set the clamav socket)</comment>
+LocalSocket /var/amavis/clamd
+<comment>(Close the connection when this limit is exceeded)</comment>
+StreamMaxLength 10M
+<comment>(Don't run clamd as root)</comment>
+User amavis
+<comment>(Newer versions require you to uncomment this)</comment>
+ScanMail
+ScanArchive
+</pre>
+
+<note>
+Also remember to remove the Example directive to make ClamAV work
+</note>
+
+<p>
+ClamAV comes with the <c>freshclam</c> deamon dedicated to periodical checks
+of virus signature updates.  Instead of updating virus signatures twice a day
+we will make <c>freshclam</c> update virus signatures every two hours.
+</p>
+
+<pre caption="Edit /etc/freshclam.conf">
+<comment>(Syslog logging)</comment>
+LogSyslog
+<comment>(Verbose logging)</comment>
+LogVerbose
+<comment>(Explicitly drop root privileges)</comment>
+DatabaseOwner clamav
+<comment>(Check for updates every two hours. That is the official recommendation)</comment>
+Checks 12
+<comment>(Use the mirror closest to you. Replace XY with your country code</comment>
+DatabaseMirror db.XY.clamav.net
+</pre>
+
+<p>
+Start <c>clamd</c> with <c>freshclam</c> using the init scripts by modifying
+<path>/etc/conf.d/clamd</path>.
+</p>
+
+<pre caption="Modifying /etc/conf.d/clamd">
+START_CLAMD=yes
+FRESHCLAM_OPTS="-d"
+</pre>
+
+<p>
+At last modify <path>amavisd.conf</path> with the new location of the
+socket.
+</p>
+
+<pre caption="Modifying /etc/amavisd.conf">
+<comment>(Uncomment the clamav scanner and modify socket location)</comment>
+['ClamAV-clamd',
+\&amp;ask_daemon, ["CONTSCAN {}\n", "/var/amavis/clamd"],
+  qr/\bOK$/, qr/\bFOUND$/,
+  qr/^.*?: (?!Infected Archive)(.*) FOUND$/ ],
+</pre>
+
+<warn>
+Do NOT modify the <c>$unix_socketname</c> unless you know what you're doing.
+</warn>
+
+</body>
+</section>
+<section>
+<title>Configuring Vipul's Razor</title>
+<body>
+
+<p>
+Razor2 is a collaborative and distributed spam checksum network. Install it
+with <c>emerge razor</c> and create the needed configuration files. Do this
+as user <c>amavis</c> by running <c>su - amavis</c> followed <c>razor-admin
+-create</c>.
+</p>
+
+<pre caption="Creating the required configuration files">
+# <i>emerge razor</i>
+
+<comment>(Temporarily set amavis' shell to bash)</comment>
+# <i>usermod -s /bin/bash amavis</i>
+# <i>su - amavis</i>
+$ <i>razor-admin -create</i>
+$ <i>exit</i>
+
+<comment>(Reset the shell to /bin/false)</comment>
+# <i>usermod -s /bin/false amavis</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Configuring Distributed Checksum Clearinghouse (dcc)</title>
+<body>
+
+<p>
+Like Razor2, dcc is a collaborative and distributed spam checksum network. Its
+philosopy is to count the number of recipients of a given mail identifying each
+mail with a fuzzy checksum.
+</p>
+
+<pre caption="Installing DCC">
+# <i>emerge dcc</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Configuring Spamassassin</title>
+<body>
+
+<p>
+Amavis is using the Spamassassin Perl libraries directly so there is no need to
+start the service. Also this creates some confusion about the configuration as
+some Spamassassin settings are configured in
+<path>/etc/mail/spamassassin/local.cf</path> and overridden by options in
+<path>/etc/amavisd.conf</path>.
+</p>
+
+<pre caption="Create /etc/mail/spamassassin/local.cf">
+<comment># Enable the Bayes system</comment>
+use_bayes               1
+
+<comment># Enable all network checks</comment>
+skip_rbl_checks         0
+
+<comment># Mail using languages used in these country codes will not be marked
+# as being possibly spam in a foreign language.
+# - danish english norwegian swedish</comment>
+ok_languages            da en no sv
+
+<comment># Mail using locales used in these country codes will not be marked
+# as being possibly spam in a foreign language.</comment>
+ok_locales              en
+
+<comment># Use a sensible bayes path</comment>
+bayes_path              /var/amavis/.spamassassin/bayes
+</pre>
+
+<note>
+With Spamassassin version 3.1 you have to enable DCC, Razor2 by uncommenting
+the corresponding lines in <path>v310.pre</path>.
+</note>
+
+<note>
+You can find inspiration for your <path>local.cf</path> file by trying the <uri
+link="http://www.yrex.com/spam/spamconfig.php">SpamAssassin Configuration
+Generator</uri>.
+</note>
+
+<note>
+You might also want to switch the <c>ok_languages</c> and <c>ok_locales</c>.
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Every good rule has good exceptions as well</title>
+<section>
+<body>
+
+<p>
+Once mail really starts passing through this mail gateway you will probably
+discover that the above setup is not perfect. Maybe some of your customers like
+to receive mails that others wouldn't. You can whitelist/blacklist
+envelope senders quite easily. Uncomment the following line in
+<path>amavisd.conf</path>.
+</p>
+
+<pre caption="Modifying amavisd.conf to do sitewide scoring">
+read_hash("/var/amavis/sender_scores_sitewide"),
+</pre>
+
+<p>
+In the <path>sender_scores_sitewide</path> file you put complete email
+addresses or just the domian parts and then note a positive/negative score
+to add to the spam score.
+</p>
+
+<pre caption="whitelist_sender example">
+<comment>(Whitelist all emails from the specific email address)</comment>
+postmaster@example.net                -3.0
+<comment>(Whitelist all emails from the example.net excluding subdomains)</comment>
+.example.net                          1.0
+</pre>
+
+<note>
+See <path>/etc/amavisd.conf</path> for more examples.
+</note>
+
+<note>
+Placing these addresses outside <path>amavisd.conf</path> is a cleaner and safer
+solution.
+</note>
+
+<note>
+Alternatively it can be done in Spamassassin's configuration file
+<path>/etc/mail/spamassassin/local.cf</path> but I think it is cleaner
+to do it in <path>/etc/amavisd.conf</path>.
+</note>
+
+<note>
+In a later chapter I will show how to implement per-user policies using
+MySQL.
+</note>
+
+<p>
+While waiting for a better method you can add the following to
+<path>amavisd.conf</path> to bypass spam checks for <c>postmaster</c> and
+<c>abuse</c> mailboxes.
+</p>
+
+<pre caption="By pass spam filters for all postmaster and abuse mails">
+map { $bypass_spam_checks{lc($_)}=1 } (qw(
+        postmaster@
+        abuse@
+));
+</pre>
+
+<impo>
+While we are at it we should <e>never</e> automatically discard mails to the
+<c>postmaster</c> or the <c>abuse</c> accounts. See <uri
+link="http://www.ietf.org/rfc/rfc2142.txt">RFC 2142 MAILBOX NAMES FOR COMMON
+SERVICES, ROLES AND FUNCTIONS</uri>. Otherwise your domains might end up listed
+in some of the evil lists over at <uri
+link="http://www.rfc-ignorant.org/">rfc-ignorant.org</uri>.
+</impo>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Adding more rules</title>
+<section>
+<body>
+
+<p>
+If you want to use more rules provided by the SARE Ninjas over at the
+<uri link="http://www.rulesemporium.com/">SpamAssassin Rules
+Emporium</uri> you can easily add and update them using
+the <c>sa-update</c> mechanism included in Spamassassin.
+</p>
+
+<p>
+A brief guide to using SARE rulesets with <c>sa-update</c> can be found <uri
+link="http://daryl.dostech.ca/sa-update/sare/sare-sa-update-howto.txt">here</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Testing and finishing up</title>
+<section>
+<title>Testing the setup</title>
+<body>
+
+<p>
+Now before you start <c>freshclam</c> you can manually verify that it works.
+</p>
+
+<pre caption="Testing freshclam">
+# <i>freshclam</i>
+ClamAV update process started at Sun May  2 09:13:41 2004
+Reading CVD header (main.cvd): OK
+Downloading main.cvd [*]
+main.cvd updated (version: 22, sigs: 20229, f-level: 1, builder: tkojm)
+Reading CVD header (daily.cvd): OK
+Downloading daily.cvd [*]
+daily.cvd updated (version: 298, sigs: 1141, f-level: 2, builder: diego)
+Database updated (21370 signatures) from database.clamav.net (193.1.219.100).
+</pre>
+
+<p>
+Now you have updated virus definitions and you know that
+<path>freshclam.conf</path> is working properly.
+</p>
+
+<p>
+Test freshclam and amavisd from the cli and amavisd testmails.
+Start <c>clamd</c> and <c>amavis</c> with the following commands:
+</p>
+
+<pre caption="Start amavisd and clamd and reload postfix configuration">
+# <i>/etc/init.d/clamd start</i>
+# <i>/etc/init.d/amavisd start</i>
+# <i>/etc/init.d/postfix reload</i>
+</pre>
+
+<p>
+If everything went well <c>postfix</c> should now be listening for mails on port
+25 and for reinjected mails on port 10024. To verify this check your log file.
+</p>
+
+<pre caption="Checking log files">
+# <i>tail -f /var/log/mail.log</i>
+</pre>
+
+<note>
+Depending on your log settings the correct path might be
+<path>/var/log/messages</path>.
+</note>
+
+<p>
+Now if no strange messages appear in the log file it is time for a new
+test.
+</p>
+
+<p>
+Use <c>netcat</c> to manually connect to <c>amavisd</c> on port 10024
+and <c>postfix</c> on port 10025.
+</p>
+
+<note>
+Netcat can be used as an advanced replacement for <c>telnet</c>. Install it with
+<c>emerge netcat</c>.
+</note>
+
+<note>
+For some unknown reason you can not complete a manual mail injection to
+<c>amavisd</c> with netcat. Use <c>telnet</c> instead.
+</note>
+
+<pre caption="Manually checking that amavisd and postfix are listning to the new ports">
+# <i>nc localhost 10024</i>
+<comment>(Amavis working)</comment>
+220 [127.0.0.1] ESMTP amavisd-new service ready
+<i>nc localhost 10025</i>
+<comment>(Postfix reinject working)</comment>
+220 example.com ESMTP Postfix
+</pre>
+
+<note>
+If you want to see the complete output from amavisd-new start
+<c>amavisd debug-sa</c> as the <c>amavis</c> user and send a mail.
+For this to work you might have to change the default shell in
+<path>/etc/passwd</path>.
+</note>
+
+<p>
+Add <c>amavisd</c> and <c>clamd</c> to the <c>default</c> runlevel.
+</p>
+
+<pre caption="Add amavisd and clamd to the default runlevel">
+# <i>rc-update add clamd default</i>
+# <i>rc-update add amavisd default</i>
+</pre>
+
+<note>
+We do not add <c>spamd</c> to the default runlevel as <c>amavisd</c>
+uses the Spamassassin Perl libraries directly.
+</note>
+
+<note>
+You might notice <c>Net::Server: Couldn't POSIX::setuid to ...
+[]</c> lines in your log. According to
+<uri link="http://www.ijs.si/software/amavisd/README.chroot">amavis chroot
+README</uri>, if the process UID remains 0 (<c>root</c>), the program will
+terminate, otherwise you can consider the message just as informative.
+This is because <c>POSIX::setuid()</c> returns a string <c>0 but
+true</c>.
+</note>
+
+<impo>
+If you enabled login for amavis remember to set back the login shell in
+<path>/etc/passwd</path> to <c>/bin/false</c>.
+</impo>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Autolearning and sidelining emails</title>
+<section>
+<title>Creating the spamtrap user</title>
+<body>
+
+<p>
+Create the spamtrap account and directories.
+</p>
+
+<pre caption="Create spamtrap account">
+# <i>useradd -m spamtrap</i>
+# <i>maildirmake /home/spamtrap/.maildir</i>
+# <i>chown -R spamtrap:spamtrap /home/spamtrap/.maildir</i>
+<comment>(Give the spamtrap user a sensible password)</comment>
+# <i>passwd spamtrap</i>
+</pre>
+
+<p>
+If you manually want to check some of the mails to ensure that you have no false
+positives you can use the following <c>procmail</c> recipe to sideline spam
+found into different mail folders.
+</p>
+
+</body>
+</section>
+<section>
+<title>Creating .procmailrc</title>
+<body>
+
+<pre caption="Creating /home/spamtrap/.procmailrc">
+<comment>#Set some default variables</comment>
+MAILDIR=$HOME/.maildir
+
+SPAM_FOLDER=$MAILDIR/.spam-found/
+
+LIKELY_SPAM_FOLDER=$MAILDIR/.likely-spam-found/
+
+<comment>#Sort mails with a spamscore of 7+ to the spamfolder</comment>
+:0:
+* ^X-Spam-Status: Yes
+* ^X-Spam-Level: \*\*\*\*\*\*\*
+$SPAM_FOLDER
+
+<comment>#Sort mail with a spamscore between 5-7 to the likely spam folder</comment>
+:0:
+* ^X-Spam-Status: Yes
+$LIKELY_SPAM_FOLDER
+
+<comment>#Sort all other mails to the inbox</comment>
+:0
+*
+./
+</pre>
+
+<warn>
+If your mail server is going to receive a lot of mail you should NOT
+use the likely-spam recipe. Instead set <c>$sa_tag2_level_deflt</c>
+high enough to avoid false positives and filter it directly to
+<c>$SPAM_FOLDER</c>.
+</warn>
+
+<note>
+If you haven't already installed <c>procmail</c> do it with <c>emerge
+procmail</c>.
+</note>
+
+<p>
+Now make sure that Postfix uses <c>procmail</c> to deliver mail.
+</p>
+
+<pre caption="Modifying /etc/postfix/main.cf">
+mailbox_command = /usr/bin/procmail -a "DOMAIN"
+</pre>
+
+</body>
+</section>
+<section>
+<title>Create mailfolders</title>
+<body>
+
+<p>
+Now we will create shared folders for ham and spam.
+</p>
+
+<pre caption="Create the necessary mailfolders">
+# <i>maildirmake /var/amavis/.maildir</i>
+# <i>maildirmake -S /var/amavis/.maildir/Bayes</i>
+# <i>maildirmake -s write -f spam /var/amavis/.maildir/Bayes</i>
+# <i>maildirmake -s write -f ham /var/amavis/.maildir/Bayes</i>
+# <i>maildirmake -s write -f redeliver /var/amavis/.maildir/Bayes</i>
+</pre>
+
+<p>
+Amavisd-new needs to be able to read these files as well as all mailusers.
+Therefore we add all the relevant users to the mailuser group along with amavis.
+</p>
+
+<pre caption="Setting the proper permissions">
+# <i>groupadd mailusers</i>
+# <i>usermod -G mailusers spamtrap</i>
+# <i>chown -R amavis:mailusers /var/amavis/.maildir/</i>
+# <i>chown amavis:mailusers /var/amavis/</i>
+# <i>chmod -R 1733 /var/amavis/.maildir/Bayes/</i>
+# <i>chmod g+rx /var/amavis/.maildir/</i>
+# <i>chmod g+rx /var/amavis/.maildir/Bayes/</i>
+</pre>
+
+<warn>
+This grants members of the <c>mailusers</c> groups access to <c>amavis</c>
+mail.
+</warn>
+
+<p>
+This makes the spam and ham folders writable but not readable. This way
+users can safely submit their ham without anyone else being able to read it.
+</p>
+
+<p>
+Then run the following command as the <c>spamtrap</c> user:
+</p>
+
+<pre caption="Adding the shared folders to the users mailfolder">
+$ <i>maildirmake --add Bayes=/var/amavis/.maildir/Bayes $HOME/.maildir</i>
+</pre>
+
+<note>
+We have to give the group read permissions on the <path>Bayes</path>
+folder in order for the mail client to be able to see the subdirectories used by
+IMAP.
+</note>
+
+</body>
+</section>
+<section>
+<title>Adding cron jobs</title>
+<body>
+
+<p>
+Now run <c>crontab -u amavis -e</c> to edit the amavis crontab to
+enable automatic learning of the Bayes filter every hour.
+</p>
+
+<pre caption="amavis crontab">
+<comment>#Auto learn</comment>
+0 * * * *          /usr/bin/sa-learn --spam /var/amavis/.maildir/Bayes/.spam/{cur,new} \
+                    > /dev/null 2>&amp;1
+0 * * * *          /usr/bin/sa-learn --ham /var/amavis/.maildir/Bayes/.ham/{cur,new} > \
+                   /dev/null 2>&amp;1
+</pre>
+
+<note>
+<c>amavis</c> has to be a member of the <c>cron</c> group to run
+crons.
+</note>
+
+<note>
+It seems like the shared maildir folders will make <c>sa-learn</c> examine all
+messages twice. This should not be a problem. The output will also show that the
+maximum of messages learned from is half or less than the messages examined.
+</note>
+
+</body>
+</section>
+<section>
+<title>Modifying amavisd.conf</title>
+<body>
+
+<p>
+Now modify amavis to redirect spam emails to the <c>spamtrap</c> account and
+keep spamheaders.
+</p>
+
+<pre caption="Modifying /etc/amavisd.conf">
+<comment>(Define the account to send virus spam emails)</comment>
+$spam_quarantine_to = "spamtrap\@$myhostname";
+</pre>
+
+</body>
+</section>
+<section>
+<title>Cleaning up</title>
+<body>
+
+<p>
+We don't want to keep mail forever so we use <c>tmpwatch</c> to clean up
+regularily. Emerge it with <c>emerge tmpwatch</c>.  Only <c>root</c> is able to
+run <c>tmpwatch</c> so we have to edit the <c>root</c> crontab.
+</p>
+
+<pre caption="Modifying root crontab">
+<comment># Clean up
+# Keep virusmails for a week (24*7 hours)</comment>
+15 0 * * *      /usr/sbin/tmpwatch -c -f -d --quiet 168 /var/amavis/virusmails/
+<comment># Delete spam and ham learned after a week</comment>
+15 0 * * *      /usr/sbin/tmpwatch -c -f -d --quiet 168 /var/amavis/.maildir/Bayes/
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<!--
+<chapter>
+<title>Log analyzers</title>
+<section>
+<title>General Postfix statistics</title>
+<body>
+
+<p>
+Now that we have set up our gateway mail server it would be nice to be
+able to monitor it. To this end we install two small Perl scripts that
+will mail you daily summaries about mail and spam statistics. First
+download and install <c>pflogsumm</c>:
+</p>
+
+<pre caption="Download and installing pflogsumm">
+# <i>wget http://jimsun.linxnet.com/downloads/pflogsumm-1.1.0.tar.gz</i>
+# <i>tar xzf pflogsumm-1.1.0.tar.gz</i>
+# <i>cp pflogsumm-1.1.0/pflogsumm.pl /usr/local/bin/</i>
+</pre>
+</body>
+</section>
+<section>
+<title>Postfix spam statistics</title>
+<body>
+
+<p>
+Next we download and install the script that generates daily
+statistics about spam caught:
+</p>
+
+<pre caption="Downloading and installing spamreport">
+# <i>wget http://www.flakshack.com/anti-spam/nosack-spamreport.pl</i>
+# <i>mv nosack-spamreport.pl /usr/local/bin/</i>
+# <i>chmod +x /usr/local/bin/nosack-spamreport.pl</i>
+</pre>
+<p>
+We want a daily mail from each of the scripts so we add two entries to
+the <c>root</c> crontab:
+</p>
+<pre caption="Adding report scripts to root crontab">
+15 0 * * *      /usr/local/bin/pflogsumm.pl -d yesterday \
+                /var/log/mail.log 2&gt;&amp;1 | /bin/mailx \
+                -s "`uname -n` daily mail stats" postmaster
+10 0 * * *      /usr/local/bin/nosack-spamreport.pl \
+                /var/log/mail.log 2&gt;&amp;1 | /bin/mailx \
+                -s "`uname -n` daily spam stats" postmaster
+</pre>
+
+<note>
+You might need to do an <c>emerge Date-Calc</c> and <c>emerge
+mailx</c>. Alternatively you can use <c>mail</c> installed with
+<c>emerge mailutils</c>
+</note>
+
+<note>
+If you rotate your logs on a weekly basis (like I do) you might want
+to ensure that the scripts are run just before the logs are rotated.
+</note>
+
+<note>
+Currently investigating another amavis log analyzer
+<uri link="http://homepages.hs-bremen.de/~renegat/amavislogsumm">amavislogsumm</uri>
+</note>
+</body>
+</section>
+</chapter>
+-->
+
+<chapter>
+<title>Greylisting</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+Greylisting is one of the newer weapons in the spam fighting
+arsenal. As the name implies it is much like whitelisting and
+blacklisting. Each time an unknown mailserver tries to deliver
+mail the mail is rejected with a <e>try again later</e> message.
+This means that mail gets delayed but also that stupid spam bots
+that do not implement the RFC protocol will drop the attempt to
+deliver the spam and never retry.  With time spam bots will probably
+adjust, however it will give other technologies more time to identify
+the spam.
+</p>
+
+<note>
+If your ISP blocks incoming traffic on port 25 and relays all mail to you
+through their own mail server greylisting will not work.
+</note>
+
+<p>
+Postfix 2.1 come with a simple Perl greylisting policy server that
+implements such a scheme. However it suffers from unpredictable
+results when the partition holding the greylisting database run
+out of space. There exists an improved version that do not suffer
+this problem. First I will show how to install the builtin
+greylisting support that come with Postfix and then I will show
+how to configure the more robust replacement.
+</p>
+
+<note>
+There are other greylisting policy servers for Postfix around (such as <uri
+link="http://www.gasmi.net/gld.html">Gld</uri>, which is in Portage, and <uri
+link="http://sqlgrey.sourceforge.net/">SQLgrey</uri>). Some of them support
+database backends, auto whitelisting and other neat features.
+</note>
+
+</body>
+</section>
+<section>
+<title>Simple greylisting</title>
+<body>
+
+<note>
+If you prefer to use the improved greylisting with postgrey you can
+safely skip this section.
+</note>
+
+<p>
+We need the file <path>greylist.pl</path> but unfortunately
+the ebuild does not install it as default.
+</p>
+
+<pre caption="Getting greylist.pl">
+# <i>cp /usr/portage/distfiles/postfix-your-version-here.tar.gz /root/</i>
+# <i>tar xzf postfix-your-version-here.tar.gz</i>
+# <i>cp postfix-2.1.0/examples/smtpd-policy/greylist.pl /usr/bin/</i>
+</pre>
+
+<p>
+Now we have the file in place we need to create the directory
+to hold the greylisting database:
+</p>
+
+<pre caption="Creating directory for the greylisting database">
+# <i>mkdir /var/mta</i>
+# <i>chown nobody /var/mta</i>
+</pre>
+
+<warn>
+Do not create the greylisting database directory on a partition that
+might run out of space. While postfix can recover from no-space-left
+situations for the mail queue and mail box situations, this is not the
+case with the greylisting database. If the file becomes corrupted
+you may not be able to receive mail at all until you delete the file
+by hand.
+</warn>
+
+</body>
+</section>
+<section>
+<title>Configuring greylisting</title>
+<body>
+
+<p>
+Now that we have all this ready all that is left is to add it to the
+postfix configuration. First we add the necessary information to the
+<path>master.cf</path>:
+</p>
+
+<pre caption="Modifying master.cf to use greylisting">
+policy-greylist  unix  -       n       n       -       -       spawn
+   user=nobody argv=/usr/bin/perl /usr/bin/greylist.pl
+</pre>
+
+<p>
+The postfix spawn daemon normally kills its child processes after 1000
+seconds but this is too short for the greylisting process so we have
+to increase the timelimit in <path>main.cf</path>:
+</p>
+
+<pre caption="Modifying main.cf to use greylisting">
+policy-greylist_time_limit = 3600
+<comment>(Under smtpd_recipient_restrictions add:)</comment>
+check_sender_access hash:/etc/postfix/sender_access
+<comment>(Later on add:)</comment>
+restriction_classes = greylist
+greylist = check_policy_service unix:private/policy-greylist
+</pre>
+
+<warn>
+Be sure to specify <c>check_sender_access</c> AFTER
+<c>reject_unauth_destination</c> or else your system could become an
+open mail relay.
+</warn>
+
+<note>
+The greylist database gets polluted quickly with bogus addresses. It
+helps if you protect greylist lookups with other restrictions that
+reject unknown senders and/or recipients.
+</note>
+
+<p>
+We don't want to use greylisting for all domains but only for those
+frequently abused by spammers. After all it will delay mail delivery.
+A list of frequently forged MAIL FROM domains can be found <uri
+link="http://www.monkeys.com/anti-spam/filtering/sender-domain-validate.in">online</uri>.
+Add the domains you receive a lot of spam from to
+<path>/etc/postfix/sender_access</path>:
+</p>
+
+<pre caption="Format of sender_access">
+aol.com     greylist
+hotmail.com greylist
+bigfoot.com greylist
+</pre>
+
+<p>
+If you want a more extensive list:
+</p>
+
+<pre caption="Adding all domains to sender_access">
+# <i>wget http://www.monkeys.com/anti-spam/filtering/sender-domain-validate.in</i>
+# <i>cat sender-domain-validate.in | sort | awk {'print $1 "\t\t greylist"'} > /etc/postfix/sender_access</i>
+</pre>
+
+<p>
+Now we only have to initialize the <path>sender_access</path>
+database:
+</p>
+
+<pre caption="Initialize sender_access">
+# <i>postmap /etc/postfix/sender_access</i>
+</pre>
+
+<p>
+Now the setup of simple greylisting is complete.
+</p>
+
+<warn>
+I tried this on one box handling thousands of mails daily and the
+results were almost a complete disaster. After four days the box was
+bogged down with hundreds of old <c>greylist.pl</c> processes.
+</warn>
+
+</body>
+</section>
+<section>
+<title>Configuring improved greylisting with postgrey</title>
+<body>
+
+<p>
+You can install the enhanced greylisting policy server with a simple
+<c>emerge</c>:
+</p>
+
+<pre caption="Installing postgrey">
+# <i>emerge postgrey</i>
+</pre>
+
+<p>
+After installing <c>postgrey</c> we have to edit <path>main.cf</path>.
+Changes are almost exactly like the built in greylisting.
+</p>
+
+<pre caption="Modifying main.cf to use greylisting">
+<comment>(Under smtpd_recipient_restrictions add:)</comment>
+check_sender_access hash:/etc/postfix/sender_access
+<comment>(Later on add:)</comment>
+smtpd_restriction_classes = greylist
+greylist = check_policy_service inet:127.0.0.1:10030
+</pre>
+
+<note>
+The Postfix SMTPD_POLICY_README only uses <c>restriction_classes</c>
+but that does not appear to work.
+</note>
+
+<note>
+If you want to greylist everything instead add <c>check_policy_service
+inet:127.0.0.1:10030</c>.
+</note>
+
+<p>
+Finally, start the server and add it to the proper runlevel.
+</p>
+
+<pre caption="Starting postgrey">
+# <i>/etc/init.d/postgrey start</i>
+# <i>rc-update add postgrey default</i>
+</pre>
+
+<note>
+Some people like to get their mail fast and thus greylisting is
+worthless. However if you employ a backup mail server you can safely
+setup greylisting on that server. My limited experiences tell me that
+it can stop up to a third of the spam received.
+</note>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>SPF (Sender Policy Framework)</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+SPF allows domain owners to state in their DNS records which IP
+addressess should be allowed to send mails from their domain. This
+will prevent spammers from spoofing the <c>Return-Path</c>.
+</p>
+
+<note>
+If your ISP blocks incoming traffic on port 25 and relays all mail to you
+through their own mail server SPF will not work.
+</note>
+
+<p>
+First domain owners have to create a special <c>TXT</c> DNS record.
+Then an SPF-enabled MTA can read this and if the mail originates from a
+server that is not described in the SPF record the mail can be
+rejected. An example entry could look like this:
+</p>
+
+<pre caption="Example SPF record">
+example.com.  IN TXT  "v=spf1 a mx ptr -all"
+</pre>
+
+<p>
+The <c>-all</c> means to reject all mail by default but allow mail
+from the <c>A</c>(<c>a</c>), <c>MX</c>(<c>mx</c>) and
+<c>PTR</c>(<c>ptr</c>) DNS records. For more info consult further
+resources below.
+</p>
+
+<note>
+If you relay outgoing mail through your ISP you will have to add:
+<c>include:yourisp.com</c>.
+</note>
+
+<p>
+Spamassassin 3.0 has support for SPF, however it is not enabled by default
+and the new policy daemon in Postfix supports SPF so let's install SPF support
+for Postfix.
+</p>
+
+<note>
+If you want to use SPF with Spamassassin instead simply
+<c>emerge&nbsp;dev-perl/Mail-SPF-Query</c> and restart Amavisd-new.
+</note>
+
+</body>
+</section>
+<section>
+<title>Preparations</title>
+<body>
+
+<p>
+First you have to
+install Postfix 2.1 as described above. When you have fetched the
+source grab the <path>spf.pl</path> with:
+</p>
+
+<pre caption="Installing spf.pl">
+# <i>cp postfix-&lt;version&gt;/examples/smtpd-policy/spf.pl /usr/local/bin/</i>
+</pre>
+
+<note>
+The <path>spf.pl</path> coming with Postfix is slightly buggy so find
+and uncomment the following line: <c>push @HANDLERS, "sender_permitted_from";
+use Mail::SPF::Query;</c>. Furthermore in about line 199 substitute
+<c>comemnt</c> with <c>comment</c>. Alternatively you can download a
+<uri link="http://spf.pobox.com/postfix-policyd.txt">development
+version</uri>.
+</note>
+
+<p>
+This Perl script also needs some Perl libraries that are not in
+portage but it is still quite simple to install them:
+</p>
+
+<pre caption="Installing the needed Perl libraries">
+# <i>emerge Mail-SPF-Query Net-CIDR-Lite Sys-Hostname-Long</i>
+</pre>
+
+<p>
+Now that we have everything in place all we need is to configure
+Postfix to use this new policy.
+</p>
+
+<pre caption="Modifying master.cf to use SPF">
+policy-spf  unix  -       n       n       -       -       spawn
+   user=nobody argv=/usr/bin/perl /usr/local/bin/spf.pl
+</pre>
+
+<p>
+Now add the SPF check in <path>main.cf</path>. Properly configured SPF
+should do no harm so we could check SPF for all domains:
+</p>
+
+<pre caption="Modifying main.cf to use SPF">
+<comment>(Under smtpd_recipient_restrictions add:)</comment>
+check_policy_service unix:private/policy-spf
+</pre>
+
+<note>
+If you're experiencing problems with SPF, e.g. when using
+<c>fetchmail</c>, you might want to enable SPF for certain domains only.
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring amavisd-new to use MySQL</title>
+<section>
+<title>Configuring MySQL</title>
+<body>
+
+<note>
+This has not been tested on versions higher than 2.2. Feedback is welcome :)
+</note>
+
+<p>
+For large domains the default values you can set in
+<path>amavisd.conf</path> might not suit all users. If you configure
+amavisd-new with MySQL support you can have individual settings for
+users or groups of users.
+</p>
+
+<pre caption="Creating the MySQL database and user">
+# <i>mysql -u root -p mysql</i>
+Enter password:
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 78 to server version: 4.0.18-log
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+mysql> <i>create database maildb;</i>
+mysql> <i>GRANT INSERT,UPDATE,DELETE,SELECT ON maildb.* TO 'mail'@'localhost' IDENTIFIED BY 'very_secret_password';</i>
+mysql> <i>use maildb;</i>
+</pre>
+
+<p>
+Now that the database is created we'll need to create the necessary tables.
+You can cut and paste the following into the mysql prompt:
+</p>
+
+<pre caption="MySQL table layout">
+CREATE TABLE users (
+    id         int unsigned NOT NULL auto_increment,
+    priority   int          NOT NULL DEFAULT '7',  -- 0 is low priority
+    policy_id  int unsigned NOT NULL DEFAULT '1',
+    email      varchar(255) NOT NULL,
+    fullname   varchar(255) DEFAULT NULL,    -- not used by amavisd-new
+    local      char(1),     -- Y/N  (optional field, see note further down)
+    PRIMARY KEY (id),
+    KEY email (email)
+    );
+CREATE UNIQUE INDEX users_idx_email ON users(email);
+
+<comment>(any e-mail address, external or local, used as senders in wblist)</comment>
+CREATE TABLE mailaddr (
+   id         int unsigned NOT NULL auto_increment,
+   priority   int          NOT NULL DEFAULT '7',  -- 0 is low priority
+   email      varchar(255) NOT NULL,
+   PRIMARY KEY (id),
+   KEY email (email)
+   );
+CREATE UNIQUE INDEX mailaddr_idx_email ON mailaddr(email);
+
+<comment>(-- per-recipient whitelist and/or blacklist,</comment>
+<comment>-- puts sender and recipient in relation wb)</comment>
+(white or blacklisted sender)
+CREATE TABLE wblist (
+   rid        int unsigned NOT NULL,     -- recipient: users.id
+   sid        int unsigned NOT NULL,     -- sender:    mailaddr.id
+   wb         char(1) NOT NULL, -- W or Y / B or N / space=neutral
+   PRIMARY KEY (rid,sid)
+   );
+
+CREATE TABLE policy (
+   id               int unsigned NOT NULL auto_increment,
+   policy_name      varchar(32),     -- not used by amavisd-new
+   virus_lover          char(1),     -- Y/N
+   spam_lover           char(1),     -- Y/N  (optional field)
+   banned_files_lover   char(1),     -- Y/N  (optional field)
+   bad_header_lover     char(1),     -- Y/N  (optional field)
+   bypass_virus_checks  char(1),     -- Y/N
+   bypass_spam_checks   char(1),     -- Y/N
+   bypass_banned_checks char(1),     -- Y/N  (optional field)
+   bypass_header_checks char(1),     -- Y/N (optional field)
+   spam_modifies_subj   char(1),     -- Y/N (optional field)
+   spam_quarantine_to   varchar(64) DEFAULT NULL, -- (optional field)
+   spam_tag_level  float,  -- higher score inserts spam info headers
+   spam_tag2_level float DEFAULT NULL,  -- higher score inserts
+               -- 'declared spam' info header fields
+   spam_kill_level float,  -- higher score activates evasive actions, e.g.
+               -- reject/drop, quarantine, ...
+               -- (subject to final_spam_destiny setting)
+   PRIMARY KEY (id)
+  );
+</pre>
+
+<note>
+If you have problems using copy/paste you might have to copy this
+somewhere else and clean out the unneeded characters.
+</note>
+
+<note>
+Lookups trying to match email are done with raw (rfc2821-unquoted
+and unbracketed) addresses as a key, i.e.:
+<c>John "Funny" Smith@example.com</c>
+</note>
+
+<note>
+Lookups are performed in the following order: <c>SQL</c>, <c>LDAP</c>,
+<c>hash</c>, <c>ACL</c>, <c>regexp</c>, <c>constant</c>. The first that
+returns a definitive answer (not <c>undef/NULL</c>) stops the search.
+</note>
+
+<p>
+If you wish to use whitelisting and blacklisting you must add the
+sender and receiver to <c>mailadr</c> after which you create the relation
+between the two e-mail addresses in <c>wblist</c> and state if it is
+whitelisting (<c>W</c>) or blacklisting (<c>B</c>).
+</p>
+
+<p>
+Now that we have created the tables let's insert a test user and a test
+policy:
+</p>
+
+<pre caption="Create test user and test policy">
+INSERT INTO users
+   SET
+      id         =1,
+      priority   =9,
+      policy_id  =1,
+      email      ="johndoe@example.com",
+      fullname   ="John Doe",
+      local      ="Y";
+
+INSERT INTO policy
+   SET
+      id                     =1,
+      policy_name            ="Test policy 1",
+      virus_lover            ="N",
+      spam_lover             ="N",
+      banned_files_lover     ="N",
+      bad_header_lover       ="N",
+      bypass_virus_checks    ="N",
+      bypass_spam_checks     ="N",
+      bypass_banned_checks   ="N",
+      bypass_header_checks   ="N",
+      spam_modifies_subj     ="N",
+      spam_quarantine_to     =NULL,
+      spam_tag_level         =-50.0,
+      spam_tag2_level        =7.0,
+      spam_kill_level        =10.0;
+</pre>
+
+<note>
+Copy this to somewhere else and adjust to suit your own environment.
+</note>
+
+<note>
+<c>local</c> should be set to <c>Y</c> otherwise the mail will not be
+scanned for spam.
+</note>
+
+<p>
+This inserts a test user and a Test policy. Adjust these examples to
+fit your needs. Further explanation of the configuration names can be
+found in <path>amavisd.conf</path>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring amavisd to use MySQL</title>
+<body>
+
+<p>
+Now that MySQL is ready we need to tell amavis to use it:
+</p>
+
+<pre caption="Modifying amavisd.conf">
+@lookup_sql_dsn =
+   ( ['DBI:mysql:maildb:host1', 'mail', 'very_secret_password']  );
+
+<comment>(For clarity uncomment the default)</comment>
+$sql_select_policy = 'SELECT *,users.id FROM users,policy'.
+   ' WHERE (users.policy_id=policy.id) AND (users.email IN (%k))'.
+   ' ORDER BY users.priority DESC';
+
+<comment>(If you want sender white/blacklisting)</comment>
+   $sql_select_white_black_list = 'SELECT wb FROM wblist,mailaddr'.
+     ' WHERE (wblist.rid=?) AND (wblist.sid=mailaddr.id)'.
+     '   AND (mailaddr.email IN (%k))'.
+     ' ORDER BY mailaddr.priority DESC';
+</pre>
+</body>
+
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring Spamassassin to use MySQL</title>
+<section>
+<body>
+
+<p>
+As of Spamassassin 3.0 it is possible to store the Bayes and AWL data in a MySQL
+database. We will use MySQL as the backend as it can generally outperform other
+databases. Also, using MySQL for both sets of data makes system management much
+easier. Here I will show how to easily accomplish this.
+</p>
+
+<p>
+First start out by creating the new MySQL user and then create
+the needed tables.
+</p>
+
+<pre caption="Creating the new MySQL database and user">
+# <i>mysql -u root -p mysql</i>
+Enter password:
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 78 to server version: 4.0.18-log
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+mysql> <i>create database dbname;</i>
+mysql> <i>GRANT INSERT,UPDATE,DELETE,SELECT ON dbname.* TO 'dbuser'@'localhost' IDENTIFIED BY 'another_very_secret_password';</i>
+mysql> <i>use dbname;</i>
+</pre>
+
+<p>
+Now that the database is created we'll create the necessary tables. You can cut
+and paste the following into the mysql prompt:
+</p>
+
+<pre caption="MySQL table layout">
+      CREATE TABLE bayes_expire (
+          id                    int(11)         NOT NULL default '0',
+          runtime               int(11)         NOT NULL default '0',
+          KEY bayes_expire_idx1 (id)
+          ) TYPE=MyISAM;
+
+      CREATE TABLE bayes_global_vars (
+          variable              varchar(30)     NOT NULL default '',
+          value                 varchar(200)    NOT NULL default '',
+          PRIMARY KEY           (variable)
+          ) TYPE=MyISAM;
+
+      INSERT INTO bayes_global_vars VALUES ('VERSION','3');
+
+      CREATE TABLE bayes_seen (
+          id                    int(11)         NOT NULL default '0',
+          msgid                 varchar(200) binary NOT NULL default '',
+          flag                  char(1)         NOT NULL default '',
+          PRIMARY KEY           (id,msgid)
+          ) TYPE=MyISAM;
+
+      CREATE TABLE bayes_token (
+          id                    int(11)         NOT NULL default '0',
+          token                 char(5)         NOT NULL default '',
+          spam_count            int(11)         NOT NULL default '0',
+          ham_count             int(11)         NOT NULL default '0',
+          atime                 int(11)         NOT NULL default '0',
+          PRIMARY KEY           (id, token),
+          INDEX (id, atime)
+          ) TYPE=MyISAM;
+
+      CREATE TABLE bayes_vars (
+          id                    int(11)         NOT NULL AUTO_INCREMENT,
+          username              varchar(200)    NOT NULL default '',
+          spam_count            int(11)         NOT NULL default '0',
+          ham_count             int(11)         NOT NULL default '0',
+          token_count           int(11)         NOT NULL default '0',
+          last_expire           int(11)         NOT NULL default '0',
+          last_atime_delta      int(11)         NOT NULL default '0',
+          last_expire_reduce    int(11)         NOT NULL default '0',
+          oldest_token_age      int(11)         NOT NULL default '2147483647',
+          newest_token_age      int(11)         NOT NULL default '0',
+          PRIMARY KEY           (id),
+          UNIQUE bayes_vars_idx1 (username)
+          ) TYPE=MyISAM;
+
+      CREATE TABLE awl (
+          username              varchar(100)    NOT NULL default '',
+          email                 varchar(200)    NOT NULL default '',
+          ip                    varchar(10)     NOT NULL default '',
+          count                 int(11)         default '0',
+          totscore              float           default '0',
+          PRIMARY KEY           (username,email,ip)
+          ) TYPE=MyISAM;
+</pre>
+
+<impo>
+The <c>INSERT</c> line is needed otherwise Spamassassin
+will not work.
+</impo>
+
+<note>
+This is also available in the source tarball in the files
+<path>awl_mysql.sql</path> and <path>bayes_mysql.sql</path>.
+</note>
+
+</body>
+</section>
+<section>
+<title>Configuring Spamassassin to use the MySQL backend</title>
+<body>
+
+<p>
+If you have an old Bayes database in the DBM database and want
+to keep it follow these instructions:
+</p>
+
+<pre caption="Converting Bayes data from a DBM Database">
+<i>su - amavis</i>
+<i>sa-learn --sync</i>
+<i>sa-learn --backup > backup.txt</i>
+<i>sa-learn --restore backup.txt</i>
+</pre>
+
+<note>
+Note that the last step should only be performed after the MySQL database and
+<path>secrets.cf</path> have been updated.
+</note>
+
+<p>
+Now give Spamassassin the required info:
+</p>
+
+<pre caption="Modifying /etc/mail/spamassassin/secrets.cf">
+<comment>(Tell Spamassassin to use MySQL for bayes data</comment>
+bayes_store_module              Mail::SpamAssassin::BayesStore::SQL
+bayes_sql_dsn                   DBI:mysql:sa_bayes:localhost:3306
+bayes_sql_username              db_name
+bayes_sql_password              another_very_secret_password
+
+<comment>(Tell Spamassassin to use MySQL for AWL data</comment>
+auto_whitelist_factory          Mail::SpamAssassin::SQLBasedAddrList
+user_awl_dsn                    DBI:mysql:sa_bayes:localhost:3306
+user_awl_sql_username           db_name
+user_awl_sql_password           another_very_secret_password
+</pre>
+
+<p>
+Next, change its permissions for proper security:
+</p>
+
+<pre caption="Changing permissions">
+# <i>chmod 400 /etc/mail/spamassassin/secrets.cf</i>
+</pre>
+
+<note>
+To create a very secret password use <c>emerge
+app-admin/makepasswd</c> and <c>makepasswd -chars=8</c>
+</note>
+
+<p>
+Now all you have to do is <c>/etc/init.d/amavisd restart</c>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Troubleshooting</title>
+<section>
+<title>Amavisd-new</title>
+<body>
+
+<p>
+To troubleshoot Amavisd-new start out by stopping it with <c>/etc/init.d/amavisd
+stop</c> and then start it manually in the foreground with <c>amavisd debug</c>
+and watch it for anomalies in the output.
+</p>
+
+</body>
+</section>
+<section>
+<title>Spamassassin</title>
+<body>
+
+<p>
+To troubleshoot Spamassassin you can filter an email through it with
+<c>spamassassin -D &lt; mail</c>. To ensure that the headers are intact you can
+move it from another machine with IMAP.
+</p>
+
+<note>
+If you need to troubleshoot you have to enable login for the user
+<c>amavis</c> by changing the login shell in <path>/etc/passwd</path> to
+<path>/bin/bash</path>.
+</note>
+
+<p>
+If you want you can make get the same information and more with Amavisd-new
+using <c>amavisd debug-sa</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Getting help</title>
+<body>
+
+<p>
+If you need help a good place to go is the amavis-user mailing
+list. Before postting a question try searching the <uri
+link="http://marc.theaimsgroup.com/?l=amavis-user">Amavis User
+mailing list archives</uri>. If you find no answer here you can
+subscribe to the <uri
+link="https://lists.sourceforge.net/lists/listinfo/amavis-user">Amavis User
+mailing list</uri>
+</p>
+
+<p>
+If your question is specific to SpamAssassin, DCC, Razor, or
+Postfix, please refer to their respective home pages listed below.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Resources</title>
+<section>
+<title>For further information</title>
+<body>
+
+<ul>
+  <li>
+    <uri link="http://www.ijs.si/software/amavisd/INSTALL">Amavisd-new
+    INSTALL</uri>
+  </li>
+  <li>
+    <uri link="http://www.ijs.si/software/amavisd/README.postfix">Amavisd-new
+    Postfix README</uri>
+  </li>
+  <li>
+    <uri link="http://www.ijs.si/software/amavisd/amavisd-new-docs.html#pbanks">Amavisd-new
+    Policy bank documentation</uri>
+  </li>
+  <li>
+    <uri link="http://spamassassin.apache.org/full/3.0.x/dist/sql/README">Spamassassin
+    SQL README</uri>
+  </li>
+  <li>
+    <uri link="http://www.greylisting.org">Greylisting</uri>
+  </li>
+  <li>
+    <uri link="http://www.postfix.org/FILTER_README.html">Postfix
+    SMTPD_POLICY_README</uri>
+  </li>
+  <li>
+    <uri link="http://www.unixwiz.net/techtips/postfix-HELO.html">Blocking
+    spammers with Postfix HELO controls</uri>
+  </li>
+  <li>
+    <uri link="http://www.linuxjournal.com/article.php?sid=7327">SPF
+    Overview</uri>
+  </li>
+  <li>
+    <uri link="http://jimsun.linxnet.com/misc/postfix-anti-UCE.txt">Jim
+    Seymour's Postfix Anti-UCE Cheat Sheet</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>General resources</title>
+<body>
+
+<ul>
+  <li><uri link="http://www.spamassassin.org">Spamassassin</uri></li>
+  <li><uri link="http://www.ijs.si/software/amavisd/">Amavisd-new</uri></li>
+  <li>
+    <uri link="http://www.ijs.si/software/amavisd/amavisd-new-docs.html">Amavisd-new
+    documentation bits and pieces</uri>
+  </li>
+  <li><uri link="http://razor.sourceforge.net/">Vipuls's Razor</uri></li>
+  <li><uri link="http://pyzor.sourceforge.net/">Pyzor</uri></li>
+  <li>
+    <uri link="http://www.rhyolite.com/anti-spam/dcc/">Distributed Checksum
+    Clearinghouse</uri>
+  </li>
+  <li>
+    <uri link="http://www.renaissoft.com/projects/maia/">Maia
+    Mailguard</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Other howtos</title>
+<body>
+
+<ul>
+  <li>
+    <uri link="http://www.flakshack.com/anti-spam/">Fairly-Secure Anti-SPAM
+    Gateway Using OpenBSD, Postfix, Amavisd-new, SpamAssassin, Razor
+    and DCC</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

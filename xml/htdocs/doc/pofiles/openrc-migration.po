@@ -1,0 +1,940 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/openrc-migration.xml:6
+#, no-wrap
+msgid "Baselayout and OpenRC Migration Guide"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/openrc-migration.xml:22
+#, no-wrap
+msgid ""
+"This guide shows you how to migrate from baselayout-1 to baselayout-2 and\n"
+"OpenRC.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/openrc-migration.xml:34
+#, no-wrap
+msgid "Background"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:37
+#, no-wrap
+msgid "What's baselayout?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:41
+#, no-wrap
+msgid ""
+"Baselayout provides a basic set of files that are necessary for all systems to\n"
+"function properly, such as <path>/etc/hosts</path>. It also provides the basic\n"
+"filesystem layout used by Gentoo (i.e. <path>/etc</path>, <path>/var</path>,\n"
+"<path>/usr</path>, <path>/home</path> directories).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:51
+#, no-wrap
+msgid "What's OpenRC?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:55
+#, no-wrap
+msgid ""
+"OpenRC is a dependency-based rc system that works with whatever init is provided\n"
+"by the system, normally <path>/sbin/init</path>. However, it is <e>not</e> a\n"
+"replacement for <path>/sbin/init</path>. The default init used by Gentoo Linux\n"
+"is <c>sys-apps/sysvinit</c>, while Gentoo/FreeBSD uses the FreeBSD init provided\n"
+"by <c>sys-freebsd/freebsd-sbin</c>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:66
+#, no-wrap
+msgid "So why migrate?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:70
+#, no-wrap
+msgid ""
+"Originally Gentoo's rc system was built into baselayout 1 and written entirely\n"
+"in bash. This led to several limitations. For example, certain system calls need\n"
+"to be accessed during boot and this required C-based callouts to be added. These\n"
+"callouts were each statically linked, causing the rc system to bloat over time.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:77
+#, no-wrap
+msgid ""
+"Additionally, as Gentoo expanded to other platforms like\n"
+"Gentoo/FreeBSD and Gentoo Embedded, it became impossible to require a bash-based\n"
+"rc system. This led to a development of baselayout 2, which is written in\n"
+"C and only requires a POSIX-compliant shell. During the development of\n"
+"baselayout 2, it was determined that it was a better fit if baselayout merely\n"
+"provided the base files and filesystem layout for Gentoo and the rc system\n"
+"was broken off into its own package. Thus we have OpenRC.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:87
+#, no-wrap
+msgid ""
+"OpenRC was initially developed by <uri link=\"http://roy.marples.name/openrc\">Roy\n"
+"Marples</uri> until 2010, and is now maintained by the <uri\n"
+"link=\"/proj/en/base/openrc/\">Gentoo OpenRC Project</uri>. OpenRC supports all\n"
+"current Gentoo variations (i.e. Gentoo Linux, Gentoo/FreeBSD, Gentoo Embedded,\n"
+"and Gentoo Vserver) and other platforms such as FreeBSD and NetBSD.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/openrc-migration.xml:98
+#, no-wrap
+msgid "Migration to OpenRC"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:103
+#, no-wrap
+msgid ""
+"Migration to OpenRC is fairly straightforward; it will be pulled in as part of\n"
+"your regular upgrade process by your package manager. The most important step\n"
+"actually comes after you install the new <c>>=sys-apps/baselayout-2</c> and\n"
+"<c>sys-apps/openrc</c> packages. It is <e>critical</e> that you run\n"
+"<c>dispatch-conf</c> and ensure your <path>/etc</path> is up to date before\n"
+"rebooting. "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p><brite>
+#: en/openrc-migration.xml:108
+#, no-wrap
+msgid "Failure to do so will result in an unbootable system"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:109
+#, no-wrap
+msgid ""
+"and will require the use of the Gentoo LiveCD to perform the steps below to\n"
+"repair your system.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:114
+#, no-wrap
+msgid ""
+"Once you've finished updating your config files, there are a few things to\n"
+"verify prior to rebooting.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:121
+#, no-wrap
+msgid "/etc/conf.d/rc"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:125
+#, no-wrap
+msgid ""
+"<path>/etc/conf.d/rc</path> has been deprecated and any settings you have in\n"
+"there will need to be migrated to the appropriate settings in\n"
+"<path>/etc/rc.conf</path>. Please read through <path>/etc/rc.conf</path> and\n"
+"<path>/etc/conf.d/rc</path> and migrate the settings. Once you are complete,\n"
+"delete <path>/etc/conf.d/rc</path>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:135
+#, no-wrap
+msgid "Kernel modules"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:139
+#, no-wrap
+msgid ""
+"Normally, when you want certain kernel modules automatically loaded at boot, you\n"
+"place them into <path>/etc/modules.autoload.d/kernel-2.6</path> along with any\n"
+"parameters you wanted to pass to them. In baselayout-2, this file is not used\n"
+"anymore. Instead, autoloaded modules and module parameters are placed in one\n"
+"file, <path>/etc/conf.d/modules</path>, no matter the kernel version.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:147
+#, no-wrap
+msgid "An example old style configuration would be:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:150
+#, no-wrap
+msgid "/etc/modules.autoload.d/kernel-2.6"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:151
+#, no-wrap
+msgid ""
+"ivtv\n"
+"cx88_dvb video_br=2\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:156
+#, no-wrap
+msgid "Converting the above example would result in the following:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:159
+#, no-wrap
+msgid "/etc/conf.d/modules"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:160
+#, no-wrap
+msgid ""
+"<comment># Modules autoloaded at boot</comment>\n"
+"modules_2_6=\"ivtv cx88_dvb\"\n"
+"<comment># Module parameters</comment>\n"
+"module_cx88_dvb_args_2_6=\"video_br=2\"\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:167
+#, no-wrap
+msgid ""
+"In the above examples, the modules and their parameters would only be passed\n"
+"to 2.6.x series kernels. The new configuration allows for fine grained\n"
+"control over the modules and parameters based on kernel version.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/openrc-migration.xml:173
+#, no-wrap
+msgid ""
+"The <b>module*</b> variables are not cumulative. The more version-specific\n"
+"variables will override the more general variables.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/openrc-migration.xml:178
+#, no-wrap
+msgid "Please note the difference between <b>module_</b> and <b>modules_</b>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:182
+#, no-wrap
+msgid "An in-depth example would be:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:185
+#, no-wrap
+msgid "detailed example of /etc/conf.d/modules"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:186
+#, no-wrap
+msgid ""
+"<comment># Only load ivtv for 2.6.23-gentoo-r5</comment>\n"
+"modules_2_6_23_gentoo_r5=\"ivtv\"\n"
+"<comment># Only load cx88_dvb for 2.6.23 kernels (other than -gentoo-r5)</comment>\n"
+"modules_2_6_23=\"cx88_dvb\"\n"
+"<comment># Only load tun and usbserial for 2.6.x series kernels where x != 23</comment>\n"
+"modules_2_6=\"tun usbserial\"\n"
+"<comment># Otherwise load ochi1394 and ieee1394</comment>\n"
+"modules=\"ohci1394 ieee1394\"\n"
+"\n"
+"<comment># For 2.6.23-gentoo-r5, pass video_br=2 to cx88_dvb</comment>\n"
+"module_cx88_dvb_args_2_6_23_gentoo_r5=\"video_br=2\"\n"
+"<comment># For 2.6.x series kernels, always pass vendor and product</comment>\n"
+"module_usbserial_args_2_6=\"vendor=0x1410 product=0x2110\"\n"
+"<comment># Always pass debug to ieee1394</comment>\n"
+"module_ieee1394_args=\"debug\" \n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:206
+#, no-wrap
+msgid "Boot runlevel"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:210
+#, no-wrap
+msgid ""
+"The <c>boot</c> runlevel performs several important steps for every machine. For\n"
+"example, making sure your root filesystem is mounted read/write, that your\n"
+"filesystems are checked for errors, that your mountpoints are available, and\n"
+"that the <path>/proc</path> pseudo-filesystem is started at boot.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:217
+#, no-wrap
+msgid ""
+"With OpenRC, volume management services for your block storage devices are no\n"
+"longer run automatically at boot. This includes lvm, raid, swap, device-mapper\n"
+"(dm), dm-crypt, and the like. You must ensure the appropriate initscript\n"
+"for these services is in the <c>boot</c> runlevel, otherwise it's possible that\n"
+"your system will not boot!\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:225
+#, no-wrap
+msgid ""
+"While the OpenRC ebuild will attempt to do this migration for you, you should\n"
+"verify that it migrated all the volume management services properly:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:229
+#, no-wrap
+msgid "Display all services in boot runlevel"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:230
+#, no-wrap
+msgid "# <i>ls -l /etc/runlevels/boot/</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:234
+#, no-wrap
+msgid ""
+"If you don't see root, procfs, mtab, swap, and fsck in the above listing,\n"
+"perform the following to add them to the <c>boot</c> runlevel:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:238
+#, no-wrap
+msgid "Adding critical services to the boot runlevel"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:239
+#, no-wrap
+msgid ""
+"# <i>rc-update add root boot</i>\n"
+"# <i>rc-update add procfs boot</i>\n"
+"# <i>rc-update add mtab boot</i>\n"
+"# <i>rc-update add fsck boot</i>\n"
+"# <i>rc-update add swap boot</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:247
+#, no-wrap
+msgid ""
+"If you know you use mdraid and lvm but do not see them above, you would run\n"
+"the following to add initscripts to the <c>boot</c> runlevel:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:251
+#, no-wrap
+msgid "Adding mdraid and lvm to the boot runlevel"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:252
+#, no-wrap
+msgid ""
+"# <i>rc-update add mdraid boot</i>\n"
+"# <i>rc-update add lvm boot</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:259
+#, no-wrap
+msgid "Udev"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:263
+#, no-wrap
+msgid ""
+"OpenRC no longer starts <c>udev</c> by default, but it does need to be present\n"
+"in the <c>sysinit</c> runlevel to be started. The OpenRC ebuild should detect if\n"
+"<c>udev</c> was previously enabled and add it to the <c>sysinit</c> runlevel.\n"
+"However, to be safe, check if <c>udev</c> is present:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:269
+#, no-wrap
+msgid "Verifying udev"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:270
+#, no-wrap
+msgid ""
+"# <i>ls -l /etc/runlevels/sysinit</i>\n"
+"lrwxrwxrwx 1 root root 14 2009-01-29 08:00 /etc/runlevels/sysinit/udev -> \\\n"
+"/etc/init.d/udev\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:276
+#, no-wrap
+msgid "If <c>udev</c> is not listed, add it to the correct runlevel:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:279
+#, no-wrap
+msgid "Adding udev to the sysinit runlevel"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:280
+#, no-wrap
+msgid "# <i>rc-update add udev sysinit</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:286
+#, no-wrap
+msgid "Network"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:290
+#, no-wrap
+msgid ""
+"Due to baselayout and OpenRC being broken into two different packages, your\n"
+"net.eth0 initscript may disappear during the upgrade process. To replace this\n"
+"initscript and re-add it to the default runlevel, please perform the\n"
+"following:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:296
+#, no-wrap
+msgid "Adding back missing net.eth0 script"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:297
+#, no-wrap
+msgid ""
+"# <i>cd /etc/init.d</i>\n"
+"# <i>ln -s net.lo net.eth0</i>\n"
+"# <i>rc-update add net.eth0 default</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:303
+#, no-wrap
+msgid ""
+"If you are missing any other network initscripts, follow the instructions above\n"
+"to re-add them. Simply replace <c>eth0</c> with the name of your network\n"
+"device.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:309
+#, no-wrap
+msgid ""
+"Also, <path>/etc/conf.d/net</path> (oldnet) no longer uses bash-style arrays\n"
+"for configuration. Please review\n"
+"<path>/usr/share/doc/openrc-&lt;version&gt;/net.example</path> for configuration\n"
+"instructions. Conversion should be relatively straight-forward, converting to\n"
+"newlines for seperate entries, for example a static IP assignment would change\n"
+"as follows:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:317
+#, no-wrap
+msgid "Old /etc/conf.d/net style"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:318
+#, no-wrap
+msgid ""
+"config_eth0=( \"192.168.1.37 netmask 255.255.255.0 brd 192.168.1.255\" )\n"
+"routes_eth0=( \"default via 192.168.1.100\" \"10.0.0.0/8 via 192.168.1.2\" )\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:322
+#, no-wrap
+msgid "New /etc/conf.d/net style"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:323
+#, no-wrap
+msgid ""
+"config_eth0=\"192.168.1.37 netmask 255.255.255.0 brd 192.168.1.255\"\n"
+"routes_eth0=\"default via 192.168.1.100\n"
+"10.0.0.0/8 via 192.168.1.2\"\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:331
+#, no-wrap
+msgid "Clock"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:335
+#, no-wrap
+msgid ""
+"Clock settings have been renamed from <path>/etc/conf.d/clock</path> to your\n"
+"system's native tool for adjusting the clock. This means on Linux it will be\n"
+"<path>/etc/conf.d/hwclock</path> and on FreeBSD it will be\n"
+"<path>/etc/conf.d/adjkerntz</path>. Systems without a working real time clock\n"
+"(RTC) chip should use <path>/etc/init.d/swclock</path>, which sets the system\n"
+"time based on the mtime of a file which is created at system shutdown. The\n"
+"initscripts in <path>/etc/init.d/</path> have also been renamed accordingly, so\n"
+"make sure the appropriate script for your system has been added to the boot\n"
+"runlevel.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:347
+#, no-wrap
+msgid ""
+"Additionally, the <c>TIMEZONE</c> variable is no longer in this file. Its\n"
+"contents are instead found in the <path>/etc/timezone</path> file. If it\n"
+"doesn't exist, you will of course have to create it with your timezone. Please\n"
+"review both of these files to ensure their correctness.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:354
+#, no-wrap
+msgid ""
+"The proper value for this file is the path relative to your timezone from\n"
+"<path>/usr/share/zoneinfo</path>. For example, for someone living on the east\n"
+"coast of the United States, the following would be a correct setting:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:359
+#, no-wrap
+msgid "/etc/timezone"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:360
+#, no-wrap
+msgid "America/New_York\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:366
+#, no-wrap
+msgid "XSESSION"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:370
+#, no-wrap
+msgid ""
+"The XSESSION variable is no longer found in <path>/etc/rc.conf</path>. Instead,\n"
+"you can set the XSESSION variable per-user in <path>~/.bashrc</path> (or\n"
+"equivalent), or system-wide in <path>/etc/env.d/</path>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:376
+#, no-wrap
+msgid "Here's an example of setting XSESSION for the whole system:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:379
+#, no-wrap
+msgid "Setting XSESSION system-wide"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:380
+#, no-wrap
+msgid "# <i>echo 'XSESSION=\"Xfce4\"' > /etc/env.d/90xsession</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/openrc-migration.xml:384 en/openrc-migration.xml:404
+#, no-wrap
+msgid ""
+"You must run <c>env-update</c> after creating a file in <path>/etc/env.d</path>,\n"
+"and then logout and login for it to take effect. If you set the variable in\n"
+"<path>~/.bashrc</path>, you can re-source the file with <c>source\n"
+"~/.bashrc</c>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:393
+#, no-wrap
+msgid "EDITOR and PAGER"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:397
+#, no-wrap
+msgid ""
+"The EDITOR variable is no longer found in <path>/etc/rc.conf</path>.  Both\n"
+"EDITOR and PAGER are set by default in <path>/etc/profile</path>.  You should\n"
+"change this as needed in your <path>~/.bashrc</path> (or equivalent) file or\n"
+"create <path>/etc/env.d/99editor</path> and set the system default there.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:413
+#, no-wrap
+msgid "Boot log"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:417
+#, no-wrap
+msgid ""
+"Previously, you could log the boot process by using\n"
+"<c>app-admin/showconsole</c>. However, OpenRC now handles all logging\n"
+"internally, so there's no need for the hacks that <c>showconsole</c> employed.\n"
+"You can safely unmerge <c>showconsole</c>. To continue logging boot messages,\n"
+"just set the appropriate variable in <path>/etc/rc.conf</path>. Logs will appear\n"
+"in <path>/var/log/rc.log</path>.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:425
+#, no-wrap
+msgid "Enabling boot logging in /etc/rc.conf"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:426
+#, no-wrap
+msgid "rc_logger=\"YES\"\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:432
+#, no-wrap
+msgid "local.start and local.stop"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:436
+#, no-wrap
+msgid ""
+"With OpenRC, <path>/etc/conf.d/local.start</path> and <path>local.stop</path>\n"
+"are deprecated. During the migration to OpenRC, the files are moved to\n"
+"<path>/etc/local.d</path> and gain the suffix <path>.start</path> or\n"
+"<path>.stop</path>. OpenRC then executes those in alphabetic order.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:445
+#, no-wrap
+msgid "System sub-types: Virtualization special cases"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:449
+#, no-wrap
+msgid ""
+"In the early versions of OpenRC, we explictly detected multiple types of\n"
+"virtualization, and used that detection to note when certain init scripts\n"
+"should be skipped, using the <b>keyword</b> call in the <b>depend</b>\n"
+"functions.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:456
+#, no-wrap
+msgid ""
+"However, as of the 0.7.0 release, you are required to explicitly configure the\n"
+"sub-type using the <b>rc_sys</b> variable in <path>/etc/rc.conf</path>. The\n"
+"sub-type should be set to match the virtualization environment that the given\n"
+"root is in. In general, the non-empty <b>rc_sys</b> value should be within the\n"
+"virtual containers; The host node will have <b>rc_sys=\"\"</b>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/openrc-migration.xml:464
+#, no-wrap
+msgid ""
+"If you do not have any specific sub-type, please use the default of an empty\n"
+"string <b>\"\"</b>. If the variable is unset, you will be given a warning and we\n"
+"will attempt to use the old detection algorithm.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/openrc-migration.xml:470
+#, no-wrap
+msgid ""
+"If you do not know what value your system was using with the automatic\n"
+"detection, you should temporarily comment out the <b>rc_sys</b> variable and\n"
+"run the detection command, <c>rc -S</c>.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:475
+#, no-wrap
+msgid "Setting system sub-type to none in /etc/rc.conf"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/openrc-migration.xml:476
+#, no-wrap
+msgid "rc_sys=\"\"\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:480
+#, no-wrap
+msgid ""
+"The detection algorithm had to be replaced with manual configuration due to\n"
+"the introduction of new sub-types and changes to the kernel that made prior\n"
+"detection unreliable.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/openrc-migration.xml:487
+#, no-wrap
+msgid "Subtype"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/openrc-migration.xml:488
+#, no-wrap
+msgid "Description"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/openrc-migration.xml:489
+#, no-wrap
+msgid "Notes"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:493
+#, no-wrap
+msgid "Default, no sub-type"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:494
+#, no-wrap
+msgid "Not the same as unset; FreeBSD, Linux &amp; NetBSD"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:497
+#, no-wrap
+msgid "jail"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:498
+#, no-wrap
+msgid "FreeBSD jails"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:502
+#, no-wrap
+msgid "lxc"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:503
+#, no-wrap
+msgid "Linux Containers"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:504
+#, no-wrap
+msgid "Not auto-detected"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:507
+#, no-wrap
+msgid "openvz"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:508
+#, no-wrap
+msgid "Linux OpenVZ"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:512
+#, no-wrap
+msgid "prefix"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:513
+#, no-wrap
+msgid "Prefix"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:514
+#, no-wrap
+msgid "Not auto-detected; FreeBSD, Linux &amp; NetBSD"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:517
+#, no-wrap
+msgid "vserver"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:518
+#, no-wrap
+msgid "Linux vserver"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:522
+#, no-wrap
+msgid "xen0"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:523
+#, no-wrap
+msgid "Xen0 Domain"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:524 en/openrc-migration.xml:529
+#, no-wrap
+msgid "Linux &amp; NetBSD"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:527
+#, no-wrap
+msgid "xenU"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/openrc-migration.xml:528
+#, no-wrap
+msgid "XenU Domain"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:536
+#, no-wrap
+msgid "Cleaning up stale configuration files"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:540
+#, no-wrap
+msgid ""
+"After migration, there will be files left on your file system that are not\n"
+"cleaned up by Portage. Those are configuration files which are protected by\n"
+"Portage' configuration file protection feature.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:546
+#, no-wrap
+msgid ""
+"The most notable example would be <path>/etc/conf.d/net.example</path> which is\n"
+"superseded by <path>/usr/share/doc/openrc-*/net.example.bz2</path>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:553
+#, no-wrap
+msgid "Finishing up"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:557
+#, no-wrap
+msgid ""
+"Once you've finished updating your config files and initscripts, the last thing\n"
+"to do is <b>reboot</b>. This is necessary because system state information is\n"
+"not preserved during the upgrade, so you'll need to provide it with a fresh\n"
+"boot.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/openrc-migration.xml:568
+#, no-wrap
+msgid "Changed functionality"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:570
+#, no-wrap
+msgid "The pause action"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:574
+#, no-wrap
+msgid ""
+"Previously it was possible to temporarily stop a service without taking down all\n"
+"the depending services by using <c>/etc/init.d/service pause</c>. In OpenRC, the\n"
+"<c>pause</c> action was removed; this functionality is supported by the\n"
+"<c>/etc/init.d/service --nodeps stop</c>, which also works in the old\n"
+"baselayout.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/openrc-migration.xml:584
+#, no-wrap
+msgid "rootfs entry in /etc/mtab"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/openrc-migration.xml:588
+#, no-wrap
+msgid ""
+"Previously, the initial <b>rootfs</b> entry was removed from\n"
+"<path>/etc/mtab</path>, and only the real root <path>/</path> entry was\n"
+"present. The duplicate rootfs item was actually added back during shutdown.\n"
+"In OpenRC, both entries must be present for full support of initramfs and\n"
+"tmpfs-on-root. This also means that less writing is required during shutdown.\n"
+msgstr ""

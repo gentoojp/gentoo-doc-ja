@@ -1,0 +1,706 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/articles/hardware-stability-p1.xml:6
+#, no-wrap
+msgid "Linux hardware stability guide, Part 1"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/articles/hardware-stability-p1.xml:14
+#, no-wrap
+msgid ""
+"In this article, Daniel Robbins shows you how to diagnose and fix CPU\n"
+"flakiness, as well as how to test your RAM for defects. By the end of this\n"
+"article, you'll have the skills to ensure that your Linux system is as stable\n"
+"as it possibly can be.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/hardware-stability-p1.xml:29
+#, no-wrap
+msgid "CPU troubleshooting"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:34
+#, no-wrap
+msgid ""
+"Many of us in the Linux world have been bitten by nasty hardware problems.  How\n"
+"many of us have set up a Linux box, installed our favorite distribution,\n"
+"compiled and installed some additional apps, and gotten everything working\n"
+"perfectly only to find that our new system has an (argh!) fatal hardware bug?\n"
+"Whether the symptoms are random segmentation faults, data corruption, hard\n"
+"locks, or lost data is irrelevant -- the hardware glitch effectively makes our\n"
+"normally reliable Linux operating system barely able to stay afloat. In this\n"
+"article, we'll take an in-depth look at how to detect flaky CPUs and RAM --\n"
+"allowing you to replace the defective parts before they do some serious \n"
+"damage.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:47
+#, no-wrap
+msgid ""
+"If you're experiencing instability problems and suspect they are hardware\n"
+"related, I encourage you to test both your CPU and memory to ensure that\n"
+"they're working OK. However, even if you haven't experienced these problems,\n"
+"it's still a good idea to perform these CPU and memory tests. In doing so, you\n"
+"may detect a hardware problem that could have bitten you at an inopportune\n"
+"time, something that could have caused data loss or hours of frustration in a\n"
+"frantic search for the source of the problem. The proper, proactive application\n"
+"of these techniques can help you to avoid a lot of headaches, and if your\n"
+"system passes the tests, you'll have the peace of mind that your system is up\n"
+"to spec.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/hardware-stability-p1.xml:62
+#, no-wrap
+msgid "CPU issues"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:66
+#, no-wrap
+msgid ""
+"If you have a horribly defective CPU, your machine may be unable to boot Linux\n"
+"or may only run for a few minutes before locking up. CPUs in this ragged state\n"
+"are easy to diagnose as defective because the symptoms are so obvious. But\n"
+"there are more subtle CPU defects that aren't so easy to detect; generally, the\n"
+"less obvious errors are the ones that cause machines to either lock up every\n"
+"now and then for no apparent reason, or cause certain processes to die\n"
+"unexpectedly. Most CPU instabilities can be triggered by \"exercising\" the CPU\n"
+"-- giving it a bunch of work to do, causing it to heat up and possibly flake\n"
+"out.  Let's look at some ways to stress-test the CPU.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:78
+#, no-wrap
+msgid ""
+"You may be surprised to hear that one of the best tests of CPU stability is\n"
+"built in to Linux -- the kernel compile. The gcc compiler is a great tool for\n"
+"testing general CPU stability, and a kernel build uses gcc a whole lot. By\n"
+"creating and running the following script from your <path>/usr/src/linux</path>\n"
+"directory, you can give your machine an industrial-strength kernel compile\n"
+"stress test:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/hardware-stability-p1.xml:86
+#, no-wrap
+msgid "The cpubuild script"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/hardware-stability-p1.xml:87
+#, no-wrap
+msgid ""
+"#!/bin/bash\n"
+"make dep\n"
+"while [ \"foo\" = \"foo\" ]\n"
+"do\n"
+"  make clean\n"
+"  make -j2 bzImage\n"
+"  if [ $? -ne 0 ]\n"
+"  then\n"
+"    echo OUCH OUCH OUCH OUCH\n"
+"    exit 1\n"
+"  fi\n"
+"done\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:102
+#, no-wrap
+msgid ""
+"You'll notice that this script <e>repeatedly</e> compiles the kernel.  The\n"
+"reason for this is simple -- some CPUs have intermittent glitches, allowing\n"
+"them to compile the kernel perfectly 95% of the time, but causing the kernel\n"
+"compile to bomb out every now and then. Normally, this is because it may take\n"
+"five or more kernel compiles before the processor heats up to the point where\n"
+"it becomes unstable.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:111
+#, no-wrap
+msgid ""
+"In the above script, make sure to adjust the <c>-j</c> option so that the\n"
+"number following it is one greater than the number of CPUs in your system; in\n"
+"other words, use \"2\" for uniprocessors, \"3\" for dual-processors, etc. The\n"
+"<c>-j</c> option tells <c>make</c> to build the kernel in parallel, ensuring\n"
+"that there's always at least one gcc process on deck after each source file is\n"
+"compiled -- ensuring that the stress on your CPU is maximized. If your Linux\n"
+"box is going to be unused for the afternoon, go ahead and run this script, and\n"
+"let the machine recompile the kernel for a few hours.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/hardware-stability-p1.xml:124
+#, no-wrap
+msgid "Possible CPU problems"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:128
+#, no-wrap
+msgid ""
+"If the script runs perfectly for several hours, congratulations! Your CPU has\n"
+"passed the first test. However, it's possible that the above script dies\n"
+"unexpectedly. How do you know you're having a CPU problem as opposed to\n"
+"something else? Well, if gcc spat out an error like this, then there's a very\n"
+"good possibility that your CPU is defective:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/hardware-stability-p1.xml:135
+#, no-wrap
+msgid "GCC error"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/hardware-stability-p1.xml:136
+#, no-wrap
+msgid "gcc: Internal compiler error: program cc1 got fatal signal 11\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:140
+#, no-wrap
+msgid "At this point, you have about three possibilities as to the state of your CPU:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:145
+#, no-wrap
+msgid ""
+"    If you type <c>make bzImage</c> to resume the kernel compilation, and the\n"
+"    compiler dies on the exact same file, keep typing <c>make bzImage</c> over\n"
+"    and over again. If after about ten tries the build process continues to die\n"
+"    on this particular file, then the problem is most likely caused by a (rare)\n"
+"    gcc compiler bug that's being triggered by this particular source file,\n"
+"    rather than a flaky CPU. However, these days, gcc is quite stable, so this\n"
+"    isn't likely to happen.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:154
+#, no-wrap
+msgid ""
+"    If you type <c>make bzImage</c> to resume kernel compilation, and you get\n"
+"    another signal 11 a little bit later, then your CPU is most likely on its\n"
+"    last legs.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:159
+#, no-wrap
+msgid ""
+"    If you type <c>make bzImage</c> to resume kernel compilation and the kernel\n"
+"    compiles successfully, this doesn't mean that your CPU is OK.  Normally,\n"
+"    this means that your CPU glitch only shows up every now and then, normally\n"
+"    only when the CPU rises above a certain temperature (a CPU will get hotter\n"
+"    when it is being used for an extended period of time, and may take several\n"
+"    kernel compiles to get to that critical point).\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/hardware-stability-p1.xml:171
+#, no-wrap
+msgid "Rescuing your CPU"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:175
+#, no-wrap
+msgid ""
+"If your CPU is experiencing random intermittent errors when placed under heavy\n"
+"load, it's possible that your CPU isn't defective at all -- maybe it simply\n"
+"isn't being cooled properly. Here are some things that you can check:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:181
+#, no-wrap
+msgid "Is your CPU fan plugged in?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:182
+#, no-wrap
+msgid "Is it relatively dust-free?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:184
+#, no-wrap
+msgid ""
+"    Does the fan actually spin (and spin at the proper speed) when the power is\n"
+"    on?\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:187
+#, no-wrap
+msgid "Is the heat sink seated properly on the CPU?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:188
+#, no-wrap
+msgid "Is there thermal grease between the CPU and the heat sink?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:189
+#, no-wrap
+msgid "Does your case have adequate ventilation?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:193
+#, no-wrap
+msgid ""
+"If everything seems fine, then you may want to rerun the kernel compile tests\n"
+"with an open case. Let the kernel compile go for about five minutes and then\n"
+"put your hand inside the running machine and touch the outside metal casing of\n"
+"the power supply to ground yourself. Then, carefully test the temperature of\n"
+"the heat sink with the tip of your finger. If it's unusually hot, then it's\n"
+"very possible that your heatsink/fan combo just isn't adequate for your\n"
+"particular CPU. In that case, upgrade your system's cooling hardware --\n"
+"hopefully, your CPU hasn't sustained any permanent damage and is still\n"
+"functional.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/hardware-stability-p1.xml:207
+#, no-wrap
+msgid "The ultimate CPU test"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:211
+#, no-wrap
+msgid ""
+"The kernel compile test is a great way to test for CPU stability, but there's\n"
+"an even more extreme CPU test available that you might want to use. I saved\n"
+"this one for last, because if your CPU is grossly undercooled, this particular\n"
+"test could really overheat it and could <e>theoretically</e> cause permanent\n"
+"damage to your CPU. This test is intended for systems that pass the kernel\n"
+"compile test with no problem -- systems that you want to ensure can handle even\n"
+"the most challenging CPU loads with ease. If your CPU is properly cooled, it\n"
+"will pass this test, and if it doesn't pass, you need more cooling.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:222
+#, no-wrap
+msgid ""
+"To perform my \"ultimate\" CPU test, the first thing I do is head over to the\n"
+"lm_sensors page (see <uri link=\"#resources\">Resources</uri>) and download the\n"
+"lm_sensors package. This source tarball contains various kernel modules that\n"
+"interface with the health monitoring features that are built in to nearly all\n"
+"modern motherboards. Once this package is properly installed and the proper\n"
+"modules are loaded (use the prog/detect/sensors-detect script to figure out\n"
+"which ones), you'll see some new files and directories appear at\n"
+"<path>/proc/sys/dev/sensors</path>.  These files contain handy information like\n"
+"the speed of your CPU fans, CPU and mainboard temperature readings, and\n"
+"motherboard voltage readings, all updated in real time. I recommend you\n"
+"configure this package to compile as modules and use the sensors-detect script\n"
+"to figure out what modules to load at boot time, since I've had better results\n"
+"with this configuration.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:238
+#, no-wrap
+msgid ""
+"Once you have the lm_sensors modules loaded, I recommend that you install a\n"
+"graphical CPU/sensors monitor, which will allow you to watch your CPU load and\n"
+"temperatures in real time without having to repeatedly <c>cat</c> files in\n"
+"/proc/sys/dev/sensors. For this purpose, I use a great little program called\n"
+"gkrellm (see <uri link=\"#resources\">Resources</uri>). Here's a snapshot of my\n"
+"gkrellm app, monitoring my CPU usage, motherboard temperature settings and a\n"
+"bunch of other things:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><figure>
+#: en/articles/hardware-stability-p1.xml:247
+#, no-wrap
+msgid ""
+"gkrellm is up and \n"
+"running"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:251
+#, no-wrap
+msgid ""
+"There are other graphical monitoring packages available that are compatible\n"
+"with lm_sensors; you'll find a bunch of them listed over at the lm_sensors home\n"
+"page, under the \"links\" section.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:257
+#, no-wrap
+msgid ""
+"The last preparatory step is to download the cpuburn program (see <uri\n"
+"link=\"#resources\">Resources</uri>). This handy little program uses hand-crafted\n"
+"combinations of machine instructions to put maximum stress on your particular\n"
+"CPU -- even a little bit more than a repetitive kernel compile. Included in the\n"
+"archive are various little programs customized to set P5- and P6-class\n"
+"processors, as well as a special version for the AMD K6. Once you've unpacked\n"
+"the cpuburn tarball, read the README file; it explains how to compile the\n"
+"included assembly source files. After you've done this, you'll have your own\n"
+"little cpuburn program.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:269
+#, no-wrap
+msgid ""
+"Now, for the test. I normally fire up my graphical sensors monitor, and then\n"
+"start the cpuburn program as root. Then, I watch the CPU temperature reading\n"
+"rise and stabilize, and then I leave cpuburn running for an hour or so. If you\n"
+"repeat these steps and your CPU temperature continues to rise to an unusually\n"
+"high temperature (160 degrees Farenheit or so would be considered \"unusually\n"
+"high\"), then your CPU cooling system needs major work. And, if your machine\n"
+"crashes or locks up, or the cpuburn process dies, your CPU cooling needs\n"
+"improvement -- or maybe your particular CPU simply isn't up to \"spec\". You can\n"
+"use the CPU temperature readings to make that judgment. But if all goes well,\n"
+"then your system should be able to tackle any challenge thrown at it. After an\n"
+"hour or so, you can go ahead and kill the cpuburn program and resume normal\n"
+"operations.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/hardware-stability-p1.xml:288
+#, no-wrap
+msgid "Memory troubleshooting"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/hardware-stability-p1.xml:290
+#, no-wrap
+msgid "Memory testing"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:294
+#, no-wrap
+msgid ""
+"It's really important to have a completely reliable CPU, and it's just as\n"
+"important to have rock-solid RAM chips. Some people think that SIMMS and DIMMS\n"
+"never fail and never need to be tested. Unfortunately, this isn't true -- bad\n"
+"memory is very common, and is something that all of us need to watch out for.\n"
+"Other people believe that while there may be bad RAM out there, any RAM errors\n"
+"will be detected by the boot-time BIOS memory check. This is also false; the\n"
+"BIOS memory check won't detect the vast majority of bad RAM, so don't let the\n"
+"BIOS check give you a false sense of security.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/hardware-stability-p1.xml:307
+#, no-wrap
+msgid "Bad memory symptoms"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:311
+#, no-wrap
+msgid ""
+"OK, so there's bad RAM out there, and some may be sitting in your machine right\n"
+"now. Here are some warning signs that may indicate that your computer contains\n"
+"bad RAM:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:318
+#, no-wrap
+msgid ""
+"    When you load a bunch of programs at once, every now and then a particular\n"
+"    program will die for no apparent reason.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:322
+#, no-wrap
+msgid ""
+"    Every now and then, when you open a file, it appears corrupted. If you open\n"
+"    it later, it looks fine.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:326
+#, no-wrap
+msgid ""
+"    When you extract tarballs (<c>tar -xzvf</c>), tar frequently reports that\n"
+"    the tarball is corrupted. You try extracting the tarball again at a later\n"
+"    date and tar doesn't report any errors. Similar problems can occur with\n"
+"    gzip and bzip2.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:332
+#, no-wrap
+msgid ""
+"    If you're experiencing problems like these, it's likely that your system\n"
+"    RAM is defective. You'll definitely want to test your RAM using the\n"
+"    following method. And even if you haven't experienced any of these\n"
+"    problems, it's a good idea to give the RAM in your system a good workout to\n"
+"    help ensure that you won't be bitten by unexpected RAM quirks in the\n"
+"    future. Here's how.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/hardware-stability-p1.xml:344
+#, no-wrap
+msgid "memtest86"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:348
+#, no-wrap
+msgid ""
+"Fortunately for us, there's an excellent Linux-based memory testing program\n"
+"that installs onto a bootable floppy disk. It's called memtest86 (see <uri\n"
+"link=\"#resources\">Resources</uri> to get it). Creating a memtest floppy is\n"
+"simple.  First, download the tarball. Then, unpack the archive and build the\n"
+"binary disk image:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/hardware-stability-p1.xml:355
+#, no-wrap
+msgid "Building memtest86"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/hardware-stability-p1.xml:356
+#, no-wrap
+msgid ""
+"# <i>tar -xzvf memtest86-2.5.tar.gz</i>\n"
+"# <i>cd memtest86-2.5</i>\n"
+"# <i>make</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:362
+#, no-wrap
+msgid "Then, insert a blank 3.5\" disk into your floppy drive, and type:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/hardware-stability-p1.xml:365
+#, no-wrap
+msgid "Installing memtest86"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/hardware-stability-p1.xml:366
+#, no-wrap
+msgid "# <i>make install</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:370
+#, no-wrap
+msgid ""
+"After just a few seconds, your 3.5\" disk will have a wonderful little memory\n"
+"tester sitting on it, ready to be booted. The best way to perform this test is\n"
+"to find some time when your machine can sit idle for at least six hours --\n"
+"starting the test right before you go to bed (or leave work) is a good idea. To\n"
+"start the test, reboot your machine with the 3.5\" disk in the drive. When your\n"
+"system boots, the memtest86 program will immediately start:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><figure>
+#: en/articles/hardware-stability-p1.xml:379
+#, no-wrap
+msgid "memtest86 testing the RAM on my development machine"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:382
+#, no-wrap
+msgid ""
+"Major memory quirks (such as \"dead\" bits) will be detected within seconds.\n"
+"Failures triggered by specific bit patterns (which are unfortunately quite\n"
+"common) may not be detected for several hours, but should eventually be\n"
+"detected. As soon as memtest86 detects a defective bit, a message will appear\n"
+"at the bottom of the screen -- and the tests will continue. When you turn on\n"
+"your monitor in the morning, find that the tests have completed, and see no\n"
+"warnings on the screen, then in all probability your RAM is fine. However, if\n"
+"you continue to experience the problems listed in the <uri link=\"#badmem\">Bad\n"
+"memory symptoms</uri> section, then it <e>is</e> possible that your RAM has an\n"
+"infrequently occurring quirk and may still need to be replaced.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/hardware-stability-p1.xml:397
+#, no-wrap
+msgid "Solving RAM problems"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:401
+#, no-wrap
+msgid ""
+"I hope that all your RAM is working just fine. However, if you're one of the\n"
+"unfortunate ones, all may not be lost -- there are still some things you can do\n"
+"to \"fix\" your bad RAM. The first thing I suggest doing is to visit your BIOS\n"
+"setup program and look at your memory settings. Some BIOS setup programs have a\n"
+"memory option called \"Turbo Mode\" -- obviously, if you have something like this\n"
+"enabled, then you should disable it. It's also possible that your BIOS memory\n"
+"timings are set incorrectly -- you can try adjusting them (increasing the\n"
+"refresh rate, lowering the CAS setting) and rerunning memtest86 to see if the\n"
+"problem goes away.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:413
+#, no-wrap
+msgid ""
+"If memtest still finds errors, then it's time to locate the faulty SIMM or DIMM\n"
+"and remove it from your machine. If you have more than one memory module\n"
+"installed, then you'll want to install only a single module (or two modules if\n"
+"you have SIMMS), and run memtest86. Cycle through all your modules and you'll\n"
+"be able to determine which ones are defective -- there's no need to throw a\n"
+"good memory module in the trash.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:422
+#, no-wrap
+msgid ""
+"That's all for now; in the second and final installment in this series, we'll\n"
+"take a look at how to fix problems related to hardware configuration, including\n"
+"IRQ and PCI latency issues. In the mean time, you may want to check out the\n"
+"following resources.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/hardware-stability-p1.xml:431
+#, no-wrap
+msgid "Resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:436
+#, no-wrap
+msgid ""
+"    Download the <uri link=\"http://www.netroedge.com/~lm78\">lm_sensors\n"
+"    package</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:439
+#, no-wrap
+msgid "Pick up a copy of <uri link=\"http://gkrellm.net/\">gkrellm</uri>."
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:441
+#, no-wrap
+msgid ""
+"    Get the <uri link=\"http://users.ev1.net/~redelm/\">cpuburn program</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:444
+#, no-wrap
+msgid ""
+"    Grab your own copy of <uri link=\"http://www.memtest86.com/\">memtest86</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:447
+#, no-wrap
+msgid ""
+"    For more information on the \"signal 11 problem\", check out the <uri\n"
+"    link=\"http://www.bitwizard.nl/sig11/\">Sig 11 FAQ</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:451
+#, no-wrap
+msgid ""
+"    You can find a bunch of Window-maker dockapps (some of which graph CPU and\n"
+"    sensors data) at <uri\n"
+"    link=\"http://www.windowmaker.org/links-general.html\">Linuxpowered.com's\n"
+"    Window-maker links page</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:457
+#, no-wrap
+msgid ""
+"    If you're trying to diagnose a hardware problem related to your nVidia\n"
+"    graphics card, be sure to check out the <uri\n"
+"    link=\"http://www.technologyvault.co.uk/geforce/faq.php?list=categories&amp;prog=gef&amp;lang=en\">GeForce FAQ</uri>. There's lots of great\n"
+"    Linux and Windows-related information there.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/hardware-stability-p1.xml:463
+#, no-wrap
+msgid ""
+"    For additional nVidia troubleshooting information, check out Sven\n"
+"    Vermeulen's <uri link=\"/doc/en/nvidia-guide.xml\">nVidia Guide</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/hardware-stability-p1.xml:471
+#, no-wrap
+msgid "About the author"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/hardware-stability-p1.xml:475
+#, no-wrap
+msgid ""
+"Daniel Robbins lives in Albuquerque, New Mexico. He was the President/CEO of\n"
+"Gentoo Technologies Inc., the Chief Architect of the Gentoo Project and is a\n"
+"contributing author of several books published by MacMillan: Caldera OpenLinux\n"
+"Unleashed, SuSE Linux Unleashed, and Samba Unleashed. Daniel has been involved\n"
+"with computers in some fashion since the second grade when he was first exposed\n"
+"to the Logo programming language and a potentially lethal dose of Pac Man. This\n"
+"probably explains why he has since served as a Lead Graphic Artist at SONY\n"
+"Electronic Publishing/Psygnosis. Daniel enjoys spending time with his wife Mary\n"
+"and his new baby daughter, Hadassah. You can contact Daniel at\n"
+"<mail>drobbins@gentoo.org</mail>.\n"
+msgstr ""

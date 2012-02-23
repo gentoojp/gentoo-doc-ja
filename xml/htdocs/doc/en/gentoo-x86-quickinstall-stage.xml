@@ -1,0 +1,151 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE included SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-x86-quickinstall-stage.xml,v 1.14 2012/02/22 21:27:45 swift Exp $ -->
+
+<included>
+
+<version>13</version>
+<date>2012-02-22</date>
+
+<section>
+<title>Setting Up The Stage</title>
+<body>
+
+<p>
+First make sure your date and time is set correctly using <c>date
+MMDDhhmmYYYY</c>. Use UTC time.
+</p>
+
+<pre caption="Set the date and UTC time">
+<comment>(Check the clock)</comment>
+livecd gentoo # <i>date</i>
+Mon Mar  6 00:14:13 UTC 2006
+
+<comment>(Set the current date and time if required)</comment>
+livecd gentoo # <i>date 030600162006</i> <comment>(Format is MMDDhhmmYYYY)</comment>
+Mon Mar  6 00:16:00 UTC 2006
+</pre>
+
+<p>
+Next, download a stage from one of our <uri
+link="/main/en/mirrors.xml">mirrors</uri>:
+</p>
+
+<pre caption="Download a stage3 archive">
+livecd gentoo # <i>links http://www.gentoo.org/main/en/mirrors.xml</i>
+<comment>(Pick a mirror, move to the releases/x86/current-stage3/ directory,
+highlight the stage3 of your choice, probably the i686 stage3, and press D to
+download it)</comment>
+
+<comment>(<b>Or</b> download it directly with wget without choosing a nearby mirror)</comment>
+livecd gentoo # <i>wget ftp://distfiles.gentoo.org/pub/gentoo/releases/x86/current-stage3/stage3-i686-*.tar.bz2</i>
+</pre>
+
+<p>
+Go to <path>/mnt/gentoo</path> and unpack the stage using <c>tar xjpf &lt;stage3
+tarball&gt;</c>.
+</p>
+
+<pre caption="Unpack the stage3 archive">
+livecd gentoo # <i>time tar xjpf stage3*</i>
+
+real  1m14.157s
+user  1m2.920s
+sys   0m7.530s
+</pre>
+
+<p>
+Install the latest Portage snapshot. Proceed as for the stage3 archive: choose
+a nearby mirror from our <uri link="/main/en/mirrors.xml">list</uri>, download
+the latest snapshot and unpack it.
+</p>
+
+<pre caption="Download the latest Portage snapshot">
+livecd gentoo # <i>cd /mnt/gentoo/usr</i>
+livecd usr # <i>links http://www.gentoo.org/main/en/mirrors.xml</i>
+<comment>(Pick a mirror, move to the snapshots/ directory,
+highlight <b>portage-latest.tar.bz2</b> and press D to download it)</comment>
+
+<comment>(<b>Or</b> download it directly with wget without choosing a nearby mirror)</comment>
+livecd gentoo # <i>cd /mnt/gentoo/usr</i>
+livecd usr # <i>wget http://distfiles.gentoo.org/snapshots/portage-latest.tar.bz2</i>
+</pre>
+
+<pre caption="Unpack the Portage snapshot">
+livecd usr # <i>time tar xjf portage-lat*</i>
+
+real  0m40.523s
+user  0m28.280s
+sys   0m8.240s
+</pre>
+
+</body>
+</section>
+<section>
+<title>Chrooting</title>
+<body>
+
+<p>
+Mount the <path>/proc</path> &amp; <path>/dev</path> file systems, copy over
+the <path>/etc/resolv.conf</path> file, then chroot into your Gentoo
+environment.
+</p>
+
+<pre caption="Chroot">
+livecd usr # <i>cd /</i>
+livecd / # <i>mount -t proc proc /mnt/gentoo/proc</i>
+livecd / # <i>mount --rbind /dev /mnt/gentoo/dev</i>
+livecd / # <i>cp -L /etc/resolv.conf /mnt/gentoo/etc/</i>
+livecd / # <i>chroot /mnt/gentoo /bin/bash</i>
+livecd / # <i>env-update &amp;&amp; source /etc/profile</i>
+>>> Regenerating /etc/ld.so.cache...
+</pre>
+
+</body>
+</section>
+<section>
+<title>Set your time zone</title>
+<body>
+
+<p>
+Set your time zone information by using the correct listing in
+<path>/usr/share/zoneinfo</path>.
+</p>
+
+<pre caption="Setting your timezone">
+livecd / # <i>ls /usr/share/zoneinfo</i>
+<comment>(Using Brussels as an example)</comment>
+livecd / # <i>cp /usr/share/zoneinfo/Europe/Brussels /etc/localtime</i>
+livecd / # <i>echo "Europe/Brussels" &gt; /etc/timezone</i>
+
+livecd / # <i>date</i>
+Wed Mar  8 00:46:05 CET 2006
+</pre>
+
+</body>
+</section>
+<section>
+<title>Set your host name and domain name</title>
+<body>
+
+<p>
+Set your host name in <path>/etc/conf.d/hostname</path> and
+<path>/etc/hosts</path>. In the following example, we use
+<c>mybox</c> as host name and <c>at.myplace</c> as domain name.  You can either
+edit the config files with <c>nano</c> or use the following commands:
+</p>
+
+<pre caption="Set host and domain name">
+livecd / # <i>cd /etc</i>
+livecd etc # <i>echo "127.0.0.1 mybox.at.myplace mybox localhost" > hosts</i>
+livecd etc # <i>sed -i -e 's/HOSTNAME.*/HOSTNAME="mybox"/' conf.d/hostname</i>
+<comment>(Use defined host name and check)</comment>
+livecd etc # <i>hostname mybox</i>
+livecd etc # <i>hostname -f</i>
+mybox.at.myplace
+</pre>
+
+</body>
+</section>
+
+</included>

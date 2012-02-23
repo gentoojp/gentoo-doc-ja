@@ -1,0 +1,387 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-working-use.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.21</version>
+<date>October 21, 2004</date>
+
+<section>
+<title>What are USE-flags?</title>
+<subsection>
+<title>The ideas behind USE-flags</title>
+<body>
+
+<p>
+When you are installing Gentoo (or any other distribution, or even operating
+system for that matter) you make choices depending on the environment you are 
+working with. A setup for a server differs from a setup for a workstation.
+A gaming workstation differs from a 3D rendering workstation.
+</p>
+
+<p>
+This is not only true for choosing what packages you want to install, but also
+what features a certain package should support. If you don't need OpenGL, why
+would you bother installing OpenGL and build OpenGL support in most of your
+packages? If you don't want to use KDE, why would you bother compiling packages
+with KDE-support if those packages work flawlessly without?
+</p>
+
+<p>
+To help users in deciding what to install/activate and what not, we wanted the
+user to specify his/her environment in an easy way. This forces the user into
+deciding what they really want and eases the process for Portage, our package
+managment system, to make useful decisions.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Definition of a USE-flag</title>
+<body>
+
+<p>
+Enter the USE-flags. Such a flag is a keyword that embodies support and
+dependency-information for a certain concept. If you define a certain USE-flag, 
+Portage will know that you want support for the chosen keyword. Of course
+this also alters the dependency information for a package.
+</p>
+
+<p>
+Let us take a look at a specific example: the <c>kde</c> keyword. If you do not
+have this keyword in your <c>USE</c> variable, all packages that have
+<e>optional</e> KDE support will be compiled <e>without</e> KDE support. All
+packages that have an <e>optional</e> KDE dependency will be installed
+<e>without</e> installing the KDE libraries (as dependency). If you have defined
+the <c>kde</c> keyword, then those packages <e>will</e> be compiled with KDE
+support, and the KDE libraries will be installed as dependency.
+</p>
+
+<p>
+By correctly defining the keywords you will receive a system tailored
+specifically to your needs.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>What USE-flags exist?</title>
+<body>
+
+<p>
+There are two types of USE-flags: <e>global</e> and <e>local</e> USE-flags.
+</p>
+
+<ul>
+  <li>
+    A <e>global</e> USE-flag is used by several packages, system-wide. This is 
+    what most people see as USE-flags.
+  </li>
+  <li>
+    A <e>local</e> USE-flag is used by a single package to make package-specific
+    decisions.
+  </li>
+</ul>
+
+<p>
+A list of available global USE-flags can be found <uri
+link="/dyn/use-index.xml">online</uri> or locally in
+<path>/usr/portage/profiles/use.desc</path>. A short (<e>very</e> incomplete)
+snippet:
+</p>
+
+<pre caption="A short snippet of available USE-flags">
+gtk     - Adds support for x11-libs/gtk+ (The GIMP Toolkit)
+gtk2    - Use gtk+-2.0.0 over gtk+-1.2 in cases where a program supports both.
+gtkhtml - Adds support for gnome-extra/gtkhtml
+guile   - Adds support for dev-util/guile (interpreter for Scheme)
+icc     - Use the Intel C++ Compiler if the package supports it
+icc-pgo - Enable PGO data generation or use when use icc.
+imap    - Adds support for IMAP
+</pre>
+
+<p>
+A list of available local USE-flags can be found locally in
+<path>/usr/portage/profiles/use.local.desc</path>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Using USE-flags</title>
+<subsection>
+<title>Declare permanent USE-flags</title>
+<body>
+
+<p>
+In the hope you are convinced of the importance of USE-flags we will now inform
+you how to declare USE-flags.
+</p>
+
+<p>
+As previously mentioned, all USE-flags are declared inside the <c>USE</c>
+variable. To make it easy for users to search and pick USE-flags, we already
+provide a <e>default</e> USE setting. This setting is a collection of USE-flags
+we think are commonly used by the Gentoo users. This default setting is declared
+in the <path>/etc/make.profile/make.defaults</path> file. Let us take a look at
+this default setting:
+</p>
+
+<pre caption="/etc/make.profile/make.defaults USE variable on an x86 system">
+USE="x86 oss apm arts avi berkdb crypt cups encode foomaticdb gdbm gif gpm
+     gtk gtk2 imlib jpeg kde gnome libg++ libwww mad mikmod motif mpeg ncurses
+     nls oggvorbis opengl pam pdflib png python qt quicktime readline sdl
+     slang spell ssl svga tcpd truetype X xml2 xmms xv zlib"
+</pre>
+
+<p>
+As you can see, this variable already contains quite a lot of keywords. Do
+<b>not</b> alter the <path>/etc/make.profile/make.defaults</path> file to tailor
+the <c>USE</c> variable to your needs: changes in this file will be undone when
+you update Portage!
+</p>
+
+<p>
+To change this default setting, you need to add or remove keywords to the
+<c>USE</c> variable. This is done globally by defining the <c>USE</c> variable 
+in <path>/etc/make.conf</path>. In this variable you add the extra USE-flags you
+require, or remove the USE-flags you don't want. This latter is done by
+prefixing the keyword with the minus-sign ("-").
+</p>
+
+<p>
+For instance, to remove support for KDE and QT but add support for ldap, the
+following <c>USE</c> can be defined in <path>/etc/make.conf</path>:
+</p>
+
+<pre caption="An example USE setting in /etc/make.conf">
+USE="-kde -qt ldap"
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Declaring USE flags for individual packages</title>
+<body>
+
+<p>
+Sometimes you want to declare a certain USE flag for one (or a couple) of
+applications but not system-wide. To accomplish this, you will need to create
+the <path>/etc/portage</path> directory (if it doesn't exist yet) and edit
+<path>/etc/portage/package.use</path>.
+</p>
+
+<p>
+For instance, if you don't want <c>berkdb</c> support globally but you do want
+it for <c>mysql</c>, you would add:
+</p>
+
+<pre caption="/etc/portage/package.use example">
+dev-db/mysql berkdb
+</pre>
+
+<p>
+You can of course also explicitly <e>disable</e> USE flags for a certain
+application. For instance, if you don't want <c>java</c> support in PHP:
+</p>
+
+<pre caption="/etc/portage/package.use 2nd example">
+dev-php/php -java
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Declare temporary USE-flags</title>
+<body>
+
+<p>
+Sometimes you want to set a certain USE-setting only once. Instead of editing
+<path>/etc/make.conf</path> twice (to do and undo the USE-changes) you can just 
+declare the USE-variable as environment variable. Remember that, when you
+re-emerge or update this application (either explicitly or as part of a system 
+update) your changes will be lost!
+</p>
+
+<p>
+As an example we will temporarily remove java from the USE-setting
+during the installation of mozilla.
+</p>
+
+<pre caption="Using USE as environment variable">
+# <i>USE="-java" emerge mozilla</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Inheriting USE-flags</title>
+<body>
+
+<p>
+Some packages don't only listen to USE-flags, but also provide USE-flags. When
+you install such a package, the USE-flag they provide is added to your USE
+setting. To view the list of packages that provide a USE-flag, check
+<path>/etc/make.profile/use.defaults</path>:
+</p>
+
+<pre caption="A snippet from /etc/make.profile/use.defaults">
+gnome           gnome-base/gnome
+gtk             x11-libs/gtk+
+qt              x11-libs/qt
+kde             kde-base/kdebase
+motif           x11-libs/openmotif
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Precedence</title>
+<body>
+
+<p>
+Of course there is a certain precedence on what setting has priority over the
+USE setting. You don't want to declare <c>USE="-java"</c> only to see that
+<c>java</c> is declared anyway. The precedence for the USE setting is, ordered
+by priority (first has lowest priority):
+</p>
+
+<ol>
+  <li>
+    Default USE setting declared in <path>/etc/make.profile/make.defaults</path>
+  </li>
+  <li>
+    Inherited USE setting if a package from
+    <path>/etc/make.profile/use.defaults</path> is installed
+  </li>
+  <li>
+    User-defined USE setting in <path>/etc/make.conf</path>
+  </li>
+  <li>
+    User-defined USE setting in <path>/etc/portage/package.use</path>
+  </li>
+  <li>
+    User-defined USE setting as environment variable
+  </li>
+</ol>
+
+<p>
+To view the final <c>USE</c> setting as seen by Portage, run <c>emerge info</c>.
+This will list all relevant variables (including the <c>USE</c> variable) with
+the content used by Portage.
+</p>
+
+<pre caption="Running emerge info">
+# <i>emerge info</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Adapting your Entire System to New USE Flags</title>
+<body>
+
+<p>
+If you have altered your USE flags and you wish to update your entire system to
+use the new USE flags, use <c>emerge</c>'s <c>--newuse</c> option:
+</p>
+
+<pre caption="Rebuilding your entire system">
+# <i>emerge --update --deep --newuse world</i>
+</pre>
+
+<p>
+Next, run Portage's depclean to remove the conditional dependencies that
+were emerged on your "old" system but that have been obsoleted by the new USE
+flags. 
+</p>
+
+<warn>
+Running <c>emerge depclean</c> is a dangerous operation and should be handled
+with care. Double-check the provided list of "obsoleted" packages to make sure
+it doesn't remove packages you need. In the following example we add the
+<c>-p</c> switch to have depclean only list the packages without removing them.
+</warn>
+
+<pre caption="Removing obsoleted packages">
+# <i>emerge -p depclean</i>
+</pre>
+
+<p>
+When depclean has finished, run <c>revdep-rebuild</c> to rebuild the
+applications that are dynamically linked against shared objects provided by 
+possibly removed packages. <c>revdep-rebuild</c> is part of the 
+<c>gentoolkit</c> package; don't forget to emerge it first.
+</p>
+
+<pre caption="Running revdep-rebuild">
+# <i>revdep-rebuild</i>
+</pre>
+
+<p>
+When all this is accomplished, your system is using the new USE flag settings.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Package specific USE-flags</title>
+<subsection>
+<title>Viewing available USE-flags</title>
+<body>
+
+<p>
+Let us take the example of <c>mozilla</c>: what USE-flags does it listen to? To
+find out, we use <c>emerge</c> with the <c>--pretend</c> and <c>--verbose</c>
+options:
+</p>
+
+<pre caption="Viewing the used USE-flags">
+# <i>emerge --pretend --verbose mozilla</i>
+These are the packages that I would merge, in order:
+
+Calculating dependencies ...done!
+[ebuild  N    ] net-www/mozilla-1.5-r1 +java +crypt -ipv6 -gtk2 +ssl +ldap 
++gnome -debug +mozcalendar -mozaccess -mozxmlterm -moznoirc -moznomail
+-moznocompose -moznoxft 
+</pre>
+
+<p>
+<c>emerge</c> isn't the only tool for this job. In fact, we have a tool
+dedicated to package information called <c>etcat</c> which resides in the
+<c>gentoolkit</c> package. First, install <c>gentoolkit</c>:
+</p>
+
+<pre caption="Installing gentoolkit">
+# <i>emerge gentoolkit</i>
+</pre>
+
+<p>
+Now run <c>etcat</c> with the <c>uses</c> argument to view the USE-flags of a
+certain package. For instance, for the <c>gnumeric</c> package:
+</p>
+
+<pre caption="Using etcat to view used USE-flags">
+# <i>etcat uses gnumeric</i>
+[ Colour Code : <i>set</i> <comment>unset</comment> ]
+[ Legend      : (U) Col 1 - Current USE flags        ]
+[             : (I) Col 2 - Installed With USE flags ]
+
+ U I [ Found these USE variables in : app-office/gnumeric-1.2.0 ]
+ - - <comment>libgda</comment>  : Adds GNU Data Access (CORBA wrapper) support for gnumeric
+ - - <comment>gnomedb</comment> : unknown
+ + + <i>python</i>  : Adds support/bindings for the Python language
+ + + <i>bonobo</i>  : Adds support for gnome-base/bonobo (Gnome CORBA interfaces)
+</pre>
+
+</body>
+</subsection>
+</section>
+</sections>

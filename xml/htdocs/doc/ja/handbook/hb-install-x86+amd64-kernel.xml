@@ -1,0 +1,421 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-x86+amd64-kernel.xml,v 1.10 2011/11/14 08:00:32 naota Exp $ -->
+
+<sections>
+
+<abstract>
+全てのディストリビューションで中核をなすのが、Linuxカーネルです。
+本章では、カーネルのコンフィギュレーション方法について説明します。
+</abstract>
+
+<version>14</version>
+<date>2011-11-05</date>
+
+<!-- Original revision: 1.44 -->
+<!-- Translator: Taku Murakami -->
+<!-- Translator: masuda -->
+<!-- Translator: naota -->
+
+<section>
+<title>タイムゾーン</title>
+<body>
+
+<p>
+システムが、どの地域に設置されているかを把握するため、
+まず初めにタイムゾーンを選択しなくてはいけません。
+nn<path>/usr/share/zoneinfo</path>でタイムゾーンを確認し、
+<path>/etc/localtime</path>へコピーします。
+なお、ファイル名が実際の地域を示しているわけではないので、
+<path>/usr/share/zoneinfo/Etc/GMT*</path>タイムゾーンは避けて下さい。
+例えば、<path>GMT-8</path>は実際にはGMT+8を示します。
+</p>
+
+<pre caption="タイムゾーン情報の設定">
+# <i>ls /usr/share/zoneinfo</i>
+<comment>(ここでは、GMTを使用することを想定しています)</comment>
+# <i>cp /usr/share/zoneinfo/GMT /etc/localtime</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>ソースをインストールする</title>
+<subsection>
+<title>カーネルを選択する</title>
+<body>
+
+<p>
+全のディストリビューションで中核となるのが、Linuxカーネルです。これは、
+ユーザプログラムとシステムハードウェアを仲介します。Gentooでは、
+使用可能なカーネルソースをユーザに複数提供しています。説明がついた詳細な一覧表が、
+<uri link="/doc/en/gentoo-kernel.xml">Gentoo Kernel
+Guide</uri><uri link="/doc/ja/gentoo-kernel.xml">(日本語訳)</uri>から入手できます。
+</p>
+
+<p>
+<keyval id="arch"/>ベースのシステムでは、
+<c>gentoo-sources</c>(追加機能のパッチを含んだカーネルソース)が提供されています。
+</p>
+
+<p>
+カーネルソースを選択し、<c>emerge</c>を使ってインストールします。
+</p>
+
+<pre caption="カーネルソースのインストール">
+# <i>emerge gentoo-sources</i>
+</pre>
+
+<p>
+<path>/usr/src</path>を確認すると、
+カーネルソースにリンクが張られた<path>linux</path>というシンボリックリンクがあるはずです。この場合、
+インストールされたカーネルソースは<c>gentoo-sources-<keyval id="kernel-version"/></c>にリンクが張られています。
+なお、読者の環境によっては異なるかもしれませんので、注意して下さい。
+</p>
+
+<pre caption="カーネルソースのシンボリックリンクを確認">
+# <i>ls -l /usr/src/linux</i>
+lrwxrwxrwx    1 root   root    12 Oct 13 11:04 /usr/src/linux -&gt; linux-<keyval id="kernel-version"/>
+</pre>
+
+<p>
+それでは、カーネルソースをコンフィギュレーションしコンパイルしていきます。なお、
+<c>genkernel</c>を使用し、インストールCDで使用される標準カーネルをビルドすることもできます。
+但し、ここではまず初めにに"マニュアル"コンフィギュレーションを説明します。というのも、
+これは環境を最適化する上で最良の方法だからです。
+</p>
+
+<p>
+マニュアルでカーネルをコンフィギュレーションするなら、<uri
+link="#manual">デフォルト: マニュアルコンフィギュレーション</uri>へ進んで下さい。
+<c>genkernel</c>を使用するなら、
+代わりに<uri link="#genkernel">代替案: genkernelを使用する</uri>を読み進んで下さい。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="manual">
+<title>デフォルト: マニュアルコンフィギュレーション</title>
+<subsection>
+<title>はじめに</title>
+<body>
+
+<p>
+マニュアルでカーネルをコンフィギュレーションすることは、
+Linuxユーザが行うべきオペレーションの中で、最難関と見なされることがあります。
+これは、それほど真実ということでもありません。カーネルのコンフィギュレーションを数回こなせば、
+難しかったことを思い出すことすらないでしょう。;)
+</p>
+
+<p>
+しかし、一つだけ<e>本当</e>のことがあります。
+カーネルをマニュアルでコンフィギュレーションし始める際には、
+システムをよく把握しておかなくてはいけないということです。ほとんどの情報は、
+<c>lspci</c>を含んだpciutils(<c>emerge pciutils</c>)をemergeすることで収集できます。
+そうすれば、chrootされた環境で、<c>lspci</c>を実行できます。
+なお、<c>lspci</c>によって出力される<e>pcilib</e>に関する警告は、
+無視して構いません(例えば、pcilib: cannot open/sys/bus/pci/devices)。あるいは、
+<e>chrootされていない</e>環境から<c>lspci</c>を実行することも可能です。
+実行結果は同じになります。または、<c>lsmod</c>を実行し、
+インストールCDがどのカーネルモジュールを使用しているかを確認することもできます(有効にすべきモジュールを判断する上で、
+良いヒントになるでしょう)。
+</p>
+
+<p>
+それでは、カーネルソースのディレクトリに移動し、<c>make menuconfig</c>を実行します。
+ncursesベースのコンフィギュレーションメニューが表示されます。
+</p>
+
+<pre caption="menuconfigの呼び出し">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+コンフィギュレーション項目がいくつか表示されますので、まずは、
+有効にすべきオプションをピックアップしていきましょう(そうしないと、
+Gentooが機能しなかったり、あるいは追加調整なしで正常に機能しません)。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>必須オプションを有効にする</title>
+<body>
+
+<p>
+システムをブートする上で必須のドライバ(例えば、SCSIコントローラ等)全てが、
+モジュールとしてではなく、カーネル<e>自身</e>にコンパイルされるようにして下さい。
+そうしないと、システムが完全にブートできるようになりません。
+</p>
+
+</body>
+<body test="func:keyval('arch')='AMD64'">
+
+<p>
+次に、正確なプロセッサタイプを選択します。x86_64のカーネルメンテナは、
+ハードウェアの問題がユーザへ通知されるように、MCE機能を有効にすることを強く推奨しています。
+x86_64では、他のアーキテクチャと異なり、この種のエラーは<c>dmesg</c>ではなく、
+<path>/dev/mcelog</path>へ出力されます。なお、その際には<c>app-admin/mcelog</c>パッケージが必要になります。
+また、32ビットプログラムを実行可能にするなら、IA32エミュレーションを選択するようにして下さい。
+Gentooでは、マルチライブラリシステム(32ビット/64ビットコンピューティングの混合)が、
+デフォルトでインストールされます。そのため、このオプションは必須です。
+</p>
+
+<note>
+マルチライブラリでないプロファイル(完全に64ビットのみのシステム)を使うつもりであれば、IA32エミュレーションを選択する必要はありません。
+しかし、<uri link="/doc/en/gentoo-amd64-faq.xml">マルチライブラリでないプロファイル</uri>
+<uri link="/doc/ja/gentoo-amd64-faq.xml">(日本語訳)</uri>に変更するための<uri
+link="?part=1&amp;chap=6#doc_chap2_sect2">ガイド</uri>に従い、また正しい<uri
+link="?part=1&amp;chap=10#doc_chap2_sect2">ブートローダ</uri>を選択するようにしましょう。
+</note>
+
+<pre caption="プロセッサタイプと機能の選択">
+Processor type and features  --->
+   [ ] Machine Check / overheating reporting
+   [ ] Intel MCE Features
+   [ ] AMD MCE Features
+  Processor family (AMD-Opteron/Athlon64)  --->
+    ( ) Opteron/Athlon64/Hammer/K8
+    ( ) Intel P4 / older Netburst based Xeon
+    ( ) Core 2/newer Xeon
+    ( ) Intel Atom
+    ( ) Generic-x86-64
+Executable file formats / Emulations  --->
+   [*] IA32 Emulation
+</pre>
+
+</body>
+<body test="func:keyval('arch')='x86'">
+
+<p>
+それでは、正確なプロセッサファミリを選択します。
+</p>
+
+<pre caption="正確なプロセッサファミリの選択">
+Processor type and features ---&gt;
+  <comment>(システムに合わせ変更して下さい。)</comment>
+  (<i>Athlon/Duron/K7</i>) Processor family
+</pre>
+
+</body>
+<body>
+
+<p>
+<c>File Systems</c>に移動し、使用するファイルシステムのサポートを選択します。
+但し、モジュールとしてコンパイル<e>してはいけません</e>。そうしないと、
+Gentooシステムはパーティションをマウントできません。また、<c>Virtual
+memory</c>と<c>/proc file system</c>を選択して下さい。
+</p>
+
+<pre caption="必要なファイルシステムを選択">
+File systems ---&gt;
+<comment>(システムに合わせて下記オプションを1つ以上選択して下さい。)</comment>
+  &lt;*&gt; Second extended fs support
+  &lt;*&gt; Ext3 journalling file system support
+  &lt;*&gt; The Extended 4 (ext4) filesystem
+  &lt;*&gt; Reiserfs support
+  &lt;*&gt; JFS filesystem support
+  &lt;*&gt; XFS filesystem support
+  ...
+  Pseudo Filesystems ---&gt;
+    [*] /proc file system support
+    [*] Virtual memory file system support (former shm fs)
+
+<comment>(GPTを使用しているなら、GPTパーティションラべルを有効にします)</comment>
+  Partition Types ---&gt;
+    [*] Advanced partition selection
+      ...
+      [*] EFI GUID Partition support
+</pre>
+
+<p>
+PPPoEを使用してインターネット接続する、
+あるいはダイアルアップモデムを使用しているのであれば、
+下記のオプションがカーネルで必要になります。
+</p>
+
+<pre caption="必要なPPPoE用ドライバを選択">
+Device Drivers ---&gt;
+  Networking device Support ---&gt;
+    &lt;*&gt; PPP (point-to-point protocol) support
+    &lt;*&gt;   PPP support for async serial ports
+    &lt;*&gt;   PPP support for sync tty ports
+</pre>
+
+<p>
+2つの圧縮オプションに害はありませんが、必須というわけでもありません。
+同様に、<c>PPP over Ethernet</c>オプションも必須というわけではなく、
+カーネルにPPPoE機能をコンフィギュレーションする際に<c>ppp</c>で使用されるだけです。
+</p>
+
+<p>
+また、必要に応じて、イーサネットカードに合わせカーネルサポートを有効にして下さい。
+</p>
+
+<p test="func:keyval('arch')='x86'">
+ハイパースレッディング(tm)をサポートするインテル製CPU、あるいはマルチCPUシステムなら、
+"Symmetric multi-processing support"を有効にします。
+</p>
+
+<p test="func:keyval('arch')='AMD64'">
+マルチCPUのOpteron、又はマルチコア(AMD64 X2等)システムなら、
+"Symmetric multi-processing support"を有効にします。
+</p>
+
+<pre caption="SMPサポートの有効化">
+Processor type and features  ---&gt;
+  [*] Symmetric multi-processing support
+</pre>
+
+<note>
+マルチコアシステムでは、各コアが1つのプロセッサとしてカウントされます。
+</note>
+
+<p test="func:keyval('arch')='x86'">
+4GB以上のRAMを搭載している場合、
+"High Memory Support (64G)"を有効にする必要があります。
+</p>
+
+<p>
+USB入力デバイス(キーボードやマウス等)を使用するなら、同様に下記も有効にして下さい。
+</p>
+
+<pre caption="入力デバイス用に、USBサポートの有効化">
+Device Drivers ---&gt;
+  [*] HID Devices  ---&gt;
+    &lt;*&gt;   USB Human Interface Device (full HID) support
+</pre>
+
+</body>
+<body test="func:keyval('arch')='x86'">
+
+<p>
+PCMCIAサポートがノートPCで必要なら、
+システムに合わせPCMCIAカードブリッジのサポートを有効にして下さい。
+</p>
+
+<pre caption="PCMCIAサポートの有効化">
+Bus options (PCI etc.)  ---&gt;
+  PCCARD (PCMCIA/CardBus) support  ---&gt;
+    &lt;*&gt; PCCard (PCMCIA/CardBus) support
+<comment>(古いPCMCIAカードのサポートが必要なら、16ビットを選択します。ほとんどのシステムで必要になります。)</comment>
+    &lt;*&gt;   16-bit PCMCIA support
+    [*]   32-bit CardBus support
+<comment>(適切なブリッジを下記から選択します。)</comment>
+    *** PC-card bridges ***
+    &lt;*&gt; CardBus yenta-compatible bridge support (NEW)
+    &lt;*&gt; Cirrus PD6729 compatible bridge support (NEW)
+    &lt;*&gt; i82092 compatible bridge support (NEW)
+</pre>
+
+<p>
+カーネルのコンフィギュレーションが終了したら、<uri 
+link="#compiling">コンパイルとインストール</uri>へ進んで下さい。
+</p>
+
+</body>
+</subsection>
+<subsection id="compiling">
+<title>コンパイルとインストール</title>
+<body>
+
+<p>
+カーネルのコンフィギュレーションが済みましたので、コンパイル・インストールしていきます。
+コンフィギュレーションメニューを終了し、コンパイルに進みます。
+</p>
+
+<pre caption="カーネルのコンパイル">
+# <i>make &amp;&amp; make modules_install</i>
+</pre>
+
+<p>
+カーネルのコンパイルが終了したら、カーネルイメージを<path>/boot</path>へコピーします。
+選択したカーネルにふさわしいと思うファイル名であれば、どんなものでも構いませんが、
+ブートローダを設定する際に後ほど必要となりますので、ファイル名は覚えておいて下さい。
+<c><keyval id="kernel-name"/></c>をカーネルの名称とバージョンに置き換える必要があります。
+</p>
+
+<pre caption="カーネルのインストール">
+# <i>cp arch/<keyval id="arch-sub"/>/boot/bzImage /boot/<keyval id="kernel-name"/></i>
+</pre>
+
+<p>
+では、<uri link="#kernel_modules">カーネルモジュール</uri>へ進みましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="genkernel">
+<title>代替案: genkernelを使用する</title>
+<body>
+
+<p>
+このセクションを読んでいるなら、<c>genkernel</c>スクリプトを使用し、
+カーネルのコンフィギュレーションを行うことにしたということでしょう。
+</p>
+
+<p>
+カーネルツリーはインストールされていますので、<c>genkernel</c>スクリプトを使用し、
+カーネルを自動でビルドします。
+<c>genkernel</c>は、コンフィギュレーションがインストールCDのそれとほぼ同じになるように動作します。
+つまり、<c>genkernel</c>を使用しカーネルをビルドすると、インストールCD同様、
+通常であれば起動時にシステムが全ハードウェアを検出してくれるということになります。
+genkernelでは、マニュアルでカーネルをコンフィギュレーションする必要がないので、
+カーネルをコンパイルするのが不安なユーザにとっては理想的なソリューションです。
+</p>
+
+<p>
+では、genkernelの使用方法を見ていきます。初めに、genkernelをemergeします。
+</p>
+
+<pre caption="genkernelのemerge">
+# <i>emerge genkernel</i>
+</pre>
+
+<p>
+では、<c>genkernel all</c>を実行しカーネルソースをコンパイルして下さい。<c>genkernel</c>では、
+ほとんど全てのハードウェアをサポートするカーネルをコンパイルするので、
+コンパイルが終了するにはかなりの時間がかかります!
+</p>
+
+<p>
+ブートパーティションが、ext2あるいはext3をファイルシステムとして使用していなければ、
+マニュアルでカーネルをコンフィギュレーションしなくてはいけません。その際は、
+<c>genkernel --menuconfig all</c>を実行しカーネル<e>自身</e>にファイルシステムのサポートを追加します(つまり、
+モジュールとしてでは<e>ありません</e>)。同様に、LVM2ユーザは、
+<c>--lvm2</c>を引数に追加する必要があるかもしれません。
+</p>
+
+<pre caption="genkernelの実行">
+# <i>genkernel all</i>
+</pre>
+
+<p>
+<c>genkernel</c>が完了したら、カーネル -- モジュール全一式と<e>初期RAMディスク</e>(initramfs)
+-- が作成されます。本書では、後ほどブートローダを設定する際に、カーネルとinitrdを使用します。
+ブートローダの設定ファイルを記述する際に必要となりますので、
+カーネルとinitrdのファイル名を書き留めておいて下さい。電源ボタンを押し、
+ハードウェアの自動検知(インストールCDで行われているように)が実行された後、
+initrdはすぐに展開されます(但し、それは"実際の"システムが起動する前です)。
+</p>
+
+<pre caption="作成されたカーネルイメージとinitrdの確認">
+# <i>ls /boot/kernel* /boot/initramfs*</i>
+</pre>
+
+</body>
+</section>
+<section id="kernel_modules">
+<title>カーネルモジュール</title>
+<subsection>
+<include href="hb-install-kernelmodules.xml"/>
+</subsection>
+</section>
+</sections>

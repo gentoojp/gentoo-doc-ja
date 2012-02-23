@@ -1,0 +1,412 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/openrc-migration-ja.xml,v 1.1 2010/02/14 23:02:02 shindo Exp $ -->
+
+<guide link="/doc/ja/openrc-migration.xml">
+<title>BaselayoutとOpenRCの移行ガイド </title>
+
+<author title="Author">
+  <mail link="cardoe"/>
+</author>
+<author title="Author">
+  <mail link="nightmorph"/>
+</author>
+<author title="Contributor">
+  <mail link="uberlord"/>
+</author>
+<author title="翻訳">
+  <mail link="idani@gentoo.gr.jp">飴谷　シゲヒロ</mail>
+</author>
+
+
+<abstract>
+このガイドは、baselayout-1からbaselayout-2とOpenRCへの移行方法を説明します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.11</version>
+<date>2009-11-29</date>
+
+<!--Original revision: 1.17 -->
+
+<chapter>
+<title>背景</title>
+<section>
+<title>baselayoutとは何ですか?</title>
+<body>
+
+<p>
+Baselayoutは、すべてのシステムで正常に動作するために必要とされる、例えば<path>/etc/hosts</path>のような基本的なファイルセットを提供します。
+また、Gentooで使用されている基本的なファイルシステムのディレクトリ構成(言い換えれば、<path>/etc</path>、 <path>/var</path>、<path>/usr</path>、<path>/home</path>などのディレクトリ )も提供します。
+</p>
+
+</body>
+</section>
+<section>
+<title>OpenRCとは何ですか?</title>
+<body>
+
+<p>
+OpenRCは、依存関係を前提としたrcシステムで、システムにはinitとして提供されています。普通は<path>/sbin/init</path>を指します。
+しかし、<path>/sbin/init</path>を<e>置き換えるものではありません。</e>
+Gentoo Linuxが標準で使用するinitは、<c>sys-apps/sysvinit</c>です。しかし、FreeBSDで使用されるGentoo/FreeBSDのinitは、<c>sys-freebsd/freebsd-sbin</c>で提供されます。
+</p>
+
+</body>
+</section>
+<section>
+<title>なぜ移行するのでしょうか？</title>
+<body>
+
+<p>
+もともとGentooのrcシステムは、ほぼbashで書かれたbaselayout 1に組み込まれていました。
+
+これはいくつかの制限につながりました。例えば、特定のシステムコールは、起動中はずっとアクセスできる必要があり、これを実現するにはC言語ベースの呼び出しを追加する必要があります。これらの呼び出しは、個々にスタティックリンクされ、長期間かけて肥大化する結果となった。
+</p>
+
+<p>
+それに加えて、GentooがGentoo/FreeBSDやGentoo Embeddedのようなプラットフォームに拡大するにつれて、bashを必要とするrcシステムは合わなくなってきました。
+これはPOSIXに準拠したshellのみを必要とするC言語で実装されたbaselayout 2の開発につながりました。
+baselayout 2の開発中に、
+baselayoutは、ただ単に基本ファイルとGentoo向けのファイルシステムのディレクトリ構成だけを提供すれば汎用性が向上し、rcシステムの個々の機能は、個々のパッケージに分割することが決定した。
+それゆえ、OpenRCと呼ばれます。
+</p>
+
+<p>
+OpenRCは、主に<uri link="http://roy.marples.name/openrc">Roy Marples</uri>によって開発され、現在提供されている全てのGentooのバリエーション(Gentoo Linux、Gentoo/FreeBSD、Gentoo Embedded、Gentoo Vserver)とFreeBSDやNetBSDのような他のプラットフォームをサポートします。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>OpenRCへの移行</title>
+<section>
+<body>
+
+<p>
+OpenRCへの移行は、非常に簡単です。パッケージマネージャの通常のアップグレードプロセスで導入できます。
+最も重要なステップは、実際に<c>>=sys-apps/baselayout-2</c>と<c>sys-apps/openrc</c>の2つの新しいパッケージをインストールした後です。
+再起動前に、<c>dispatch-conf</c>を実行し、<path>/etc</path>配下を更新しておくことが<e>もっとも重要です。</e>
+
+<brite>上記を実行しないと、起動不能なシステムになります。</brite>
+こうなってしまったシステムを復旧するには、Gentoo LiveCDを使用して、以下の手順を実行する必要があります。
+</p>
+
+<p>
+設定ファイルの更新が完了したら、再起動する前の確認項目がいくつかあります。
+</p>
+	
+</body>
+</section>
+
+<section id="rc_conf">
+<title>/etc/conf.d/rc</title>
+<body>
+
+<p>
+<path>/etc/conf.d/rc</path>は廃止され、そこで設定されていた設定項目は、<path>/etc/rc.conf</path>の適切な設定に移行する必要があります。
+<path>/etc/rc.conf</path>と<path>/etc/conf.d/rc</path>を一読し、設定を移行してください。移行が完了したら、<path>/etc/conf.d/rc</path>は削除してください。
+</p>
+
+</body>
+</section>
+<section id="modules">
+<title>カーネル　モジュール</title>
+<body>
+
+<p>
+通常は、起動時に特定のモジュールを自動的にロードしたい時は、<path>/etc/modules.autoload.d/kernel-2.6</path>にそのモジュールに渡したいパラメータと一緒に記述します。
+
+baselayout-2では、もはやこのファイルは利用しません。代わりに、自動ロードを行うモジュールとモジュールに渡すパラメータは、<path>/etc/conf.d/modules</path>に集約されました。もう、カーネルのバージョンは関係ありません。
+</p>
+
+<p>
+以前の設定例を紹介します。
+</p>
+
+<pre caption="/etc/modules.autoload.d/kernel-2.6">
+ivtv
+cx88_dvb video_br=2
+</pre>
+
+<p>
+上記の例は、移行後は以下のようになります。
+</p>
+
+<pre caption="/etc/conf.d/modules">
+<comment># Modules autoloaded at boot</comment>
+<comment># 起動時に自動的に読み込むモジュール</comment>
+modules_2_6="ivtv cx88_dvb"
+<comment># Module parameters</comment>
+<comment># モジュールのパラメータ</comment>
+module_cx88_dvb_args_2_6="video_br=2"
+</pre>
+
+<p>
+上記の例では、モジュールとそのパラメータは、2.6.xシリーズのカーネルのみに渡されます。
+新しい設定では、モジュールとパラメータをカーネルのバージョンまで指定することが可能となります。
+</p>
+
+<p>
+より詳細な例を紹介します。
+</p>
+
+<pre caption="/etc/conf.d/modulesの詳細な設定例">
+<comment># Always load ochi1394 and ieee1394, no matter the kernel version</comment>
+<comment># カーネルのバージョンに関係なく、ochi1394とieee1394は常時ロード</comment>
+modules="ohci1394 ieee1394"
+<comment># Only load tun and usbserial for 2.6.x series kernels</comment>
+<comment># 2.6.xシリーズのカーネルでのみ、tunとusbserailをロード</comment>
+modules_2_6="tun usbserial"
+<comment># Only load cx88_dvb for 2.6.23 kernels</comment>
+<comment># cx88_dvbは2.6.23カーネルでのみロード</comment>
+modules_2_6_23="cx88_dvb"
+<comment># Only load ivtv for 2.6.23-gentoo-r5</comment>
+<comment># ivtvは2.6.23-gentoo-r5でのみロード</comment>
+modules_2_6_23_gentoo_r5="ivtv"
+
+<comment># For 2.6.23-gentoo-r5, pass video_br=2 to cx88_dvb</comment>
+<comment># 2.6.23-gentoo-r5でのみcx88_dvbにパラメータとしてvideo_br=2を渡す</comment>
+module_cx88_dvb_args_2_6_23_gentoo_r5="video_br=2"
+<comment># For 2.6.x series kernels, always pass vendor and product</comment>
+<comment># 2.6.xシリーズのカーネルは、vendorとproductを渡す</comment>
+module_usbserial_args_2_6="vendor=0x1410 product=0x2110"
+<comment># Always pass debug to ieee1394</comment>
+<comment># ieee1394には常にdebugを渡す</comment>
+module_ieee1394_args="debug" 
+</pre>
+
+<note>
+<b>module_</b>と<b>modules_</b>は意味が違うので、注意してください。
+</note>
+
+</body>
+</section>
+<section id="boot">
+<title>起動時のランレベル</title>
+<body>
+
+<p>
+<c>起動時に選択された</c>ランレベルは、全てのマシンにおける重要なステップのいくつかを実行します。
+例えば、rootファイルシステムがread/writeでマウントされたかを確認し、マウントされたファイルシステムにエラーが無いことを確認し、マウントポイントが利用可能となり、その後、<path>/proc</path>という疑似ファイルシステムがスタートします。
+</p>
+
+<p>
+OpenRCにおいて、ブロック ストレージ デバイスのためのボリューム管理サービスは、起動時に自動的に実行されません。
+これは、lvm、raid、swap、device-mapper(dm)、dm-crypt、evmsのようなものを含みます。
+
+<c>起動時の</c>のランレベルの中で、これらのサービスのための適切なinitscriptを実行する必要があります。そうしなければ、システムは起動しなくなるでしょう！
+</p>
+
+<p>
+While the OpenRC ebuild will attempt to do this migration for you, you should
+verify that it migrated all the volume management services properly:
+
+OpenRC ebuildは、この移行作業を自動的に行いますが、全てのボリューム管理サービスに対して適切に移行できたかは、ユーザが確認する必要があります。
+</p>
+
+<pre caption="起動時のランレベルのすべてのサービスを表示する">
+# <i>ls -l /etc/runlevels/boot/</i>
+</pre>
+
+<p>
+もし、上記コマンドで出力したリストにrootとprocfs、mtab、swap、fsckが見当たらなければ、<c>起動時の</c>のランレベルに、以下の追加手順を実施してください。
+</p>
+
+<pre caption="起動時のランレベルに最重要サービスを追加する">
+# <i>rc-update add root boot</i>
+# <i>rc-update add procfs boot</i>
+# <i>rc-update add mtab boot</i>
+# <i>rc-update add fsck boot</i>
+# <i>rc-update add swap boot</i>
+</pre>
+
+<p>
+もし、mdraidとlvmを使用していて、先のリストで見当たらなければ、<c>起動時の</c>ランレベルに以下の手順でinitscriptを追加してください。
+</p>
+
+<pre caption="起動時のランレベルにmdraidとlvmを追加する">
+# <i>rc-update add mdraid boot</i>
+# <i>rc-update add lvm boot</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Udev</title>
+<body>
+
+<p>
+OpenRCは、もはやデフォルトで<c>udev</c>を実行しません。しかし、実行するために<c>sysinit</c>ランレベルに存在する必要があります。
+OpenRC ebuildは、もし移行前のシステムで<c>udev</c>を使用していることを検知したら、<c>sysinit</c>ランレベルに追加します。
+しかし、安全のために<c>udev</c>があるか確認してください。
+</p>
+
+<pre caption="udevを確認する">
+# <i>ls -l /etc/runlevels/sysinit</i>
+lrwxrwxrwx 1 root root 14 2009-01-29 08:00 /etc/runlevels/sysinit/udev -> \
+/etc/init.d/udev
+</pre>
+
+<p>
+<c>udev</c>がリストアップされない場合は、適切なランレベルに追加します。
+</p>
+
+<pre caption="sysinitランレベルにudevを追加する">
+# <i>rc-update add udev sysinit</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>ネットワーク</title>
+<body>
+
+<p>
+baselayoutとOpenRCという2つの異なるパッケージに分割されたため、net.eth0というinitscriptはアップグレード プロセスの中で消失する可能性があります。このinitscriptを置き換えるために、以下の手順を実行してください。
+</p>
+
+<pre caption="消失したnet.eth0スクリプトを追加しなおす">
+# <i>cd /etc/init.d</i>
+# <i>ln -s net.lo net.eth0</i>
+</pre>
+
+<p>
+その他のネットワーク用のinitscriptが見当たらない場合は、再追加する上記手順を同様に行ってください。
+単純に、ネットワーク デバイスの<c>eth0</c>を置き換えて実行してください。
+</p>
+
+<p>
+また、<path>/etc/conf.d/net</path>の設定に、bashスタイルの配列は使用できなくなります。
+設定手順が記載されている<path>/usr/share/doc/openrc-&lt;version&gt;/net.example</path>を見直してください。
+
+設定の書き直しは、比較的簡単です。例えば、スタティックIPアドレスの設定は、以下のように変更となります。
+</p>
+
+<pre caption="以前のスタイル/etc/conf.d/net">
+config_eth0=( "192.168.1.37 netmask 255.255.255.0 brd 192.168.1.255" )
+routes_eth0=( "default via 192.168.1.100" )
+</pre> 
+
+<pre caption="新しいスタイルの/etc/conf.d/net">
+config_eth0="192.168.1.37 netmask 255.255.255.0 brd 192.168.1.255"
+routes_eth0="default via 192.168.1.100"
+</pre>
+
+</body>
+</section>
+<section>
+<title>Clock</title>
+<body>
+
+<p>
+Clockの設定は、<path>/etc/conf.d/clock</path>から時刻を設定するためのネイティブツールに名前が変更されました。
+
+Linuxは、<path>/etc/conf.d/hwclock</path>になり、FreeBSDは、<path>/etc/conf.d/adjkerntz</path>になりました。
+
+リアルタイムクロック(RTC)チップが働かないシステムは、システムがシャットダウン時に作成されるmtimeというファイルのシステムクロックである、<path>/etc/init.d/swclock</path>を使用すべきです。
+
+<path>/etc/init.d/</path>のinitscriptは、それに応じて名称を変更しています。
+そのため、自分のシステムの適切なスクリプトを、起動時のランレベルに追加する必要があります。
+</p>
+
+<p>
+また、<c>TIMEZONE</c>変数は、このファイルでは無くなりました。
+この変数は、<path>/etc/timezone</path>ファイルに統合されました。
+
+もし、<path>/etc/timezone</path>ファイルが無い場合は、自分のタイムゾーンに合わせたファイルを作成する必要があります。
+
+これらのファイルが正しく更新されたかどうか確認してください。
+</p>
+
+<p>
+このファイルの適切な設定値は、<path>/usr/share/zoneinfo</path>からの相対パスになります。
+例えば、米国の東海岸に住んでいる人は、以下が正しい設定になります。
+</p>
+
+<pre caption="/etc/timezone">
+America/New_York
+</pre>
+
+</body>
+</section>
+<section>
+<title>XSESSION</title>
+<body>
+
+<p>
+XSESSION変数は、<path>/etc/rc.conf</path>から無くなりました。
+その代わりXSESSION変数は、利用者毎の設定は、<path>~/.bashrc</path>(または同等のファイル)に設定し、システム全体の設定は、<path>/etc/env.d/</path>で行います。
+</p>
+
+<p>
+システム全体に適用するXSESSIONの設定例を示します。
+</p>
+
+<pre caption="システム全体に適用するXSESSIONの設定例">
+# <i>echo 'XSESSION="Xfce4"' > /etc/env.d/90xsession</i>
+</pre>
+
+<impo>
+<path>/etc/env.d</path>にファイルを作成した後は、<c>env-update</c>を必ず実行してください。そして、設定を反映するためにログアウトして、ログインしてください。
+<path>~/.bashrc</path>に設定する場合は、<c>source ~/.bashrc</c>で読み込み直してください。
+</impo>
+
+</body>
+</section>
+<section>
+<title>EDITORとPAGER</title>
+<body>
+
+<p>
+EDITOR変数は、<path>/etc/rc.conf</path>から無くなりました。
+このEDITORとPAGERは、<path>/etc/profile</path>で設定します。
+利用者毎に設定する場合は、<path>~/.bashrc</path>(または同様のファイル)で行い、システム全体で設定する場合は、<path>/etc/env.d/99editor</path>を作成してください。
+</p>
+
+<impo>
+<path>/etc/env.d</path>にファイルを作成した後は、<c>env-update</c>を必ず実行してください。そして、設定を反映するためにログアウトして、ログインしてください。
+<path>~/.bashrc</path>に設定する場合は、<c>source ~/.bashrc</c>で読み込み直してください。
+</impo>
+
+</body>
+</section>
+<section>
+<title>起動時のログ</title>
+<body>
+
+<p>
+以前は、<c>app-admin/showconsole</c>で起動中のプロセスのログを取ることができました。
+しかし、最新のOpenRCは、内部機能で全てのログを処理しますので、<c>showconsole</c>を使用する必要が無くなりました。
+<c>showconsole</c>を安全にアンインストールすることができます。
+
+起動中のメッセージのログをとり続けるために、<path>/etc/rc.conf</path>に適切な変数を設定します。
+
+ログは、<path>/var/log/rc.log</path>に出力されます。
+</p>
+
+<pre caption="/etc/rc.confに起動のログを出力を有効にする">
+rc_logger="YES"
+</pre>
+
+</body>
+</section>
+<section>
+<title>仕上げ</title>
+<body>
+
+<p>
+設定ファイルとinitscriptの更新作業が完了すると、最後の作業は、<b>再起動</b>することです。
+
+システムの状態情報は、この更新作業で保存されないので、再起動を行うことでシステムの状況を更新する必要があるのです。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

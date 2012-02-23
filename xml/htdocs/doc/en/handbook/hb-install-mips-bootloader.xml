@@ -1,0 +1,598 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-mips-bootloader.xml,v 1.23 2011/05/09 19:47:22 nightmorph Exp $ -->
+
+<sections>
+
+<abstract>
+On both Silicon Graphics machines, and on Cobalt servers, both require the use
+of a bootloader to load the kernel.  This section covers setting up
+arcboot/arcload (for SGI machines) and colo for Cobalt servers.
+</abstract>
+
+<version>11</version>
+<date>2011-05-09</date>
+
+<section id="sgi">
+<title>Silicon Graphics Machines -- Setting Up arcload</title>
+<subsection>
+<title>Which one?</title>
+<body>
+
+<p>
+On SGI machines, we use the <c>arcload</c> boot loader.  In previous releases,
+we also provided <c>arcboot</c>, however it has been officially declared
+obsolete, in favour of <c>arcload</c>.
+</p>
+
+<note>
+The SGI volume header filenames are limited to 8 characters, and there may be
+no more than 16 files contained in a single volume header.
+</note>
+
+</body>
+</subsection>
+
+<subsection>
+<title>Installing arcload</title>
+<body>
+
+<p>
+<c>arcload</c> was written for machines that require 64-bit kernels, and
+therefore can't use <c>arcboot</c> (which can't easily be compiled as a 64-bit
+binary). It also works around peculiarities that arise when loading kernels
+directly from the volume header. So, now you know what this is about, we can
+proceed with the installation:
+</p>
+
+<pre caption="Merging arcload and dvhtool">
+# <i>emerge arcload dvhtool</i>
+</pre>
+
+<p>
+Once this has finished, you should find the <c>arcload</c> binary in
+<path>/usr/lib/arcload</path>. Now, two files exist:
+</p>
+
+<ul>
+  <li>
+    <c>sashARCS</c>: The 32-bit binary for Indy, Indigo2 (R4k), Challenge S and
+    O2 systems
+  </li>
+  <li>
+    <c>sash64</c>: The 64-bit binary for Octane/Octane2, Origin 200/2000 and
+    Indigo2 Impact systems
+  </li>
+</ul>
+
+<p>
+Use <c>dvhtool</c> to install the appropriate binary for your system into the
+volume header:
+</p>
+
+<pre caption="Placing arcload in the volume header">
+<comment>(Indy/Indigo2/Challenge S/O2 users)</comment>
+# <i>dvhtool --unix-to-vh /usr/lib/arcload/sashARCS sashARCS</i>
+
+<comment>(Indigo2 Impact/Octane/Octane2/Origin 200/Origin 2000 users)</comment>
+# <i>dvhtool --unix-to-vh /usr/lib/arcload/sash64 sash64</i>
+</pre>
+
+<note>
+You don't have to use the name <c>sashARCS</c> or <c>sash64</c>, unless you are
+installing to the volume header of a bootable CD. For normal boot from
+hard-disk, you may name them something else if you wish.
+</note>
+
+<p>
+Now just use <c>dvhtool</c> to verify they are in the volume header.
+</p>
+
+<pre caption="Checking arcload is present in the volume header">
+# <i>dvhtool --print-volume-directory</i>
+----- directory entries -----
+Entry #0, name "sash64", start 4, bytes 55859
+#
+</pre>
+
+<p>
+Now, the <c>arc.cf</c> file has a C-like syntax. For the full detail on how one
+configures it, see the <uri
+link="http://www.linux-mips.org/wiki/Arcload">arcload page on the Linux/MIPS
+wiki</uri>. In short, you define a number of options, which you enable and
+disable at boot time using the <c>OSLoadFilename</c> variable.
+</p>
+
+<pre caption="An example arc.cf">
+<comment># ARCLoad Configuration</comment>
+
+<comment># Some default settings...</comment>
+append  "root=/dev/sda3";
+append  "ro";
+append  "console=ttyS0,9600";
+
+<comment># Our main definition. ip28 may be changed if you wish.</comment>
+ip28 {
+        <comment># Definition for a "working" kernel</comment>
+        <comment># Select this by setting OSLoadFilename="ip28(working)"</comment>
+        working {
+                description     "SGI Indigo2 Impact R10000\n\r";
+                image system    "/working";
+        }
+
+        <comment># Definition for a "new" kernel</comment>
+        <comment># Select this by setting OSLoadFilename="ip28(new)"</comment>
+        new {
+                description     "SGI Indigo2 Impact R10000 - Testing Kernel\n\r";
+                image system    "/new";
+        }
+
+        <comment># For debugging a kernel</comment>
+        <comment># Select this by setting OSLoadFilename="ip28(working,debug)"</comment>
+        <comment># or OSLoadFilename="ip28(new,debug)"</comment>
+        debug {
+                description     "Debug console";
+                append          "init=/bin/bash";
+        }
+}
+</pre>
+
+<p>
+Starting with <c>arcload-0.5</c>, <path>arc.cf</path> and kernels may reside
+either in the volume header, or on a partition. If you wish to utilise this
+newer feature, you may instead place the files in your <path>/boot</path>
+partition (or <path>/</path> if your boot partition is not separate).
+<c>arcload</c> uses the filesystem driver code from the popular <c>grub</c>
+bootloader, and thus supports the same range of filesystems.
+</p>
+
+<pre caption="Placing arc.cf and kernel in the volume header">
+# <i>dvhtool --unix-to-vh arc.cf arc.cf</i>
+# <i>dvhtool --unix-to-vh /usr/src/linux/vmlinux new</i>
+</pre>
+
+<p>
+With this done, now all that's left is to set some options in the PROM. See the
+section on <uri link="#reboot">Rebooting the System</uri>.
+</p>
+
+</body>
+</subsection>
+
+</section>
+
+<section id="cobalt">
+<title>Cobalt MicroServers -- Setting Up CoLo</title>
+<subsection>
+<title>Installing CoLo</title>
+<body>
+
+<p>
+On Cobalt servers, these machines have a much less capable firmware installed
+on chip. The Cobalt BOOTROM is primitive, by comparison to the SGI PROM, and
+has a number of serious limitations.
+</p>
+
+<ul>
+  <li>
+    There's a 675kB (approximate) limit on kernels. The current size of Linux
+    2.4 makes it nearly impossible to make a kernel this size. Linux 2.6 is
+    totally out of the question.
+  </li>
+  <li>
+    64-bit kernels are not supported by the stock firmware (although these are
+    highly experimental on Cobalt machines at this time)
+  </li>
+  <li>
+    The shell is basic at best
+  </li>
+</ul>
+
+<p>
+To overcome these limitations, an alternative firmware, called <uri
+link="http://www.colonel-panic.org/cobalt-mips/">CoLo</uri> (Cobalt Loader) was
+developed. This is a BOOTROM image that can either be flashed into the chip
+inside the Cobalt server, or loaded from the existing firmware.
+</p>
+
+<note>
+This guide will take you through setting up CoLo so that it is loaded by the
+stock firmware. This is the only truly safe, and recommended way to set up
+CoLo.
+</note>
+
+<warn>
+You may, if you wish, flash it into the server, and totally replace the
+original firmware -- however, you are entirely on your own in that endeavour.
+Should anything go wrong, you will need to physically remove the BOOTROM and
+reprogram it yourself with the stock firmware. If you are not sure how to do
+this -- then <e>DO NOT</e> flash your machine. We take no responsibility for
+whatever happens if you ignore this advice.
+</warn>
+
+<p>
+Okay, with the warnings over now, we'll get on with installing CoLo. First,
+start by emerging the package.
+</p>
+
+<pre caption="Emerging colo">
+# <i>emerge colo</i>
+</pre>
+
+<p>
+With that installed (I hope you read those messages ;-) you should be able to
+look inside the <path>/usr/lib/colo</path> directory to find two files,
+<path>colo-chain.elf</path>: the "kernel" for the stock firmware to load, and
+<path>colo-rom-image.bin</path>: a ROM image for flashing into the BOOTROM. We
+start by mounting /boot and dumping a compressed copy of
+<path>colo-chain.elf</path> in <path>/boot</path> where the system expects it.
+</p>
+
+<pre caption="Putting CoLo in its place">
+# <i>gzip -9vc /usr/lib/colo/colo-chain.elf &gt; /boot/vmlinux.gz</i>
+</pre>
+
+</body>
+</subsection>
+
+<subsection>
+<title>Configuring CoLo</title>
+
+<body>
+
+<p>
+Now, when the system first boots up, it'll load CoLo which will spit up a menu
+on the back LCD. The first option (and default that is assumed after roughly 5
+seconds) is to boot to the hard disk. The system would then attempt to mount
+the first Linux partition it finds, and run the script
+<path>default.colo</path>. The syntax is fully documented in the CoLo
+documentation (have a peek at
+<path>/usr/share/doc/colo-X.YY/README.shell.gz</path> -- where X.YY is the
+version installed), and is very simple.
+</p>
+
+<note>
+Just a tip: when installing kernels, I usually create two kernel images,
+<path>kernel.gz.working</path> -- a known working kernel, and
+<path>kernel.gz.new</path> -- a kernel that's just been compiled. You can
+either use symlinks to point to the curent "new" and "working" kernels, or just
+rename the kernel images.
+</note>
+
+<pre caption="A basic default.colo">
+<comment>#:CoLo:#</comment>
+mount hda1
+load /kernel.gz.working
+execute root=/dev/sda3 ro console=ttyS0,115200
+</pre>
+
+<note>
+CoLo will refuse to load a script that does not begin with the <c>#:CoLo:#</c>
+line. Think of it as the equivalent of saying <c>#!/bin/sh</c> in shell
+scripts.
+</note>
+
+<p>
+It is also possible to ask a question, such as which kernel &amp; configuration
+you'd like to boot, with a default timeout. This configuration does exactly
+this, asks the user which kernel they wish to use, and executes the chosen
+image. <path>vmlinux.gz.new</path> and <path>vmlinux.gz.working</path> may be
+actual kernel images, or just symlinks pointing to the kernel images on that
+disk. The <c>50</c> argument to <c>select</c> specifies that it should proceed
+with the first option ("Working") after 50/10 seconds.
+</p>
+
+<pre caption="Menu-based configuration">
+<comment>#:CoLo:#</comment>
+
+lcd "Mounting hda1"
+mount hda1
+select "Which Kernel?" 50 Working New
+
+goto {menu-option}
+var image-name vmlinux.gz.working
+goto 3f
+@var image-name vmlinux.gz.working
+goto 2f
+@var image-name vmlinux.gz.new
+
+@lcd "Loading Linux" {image-name}
+load /{image-name}
+lcd "Booting..."
+execute root=/dev/sda5 ro console=ttyS0,115200
+boot
+</pre>
+
+<p>
+See the documentation in <path>/usr/share/doc/colo-VERSION</path> for more
+details.
+</p>
+
+</body>
+
+</subsection>
+</section>
+
+<section>
+<title>Setting up for Serial Console</title>
+
+<subsection>
+<body>
+
+<p>
+Okay, the Linux installation as it stands now, would boot fine, but assumes
+you're going to be logged in at a physical terminal. On Cobalt machines, this
+is particularly bad -- there's no such thing as a physical terminal.
+</p>
+
+<note>
+Those who do have the luxury of a supported video chipset may skip this section
+if they wish.
+</note>
+
+<p>
+First, pull up an editor and hack away at <path>/etc/inittab</path>. Further
+down in the file, you'll see something like this:
+</p>
+
+<pre caption="inittab Configuration">
+<comment># SERIAL CONSOLE</comment>
+<comment>#c0:12345:respawn:/sbin/agetty 9600 ttyS0 vt102</comment>
+
+<comment># TERMINALS</comment>
+c1:12345:respawn:/sbin/agetty 38400 tty1 linux
+c2:12345:respawn:/sbin/agetty 38400 tty2 linux
+c3:12345:respawn:/sbin/agetty 38400 tty3 linux
+c4:12345:respawn:/sbin/agetty 38400 tty4 linux
+c5:12345:respawn:/sbin/agetty 38400 tty5 linux
+c6:12345:respawn:/sbin/agetty 38400 tty6 linux
+
+<comment># What to do at the "Three Finger Salute".</comment>
+ca:12345:ctrlaltdel:/sbin/shutdown -r now
+</pre>
+
+<p>
+First, uncomment the <c>c0</c> line. By default, it's set to use a terminal
+baud rate of 9600 bps. On Cobalt servers, you may want to change this to 115200
+to match the baud rate decided by the BOOT ROM. This is how that section looks
+on my machine. On a headless machine (e.g. Cobalt servers), I'll also recommend
+commenting out the local terminal lines (<c>c1</c> through to <c>c6</c>) as
+these have a habit of misbehaving when they can't open <path>/dev/ttyX</path>.
+</p>
+
+<pre caption="Example snippet from inittab">
+<comment># SERIAL CONSOLE</comment>
+c0:12345:respawn:/sbin/agetty 115200 ttyS0 vt102
+
+<comment># TERMINALS -- These are useless on a headless qube</comment>
+<comment>#c1:12345:respawn:/sbin/agetty 38400 tty1 linux</comment>
+<comment>#c2:12345:respawn:/sbin/agetty 38400 tty2 linux</comment>
+<comment>#c3:12345:respawn:/sbin/agetty 38400 tty3 linux</comment>
+<comment>#c4:12345:respawn:/sbin/agetty 38400 tty4 linux</comment>
+<comment>#c5:12345:respawn:/sbin/agetty 38400 tty5 linux</comment>
+<comment>#c6:12345:respawn:/sbin/agetty 38400 tty6 linux</comment>
+</pre>
+
+<p>
+Now, lastly... we have to tell the system, that the local serial port can be
+trusted as a secure terminal. The file we need to poke at is
+<path>/etc/securetty</path>. It contains a list of terminals that the system
+trusts. We simply stick in two more lines, permitting the serial line to be
+used for <c>root</c> logins.
+</p>
+
+<pre caption="Enabling root logins on serial console">
+<comment>(/dev/ttyS0 -- the traditional name for the first serial port)</comment>
+# <i>echo 'ttyS0' >> /etc/securetty</i>
+
+<comment>(Lately, Linux also calls this /dev/tts/0 -- so we add this
+too)</comment>
+# <i>echo 'tts/0' >> /etc/securetty</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+
+<section id="reboot">
+<title>Rebooting the System</title>
+<subsection>
+<body>
+
+<p>
+Exit the chrooted environment and unmount all mounted partitions. Then type in
+that one magical command you have been waiting for: <c>reboot</c>.
+</p>
+
+<pre caption="Exiting the chroot, unmounting all partitions and rebooting">
+# <i>exit</i>
+cdimage ~# <i>cd</i>
+cdimage ~# <i>umount -l /mnt/gentoo/dev{/shm,/pts,}</i>
+cdimage ~# <i>umount -l /mnt/gentoo{/boot,/proc,}</i>
+cdimage ~# <i>reboot</i>
+</pre>
+
+<note>
+<e>Cobalt Users:</e> The rest of this section covers the setting up of the SGI
+PROM so that it boots <c>arcload</c> off disk and loads
+Linux.
+This is not applicable to the setup of Cobalt servers. In fact, all your work
+is done -- there is no configuration needed for the first boot up, you can skip
+to the next section: <uri link="?part=1&amp;chap=11">Finalising your Gentoo
+Installation</uri>
+</note>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Tweaking the SGI PROM</title>
+<subsection>
+<title>Setting generic PROM settings</title>
+<body>
+
+<p>
+Now that you've installed the bootloader, you're ready to reboot the machine.
+</p>
+
+<pre caption="Rebooting">
+<comment>(Exit the chroot environment)</comment>
+# <i>exit</i>
+
+<comment>(Unmount the drives)</comment>
+cdimage ~# <i>umount -l /mnt/gentoo/dev{/shm,/pts,}</i>
+cdimage ~# <i>umount -l /mnt/gentoo{/boot,/proc,}</i>
+
+<comment>(Reboot)</comment>
+# <i>reboot</i>
+</pre>
+
+<p>
+When you are rebooted, go to the <e>System Maintenance Menu</e> and select
+<e>Enter Command Monitor</e> (<c>5</c>) like you did when you netbooted the
+machine.
+</p>
+
+<pre caption="Configuring the PROM to Boot Gentoo">
+1) Start System
+2) Install System Software
+3) Run Diagnostics
+4) Recover System
+5) Enter Command Monitor
+
+Option? <i>5</i>
+Command Monitor. Type "exit" to return to the menu.
+
+<comment>(Set some options for arcload)</comment>
+
+<comment>(Provide the location of the Volume Header)</comment>
+&gt;&gt; <i>setenv SystemPartition scsi(0)disk(1)rdisk(0)partition(8)</i>
+
+<comment>(Automatically boot Gentoo)</comment>
+&gt;&gt; <i>setenv AutoLoad Yes</i>
+
+<comment>(Set the timezone)</comment>
+&gt;&gt; <i>setenv TimeZone EST5EDT</i>
+
+<comment>(Use the serial console - graphic adapter users should have "g" instead of "d1" (one))</comment>
+&gt;&gt; <i>setenv console d1</i>
+
+<comment>(Setting the serial console baud rate. This is optional, 9600 is the          )
+(default setting, although one may use rates up to 38400 if that is desired.  )</comment>
+&gt;&gt; <i>setenv dbaud 9600</i>
+</pre>
+
+<p>
+Now, the next settings depend on how you are booting the system.
+</p>
+
+</body>
+</subsection>
+
+<subsection>
+<title>Settings for direct volume-header booting</title>
+<body>
+
+<p>
+This is covered here for completeness. It's recommended that users look into
+installing <c>arcload</c> instead.
+</p>
+
+<note>
+This only works on the Indy, Indigo2 (R4k) and Challenge S.
+</note>
+
+<pre caption="PROM settings for booting off the volume header">
+<comment>(&lt;root device&gt; = Gentoo's root partition, e.g. /dev/sda3)</comment>
+&gt;&gt; <i>setenv OSLoadPartition &lt;root device&gt;</i>
+
+<comment>(To list the available kernels, type "ls")</comment>
+&gt;&gt; <i>setenv OSLoader &lt;kernel name&gt;</i>
+&gt;&gt; <i>setenv OSLoadFilename &lt;kernel name&gt;</i>
+
+<comment>(Declare the kernel parameters you want to pass)</comment>
+&gt;&gt; <i>setenv OSLoadOptions &lt;kernel parameters&gt;</i>
+</pre>
+
+<p>
+If you wish to try a kernel without messing with kernel parameters, you may do
+so using the <c>boot -f</c> PROM command:
+</p>
+
+<pre caption="Booting without changing environment variables">
+<comment>(Booting a kernel, "new", with additional options)</comment>
+# <i>boot -f new root=/dev/sda3 ro</i>
+</pre>
+
+</body>
+</subsection>
+
+<subsection>
+<title>Settings for arcload</title>
+<body>
+
+<p>
+<c>arcload</c> uses the <c>OSLoadFilename</c> option to specify which options
+to set from <path>arc.cf</path>. The configuration file is essentially a
+script, with the top-level blocks defining boot images for different systems,
+and inside that, optional settings. Thus, setting
+<c>OSLoadFilename=mysys(serial)</c> pulls in the settings for the <c>mysys</c>
+block, then sets further options overridden in <c>serial</c>.
+</p>
+
+<p>
+In the example file above, we have one system block defined, <c>ip28</c> with
+<c>working</c>, <c>new</c> and <c>debug</c> options available. We define our
+PROM variables as so:
+</p>
+
+<pre caption="PROM settings for using arcload">
+<comment>(Select arcload as the bootloader:- sash64 or sashARCS)</comment>
+&gt;&gt; <i>setenv OSLoader sash64</i>
+
+<comment>(Use the "working" kernel image, defined in "ip28" section of arc.cf)</comment>
+&gt;&gt; <i>setenv OSLoadFilename ip28(working)</i>
+</pre>
+
+<p>
+Starting with <c>arcload-0.5</c>, files no longer need to be placed in the
+volume header -- they may be placed in a partition instead.  To tell
+<c>arcload</c> where to look for its configuration file and kernels, one must
+set the <c>OSLoadPartition</c> PROM variable.  The exact value here will depend
+on where your disk resides on the SCSI bus.  Use the <c>SystemPartition</c> PROM
+variable as a guide -- only the partition number should need to change.
+</p>
+
+<note>
+Partitions are numbered starting at 0, not 1 as is the case in Linux.
+</note>
+
+<pre caption="Telling arcload where to find arc.cf">
+<comment>(If you wish to load from the volume header -- use partition 8)</comment>
+&gt;&gt; <i>setenv OSLoadPartition scsi(0)disk(1)rdisk(0)partition(8)</i>
+
+<comment>(Otherwise, specify the partition and filesystem type)</comment>
+&gt;&gt; <i>setenv OSLoadPartition scsi(0)disk(1)rdisk(0)partition(0)[ext2]</i>
+</pre>
+
+</body>
+</subsection>
+
+<subsection>
+<title>All Done</title>
+<body>
+
+<p>
+Now you're ready to enjoy Gentoo! Boot up your Gentoo installation and finish
+up with <uri link="?part=1&amp;chap=11">Finalizing your Gentoo
+Installation</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

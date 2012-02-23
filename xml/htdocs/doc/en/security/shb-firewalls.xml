@@ -1,0 +1,1103 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/security/shb-firewalls.xml,v 1.7 2007/02/20 22:07:05 nightmorph Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.4</version>
+<date>2007-02-20</date>
+
+<section>
+<title>A firewall</title>
+<body>
+
+<p>
+People often think that a firewall provides the ultimate security, but they
+are wrong. In most cases a misconfigured firewall gives less security than
+not having one at all. A firewall is also a piece of software and should be
+treated the same way as any other piece of software, because it is just as likely
+to contain bugs.
+</p>
+
+<p>
+So think before implementing a firewall! Do you really need one? If you think
+you need one write a policy on how it should work, what type of firewall, and
+who should operate it. But first read this guide.
+</p>
+
+<p>
+Firewalls are used for two purposes:
+</p>
+
+<ul>
+<li>To keep users (worms/attackers) out</li>
+<li>To keep users (employees/children) in</li>
+</ul>
+
+<p>
+Basically there are three types of firewalls:
+</p>
+
+<ul>
+<li>Packet filtering</li>
+<li>Circuit relay</li>
+<li>Application gateway</li>
+</ul>
+
+<p>
+A firewall should be a dedicated machine running no services (or <c>sshd</c> as
+the only one) and secured the way this guide recommends it be.
+</p>
+
+</body>
+</section>
+<section>
+<title>Packet filtering</title>
+<body>
+
+<p>
+All network traffic is sent in the form of packets. Large amounts of traffic is
+split up into small packets for easy handling and then reassembled when it
+arrives at its destination. In the packet header every packet contains
+information on how and where it should be delivered. And this information is
+exactly what a packing filtering firewall uses. Filtering is based on:
+</p>
+
+<ul>
+<li>Allow or disallow packets based on source/destination IP address</li>
+<li>Allow or disallow packets based on source/destination port</li>
+<li>Allow or disallow packets based on protocol</li>
+<li>Allow or disallow packets based on flags within a specific protocol</li>
+</ul>
+
+<p>
+In other words, this filtering is based on all the data within the header of a
+packet and not its content.
+</p>
+
+<p>
+Weaknesses:
+</p>
+
+<ul>
+<li>
+  Address information in a packet can potentially be a bogus IP address (or as we
+  say <e>spoofed</e> by the sender).
+</li>
+<li>
+  Data or requests within the allowed packet may contain unwanted data that the
+  attacker can use to exploit known bugs in the services on or behind the firewall
+</li>
+<li>Usually single point of failure</li>
+</ul>
+
+<p>
+Advantages:
+</p>
+
+<ul>
+<li>Simple and easy to implement</li>
+<li>
+  Can give warnings of a possible attack before it happens (ie. by detecting
+  port scans)
+</li>
+<li>Good for stopping SYN attacks</li>
+</ul>
+
+<p>
+Examples of free packet filters on Linux:
+</p>
+
+<ul>
+<li><uri link="http://www.iptables.org">Iptables</uri></li>
+<li>
+  <uri link="http://www.linuxdocs.org/HOWTOs/IPCHAINS-HOWTO.html">Ipchains</uri>
+</li>
+<li><uri link="http://www.smoothwall.org">SmoothWall</uri></li>
+</ul>
+<!--FIXME: should SmoothWall really be included, since it uses iptables?-->
+<note>
+It is recommended that you use iptables. Ipchains is obsoleted.
+</note>
+
+</body>
+</section>
+<section>
+<title>Circuit relay</title>
+<body>
+
+<p>
+A circuit level gateway is a firewall that validates connections before allowing
+data to be exchanged. This means that it does not simply allow or deny packets
+based on the packet header but determines whether the connection between both
+ends is valid according to configurable rules before it opens a session and
+allows data to be exchanged. Filtering is based on:
+</p>
+
+<ul>
+<li>Source/destination IP address</li>
+<li>Source/destination port</li>
+<li>A period of time</li>
+<li>Protocol</li>
+<li>User</li>
+<li>Password</li>
+</ul>
+
+<p>
+All traffic is validated and monitored, and unwanted traffic can be dropped.
+</p>
+
+<p>
+Weakness:
+</p>
+
+<ul>
+<li>
+  Operates at the Transport Layer and may require substantial modification of the
+  programs that normally provide transport functions.
+</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Application gateway</title>
+<body>
+
+<p>
+The application level gateway is a proxy for applications, exchanging data with
+remote systems on behalf of the clients. It is kept away from the public safely
+behind a DMZ (De-Militarized Zone: the portion of a private network that is
+visible through the firewall) or a firewall allowing no connections from the
+outside. Filtering is based on:
+</p>
+
+<ul>
+<li>Allow or disallow based on source/destination IP address</li>
+<li>Based on the packet's content</li>
+<li>Limiting file access based on file type or extension</li>
+</ul>
+
+<p>
+Advantages:
+</p>
+
+<ul>
+<li>Can cache files, increasing network performance</li>
+<li>Detailed logging of all connections</li>
+<li>Scales well (some proxy servers can "share" the cached data)</li>
+<li>No direct access from the outside</li>
+<li>Can even alter the packet content on the fly</li>
+</ul>
+
+<p>
+Weakness:
+</p>
+
+<ul>
+<li>Configuration is complex</li>
+</ul>
+
+<p>
+Application gateways are considered to be the most secure solution since they do
+not have to run as root and the hosts behind them are not reachable from the
+Internet.
+</p>
+
+<p>
+Example of a free application gateway:
+</p>
+
+<ul>
+<li><uri link="http://www.squid-cache.org/">Squid</uri></li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Iptables</title>
+<body>
+
+<p>
+In order to use iptables, it must be enabled in the kernel. I have added
+iptables as modules (the <c>iptables</c> command will load them as they are
+needed) and recompiled my kernel (but you may want to compile iptables in, if
+you intend to disable Loadable Kernel Modules as discussed previously). For
+more information on how to configure your kernel for iptables go to the <uri
+link="http://iptables-tutorial.frozentux.net/iptables-tutorial.html#PREPARATIONS">Iptables
+Tutorial Chapter 5: Preparations</uri>. After you have compiled your new kernel
+(or while compiling the kernel), you must add the <c>iptables</c> command.
+Just <c>emerge iptables</c> and it should work.
+</p>
+
+<p>
+Now test that it works by running <c>iptables -L</c>. If this fails something
+is wrong and you have to check you configuration once more.
+</p>
+
+<p>
+Iptables is the new and heavily improved packet filter in the Linux 2.4.x
+kernel. It is the successor of the previous ipchains packet filter in the Linux
+2.2.x kernel. One of the major improvements is that iptables is able to perform
+stateful packet filtering. With stateful packet filtering it is possible to
+keep track of each established TCP connection.
+</p>
+
+<p>
+A TCP connection consists of a series of packets containing information about
+source IP address, destination IP address, source port, destination port, and a
+sequence number so the packets can be reassembled without losing data. TCP is a
+connection-oriented protocol, in contrast to UDP, which is connectionless.
+</p>
+
+<p>
+By examining the TCP packet header, a stateful packet filter can determine if a
+received TCP packet is part of an already established connection or not and
+decide either to accept or drop the packet.
+</p>
+
+<p>
+With a stateless packet filter it is possible to fool the packet filter into
+accepting packets that should be dropped by manipulating the TCP packet headers.
+This could be done by manipulating the SYN flag or other flags in the TCP header
+to make a malicious packet appear to be a part of an established connection
+(since the packet filter itself does not do connection tracking). With stateful
+packet filtering it is possible to drop such packets, as they are not part of an
+already established connection. This will also stop the possibility of
+"stealth scans", a type of port scan in which the scanner sends packets
+with flags that are far less likely to be logged by a firewall than ordinary SYN
+packets.
+</p>
+
+<p>
+Iptables provides several other features like NAT (Network Address Translation)
+and rate limiting. Rate limiting is extremely useful when trying to prevent
+certain DoS (Denial of Service) attacks like SYN floods.
+</p>
+
+<p>
+A TCP connection is established by a so called three-way handshake. When
+establishing a TCP connection the client-side sends a packet to the server
+with the SYN flag set. When the server-side receives the SYN packet it
+responds by sending a SYN+ACK packet back to the client-side. When the SYN+ACK
+is received the client-side responds with a third ACK packet in effect
+acknowledging the connection.
+</p>
+
+<p>
+A SYN flood attack is performed by sending the SYN packet but failing to
+respond to the SYN+ACK packet. The client-side can forge a packet with a fake
+source IP address because it does not need a reply. The server-side system will
+add an entry to a queue of half-open connections when it receives the SYN
+packet and then wait for the final ACK packet before deleting the entry from
+the queue. The queue has a limited number of slots and if all the slots are
+filled it is unable to open any further connections. If the ACK packet is not
+received before a specified timeout period the entry will automatically be
+deleted from the queue. The timeout settings vary but will typically be 30-60
+seconds or even more. The client-side initiates the attack by forging a lot of
+SYN packets with different source IP addresses and sends them to the target IP
+address as fast as possible and thereby filling up the queue of half-open
+connections and thus preventing other clients from establishing a legitimate
+connection with the server.
+</p>
+
+<p>
+This is where the rate limit becomes handy. It is possible to limit the rate
+of accepted SYN packets by using the <c>-m limit --limit 1/s</c>. This will
+limit the number of SYN packets accepted to one per second and therefore
+restricting the SYN flood on our resources.
+</p>
+
+<note>
+Another option for preventing SYN floods are <uri link =
+"http://cr.yp.to/syncookies.html">SYN cookies</uri>, which allow your computer
+to respond to SYN packets without filling space in the connection queue. SYN
+cookies can be enabled in the Linux kernel configuration, but they are
+considered experimental at this time.
+</note>
+
+<p>
+Now some practical stuff!
+</p>
+
+<p>
+When iptables is loaded in the kernel it has 5 hooks where you can place your
+rules. They are called <c>INPUT</c>, <c>OUTPUT</c>, <c>FORWARD</c>,
+<c>PREROUTING</c> and <c>POSTROUTING</c>. Each of these is called a chain and
+consists of a list of rules. Each rule says if the packet header looks like
+this, then here is what to do with the packet. If the rule does not match the
+packet the next rule in the chain is consulted.
+</p>
+
+<p>
+You can place rules directly in the 5 main chains or create new chains and add
+them to as a rule to an existing chain. Iptables supports the following options.
+</p>
+
+<table>
+<tr>
+  <th>Option:</th>
+  <th>Description:</th>
+</tr>
+<tr>
+  <ti>-A</ti>
+  <ti>Append</ti>
+</tr>
+<tr>
+  <ti>-D</ti>
+  <ti>Delete</ti>
+</tr>
+<tr>
+  <ti>-I</ti>
+  <ti>Insert</ti>
+</tr>
+<tr>
+  <ti>-R</ti>
+  <ti>Replace</ti>
+</tr>
+<tr>
+  <ti>-L</ti>
+  <ti>List</ti>
+</tr>
+<tr>
+  <ti>-F</ti>
+  <ti>Delete all rules in chain or all chains</ti>
+</tr>
+<tr>
+  <ti>-Z</ti>
+  <ti>Zero counters in chain or all chains</ti>
+</tr>
+<tr>
+  <ti>-C</ti>
+  <ti>Test this packet on chain</ti>
+</tr>
+<tr>
+  <ti>-N</ti>
+  <ti>Create a new user-defined chain</ti>
+</tr>
+<tr>
+  <ti>-X</ti>
+  <ti>Delete a user-defined chain</ti>
+</tr>
+<tr>
+  <ti>-P</ti>
+  <ti>Change policy on chain to target</ti>
+</tr>
+<tr>
+  <ti>-E</ti>
+  <ti>Change chain name</ti>
+</tr>
+<tr>
+  <ti>-p</ti>
+  <ti>Protocol</ti>
+</tr>
+<tr>
+  <ti>-s</ti>
+  <ti>Source address/mask</ti>
+</tr>
+<tr>
+  <ti>-d</ti>
+  <ti>Destination address/mask</ti>
+</tr>
+<tr>
+  <ti>-i</ti>
+  <ti>Input name (Ethernet name)</ti>
+</tr>
+<tr>
+  <ti>-o</ti>
+  <ti>Output name (Ethernet name)</ti>
+</tr>
+<tr>
+  <ti>-j</ti>
+  <ti>Jump (target for rule)</ti>
+</tr>
+<tr>
+  <ti>-m</ti>
+  <ti>Extended match (might use extension)</ti>
+</tr>
+<tr>
+  <ti>-n</ti>
+  <ti>Numeric output of addresses and ports</ti>
+</tr>
+<tr>
+  <ti>-t</ti>
+  <ti>Table to manipulate</ti>
+</tr>
+<tr>
+  <ti>-v</ti>
+  <ti>Verbose mode</ti>
+</tr>
+<tr>
+  <ti>-x</ti>
+  <ti>Expand numbers (display exact values)</ti>
+</tr>
+<tr>
+  <ti>-f</ti>
+  <ti>Match second or further fragments only</ti>
+</tr>
+<tr>
+  <ti>-V</ti>
+  <ti>Packet version</ti>
+</tr>
+<tr>
+  <ti>--line-numbers</ti>
+  <ti>Print line numbers when listing</ti>
+</tr>
+</table>
+
+<p>
+First we will try to block all ICMP packets to our machine, just to get familiar
+with iptables.
+</p>
+
+<pre caption="Block all ICMP packets">
+# <i>iptables -A INPUT -p icmp -j DROP</i>
+</pre>
+
+<p>
+First we specify the chain our rule should be appended to, then the protocol of
+the packets to match, and finally the target. The target can be the name of a
+user specified chain or one of the special targets <c>ACCEPT</c>, <c>DROP</c>,
+ <c>REJECT</c>, <c>LOG</c>, <c>QUEUE</c>, or <c>MASQUERADE</c>. In this case we
+ use <c>DROP</c>, which will drop the packet without responding to the client.
+</p>
+
+<note>
+The <c>LOG</c> target is what's known as "non-terminating". If a packet matches
+a rule with the <c>LOG</c> target, rather than halting evaluation, the packet
+will continue to be matched to further rules. This allows you to log packets
+while still processing them normally.
+</note>
+
+<p>
+Now try <c>ping localhost</c>. You will not get any response, since iptables
+will drop all incoming ICMP messages. You will also not be able to ping other
+machines, since the ICMP reply packet will be dropped as well. Now flush the
+chain to get ICMP flowing again.
+</p>
+
+<pre caption="Flush all rules">
+# <i>iptables -F</i>
+</pre>
+
+<p>
+Now lets look at the stateful packet filtering in iptables. If we wanted to
+enable stateful inspection of packets incoming on eth0 we would issue the
+command:
+</p>
+
+<pre caption="Accept packets that originate from an already established connection">
+# <i>iptables -A INPUT -i eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT</i>
+</pre>
+
+<p>
+This will accept any packet from an already established connection or related in
+the INPUT chain. And you could drop any packet that is not in the state table by
+issuing <c>iptables -A INPUT -i eth0 -m state --state INVALID -j DROP</c> just
+before the previous command. This enables the stateful packet filtering in
+iptables by loading the extension "state". If you wanted to allow others to
+connect to your machine, you could use the flag <c>--state NEW</c>. Iptables
+contains some modules for different purposes. Some of them are:
+</p>
+
+<table>
+<tr>
+  <th>Module/Match</th>
+  <th>Description</th>
+  <th>Extended options</th>
+</tr>
+<tr>
+  <ti>mac</ti>
+  <ti>Matching extension for incoming packets mac address.</ti>
+  <ti>--mac-source</ti>
+</tr>
+<tr>
+  <ti>state</ti>
+  <ti>Enables stateful inspection</ti>
+  <ti>--state (states are ESTABLISHED,RELATED, INVALID, NEW)</ti>
+</tr>
+<tr>
+  <ti>limit</ti>
+  <ti>Rate matching limiting</ti>
+  <ti>--limit, --limit-burst</ti>
+</tr>
+<tr>
+  <ti>owner</ti>
+  <ti>Attempt to match various characteristics of the packet creator</ti>
+  <ti>
+    --uid-owner userid --gid-owner groupid --pid-owner processid --sid-owner
+    sessionid
+  </ti>
+</tr>
+<tr>
+  <ti>unclean</ti>
+  <ti>Various random sanity checks on packets</ti><ti></ti>
+</tr>
+</table>
+
+<p>
+Lets try to create a user-defined chain and apply it to one of the existing
+chains:
+</p>
+
+<pre caption="Creating a user defined chain">
+<comment>(Create a new chain with one rule)</comment>
+# <i>iptables -X mychain</i>
+# <i>iptables -N mychain</i>
+# <i>iptables -A mychain -i eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT</i>
+<comment>(The default policy is all outgoing traffic is allowed. Incoming is dropped.)</comment>
+# <i>iptables -P OUTPUT ACCEPT</i>
+# <i>iptables -P INPUT DROP</i>
+<comment>(And add it to the INPUT chain)</comment>
+# <i>iptables -A INPUT -j mychain</i>
+</pre>
+
+<p>
+By applying the rule to the input chain we get the policy: All outgoing packets
+are allowed and all incoming packets are dropped.
+</p>
+
+<p>
+One can find documentation at <uri
+link="http://www.iptables.org/documentation/index.html#HOWTO">Netfilter/iptables
+documentation</uri>.
+</p>
+
+<p>
+Lets see a full blown example. In this case my firewall/gateway policy states:
+</p>
+
+<ul>
+<li>Connections to the firewall are only allowed through SSH (port 22)</li>
+<li>
+  The local network should have access to HTTP, HTTPS and SSH (DNS should also
+  be allowed)
+</li>
+<li>
+  ICMP traffic can contain payload and should not be allowed. Of course we have
+  to allow some ICMP traffic.
+</li>
+<li>Port scans should be detected and logged</li>
+<li>SYN attacks should be avoided</li>
+<li>All other traffic should be dropped and logged</li>
+</ul>
+
+<pre caption="/etc/init.d/firewall">
+#!/sbin/runscript
+IPTABLES=/sbin/iptables
+IPTABLESSAVE=/sbin/iptables-save
+IPTABLESRESTORE=/sbin/iptables-restore
+FIREWALL=/etc/firewall.rules
+DNS1=212.242.40.3
+DNS2=212.242.40.51
+#inside
+IIP=10.0.0.2
+IINTERFACE=eth0
+LOCAL_NETWORK=10.0.0.0/24
+#outside
+OIP=217.157.156.144
+OINTERFACE=eth1
+
+opts="${opts} showstatus panic save restore showoptions rules"
+
+depend() {
+  need net
+}
+
+rules() {
+  stop
+  ebegin "Setting internal rules"
+
+  einfo "Setting default rule to drop"
+  $IPTABLES -P FORWARD DROP
+  $IPTABLES -P INPUT   DROP
+  $IPTABLES -P OUTPUT  DROP
+
+  #default rule
+  einfo "Creating states chain"
+  $IPTABLES -N allowed-connection
+  $IPTABLES -F allowed-connection
+  $IPTABLES -A allowed-connection -m state --state ESTABLISHED,RELATED -j ACCEPT
+  $IPTABLES -A allowed-connection -i $IINTERFACE -m limit -j LOG --log-prefix \
+      "Bad packet from ${IINTERFACE}:"
+  $IPTABLES -A allowed-connection -j DROP
+
+  #ICMP traffic
+  einfo "Creating icmp chain"
+  $IPTABLES -N icmp_allowed
+  $IPTABLES -F icmp_allowed
+  $IPTABLES -A icmp_allowed -m state --state NEW -p icmp --icmp-type \
+      time-exceeded -j ACCEPT
+  $IPTABLES -A icmp_allowed -m state --state NEW -p icmp --icmp-type \
+      destination-unreachable -j ACCEPT
+  $IPTABLES -A icmp_allowed -p icmp -j LOG --log-prefix "Bad ICMP traffic:"
+  $IPTABLES -A icmp_allowed -p icmp -j DROP
+
+  #Incoming traffic
+  einfo "Creating incoming ssh traffic chain"
+  $IPTABLES -N allow-ssh-traffic-in
+  $IPTABLES -F allow-ssh-traffic-in
+  #Flood protection
+  $IPTABLES -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags \
+      ALL RST --dport ssh -j ACCEPT
+  $IPTABLES -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags \
+      ALL FIN --dport ssh -j ACCEPT
+  $IPTABLES -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags \
+      ALL SYN --dport ssh -j ACCEPT
+  $IPTABLES -A allow-ssh-traffic-in -m state --state RELATED,ESTABLISHED -p tcp --dport ssh -j ACCEPT
+
+  #outgoing traffic
+  einfo "Creating outgoing ssh traffic chain"
+  $IPTABLES -N allow-ssh-traffic-out
+  $IPTABLES -F allow-ssh-traffic-out
+  $IPTABLES -A allow-ssh-traffic-out -p tcp --dport ssh -j ACCEPT
+
+  einfo "Creating outgoing dns traffic chain"
+  $IPTABLES -N allow-dns-traffic-out
+  $IPTABLES -F allow-dns-traffic-out
+  $IPTABLES -A allow-dns-traffic-out -p udp -d $DNS1 --dport domain \
+      -j ACCEPT
+  $IPTABLES -A allow-dns-traffic-out -p udp -d $DNS2 --dport domain \
+     -j ACCEPT
+
+  einfo "Creating outgoing http/https traffic chain"
+  $IPTABLES -N allow-www-traffic-out
+  $IPTABLES -F allow-www-traffic-out
+  $IPTABLES -A allow-www-traffic-out -p tcp --dport www -j ACCEPT
+  $IPTABLES -A allow-www-traffic-out -p tcp --dport https -j ACCEPT
+
+  #Catch portscanners
+  einfo "Creating portscan detection chain"
+  $IPTABLES -N check-flags
+  $IPTABLES -F check-flags
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL FIN,URG,PSH -m limit \
+      --limit 5/minute -j LOG --log-level alert --log-prefix "NMAP-XMAS:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL FIN,URG,PSH -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL ALL -m limit --limit \
+      5/minute -j LOG --log-level 1 --log-prefix "XMAS:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL ALL -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG \
+      -m limit --limit 5/minute -j LOG --log-level 1 --log-prefix "XMAS-PSH:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL NONE -m limit \
+      --limit 5/minute -j LOG --log-level 1 --log-prefix "NULL_SCAN:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL NONE -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags SYN,RST SYN,RST -m limit \
+      --limit 5/minute -j LOG --log-level 5 --log-prefix "SYN/RST:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags SYN,FIN SYN,FIN -m limit \
+      --limit 5/minute -j LOG --log-level 5 --log-prefix "SYN/FIN:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
+
+  # Apply and add invalid states to the chains
+  einfo "Applying chains to INPUT"
+  $IPTABLES -A INPUT -m state --state INVALID -j DROP
+  $IPTABLES -A INPUT -p icmp -j icmp_allowed
+  $IPTABLES -A INPUT -j check-flags
+  $IPTABLES -A INPUT -i lo -j ACCEPT
+  $IPTABLES -A INPUT -j allow-ssh-traffic-in
+  $IPTABLES -A INPUT -j allowed-connection
+
+  einfo "Applying chains to FORWARD"
+  $IPTABLES -A FORWARD -m state --state INVALID -j DROP
+  $IPTABLES -A FORWARD -p icmp -j icmp_allowed
+  $IPTABLES -A FORWARD -j check-flags
+  $IPTABLES -A FORWARD -o lo -j ACCEPT
+  $IPTABLES -A FORWARD -j allow-ssh-traffic-in
+  $IPTABLES -A FORWARD -j allow-www-traffic-out
+  $IPTABLES -A FORWARD -j allowed-connection
+
+  einfo "Applying chains to OUTPUT"
+  $IPTABLES -A OUTPUT -m state --state INVALID -j DROP
+  $IPTABLES -A OUTPUT -p icmp -j icmp_allowed
+  $IPTABLES -A OUTPUT -j check-flags
+  $IPTABLES -A OUTPUT -o lo -j ACCEPT
+  $IPTABLES -A OUTPUT -j allow-ssh-traffic-out
+  $IPTABLES -A OUTPUT -j allow-dns-traffic-out
+  $IPTABLES -A OUTPUT -j allow-www-traffic-out
+  $IPTABLES -A OUTPUT -j allowed-connection
+
+  #Allow client to route through via NAT (Network Address Translation)
+  $IPTABLES -t nat -A POSTROUTING -o $OINTERFACE -j MASQUERADE
+  eend $?
+}
+
+start() {
+  ebegin "Starting firewall"
+  if [ -e "${FIREWALL}" ]; then
+    restore
+  else
+    einfo "${FIREWALL} does not exists. Using default rules."
+    rules
+  fi
+  eend $?
+}
+
+stop() {
+  ebegin "Stopping firewall"
+  $IPTABLES -F
+  $IPTABLES -t nat -F
+  $IPTABLES -X
+  $IPTABLES -P FORWARD ACCEPT
+  $IPTABLES -P INPUT   ACCEPT
+  $IPTABLES -P OUTPUT  ACCEPT
+  eend $?
+}
+
+showstatus() {
+  ebegin "Status"
+  $IPTABLES -L -n -v --line-numbers
+  einfo "NAT status"
+  $IPTABLES -L -n -v --line-numbers -t nat
+  eend $?
+}
+
+panic() {
+  ebegin "Setting panic rules"
+  $IPTABLES -F
+  $IPTABLES -X
+  $IPTABLES -t nat -F
+  $IPTABLES -P FORWARD DROP
+  $IPTABLES -P INPUT   DROP
+  $IPTABLES -P OUTPUT  DROP
+  $IPTABLES -A INPUT -i lo -j ACCEPT
+  $IPTABLES -A OUTPUT -o lo -j ACCEPT
+  eend $?
+}
+
+save() {
+  ebegin "Saving Firewall rules"
+  $IPTABLESSAVE &gt; $FIREWALL
+  eend $?
+}
+
+restore() {
+  ebegin "Restoring Firewall rules"
+  $IPTABLESRESTORE &lt; $FIREWALL
+  eend $?
+}
+
+restart() {
+  svc_stop; svc_start
+}
+
+showoptions() {
+  echo "Usage: $0 {start|save|restore|panic|stop|restart|showstatus}"
+  echo "start)      will restore setting if exists else force rules"
+  echo "stop)       delete all rules and set all to accept"
+  echo "rules)      force settings of new rules"
+  echo "save)       will store settings in ${FIREWALL}"
+  echo "restore)    will restore settings from ${FIREWALL}"
+  echo "showstatus) Shows the status"
+}
+</pre>
+
+<p>
+Some advice when creating a firewall:
+</p>
+
+<ol>
+<li>Create your firewall policy before implementing it</li>
+<li>Keep it simple</li>
+<li>
+Know how each protocol works (read the relevant <uri
+link="http://www.ietf.org/">RFC</uri>(Request For Comments))
+</li>
+<li>
+Keep in mind that a firewall is just another piece of software running as root.
+</li>
+<li>Test your firewall</li>
+</ol>
+
+<p>
+If you think that iptables is hard to understand or takes to long to setup a
+decent firewall you could use <uri
+link="http://www.shorewall.net">Shorewall</uri>. It basically uses iptables to
+generate firewall rules, but concentrates on rules and not specific protocols.
+</p>
+
+</body>
+</section>
+<section>
+<title>Squid</title>
+<body>
+
+<p>
+Squid is a very powerful proxy server. It can filter traffic based on time,
+regular expressions on path/URI, source and destination IP addresses, domain,
+browser, authenticated user name, MIME type, and port number (protocol). I
+probably forgot some features, but it can be hard to cover the entire list right
+here.
+</p>
+
+<p>
+In the following example I have added a banner filter instead of a filter based
+on porn sites. The reason for this is that Gentoo.org should <e>not</e> be
+listed as some porn site. And I do not want to waste my time trying to find some
+good sites for you.
+</p>
+
+<p>
+In this case, my policy states:
+</p>
+
+<ul>
+<li>
+Surfing (HTTP/HTTPS) is allowed during work hours (mon-fri 8-17 and sat 8-13),
+but if employees are here late they should work, not surf
+</li>
+<li>
+Downloading files is not allowed (.exe, .com, .arj, .zip, .asf, .avi, .mpg,
+.mpeg, etc)
+</li>
+<li>
+We do not like banners, so they are filtered and replaced with a transparent gif
+(this is where you get creative!).
+</li>
+<li>
+All other connections to and from the Internet are denied.
+</li>
+</ul>
+
+<p>
+This is implemented in 4 <e>easy</e> steps.
+</p>
+
+<pre caption="/etc/squid/squid.conf">
+# Bind to a ip and port
+http_port 10.0.2.1:3128
+
+# Standard configuration
+hierarchy_stoplist cgi-bin ?
+acl QUERY urlpath_regex cgi-bin \?
+no_cache deny QUERY
+
+# Add basic access control lists
+acl all src 0.0.0.0/0.0.0.0
+acl manager proto cache_object
+acl localhost src 127.0.0.1/255.255.255.255
+
+# Add who can access this proxy server
+acl localnet src 10.0.0.0/255.255.0.0
+
+# And ports
+acl SSL_ports port 443
+acl Safe_ports port 80
+acl Safe_ports port 443
+acl purge method PURGE
+
+# Add access control list based on regular
+# expressions within urls
+acl archives urlpath_regex "/etc/squid/files.acl"
+acl url_ads url_regex "/etc/squid/banner-ads.acl"
+
+# Add access control list based on time and day
+acl restricted_weekdays time MTWHF 8:00-17:00
+acl restricted_weekends time A 8:00-13:00
+
+acl CONNECT method CONNECT
+
+#allow manager access from localhost
+http_access allow manager localhost
+http_access deny manager
+
+# Only allow purge requests from localhost
+http_access allow purge localhost
+http_access deny purge
+
+# Deny requests to unknown ports
+http_access deny !Safe_ports
+
+# Deny CONNECT to other than SSL ports
+http_access deny CONNECT !SSL_ports
+
+# My own rules
+
+# Add a page do be displayed when
+# a banner is removed
+deny_info NOTE_ADS_FILTERED url_ads
+
+# Then deny them
+http_access deny url_ads
+
+# Deny all archives
+http_access deny archives
+
+# Restrict access to work hours
+http_access allow localnet restricted_weekdays
+http_access allow localnet restricted_weekends
+
+# Deny the rest
+http_access deny all
+</pre>
+
+<p>
+Next fill in the files you do not want your users to download files. I have
+added zip, viv, exe, mp3, rar, ace, avi, mov, mpg, mpeg, au, ra, arj, tar, gz
+and z files.
+</p>
+
+<pre caption="/etc/squid/files.acl">
+\.[Zz][Ii][pP]$
+\.[Vv][Ii][Vv].*
+\.[Ee][Xx][Ee]$
+\.[Mm][Pp]3$
+\.[Rr][Aa][Rr]$
+\.[Aa][Cc][Ee]$
+\.[Aa][Ss][Ff]$
+\.[Aa][Vv][Ii]$
+\.[Mm][Oo][Vv]$
+\.[Mm][Pp][Gg]$
+\.[Mm][Pp][Ee][Gg]$
+\.[Aa][Uu]$
+\.[Rr][Aa]$
+\.[Aa][Rr][Jj]$
+\.[Tt][Aa][Rr]$
+\.[Gg][Zz]$
+\.[Zz]$
+</pre>
+
+<note>
+Please note the [] with upper and lowercase of every character. This is done so
+no one can fool our filter by accessing a file called AvI instead of avi.
+</note>
+
+<p>
+Next we add the regular expressions for identifying banners. You will probably
+be a lot more creative than I:
+</p>
+
+<pre caption="/etc/squid/banner-ads.acl">
+/adv/.*\.gif$
+/[Aa]ds/.*\.gif$
+/[Aa]d[Pp]ix/
+/[Aa]d[Ss]erver
+/[Aa][Dd]/.*\.[GgJj][IiPp][FfGg]$
+/[Bb]annerads/
+/adbanner.*\.[GgJj][IiPp][FfGg]$
+/images/ad/
+/reklame/
+/RealMedia/ads/.*
+^http://www\.submit-it.*
+^http://www\.eads.*
+^http://ads\.
+^http://ad\.
+^http://ads02\.
+^http://adaver.*\.
+^http://adforce\.
+adbot\.com
+/ads/.*\.gif.*
+_ad\..*cgi
+/Banners/
+/SmartBanner/
+/Ads/Media/Images/
+^http://static\.wired\.com/advertising/
+^http://*\.dejanews\.com/ads/
+^http://adfu\.blockstackers\.com/
+^http://ads2\.zdnet\.com/adverts
+^http://www2\.burstnet\.com/gifs/
+^http://www.\.valueclick\.com/cgi-bin/cycle
+^http://www\.altavista\.com/av/gifs/ie_horiz\.gif
+</pre>
+
+<p>
+And as the last part we want this file to be displayed when a banner is removed.
+It is basically a half html file with a 4x4 transparent gif image.
+</p>
+
+<pre caption="/etc/squid/errors/NOTE_ADS_FILTERED">
+&lt;HTML&gt;
+&lt;HEAD&gt;
+&lt;META HTTP-EQUIV="REFRESH" CONTENT="0; URL=http://localhost/images/4x4.gif"&gt;
+&lt;TITLE>ERROR: The requested URL could not be retrieved&lt;/TITLE&gt;
+&lt;/HEAD&gt;
+&lt;BODY&gt;
+&lt;H1&gt;Add filtered!&lt;/H1&gt;
+</pre>
+
+<note>
+Do not close the &lt;HTML&gt; &lt;BODY&gt; tags. This will be done by squid.
+</note>
+
+<p>
+As you can see, Squid has a lot of possibilities and it is very effective at
+both filtering and proxying. It can even use alternative Squid proxies to scale
+on very large networks. The configuration I have listed here is mostly suited
+for a small network with 1-20 users.
+</p>
+
+<p>
+But combining the packet filter (iptables) and the application gateway (Squid)
+is probably the best solution, even if Squid is located somewhere safe and
+nobody can access it from the outside. We still need to be concerned about
+attacks from the inside.
+</p>
+
+<p>
+Now you have to configure your clients browsers to use the proxy server. The
+gateway will prevent the users from having any contact with the outside unless
+they use the proxy.
+</p>
+
+<note>
+In Mozilla Firefox this is done in Edit->Preferences->Advanced->Network.
+</note>
+
+<p>
+It can also be done transparently by using iptables to forward all outbound
+traffic to a Squid proxy. This can be done by adding a forwarding/prerouting
+rule on the gateway:
+</p>
+
+<pre caption="Enable portforwarding to our proxyserver">
+# <i>iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to proxyhost:3128</i>
+# <i>iptables -t nat -A PREROUTING -p tcp --dport 443 -j DNAT --to proxyhost:3128</i>
+</pre>
+
+<note>
+If the proxy is running on the packet filtering host--though this is not
+recommended, it may be necessary if you do not have enough spare machines--use
+a <c>REDIRECT</c> target instead of <c>DNAT</c> (<c>REDIRECT</c> directs packets
+to the localhost).
+</note>
+
+</body>
+</section>
+<section>
+<title>Lessons learned</title>
+<body>
+
+<p>
+We have learned that:
+</p>
+
+<ol>
+<li>
+A firewall can be a risk in itself. A badly configured firewall is worse than
+not having one at all.
+</li>
+<li>How to setup a basic gateway and a transparent proxy.</li>
+<li>The key to a good firewall is to know the protocols you want do allow.</li>
+<li>
+That IP traffic does not always contain legitimate data, e.g. ICMP packets,
+which can contain a malicious payload.
+</li>
+<li>How to prevent SYN attack.</li>
+<li>Filtering HTTP traffic by removing offensive pictures and downloads of viruses.</li>
+<li>
+Combining packet filters and application gateways provides better control.
+</li>
+</ol>
+
+<p>
+Now, if you <e>really</e> need to, go create a firewall that matches
+your needs.
+</p>
+
+</body>
+</section>
+
+</sections>

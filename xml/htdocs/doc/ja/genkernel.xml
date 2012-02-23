@@ -1,0 +1,431 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/genkernel.xml,v 1.3 2005/07/05 17:47:32 idani Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/genkernel.xml">
+<title>Gentoo Linux genkernelガイド</title>
+
+<author title="Author">
+  <mail link="plasmaroo@gentoo.org">Tim Yamin</mail>
+</author>
+<author title="翻訳">
+  <mail link="yasumichi@users.sourceforge.jp">赤星柔充</mail>
+</author>
+
+<abstract>
+このガイドは、genkernelにより提供される全機能のリファレンスを提供することを意図しています。
+</abstract>
+
+<license/>
+
+<version>1.1.2.3</version>
+<date>2005-06-26</date>
+<!-- Original revision: 1.16 -->
+
+<chapter>
+<title>はじめに</title>
+<section>
+<title>はじめに</title>
+<body>
+
+<p>
+genkernelは、カーネルのコンパイルにまだ慣れていないユーザがハードウェアを自動認識するGentoo インストールCD上で使われているカーネルと類似したカーネルをセットアップできる様に設計されました。
+</p>
+
+<p>
+初期化を必要とするハードウェアと起動可能な動くカーネルのためにgenkernelを使うことに興味を持っているユーザもいるでしょう。
+またgenkernelはカーネルモジュールを自動でコンパイルするため、
+ハードウェアに必要なモジュールがモジュールパラメータとともに読み込まれ使用されることを可能にします。
+</p>
+
+</body>
+</section>
+<section>
+<title>genkernelは私のためにあるの?</title>
+<body>
+
+<p>
+genkernelは大抵、自分自身でカーネルをコンパイルしない人や自身のハードウェアの設定に不案内な人には良い選択です。
+</p>
+
+<p>
+genkernelは一般的な設定を使うよう設計されているので、
+あなたのハードウェアの全てをサポートできるでしょう。
+- とはいえ全てのドライバーとモジュールが同様にコンパイルされるので、
+あなた自身がカーネルをコンパイルする方が、あなたが必要と知っているものをより早く提供できるでしょう。
+</p>
+
+<p>
+しかしながらgenkernelは、今のところLVM2/EVMS2パーティションからの起動をサポートしていません。
+LVM2/EVMS2のユーザには、(訳注：サポートされる)時が来るまで手動によるカーネルコンパイルを使用することを推奨します。
+</p>
+
+</body>
+</section>
+<section>
+<title>genkernelの取得</title>
+<body>
+
+<p>
+あなたは、単に<c>emerge genkernel</c>を実行することによってgenkernelを獲得できます。
+あなたは、GRPといったバイナリパッケージを使うためには、
+<c>-k</c>フラグを使うのを忘れないでください。
+古いバージョンのgenkernelを持つGRPパッケージのため、フラグは異なります。
+あなたは結果として、
+<uri link="/doc/en/handbook/handbook-x86.xml?part=1&amp;chap=10">Gentoo Handbook</uri>と<path>genkernel --help</path>を調べる事になるでしょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>サポートされているプラットフォーム</title>
+<body>
+
+<p>
+genkernel 3.0.2として、以下のプラットフォームがサポートされています。
+alpha、amd64、parisc、parisc64、ppc、ppc64、sparc、sparc64及びx86。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>genkernelの使い方</title>
+<section>
+<title>はじめに</title>
+<body>
+
+<p>
+genkernelは、3つのモードで動作する様に設計されています。:
+</p>
+
+<ul>
+  <li>"all"モード: これは、カーネルとinitrdをビルドします。</li>
+  <li>"kernel"モード: これは、カーネルイメージをビルドするのみです。</li>
+  <li>"initrd"モード: これは、initrdをビルドするのみです。</li>
+</ul>
+
+<p>
+ほとんどのユーザは、あなたのために"kernnel"と"initrd"モードを実行する"all"モードのみを欲するでしょう。
+これら"kernel"と"initrd"モードは、現在の所、"all"モードの別名に過ぎないので、
+なんら特別な効果をあなたにもたらさないことに<b>注意してください</b>。
+</p>
+
+<p>
+genkernelは主にあなたがカーネルのコンパイルを必要とする時にあなたの生活をより簡単にするコマンドですが、
+あなたのカーネルがどの様にコンパイルあるいは設定されるかをカスタマイズできるさまざまなフラグも満載しています。
+</p>
+
+</body>
+</section>
+<section>
+<title>genkernelコンパイラフラグ</title>
+<body>
+
+<p>
+genkernelは、あなたのカーネルがアセンブルされる時に適切なアプリケーションに渡される以下のフラグをサポートします。
+</p>
+
+<ul>
+  <li>
+    <b>--kernel-as=<c>someAssembler</c></b>: これはあなたのカーネルの構築に使われるアセンブラを指定します。
+  </li>
+  <li>
+    <b>--kernel-cc=<c>someCompiler</c></b>: これはあなたのカーネルの構築に使われるコンパイラを指定します。
+  </li>
+  <li>
+    <b>--kernel-ld=<c>someLinker</c></b>: これはあなたのカーネルの構築に使われるリンカを指定します。
+  </li>
+  <li>
+    <b>--kernel-make=<c>someMake</c></b>: これはあなたのカーネルの構築に使われるGNU makeの代替を指定します。
+  </li>
+</ul>
+
+<ul>
+  <li>
+    <b>--utils-as=<c>someAssembler</c></b>: これはサポートユーティリティを構築する時に使われるアセンブラを指定します。
+  </li>
+  <li>
+    <b>--utils-cc=<c>someCompiler</c></b>: これはサポートユーティリティを構築する時に使われるコンパイラを指定します。
+  </li>
+  <li>
+    <b>--utils-ld=<c>someLinker</c></b>: これはサポートユーティリティを構築する時に使われるリンカを指定します。
+  </li>
+  <li>
+    <b>--utils-make=<c>someMake</c></b>: これはサポートユーティリティを構築する時に使われるGNU makeの代替を指定します。
+  </li>
+</ul>
+
+<ul>
+  <li>
+    <b>--makeopts=<c>-jJobs</c></b>: これはカーネルとサポートユーティリティが構築される際にGNU makeに渡されるフラグを指定します。
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>genkernelカーネルフラグ</title>
+<body>
+
+<p>
+genkernelは以下のフラグをサポートしていて、いくつかのフラグは、
+カーネルの構築に影響を与える<c>--<b>no-</b>option</c>と等価なものを持っています。
+</p>
+
+<ul>
+  <li>
+    <b>--callback="echo Hello"</b>:
+    このルーチンはカーネルと関連モジュールがビルドされた後に指定された引数を呼びます。
+    しかし、initrdが構築される前です。
+    これは、コールバックを使用することによりgenkernelモジュールグループを再定義して、
+    関連項目をemergeする事によってinitrdに外部モジュールをインストールしたいと思う場合に有用です。
+  </li>
+  <li>
+    <b>--<c>no-</c>clean</b>:
+    これは、あなたのカーネルを構築する前に<c>make clean</c>を実行するか<e>あるいは実行しません。</e>
+    これは、全てのオブジェクトファイルと依存関係が削除されます。
+  </li>
+  <li>
+    <b>--<c>no-</c>mrproper</b>:
+    これは、あなたのカーネルを構築する前に<c>make mrproper</c>を実行するか<e>あるいは実行しません</e>。
+    これは、全てのオブジェクトファイル、依存関係<b>及びあなたの設定</b>が削除されます。
+  </li>
+</ul>
+
+<ul>
+  <li>
+    <b>--kerneldir=<path>/path/to/sources</path></b>:
+    これは、デフォルトの場所である<path>/usr/src/linux</path>の代わりに代替のカーネルソースの場所を指定します。
+  </li>
+  <li>
+    <b>--kernel-config=<path>/path/to/config-file</path></b>:
+    これは、使用される代替のカーネル設定を指定します。
+    デフォルトで使用される持続性のない<path>/path/to/sources/.config</path>の代わりに使用されます。
+  </li>
+</ul>
+
+<ul>
+  <li>
+    <b>--<c>no-</c>bootsplash</b>:
+    これは、genkernelがビルドする際にinitrdにブートスプラッシュサポートを加えるか<e>あるいは加えません</e>。
+    現在の所、全てのアーキテクチャでブートスプラッシュをサポートしているわけではありませんし、
+    ブートスプラッシュをサポートしているカーネルも必要です。
+  </li>
+  <li>
+    <b>--<c>no-</c>menuconfig</b>: This runs <e>or does not run</e> the kernel 
+    これは、<c>make oldconfig</c>が実行された後、
+    あなたのカーネルをビルドする前にメニューベースのカーネル設定を実行するか<e>あるいは実行しません</e>。
+  </li>
+</ul>
+
+<ul>
+  <li>
+  <b>--no-initrdmodules</b>: これは、genkernelが作成するinitrdにモジュールを全くコピーしません。
+  </li>
+  <li>
+    <b>--<c>no-</c>install</b>:
+    これは、構築が終わったカーネル、モジュール及びinitrdをインストールするか<e>あるいはインストールしません</e>。
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>genkernelの様々なフラグ</title>
+<body>
+
+<p>
+genkernelは、他の2つのカテゴリに適さないいくつかのフラグもサポートします:
+</p>
+
+<ul>
+  <li>
+    <b>--arch-override=<c>someArch</c></b>:
+    このフラグは、自動認識のメカニズムが失敗した場合(その場合は、
+    どうかバグを提出してください!)やあるいはあなたがカーネルをクロスコンパイルしたいと願っている場合、
+    genkernelが考えているアーキテクチャをあなたが考えているものに上書きするために使うことができます。
+  </li>
+</ul>
+
+<ul>
+  <li>
+    <b>--busybox-config=<path>/path/to/busybox-config</path></b>:
+    これは、指定されたファイルでデフォルトのbusybox設定を上書きします。
+  </li>
+  <li>
+    <b>--busybox-bin=<path>/path/to/busybox-binary.tar.bz2</path></b>:
+    このオプションを使う事は、busyboxのバイナリをコンパイルせず、
+    指定されたtarballを使うことを意味します。
+    busyboxが静的にコンパイルされる<e>べき</e>であることに注意してください。
+  </li>
+</ul>
+
+<ul>
+  <li>
+    <b>--minkernpackage=<path>/output/to/yourkernel.tar.bz2</path></b>:
+    このフラグは、<path>kernel</path>と名付けられたカーネルと<path>initrd</path>と名付けられたinitrdのtarballを指定されたファイルに出力します。
+    このtarballには、パッチ情報やモジュールは含まれません。
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>genkernelの実行</title>
+<body>
+
+<p>
+genkernelの実行に必要な事は、必要なフラグと共にrootとして実行することです。例:
+</p>
+
+<pre caption="genkernelの実行">
+# genkernel --menuconfig --no-clean --no-install --bootsplash all
+<comment>(あなたが思うようにカーネルを設定し、コンパイルされたオブジェクトファイルを作成し、
+ブートスプラッシュサポートを有効にしますが、何もインストールしません。)</comment>
+</pre>
+
+<p>
+もし、あなたが同様にカーネルのインストールのためにgenkernelを欲するのであれば、
+確実に<path>/boot</path>パーティションをマウントしてください。-
+最近のgenkernelは、<path>/etc/genkernel.conf</path>内のMOUNTBOOTを"yes"に設定すれば、
+自動でそれを試みます。
+</p>
+
+<pre caption="手動で/bootをマウントする">
+<comment>(もし、/bootが/etc/fstab内で有効になっていれば:)</comment>
+# mount /boot
+<comment>(... そうでない場合、IDEディスクならば:)</comment>
+# mount /dev/hda1 /boot
+<comment>(... そしてSCSIディスクならば:)</comment>
+# mount /dev/sda1 /boot
+</pre>
+
+</body>
+</section>
+<section>
+<title>ブートローダで動くようにgenkernelをセットアップする</title>
+<body>
+
+<p>
+ブートローダで動くようにgenkernelをセットアップするには、
+ブートローダの設定に3つか4つの変更が必要です。
+</p>
+
+<ol>
+  <li>
+    <c>root=/dev/ram0</c>と<c>init=/linuxrc</c>をカーネルイメージに渡されるカーネルパラメータに加えてください。
+  </li>
+  <li>
+    例えば<path>/dev/hda3</path>にルートパーティションが含まれているならば、
+    <c>real_root=/dev/hda3</c>をカーネルイメージに渡されるカーネルパラメータに加えてください。
+  </li>
+  <li>
+    もしブートスプラッシュを使いたいならば、
+    <c>vga=0x317</c>といった適したモードラインをカーネルイメージに渡されるカーネルパラメータに加えてください。
+    そして、あなたがブートスプラッシュに冗長さを要求するかどうかによる<c>splash=verbose</c>または<c>splash=silent</c>も加えてください。
+  </li>
+  <li>
+    ブートローダがどの様にそれを必要とするかによってinitrdを加えてください:
+    あなたがお使いのブートローダではどの様にするかの詳細は、
+    <uri link="/doc/en/handbook/handbook-x86.xml?part=1&amp;chap=10">Gentoo  Handbook</uri>を参照してください。
+  </li>
+</ol>
+
+</body>
+</section>
+<section>
+<title>カーネル設定ファイル</title>
+<body>
+
+<p>
+genkernelは<path>/etc/kernels</path>にあなたのカーネル設定を保存し、
+<c>genkernel</c>を呼び出す場合は常にその設定を使用します。
+もし、再びデフォルトの設定で始めたい場合は、<path>/etc/kernels</path>内のファイルの名前を変更してください。
+そうすれば、genkernelは<path>/usr/share/genkernel/&lt;arch&gt;</path>に置かれたカーネル設定を代わりに使用します。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>genkernelの移植</title>
+<section>
+<title>はじめに</title>
+<body>
+
+<p>
+あなたのアーキテクチャに提供するためには、全ての必要なライブラリとgenkernelが必要ですが、
+これらは、あなたのアーキテクチャで動くカーネル、動くコンパイラスイート、GNU make、
+及び動くbusyboxディストリビューションに限られ、準備はできています。
+</p>
+
+<p>
+genkernelは、そのアーキテクチャ向けの設定ファイル<path>/usr/share/genkernel/$archName</path>を各アーキテクチャ向けに使用します。
+</p>
+
+</body>
+</section>
+<section>
+<title>システムがブートストラップする方法</title>
+<body>
+
+<ol>
+  <li>
+    ブートローダは、genkernelのディレクトリ内にある設定ファイルの仕様に基づいてビルドされたgenkernelイメージとgenkernelによって用意されたinitrdを読み込みます。
+  </li>
+  <li>
+    カーネルが起動し、busyboxを初期化するために少量のメモリを確保します。
+    busyboxは、そのアーキテクチャ向けのモジュール読込リストにあるモジュールについてシステムを調べます。
+  </li>
+  <li>
+    そして、もしbusyboxがルートデバイスとして認識する<c>real_root</c>パラメータが見付かれば、
+    システムはそのデバイスから起動されます。
+  </li>
+</ol>
+
+</body>
+</section>
+<section>
+<title>設定ファイル</title>
+<body>
+
+<ul>
+  <li>
+    <path>busy-config</path>:
+    これは、あなたのアーキテクチャ用にbusyboxが構築されるために使われる設定です。
+  </li>
+  <li>
+    <path>config.sh</path>:
+    これは、genkernelの内部変数の値を設定するシェルスクリプトです。
+    ファイル<path>config.sh</path>の一つを一例として見てください。
+  </li>
+  <li>
+    <path>modules_load</path>:
+    これは、SCSI、FireWire、ATARAIDおよびPCMCIAをサポートするモジュールを空白で区切ったリストを含んだファイルです。
+    もし、あなたのプラットフォームで有効な物がなければ、フィールドを空のままにしてください。
+    ファイル<path>modules_load</path>の一つを一例として見てください。
+  </li>
+</ul>
+
+<ul>
+  <li>
+    <path>kernel-config</path>:
+    あらゆるカーネルのバージョンで使用されるデフォルトのカーネル設定です。
+  </li>
+  <li>
+    <path>kernel-config-2.4</path>:
+    2.4シリーズのカーネルで使用されるデフォルトのカーネル設定です。
+  </li>
+  <li>
+    <path>kernel-config-2.6</path>:
+    2.6シリーズのカーネルで使用されるデフォルトのカーネル設定です。
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

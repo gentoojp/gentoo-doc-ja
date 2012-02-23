@@ -1,0 +1,192 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-x86-quickinstall-media.xml,v 1.5 2009/10/04 17:25:49 nightmorph Exp $ -->
+<!DOCTYPE included SYSTEM "/dtd/guide.dtd">
+
+<included>
+
+<version>5</version>
+<date>2009-10-04</date>
+
+<!-- Original revision: 1.5 -->
+
+<section>
+<title>インストールメディア</title>
+<body>
+
+<p>
+<uri link="/main/en/mirrors.xml">ミラー</uri>(<uri link="/main/ja/mirrors.xml">日本語訳</uri>)からCDをダウンロードします。
+minimalインストールCDのISOファイルが<path>releases/x86/current-iso/</path>にあります。
+<e>minimal</e>インストールCDはインターネットベースのインストールにのみ役立ちます。
+このガイドではminimalインストールCDを使います。
+</p>
+
+<p>
+CDを<uri link="/doc/en/faq.xml#isoburning">焼いて</uri>(<uri link="/doc/ja/faq.xml#isoburning">日本語訳</uri>)起動します。
+</p>
+
+</body>
+</section>
+<section>
+<title>Booting the CD</title>
+<body>
+
+<p>
+起動画面で<c>F2</c>を押してどんな起動オプションがあるのかを見てください。
+<c>gentoo</c>でも<c>gentoo-nofb</c>でも起動することができますが、
+後者はフレームバッファが無効になります。
+LiveCDを起動したのなら<c>nox</c>をつけて、Xのグラフィックシステムが動かないようにしてください。
+いろいろな機能を有効・無効にする様々なオプションがあります。
+全てうまくいけば、ハードウェアが認識されモジュールが読みこまれます。
+もしカーネルがうまく起動しなかったり、起動中にハングしたりするなら、
+別の設定を試してみるのがいいかもしれません。
+一番安全なのは<c>nodetect</c>オプションをつけて明示的に必要なモジュールを読みこむことでしょう。
+</p>
+
+<pre caption="minimalインストールCDの起動">
+Gentoo Linux Installation LiveCD                     http://www.gentoo.org
+Enter to Boot; F1 for kernels  F2 for options.
+boot: <i>gentoo-nofb</i>
+  <comment>(or in case of problems)</comment>
+boot: <i>gentoo-nofb nodetect</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>任意自由選択: モジュールのロード</title>
+<body>
+
+<p>
+If you used the <c>nodetect</c> option, once booted, load the required modules.
+You need to enable networking and have access to your disks. The <c>lspci</c>
+command can help you identify your hardware.
+</p>
+
+<pre caption="Load required modules">
+livecd root # <i>lspci</i>
+<comment>(Use lspci's output to identify required modules)</comment>
+
+<comment>(The following is an example, adapt it to your hardware)</comment>
+livecd root # <i>modprobe 3w-9xxx</i>
+livecd root # <i>modprobe r8169</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>ネットワーク設定</title>
+<body>
+
+<p>
+ネットワークの準備が整っていないのなら、<c>net-setup</c>を使ってネットワークの設定を行います。
+設定の前に<c>modprobe</c>でネットワークカードに対応したドライバを読み込む必要があるかもしれません。
+ADSLを使っているのなら、<c>adsl-setup</c>と<c>adsl-start</c>を使います。
+PPTPサポートが必要なら、まず<path>/etc/ppp/chap-secrets</path>と<path>/etc/ppp/options.pptp</path>を編集し、<c>pptp &lt;server&nbsp;ip&gt;</c>を使用します。
+</p>
+
+<p>
+無線LANを使うには、<c>iwconfig</c>を使って無線変数を設定し、<c>net-setup</c>をもう一度行うか、もしくは<c>ifconfig</c>、<c>dhcpcd</c>、<c>route</c>を手動で実行します。
+</p>
+
+<p>
+proxyを使用するには、<c>export http_proxy</c>、<c>ftp_proxy</c>、そして<c>RSYNC_PROXY</c>を使ってシステムを初期化することを忘れないでください。
+</p>
+
+<p>
+If your network does not work already, you can use <c>net-setup</c> to
+configure your network. You might need to load support for your network card
+using <c>modprobe</c> prior to the configuration. If you have ADSL, use
+<c>pppoe-setup</c> and <c>pppoe-start</c>. For PPTP support, first edit
+<path>/etc/ppp/chap-secrets</path> and <path>/etc/ppp/options.pptp</path> and
+then use <c>pptp &lt;server&nbsp;ip&gt;</c>.
+</p>
+
+<p>
+For wireless access, use <c>iwconfig</c> to set the wireless parameters and then
+use either <c>net-setup</c> again or run <c>ifconfig</c>, <c>dhcpcd</c> and/or
+<c>route</c> manually.
+</p>
+
+<p>
+If you are behind a proxy, do not forget to initialize your system using
+<c>export http_proxy</c>, <c>ftp_proxy</c> and <c>RSYNC_PROXY</c>.
+</p>
+
+<pre caption="Configure networking the guided way">
+livecd root # <i>net-setup eth0</i>
+</pre>
+
+<p>
+Alternatively, you can start networking manually. The following example assigns
+the IP address 192.168.1.10 to your PC and defines 192.168.1.1 as your router
+and name server.
+</p>
+
+<pre caption="Configure networking the manual way">
+livecd root # <i>ifconfig eth0 192.168.1.10/24</i>
+livecd root # <i>route add default gw 192.168.1.1</i>
+livecd root # <i>echo nameserver 192.168.1.1 > /etc/resolv.conf</i>
+</pre>
+
+<p>
+The installation CD allows you to start an <c>sshd</c> server, add additional
+users, run <c>irssi</c> (a command-line chat client) and surf the web using
+<c>links</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Optional: connect to your new box over ssh</title>
+<body>
+
+<p>
+The most interesting feature is of course <c>sshd</c>. You can start it and
+then connect from another machine and cut and paste commands from this guide.
+</p>
+
+<pre caption="Start sshd">
+livecd root # <i>time /etc/init.d/sshd start</i>
+ * Generating hostkey ...
+<comment>(sshd generates the key and displays more output)</comment>
+ * starting sshd ...                            [ok]
+
+real   0m13.688s
+user   0m9.420s
+sys    0m0.090s
+</pre>
+
+<p>
+Now, set the root password on the liveCD so that you can connect to it from
+another PC. Please note that allowing root to connect over ssh is not
+recommended under normal circumstances. If you can't trust your local network,
+use a long and complex password, you should use it only once as it will
+disappear after your first reboot.
+</p>
+
+<pre caption="Set the root password">
+livecd root # <i>passwd</i>
+New UNIX password: <comment>type_a_password</comment>
+Retype new UNIX password: <comment>type_a_password</comment>
+passwd: password updated successfully
+</pre>
+
+<p>
+Now, you can start a terminal on another PC and connect to your new box, follow
+the rest of this guide in another window, and cut and paste commands.
+</p>
+
+<pre caption="Connect to your new box from another PC">
+<comment>(Use the IP address of your new box)</comment>
+$ <i>ssh root@192.168.1.10</i>
+The authenticity of host '192.168.1.10 (192.168.1.10)' can't be established.
+RSA key fingerprint is 96:e7:2d:12:ac:9c:b0:94:90:9f:40:89:b0:45:26:8f.
+Are you sure you want to continue connecting (yes/no)? <i>yes</i>
+Warning: Permanently added '192.168.1.10' (RSA) to the list of known hosts.
+Password: <comment>type_the_password</comment>
+</pre>
+
+</body>
+</section>
+
+</included>

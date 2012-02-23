@@ -1,0 +1,647 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/cron-guide.xml,v 1.8 2009/08/23 03:30:17 shindo Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/cron-guide.xml" lang="ja">
+<title>Gentoo Linux Cronガイド</title>
+
+<author title="Author">
+  <mail link="eric.brown@dnbrown.net">Eric Brown</mail>
+</author>
+<author title="Editor">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+<author title="翻訳">
+  <mail link="shindo@gentoo.org">シンドウナオアキ</mail>
+</author>
+
+<abstract>
+このガイドではcronの設定法と利用法を説明します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.9</version>
+<date>2008-01-26</date>
+
+<!-- Original revision: 1.17 -->
+
+<chapter>
+<title>cronの基礎概念</title>
+<section>
+<title>cronは何をするのか</title>
+<body>
+
+<p>
+cronは<c>crontab</c>コマンドからの入力に基づいて、定期作業を実行するデーモンです。
+これは1分ごとに、各ユーザのcrontabになにか実行されるべきcronジョブがあるかどうかが確認されることで行われています。
+</p>
+
+<note>
+<e>crontab</e>は、cronジョブの登録情報の一覧名でもあり、そのリストを編集するコマンド名でもあるということに気をつけてください。
+</note>
+
+</body>
+</section>
+<section>
+<title>事実上標準のcron</title>
+<body>
+
+<p> 
+Portageには選択可能なcronの実装がいくつかあります。
+これらは同じようなインターフェースを提供します。すなわち<c>crontab</c>かそれに似たコマンドを使います。
+連続運用されないシステムでcronと共に動作するAnacronという関連したユーティリティもあります。
+</p>
+
+<p>
+これら利用可能なcronパッケージのすべてが<c>sys-process/cronbase</c>に依存していると知っておくべきです。
+いずれのcronパッケージもこのパッケージに対しては技術的に依存しているわけではありませんが、このパッケージは多くのユーザにとって便利なcronに似た機能を提供します。
+</p>
+
+<p>
+cronを使い始める前に、どの実装を使用したいか選ばなければなりません。
+参考までに、以下にこれらそれぞれの情報を集めました。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>どのcronが適切でしょうか?</title>
+<section>
+<title>vixie cron</title>
+<body>
+
+<p>
+vixie cronはSysV cronに準じた完全なcron機能を実装しています。
+ユーザは各自のcrontabを所有しており、crontabで環境変数を指定することができます。
+他のcronと違い、SELinuxとPAMのサポートも提供します。
+アーキテクチャのサポートは、dcronより少ないですが、fcronよりは多いです。
+</p>
+
+<p>
+<c>sys-process/vixie-cron</c>には以下のような特徴があります。
+</p>
+
+<ul>
+<li>SELinuxのサポート</li>
+<li>PAMのサポート（<path>/etc/security/limits.conf</path>）</li>
+<li>crontabに環境変数(PATH、SHELL、HOMEなど)を設定可能</li>
+<li>
+ユーザが各自のcrontabを持つことができ、その利用の可否は<path>cron.allow</path>と<path>cron.deny</path>で制御可能
+</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Dillonのcron</title>
+<body>
+
+<p>
+dcronはシンプル、かつ洗練され、そして安全性の高いcronの実装を目指しています。
+crontabで環境変数を指定することはできず、全てのcronジョブは<path>/bin/sh</path>から実行されます。
+vixie cronと同様に、それぞれのユーザが各自のcrontabを持ちます。
+</p>
+
+<p>
+<c>sys-process/dcron</c>には以下のような特徴があります。
+</p>
+
+<ul>
+<li>高速に動作し、構造が簡単で、無用な機能がありません</li>
+<li>
+  <c>crontab</c>へのアクセスはcronグループに制限され、従って、外部の機能には依存しません
+</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>fcron</title>
+<body>
+
+<p>
+fcronはvixie cronとanacronの代わりになることを目指しています。
+連続運用しないシステムで動作するように設計されており、追加の拡張機能が詰め込まれています。
+これにはジョブの起動条件、ジョブの実行順序の制御、ジョブに(実行優先度を決める)nice値を割り当てる機能、システムの起動時にジョブを実行することができるスケジュール機能があります。
+より詳しい情報は<uri link="http://fcron.free.fr/">fcron's home page</uri>を参照してください。
+</p>
+
+<p>
+<c>sys-process/fcron</c>には以下のような特徴があります。
+</p>
+
+<ul>
+<li>
+  連続運用しないシステムで動作するように設計されています。すなわち、それは実行に失敗したジョブがあれば再起動後に実行します
+</li>
+<li>
+  crontabで環境変数やその他多くのオプションが設定可能 
+</li>
+<li>
+  ユーザが各自のcrontabを持つことができ、その利用の可否はcron.allowとcron.denyで制御可能
+</li>
+<li>
+  多くの新しい機能をサポートする拡張されたcrontab構文を利用可能
+</li>
+</ul>
+
+
+</body>
+</section>
+
+<section>
+<title>bcron</title>
+<body>
+<p>
+bcronはセキュアな動作を念頭において設計された新しいcronです。
+このために、システムは分割されたタスクに対応する複数のプログラムに分割され、互いの通信は厳密に制御されています。ユーザーインタフェースは互換性のため同様のシステム（vixie-cronのような）と同じですが、内部的には大きくことなっています。
+より詳しくは、bcronのホームページ<uri>http://untroubled.org/bcron/</uri>
+</p>
+
+<p>
+<c>sys-process/bcron</c>には以下のような特徴があります。
+</p>
+
+<ul>
+<li>vixie-cronとの互換</li>
+<li>マルチプロセス対応</li>
+<li>サマータイム対応</li>
+</ul>
+
+</body>
+</section>
+
+<section>
+<title>anacron</title>
+<body>
+<p>
+anacronはcronデーモンではなく、たいていcronデーモンと連携して動作するものです。
+それは長い間、特定の間隔でコマンドを実行し、システムが連続稼働していることを想定していません。
+それゆえ、システムがダウンしている間に失敗したジョブを実行します。
+anacronはたいていいつも動作しているcronデーモンと連携します。
+</p>
+</body>
+
+</section>
+</chapter>
+
+<chapter>
+<title>cronを使う</title>
+<section>
+<title>インストール</title>
+<body>
+
+<p>
+最も好みのcronを選んだら、それをemergeします。
+</p>
+
+<pre caption="cronのインストール">
+# <i>emerge dcron</i>
+# <i>/etc/init.d/dcron start</i>
+# <i>rc-update add dcron default</i>
+</pre>
+
+<p>
+お好みですが、もしFcronをインストールしたのでないのなら、Anacronをインストールしてもよいです。
+</p>
+
+<pre caption="anacronのインストール">
+# <i>emerge anacron</i>
+# <i>/etc/init.d/anacron start</i>
+# <i>rc-update add anacron default</i>
+</pre>
+
+</body>
+</section>
+<section id="systemtab">
+<title>システムcrontab</title>
+<body>
+
+<p>
+これらcronパッケージをインストールした後に、<c>crontab /etc/crontab</c>を実行するように指示されます。
+<path>/etc/crontab</path>ファイルがあなたの<e>システムcrontab</e>です。
+cronのインストールは、<path>/etc/cron.{daily,hourly,weekly,monthly}</path>でスクリプトを実行するために、<c>sys-process/cronbase</c>とともにシステムcronを使います。
+vixie-cronのみ、<path>/etc/crontab</path>に記述されている内容を、変更後すぐに反映することに注意してください。
+dcronとfcronユーザは<path>/etc/crontab</path>を変更するたびに、<c>crontab /etc/crontab</c>を実行する必要があります。
+</p>
+
+<p>
+システムcrontabに登録されたジョブは<c>crontab -l</c>を使って表示されるcronジョブリストには表示されないことに注意してください。
+</p>
+
+<p>
+もちろん、どんなシステムcrontabも全く使わないという選択もできます。
+その場合は、dcronかfcronを選んだなら、<c>crontab /etc/crontab</c>を実行しては<e>いけません</e>。
+また、vixie-cronかbcronを選んだなら、<path>/etc/crontab</path>の全ての行をコメントアウトするべきです。
+</p>
+
+<pre caption="/etc/crontabの全ての行をコメントアウト">
+# <i>sed -i -e "s/^/#/" /etc/crontab</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>信用できるユーザにcronの利用を許可する</title>
+<body>
+
+<p>
+root以外のユーザをcronデーモンにアクセスできるようにしたいなら、この章を読んでください。
+そうでなければ、次の章である<uri link="#scheduling">cronジョブの登録</uri>に進みましょう。
+</p>
+
+<note>
+他のユーザにcrontabの利用を許可するということは、cronジョブをrootとして実行できるようにすることではありません。
+ユーザがrootのcrontabを編集できるようにしたいなら、<c>sudo</c>を検討すべきです。
+詳細は<uri link="/doc/en/sudo-guide.xml">Gentoo Sudo(ers) Guide</uri><uri link="/doc/ja/sudo-guide.xml">(日本語訳)</uri>を参照してください。
+</note>
+
+<p>
+どのcronパッケージを使うにしろ、ユーザにcrontabの利用を許可したいなら、まずユーザをcronグループに追加しなければなりません。
+例では、<e>wepy</e>というユーザをcronグループに追加します。
+</p>
+
+<pre caption="cronグループにユーザを追加">
+#<i>gpasswd -a wepy cron</i>
+</pre>
+
+<note>
+ユーザをcronグループに追加するときには、ユーザは確実にログアウトしておき、グループの変更が行われたら戻ってきてください。
+</note>
+
+<p>
+<b>dcron</b>を使っているなら、ユーザにcrontabへのアクセス権を与えるだけです。
+dcronユーザは次の章である<uri link="#scheduling">cronジョブの登録</uri>に進んでもかまいません。
+その他のユーザはこのまま読み続けてください。
+</p>
+
+<p>
+<b>fcron</b>を使っているなら、<path>/etc/fcron/fcron.deny</path>と<path>/etc/fcron/fcron.allow</path>を編集してください。
+最も安全な方法は、まず<path>/etc/fcron/fcron.deny</path>で全てを拒否し、<path>/etc/fcron/fcron.allow</path>で許可するユーザを明示的に記述します。
+</p>
+
+<impo>
+<b><path>/etc/fcron/fcron.allow</path>と<path>/etc/fcron/fcron.deny</path>のどちらも存在していなければ、cronグループの全てのユーザは、crontabを利用することが許可されます</b>。
+fcronをインストールした時点での初期設定である<path>fcron.allow</path>は、fcrontabの利用をcronグループに属する<b>全てのユーザに許可</b>します。
+</impo>
+
+<pre caption="fcron.denyの禁止設定">
+all
+</pre>
+
+<p>
+現在、cronジョブを登録可能であるべき<e>wepy</e>というユーザがいます。
+以下のようにして<path>/etc/fcron/fcron.allow</path>に追加しましょう。
+</p>
+
+<pre caption="fcron.allowの許可設定">
+wepy
+</pre>
+
+<p>
+<b>vixie cron</b>を選択した場合、おそらく<path>/etc/cron.allow</path>をだけ編集すればよいでしょう。
+</p>
+
+<impo>
+<path>/etc/cron.allow</path>だけが存在するなら、そこに記入されていてcronグループに属するユーザのみが利用できます。
+ですが、空の<path>/etc/cron.deny</path>だけが存在するなら、全てのcronグループに属するユーザが許可されると言うことに注意することが重要です。
+<b><path>/etc/cron.allow</path>がないなら、空の<path>/etc/cron.deny</path>を残したままにしてはいけません</b>。
+</impo>
+
+<p>
+例えば、<e>wepy</e>ユーザのアクセスを許可したいなら、以下のようにして<path>/etc/cron.allow</path>に追加します。
+</p>
+
+<pre caption="/etc/cron.allowの許可設定">
+wepy
+</pre>
+
+</body>
+</section>
+
+<section id="scheduling">
+<title>cronジョブの登録</title>
+<body>
+
+<p>
+crontabを編集する方法はそれぞれのパッケージによって異なりますが、それら全ては同じ基本的なコマンドをサポートしています。
+それにはcrontabの追加、置き換え、編集、削除、そしてcronジョブの表示があります。
+以下の表はそれぞれのパッケージでこれらのコマンドを実行する方法を示しています。
+</p>
+
+<table>
+<tr>
+  <th>パッケージの種類</th>
+  <th>crontabの編集</th>
+  <th>crontabの削除</th>
+  <th>新規crontab</th>
+  <th>crontabの表示</th>
+</tr>
+<tr>
+  <ti>dcron</ti>
+  <ti><c>crontab -e</c></ti>
+  <ti><c>crontab -d <e>[user]</e></c></ti>
+  <ti><c>crontab <e>file</e></c></ti>
+  <ti><c>crontab -l</c></ti>
+</tr>
+<tr>
+  <ti>fcron</ti>
+  <ti><c>fcrontab -e</c></ti>
+  <ti><c>fcrontab -r <e>[user]</e></c></ti>
+  <ti><c>fcrontab <e>file</e></c></ti>
+  <ti><c>fcrontab -l</c></ti>
+</tr>
+<tr>
+  <ti>vixie-cron &amp; bcron</ti>
+  <ti><c>crontab -e</c></ti>
+  <ti><c>crontab -r <e>-u [user]</e></c></ti>
+  <ti><c>crontab <e>file</e></c></ti>
+  <ti><c>crontab -l</c></ti>
+</tr>
+</table>
+
+<note>
+削除コマンドを使用する際に引数がなければ、現在のユーザのcrontabを削除します。
+</note>
+
+<note>
+fcronは<c>crontab</c>から<c>fcrontab</c>へのシンボリックリンクも作成します。
+</note>
+
+<p>
+これらのコマンドを使う前に、crontab自身を理解する必要があります。
+crontabのそれぞれの行は以下の5つの時間フィールドを指定する必要があります。
+分(0-59)、時(0-23)、日(1-31)、月(1-12)、そして曜日(0-7、月曜日は1、日曜日は0と7)です。
+曜日と月はmon、tue、jan、febなどといった3文字の略語で指定することも可能です。
+それぞれのフィールドは数値の範囲(1-5やmon-friなど)や、数値をコンマで区切って指定(1,2,3やmon,tue,wedなど)、そして<e>間隔</e>を設定した範囲指定(1-6/2で1,3,5など)をすることもできます。
+</p>
+
+<p>
+少々複雑に見えますが、以下の例を見れば、それほど難しい物ではないということが分かるでしょう。
+</p>
+
+<pre caption="例">
+<comment># ずっと毎分/bin/falseを実行</comment>
+*     *     *     *     *        /bin/false  
+
+<comment># 毎月4日と毎週月、火、水の1:35に/bin/falseを実行</comment>
+35    1     4     *     mon-wed  /bin/false
+
+<comment># 3月2日の22:25に/bin/trueを実行</comment>
+25    22    2     3     *        /bin/true
+
+<comment># 毎週月、水、金の2:00に/bin/falseを実行</comment>
+0     2     *     *     1-5/2    /bin/false
+</pre>
+
+<note>
+特定の曜日と日の指定を組み合わせる前に、どのように指定しなければならないか注意してください。
+曜日か日のどちらか一方を*にした場合は、もう片方が優先されます。両方が*なら毎日を意味します。
+</note>
+
+<p>
+今説明したことを確認するために、実際にいくつかのcronジョブを登録してみましょう。
+まず、<path>crons.cron</path>というファイルを作成して以下のようにします。
+</p>
+
+<pre caption="crons.cronの編集">
+$ <i>nano crons.cron</i>
+<comment>#分  時  日   月  曜日</comment>
+10     3      1      1       *       /bin/echo "I don't really like cron"
+30     16     *      1,2     *       /bin/echo "I like cron a little"
+*      *      *      1-12/2  *       /bin/echo "I really like cron"
+</pre>
+
+<p>
+ではcrontabを上記の表の「新規コマンド」を使ってシステムに追加しましょう。
+</p>
+
+<pre caption="新規crontab">
+# <i>crontab crons.cron</i>
+</pre>
+
+<note>
+リダイレクトを使わない限りは実際にはechoコマンドからの出力は表示されないでしょう。
+</note>
+
+<p>
+登録したcronジョブを確認するために、上記の表の適切な<e>表示コマンド</e>を利用します。
+</p>
+
+<pre caption="cronジョブの表示">
+# <i>crontab -l</i>
+</pre>
+
+<p>
+<path>crons.cron</path>の内容と共通の表示がされているか確認すべきです。
+確認できない場合、新規crontabを追加する際に間違ったコマンドを使ったのかもしれません。
+</p>
+
+<p>
+このcrontabは1ヶ月おきの毎日毎時毎分に"I really like cron"と表示します。
+cronがすごく好きなら、当然この出力だけでいいですね。
+crontabは1月と2月の毎日16:30に"I like cron a little"とも表示し、1月1日の3:10に"I don't really like cron"とも表示します。
+</p>
+
+<p>
+anacronを使っているなら、このままこの章を読み続けてください。
+使用していない場合は、次の章である<uri link="#editing">crontabの編集</uri>に進んでください。
+</p>
+
+<p>
+anacronユーザは<path>/etc/anacrontab</path>を編集します。
+このファイルは4つのフィールドを持っています。
+それは、実行間隔の日数、実行猶予時間の分数、ジョブ名、そして実行するコマンドです。
+</p>
+
+<p>
+例えば、<c>echo "I like anacron"</c>を5日に1度、anacronの起動10分後に実行するなら、以下のようにします。
+</p>
+
+<pre caption="/etc/anacrontab">
+5 10 wasting-time /bin/echo "I like anacron"
+</pre>
+
+<p>
+anacrontabにある全てのジョブが実行された後、anacronは終了します。
+したがって、これらのジョブを毎日確認したいなら、cronを使用する必要があります。
+次章の最後でその方法を説明します。
+</p>
+
+</body>
+</section>
+<section id="editing">
+<title>crontabの編集</title>
+<body>
+
+<p>
+現実的に考えて、あなたがどれ程cronが好きかを1分ごとにシステムに伝える必要はないでしょう。
+次へ進んで、上記表の使用しているcronパッケージに対応する<e>削除コマンド</e>を使用してcrontabを削除しましょう。
+動作を確認するために、削除後にcronジョブを表示します。
+</p>
+
+<pre caption="crontabの削除">
+# <i>crontab -d</i>
+# <i>crontab -l</i>
+</pre>
+
+<p>
+<c>crontab -l</c>の出力には何のcronジョブも無いでしょう。
+ジョブが表示されるなら、crontabの削除に失敗しています。
+cronパッケージに合わせた正しい<e>削除コマンド</e>を実行したか確認すべきです。
+</p>
+
+<p>
+ここまで問題なく進んできたので、<b>root</b>のcrontabに何か役に立つことを入力しましょう。
+多くの人は<c>slocate</c>が正しく動作するようにするために毎週<c>updatedb</c>を実行したほうがよいでしょう。
+これをcrontabに追加するために、まず以下のように<path>crons.cron</path>を再度編集しましょう。
+</p>
+
+<pre caption="現実的なcrontab">
+22 2 * * 1    /usr/bin/updatedb
+</pre>
+
+<p>
+これにより毎週月曜の朝2:22にcronがupdatedbを実行します。
+では上記表の正しい<e>新規コマンド</e>を使ってcrontabを入力し、もう一度リストを表示して確認しましょう。
+</p>
+
+<pre caption="cronジョブを表示">
+# <i>crontab crons.cron</i>
+# <i>crontab -l</i>
+</pre>
+
+<p>
+ここで、毎日の日課として<c>emerge --sync</c>を追加したほうがよいでしょう。
+これを行うために、以前行ったようにまず<path>crons.cron</path>を編集して<c>crontab crons.cron</c>を使うか、上記表の正しい<e>編集コマンド</e>を利用することができます。
+これは<path>crons.cron</path>の様な外部ファイルに依存することなく、ユーザのcrontabを直接編集することができます。
+</p>
+
+<pre caption="crontabの直接編集">
+# <i>crontab -e</i>
+</pre>
+
+<p>
+そうすると、エディタを使用してユーザのcrontabが開くはずです。
+<c>emerge --sync</c>を毎日午前6:30に実行したいので、以下のように編集します。
+</p>
+
+<pre caption="実際のcrontab">
+22 2 * * 1    /usr/bin/updatedb
+30 6 * * *    /usr/bin/emerge --sync
+<comment>(anacronを使っているなら、この行を追加します)</comment>
+30 7 * * * 	  /usr/sbin/anacron -s
+</pre>
+
+<p>
+繰り返しますが、ジョブが登録されているか確認するために、cronジョブリストを表示して確認します。
+もし全てがあれば、設定は完了です。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>cronbaseの使用</title>
+<section>
+<body>
+
+<p>
+前述の通り、利用可能なcronパッケージすべてが<c>sys-process/cronbase</c>に依存しています。
+cronbaseパッケージは<path>/etc/cron.{hourly,daily,weekly,monthly}</path>と、<c>run-crons</c>というスクリプトを作成します。
+デフォルトの<path>/etc/crontab</path>には以下のようなものが含まれていると気づくでしょう。
+</p>
+
+<pre caption="デフォルトのシステムcrontab">
+*/15 * * * *     test -x /usr/sbin/run-crons &amp;&amp; /usr/sbin/run-crons
+0  *  * * *      rm -f /var/spool/cron/lastrun/cron.hourly
+0  3  * * *      rm -f /var/spool/cron/lastrun/cron.daily
+15 4  * * 6      rm -f /var/spool/cron/lastrun/cron.weekly
+30 5  1 * *      rm -f /var/spool/cron/lastrun/cron.monthly
+</pre>
+
+<p>
+細部にはいるのを避けるために、これらのコマンドは毎時、毎日、毎週、そして毎月のスクリプトを実行すると仮定します。
+cronジョブのスケジューリングを行うこの方法は、いくつかの重要な利点があります。
+</p>
+
+<ul>
+  <li>
+    たとえスケジュールされた実行時間にコンピュータの電源が切れていたとしても実行されます
+  </li>
+  <li>
+    パッケージメンテナがスクリプトを定義された場所へ設置しやすくなります
+  </li>
+  <li>
+    cronジョブとcrontabがどこに保存されているかを正確に知ることが出来るため、バックアップとリストアを容易に行うことが出来ます
+  </li>
+</ul>
+
+<note>
+繰り返しますが、vixie cronとbcronは<path>/etc/crontab</path>を自動的に読み込むのに対し、dcronとfcronは行いません。
+詳しくは<uri link="#systemtab">System crontab</uri>の章を参照してください。
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>最後に</title>
+<section>
+<title>トラブルシューティング</title>
+<body>
+
+<p>
+cronを正しく動作させるのに問題が発生しているなら、このクイックチェックリストをくまなく調べるといいでしょう。
+</p>
+
+<ul>
+<li>
+  <b>cronは起動していますか?</b>
+  <c>ps ax | grep cron</c>を実行して、表示されるか確認してください。
+</li>
+<li>
+  <b>cronは動作していますか?</b>
+  「* * * * * /bin/echo "foobar" &gt;&gt; /file_you_own」（訳注：file_you_ownには適当なファイルを指定してください。これ以降も同様にします。）をあなたのcronジョブに追加して、動作するか確認してください。
+</li>
+<li>
+  <b>コマンドは動作していますか?</b>
+  「* * * * * /bin/foobar &gt; /file_you_own 2&gt;&amp;1」を追加して、「/file_you_own」のエラーを確認してください。
+</li>
+<li>
+  <b>cronはあなたのジョブを実行できますか?</b>
+  cronのログを確認してください。普通は<path>/var/log/cron.log</path>か<path>/var/log/messages</path>にあります。
+</li>
+<li>
+  <b><path>dead.letter</path>はありますか?</b>
+    cronは問題があるとたいていメールを送信するので、メールを確認し、<path>~/dead.letter</path>ファイルも確認してください。
+</li>
+</ul>
+
+<p>
+それぞれのcronパッケージは異なっており、機能の範囲は大きく異なっていると言うことを忘れないようにしてください。
+使用するパッケージに応じて、crontab、fcrontab、anacrontabのmanページを必ず調べてください。
+</p>
+
+<p>
+幸運を!
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

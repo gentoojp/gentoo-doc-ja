@@ -1,0 +1,232 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-install-tools.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.26</version>
+<date>October 9, 2004</date>
+
+<section>
+<title>System Logger</title>
+<body>
+
+<p>
+When we mentioned what <e>stage3</e> was, we said that it contained all
+necessary system tools for which we cannot provide a choice to our users. We 
+also said that we would install the other tools later on. Well, here we are :)
+</p>
+
+<p>
+The first tool you need to decide on has to provide logging facilities for your
+system. Unix and Linux have an excellent history of logging capabilities -- if
+you want you can log everything that happens on your system in logfiles. This
+happens through the <e>system logger</e>.
+</p>
+
+<p>
+Gentoo offers several system loggers to choose from. There are <c>sysklogd</c>,
+which is the traditional set of system logging daemons, <c>syslog-ng</c>, an 
+advanced system logger, and <c>metalog</c> which is a highly-configurable 
+system logger. Others might be available through Portage as well - our number of
+available packages increases on a daily basis.
+</p>
+
+<p>
+If you can't choose one, use <c>metalog</c> as it is very powerful yet comes
+with a great default configuration.
+</p>
+
+<p>
+To install the system logger of your choice, <c>emerge</c> it and have it added
+to the default runlevel using <c>rc-update</c>. The following example installs
+<c>metalog</c>. Of course substitute with your system logger:
+</p>
+
+<warn>
+The stage3 tarballs of the 2004.2 release erroneously contain the sysklogd
+logger. You will need to unmerge this logger before emerging a new one.
+</warn>
+
+<pre caption="Installing a system logger">
+<comment>(First unmerge the sysklogd logger if you use a stage3 tarball)</comment>
+# <i>emerge unmerge sysklogd</i>
+<comment>(You will also need to remove the sysklogd init script)</comment>
+# <i>rm /etc/init.d/sysklogd</i>
+
+<comment>(Now install the system logger of your choice)</comment>
+# <i>emerge metalog</i>
+# <i>rc-update add metalog default</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Optional: Cron Daemon</title>
+<body>
+
+<p>
+Next is the cron daemon. Although it is optional and not required for your
+system, it is wise to install one. But what is a cron daemon? A cron daemon 
+executes scheduled commands. It is very handy if you need to execute some 
+command regularly (for instance daily, weekly or monthly).
+</p>
+
+<p>
+Gentoo offers three possible cron daemons: <c>dcron</c>, <c>fcron</c> and
+<c>vixie-cron</c>. Installing one of them is similar to installing a system 
+logger. However, <c>dcron</c> and <c>fcron</c> require an extra configuration 
+command, namely <c>crontab /etc/crontab</c>. If you don't know what to choose, 
+use <c>vixie-cron</c>.
+</p>
+
+<p>
+We only provide <c>vixie-cron</c> for networkless installations. If you want
+another cron daemon you can wait and install it later on.
+</p>
+
+<pre caption="Installing a cron daemon">
+# <i>emerge vixie-cron</i>
+# <i>rc-update add vixie-cron default</i>
+<comment>(Only if you have chosen dcron or fcron)</comment> # <i>crontab /etc/crontab</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Optional: File Indexing</title>
+<body>
+
+<p>
+If you want to index your system's files so you are able to quickly
+locate them using the <c>locate</c> tool, you need to install
+<c>sys-apps/slocate</c>. 
+</p>
+
+<note>
+If you are not installing Gentoo using cascading profiles slocate will 
+already be part of your system. Cascading profiles are not used by default yet 
+so if you don't understand it you can assume that you're not using cascading 
+profiles.
+</note>
+
+<pre caption="Installing slocate">
+# <i>emerge slocate</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>File System Tools</title>
+<body>
+
+<p>
+Depending on what file systems you are using, you need to install the necessary
+file system utilities (for checking the filesystem integrity, creating 
+additional file systems etc.).
+</p>
+
+<p>
+The following table lists the tools you need to install if you use a certain
+file system:
+</p>
+
+<table>
+<tr>
+  <th>File System</th>
+  <th>Tool</th>
+  <th>Install Command</th>
+</tr>
+<tr>
+  <ti>XFS</ti>
+  <ti>xfsprogs</ti>
+  <ti><c>emerge xfsprogs</c></ti>
+</tr>
+<tr>
+  <ti>ReiserFS</ti>
+  <ti>reiserfsprogs</ti>
+  <ti><c>emerge reiserfsprogs</c></ti>
+</tr>
+<tr>
+  <ti>JFS</ti>
+  <ti>jfsutils</ti>
+  <ti><c>emerge jfsutils</c></ti>
+</tr>
+</table>
+
+<!-- TODO reactivate when LVM2 instructions are boarded
+<p>
+If you are an LVM user, you also need to install <c>lvm-user</c>:
+</p>
+
+<pre caption="Installing LVM utilities">
+# <i>emerge - -usepkg lvm-user</i>
+</pre>
+-->
+
+<p>
+If you don't require any additional networking-related tools (such as rp-pppoe
+or a dhcp client) continue with <uri link="?part=1&amp;chap=10">Configuring the
+Bootloader</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Networking Tools</title>
+<subsection>
+<title>Optional: Installing a DHCP Client</title>
+<body>
+
+<p>
+If you require Gentoo to automatically obtain an IP address for your network
+interface(s), you need to install <c>dhcpcd</c> (or any other DHCP Client) 
+on your system. If you don't do this now, you might not be able to connect 
+to the internet after the installation!
+</p>
+
+<note>
+If you are not installing Gentoo using cascading profiles dhcpcd will 
+already be part of your system. Cascading profiles are not used by default yet 
+so if you don't understand it you can assume that you're not using cascading 
+profiles.
+</note>
+
+<pre caption="Installing dhcpcd">
+# <i>emerge dhcpcd</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Optional: Installing a PPPoE Client</title>
+<body>
+
+<p>
+If you need <c>rp-pppoe</c> to connect to the net, you need to install it.
+</p>
+
+<pre caption="Installing rp-pppoe">
+# <i>USE="-X" emerge rp-pppoe</i>
+</pre>
+
+<p>
+The <c>USE="-X"</c> will prohibit xorg-x11 to be installed as a dependency
+(<c>rp-pppoe</c> has graphical tools; if you want those enabled, you can
+recompile <c>rp-pppoe</c> later on or have xorg-x11 installed now -- which takes a
+long time to compile).
+</p>
+
+<p>
+Now continue with <uri link="?part=1&amp;chap=10">Configuring the
+Bootloader</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

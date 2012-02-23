@@ -1,0 +1,418 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/l-redesign-2.xml,v 1.3 2011/09/04 17:53:41 swift Exp $ -->
+
+<guide disclaimer="articles">
+<title>The gentoo.org redesign, Part 2: A site reborn</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+
+<abstract>
+Have you ever woken up in the morning to the realization that your personal
+development Web site isn't really that great? If so, you're in good company. In
+this series, Daniel Robbins shares his experiences as he redesigns the
+www.gentoo.org Web site using technologies like XML, XSLT, and Python. Along
+the way, you may find some excellent approaches to use in your next Web site
+redesign. In this, the second installment, Daniel shows off the new
+documentation system and sets up a daily CVS-log mailing list.
+</abstract>
+
+<!-- The original version of this article was first published on IBM
+developerWorks, and is property of Westtech Information Services. This
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>1.0</version>
+<date>2005-10-10</date>
+
+<chapter>
+<title>The doc system</title>
+<section>
+<body>
+
+<p>
+If you've read the <uri link="/doc/en/articles/l-redesign-1.xml">first
+installment</uri> of my series on the gentoo.org redesign, then you know that
+I'm the Chief Architect of Gentoo Linux, making me responsible for the Gentoo
+Linux Web site. And right now, the site leaves a lot to be desired. Yes, it
+does look somewhat attractive, but when you look beyond the cute graphics you
+will see that it really doesn't serve the needs of its primary target audience:
+Gentoo Linux developers, users, and potential users.
+</p>
+
+<p>
+Last time, I used a user-centric design approach to create a set of priorities
+for the site, and then used these priorities to create an action plan for
+revamping gentoo.org. Two things were at the top of the priority list: new
+developer documentation and a new mailing list to communicate to developers
+changes made to our CVS repository. While adding the new CVS mailing list was
+relatively easy (though, as you will see, it was more difficult than I
+thought), the new developer documentation required a lot of planning and work.
+</p>
+
+<p>
+Not only did I need to create some actual documentation (a task that I had been
+ignoring for too long), but I also had to choose an official XML syntax that
+our new master documentation would use. You see, until a few weeks ago, I was
+creating the documentation in raw HTML. This was definitely a naughty thing to
+do, because by doing this content was being mixed (the actual information) with
+presentation (the display-related HTML tags). And what did I end up with? An
+inflexible mess, that's what. It was hard to edit the actual documentation and
+extremely difficult to make site-wide HTML improvements.
+</p>
+
+<p>
+In this article, I'll proudly demonstrate the site's new flexible XML
+documentation solution. But first, I'll recap my experiences in adding the CVS
+log mailing list to our site.
+</p>
+
+</body>
+</section>
+<section>
+<title>Adding the CVS log mailing list</title>
+<body>
+
+<p>
+The goal of the CVS log mailing list is to inform developers of new commits
+made to our CVS repository. Since I already had the mailman mailing list
+manager (see <uri link="#resources">Resources</uri>) installed, I thought that
+creating this new list would be easy. First, I would simply create the mailing
+list, then add the proper "hook" to the CVS repository so that e-mails would be
+automatically generated and sent out, describing the changes to our sources as
+they happened.
+</p>
+
+<p>
+I first started researching a special file in my repository's CVSROOT called
+"loginfo." Theoretically, by modifying this file, I could instruct CVS to
+execute a script when any commit (and thus, modification) was made to the
+repository. So I created a special loginfo script and plugged it into my
+existing repository. And it did indeed send out e-mails to the new "gentoo-cvs"
+mailing list whenever modifications were made to our sources.
+</p>
+
+<p>
+Unfortunately, this solution wasn't all I'd hoped it would be. First of all, it
+generated lots of e-mail messages -- one for each modified file -- and
+secondly, the messages were cryptic and sometimes even empty! I quickly removed
+my loginfo script and put the gentoo-cvs mailing list project on hold. It was
+clear that CVS's loginfo hook wasn't appropriate for my needs, and I had a hard
+time tracking down any loginfo-related documentation that could help me solve
+my problem.
+</p>
+
+</body>
+</section>
+<section>
+<title>cvs2cl.pl</title>
+<body>
+
+<p>
+Several weeks later I started looking for an alternative to loginfo. This time
+I did the smart thing and headed over to <uri>http://freshmeat.net</uri>. There
+I quickly found just what I was looking for: the incredibly wonderful
+<path>cvs2cl.pl</path> perl script available from
+<uri>http://red-bean.com</uri> (see <uri link="#resources">Resources</uri>).
+Instead of using the loginfo hook, <path>cvs2cl.pl</path> uses the <c>cvs
+log</c> command to connect directly to the repository and extract the
+appropriate relevant log information. Also, rather than spitting out relatively
+cryptic CVS log messages, it does a great job of reformatting everything into a
+readable ChangeLog format:
+</p>
+
+<pre caption="Output generated by cvs2cl.pl">
+2001-04-09 20:58  drobbins
+      * app-doc/gentoo-web/files/xml/dev.xml: new fixes
+2001-04-09 20:47  drobbins
+      * app-doc/gentoo-web/: gentoo-web-1.0.ebuild, 
+      files/pyhtml/index.pyhtml, files/xml/gentoo-howto.xml: new gentoo-howto
+      fixes
+2001-04-09 20:03  drobbins
+      * app-doc/gentoo-web/files/xml/dev.xml: typo fix
+2001-04-09 20:02  drobbins
+      * app-doc/gentoo-web/files/pyhtml/index.pyhtml: little update
+</pre>
+
+<p>
+<path>cvs2cl.pl</path> can also be instructed to generate output in XML format,
+and in my next article I'll take advantage of this by incorporating an
+up-to-date ChangeLog into the new developer section of our site.
+</p>
+
+</body>
+</section>
+<section>
+<title>The cvslog.sh script</title>
+<body>
+
+<p>
+Here's the script I now use to generate the daily ChangeLog e-mails. First, it
+changes the current working directory to the location of my checked-out CVS
+repository. Then, it creates $yesterday and $today environment variables that
+contain the appropriate dates in RFC 822 format. Notice that both date
+variables have the time set to either "00:00" or midnight. These variables are,
+in turn, used to create a $cvsdate variable that is then passed to cvs2cl.pl to
+specify the date range that I'm interested in -- the span of time from
+yesterday at midnight to today at midnight. Thus, the $cvsdate variable
+contains a datespec that informs <path>cvs2cl.pl</path> to log only changes
+made yesterday, but not others.
+</p>
+
+<p>
+In addition, I also created a $nicedate variable (used in the mail subject line)
+and use the mutt mailer (in mailx compatibility mode [see Resources]) to send
+the e-mail to the gentoo-cvs mailing list:
+</p>
+
+<pre caption="cvslog.sh script">
+#!/bin/bash
+cd /usr/portage
+cvs -q update -dP
+yesterday=`date -d "1 day ago 00:00" -R`
+today=`date -d "00:00" -R`
+cvsdate=-d\'${yesterday}\&lt;${today}\'
+nicedate=`date -d yesterday +"%d %b %Y %Z (%z)"`
+/home/drobbins/gentoo/cvs2cl.pl -f /home/drobbins/gentoo/cvslog.txt -l "${cvsdate}" 
+mutt -x gentoo-cvs -s "cvs log for $nicedate" &lt;\
+/home/drobbins/gentoo/cvslog.txt
+</pre>
+
+<p>
+Using cron, I run this script every night at midnight. Thanks to
+<path>cvs2cl.pl</path>, my developers now get accurate and readable daily CVS
+updates.
+</p>
+
+</body>
+</section>
+<section>
+<title>The documentation project</title>
+<body>
+
+<p>
+Now, for the Gentoo Linux documentation project. Our new documentation system
+involves two groups of people or target audiences: the documentation creators
+and the documentation readers. The creators need a well-designed XML syntax
+that doesn't get in their way; the readers, who couldn't care less about the
+XML, want generated HTML documentation that is both functional and attractive.
+The implementation challenge is to put together a complete system that
+addresses the needs of both audiences. Oh, and I suppose there is a third
+"audience" -- me, the webmaster and the person designing the new system. Since
+I'm going to be interacting with the new doc system whenever the site is
+upgraded, I need it to be reliable and flexible.
+</p>
+
+</body>
+</section>
+<section>
+<title>The Web-ready HTML</title>
+<body>
+
+<p>
+First, let's talk a bit about the Web-ready HTML that'll be generated from my
+master XML files. To make great, readable documentation, I'll need to have
+support for the proper XML tags. For example, the ability to insert notes,
+important messages, and warnings into the body of the document (and have them
+prominently displayed in the resultant HTML) is a must. Also, I must be able to
+insert blocks of code, and it would be great if actual user input could somehow
+be offset from program output. I could even add tags that highlight the source
+code comments in an alternate color so that the code blocks are more readable.
+</p>
+
+<p>
+The documents should have a table of contents (with hyperlinks to the
+appropriate chapters), a synopsis, a revision date, version, and an authors
+list at the top of the document. And, of course, every document should have a
+header at the extreme top of the page containing a small Gentoo Linux logo.
+Clicking on this logo should bring you back to the main Gentoo Linux page. Last
+but not least, every document should have a footer that contains copyright
+information, along with a contact e-mail address.
+</p>
+
+</body>
+</section>
+<section>
+<title>The spiffy new logo</title>
+<body>
+
+<p>
+This was a hefty list of requirements, and I decided to focus on the most
+entertaining part first, the new Gentoo Linux logo that would appear in the
+upper-left corner of every Gentoo Linux document. I used the "g" from the
+"gentoo" graphic (created using the excellent and free Blender 3D program) on
+our main page as the basis for the new smaller logo. I tweaked the extrusion
+settings a bit and then added a chrome environment map. Finally, I positioned
+the lights and camera just so, and the new logo was complete. After importing
+it into Xara X (see <uri link="#resources">Resources</uri>) and adding some
+text, this was the result:
+</p>
+
+<figure link="/images/docs/l-redesign-02.gif" caption="The new Gentoo Linux
+logo"/>
+
+<p>
+I used this new logo as inspiration for the rest of the HTML color scheme,
+using a purplish theme throughout. I made heavy use of cascading style sheets
+(CSS) to control font attributes and spacing. Once I had a decent HTML
+prototype in place, I started focusing on the guts of the new documentation --
+the new XML syntax. I wanted the syntax to be as simple as possible, so I
+created just enough XML tags to allow for the proper organization of the
+document, but no more. Then I started working on the XSLT to transform the XML
+into the target HTML.
+</p>
+
+</body>
+</section>
+<section>
+<title>The result!</title>
+<body>
+
+<p>
+After much tweaking and a good amount of feedback from one of my developers,
+the new documentation system reached the point where it was ready for use. I
+immediately began work on our first new development guide, "The Gentoo Linux
+Documentation Guide" (xml-guide.html), which contains a complete description of
+the new XML format. Not only did this allow other developers to begin work on
+the new-style documentation, but it also served as an excellent example of the
+new documentation system in action. Be sure to read this guide to get a
+complete understanding of our new XML syntax.
+</p>
+
+</body>
+</section>
+<section>
+<title>DocBook vs. Guide</title>
+<body>
+
+<p>
+If you're working on your own documentation solution, you may also want to
+consider the DocBook XML and SGML formats (see Resources). DocBook is
+well-suited for large-scale technical documentation and book projects, is very
+flexible, and has many (maybe too many) features. In addition, there are a
+number of existing packages that can be used to convert DocBook XML/SGML to man
+pages, texinfo files, Postscript, PDF, and, of course, HTML formats.
+</p>
+
+<p>
+I <e>didn't</e> choose DocBook because a lightweight XML syntax worked best for
+Gentoo's needs. Right now, our XML guide syntax has around 20 tags and about 10
+attributes. The limited tagset makes guide XML easy to transform into other
+formats such as HTML, and also ensures a certain level of consistency
+throughout our entire documentation set, since the format is so simple. Because
+I have my own XML format, I'll be able to extend the format with new tags as
+needed. I like having that level of control. I view XML as a technology that
+should be used by people to structure their data in ways that they find most
+helpful. In other words, the ability to define our own elements and attributes
+is a precious thing, and I should take full advantage of it. After all, it's
+the defining feature of XML.
+</p>
+
+<p>
+Of course, creating your own XML syntax is not always the best solution,
+especially when data interchange is important to you. Amid all the XML hype,
+one thing that is often overlooked is that <e>conversion to and from different
+XML formats can be extremely difficult</e>. In many cases, the two formats
+won't be 100% compatible, and you'll have the unpleasant choice of either
+throwing away data and/or metadata, intentionally avoiding use of certain
+elements or attributes, or creating a "super-format" that will accommodate the
+data and metadata from both XML formats. In the documentation world, DocBook is
+a pretty good choice as a "super-format" because it's so flexible; it can
+easily accommodate documentation imported from a variety of sources.
+</p>
+
+<p>
+However, DocBook's richness and flexibility can also create problems. For
+example, there may be hundreds of tags that you may never need, and supporting
+all these tags in your XSLT can make conversion to other formats more
+difficult. So, while DocBook is a great container for documentation converted
+from other formats, your own minimal XML syntax will almost always be easier to
+convert to other formats.
+</p>
+
+<p>
+The most important thing is to carefully evaluate any potential solution while
+keeping the needs of your target audience(s) in mind.
+</p>
+
+</body>
+</section>
+<section>
+<title>Wrapping it up</title>
+<body>
+
+<p>
+With the new doc system in place, I converted all our docs to the new format
+and posted the new docs on our existing site. In addition, I created a link to
+the gentoo-cvs mailing list subscription page. The key point here is that I
+integrated these features into the existing site so that users could benefit
+from the improvements right away.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="resources">
+<title>Resources</title>
+<section>
+<body>
+
+<ul>
+  <li>
+    Read the other articles in this developerWorks series about the redesign of
+    the www.gentoo.org Web site using technologies like XML, XSLT, and Python:
+    <ul>
+      <li>
+        In <uri link="/doc/en/articles/l-redesign-1.xml">Part 1</uri>, the
+        author creates a user-centric action plan and introduces pytext, an
+        embedded Python interpreter (March 2001).
+      </li>
+      <li>
+        In <uri link="/doc/en/articles/l-redesign-3.xml">Part 3</uri>, he
+        creates a new look for the site (July 2001).
+      </li>
+      <li>
+        In <uri link="/doc/en/articles/l-redesign-4.xml">Part 4</uri>, Daniel
+        completes the conversion to XML/XSLT, fixes a host of Netscape 4.x
+        browser compatibility bugs, and adds an auto-generated XML Changelog to
+        the site (Aug 2001).
+      </li>
+    </ul>
+  </li>
+  <li>
+    If you haven't started using <uri link="http://www.python.org">Python</uri>
+    yet, you're only hurting yourself. Go check it out.
+  </li>
+  <li>
+    <uri link="http://www.xara.com/">Xara.com</uri> is the home of Xara X -- an
+    excellent vector drawing package for Windows. With virtually no bloat and
+    blazing speed, it has my personal recommendation.
+  </li>
+  <li>Learn more about <uri link="http://www.xslt.com">XSLT</uri></li>
+  <li>
+    When you wake up, check out Sablotron, a fast XSLT processor available from
+    <uri link="http://www.gingerall.com">Gingerall</uri>
+  </li>
+  <li>
+    You can find the wonderful <uri
+    link="http://www.red-bean.com/cvs2cl/">cvs2cl.pl</uri> CVS-to-ChangeLog
+    script at <uri link="http://www.red-bean.com/">Red-Bean</uri>
+  </li>
+  <li>Learn more about DocBook at <uri>http://www.docbook.org</uri></li>
+  <li>
+    If you're looking for a great mailing list manager, be sure to take a look
+    at <uri link="http://www.list.org/">Mailman</uri>
+  </li>
+  <li>
+    Check out <uri link="http://www.mutt.org">www.mutt.org</uri> for the most
+    current version of the Mutt e-mail client.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

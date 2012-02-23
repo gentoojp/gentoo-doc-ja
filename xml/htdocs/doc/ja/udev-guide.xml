@@ -1,0 +1,473 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/udev-guide.xml,v 1.12 2009/07/20 10:22:31 shindo Exp $ -->
+
+<guide link="/doc/ja/udev-guide.xml" lang="ja">
+<title>Gentoo udev ガイド</title>
+
+<author title="Author">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Contributor">
+  <mail link="greg_g@gentoo.org">Gregorio Guidi</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+<author title="翻訳">
+  <mail link="igarashi@gentoo.gr.jp">五十嵐 正尚</mail>
+</author>
+<author title="翻訳">
+  <mail link="shindo@gentoo.gr.jp">シンドウナオアキ</mail>
+</author>
+
+<abstract>
+この文書では、udevとは何であるか、そして、それはユーザの要求を満たすためにどのように使用することができるかを説明します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>4</version>
+<date>2009-01-26</date>
+
+<!-- Original revision: 1.49 -->
+
+<chapter>
+<title>udevって何?</title>
+<section>
+<title>/devディレクトリ</title>
+<body>
+
+<p>
+Linuxはウィルスの一種かコーヒーのブランドの何かかな思う人たちの中で、Linuxユーザがシステムのハードウェアについて話すとき、「スラッシュdevスラッシュ何とか」という言葉を使うと、確かに奇妙に映るでしょう。
+ですが、幸運なユーザ(読者であるあなたも含む)にとって<path>/dev/hda1</path>と使うのは、プライマリマスタIDEの一番目のパーティションについて話しているということを説明するのには手っ取り早い方法ですよね?
+</p>
+
+<p>
+私たちの全てがデバイスファイルとは何であるかを知っています。そのうちの幾人かは<path>/dev</path>ディレクトリで<c>ls -l</c>を実行して、その結果をより詳しく見たときに、なぜデバイスファイルが特別な数値を持っているのかさえも知っています。しかし、プライマリマスタIDEディスクが<path>/dev/hda</path>として参照されるということを、私たちは常に当然だと考えます。あなたはこのように判断しないかもしれませんが、そうであればそれは設計上の欠陥です。
+</p>
+
+<p>
+USBやIEEE1394、ホットスワップ可能なPCIのようなホットプラグ可能デバイスについて考えてみてください...何が一番目のデバイスですか。
+そしてそれはどれだけの期間ですか。一番目のものが外されたとき、他のデバイスは何と名前を割り当てられるでしょうか。
+現在進行中のトランザクションにどう影響するでしょうか。
+あなたのママが、たまたま一番目のプリンタだったレーザープリンタのプラグを引き抜くことにしたために、印刷ジョブがすごく新しいレーザプリンタから、ほとんど死んでしまっているマトリックスプリンタに突然移動されてしまうことは嬉しいですか。
+</p>
+
+<p>
+udevの話題に入りましょう。udevプロジェクトの目標は、以下のように興味深くもあり必要なことでもあります。
+</p>
+
+<ul>
+  <li>ユーザスペースでの実行</li>
+  <li>デバイスファイルを動的に作成/削除</li>
+  <li>一貫性のある命名規則の提供</li>
+  <li>ユーザスペース向けAPIの提供</li>
+</ul>
+
+<p>
+これらの特徴を提供するために、udevは三つに分かれたプロジェクトで開発されています。それはnamedevとlibsysfs、そしてもちろんudevです。
+</p>
+
+</body>
+</section>
+<section>
+<title>namedev</title>
+<body>
+
+<p>
+namedevは、デバイスの命名規則を、udevプログラムとは分離して定義することを可能にします。
+これは、柔軟な命名規則方針や体系を独立した団体が開発することを可能にします。
+デバイスネーミングサブシステム(namedev)は、udevから使用できる標準インターフェースを提供します。
+</p>
+
+<p>
+現在のところnamedevによって一つの命名体系だけが提供されます。
+それはLANANAによって提供され、現在のLinuxシステムの大多数によって採用されているので、ほとんどのLinuxユーザにとても馴染みやすいです。
+(訳注: LANANA - Linux Assigned Name And Number Authority - http://www.lanana.org/)
+</p>
+
+<p>
+namedevは、デバイスの名前を見つけるために、5つのステップを踏みます。
+デバイスの名前がそのステップの一つで見つかると、その名前が使用されます。
+それらのステップは、以下の通りです。
+</p>
+
+<ul>
+  <li>ラベルまたはシリアルナンバー</li>
+  <li>バスデバイスナンバー</li>
+  <li>バストポロジ</li>
+  <li>静的に与えられる名前</li>
+  <li>カーネルが提供する名前</li>
+</ul>
+
+<p>
+<e>ラベルまたはシリアルナンバー</e>のステップは、デバイスが固有の識別子を持つかどうかをチェックします。例えばUSBデバイスは、固有のUSBシリアルナンバーを持っています。SCSIデバイスは固有のUUIDを持っています。namedevが、指定された設定ファイルで、この固有ナンバーと一致するものを見つけた場合、設定ファイルで提供される名前を使用します。
+</p>
+
+<p>
+<e>バスデバイスナンバー</e>のステップは、デバイスバスナンバーをチェックします。
+ホットスワップ可能でない環境にとっては、このステップはハードウェアデバイスを識別するのに十分に機能します。例えば、PCIバスナンバーは、システムの生存期間中にめったに変わりません。この場合もやはり、namedevは、指定された設定ファイルの中でこの位置関係と一致するものを見つけたら、設定ファイルで提供される名前を使用します。
+</p>
+
+<p>
+同様に<e>バストポロジ</e>のステップは、ユーザがデバイスを抜き差しして変更しない限り、定義を変更しないやや静的な方法です。ユーザによって提供される設定とデバイスの位置が一致した場合、併記されている名前が使用されます。
+</p>
+
+<p>
+四つ目のステップ、<e>静的に与えられる名前</e>は、単純な文字列の置換です。カーネルの名前(デフォルトの名前)が、指定される置換文字列に一致する場合、置換した名前が使用されます。
+</p>
+
+<p>
+最後のステップ(<e>カーネルが提供する名前</e>)は、あらゆる状況に対応します。
+このステップは、カーネルによって提供されるデフォルトの名前を取得します。
+現在のLinuxシステム上で使用されるデバイスの命名規則に一致するので、ほとんどの状況において十分機能します。
+</p>
+
+</body>
+</section>
+<section>
+<title>libsysfs</title>
+<body>
+
+<p>
+udevは、sysfs仮想ファイルシステムを通してカーネルと情報のやりとりを行います。
+libsysfsプロジェクトは、sysfsファイルシステムによって提供される情報に、共通の方法でアクセスするための、共通API層を提供します。
+このAPIは、ハードウェアの種類が何であろうと、すべてのハードウェアに対して問い合わせることを可能にします。
+</p>
+
+</body>
+</section>
+<section>
+<title>udev</title>
+<body>
+
+<p>
+カーネルがデバイス構造のイベントを検知すると、udevに対して確認するように指示します。udevは<path>/etc/udev/rules.d/</path>ディレクトリにあるルールに従います。そして、udevは、<path>/dev</path>構造上で必要なアクション（デバイスファイルの作成や削除）を行うためカーネルから提供された情報を利用します。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Gentooでのudevの使用</title>
+<section>
+<title>必要条件</title>
+<body>
+
+<p>
+udevは、(デフォルトの2007.0のプロファイルにある<c>gentoo-sources</c>のような)カーネル2.6との組み合わせで使用されるように意図されています。
+このようなカーネルを使用しているなら、最新の<c>sys-apps/baselayout</c>バージョンを使用しているか確認する必要があります。必要な条件はこれだけです。
+</p>
+
+<pre caption="udevのインストール">
+# <i>emerge udev</i>
+</pre>
+
+<p>
+カーネルに関しては、以下のオプションを必ず有効にしてください。
+</p>
+
+<pre caption="要求されるカーネルオプション">
+General setup ---&gt;
+  [*] Support for hot-pluggable devices
+
+File systems ---&gt;
+   [*] Inotify file change notification support
+   [*]   Inotify support for userspace
+  Pseudo filesystems ---&gt;
+    [*] /proc file system support
+    [*] Virtual memory file system support (former shm fs)
+</pre>
+
+<p>
+もし、<c>genkernel</c>を使っているならば、特に何もする必要はありません。Genkernelはデフォルトでudevをセットアップします。
+</p>
+
+</body>
+</section>
+<section>
+<title>設定</title>
+<body>
+
+<p>
+システムを快適にするためにGentooが提供しているudev設定を使用したい場合は、これ以上読まないでください。
+Gentooはudevを使いますが、デバイスノードが欠けるようなことがないよう、静的な<path>/dev</path>を継続します。
+Gentooのinitスクリプトは、devfsdデーモンを実行しませんし、ブート時にdevfsを停止状態にします。
+</p>
+
+<p>
+しかし、あなたが頑固な人で、udev開発者が意図する(udevがまだサポートしていないことによるデバイスノード不足の障害も含む)通りに、udevだけのシステムを走らせたいなら、必ずこのまま読み続けてください。
+</p>
+
+<p>
+デバイスファイルノードの保存機能を停止します。
+<path>/etc/conf.d/rc</path>の中の<c>RC_DEVICE_TARBALL</c>変数を編集し、それに<c>no</c>を設定してください。
+</p>
+
+<pre caption="/etc/conf.d/rc">
+RC_DEVICE_TARBALL="no"
+</pre>
+
+<p>
+カーネルにdevfsサポートが含まれているなら、ブートローダ設定でそれを無効にできます。
+カーネルパラメータに<c>gentoo=nodevfs</c>を追加してください。
+devfsを使用しudevを無効にしたいなら、カーネルパラメータに<c>gentoo=noudev</c>を追加してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>既知の問題</title>
+<section>
+<title>ブート時のデバイスノードファイル不足</title>
+<body>
+
+<p>
+<path>/dev/null</path>が見つからないというエラーが発生するか、最初のコンソールがないのが原因でうまくブートできない場合の問題は、<path>/dev</path>がマウントされてudevによって処理される<e>前に</e>利用可能でなければならない、いくつかのデバイスファイルが不足しているということです。古いメディアからインストールされるGentooマシンで共通の問題です。
+</p>
+
+<p>
+<c>sys-apps/baselayout-1.8.12</c>もしくはそれ以降のバージョンで実行している場合、ブートプロセスは最低でもなんとか完走するので、この問題は多少解決されます。しかし、うるさい警告をなくすために、以下で述べられる通りにして不足しているデバイスノードを作成するべきです。
+</p>
+
+<p>
+<path>/dev</path>ファイルシステムがマウントされる前に存在しているデバイスノードを確認するために、以下のコマンドを実行してください。
+</p>
+
+<pre caption="ブート時に利用可能なデバイスノードのリスト表示">
+# <i>mkdir test</i>
+# <i>mount --bind / test</i>
+# <i>cd test/dev</i>
+# <i>ls</i>
+</pre>
+
+<p>
+うまくブートするために必要なデバイスは、<path>/dev/null</path>と<path>/dev/console</path>です。もし上記のテストでそれらが表示されないなら、手動で作成しなければなりません。以下のコマンドを<path>test/dev/</path>ディレクトリで実行してください。
+</p>
+
+<pre caption="必要なデバイスノードファイルの作成">
+# <i>mknod -m 660 console c 5 1</i>
+# <i>mknod -m 660 null c 1 3</i>
+</pre>
+
+<p>
+完了したら、<path>test/</path>ディレクトリをアンマウントすることを忘れないでください。
+</p>
+
+<pre caption="test/ディレクトリのアンマウント">
+# <i>cd ../..</i>
+# <i>umount test</i>
+# <i>rmdir test</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>udevとnvidia</title>
+<body>
+
+<p>
+udevのみのシステムでnVidia社が開発したドライバを使用し、Xサーバが起動に失敗したら、以下のものを確認してください。
+</p>
+
+<ul>
+  <li>
+    <path>/etc/modules.autoload.d/kernel-2.6</path>に<c>nvidia</c>モジュールが記述されているか
+  </li>
+  <li>
+    baselayoutのバージョンが<c>sys-apps/baselayout-1.8.12</c>と同じかより大きいものであるか
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>DevFSとudevの間で一貫しない名前付け</title>
+<body>
+
+<p>
+二つの動的なデバイス管理方法に一貫した名前付けスキーマを持つという、私たちの意図にも関わらず、名前の食い違いが時々発生します。
+</p>
+<p>
+HP Smart Array 5i RAID コントローラ（正確には<c>cciss</c>カールモジュール）に関して、この種の障害が報告されました。
+udevでは、このデバイスは、X,Y,Zを規則的な番号として<path>/dev/cciss/cXdYpZ</path>という名前になります。
+devfsでは、<path>/dev/hostX/targetY/partZ</path>または<path>/dev/cciss/cXdY</path>からのシンボリックリンクになります。
+</p>
+
+<p>
+この場合、<path>/etc/fstab</path>とブートローダ設定ファイルを状況に応じてアップデートをするのを忘れないでください。
+</p>
+
+<p>
+同じことが、<c>udev</c>ではすでに作成されない<path>/dev/mouse</path>のような<path>/dev</path>に存在していたシンボリックリンクでも起きます。
+Xの設定ファイルを念入りにチェックし、マウスのDeviceルールが、存在するデバイスファイルを指しているかどうか見てください。
+</p>
+
+<p>
+devfsとudev間のターミナルの名前の違卯という別な問題もあります。
+devfsではターミナルを<c>tty</c>と呼び、udevでは<c>vc</c>と<c>tty</c>と呼びます。
+これにより、<path>/etc/security</path>を使ってrootのコンソールログインを制限している場合には問題を引き起こすかもしれません。
+rootがコンソールからログインできるよう、<path>/etc/security</path>のなかに<c>tty1</c>と<c>vc1</c>があるかどうか確かめてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>ブロックデバイスのリネーム</title>
+<body>
+
+<p>
+最近のudev（104以上）と新しめのカーネルバージョン(2.6.19以上）が一緒になると、カーネルのlibataの実装変更によっては、ディスクデバイスの名前が変更されるかもしれません。
+<path>/dev/hdc</path>にあるCD-RWデバイスは<path>/dev/sr0</path>に変更されるかもしれません。
+一方、これは通常の問題ではなく、別な場所でデバイスを探すためにハードコードされたアプリケーションにおいて問題となりえます。
+例えば、<c>media-sound/rip</c>はディスクを見つけるのに、<path>/dev/cdrom</path>を前提しますが、
+新しいカーネルとudevにより、<path>/dev/cdrom1</path>に名前が変更されていた場合には問題となります。
+</p>
+
+<p>
+これらの問題への対応として、<path>/etc/udev/rules.d/70-persistent-cd.rules</path>を編集し、正しい名前を割り当てなければなりません。
+</p>
+
+<p>
+udevルールを書くためにのより詳しい情報は、Daniel Drakeの<uri link="">ガイド</uri>を読むようにしてください。
+（訳注：<uri link="http://www.gentoo.gr.jp/transdocs/udevrules/udevrules.html">日本語訳</uri>）
+</p>
+
+</body>
+</section>
+<section>
+<title>ネットワークデバイスのリネーム</title>
+<body>
+
+<p>
+ネットワークデバイス（USB WiFiカードなど）の抜き差しにより、ネットワークデバイス名が一つずつインクリメントされることがあります。
+</p>
+
+<p>
+こうしたことが起きた場合、<c>wlan0</c>、<c>wlan1</c>、<c>wlan2</c>といったものが見られます。
+これは、udevがすでにあるルールをリロードする代わりに、ルールファイルにルールを追加するためです。
+udevはルールディレクトリをinotifyにより監視していますので、カーネルコンフィグでinotifyサポートを有効にする必要があります。
+</p>
+
+<pre caption="inotifyサポートをカーネルで有効にする">
+File systems ---&gt;
+  [*] Inotify file change notification support
+  [*]   Inotify support for userspace
+</pre>
+
+<p>
+これで、udevによりネットワークデバイスに対する正しい名前が維持されます。
+</p>
+
+</body>
+</section>
+<section>
+<title>udevが予期できない順序でモジュールをロードする</title>
+<body>
+
+<p>
+ときどき、udevは意図しない、予期できない、もしくはランダムな順番でモジュールをロードします。
+とくに、マルチメディアデバイスのほか、同じタイプの複数デバイスがシステムにある場合によく起こります。
+割り当てられたデバイス番号に影響を及ぼします。たとえば、サウンドカードで番号が変わっている場合があります。
+</p>
+
+<p>
+デバイス番号及び/又はモジュールロード順を固定するための方法はあまり多くありません。
+理想を言えば、モジュールパラメータを求めるデバイス番号を特定するために使えばよいのです。
+ALSAのようなモジュールでは、indexパラメータを持っています。
+こうしたインデックスパラメータを使っているモジュールでは、次に示すように調整することができます。
+この例では、システムは二つのサウンドカードをもっています。
+インデックスが0のカードが第一カードと指定されます。
+一度パラメータが変わってしまったならば、モジュールコンフィグファイルは更新される必要があります。
+</p>
+
+<pre caption="モジュールパラメータを指定する">
+# <i>echo "option snd-ice1724 index=0" >> /etc/modules.d/alsa</i>
+# <i>echo "option snd-ymfpci index=1" >> /etc/modules.d/alsa</i>
+# <i>update-modules</i>
+</pre>
+
+<p>
+上の例はよい解決策ですが、全てのモジュールがインデックスのようなパラメータをサポートしているわけではありません。
+こうしたモジュールについては、正しいモジュールロード順を強制する必要があるでしょう。
+まず、ブラックリストにそうしたモジュールを記載することで、udevの自動ロードを止めなければいけません。
+ロードされるときの正しい名前を使っていることを確認してください。
+PCI デバイスでは、<c>pciutils</c>パッケージにある<c>pcimodules</c>の出力から得られるモジュール名を使う必要があります。
+次の例は、DVBモジュールを使う例です。
+</p>
+
+<pre caption="モジュールをブラックリストに載せる">
+# <i>echo "blacklist b2c2-flexcop-pci" >> /etc/modprobe.d/dvb</i>
+# <i>echo "blacklist budget" >> /etc/modprobe.d/dvb</i>
+# <i>update-modules</i>
+</pre>
+
+<p> 
+次に、モジュールを正しい順にロードさせます。
+それらを、<path>/etc/modules.autoload.d/kernel-2.6</path>に
+<e>ロードして欲しい適切な順で</e>加えます。
+</p> 
+
+<pre caption="適切な順番でのモジュールローディング">
+# <i>echo "budget" >> /etc/modules.autoload.d/kernel-2.6</i>
+ # <i>echo "b2c2-flexcop-pci" >> /etc/modules.autoload.d/kernel-2.6</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>その他の問題</title>
+<body>
+
+<p>
+デバイスノードが、<path>/etc/modules.autoload.d/kernel-2.6</path>からモジュールが自動でロードされるときには作成されず、modprobeで手動でモジュールをロードしたときには作成されるなら、<c>sys-apps/baselayout-1.8.12</c>かそれ以降のバージョンに更新してみるべきです。
+</p>
+
+<p>
+フレームバッファデバイス(<path>/dev/fb/*</path>)のためのサポートは、2.6.6-rc2のバージョンからカーネルに備わっています。
+</p>
+
+<p>
+2.6.4より古いカーネルに対しては、<path>/dev/pts</path>ファイルシステムのサポートを明示的に含めなければなりません。
+</p>
+
+<pre caption="/dev/ptsファイルシステムの有効化">
+File systems ---&gt;
+  Pseudo filesystems ---&gt;
+    [*] /dev/pts file system for Unix98 PTYs
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>資料と謝辞</title>
+<section>
+<body>
+
+<p>
+Greg Kroah-Hartman(IBM社)による、Linuxシンポジウム(カナダ、オンタリオ州、オタワ - 2003年)でのudev議論は、udevアプリケーションに関して確実な理解を広めました。
+</p>
+
+<p>
+<uri link="http://webpages.charter.net/decibelshelp/LinuxHelp_UDEVPrimer.html">Decibel's 
+UDEV Primer(訳注: decibelsのUDEV手引書)</uri><uri link="http://www.gentoo.gr.jp/transdocs/decibelshelp/LinuxHelp_UDEVPrimer.html">(日本語訳)</uri>は、udevとGentooについての詳細な文書です。
+</p>
+
+<p>
+Gentoo開発者仲間のDaniel Drakeによる<uri link="http://www.reactivated.net/udevrules.php">Writing udev rules(訳注: udevルールの書き方)</uri><uri link="http://www.gentoo.gr.jp/transdocs/udevrules/udevrules.html">(日本語訳)</uri>は、udevの設定をカスタマイズする方法を学ぶためのすばらしい文書です。
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

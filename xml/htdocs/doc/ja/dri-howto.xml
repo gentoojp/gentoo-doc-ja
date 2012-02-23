@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/dri-howto.xml,v 1.13 2008/11/06 09:42:04 nightmorph Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/dri-howto.xml">
+<title>ハードウェア3Dアクセラレーションガイド</title>
+<author title="Author">
+<mail link="dberkholz@gentoo.org">Donnie Berkholz</mail>
+</author>
+<author title="Editor">
+<mail link="peesh@gentoo.org">Jorge Paulo</mail>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+
+<abstract>
+このドキュメントはGentoo LinuxでXorgとX11-DRMを利用して3Dアクセラレーションを行うためのガイドです。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.2</version>
+<date>2006-02-01</date>
+
+<!-- Original revision: 1.28 -->
+
+<chapter>
+<title>始めに</title>
+<section>
+<title>ハードウェア3Dアクセラレーションとは何ですか？なぜ私はそれが必要なのですか？</title>
+<body>
+
+<p>
+ハードウェア3Dアクセラレーションを使うと、3次元表現をする際に、貴重なCPUリソースを使う代わりにビデオカードの上のグラフィックスプロセッサーを使うようになります。
+これはまた、このハードウェア3Dアクセラレーションがない場合には、MesaソフトウェアレンダリングライブラリというCPUをかなり使用するソフトウェアを使用するので、「ソフトウェアアクセラレーション」に対して「ハードウェアアクセラレーション」と呼ばれます。
+Xorgは一般に2Dハードウェアアクセラレーションをサポートしていますが、しばしばハードウェア3Dアクセラレーションを欠いています。 
+ハードウェア3Dアクセラレーションは、ゲーム、3D CAD、そしてモデリングのような3Dオブジェクトのレンダリングが要求される状況に役立ちます。
+</p>
+
+</body>
+</section>
+<section>
+<title>どうすればハードウェア3Dアクセラレーションを得ることができますか？</title>
+<body>
+
+<p>
+多くの場合、バイナリで提供されるドライバーと、オープンソースのドライバーがあります。
+私たちがLinuxを使っていて、その根底にある原理の1つがオープンソースであるので、オープンソースドライバーが好ましいです。
+時々、nVidiaカードの様にバイナリドライバーが唯一の選択であることがあります。
+バイナリドライバーにはnVidiaカード用のmedia-video/nvidia-kernelとmedia-video/nvidia-glx、Matroxカード用のmedia-video/mgavideo、そしてATIカード用のmedia-video/ati-driversが含まれています。
+その他のオープンソースドライバーにはKyroIIカード用のmedia-video/kyro-kernel、そしてより完全にATIのビデオ能力をサポートするmedia-video/ati-gatosが含まれています。
+</p>
+
+</body>
+</section>
+<section>
+<title>DRIとは何ですか？</title>
+<body>
+
+<p>
+DRIとも言われる<uri link="http://dri.freedesktop.org/wiki/">Direct Rendering Infrastructure</uri>は、グラフィックハードウェアに安全で効率的な方法で直接アクセスできるようにする構成です。
+それはXサーバ、いくつかのクライアントライブラリ、そしてカーネルの変更を含みます。
+DRIのための最初の主な使用は高速なOpenGLの実装を作成することです。
+</p>
+
+</body>
+</section>
+<section>
+<title>X11-DRMとは何で、どのようにXorgに関連しているのですか？</title>
+<body>
+
+<p>
+X11-DRMはダイレクトレンダリングに必要なカーネルモジュールを追加することによってカードのための3Dアクセラレーションを加えるXorgへの<e>機能強化</e>です。
+</p>
+
+</body>
+</section>
+<section>
+<title>目的</title>
+<body>
+
+<p>
+このガイドはXorgだけではダイレクトレンダリングが動作しない人のための物です。
+X11-DRMは3dfx、gamma、intel、matrox、rage128、radeon、mach64、そしてsis300シリーズのドライバーで動作します。
+より多くの情報とドキュメントは<uri link="http://dri.freedesktop.org/">DRI homepage</uri>を見てください。
+</p>
+
+</body>
+</section>
+<section>
+<title>フィードバック</title>
+<body>
+
+<p>
+提案、質問等がありましたら、<mail link="dberkholz@gentoo.org">Donnie Berkholz</mail>までメールしてください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Xorgのインストールとカーネルの設定</title>
+<section>
+<title>Xorgのインストール</title>
+<body>
+
+<p>
+Xorgの導入方法は<uri link="/doc/en/xorg-config.xml">Xorg Configuration Guide</uri><uri link="/doc/ja/xorg-config.xml">(日本語訳)</uri>を参照してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>カーネルの設定</title>
+<body>
+
+<p>
+あなたのチップセットを詳しく調査して、正しいものを有効にしてください。
+</p>
+
+<pre caption="AGPチップセットを選択">
+# <i>emerge pciutils; lspci | grep AGP</i>
+# <i>00:01.0 PCI bridge: Intel Corp. 440BX/ZX/DX - 82443BX/ZX/DX AGP bridge (rev 03)</i>
+<comment>(ハードウェアが異なるためあなたの出力は上の物と異なるかもしれません)</comment>
+</pre>
+
+<p>
+チップセットがカーネルによってサポートされていない場合には、カーネル変数に<c>agp=try_unsupported</c>を渡すことによってうまくいくかもしれません。
+これはAGPサポートのためにインテルの包括的なルーチンを使います。
+このパラメーターを加えるために、ブートローダー設定ファイルを編集してください。
+</p>
+
+<p>
+すべてでないにしろ、ほとんどのカーネルでこれらのオプションが使えるはずです。
+ここではgentoo-sources-2.4.20-r5を使用して設定を行いました。
+</p>
+
+<pre caption="カーネルの設定">
+# <i>ls -l /usr/src/linux </i>
+lrwxrwxrwx    1 root     root           22 May 29 18:20 /usr/src/linux -> linux-2.4.20-gentoo-r5
+<comment>(/usr/src/linuxが現在のカーネルにリンクするようにしてください)</comment>
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<pre caption="make menuconfigオプション">
+Processor type and features ---&gt;
+&lt;*&gt; MTRR (Memory Type Range Register) support
+Character devices ---&gt;
+&lt;M&gt; /dev/agpgart (AGP Support)
+[M] Intel 440LX/BX/GX and I815/I820/I830M/I830MP/I840/I845/I850/I860 support
+<comment>(上の代わりにあなたのチップセットを有効にすること)</comment>
+&lt; &gt; Direct Rendering Manager (XFree86 4.1.0 and higher DRI support)
+</pre>
+
+<p>
+ダイレクトレンダリングマネージャー(DRM)を<e>off</e>にしてください。
+X11-DRMパッケージ自身が提供してくれます。
+</p>
+
+</body>
+</section>
+<section>
+<title>カーネルのコンパイルとインストール</title>
+<body>
+
+<pre caption="カーネルのコンパイルとインストール">
+<comment>(これは2.4カーネルでの例です)</comment>
+# <i>make dep &amp;&amp; make clean bzImage modules modules_install</i>
+# <i>mount /boot</i>
+# <i>cp arch/i386/boot/bzImage /boot</i>
+</pre>
+
+<p>
+カーネルにbzImage以外の名前を付けたい場合は、/boot/yournameに置き換えてコピーするようにしてください。
+grub.confかlilo.confの設定と、LILOを使っているのなら/sbin/liloの実行を忘れずに行ってください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>X11-DRMのインストールとダイレクトレンダリングの設定</title>
+<section>
+<title>X11-DRMのインストール</title>
+<body>
+
+<pre caption="X11-DRMのインストール">
+# <i>emerge x11-drm</i>
+</pre>
+
+</body>
+</section>
+<section id="configure_xorg">
+<title>Xorg.confの設定</title>
+<body>
+
+<p>
+いくつかのチップセットでは<c>USE="insecure-drivers"</c>を使った<c>xorg-x11</c>の再ビルドが必要です。
+これはxorg-x11-6.8.2ではmach64、unichrome、savageチップセットに、xorg-x11-6.8.99.xではmach64とunichromeに適応されます。
+savageユーザはxorg-x11-6.8.99.xを使用すべきではありません。これらはsavageサポートが壊れています。
+</p>
+
+<pre caption="xorg-x11の再ビルド">
+<comment>(上記チップセットを使用しているのならUSEフラグにinsecure-driversを追加)</comment>
+# <i>echo "x11-base/xorg-x11 insecure-drivers" &gt;&gt; /etc/portage/package.use</i>
+
+# <i>emerge xorg-x11</i>
+</pre>
+
+<p>
+<path>/etc/X11/xorg.conf</path>をあなたの好みのエディタで開いてDRIとGLXを有効にするよう編集してください。
+</p>
+
+<pre caption="xorg.conf">
+...
+Section "Module"
+  Load "dri"
+  Load "glx"
+  ...
+EndSection
+...
+Section "Device"
+  Driver "radeon"
+  ...
+EndSection
+...
+Section "dri"
+  Mode 0666
+EndSection
+</pre>
+
+<p>
+もし違うドライバーを使っているのなら、"radeon"をあなたの物に置き換えてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>modules.autoload.dの変更</title>
+<body>
+
+<p>
+あなたのカードが使用するモジュール名を<path>/etc/modules.autoload.d/kernel-2.6</path>に追加する必要があります。
+こうすることで、システムの起動時にモジュールが自動的にロードされることを確実にします。
+</p>
+
+<pre caption="/etc/modules.autoload.d/kernel-2.6の編集">
+<comment>(モジュール名は必要に応じて変更)</comment>
+intel-agp
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>3Dアクセラレーションのテスト</title>
+<section>
+<title>新しいカーネルのリブート</title>
+<body>
+
+<p>
+コンピューターを新しいカーネルでリブートしてください。
+あなたがダイレクレンダリングを利用しているかどうかと、それがどれほど良いものか見る時です。
+</p>
+
+<pre caption="レンダリングのテスト">
+# <i>startx</i>
+<comment>(もしagpgartをモジュールとしてコンパイルしていても、ドライバーやagpgartを読み込む必要はありません)</comment>
+<comment>(それらは自動的に読み込まれます)</comment>
+# <i>glxinfo | grep rendering</i>
+direct rendering: Yes
+<comment>(もし"No"といわれたら、3Dアクセラレーションが機能していません)</comment>
+# <i>glxgears</i>
+<comment>(デフォルトサイズで１秒間のフレーム数(FPS)をテストしてください)</comment>
+<comment>(x11-drmをインストールする前よりもかなり高い数値が得られるはずです)</comment>
+<comment>(CPUができるだけアイドル状態になっているときに実行してください)</comment>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>CVSソースを利用</title>
+<section>
+<body>
+
+<warn>パッケージが動作するならこれは行わないでください。</warn>
+
+</body>
+</section>
+<section>
+<title>CVSが必要ですか？</title>
+<body>
+
+<p>
+第一にあなたはx11-drmパッケージが作動するかどうか調べなければなりません。
+それが動作せずに、またそれが設定ミスによる問題でないことをログで確認済であるなら、あなたはCVSソースを利用したいと考えるでしょう。
+CVSのものを完全にビルドしたくない場合には、毎日作成されるのドライバースナップショットも利用できます。
+</p>
+
+</body>
+</section>
+<section>
+<title>CVSソースはあなたのカードをサポートしていますか？</title>
+<body>
+
+<p>
+CVSのソースがあなたのカードをサポートしているか確かめるために、DRIが<uri link="http://dri.freedesktop.org/wiki/Status">サポートしているカードのリスト</uri>を確認してください。
+もし存在しなくても、似たカードがサポートされているなら、それを試してみてください。
+</p>
+
+<!-- I see a couple of 8x AGP stuff on the Internet about vanilla 2.4 kernels;
+     is this now available or not? I've commented it out for the time being,
+     hoping that this doesn't affect us :)
+
+<warn>
+"Linux 2.4 doesn't support agp 8x, so I had to go find a backport. The backport 
+works .... it doesn't patch quite properly, and it requires 2.4.21 (I've only 
+gotten it to work with vanilla, straight from the tarball (not ebuild)). First 
+go get the 2.4.20-2.4.21 patch from kernel.org .... (then get the patch,) It 
+was on a mailing list somewhere. It doesn't patch cleanly - - one file fails, 
+the pci_ids.h file, but if you actually read the file and the reject list, it's
+very easy to fix. But it does load, and it gives me 1600x1200 with video 
+(although a bit slow b/c of lack of dga) with xfree-drm." (SanityInAnarchy on 
+#gentoo)
+</warn>
+
+<impo>
+The patch is a little tricky to work with but <uri 
+link="http://www.ussg.iu.edu/hypermail/linux/kernel/0302.2/att-1618/01-agp3.diff.bz2">here's 
+the link</uri>. If you can disable 8X AGP in your BIOS, change it to 4X and you 
+may not need the patch.
+</impo>
+-->
+
+</body>
+</section>
+<section>
+<title>CVSの指示に従う</title>
+<body>
+
+<p>
+DRIプロジェクトにはCVSソースのコンパイルに関するドキュメントがあります。
+<uri link="http://dri.freedesktop.org/wiki/Building">ドキュメント</uri>を読んで、<e>X.orgのインストール</e>もしくは<e>X.orgのインストール</e>まで進んでください。
+</p>
+
+</body>
+</section>
+<section>
+<title>CVSのインストール</title>
+<body>
+
+<p>
+システムのためのDRIカーネルモジュールがビルドされたかどうか確認します。
+</p>
+
+<pre caption="確認">
+# <i>cd ~/DRI-CVS/build/xc/programs/Xserver/hw/xfree86/os-support/linux/drm/kernel; ls</i>
+</pre>
+
+<p>
+3dfx Voodooなら<path>tdfx.o</path>を、Matrox G200/G400なら<path>mga.o</path>を、ATI Rage 128なら<path>r128.o</path>を、ATI Radeonなら<path>radeon.o</path>を、Intel i810なら<path>i810.o</path>をそれぞれ見るべきです。
+もしDRIカーネルモジュールがビルドに失敗していたなら、正しいバージョンのLinuxカーネルを使っているか確認するべきです。
+最新のカーネルでは必ずしもサポートされているとは限りません。
+</p>
+
+<p>
+あなたのX.orgインストールの上にインストールします。
+xorg-x11をバックアップした方がいいでしょう。
+</p>
+
+<pre caption="Xorgのバックアップ">
+# <i>quickpkg xorg-x11</i>
+<comment>(これはあなたのXorg-X11パッケージをバックアップします)</comment>
+# <i>make install</i>
+</pre>
+
+<p>
+この後は、上記"Xorgの設定"セクションに従ってください。
+</p>
+
+<p>
+起動中のカーネルに適当なDRMモジュールを読み込ませるために、カーネルモジュールを<path>/lib/modules/`uname -r`/kernel/drivers/char/drm/</path>にコピーし、<c>modules-update</c>を実行してXサーバを再起動してください。
+このモジュールを使用する予定のカーネルを現在使用中でない場合には、<c>`uname -r`</c>のかわりにカーネルの名前を使用してください。
+</p>
+
+<warn>
+最初に既に読み込まれている古いDRIカーネルモジュールをアンロードするようにしてください。
+いくらかのDRMモジュールはagpgartモジュールが先に読み込まれている必要があることに注意してください。
+</warn>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>パフォーマンスの調整</title>
+<section>
+<title>より多くのダイレクトレンダリングを得る</title>
+<body>
+
+<p>
+２～３のオプションはパフォーマンスをデフォルトより30パーセント(もしくはそれ以上)増加させるかもしれません。
+<path>/etc/X11/xorg.conf</path>でそれらを設定します。
+</p>
+
+<pre caption="xorg.conf">
+Section "Device"
+  Option     "AGPMode" "4"
+  <comment>(これはFPSを609から618へと増加させました)</comment>
+  Option     "AGPFastWrite" "True"
+  <comment>(これは計測できる効果は得られませんが、コンピュータの安定性を増加させるかもしれません)</comment>
+  <comment>(BIOSでも設定する必要があります)</comment>
+  Option     "EnablePageFlip" "True"
+  <comment>(これはFPSを618から702へと改善させました。これは"リスクを伴います"が、問題を報告した人はほとんどいません)</comment>
+  ...
+EndSection
+</pre>
+
+<p>
+より多くの機能を設定したいなら、DRI Webサイトの<uri link="http://dri.freedesktop.org/wiki/FeatureMatrix">機能一覧</uri>か、Sourceforgeの<uri link="http://dri.sourceforge.net/doc/dri_driver_features.phtml">機能のリスト</uri>を確認してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>トラブルシューティング</title>
+<section>
+<title>動作しません。私はカーネルを再コンパイルもしくは新しい物へと置き換えただけです。</title>
+<body>
+
+<p>
+カーネルを再コンパイルしたり新しい物へと置き換えたときはいつでも、カーネルモジュールを再ビルドする必要があります。
+xorg-x11を再mergeする必要はありませんが、x11-drmを再mergeする必要があるということに注意してください。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>動作しません。レンダリングを得ることができず、なぜなのか伝えることができません。</title>
+<body>
+
+<p>
+Xサーバを起動させる前に<c>insmod radeon</c>を試してみてください。
+また、agpgartをモジュールの代わりにカーネル内部にビルドしてみてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>startxをすると、こんなエラーが出ました: "[drm] failed to load kernel module agpgart"</title>
+<body>
+
+<p>
+これはagpgartをモジュールの代わりにカーネル内部にコンパイルしたためです。
+問題がないのなら無視してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>ダイレクトレンダリングが動作せず、/var/log/Xorg.0.logにドライバーのバージョンが低すぎるというエラーがありました</title>
+<body>
+
+<p>
+x11-drmドライバーを使っていません。
+DRMとドライバーをカーネル内部にコンパイルしたかどうか確認してください。それをするべきではありません。
+</p>
+
+</body>
+</section>
+<section>
+<title>Radeonを使っていて、TV-Outが必要です</title>
+<body>
+
+<p>
+ati-gatosドライバーを見てください。<c>emerge -s gatos</c>。
+</p>
+
+</body>
+</section>
+<section>
+<title>動作しません。私のカードはとても新しくてすごいので、少しもサポートされていません。</title>
+<body>
+
+<p>
+バイナリドライバーを試してみてください。
+atiドライバーなら、リストが<uri>http://www.schneider-digital.de/html/download_ati.php</uri>にあります。
+それらがサポートしていないなら、fbdevを使ってください。
+遅いですが、動作はします。
+</p>
+
+</body>
+</section>
+<section>
+<title>PCIカードを使っていて動作しません。助けて！</title>
+<body>
+
+<p>
+"Device"セクションでForcePCIModeを有効にしてください。
+</p>
+
+<pre caption="ForcePCIModeを有効にする">
+Option "ForcePCIMode" "True"
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>感謝</title>
+<section>
+<body>
+
+<ol>
+  <li>
+    カーネルの変更や再コンパイルに関するトラブルシューティングを提案してくれたChristopher Webber氏
+  </li>
+  <li>
+    XF86ConfigのdriとDRI間の一貫性を提案してくれたSteve氏
+  </li>
+</ol>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>参考文献</title>
+<section>
+<body>
+
+<ol>
+  <li><uri>http://forums.gentoo.org/viewtopic.php?t=46681</uri></li>
+  <li><uri>http://forums.gentoo.org/viewtopic.php?t=29264</uri></li>
+  <li><uri>http://dri.freedesktop.org/</uri></li>
+  <li><uri>http://www.retinalburn.net/linux/dri_status.html</uri></li>
+</ol>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,405 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-install-sparc-kernel.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.7</version>
+<date>September 1, 2004</date>
+
+<section>
+<title>Timezone</title>
+<body>
+
+<p>
+You first need to select your timezone so that your system knows where it is
+located. Look for your timezone in <path>/usr/share/zoneinfo</path>, then make a
+symlink to <path>/etc/localtime</path> using <c>ln</c>:
+</p>
+
+<pre caption="Setting the timezone information">
+# <i>ls /usr/share/zoneinfo</i>
+<comment>(Suppose you want to use GMT)</comment>
+# <i>ln -sf /usr/share/zoneinfo/GMT /etc/localtime</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Installing the Sources</title>
+<subsection>
+<title>Choosing a Kernel</title>
+<body>
+
+<p>
+The core around which all distributions are built is the Linux kernel. It is the
+layer between the user programs and your system hardware. Gentoo provides its
+users several possible kernel sources. A full listing with description is
+available at the <uri link="/doc/en/gentoo-kernel.xml">Gentoo Kernel
+Guide</uri>. 
+</p>
+
+<p>
+For sparc-based systems we have <c>vanilla-sources</c> (the default kernel
+source as developed by the linux-kernel developers), <c>development-sources</c>
+(the default 2.6 kernel source) and <c>sparc-sources</c> (kernel source 
+optimized for SPARC users). If you are installing Gentoo without a working
+network connection you will need to use <c>vanilla-sources</c> or
+<c>sparc-sources</c>.
+</p>
+
+<p>
+Choose your kernel source and install it using <c>emerge</c>. 
+</p>
+
+<p>
+In the next example we install the <c>vanilla-sources</c>.
+Of course substitute with your choice of sources, this is merely an example:
+</p>
+
+<pre caption="Installing a kernel source">
+# <i>emerge vanilla-sources</i>
+</pre>
+
+<p>
+When you take a look in <path>/usr/src</path> you should see a symlink called
+<path>linux</path> pointing to your kernel source:
+</p>
+
+<pre caption="Viewing the kernel source symlink">
+# <i>ls -l /usr/src/linux</i>
+lrwxrwxrwx    1 root     root           12 Oct 13 11:04 /usr/src/linux -&gt; linux-2.4.26
+</pre>
+
+<p>
+If this isn't the case (i.e. the symlink points to a different kernel source) 
+change the symlink before you continue:
+</p>
+
+<pre caption="Changing the kernel source symlink">
+# <i>rm /usr/src/linux</i>
+# <i>cd /usr/src</i>
+# <i>ln -s linux-2.4.26 linux</i>
+</pre>
+
+<p>
+Now it is time to configure and compile your kernel source. 
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Manual Configuration</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Manually configuring a kernel is often seen as the most difficult procedure a
+Linux user ever has to perform. Nothing is less true -- after configuring a
+couple of kernels you don't even remember that it was difficult ;)
+</p>
+
+<p>
+However, one thing <e>is</e> true: you must know your system when you start
+configuring a kernel manually. Most information can be gathered by viewing the
+contents of <path>/proc/pci</path> (or by using <c>lspci</c> if available). You
+can also run <c>lsmod</c> to see what kernel modules the LiveCD uses (it might
+provide you with a nice hint on what to enable).
+</p>
+
+<p>
+Now go to your kernel source directory and execute <c>make menuconfig</c>. This
+will fire up an ncurses-based configuration menu.
+</p>
+
+<pre caption="Invoking menuconfig">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+You will be greeted with several configuration sections. We'll first list some
+options you must activate (otherwise Gentoo will not function, or not function
+properly without additional tweaks).
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating Required Options</title>
+<body>
+
+<p>
+First of all, activate the use of development and experimental code/drivers.
+You need this, otherwise some very important code/drivers won't show up:
+</p>
+
+<pre caption="Selecting experimental code/drivers">
+Code maturity level options ---&gt;
+  [*] Prompt for development and/or incomplete code/drivers
+</pre>
+
+<p>
+Now go to <c>File Systems</c> and select support for the filesystems you use.
+<e>Don't</e> compile them as modules, otherwise your Gentoo system will not be
+able to mount your partitions. Also select <c>Virtual memory</c>, <c>/proc
+file system</c>, <c>/dev file system</c> + <c>Automatically mount at boot</c>:
+</p>
+
+<pre caption="Selecting necessary file systems">
+<comment>(With a 2.4.x kernel)</comment>
+File systems ---&gt;
+  [*] Virtual memory file system support (former shm fs)
+  [*] /proc file system support
+  [*] /dev file system support (EXPERIMENTAL)
+  [*]   Automatically mount at boot
+  [ ] /dev/pts file system for Unix98 PTYs
+
+<comment>(With a 2.6.x kernel)</comment>
+File systems ---&gt;
+  Pseudo Filesystems ---&gt;
+    [*] /proc file system support
+    [*] /dev file system support (OBSOLETE)
+    [*]   Automatically mount at boot
+    [*] Virtual memory file system support (former shm fs)
+
+<comment>(Select one or more of the following options as needed by your system)</comment>
+  &lt;*&gt; Reiserfs support
+  &lt;*&gt; Ext3 journalling file system support
+  &lt;*&gt; JFS filesystem support
+  &lt;*&gt; Second extended fs support
+  &lt;*&gt; XFS filesystem support
+</pre>
+
+<p>
+If you are using PPPoE to connect to the Internet or you are using a dial-up
+modem, you will need the following options in the kernel:
+</p>
+
+<pre caption="Selecting PPPoE necessary drivers">
+<comment>(With a 2.4.x kernel)</comment>
+Network device support ---&gt;
+  &lt;*&gt; PPP (point-to-point protocol) support
+  &lt;*&gt;   PPP support for async serial ports
+  &lt;*&gt;   PPP support for sync tty ports
+
+<comment>(With a 2.6.x kernel)</comment>
+Device Drivers ---&gt;
+  Networking support ---&gt;
+    &lt;*&gt; PPP (point-to-point protocol) support
+    &lt;*&gt;   PPP support for async serial ports
+    &lt;*&gt;   PPP support for sync tty ports
+</pre>
+
+<p>
+The two compression options won't harm but are not definitely needed, neither
+does the <c>PPP over Ethernet</c> option, that might only be used by 
+<c>rp-pppoe</c> when configured to do kernel mode PPPoE.
+</p>
+
+<p>
+If you require it, don't forget to include support in the kernel for your
+ethernet card.
+</p>
+
+<p>
+Now activate the correct bus-support:
+</p>
+
+<pre caption="Activating SBUS/UPA">
+Console drivers ---&gt;
+  Frame-buffer support ---&gt;
+    [*] SBUS and UPA framebuffers             
+      [*] Creator/Creator3D support     <comment>(Only for UPA slot adapter used in many Ultras)</comment>
+    [*] CGsix (GX,TurboGX) support      <comment>(Only for SBUS slot adapter used in many SPARCStations)</comment>
+</pre>
+
+<p>
+Of course you want support for the OBP:
+</p>
+
+<pre caption="Activating OBP Support">
+Misc Linux/SPARC drivers ---&gt;
+  [*]  /dev/openprom device support
+</pre>
+
+<p>
+You will also need SCSI-specific support:
+</p>
+
+<pre caption="Activating SCSI-specific support">
+SCSI support ---&gt;
+  SCSI low-level drivers ---&gt;
+    &lt;*&gt; Sparc ESP Scsi Driver             <comment>(Only for SPARC ESP on-board SCSI adapter)</comment>
+    &lt;*&gt; PTI Qlogic, ISP Driver            <comment>(Only for SBUS SCSI controllers from PTI or QLogic)</comment>
+    &lt;*&gt; SYM53C8XX Version 2 SCSI support  <comment>(Only for Ultra 60 on-board SCSI adapter)</comment>
+</pre>
+
+<p>
+To support your network card, select one of the following:
+</p>
+
+<pre caption="Activating networking support">
+Network device support ---&gt;
+  Ethernet (10 or 100Mbit) ---&gt;
+    &lt;*&gt; Sun LANCE support                   <comment>(Only for SPARCStation, older Ultra systems, and as Sbus option)</comment>
+    &lt;*&gt; Sun Happy Meal 10/100baseT support  <comment>(Only for Ultra; also supports "qfe" quad-ethernet on PCI and Sbus)</comment>
+</pre>
+
+<p>
+When you're done configuring your kernel, continue with <uri
+link="#compiling">Compiling and Installing</uri>. However, after having
+compiled the kernel, check its size:
+</p>
+
+<pre caption="Check kernel size">
+# <i>ls -lh vmlinux</i>
+-rw-r--r--    1 root     root         2.4M Oct 25 14:38 vmlinux
+</pre>
+
+<p>
+If the (uncompressed) size is bigger than 2.5Mb (for Sparc32) or 3.5Mb (for 
+Sparc64), reconfigure your kernel until it doesn't exceed these limits. One way
+of accomplishing this is by having most kernel drivers compiled as modules.
+Ignoring this can lead to a non-booting kernel.
+</p>
+
+<note>
+If you use a 2.6.3 or higher kernel, sparc64 kernels can be up to 7.5 Mb.
+</note>
+
+<p>
+Also, if your kernel is just a tad too big, you can try stripping it using the
+<c>strip</c> command:
+</p>
+
+<pre caption="Stripping the kernel">
+# <i>strip -R .comment -R .note vmlinux</i>
+</pre>
+
+</body>
+</subsection>
+<subsection id="compiling">
+<title>Compiling and Installing</title>
+<body>
+
+<p>
+Now that your kernel is configured, it is time to compile and install it. Exit 
+the configuration and run <c>make dep &amp;&amp; make vmlinux modules 
+modules_install</c>:
+</p>
+
+<pre caption="Compiling the kernel">
+<comment>(For 2.4 kernel, sparc32)</comment>
+# <i>make dep &amp;&amp; make clean vmlinux modules modules_install</i>
+
+<comment>(For 2.4 kernel, sparc64)</comment>
+# <i>make dep &amp;&amp; make clean vmlinux image modules modules_install</i>
+
+<comment>(For 2.6 kernel, sparc32)</comment>
+# <i>make &amp;&amp; make modules_install</i>
+
+<comment>(For 2.6 kernel, sparc64)</comment>
+# <i>make &amp;&amp; make image modules_install</i>
+</pre>
+
+<p>
+When the kernel has finished compiling, copy the kernel image to
+<path>/boot</path>.
+</p>
+
+<pre caption="Installing the kernel">
+<comment>(For 2.4 kernel, sparc32)</comment>
+# <i>cp vmlinux /boot/kernel-2.4.26</i>
+
+<comment>(For 2.4 kernel, sparc64)</comment>
+# <i>cp arch/sparc64/boot/image /boot/kernel-2.4.26</i>
+
+<comment>(For 2.6 kernel, sparc32)</comment>
+# <i>cp arch/sparc/boot/image /boot/kernel-2.6.5</i>
+
+<comment>(For 2.6 kernel, sparc64)</comment>
+# <i>cp arch/sparc64/boot/image /boot/kernel-2.6.5</i>
+
+<comment>(Don't forget to copy over the System.map file)</comment>
+# <i>cp System.map /boot</i>
+</pre>
+
+<p>
+It is also wise to copy over your kernel configuration file to
+<path>/boot</path>, just in case :)
+</p>
+
+<pre caption="Backing up your kernel configuration">
+# <i>cp .config /boot/config-2.4.26</i>
+</pre>
+
+<p>
+Now continue with <uri link="#kernel_modules">Installing Separate Kernel
+Modules</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="kernel_modules">
+<title>Installing Separate Kernel Modules</title>
+<subsection>
+<title>Configuring the Modules</title>
+<body>
+
+<p>
+You should list the modules you want automatically loaded in 
+<path>/etc/modules.autoload.d/kernel-2.4</path> (or <path>kernel-2.6</path>). 
+You can add extra options to the modules too if you want.
+</p>
+
+<p>
+To view all available modules, run the following <c>find</c> command. Don't
+forget to substitute "&lt;kernel version&gt;" with the version of the kernel you
+just compiled:
+</p>
+
+<pre caption="Viewing all available modules">
+# <i>find /lib/modules/&lt;kernel version&gt;/ -type f -iname '*.o' -or -iname '*.ko'</i>
+</pre>
+
+<p>
+For instance, to automatically load the <c>3c59x.o</c> module, edit the
+<path>kernel-2.4</path> or <path>kernel-2.6</path> file and enter the module
+name in it.
+</p>
+
+<pre caption="Editing /etc/modules.autoload.d/kernel-2.4">
+<comment>(Example for 2.4 kernels)</comment>
+# <i>nano -w /etc/modules.autoload.d/kernel-2.4</i>
+</pre>
+
+<pre caption="/etc/modules.autoload.d/kernel-2.4 or kernel-2.6">
+3c59x
+</pre>
+
+<p>
+Now run <c>modules-update</c> to commit your changes to the
+<path>/etc/modules.conf</path> file:
+</p>
+
+<pre caption="Running modules-update">
+# <i>modules-update</i>
+</pre>
+
+<p>
+Continue the installation with <uri link="?part=1&amp;chap=8">Configuring 
+your System</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

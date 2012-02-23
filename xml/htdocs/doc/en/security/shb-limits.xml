@@ -1,0 +1,226 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/security/shb-limits.xml,v 1.11 2011/11/15 18:53:00 swift Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>3</version>
+<date>2011-11-15</date>
+
+<section id="limits_conf">
+<title>/etc/security/limits.conf</title>
+<body>
+
+<p>
+Controlling resource usage can be very effective when trying to prevent a local
+Denial of Service or restricting the maximum allowed logins for a group or user.
+However, too strict settings will impede on your system's behavior and will
+result in program failures so make sure that you check each setting first.
+</p>
+
+<pre caption="/etc/security/limits.conf">
+*    soft core 0
+*    hard core 0
+*    hard nproc 15
+*    hard rss 10000
+*    -    maxlogins 2
+@dev hard core 100000
+@dev soft nproc 20
+@dev hard nproc 35
+@dev -    maxlogins 10
+</pre>
+
+<p>
+If you find yourself trying to set <c>nproc</c> or <c>maxlogins</c> to 0, maybe
+you should delete the user instead. The example above sets the group <c>dev</c>
+settings for processes, core file and <c>maxlogins</c>. The rest is set to a
+default value.
+</p>
+
+<note>
+<path>/etc/security/limits.conf</path> is part of the PAM package and will
+only apply to packages that use PAM.
+</note>
+
+</body>
+</section>
+<section>
+<title>/etc/limits</title>
+<body>
+
+<p>
+<path>/etc/limits</path> is very similar to the limit file
+<path>/etc/security/limits.conf</path>. The only difference is the format and
+that it only works on users or wild cards (not groups). Let's have a look at a
+sample configuration:
+</p>
+
+<pre caption="/etc/limits">
+*   L2 C0 U15 R10000
+kn L10 C100000 U35
+</pre>
+
+<p>
+Here we set the default settings and a specific setting for the user kn.  Limits
+are part of the sys-apps/shadow package. It is not necessary to set any limits
+in this file if you have enabled <c>pam</c> in <path>/etc/make.conf</path>.
+</p>
+
+</body>
+</section>
+<section id="quotas">
+<title>Quotas</title>
+<body>
+
+<impo>
+Make sure the file systems you are working with support quotas. User tools are
+available from <uri link = "http://www.sf.net/projects/linuxquota/">the Linux
+DiskQuota project</uri>.
+</impo>
+
+<p>
+Putting quotas on a file system restricts disk usage on a per-user or per-group
+basis. Quotas are enabled in the kernel and added to a mount point
+in <path>/etc/fstab</path>. The kernel option is enabled in the kernel
+configuration under <c>File systems-&gt;Quota support</c>. Apply the following
+settings, rebuild the kernel and reboot using the new kernel.
+</p>
+
+<p>
+Start by installing quotas with <c>emerge quota</c>. Then modify your
+<path>/etc/fstab</path> and add <c>usrquota</c> and <c>grpquota</c> to the
+partitions that you want to restrict disk usage on, like in the example below.
+</p>
+
+<pre caption="/etc/fstab">
+/dev/sda1 /boot ext2 noauto,noatime 1 1
+/dev/sda2 none swap sw 0 0
+/dev/sda3 / reiserfs notail,noatime 0 0
+/dev/sda4 /tmp ext3 noatime,nodev,nosuid,noexec,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv=1 0 0
+/dev/sda5 /var ext3 noatime,nodev,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv1 0 0
+/dev/sda6 /home ext3 noatime,nodev,nosuid,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv1 0 0
+/dev/sda7 /usr reiserfs notail,noatime,nodev,ro 0 0
+/dev/cdroms/cdrom0 /mnt/cdrom iso9660 noauto,ro 0 0
+proc /proc proc defaults 0 0
+</pre>
+
+<p>
+On every partition that you have enabled quotas, create the quota files
+(<path>aquota.user</path> and <path>aquota.group</path>) and place them in the
+root of the partition.
+</p>
+
+<pre caption="Creating the quota files">
+# <i>touch /tmp/aquota.user</i>
+# <i>touch /tmp/aquota.group</i>
+# <i>chmod 600 /tmp/aquota.user</i>
+# <i>chmod 600 /tmp/aquota.group</i>
+</pre>
+
+<p>
+This step has to be done on every partition where quotas are enabled. After
+adding and configuring the quota files, we need to add the <c>quota</c> script
+to the boot run level.
+</p>
+
+<impo>
+XFS does all quota checks internally, and does <e>not</e> need the <c>quota</c>
+script added to the boot runlevel. There may be other filesystems not listed in
+this document with similar behavior, so please read the manpages for your
+filesystem to learn more about how it handles quota checks.
+</impo>
+
+<pre caption="Adding quota to the boot runlevel">
+# <i>rc-update add quota boot</i>
+</pre>
+
+<p>
+The Linux kernel will track the quota usage as the system works. If for any
+reason the quota files become corrupt or you think the data is wrong, you will
+need to bring the system in single-user mode (or at least ensure that the file
+systems are not being actively written to) and then call <c>quotacheck
+-avugm</c>.
+</p>
+
+<p>
+After rebooting the machine, it is time to setup the quotas for users and
+groups. <c>edquota -u kn</c> will start the editor defined in $EDITOR (default
+is nano) and let you edit the quotas of the user kn. <c>edquota -g</c> will do
+the same thing for groups.
+</p>
+
+<pre caption="Setting up quota's for user kn">
+Quotas for user kn:
+/dev/sda4: blocks in use: 2594, limits (soft = 5000, hard = 6500)
+         inodes in use: 356, limits (soft = 1000, hard = 1500)
+</pre>
+
+<p>
+For more detail read <c>man edquota</c> or the <uri
+link="http://www.tldp.org/HOWTO/Quota.html">Quota mini howto</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>/etc/login.defs</title>
+<body>
+
+<p>
+If your security policy states that users should change their password
+every other week, change the value <c>PASS_MAX_DAYS</c> to 14
+and <c>PASS_WARN_AGE</c> to 7. It is recommended that you use password
+aging since brute force methods can find any password, given enough
+time. We also encourage you to set <c>LOG_OK_LOGINS</c> to yes.
+</p>
+
+</body>
+</section>
+<section>
+<title>/etc/security/access.conf</title>
+<body>
+
+<p>
+The <path>access.conf</path> file is also part of the <c>sys-libs/pam</c>
+package, which provides a login access control table. This table is used to
+control who can and cannot login based on user name, group name or host name. By
+default, all users on the system are allowed to login, so the file consists only
+of comments and examples. Whether you are securing your server or workstation,
+we recommend that you setup this file so no one other than yourself (the admin)
+has access to the console.
+</p>
+
+<note>
+These settings apply for root, as well.
+</note>
+
+<pre caption="/etc/security/access.conf">
+-:ALL EXCEPT wheel sync:console
+-:wheel:ALL EXCEPT LOCAL .gentoo.org
+</pre>
+
+<impo>
+Be careful when configuring these options, since mistakes will leave you
+with no access to the machine if you do not have root access.
+</impo>
+
+<note>
+These settings do not apply to SSH, since SSH does not execute
+<c>/bin/login</c> per default. This can be enabled by setting <c>UseLogin
+yes</c> in <path>/etc/ssh/sshd_config</path>.
+</note>
+
+<p>
+This will setup login access so members of the wheel group can login locally
+or from the gentoo.org domain. Maybe too paranoid, but better to be safe than
+sorry.
+</p>
+
+</body>
+</section>
+
+
+</sections>

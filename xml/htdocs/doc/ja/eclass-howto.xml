@@ -1,0 +1,617 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<guide link = "/doc/ja/eclass-howto.xml"><version/>
+
+<title>Gentoo Documentation - eclass HOWTO</title>
+<author title = "Author">Dan Armak</author>
+<author title = "Editor"><mail link = "zhen@gentoo.org" >John P. Davis</mail></author>
+<author title = "翻訳"><mail link = "makoto@dsb.club.ne.jp" >yamakura</mail></author>
+
+<date>17 Nov 2002</date>
+<version>1.0</version>
+<!-- Original revision: 1.6 -->
+
+<abstract>この文書ではeclassに隠されたアイデア、現在利用可能なeclassとその内部動作、そして継承を使ったKDE ebuildの正しい書き方を説明します。
+</abstract>
+
+<chapter>
+<title>eclassの紹介</title>
+<body>
+<p>eclassはebuildの構成要素です。ebuildや他のeclassに読み込まれ(継承され)、同種のebuild全体に標準設定や関数を提供します。OOPと同じように、同種のebuild間で可能な限りコードの再利用ができるようにしてくれます。</p>
+
+<p>最初のセクションではeclassの書き方を簡単に紹介します。次に既存のeclassを詳しく見ていきます。続いて、KDE関連のeclassを使ってKDE ebuildを書く方法を説明します。</p>
+
+</body>
+
+<section>
+<title>例題</title>
+<body>
+<p>仮想のsourceforge.eclassを定義し、sourceforge.netで管理されているプロジェクトのホームページとダウンロード場所のデフォルトを提供するように設計します。</p>
+
+<pre caption = "E-classの例題">
+# Copyright 2001-2002 Gentoo Technologies, Inc.
+# Distributed under the terms of the GNU General Public License, v2 or later
+# Author Dan Armak &lt;danarmak@gentoo.org&gt;
+# $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/eclass-howto.xml,v 1.3 2003/07/30 20:41:49 hagi Exp $
+# この eclass は $HOMEPAGE と $SRC_URI をsourceforge.net上で管理されているプロジェクトの標準設定に設定します。
+# (訳註: ここは説明のため翻訳しましたが、現実のeclassでここに日本語を書いてしまうのはお勧めしません)
+ECLASS=base
+HOMEPAGE=&quot;http://${PN}.sourceforge.net/&quot;
+SRC_URI=&quot;http://download.sourceforge.net/${PN}/${P}.tar.gz&quot;
+</pre>
+
+<p>最初の4行はヘッダで、ほかのebuildにも同様に書かれています。続く2行はeclassの簡単な説明です。7行目はECLASSにeclassの名前をセットしています。<!-- which is useful for some applications not seen in this example. -->この例には出てきませんが、いくつかのアプリケーションで便利です。約束事ですので、これらには従わなければなりません。</p>
+
+<p>残りのコードが実際に動作する部分です。SRC_URIとHOMEPAGEをセットします。</p>
+
+</body>
+</section>
+
+<section>
+<title>There you go</title>
+<body>
+<p>以上が、eclassを書くために知っておかなければならないこと全部です。作成したeclassを<path>/usr/portage/eclass/</path>に置き、ebuildの先頭に以下に示す行を追加してください:</p>
+
+<pre caption ="eclassの継承の仕方">
+inherit sourceforge
+</pre>
+
+<p>複数のeclassを同時に継承するには、次のようにします。</p>
+
+<pre caption = "複数のeclassの継承">
+inherit eclass1 eclass2 ...
+</pre>
+
+<p>この場合は並び順に注意してください。</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ebuild.shと全体的な構成</title>
+<body/>
+
+<section>
+<title>inherit()</title>
+<body>
+
+<p>この関数はeclassの継承(読み込み)を処理します。次のように呼び出されます: inherit</p>
+
+<p>現在、inherit()は単純にあらかじめ指定された場所からファイルを読み込みます。将来、我々がeclassを別の場所に移すことに決めた場合は、eclass名とファイル名の名前の解決をするためのコードがここに入ります。</p>
+
+</body>
+</section>
+
+<section>
+<title>EXPORT_FUNCTIONS()</title>
+<body>
+<p>foo.eclassとbar.eclassがどちらもsrc_compileを定義していると仮定します。fooとbarの両方を継承した場合、どのような順番でそれらを継承したかによって、有効になるsrc_compileが変わります。この事は問題ではありませんが、利用者が継承順を把握しているということが前提となります。ただし、明示的にどちらのsrc_compileでも呼び出すことができます。</p>
+
+<p>すべてのeclassは定義する関数にプレフィックスを付加します。たとえば、A.eclassはA_src_compile()を、B.eclassはB_src_compile()を定義します。これによって、ebuildはどの関数でも呼び出すことができ、どんな結果が得られるかもわかることになります。</p>
+
+<p>これは新たな問題を引き起こします。明示的にsomething_src_compileを呼び出さなくてもよいように、src_compileとして呼び出すことができる関数が必要です。これを解消するため、EXPORT_FUNCTIONS()が登場します:</p>
+
+<pre caption = "EXPORT_FUNCTIONSの例">EXPORT_FUNCTIONS() {
+ 
+        while [ &quot;$1&quot; ]; do
+            eval &quot;$1() { ${ECLASS}_$1 ; }&quot; &gt; /dev/null
+        shift
+        done
+ 
+}
+</pre>
+
+<p>すべてのeclassは最初にECLASSに自分の名前をセットします。それから提供する関数のリストを引数としてEXPORT_FUNCTIONSを呼び出します。</p>
+
+<pre caption = "ECLASSに名前をセットしEXPORT_FUNCTIONSを実行">
+ECLASS=foo
+EXPORT_FUNCTIONS src_unpack
+</pre>
+
+<p>すると、EXPORT_FUNCTIONSは次のような文字列をeval(訳註:文字列をコードとして評価すること)します。</p>
+
+<pre caption = "EXPORT_FUNCTIONS Eval">
+src_unpack() { foo_src_unpack() ; }
+</pre>
+
+<p>これで、どちらのeclassが後に継承されてデフォルトのsrc_compileを定義しても、必要ならばどちらの関数もebuildから直接呼び出すことができます。<!-- An eclass could also define a non-default src_compile() function, but none needed to do so thus far. -->eclassではデフォルトではないsrc_compile()関数を定義することも可能ですが、そうする必要はないでしょう。</p>
+
+</body>
+</section>
+
+<section>
+<title>関数のセクション</title>
+<body>
+<p>よく出来た定義済関数はしばしばそのまま利用されます。とはいえ、変更(あるいは拡張)することもできます。</p>
+
+<p>一意な名前(foo_src_unpack)がつけば、容易にその関数が実行される前後にコードを追加できます。</p>
+
+<pre caption = "コード実行順">
+src_compile() {
+    run_my_code
+    base_src_compile
+    run_my_other_code
+}
+</pre>
+
+<p>関数をセクションに分けることによって高い自由度が得られます。関数を分解することで、任意の二つのセクション間にコードを書くことができるようになります。</p>
+
+<p>実装は単純です。題材として、base.eclassからsrc_compile()を取り上げます(base.eclassはもう無くなってしまいましたが、よい例題です)。まずは以下をご覧下さい。</p>
+<pre caption = "base.eclassの例">
+base_src_compile() {
+    ./configure || die
+    emake || die
+}
+</pre>
+
+<p>同じ関数を二つに分解してみると次のようになります。</p>
+
+<pre caption = "同じ関数をセクションに分ける">
+base_src_compile() {
+ 
+    [ -z &quot;$1&quot; ] &amp;&amp; base_src_compile all
+ 
+    while [ &quot;$1&quot; ]; do
+        case $1 in
+            configure)
+                ./configure || die;;
+            make)
+                emake || die;;
+            all)
+                base_src_compile configure make;;
+        esac
+    shift
+    done
+ 
+}
+</pre>
+
+<p>コードは<i>configure</i>と<i>make</i>の二つのセクションに分解されました。この単純な例では、それぞれ元の関数の二つのコマンドに対応します。</p>
+
+<p>新しい関数の中には while;case...esac;shift;done というコードブロックがあります。この部分で、関数のパラメータと定義されたセクションの名前をマッチングして対応するコードを実行します。</p>
+
+<p>特別なケースとして<i>all</i>は、セクションを実行順に並べたリストを引数として、同じ関数を再起的に呼び出します。このリストを維持するのはeclassの作者に任されています。</p>
+
+<p>先ほどのコードブロックの前の行は、パラメータなしで呼び出されたときに、<i>all</i>だけをつけて呼び出されたのと同じように扱うためのものです。お分かりのように、この関数には再帰呼び出しが使われています。それでも<i>base_src_compile configure all make </i>は文法上許されます。この場合は<i>base_src_compile configure configure make make</i>が実行されることになります。</p>
+
+<p>base.eclassを継承したebuildでは、base_src_compileをパラメータなしで呼び出すstub関数src_compileが利用できます。これはbase_src_compileを<i>all</i>、つまりすべてのセクションを実行します。これはこのまま利用できます。もし拡張したいのであれば、新しいsrc_compileを定義して、base_src_compileのセクションを適宜呼び出してください。</p>
+
+<pre caption = "新しいsrc_compileを定義する">
+src_compile() {
+    run_my_code1
+    base_src_compile configure
+    run_my_code2
+    base_src_compile make
+    run_my_code3
+}
+</pre>
+
+<p>見てわかるように、関数分解によって自由度が生まれ、二つのセクションの間にコードを書いたり、セクションの順番を変えて実行したり、特定のセクションだけを実行するようにしたりできるようになります。これは全体的に、コードの再利用を促進します。</p>
+
+<p>最後になりますが、<i>all</i>やパラメータなしで呼び出されたときに、すべての関数がそのセクションすべてを実行するわけではないことに注意してください。いくつかのセクションはデフォルトでは実行されず、明示的に呼び出す必要があるかもしれません。そのようなセクションは今のところひとつだけ(<i>base_src_unpack patch</i>)です。</p>
+
+</body>
+</section>
+
+<section>
+<title>debug-print-* 関数</title>
+<body>
+
+<p>これらの関数は冗長なデバッグメッセージを出力する機能を提供します。すべてのeclassはこれらの関数を何度も呼び出します。bashスクリプトには私が知る限り(bash -x を除き)デバッガ、IDE、逐次実行などがありませんので、見苦しくはなりますが、追跡をするときに大いに役立ちます。</p>
+
+<!--
+<p>debug-print() prints its parameters
+with the debug:  prefix. debug-print-function() prints debug: entering function 1, parameters: 2 3 .... 
+debug-print-section() prints debug: now in section 1.</p>
+-->
+<p>debug-print()はその引数を、"debug: prefix"に続けて表示します。debug-print-function()は"debug: entering function 1, parameters: 2 3 ....."と表示します。debug-print-section()は"debug: new in section 1."を表示します。</p>
+
+<!--
+<p>The debug output normally goes into T/eclass-debug.log. You can set the ECLASS_DEBUG_OUTPUT variable
+(in make.globals/conf, and ebuild/eclass, or the environment) and output will be sent there as well.
+You can also set it to the special value on, which echoes output to stdout together with the other emerge messages.</p>
+-->
+
+<p>デバッグメッセージは通常 T/eclass-debug.log に出力されます。ECLASS_DEBUG_OUTPUT変数にセットすると(make.conf、ebuild/eclass、あるいは環境変数)、そちらに出力されるようになります。特別な値"on"を設定すると、他のemergeメッセージと一緒に、標準出力に出力させることもできます。</p>
+
+<p>例題の関数に、典型的なデバッグメッセージを出力する文を追加してみましょう。</p>
+
+<pre caption = "デバッグメッセージの追加">
+base_src_compile() {
+ 
+    debug-print function $FUNCNAME $*
+    [ -z &quot;$1&quot; ] &amp;&amp; base_src_compile all
+ 
+    while [ &quot;$1&quot; ]; do
+        case $1 in
+            configure)
+                debug-print-section configure
+                ./configure || die;;
+            make)
+                debug-print-section make
+                make || die;;
+            all)
+                debug-print-section all
+                base_src_compile configure make;;
+        esac
+    shift
+    done
+ 
+    debug-print &quot;$FUNCNAME: result is $RESULT&quot;
+}
+</pre>
+
+<p>なお、FUNCNAMEはbashの組み込みの機能で、現在実行中の関数の名前を保持しています。</p>
+
+</body>
+</section>
+
+<section>
+<title>newdepend()</title>
+<body>
+
+<p>この関数は単純にすべてのパラメータをDEPENDとRDEPENDに追加するものです。二つの依存リストのメンテナンスをする際のトラブルから解放してくれます。</p>
+
+<p>特別なパラメータを指定したときは、あらかじめ定義してある依存関係を追加します。この特別なパラメータには、現在以下のものがあります。</p>
+
+<p>newdepend /autotools: sys-devel/autoconf sys-devel/automake sys-devel/make をDEPENDのみに追加(RDEPENDには追加しない).</p>
+
+<p>newdepend /c: virtual/glibc sys-devel/ld.so をDEPENDとRDEPENDに追加。sys-devel/gccをDEPENDのみに追加。</p>
+
+<!--
+<p>This function encourages developers to maintain comprehensive DEPEND strings. Especially,
+many ebuilds have no RDEPEND strings, which will be a problem once we have unmerge functionality that knows
+about dependencies.</p>
+-->
+
+<p>この関数は累積的なDEPEND文字列のメンテナンスをする開発者を助けます。Especially,
+many ebuilds have no RDEPEND strings, which will be a problem once we have unmerge functionality that knows
+about dependencies.</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>さまざまなeclass</title>
+<body/>
+
+<section>
+<title>base.eclass</title>
+<body>
+
+<p>このeclassはいくつかの変数のデフォルトと関数を定義しています。これらは継承をしないebuildでデフォルトで使える変数や関数と似ています。たとえば、src_unpack()  unpack A といったものです。</p>
+
+<p>結局、これは削除され、デフォルトの関数がebuild.shに取り込まれました。</p>
+
+<p>これは、KDEの様に高いレベルのeclassから継承されています。</p>
+
+<p>base_src_unpackにはデフォルトで実行されないセクション(つまり、<i>all</i>を指定しても実行されない)があることに注意してください。それは、<i>patch</i>と呼ばれているセクションで、次のようなものです。</p>
+
+<pre caption = "Patchセクション">
+cd ${S}
+patch -p0 &lt; ${FILESDIR}/${P}-gentoo.diff
+</pre>
+
+<p>base_src_unpackにはひとつ注意を払うべきセクションがあります。それは<i>autopatch</i>セクションです。これは<i>patch</i>セクションとは違い、展開(unpack)の後デフォルトで実行されます。Sのなかで、パッチレベル0でPATCHES(絶対パス)に指定されたパッチファイルを適用します。これによって、ebuildはsrc_unpackを拡張する変わりに、PATCHES=DISTDIR/foo.diff FILESDIR/bar.patchという行を書けば良いことになります。</p>
+
+</body>
+</section>
+
+<section>
+<title>cvs.eclass</title>
+<body>
+
+<p>このeclassはソースをcvsから持ってくることができるようにします。cvs ebuildはまだ正式なものではありませんので、私の作った kde3pre ebuildでしか使われていませんし、ここで詳細を述べることもしません。(訳註: 2002年12月現在では、cvs.eclassを使うebuildがいくつか存在します。)</p>
+
+</body>
+</section>
+
+<section>
+<title>cvsup.eclass</title>
+<body>
+
+<p>cvsと同じです。</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>KDE専用eclass</title>
+<body/>
+<section>
+<title>kde.eclass</title>
+<body>
+
+<p>これがもっとも重要なKDE eclassです。KDEに関連するコードの大部分が含まれます。すべてのKDE ebuildが何らかの方法でこれを継承します。</p>
+
+<p>ほかのeclassと同じように、コードを読んでどのようなことをしているのか理解してください。抜粋して読みやすくしたものを以下に示します。(一部省略しています)</p>
+
+<pre caption = "KDE eclassの改良">
+inherit base kde-functions
+ECLASS=kde
+newdepend /autotools
+HOMEPAGE=&quot;http://www.kde.org/&quot;</pre>
+
+<p>上のコードは既に明白でしょう。</p>
+<p>kde_src_unpack()はありませんが、base_src_unpack()関数がしっかり機能します。kde_src_compile()を見てみましょう。</p>
+
+<pre>kde_src_compile() {
+    local myconf;
+        myconf=&quot;$myconf --host=${CHOST} --with-x --enable-mitshm --with-xinerama;
+       case $KDEMAJORVER in
+            2) myconf=&quot;$myconf --prefix=${KDE2DIR}&quot;;;
+            3) myconf=&quot;$myconf --prefix=${KDE3DIR}&quot;;;
+            *) echo &quot;!!! $ECLASS: $FUNCNAME: myconf: could not set --prefix based on KDEMAJOVER=\&quot;$KDEMAJORVER\&quot;&quot; &amp;&amp; exit 1;;
+        esac
+        use qtmt &amp;&amp; myconf=&quot;$myconf --enable-mt&quot;
+        [ -n &quot;$DEBUG&quot; ] &amp;&amp; myconf=&quot;$myconf --enable-debug=full --with-debug&quot; \
+                        || myconf=&quot;$myconf --disable-debug --without-debug&quot;
+</pre>
+
+<p>myconf変数はconfigureに渡す引数を保持しています。ここには上書きではなく常に追加されていきますので、自分で作ったebuildでも自由に追加できます。myconfセクションでは、デフォルトの引数をセットします。</p>
+
+<p>セクションの最初の部分は決め打ちの引数をセットします。</p>
+
+<p>次のセクションでは、set-kdedir()でセットされるKDEMAJORVERに基づいてprefixをセットします。(kde-functions.eclassを説明したセクションを見てください)</p>
+
+<p>3番目のセクションでは、USEフラグ(qtmt)とDEBUGを見ながら、引数を追加します。</p>
+
+<pre caption = "More of the CVS eclass">
+	section configure:
+        # This can happen with e.g. a cvs snapshot
+        if [ ! -f &quot;./configure&quot; ]; then
+            for x in Makefile.cvs admin/Makefile.common; do
+                if [ -f &quot;$x&quot; ] &amp;&amp; [ -z &quot;$makefile&quot; ]; then makefile=&quot;$x&quot;; fi
+            done
+            emake -f $makefile
+            [ -f &quot;./configure&quot; ] || die &quot;no configure script found, generation unsuccessful&quot;
+        fi
+        export PATH=&quot;${KDEDIR}/bin:${PATH}&quot;
+        ./configure ${myconf} || die &quot;died running ./configure, $FUNCNAME:configure&quot;
+		
+</pre>
+
+<p>configureセクションはmyconfの引数を使って、実際にconfigureスクリプトを実行します。configureスクリプトを生成する必要がある場合は、最初のセクションはさらにmake -f Makefile.cvsかmake -f admin/Makefile.commonを実行します。</p>
+
+<pre caption = "Make configuration">
+	section make:
+        export PATH=&quot;${KDEDIR}/bin:${PATH}&quot;
+        emake || die &quot;died running emake, $FUNCNAME:make&quot;</pre>
+
+<p>このセクションはmakeを実行します。</p>
+
+<p>次のkde_src_installは<i>dodoc</i>セクションが追加されていること以外はbase_src_installとそれほど違いません。</p>
+
+<pre>kde_src_install() {
+    section make:
+        make install DESTDIR=${D} destdir=${D} || die 
+    section dodoc:
+        dodoc AUTHORS ChangeLog README* COPYING NEWS TODO
+}
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>kde-functions.eclass</title>
+<body>
+
+<p>このeclassにはKDE関連の補助関数が収められています。ebuildから直接呼び出してはいけないものがいくつかありますが、ここでは解説しません。</p>
+
+<subsection>
+<title>kdedirの多重化</title>
+<body>
+
+<p>現在使われている、kdedirを多重化する方法について簡単に説明します。</p>
+
+<p>KDE2,3DIRとKDELIBS2,3DIRはどちらもmake.globalsでセットされ、make.confで上書きしてセットすることができます。デフォルト値は、それぞれ/usr/kde/2,3になります。</p>
+
+<p>自分自身をkde2パッケージ(後の記述を見てください)であると識別したパッケージは、KDELIBS2DIRにあるライブラリを使い、KDE2DIRにインストールします。kde3に対しても同じように動作します。注意: <!-- separating kdelibs from kde apps and any other non-default KDEDIR stuff -->kdelibsをkdeアプリケーションやデフォルトではないKDEDIRを使うアプリケーションはテストされていませんし、サポートもされません。</p>
+
+<p>qtについては、最新の2.xと3.xのバージョンがそれぞれ/usr/qt/2,3に導入されています。</p>
+
+</body>
+</subsection>
+
+<subsection>
+<title>need-kde(), need-qt(), set-kdedir(), set-qtdir()</title>
+<body>
+
+<p>このeclassは関数のペアを二つ提供します: need-kde(), need-qt() and set-kdedir(), set-qtdir()。これらはqtとkdedirの多重化を実現するための実装です。</p>
+
+<p>need-*関数は要求されるバージョンを引数にして呼び出されます。そこでは必要な依存関係を追加し、set-*dir関数を呼びます。引数が指定されなければ、0(ゼロ)が使われますが、これはすべてのバージョンが依存関係を満たすことを意味します。</p>
+
+<p>set-*dir関数はKDEDIRとQTDIRをセットし、さらにKDEMAJORVER (=2 または =3)をセットします。ebuildから必ず呼ぶ必要があるのは以上のものです。</p>
+
+<p>ここで重要なのは、これらの関数をebuildの関数の中からではなく主要部(訳註:ヘッダの下の部分)から呼び出すということです。そうすることで、DEPENDとRDEPENDに加えた変更がemergeに反映されます。</p>
+
+</body>
+</subsection>
+
+<subsection>
+<title>kde_sandbox_patch()</title>
+<body>
+
+<p>いくつかのKDE makefileは間違って生成されています。それらは、インストールの際にPREFIX内のファイルに対してchmodやchownを実行しますが、DESTDIR(D)が考慮されていません。このためsandbox(訳註:sandboxはPortageの機能です)がそれをエラーとして検出してしまいます。この関数は、既知の問題を解消するようにmakefileに対してsedを実行します。引数として、その処理をすべきディレクトリを受け取り、そこにあるMakefile, Makefile.in, Makefile.amを処理します。</p>
+
+<pre caption = "Processing">
+src_unpack() {
+    base_src_unpack
+    kde_sandbox_patch ${S}/dir1 ${S}/dir2/dir3
+}
+</pre>
+</body>
+</subsection>
+</body>
+</section>
+
+<section>
+<title>kde-base.eclass</title>
+<body>
+
+<p>標準的なkdeアプリケーション用です。ほとんどすべてのebuildが使っています。kdeを継承し、newdepend /cを実行し、HOMEPAGEにapps.kde.comをセットします。</p>
+</body>
+</section>
+
+<section>
+<title>kde-i18n.eclass</title>
+<body>
+
+<p>kde-i18n-*パッケージ用です。限定的に使われます。</p>
+
+<p>すべてのkde-i18n ebuildは全く同じですので、しなければならないのは、このeclassを継承することだけです。あとはPが処理してくれます。</p>
+
+</body>
+</section>
+
+<section>
+<title>koffice-i18n.eclass</title>
+<body>
+<p>koffice-i18n-*パッケージ用です。kde-i18n.eclassとよく似ています。</p>
+
+<p>すべてのkoffice-i18n ebuildは全く同じですので、しなければならないのは、このeclassを継承することだけです。</p>
+
+</body>
+</section>
+
+<section>
+<title>kde-dist.eclass</title>
+<body>
+
+<p>kde-base/*にあるコアKDEディストリビューションパッケージ用です。kde-baseとkde.orgを継承します。また、正しいDESCRIPTIONとHOMEPAGEを追加し、need-kde PVを呼び出します。さらに、myconfに--enable-finalを追加します。単純で小さい kde-base/ パッケージ(たとえばkdetoys)はこれを変更する必要はありません。ほとんどは依存関係を追加するだけです。</p>
+
+</body>
+</section>
+
+<section>
+<title>kde.org.eclass</title>
+<body>
+
+<p>kde-base/ コアパッケージ用と他のftp.kde.orgやそのミラーで提供されているパッケージ用(kdevelop, koffice, kdoc)です。SRC_URIをセットし、ftp.kde.orgのミラーを追加します。</p>
+
+</body>
+</section>
+
+<section>
+<title>kde-pre.eclass</title>
+<body>
+
+<p>これはkde3pre ebuildからのみ、継承されます。ただし、すでにportageからは消えています。</p>
+
+<p>これはプレリリースのebuildで使われます。このような場合、portage名には下線がついています(3.0_beta1)がソースアーカイブにはついていません(3.0beta1.tar.gz)。この下線をSRC_URIとSから取り除きます。</p>
+
+</body>
+</section>
+
+<section>
+<title>kde-i18n-pre.eclass</title>
+<body>
+<p>上のものと似ていますが、kde-i18nのプレリリース用です。</p>
+
+</body>
+</section>
+
+<section>
+<title>kde-source.eclass</title>
+<body>
+
+<p>As above, only available in kde3pre.</p>
+
+<p>これも同じく、kde3preでのみ利用可能です。</p>
+
+<!--
+<p>Used by kde-base/* core packages to get source via cvs or cvsup; uses cvs.eclass and cvsup.eclass. 
+The three eclasses together are so powerful that an ebuild only needs to inherit kde-source for everything
+to work automatically, including such goodies as automatic switching between cvs servers,
+cvs checkout/update/offline mode, etc. etc. But, there are no cvs ebuilds in portage yet, so these stay outside.</p>
+-->
+
+<p>kde-base/*コアパッケージ用で、cvsまたはcvsupを使ってソースを取得します。cvs.eclassとcvsup.eclassを利用します。これらの三つのeclassはともに強力で、ebuildはただkde-sourceを継承するだけで、cvsサーバの切替や、cvs checkout/update/offlineモードの切替などが、自動的に働きます。ただし、cvsを使ったebuildはまだありません。</p>
+</body>
+</section>
+
+<section>
+<title>kde-patch.eclass</title>
+<body>
+
+<p>cvsスナップショットパッチ、たとえば、3.0.1.20020604といったパッケージで使います。何をするものか知るには、eclassを読んでみてください。</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>KDE ebuildsを書く</title>
+<body/>
+
+<section>
+<title>典型的なKDE ebuild</title>
+<body>
+
+<p>このhowtoを読んだ後なら、このコードが何をしているのかは明白でしょう。</p>
+
+<pre caption = "例題">
+&lt;header lines&gt;
+inherit kde-base</pre>
+
+<p>いくつかのebuildはここまでで終わりになります。もう少しカスタマイズが必要なものもあります。</p>
+
+<p>依存関係を追加します。*常に*追加してください。決して上書きしないように!</p>
+
+<pre caption = "依存関係の追加">
+DEPEND=&quot;$DEPEND foo/bar&quot;
+RDEPEND=&quot;$RDEPEND bar/foo&quot;
+</pre>
+
+<p>以下はDEPENDとRDEPENDの両方に依存関係を追加します。</p>
+
+<pre caption = "RDEPENDとDEPENDに依存関係を追加">
+newdepend &quot;foo? ( bar )&quot;
+</pre>
+
+<p>以下はmyconfに引数を追加します。myconfはconfigureの引数として使われます。</p>
+
+<pre caption = "myconfに引数を追加">
+myconf=&quot;$myconf --with-foobar&quot;</pre>
+
+<p>src_unpackを拡張します。</p>
+
+<pre>src_unpack() {
+    base_src_unpack all patch   # Patch from ${FILESDIR}/${P}-gentoo.diff
+    # some more changes
+    cat foo &gt; ${S}/bar
+}
+</pre>
+</body>
+</section>
+
+<section>
+<title>KDEをオプションにする典型的なebuild</title>
+<body>
+
+<p>基本的に、KDE専用の行は use kde を先頭に付加するか、if  `use kde` ; then; fiブロックで括るかしてください。</p>
+
+<p>一般的なセクション(訳註:ヘッダの下の部分のこと。関数内に書いてはいけない)には、以下のコードが追加されます(USE kde がセットされている場合)</p>
+
+<pre caption = "別の例題">
+if [ &quot;`use kde`&quot; ]; then
+    inherit kde-functions
+    need-kde $version # minimal version of kde your app needs
+fi
+</pre>
+<p>さらにコードを追加する場合は、次のようにしてください。</p>
+
+<pre caption = "コードを追加する">
+use kde &amp;&amp; myconf=&quot;$myconf --with-my-parameter&quot;
+</pre>
+
+<p>KDEを使うアプリケーションに対して、need-kde()を呼び出した後利用可能になるKDEDIRを見るように指示してください。</p>
+
+</body>
+</section>
+</chapter>
+</guide>

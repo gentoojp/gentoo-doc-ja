@@ -1,0 +1,126 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-portage-diverttree.xml,v 1.9 2011/09/05 13:20:37 naota Exp $ -->
+
+<!-- Original revision: 1.15 -->
+<!-- Translator: kobayashi -->
+
+<sections>
+
+<abstract>
+「オフィシャルツリーからの変更」では自分専用のPortageツリーを使う方法、
+必要なカテゴリーだけ同期する方法、パッケージを挿入する方法などについてちょっとした技を紹介します。
+</abstract>
+
+<version>1.7</version>
+<date>2010-07-13</date>
+
+<section>
+<title>Portageツリーの一部を使う</title>
+<subsection>
+<title>パッケージ/カテゴリーを除外する</title>
+<body>
+
+<p>
+あるカテゴリー/パッケージのみを選択的にアップデートし、その他のものを除外することができます。
+これは<c>rsync</c>が<c>emerge --sync</c>を行っているときにカテゴリー/パッケージを除外することによって行うことができます
+</p>
+
+<p>
+除外パターンを含むファイル名を<path>/etc/make.conf</path>の<c>--exclude-from</c>変数で定義する必要があります。
+</p>
+
+<pre caption="/etc/make.confで除外ファイルを定義">
+PORTAGE_RSYNC_EXTRA_OPTS="--exclude-from=/etc/portage/rsync_excludes"
+</pre>
+
+<pre caption="/etc/portage/rsync_excludesでgameのすべてを除外">
+games-*/*
+</pre>
+
+<p>
+注意して欲しいのはこれにより依存関係の問題を引き起こすかもしれないと言うことです。
+許可されたパッケージが除外されたものに依存しているかもしれないからです。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>非公式のebuildを追加する</title>
+<subsection>
+<title>Portageオーバーレイディレクトリを定義する</title>
+<body>
+
+<p>
+Portageツリーを通して公式に利用できないebuildを利用するようにPortageに命令することができます。
+サードパーティのebuildを保存しておく新しいディレクトリ(例えば<path>/usr/local/portage</path>)を作成します。
+公式のPortageツリーと同じディレクトリ構造を使うようにしてください。
+</p>
+
+<p>
+そして<path>/etc/make.conf</path>のPORTDIR_OVERLAYが先ほど作成したディレクトリを示すように定義します。
+これでPortageを使うときには、これらのebuildが次回<c>emerge --sync</c>を実行したときに削除/上書きされることなく利用できるようになります。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>いくつかのOverlayで作業する</title>
+<body>
+
+<p>
+いくつかのoverlayで開発を行ったり、Portageツリーを破壊する前にパッケージをテストしたり、または単に様々なソースのunofficialなebuildを使用したりしたいパワーユーザ向けに、<c>app-portage/layman</c>は<c>layman</c>を提供します。これは、overlayリポジトリを最新状態に保つ手助けをしてくれるツールです。
+</p>
+
+<p>
+まず始めに<uri link="/proj/en/overlays/userguide.xml">Overlays Users' Guide</uri><uri link="/proj/ja/overlays/userguide.xml">（日本語訳）</uri>
+にあるように<c>layman</c>をインストールして設定します。そして、<c>layman -a &lt;overlay-name&gt;</c>で自分が望むリポジトリを追加します.
+</p>
+
+<p>
+<c>java</c>（開発中のjava ebuild用）と<c>entapps</c>（あなたの会社のために社内開発されたアプリケーション用）という2つのリポジトリを所有していると仮定します。
+この場合には、以下のコマンドを利用してこれらのリポジトリを更新することができます。
+</p>
+
+<pre caption="すべてのリポジトリの更新にlaymanを使用する">
+# <i>layman -S</i>
+</pre>
+
+<p>
+overlayについてより知りたいのであれば、<c>man layman</c>と<uri link="/proj/en/overlays/userguide.xml">layman/overlay users' guide</uri>
+<uri link="/proj/ja/overlays/userguide.xml">（日本語訳）</uri>を読んでください。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Portageによって保守されていないソフトウェア</title>
+<subsection>
+<title>自分で保守されたソフトウェアをPortageで使う</title>
+<body>
+
+<p>
+場合によっては、Portageが自動処理を提供しているにもかかわらず、あなた自身でソフトウェアを設定、インストール、そして保守を行いたいことがあるでしょう。
+有名なものにはカーネルソールやnvidiaドライバがあります。
+あるパッケージがシステムに手動インストールされたことをPortageが知るように設定することができます。
+この仕組みは<e>injecting</e>と呼ばれ、<path>/etc/portage/profile/package.provided</path>ファイルを通してPortageにサポートされています。
+</p>
+
+<p>
+例えば、<c>gentoo-sources-2.6.11.6</c>が手動でインストールされたと言うことをPortageに知らせたいときには、以下の行を<path>/etc/portage/profile/package.provided</path>に追加します。
+</p>
+
+<pre caption="package.provided の例">
+sys-kernel/gentoo-sources-2.6.11.6
+</pre>
+
+</body>
+</subsection>
+</section>
+</sections>

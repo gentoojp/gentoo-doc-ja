@@ -1,0 +1,654 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-x86+amd64-bootloader.xml,v 1.9 2011/08/01 21:40:01 shindo Exp $ -->
+<!-- Original revision: 1.23 -->
+<!-- Translator: takeda,nakano,kobayashi, masuda, shindo, naota -->
+
+<sections>
+
+<version>8</version>
+<date>2011-05-09</date>
+
+<section>
+<title>ブートローダの選択</title>
+<subsection>
+<title>はじめに</title>
+<body>
+
+<p>
+さて、カーネルを設定し、コンパイルし、そして必要なシステムの設定ファイルも適切に編集したので、
+システムを起動するときに、カーネルを立ち上げるプログラムをインストールするときが来ました。
+そのようなプログラムは、<e>ブートローダ</e>と呼ばれています。
+</p>
+
+</body>
+<body test="contains('AMD64 x86', func:keyval('arch'))">
+<p>
+<keyval id="arch"/>向けに、Gentoo Linuxは<uri
+link="#grub">GRUB</uri>と<uri link="#lilo">LILO</uri>を提供しています。
+</p>
+
+</body>
+<body>
+<p>
+しかし、ブートローダをインストールする前にフレームバッファの設定方法を提供します（当然それを知りたいでしょうから）。
+フレームバッファを利用すれば、（限定的ながら）グラフィカルな機能（Gentooが提供する素敵なブートスプラッシュイメージを使用するなど）とともに、Linuxのコマンドラインを実行することができます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>自由選択: フレームバッファ</title>
+<body>
+
+<p>
+<e>もし</e>、カーネルの設定でフレームバッファサポートを有効にしている場合、
+(あるいは、<c>genkernel</c>のデフォルトのカーネル設定を使用している場合)
+<c>video</c>文をブートローダの設定ファイルに追加することによってフレームバッファを有効にすることができます。
+</p>
+
+<p>
+まず、使っているフレームバッファデバイスを必要があります。
+<c>uvesafb</c>を使っているでしょう。
+</p>
+
+<p>
+<c>video</c>文はフレームバッファの表示オプションをコントロールします。
+フレームバッファドライバに続いて、有効にしたいコントロール文を記述しなければなりません。
+指定できるすべての値は<path>/usr/src/linux/Documentation/fb/uvesafb.txt</path>に記載されています。
+もっともよく使われる3つのオプションを紹介します。
+</p>
+
+<table>
+<tr>
+  <th>コントロール名</th>
+  <th>説明</th>
+</tr>
+<tr>
+  <ti>ywrap</ti>
+  <ti>
+グラフィックカードがメモリ上でwrap可能であると仮定します。
+(つまり、メモリの最後に到達したときに最初から続けられる、ということです。)
+  </ti>
+</tr>
+<tr>
+  <ti>mtrr:n</ti>
+  <ti>
+MTRRレジスタを設定します。<c>n</c>には次のものを指定できます。<br/>
+0-disabled<br/>
+1-uncachable<br/>
+2-write-back<br/>
+3-write-combining<br/>
+4-write-through<br/>
+  </ti>
+</tr>
+<tr>
+  <ti><c>mode</c></ti>
+  <ti>
+解像度、色深度、リフレッシュレートを設定します。
+例えば、<c>1024x768-32@85</c>は1024x768で32bitカラー、85Hzのリフレッシュレートであるということを示します。
+  </ti>
+</tr>
+</table>
+
+<p>
+この結果、<c>video=uvesafb:mtrr:3,ywrap,1024x768-32@85</c>のようになるでしょう。
+この設定は書き留めておいてください。あとですぐ必要になります。
+</p>
+
+<p test="func:keyval('arch')='IA64'">
+ここで、<uri link="#elilo">eliloブートローダ</uri>をインストールすべきでしょう。
+</p>
+
+<p test="not(func:keyval('arch')='IA64')">
+それでは、続いて<uri link="#grub">GRUB</uri> <e>または</e> <uri
+link="#lilo">LILO</uri>をインストールしましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="grub" test="contains('AMD64 x86',func:keyval('arch'))">
+<title>一般的な選択: GRUBを使用する</title>
+<subsection>
+<title>GRUB特有の言葉を理解する</title>
+<body>
+
+<p>
+GRUBを理解する上で最も重要なことは、GRUBのハードディスクやパーティションの参照方法に慣れることです。
+あなたのLinuxパーティション<path>/dev/sda1</path>は、GRUBの下ではほとんどの場合<path>(hd0,0)</path>になります。
+<path>hd0,0</path>の両側の括弧に注意してください。
+それらは必要なものです。
+</p>
+
+<p>
+ハードディスクドライブは、"a"ではなく0から、パーティションは1ではなく0からカウントされます。
+ハードディスクだけではなく、CD-ROMやCD-R/RW等のatapi-ideデバイスもhdデバイスになることにも注意してください。また、SCSIドライブに対しても同様の数え方をします。
+(BIOSで 、SCSIデバイスから起動する設定になっている場合を除いて、
+通常、SCSIに対してはIDEドライブより大きな数字が割り当てられます。)
+BIOSに他のハードディスク(例えばプライマリスレーブ)からブートするように設定した場合、<e>その</e>ハードディスクは<path>hd0</path>として参照されます。
+</p>
+
+<p>
+ハードディスクが<path>/dev/sda</path>、2台め以降が<path>/dev/sdb</path>、<path>/dev/sdc</path>上にあり、<path>/dev/sdb7</path>が<path>(hd1,6)</path>として参照されると仮定します。
+これはなんだかトリッキーな感じがしますし、実際、トリッキーです。
+ただし、これから見るように、GRUBにはタブ補完機能が備わっているので、ハードディスクやパーティションがたくさんある場合や、GRUBのナンバリング方法をちょっと忘れてしまったときに便利です。
+</p>
+
+<p>
+GRUBの雰囲気がつかめたところで、GRUBをインストールしましょう。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>GRUBのインストール</title>
+<body>
+
+<p>
+GRUBをインストールするには、まずemergeしましょう。
+</p>
+
+<impo test="func:keyval('arch')='AMD64'">
+non-multilib <uri link="?part=1&amp;chap=6#doc_chap2">profile</uri>を使っているなら、<c>grub</c>をemerge<b>しないで</b>ください。
+かわりに<c>grub-static</c>をemergeしなくてはなりません。もし、non-multilb プロファイルを使うつもりで、<e>かつ</e>、すでにIA-32エミュレーションをカーネルで<b>無効</b>にしていた場合は、<c>lilo</c>を使わなくてはいけません。
+</impo>
+
+<pre caption="GRUBのインストール">
+# <i>emerge grub</i>
+</pre>
+
+<p>
+これでGRUBはインストールされましたが、あなたが新たに作成したカーネルをGRUBが自動的に起動するためには、
+設定ファイルを書き、GRUBをMBRに書き込む必要があります。
+<c>nano</c>(あるいは、他のエディタでも可能ですが)で<path>/boot/grub/grub.conf</path>を作成してください。
+</p>
+
+<pre caption="/boot/grub/grub.confの作成">
+# <i>nano -w /boot/grub/grub.conf</i>
+</pre>
+
+<p>
+それでは<path>grub.conf</path>ファイルを仕上げてしまいましょう。
+このガイドで使用しているパーティションの場合の<path>grub.conf</path>の例を2つ示します。
+最初の<path>grub.conf</path>に対してのみたくさんコメントを付けています。
+カーネルイメージのファイル名、また、もし使っている場合は、initrdイメージのファイル名が、<e>あなたの使用している</e>ものであることを確認してください。
+</p>
+
+<ul>
+  <li>
+    最初の<path>grub.conf</path>、カーネル構築に<c>genkernel</c>を使用していないユーザ向けの例です。
+  </li>
+  <li>
+    2番目の<path>grub.conf</path>は、カーネル構築に<c>genkernel</c>を使用したユーザ向けの例です。
+  </li>
+</ul>
+
+<note>
+GRUBはBIOSからデバイスの表示記号を割り当てます。
+BIOSの設定を変更したら、デバイスの文字や番号も変わる可能性があります。
+例えば、もし起動デバイスの順番を変更したら、GRUBの設定を変更する必要があるかもしれません。
+</note>
+
+<note>
+rootファイルシステムがJFSの場合には、
+JFSでは、read-writeマウントを許可する前にログを再読み込みする必要があるので、" ro"を<c>kernel</c>に<e>加えなければなりません</e>。
+</note>
+
+
+<pre caption="genkernelを使用していないユーザ向けのgrub.confの例">
+<comment># どれをデフォルトでブートするかを指定する。リストの内、0は最初、1は2番目のものを表す。</comment>
+default 0
+<comment># デフォルトが起動する前に何秒間待つかを指定します。</comment>
+timeout 30
+<comment># 最高にカッコいいスプラッシュイメージ</comment>
+<comment># グラフィックカードが無い場合はコメントアウトしてください</comment>
+splashimage=(hd0,0)/boot/grub/splash.xpm.gz
+
+title Gentoo Linux <keyval id="kernel-version"/>
+<comment># カーネルイメージ(あるいは、OS)があるパーティションの指定</comment>
+root (hd0,0)
+kernel /boot/<keyval id="kernel-name"/> root=/dev/sda3
+
+title Gentoo Linux <keyval id="kernel-version"/> (rescue)
+<comment># カーネルイメージ(あるいは、OS)があるパーティションの指定</comment>
+root (hd0,0)
+kernel /boot/<keyval id="kernel-name"/> root=/dev/sda3 init=/bin/bb
+
+<comment># 次の4行は、Windowsとデュアルブートしたい場合に追加します。</comment>
+<comment># この例では、Windowsは/dev/sda6にインストールされているものとします。</comment>
+title Windows XP
+rootnoverify (hd0,5)
+makeactive
+chainloader +1
+</pre>
+
+
+<pre caption="genkernelユーザ向けのgrub.conf">
+default 0
+timeout 30
+splashimage=(hd0,0)/boot/grub/splash.xpm.gz
+
+title Gentoo Linux <keyval id="kernel-version"/>
+root (hd0,0)
+kernel /boot/<keyval id="genkernel-name"/> root=/dev/ram0 real_root=/dev/sda3
+initrd /boot/<keyval id="genkernel-initrd"/>
+
+<comment># デュアルブートしたい場合のみ</comment>
+title Windows XP
+rootnoverify (hd0,5)
+makeactive
+chainloader +1
+</pre>
+
+<p>
+もし、違うパーティション構成や、違うカーネルイメージ名を使用しているなら、適宜それにあわせてください。
+<path>(hd0,0)</path>のようなGRUBに指定するデバイスは、ルートではなく、マウントポイントに関係します。
+言い換えると、<path>(hd0,0)/grub/splash.xpm.gz</path>は、実際には、<path>/boot/grub/splash.xpm.gz</path>となります。
+これは、<path>(hd0,0)</path>が<path>/boot</path>であることによります。
+</p>
+
+<p>
+そのほかに、違うパーティション構成を使用することを選択し、<path>/boot</path>を別のパーティションにおいていなければ、上記のコード例で使用されている<path>/boot</path>は本当に<e>必要です</e>。
+もし私たちが提案したパーティション構成に従っているのなら、<path>/boot</path>を前に置く必要はありませんが、<path>boot</path>シンボリックリンクが動作するようにします。
+一言で言えば、上記のコード例は、<path>/boot</path>パーティションを分けているいないにかかわらず動作します。
+</p>
+
+<p>
+もし、なんらかオプションをカーネルに渡す必要があるならば、
+単純にそれをkernelコマンドの最後に追加してください。
+すでにひとつオプションを渡していますが（<c>root=/dev/sda3</c>、または<c>real_root=/dev/sda3</c>）、他のオプションも同様にカーネルに渡すことができます。
+例えば、すでに話題に出たフレームバッファ用の<c>video</c>オプションのようにです。
+</p>
+
+<p>
+もし、ブートローダーの設定ファイルにreal_rootパラメーターがある場合には、ルートファイルシステムマウントオプションを設定するためreal_rootflagsパラメーターを使ってください。
+</p>
+
+<p>
+もし2.6.7かそれ以降のカーネルを使用しており、BIOSが大容量のハードディスクを認識しないためにハードディスクにジャンパ設定しているなら、<c>sda=stroke</c>を指定する必要があります。
+sdaはこのオプションが必要なデバイスと置き換えてください。
+</p>
+
+<p>
+<c>genkernel</c>を使用している場合、その起動オプションはインストールCDで使われているものと同じになります。
+例えば、SCSIデバイスを持っている場合、カーネルオプションとして<c>doscsi</c>を追加します。
+</p>
+
+<p>
+それでは、<path>grub.conf</path>ファイルを保存してエディタを終了してください。
+システム起動時にGRUBが自動的に実行されるようにするためには、MBR (Master Boot Record、マスターブートレコード)にGRUBをインストールする必要があります。
+</p>
+
+<p>
+GRUBの開発者は<c>grub-install</c>を使用することを奨めています。
+しかし、なんらかの理由で<c>grub-install</c>が正常動作しない場合、
+GRUBを手動でインストールする方法もあります。
+</p>
+
+<p>
+<uri link="#grub-install-auto">一般的な選択: grub-installを使用してGRUBをインストールする</uri>または、<uri link="#grub-install-manual">もう一つの選択: GRUBを手動でインストールする</uri>へ進みしょう。
+</p>
+
+</body>
+</subsection>
+<subsection id="grub-install-auto">
+<title>一般的な選択: grub-installを使用してGRUBをインストールする</title>
+<body>
+
+<p>
+GRUBをインストールするためには、<c>grub-install</c>コマンドを実行する必要があります。
+しかし、chroot環境にいるため<c>grub-install</c>は簡単には使えません。
+はじめに、すべてのマウント済みのファイルシステムのリストである<path>/etc/mtab</path>を作成する必要があります。
+幸運なことにこれを簡単にやる方法があります。
+単に、<path>/proc/mounts</path>を<path>/etc/mtab</path>へ次のように上書きコピーしてください。
+ブートパーティションを別に作成していなければ、<c>rootfs</c>の行を除外してください。
+以下の例はどちらの場合でも動作します。
+</p>
+
+<pre caption="/etc/mtabの作成">
+# <i>grep -v rootfs /proc/mounts &gt; /etc/mtab</i>
+</pre>
+
+<p>
+これで<c>grub-install</c>を使用してGRUBをインストールすることができます。
+</p>
+
+<pre caption="grub-installの実行">
+# <i>grub-install --no-floppy /dev/sda</i>
+</pre>
+
+<p>
+もしGRUBに関してさらに疑問があるなら、<uri
+link="http://www.gnu.org/software/grub/grub-faq.html">GRUB FAQ</uri>、<uri
+link="http://grub.enbug.org/GrubLegacy">GRUB Wiki</uri>あるいは端末で<c>info grub</c>を参照してください。
+</p>
+
+<p>
+それでは、<uri link="#reboot">システムの再起動</uri>へ進みましょう。
+</p>
+
+</body>
+</subsection>
+<subsection id="grub-install-manual">
+<title>もうひとつの選択肢: GRUBを手動でインストールする</title>
+<body>
+
+<p>
+GRUBの設定を始めるために、<c>grub</c>と打ち込んでください。
+<path>grub&gt;</path>というGRUBコマンドラインプロンプトが現れたでしょう。
+ここで、ハードディスクのブートレコードにGRUBをインストールするためには、正しいコマンドを打ち込む必要があります。
+</p>
+
+<pre caption="GRUBシェルの開始">
+# <i>grub --no-floppy</i>
+</pre>
+
+<note>
+もしあなたのシステムにフロッピードライブがないなら、
+GRUBが存在しないフロッピードライブを捜査しないように、
+<c>--no-floppy</c>オプションを上記コマンドに追加してください。
+</note>
+
+<p>
+次の例では、GRUBが/bootパーティションの<path><keyval id="/boot"/></path>から情報を読むように、
+そして、コンピュータの電源を入れた後、最初にGRUBプロンプトが出現するように、
+ハードディスクのMBR(master boot record、マスターブートレコード)にGRUBをインストールしています。
+もちろん、例に従って設定する必要はなく、必要に応じて変更してください。
+</p>
+
+<p>
+GRUBのタブ補完機能は、GRUBシェルの中で使用できます。
+例えば、"<c>root (</c>"と打ち込んで、続いてTABキーを押した場合、
+<path>hd0</path>のようなデバイスの一覧を見ることができるでしょう。
+"<c>root (hd0,</c>"に続いてTABキーを押した場合は、<path>hd0,0</path>のような撰択可能なパーティションの一覧を取得できます。
+</p>
+
+<p>
+TAB補完を使うことによって、GRUBの設定はそれほど大変ではなくなるでしょう。
+それでは、GRUBの設定をしましょう。
+</p>
+
+<pre caption="GRUBをMBRにインストールする">
+grub&gt; <i>root (hd0,0)</i>          <comment>(/bootパーティションの場所を指定します)</comment>
+grub&gt; <i>setup (hd0)</i>           <comment>(MBRにGRUBをインストールします)</comment>
+grub&gt; <i>quit</i>                  <comment>(GRUBシェルを終了します)</comment>
+</pre>
+
+<note>
+GRUBをMBRではなく、特定のパーティションにインストールしたいなら、
+<c>setup</c>コマンドの部分を編集して、それが正しいパーティションを指すようにします。
+例えば、GRUBを<path>/dev/sda3</path>にインストールしたい場合、<c>setup (hd0,2)</c>というコマンドになります。しかしながら、こういうことをしたいユーザはあまりいません。
+</note>
+
+<p>
+もしGRUBに関してさらに疑問があるなら、<uri
+link="http://www.gnu.org/software/grub/grub-faq.html">GRUB FAQ</uri>、<uri
+link="http://grub.enbug.org/GrubLegacy">GRUB Wiki</uri>あるいは端末で<c>info grub</c>を参照してください。
+</p>
+
+<p>
+それでは、<uri link="#reboot">システムの再起動</uri>へ進みましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="lilo" test="contains('AMD64 x86', func:keyval('arch'))">
+<title>もう一つの選択: LILOを使う</title>
+<subsection>
+<title>LILOのインストール</title>
+<body>
+
+<p>
+LILO（LInuxLOader）は、実績があり、十分に機能するLinuxのブートローダです。
+しかし、GRUBが持っている機能のうちLILOにはないものがいくつかあります。
+そして、それが現在GRUBの人気が上昇している理由でもあります。
+LILOがいまだに使われているのは、LILOは動作してもGRUBはうまく動かないシステムもあるからです。
+また、もちろん、LILOに精通していて、LILOを使い続けたいというユーザもいます。
+どちらにしても、Gentooはその両方をサポートしていて、この節を読んでいるということは、
+あなたはLILOを使うことにしたわけです。
+</p>
+
+<p>
+LILOをインストールするのは、とても簡単です。単に次のように<c>emerge</c>を使うだけです。
+</p>
+
+<pre caption="LILOのインストール">
+# <i>emerge lilo</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>LILOの設定</title>
+<body>
+
+<p>
+LILOを設定するには、<path>/etc/lilo.conf</path>を作成しなければなりません。
+お好みのエディタ(このハンドブックでは、一貫して<c>nano</c>を例として使用しています)を立ち上げ、これを作成してください。
+</p>
+
+<pre caption="/etc/lilo.confファイルの作成">
+# <i>nano -w /etc/lilo.conf</i>
+</pre>
+
+<p>
+少し前に、作成したカーネルイメージの名前を覚えておくようにお願いしたと思います。
+次の<path>lilo.conf</path>の例でも、以前例示した構成と同じパーティション構成を使います。
+2つの例を示します。
+</p>
+
+<ul>
+  <li>
+    カーネル構築に<c>genkernel</c>を使用していない場合
+  </li>
+  <li>
+    カーネル構築に<c>genkernel</c>を使用した場合
+  </li>
+</ul>
+
+<p>
+カーネルイメージのファイル名、また、もし使っている場合は、initrdイメージのファイル名が、<e>あなたの使用している</e>ものであることを確認してください。
+</p>
+
+<note>
+rootファイルシステムがJFSの場合には、
+JFSでは、read-writeマウントを許可する前にログを再読み込みする必要があるので、<c>append="ro"</c>を各行に<e>加えなければなりません</e>。
+</note>
+
+<pre caption="/etc/lilo.confの例">
+boot=/dev/sda             <comment># LILOをMBRにインストールする</comment>
+prompt                    <comment># ユーザに他の選択をする余地を残す</comment>
+timeout=50                <comment># デフォルトセクションを起動する前に、5秒間待つ</comment>
+default=gentoo            <comment># delayで設定した時間が経過したら、"gentoo"セクションを起動する</comment>
+
+<comment># genkernelを使用していないユーザ向け</comment>
+image=/boot/<keyval id="kernel-name"/>
+  label=gentoo            <comment># このセクションの名前</comment>
+  read-only               <comment># 読み取り専用のルートファイルシステムで起動する。これは編集しないように!</comment>
+  root=/dev/sda3          <comment># ルートファイルシステムの場所</comment>
+
+image=/boot/<keyval id="kernel-name"/>
+  label=gentoo.rescue     <comment># このセクションの名前</comment>
+  read-only               <comment># 読み取り専用のルートファイルシステムで起動する。これは編集しないように!</comment>
+  root=/dev/sda3          <comment># ルートファイルシステムの場所</comment>
+  append="init=/bin/bb"   <comment># Gentooの静的レスキューシェルを起動</comment>
+
+<comment># genkernelユーザ向け</comment>
+image=/boot/<keyval id="genkernel-name"/>
+  label=gentoo
+  read-only
+  append="real_root=/dev/sda3"
+  initrd=/boot/<keyval id="genkernel-initrd"/>
+
+<comment># 次の2行は、Windowsとデュアルブートさせたい場合に追加します。</comment>
+<comment># この場合、/dev/sda6にWindowsがインストールされているものとします。</comment>
+other=/dev/sda6
+  label=windows
+</pre>
+
+<note>
+もし、違うパーティション構成や、違うカーネルイメージ名を使用しているなら、適宜それにあわせてください。
+</note>
+
+<p>
+もし、追加でカーネルにオプションを渡す必要があるなら、<c>append</c>文をそのセクションに追加してください。
+例のように、フレームバッファを有効にするために<c>video</c>を追加しています。
+</p>
+
+<pre caption="カーネルオプションを追加するためにappend文を使用する">
+image=/boot/<keyval id="kernel-name"/>
+  label=gentoo
+  read-only
+  root=/dev/sda3
+  <i>append="video=uvesafb:mtrr,ywrap,1024x768-32@85"</i>
+</pre>
+
+<p>
+もし2.6.7かそれ以降のカーネルを使用しており、BIOSが大容量のハードディスクを認識しないためにハードディスクにジャンパ設定しているなら、<c>sda=stroke</c>を指定する必要があります。
+sdaはこのオプションが必要なデバイスと置き換えてください。
+</p>
+
+<p>
+<c>genkernel</c>を使用している場合、その起動オプションはインストールCDで使われているものと同じになります。
+例えば、SCSIデバイスを持っている場合、カーネルオプションとして<c>doscsi</c>を追加します。
+</p>
+
+
+<p>
+それでは、ファイルを保存して、エディタを終了してください。
+<path>/etc/lilo.conf</path>の設定をシステムに反映するために、<c>/sbin/lilo</c>を実行してください(lilo.confの内容をディスクにインストールします)。
+新しいカーネルをインストールするたびに、あるいはメニューに変更を加えた場合は<c>/sbin/lilo</c>を毎回実行しなければならないということを覚えておいてください。
+</p>
+
+<pre caption="LILOインストールの仕上げ">
+# <i>/sbin/lilo</i>
+</pre>
+
+<p>
+もしLILOに関してさらに疑問があるなら、<uri
+link="http://en.wikipedia.org/wiki/LILO_(boot_loader)">wikipedia page</uri>を参考にしてください。
+</p>
+
+<p>
+それでは、<uri link="#reboot">システムの再起動</uri>へ進みましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="elilo" test="func:keyval('arch')='IA64'">
+<title>一般的な選択: eliloのインストール</title>
+<body>
+
+<p>
+IA64プラットフォームでは、ブートローダは<c>elilo</c>と呼ばれています。
+おそらく初めにそれをマシンにemergeする必要があるでしょう。
+</p>
+
+<pre caption="eliloのインストール">
+# <i>emerge elilo</i>
+</pre>
+
+<p>
+<path>/etc/elilo.conf</path>に設定ファイルがあり、サンプルファイルが標準の文書ディレクトリ<path>/usr/share/doc/elilo-&lt;ver&gt;/</path>の中にあります。
+ここでは別の設定例を示します。
+</p>
+
+<pre caption="/etc/elilo.confの例">
+boot=/dev/sda1
+delay=30
+timeout=50
+default=Gentoo
+append="console=ttyS0,9600"
+prompt
+
+image=/vmlinuz
+label=Gentoo
+root=/dev/sda2
+read-only
+
+image=/vmlinuz.old
+label=Gentoo.old
+root=/dev/sda2
+read-only
+</pre>
+
+<p>
+<c>boot</c>行はeliloに/bootパーティションの場所を伝えます（この場合、<path>/dev/sda1</path>）。
+<c>delay</c>行は、non-interactiveモードのとき、デフォルトを自動起動するまでの時間を10分の1秒単位の数で設定します。
+<c>timeout</c>行はちょうどinteractiveモードのときのdelay行のようなものです。
+<c>default</c>行はデフォルトのカーネルエントリ（下で定義される）を設定します。
+<c>append</c>行はカーネルコマンドラインに対する特別なオプションを追加します。
+<c>prompt</c>はeliloのデフォルトの振る舞いを対話的モードに設定します。
+</p>
+
+<p>
+<c>image</c>で始まるセクションは、異なる起動可能なイメージを定義しています。
+各イメージは分かりやすい<c>label</c>と<c>root</c>で指定されるルートファイルシステムを一つもち、このルートファイルシステムだけを<c>read-only</c>でマウントします。
+</p>
+
+<p>
+設定が終わったら、すぐに<c>elilo --efiboot</c>を実行してください。
+<c>--efiboot</c>オプションはEFIブートマネージャにGentoo Linuxのためのメニューエントリを追加します。
+</p>
+
+<pre caption="eliloの設定を適用する">
+# <i>elilo --efiboot</i>
+</pre>
+
+<p>
+それでは、<uri link="#reboot">システムの再起動</uri>へ進みましょう。
+</p>
+
+</body>
+</section>
+
+<section id="reboot">
+<title>システムの再起動</title>
+<subsection>
+<body>
+
+<p>
+chroot環境を抜けて、マウントしたすべてのパーティションをアンマウントしてください。
+そして、待ちに待った次のコマンドを入力しましょう: <c>reboot</c>
+</p>
+
+<pre caption="すべてのパーティションをアンマウントし再起動する"
+test="func:keyval('arch')='IA64'">
+# <i>exit</i>
+cdimage ~# <i>cd</i>
+cdimage ~# <i>umount -l /mnt/gentoo/dev{/pts,/shm,}</i>
+cdimage ~# <i>umount -l /mnt/gentoo{/boot,/sys,/proc,}</i>
+cdimage ~# <i>reboot</i>
+</pre>
+
+<pre caption="すべてのパーティションをアンマウントし再起動する" test="not(func:keyval('arch')='IA64')">
+# <i>exit</i>
+cdimage ~# <i>cd</i>
+cdimage ~# <i>umount -l /mnt/gentoo/dev{/shm,/pts,}</i>
+cdimage ~# <i>umount -l /mnt/gentoo{/boot,/proc,}</i>
+cdimage ~# <i>reboot</i>
+</pre>
+
+<p>
+もちろん、起動CDを抜くことを忘れずに。そうしないと新しいGentooシステムではなく、CDからまた起動してしまいます。
+</p>
+
+<p test="func:keyval('arch')='IA64'">
+再起動したとき、EFIブートマネージャの中に、Gentooを起動するGentoo Linuxのメニューオプションがあるはずです。
+</p>
+
+<p>
+再起動したら、<uri link="?part=1&amp;chap=11">Gentooインストールの締めくくり</uri>へ進んでインストールを完了させましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

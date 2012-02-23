@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-net-start.xml,v 1.10 2011/08/14 16:12:13 swift Exp $ -->
+
+<sections>
+
+<abstract>
+A guide to quickly get your network interface up and running in most common
+environments.
+</abstract>
+
+<version>9</version>
+<date>2011-08-13</date>
+
+<section>
+<title>Getting started</title>
+<body>
+
+<note>
+This document assumes that you have correctly configured your kernel, its
+modules for your hardware and you know the interface name of your hardware.
+We also assume that you are configuring <c>eth0</c>, but it could also be
+<c>eth1</c>, <c>wlan0</c>, etc.
+</note>
+
+<p>
+To get started configuring your network card, you need to tell the Gentoo RC
+system about it. This is done by creating a symbolic link from
+<path>net.lo</path> to <path>net.eth0</path> in <path>/etc/init.d</path>.
+</p>
+
+<pre caption="Symlinking net.eth0 to net.lo">
+# <i>cd /etc/init.d</i>
+# <i>ln -s net.lo net.eth0</i>
+</pre>
+
+<p>
+Gentoo's RC system now knows about that interface. It also needs to know how
+to configure the new interface. All the network interfaces are configured in
+<path>/etc/conf.d/net</path>. Below is a sample configuration for DHCP and 
+static addresses.
+</p>
+
+<pre caption="Examples for /etc/conf.d/net">
+<comment># For DHCP</comment>
+config_eth0="dhcp"
+
+<comment># For static IP using CIDR notation</comment>
+config_eth0="192.168.0.7/24"
+routes_eth0="default via 192.168.0.1"
+
+<comment># For static IP using netmask notation</comment>
+config_eth0="192.168.0.7 netmask 255.255.255.0"
+routes_eth0="default via 192.168.0.1"
+</pre>
+
+<note>
+If you do not specify a configuration for your interface then DHCP is assumed.
+</note>
+
+<note>
+CIDR stands for Classless InterDomain Routing. Originally, IPv4 addresses were
+classified as A, B, or C. The early classification system did not envision the
+massive popularity of the Internet, and is in danger of running out of new
+unique addresses. CIDR is an addressing scheme that allows one IP address to
+designate many IP addresses. A CIDR IP address looks like a normal IP address
+except that it ends with a slash followed by a number; for example,
+192.168.0.0/16. CIDR is described in <uri
+link="http://tools.ietf.org/html/rfc1519">RFC 1519</uri>.
+</note>
+
+<p>
+Now that we have configured our interface, we can start and stop it using the
+following commands:
+</p>
+
+<pre caption="Starting and stopping network scripts">
+# <i>/etc/init.d/net.eth0 start</i>
+# <i>/etc/init.d/net.eth0 stop</i>
+</pre>
+
+<impo>
+When troubleshooting networking, take a look at <path>/var/log/rc.log</path>.
+Unless you have <c>rc_logger="NO"</c> set in <path>/etc/rc.conf</path>, you
+will find information on the boot activity stored in that log file.
+</impo>
+
+<p>
+Now that you have successfully started and stopped your network interface, you
+may wish to get it to start when Gentoo boots. Here's how to do this. The last
+"rc" command instructs Gentoo to start any scripts in the current runlevel
+that have not yet been started.
+</p>
+
+<pre caption="Configuring a network interface to load at boot time">
+# <i>rc-update add net.eth0 default</i>
+# <i>rc</i>
+</pre>
+
+</body>
+</section>
+
+</sections>

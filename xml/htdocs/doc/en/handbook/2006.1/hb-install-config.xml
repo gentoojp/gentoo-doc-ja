@@ -1,0 +1,544 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2006.1/hb-install-config.xml,v 1.6 2007/03/12 08:12:38 nightmorph Exp $ -->
+
+<sections>
+
+<version>7.5</version>
+<date>2007-03-12</date>
+
+<section>
+<title>Filesystem Information</title>
+<subsection>
+<title>What is fstab?</title>
+<body>
+
+<p>
+Under Linux, all partitions used by the system must be listed in
+<path>/etc/fstab</path>. This file contains the mountpoints of those partitions
+(where they are seen in the file system structure), how they should be mounted
+and with what special options (automatically or not, whether users can mount
+them or not, etc.)
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Creating /etc/fstab</title>
+<body>
+
+<p>
+<path>/etc/fstab</path> uses a special syntax. Every line consists of six
+fields, separated by whitespace (space(s), tabs or a mixture). Each field has
+its own meaning:
+</p>
+
+<ul>
+<li>
+  The first field shows the <b>partition</b> described (the path to the device
+  file)
+</li>
+<li>
+  The second field shows the <b>mountpoint</b> at which the partition should be
+  mounted
+</li>
+<li>
+  The third field shows the <b>filesystem</b> used by the partition
+</li>
+<li>
+  The fourth field shows the <b>mountoptions</b> used by <c>mount</c> when it
+  wants to mount the partition. As every filesystem has its own mountoptions,
+  you are encouraged to read the mount man page (<c>man mount</c>) for a full
+  listing. Multiple mountoptions are comma-separated.
+</li>
+<li>
+  The fifth field is used by <c>dump</c> to determine if the partition needs to
+  be <b>dump</b>ed or not. You can generally leave this as <c>0</c> (zero).
+</li>
+<li>
+  The sixth field is used by <c>fsck</c> to determine the order in which 
+  filesystems should be <b>check</b>ed if the system wasn't shut down properly. 
+  The root filesystem should have <c>1</c> while the rest should have <c>2</c> 
+  (or <c>0</c> if a filesystem check isn't necessary).
+</li>
+</ul>
+
+<p>
+The default <path>/etc/fstab</path> file provided by Gentoo <e>is not a valid
+fstab file</e>, so start <c>nano</c> (or your favorite editor) to create your
+<path>/etc/fstab</path>:
+</p>
+
+<pre caption="Opening /etc/fstab">
+# <i>nano -w /etc/fstab</i>
+</pre>
+
+<p>
+Let us take a look at how we write down the options for the <path>/boot</path>
+partition.  If your architecture doesn't require a seperate <path>/boot</path>
+partition (such as Apple PowerPC machines) or you have elected not to create 
+one, don't include a boot line in your fstab. The Apple Bootstrap partition
+is not a <path>/boot</path> partition.
+</p>
+
+<p>
+In our default x86 partitioning example <path>/boot</path> is the
+<path>/dev/hda1</path> partition, with <c>ext2</c> as filesystem. 
+It needs to be checked during boot, so we would write down:
+</p>
+
+<pre caption="An example /boot line for /etc/fstab">
+/dev/hda1   /boot     ext2    defaults        1 2
+</pre>
+
+<p>
+Some users don't want their <path>/boot</path> partition to be mounted
+automatically to improve their system's security. Those people should 
+substitute <c>defaults</c> with <c>noauto</c>. This does mean that you need to 
+manually mount this partition every time you want to use it.
+</p>
+
+<p>
+Now, to improve performance, most users would want to add the <c>noatime</c>
+option as mountoption, which results in a faster system since access times
+aren't registered (you don't need those generally anyway):
+</p>
+
+<pre caption="An improved /boot line for /etc/fstab">
+/dev/hda1   /boot     ext2    defaults,noatime    1 2
+</pre>
+
+<p>
+If we continue with this, we would end up with the following three lines (for
+<path>/boot</path>, <path>/</path> and the swap partition):
+</p>
+
+<pre caption="Three /etc/fstab lines">
+/dev/hda1   /boot     ext2    defaults,noatime  1 2
+/dev/hda2   none      swap    sw                0 0
+/dev/hda3   /         ext3    noatime           0 1
+</pre>
+
+<p>
+To finish up, you should add a rule for <path>/proc</path>, <c>tmpfs</c>
+(required) and for your CD-ROM drive (and of course, if you have other 
+partitions or drives, for those too):
+</p>
+
+<pre caption="A full /etc/fstab example">
+/dev/hda1   /boot     ext2    defaults,noatime     1 2
+/dev/hda2   none      swap    sw                   0 0
+/dev/hda3   /         ext3    noatime              0 1
+
+proc        /proc     proc    defaults             0 0
+shm         /dev/shm  tmpfs   nodev,nosuid,noexec  0 0
+
+/dev/cdroms/cdrom0    /mnt/cdrom    auto      noauto,user    0 0
+</pre>
+
+<p>
+<c>auto</c> makes <c>mount</c> guess for the filesystem (recommended for 
+removable media as they can be created with one of many filesystems) and 
+<c>user</c> makes it possible for non-root users to mount the CD.
+</p>
+
+<p>
+Now use the above example to create your <path>/etc/fstab</path>. If you are a
+<b>SPARC</b>-user, you should add the following line to your 
+<path>/etc/fstab</path>
+too:
+</p>
+
+<pre caption="Adding openprom filesystem to /etc/fstab">
+openprom    /proc/openprom  openpromfs    defaults      0 0
+</pre>
+
+<p>
+Double-check your <path>/etc/fstab</path>, save and quit to continue.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Networking Information</title>
+<subsection>
+<title>Hostname, Domainname etc.</title>
+<body>
+
+<p>
+One of the choices the user has to make is name his/her PC. This seems to be 
+quite easy, but <e>lots</e> of users are having difficulties finding the 
+appropriate name for their Linux-pc. To speed things up, know that any name you 
+choose can be changed afterwards. For all we care, you can just call your system
+<c>tux</c> and domain <c>homenetwork</c>. 
+</p>
+
+<p>
+We use these values in the next examples. First we set the hostname:
+</p>
+
+<pre caption="Setting the hostname">
+# <i>nano -w /etc/conf.d/hostname</i>
+
+<comment>(Set the HOSTNAME variable to your hostname)</comment>
+HOSTNAME="<i>tux</i>"
+</pre>
+
+<p>
+Second, <e>if</e> you need a domainname, set it in <path>/etc/conf.d/net</path>.
+You only need a domain if your ISP or network administrator says so, or if you
+have a DNS server but not a DHCP server. You don't need to worry about DNS or
+domainnames if your networking is setup for DHCP.
+</p>
+
+<pre caption="Setting the domainname">
+# <i>nano -w /etc/conf.d/net</i>
+
+<comment>(Set the dns_domain variable to your domain name)</comment>
+dns_domain_lo="<i>homenetwork</i>"
+</pre>
+
+<p>
+If you have a NIS domain (if you don't know what that is, then you don't have
+one), you need to define that one too:
+</p>
+
+<pre caption="Setting the NIS domainname">
+# <i>nano -w /etc/conf.d/net</i>
+
+<comment>(Set the nis_domain variable to your NIS domain name)</comment>
+nis_domain_lo="<i>my-nisdomain</i>"
+</pre>
+
+<note>
+For more information on configuring DNS and NIS, please read the examples
+provided in <path>/etc/conf.d/net.example</path>. Also, you may want to emerge
+<c>resolvconf-gentoo</c> to help manage your DNS/NIS setup.
+</note>
+
+</body>
+</subsection>
+<subsection>
+<title>Configuring your Network</title>
+<body>
+
+<p>
+Before you get that "Hey, we've had that already"-feeling, you should remember
+that the networking you set up in the beginning of the Gentoo installation was 
+just for the installation. Right now you are going to configure networking for 
+your Gentoo system permanently.
+</p>
+
+<note>
+More detailed information about networking, including advanced topics like
+bonding, bridging, 802.1Q VLANs or wireless networking is covered in the <uri
+link="?part=4">Gentoo Network Configuration</uri> section.
+</note>
+
+<p>
+All networking information is gathered in <path>/etc/conf.d/net</path>. It uses
+a straightforward yet not intuitive syntax if you don't know how to set up
+networking manually. But don't fear, we'll explain everything. A fully
+commented example that covers many different configurations is available in
+<path>/etc/conf.d/net.example</path>.
+</p>
+
+<p>
+DHCP is used by default and does not require any further configuration.
+</p>
+
+<p>
+If you need to configure your network connection either because you need
+specific DHCP options or because you do not use DHCP at all, open
+<path>/etc/conf.d/net</path> with your favorite editor (<c>nano</c> is used in
+this example):
+</p>
+
+<pre caption="Opening /etc/conf.d/net for editing">
+# <i>nano -w /etc/conf.d/net</i>
+</pre>
+
+<p>
+You will see the following file:
+</p>
+
+<pre caption="Default /etc/conf.d/net">
+# This blank configuration will automatically use DHCP for any net.*
+# scripts in /etc/init.d.  To create a more complete configuration,
+# please review /etc/conf.d/net.example and save your configuration
+# in /etc/conf.d/net (this file :]!).
+</pre>
+
+<p>
+To enter your own IP address, netmask and gateway, you need
+to set both <c>config_eth0</c> and <c>routes_eth0</c>:
+</p>
+
+<pre caption="Manually setting IP information for eth0">
+config_eth0=( "192.168.0.2 netmask 255.255.255.0 brd 192.168.0.255" )
+routes_eth0=( "default gw 192.168.0.1" )
+</pre>
+
+<p>
+To use DHCP and add specific DHCP options, define <c>config_eth0</c> and
+<c>dhcp_eth0</c>:
+</p>
+
+<pre caption="Automatically obtaining an IP address for eth0">
+config_eth0=( "dhcp" )
+dhcp_eth0="nodns nontp nonis"
+</pre>
+
+<p>
+Please read <path>/etc/conf.d/net.example</path> for a list of all available
+options.
+</p>
+
+<p>
+If you have several network interfaces repeat the above steps for 
+<c>config_eth1</c>, <c>config_eth2</c>, etc.
+</p>
+
+<p>
+Now save the configuration and exit to continue.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Automatically Start Networking at Boot</title>
+<body>
+
+<p>
+To have your network interfaces activated at boot, you need to add them to the
+default runlevel. If you have PCMCIA interfaces you should skip this action as
+the PCMCIA interfaces are started by the PCMCIA init script.
+</p>
+
+<pre caption="Adding net.eth0 to the default runlevel">
+# <i>rc-update add net.eth0 default</i>
+</pre>
+
+<p>
+If you have several network interfaces, you need to create the appropriate
+<path>net.eth1</path>, <path>net.eth2</path> etc. initscripts for those. You can
+use <c>ln</c> to do this:
+</p>
+
+<pre caption="Creating extra initscripts">
+# <i>cd /etc/init.d</i>
+# <i>ln -s net.lo net.eth1</i>
+# <i>rc-update add net.eth1 default</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Writing Down Network Information</title>
+<body>
+
+<p>
+You now need to inform Linux about your network. This is defined in
+<path>/etc/hosts</path> and helps in resolving hostnames to IP addresses for
+hosts that aren't resolved by your nameserver.  You need to define your system.
+You may also want to define other systems on your network if you don't want to
+set up your own internal DNS system.
+</p>
+
+<pre caption="Opening /etc/hosts">
+# <i>nano -w /etc/hosts</i>
+</pre>
+
+<pre caption="Filling in the networking information">
+<comment>(This defines the current system)</comment>
+127.0.0.1     tux.homenetwork tux localhost
+
+<comment>(Define extra systems on your network,
+they need to have a static IP to be defined this way.)</comment>
+192.168.0.5   jenny.homenetwork jenny
+192.168.0.6   benny.homenetwork benny
+</pre>
+
+<p>
+Save and exit the editor to continue.
+</p>
+
+<p>
+If you don't have PCMCIA, you can now continue with <uri
+link="#doc_chap3">System Information</uri>. PCMCIA-users should read the
+following topic on PCMCIA.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Optional: Get PCMCIA Working</title>
+<body>
+
+<note>
+pcmcia-cs is only available for x86, amd64 and ppc platforms.
+</note>
+
+<p>
+PCMCIA-users should first install the <c>pcmcia-cs</c> package. This also
+includes users who will be working with a 2.6 kernel (even though they won't be
+using the PCMCIA drivers from this package). The <c>USE="-X"</c> is necessary 
+to avoid installing xorg-x11 at this moment:
+</p>
+
+<pre caption="Installing pcmcia-cs">
+# <i>USE="-X" emerge pcmcia-cs</i>
+</pre>
+
+<p>
+When <c>pcmcia-cs</c> is installed, add <c>pcmcia</c> to the <e>default</e> 
+runlevel:
+</p>
+
+<pre caption="Adding pcmcia to the default runlevel">
+# <i>rc-update add pcmcia default</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>System Information</title>
+<subsection>
+<title>Root Password</title>
+<body>
+
+<p>
+First we set the root password by typing:
+</p>
+
+<pre caption="Setting the root password">
+# <i>passwd</i>
+</pre>
+
+<p>
+If you want root to be able to log on through the serial console, add 
+<c>tts/0</c> to <path>/etc/securetty</path>:
+</p>
+
+<pre caption="Adding tts/0 to /etc/securetty">
+# <i>echo "tts/0" &gt;&gt; /etc/securetty</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>System Information</title>
+<body>
+
+<p>
+Gentoo uses <path>/etc/rc.conf</path> for general, system-wide configuration.
+Open up <path>/etc/rc.conf</path> and enjoy all the comments in that file :)
+</p>
+
+<pre caption="Opening /etc/rc.conf">
+# <i>nano -w /etc/rc.conf</i>
+</pre>
+
+<p>
+When you're finished configuring <path>/etc/rc.conf</path>, save and exit. 
+</p>
+
+<p>
+As you can see, this file is well commented to help you set up the necessary
+configuration variables. You can configure your system to use unicode and
+define your default editor and your display manager (like gdm or kdm).
+</p>
+
+<p>
+Gentoo uses <path>/etc/conf.d/keymaps</path> to handle keyboard configuration.
+Edit it to configure your keyboard.
+</p>
+
+<pre caption="Opening /etc/conf.d/keymaps">
+# <i>nano -w /etc/conf.d/keymaps</i>
+</pre>
+
+<p>
+Take special care with the <c>KEYMAP</c> variable. If you select the wrong
+<c>KEYMAP</c>, you will get weird results when typing on your keyboard.
+</p>
+
+<note>
+Users of <b>SPARC</b> systems and <b>SPARC</b> clones should choose old-style,
+sparc-specific keymaps if they have 2.4 kernel. But if you go for 2.6 kernel
+(which is default), you should rather choose pc-style i386 keymaps (like "us").
+<b>PPC</b> uses x86 keymaps on most systems. Users who want to be able to use
+ADB keymaps on boot have to enable ADB keycode sendings in their kernel and
+have to set a mac/ppc keymap in <path>/etc/conf.d/keymaps</path>.
+</note>
+
+<p>
+When you're finished configuring <path>/etc/conf.d/keymaps</path>, save and
+exit. 
+</p>
+
+<p>
+Gentoo uses <path>/etc/conf.d/clock</path> to set clock options. Edit it
+according to your needs.
+</p>
+
+<pre caption="Opening /etc/conf.d/clock">
+# <i>nano -w /etc/conf.d/clock</i>
+</pre>
+
+<p>
+If your hardware clock is not using UTC, you need to add <c>CLOCK="local"</c> to
+the file. Otherwise you will notice some clock skew.
+</p>
+
+<p>
+When you're finished configuring <path>/etc/conf.d/clock</path>, save and
+exit. 
+</p>
+
+<p>
+If you are not installing Gentoo on IBM PPC64 hardware, continue with
+<uri link="?part=1&amp;chap=9">Installing Necessary System Tools</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Configuring the Console</title>
+<body>
+
+<note>
+The following section applies to the IBM PPC64 hardware platforms.
+</note>
+
+<p>
+If you are running Gentoo on IBM PPC64 hardware and using a virtual console 
+you must uncomment the appropriate line in <path>/etc/inittab</path> for the 
+virtual console to spawn a login prompt.
+</p>
+
+<pre caption="Enabling hvc or hvsi support in /etc/inittab">
+hvc0:12345:respawn:/sbin/agetty -L 9600 hvc0
+hvsi:12345:respawn:/sbin/agetty -L 19200 hvsi0
+</pre>
+
+<p>
+You should also take this time to verify that the appropriate console is 
+listed in <path>/etc/securetty</path>.
+</p>
+
+<p>
+You may now continue with <uri link="?part=1&amp;chap=9">Installing Necessary 
+System Tools</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

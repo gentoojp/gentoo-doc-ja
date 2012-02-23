@@ -1,0 +1,330 @@
+﻿<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/uml.xml,v 1.4 2004/03/09 20:41:02 nakano Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/uml.xml">
+<title>Gentoo Linux開発者ガイド User-Mode Linuxによるシステムテスト</title>
+<author title="Editor"><mail link="g2boojum@gentoo.org">Grant Goodyear</mail></author>
+<author title="Editor"><!-- zhen@gentoo.org -->
+  John Davis
+</author>
+
+<author title="Editor">
+    <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Editor">
+  <mail link="bennyc@gentoo.org">Benny Chuang</mail>
+</author>
+<author title="翻訳"><mail link="hiro@extreme.jpseed.jp">武田洋之</mail>
+</author>
+
+<abstract>
+   このガイドでは、装置停止が起こりうるような変更をテストする為にuser-mode linuxを設定し、使用する方法をGentoo Linux開発者に示します。
+</abstract>
+
+<license/>
+
+<version>0.3</version>
+<date>January 16, 2004</date>
+<!-- Original revision: 1.12 -->
+
+<chapter>
+<title>User-Mode Linuxの入手</title>
+<section>
+<body>
+<p>user-mode linuxのWEBサイト(<uri>http://user-mode-linux.sourceforge.net</uri>)にあるように、
+user-mode linuxは、"Linuxの中でLinuxを実行する"ことを可能にするものです。
+user-mode linuxは、バグの多いソフトウェアを実行したり、新しいLinuxカーネルやディストリビューションを試してみたり、
+Linux内部動作を探索したりといった事を、あなたのメインのLinuxマシンで危険を伴わずに、行うことができる仮想マシンを提供します。
+<e>sys-apps/baselayout</e>や<e>sys-libs/glibc</e>の様な、Gentooコアパッケージに対する変更は、
+システムを停止させたり、起動不能にしてしまう恐れがあります。
+user-mode linuxを使えば、これらの変更を稼動しているシステムが止まってしまうかもしれないなどと気にすることなく試すことができます。
+</p>
+<p>
+user-mode linuxのインストールは、通常のカーネルインストールと本質的には同じです。
+最初に(user-mode linux用に適切にパッチが当てられた)カーネルソースをインストールします。
+そして、user-mode linuxカーネルをいつものやり方で設定します:
+</p>
+<pre>
+# <i>emerge sys-kernel/usermode-sources</i>
+# <i>cd /usr/src/uml/linux</i>
+# <i>make menuconfig <comment>ARCH=um</comment></i>
+# <i>make linux <comment>ARCH=um</comment></i>
+# <i>cp linux /usr/local/bin/linux</i>
+</pre>
+<warn><e>ARCH=um</e>フラグが<e>極めて</e>重要です!</warn>
+<impo>
+user-mode linuxカーネルでGentooシステムを正しく起動するには、
+デフォルトでは、起動時に自動的に<path>/dev</path> (devfs)がマウント<e>されないように</e>カーネルを設定する必要があります。
+また、<e>tmpfs</e>(仮想メモリファイルシステム)がコンパイルされるようになっているか確認してください。
+これは、デフォルトでは、Gentoo linuxの起動スクリプトが小さなtmpfsパーティションにその情報を保持する為です。
+(user-mode WEBサイトから入手できるカーネルのバイナリは、自動的に
+<path>/dev</path>をマウントしてしまいますし、tmpfsサポートが有効になっていません。そ
+のことで悩まないように。)
+</impo>
+<p>私は、user-mode linuxのドキュメントを読むことを強くお薦めしますが、
+user-mode linuxの基本的な考え方としては、<path>/usr/local/bin/linux</path>を実行し、user-modeカーネルを起動し、
+カレントディレクトリにある<path>root_fs</path>に書き込まれたシステムを立ち上げようとするものです。
+</p>
+<p>user-mode linuxツールをインストールするのも同様に簡単です。</p>
+<pre>
+# <i>emerge sys-apps/usermode-utilities</i>
+</pre>
+<p>これらのツールは、user-mode linux仮想システムとホストLinuxシステム間の通信(等)を行うことを容易にします。
+</p>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title><path>root_fs</path>の作成</title>
+
+<section>
+<title>Gentoo chroot環境の作成</title>
+<body>
+<p>
+user-mode linuxに必要な<path>root_fs</path>ファイルは、
+その一つのファイルの中に、Gentoo Linuxファイルシステム全体を含んでいます。
+このファイルを作成するためには、ホスト(user-modeでは無い方)のカーネルで、
+ループバックデバイスサポートを有効にしている必要があります。
+</p>
+<p><path>root_fs</path>の作成自体は、最終段階で行います。
+まず始めに、Gentooファイルシステムを通常のchroot環境に作成しましょう。
+それには、stage tarballが必要です。
+個別にダウンロードするか、liveCDあるいは、liveCDのISOイメージから取り出してください。
+</p>
+<pre caption="liveCD ISOイメージのマウント">
+# <i>mkdir /mnt/loop</i>
+# <i>mount -o loop /path/to/build-&lt;TAB&gt;.iso /mnt/loop</i>
+</pre>
+<p>
+chroot環境は、本質的には通常のGentoo Linux環境の構築と全く同様です。
+</p>
+<pre>
+# <i>mkdir /mnt/gentoo</i>
+# <i>cd /mnt/gentoo</i>
+# <i>tar xvjpf /path/to/build-&lt;TAB&gt;.tar.bz2</i>
+</pre>
+<p>
+ISOイメージをアンマウントして次に進みましょう。ISOイメージはこれ以降は必要ありません。
+</p>
+<pre>
+# <i>cp /etc/resolv.conf /mnt/gentoo/etc/</i>
+# <i>mount -o bind /proc /mnt/gentoo/proc</i>
+# <i>mkdir -p /mnt/gentoo/usr/portage/distfiles</i>
+# <i>mkdir -p /mnt/gentoo/usr/portage/packages</i>
+# <i>mount -o bind /usr/portage/distfiles /mnt/gentoo/usr/portage/distfiles</i>
+# <i>mount -o bind /usr/portage/packages /mnt/gentoo/usr/portage/packages</i>
+# <i>chroot /mnt/gentoo /bin/bash</i>
+<!--per bug 16134, 警告を抑制する為等の目的で、emerge syncを追加-->
+# <i>emerge sync</i>
+# <i>env-update</i>
+# <i>source /etc/profile</i>
+</pre>
+<p><path>/usr/portage/distfiles</path>と<path>/usr/portage/packages</path>を、
+"-o bind"オプション付きでマウントすることで、
+既にGentooホスト環境に存在しているパッケージをダウンロードしたり、再構築したりする無駄を避ける事ができます。
+</p>
+<p>
+いつもの通り、ブートストラップとシステムを構築していきます:
+</p>
+<pre>
+<!--既に行ったので、この下に書いてあったemerge syncは削除-->
+# <i>cd /usr/portage</i>
+# <i>nano -w /etc/make.conf</i>
+# <i>nano -w /etc/make.profile/packages</i> 
+# <i>nano -w /usr/portage/profiles/package.mask</i>
+# <i>scripts/bootstrap.sh &amp;&amp; emerge --usepkg system</i>
+</pre>
+<warn>
+<!--grubからvirtual/bootloaderに変更-->
+<path>/etc/make.profile/packages</path>ファイルにvirtual/bootloaderの行があるならを、これを修正し、
+デフォルトのシステムからvirtual/bootloader ebuildを削除する必要があります。
+(単純に、"*virtual/bootloader"の行の最初の"*"を削除してください。)
+virtual/bootloader ebuildは、/bootパーティションをマウントしようとしますが、chroot環境では失敗します。
+</warn>
+<note>
+これからインストールようとしているパッケージのうち、まだテストされていないものが、
+<path>/etc/make.profile/packages</path>と<path>/usr/portage/profiles/package.mask</path>においてmaskされていないことを確認してください。
+<path>scripts/bootstrap.sh</path>は、そこにそう書かれている通り、ソースからブートストラップパッケージをコンパイルします。
+現在既にあるパッケージを使うためには、<c>alias emerge="emerge --usepkg"</c>をbootstrapスクリプトのどこか最初の方に追加してください。
+</note>
+<p>
+追加したいパッケージはどんなものでも追加できます。
+仮想Gentooシステムにホスト名をつけるかどうかは任意です。
+<path>/etc/fstab</path>の中の、<path>/dev/ROOT</path>を<path>/dev/ubd/0</path>に変更します。
+このとき、ファイルシステムの種類は、ext2, ext3, あるいはreiserfs等にします。
+<path>/dev/SWAP</path>を<path>/dev/ubd/1</path>として設定し、<path>/dev/BOOT</path>はコメントアウトします。
+</p>
+
+<p> ここで、忘れずにrootのパスワードを設定しましょう。</p>
+
+<pre caption="rootパスワードの設定">
+# <i>passwd</i>
+</pre>
+
+<p>
+chroot環境を抜けて、bindマウントをすべてアンマウントし、
+それらをtarで新しいGentooシステムとして固めて、後片付けをします:
+</p>
+<pre>
+# <i>exit</i>
+# <i>umount /mnt/gentoo/usr/portage/distfiles</i>
+# <i>umount /mnt/gentoo/usr/portage/packages</i>
+# <i>umount /mnt/gentoo/proc</i>
+# <i>du -ks /mnt/gentoo</i>
+<!-- wtf is this? 261744	/mnt/gentoo-->
+<!-- 明確化の為、ディレクトリ変更を追加-->
+# <i>cd /mnt/gentoo</i>
+# <i>tar cvjpf ~/gentoo.tbz2 *</i>
+# <i>cd</i>
+# <i>rm -rf /mnt/gentoo</i>
+</pre>
+
+<p><uri link="http://www.gentoo.org/doc/en/gentoo-x86-install.xml">Gentoo Linux x86 Installation Guide(x86)</uri>
+<uri link="http://www.gentoo.org/doc/ja/gentoo-x86-install.xml">（日本語訳）</uri>の最後の手順も確認してみてください。</p>
+</body>
+</section>
+
+<section>
+<title><path>root_fs</path>の作成</title>
+<body>
+<p>
+Gentoo chroot環境は、300 MBぐらいあります。
+したがって、<path>root_fs</path>には少なくともそれぐらいのサイズが必要になります。
+私達は、0.5 GBとすることにしました。
+</p>
+<pre>
+# <i>dd if=/dev/zero of=root_fs seek=500 count=1 bs=1M</i>
+# <i>mke2fs -F root_fs</i>
+# <i>mount -o loop root_fs /mnt/loop</i>
+# <i>tar xvjpf gentoo.tbz2 -C /mnt/loop</i>
+# <i>umount /mnt/loop</i>
+</pre>
+<p>
+0.5 GBのスワップパーティションもあったほうが良いです。
+</p>
+<pre>
+# <i>dd if=/dev/zero of=swap_fs seek=500 count=1 bs=1M</i>
+# <i>mkswap -f swap_fs</i>
+</pre>
+<p>
+それでは、動くか試してみましょう!
+</p>
+<pre>
+# <i>linux ubd0=root_fs ubd1=swap_fs</i>
+</pre>
+<note>
+User-mode linuxは、起動時に仮想コンソールとしてxterm(または、同等のターミナルソフト)を使用します。
+その為、user-mode linuxを起動するterminalに$DISPLAY環境変数が適切に設定されているか確認してください(xhost/xauthの適切なパーミッションも必要です)。
+</note>
+<p>運がよければ、user-mode linux Gentooシステム内にログインできるでしょう。
+Gentooのuser-mode linuxのこのバージョンでは、ネットワークが仮想マシンとホスト間に限定されます。(訳注:後述のようにホストをNATルーターとして動作させれば外部ネットワークとも通信可能です。)
+</p>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ネットワーク</title>
+
+<section>
+<body>
+<p>
+Martin Schlemmer (Azarah)さんのおかげで、
+user-modeシステムからネットーワークを機能させる方法がわかりました。
+彼は、user-modeシステムとホストシステムからなるプライベートなネットワークを構築し、
+user-modeシステムはすべてのパケットをホスト向けに送信し、ホストが外部のネットワークへ転送するという方法を考えました。
+ホストカーネルにおいて
+Networking --> IP: Netfilter Configuration --> IP tables support 
+--> Full NAT --> MASQUERADE target support
+及び
+Network Device Support --> Ethertap network tap
+がモジュールとしてコンパイルされているか確認してください。
+そして、<e>ホスト</e>マシンにおいて次のようにします(訳注:kernel2.4系では、ethertapはobsolete(時代遅れ)です。代わりにTUN/TAPを使う方法(kernelの設定で、CONFIG_TUNを有効にし、modprobe tunでロードできます)があります。):
+</p>
+<pre>
+# <i>modprobe ethertap</i>
+# <i>modprobe iptable_nat</i>
+# <i>iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE</i>
+# <i>echo 1 > /proc/sys/net/ipv4/ip_forward</i>
+</pre>
+<p>
+iptablesの行は、user-modeシステムが繋がっているプライベートネットワークと、
+(私達の例では、<c>eth0</c>経由で到達可能な)インターネットの間のIPマスカレードを設定しています。
+echoの行は、プライベートネットワークとデフォルトゲートウェイが設定されているインタフェース(例では、eth0です)間のルーティング開始する設定です。
+</p>
+<p>
+それでは、user-modeシステムを立ち上げて、ネットワークが機能するか見てみましょう。
+</p>
+<pre>
+# <i>linux ubd0=root_fs ubd1=swap_fs eth0=ethertap,tap0,,192.168.0.254</i>
+<comment>(user-modeシステムにログイン)</comment>
+# <i>ifconfig eth0 192.168.0.1 up</i>
+# <i>ping -c 2 192.168.0.254</i>
+PING 192.168.0.254 (192.168.0.254): 56 octets data
+64 octets from 192.168.0.254: icmp_seq=0 ttl=255 time=0.8 ms
+64 octets from 192.168.0.254: icmp_seq=1 ttl=255 time=0.6 ms
+
+--- 192.168.0.254 ping statistics ---
+2 packets transmitted, 2 packets received, 0% packet loss
+round-trip min/avg/max = 0.6/0.7/0.8 ms
+# <i>route add default gw 192.168.0.254</i>
+# <i>netstat -rn</i>
+Kernel IP routing table
+Destination  Gateway        Genmask        Flags MSS Window irtt Iface
+192.168.0.0  0.0.0.0        255.255.255.0  U      40 0         0 eth0
+0.0.0.0      192.168.0.254  0.0.0.0        UG     40 0         0 eth0
+# <i>scp user@192.168.0.254:/etc/resolv.conf /etc/resolv.conf</i> <comment>(必要な場合)</comment>
+# <i>ping -c 2 www.gentoo.org</i>
+PING www.gentoo.org (207.170.82.202): 56 octets data
+64 octets from 207.170.82.202: icmp_seq=0 ttl=240 time=119.6 ms
+64 octets from 207.170.82.202: icmp_seq=1 ttl=240 time=92.0 ms
+
+--- www.gentoo.org ping statistics ---
+2 packets transmitted, 2 packets received, 0% packet loss
+round-trip min/avg/max = 92.0/105.8/119.6 ms
+</pre>
+<p>
+user-modeシステム上で、user-modeのeth0インタフェースにプライベートなIPアドレス192.168.0.1を割り当て、
+インタフェースをUPさせます。
+ホストの方は、192.168.0.254のIPアドレスを設定し、ネットワークが実際に動いているかどうか、pingを使って確認します。
+routeの行では、デフォルトゲートウェイ(つまりホスト向けに)を追加します。
+名前解決の為に、もし必要なら、scpを使って<path>/etc/resolv.conf</path>をコピーします。
+そして、user-modeシステムから名前解決が機能しているか(そして、インターネットへの一般的なアクセスが可能か)、
+確認するためにwww.gentoo.orgに向けてpingを実行しています。
+これで、好きなときにuser-modeシステムでも<c>emerge</c>することができるようになりました。
+</p>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ISOイメージのテスト</title>
+
+<section>
+<body>
+<p>
+恐らく、理想的なGentoo Linuxのテストは、user-mode linuxを使ってISOイメージを起動し、
+user-mode linux仮想システム内にGentooを完全にインストールしてしまうことでしょう。
+</p>
+<p>
+ISOイメージを起動する、実際には、ISOイメージからinitrdを起動することは、実に簡単です。
+</p>
+<pre>
+# <i>mount -o loop /path/to/build-&lt;TAB&gt;.iso /mnt/loop</i>
+# <i>cp /mnt/loop/isolinux/rescue.gz .</i>
+# <i>linux load_ramdisk=1 prompt_ramdisk=0 ramdisk_size=22000 \</i>
+&gt; <i>initrd=rescue.gz root=/dev/ram0 ubd0=root_fs ubd1=swap_fs \</i>
+&gt; <i>ubd2=/dev/cdroms/cdrom0 eth0=ethertap,tap0,,192.168.0.254</i>
+</pre>
+<p>これで、基本的には、Gentooインストールドキュメントに従ってインストールすることができますが、
+ルートファイルシステムが<path>/dev/ubd/0</path>に、
+スワップパーティションが<path>/dev/ubd/1</path>に、
+CD-ROMが<path>/dev/ubd/2</path>になるということは知っておく必要があります。</p>
+</body>
+</section>
+</chapter>
+
+
+</guide>

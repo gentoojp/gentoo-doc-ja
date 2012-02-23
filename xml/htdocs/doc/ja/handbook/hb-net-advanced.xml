@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-net-advanced.xml,v 1.8 2011/08/19 08:56:49 shindo Exp $ -->
+
+<!-- Original revision: 1.15 -->
+<!-- Translator: igarashi -->
+
+<sections>
+
+<abstract>
+ここでは設定がどのように働くのか学びます。
+モジュラーネットワーキングについて学ぶ前に、知っておく必要あります。
+</abstract>
+
+<version>8.1</version>
+<date>2009-02-12</date>
+
+<section>
+<title>高度な設定</title>
+<body>
+
+<p>
+<c>config_eth0</c>変数が、インターフェースの設定の要です。
+config_eth0は、インターフェース(この場合は<c>eth0</c>)設定用の高度な設定値のリストです。
+設定値のリストに含まれる各コマンドは、順に実行されます。
+一つでもコマンドが動作すれば、そのインターフェースは正常であると判断されます。
+</p>
+
+<p>
+以下は、あらかじめ備わっている設定値のリストです。
+</p>
+
+<table>
+  <tr>
+    <th>コマンド</th>
+    <th>説明</th>
+  </tr>
+  <tr>
+    <ti><c>null</c></ti>
+    <ti>何もしません</ti>
+  </tr>
+  <tr>
+    <ti><c>noop</c></ti>
+    <ti>
+      インターフェースが有効になっていてアドレスが割り当てられていたならば、
+その時はこの設定を無視します
+    </ti>
+  </tr>
+  <tr>
+    <ti>IPv4かIPv6のアドレス</ti>
+    <ti>インターフェースに指定されたアドレスを追加します</ti>
+  </tr>
+  <tr>
+    <ti>
+      <c>dhcp</c>、<c>adsl</c>、<c>apipa</c>(もしくはサードパーティのモジュールが要求するカスタムコマンド)
+    </ti>
+    <ti>
+      コマンドを供給するモジュールを実行します。例えば<c>dhcp</c>は、<c>dhcpcd</c>、<c>dhclient</c>、<c>pump</c>のうちのどれか一つである、DHCP機能を提供するモジュールを実行します。
+    </ti>
+  </tr>
+</table>
+
+<p>
+一つのコマンドが失敗した場合に備えて、一つの予備のコマンドを指定することができます。
+予備のコマンド(fallback)も、これらの設定の形式に正確に適合している必要があります。
+</p>
+
+<p>
+これらのコマンドを繋げて同時に指定できます。実際に使用されるいくつかの例を示します。
+</p>
+
+<pre caption="設定例">
+<comment># 以下のIPv4アドレスを追加します</comment>
+config_eth0=(
+	"192.168.0.2/24"
+	"192.168.0.3/24"
+	"192.168.0.4/24"
+)
+
+<comment># 一つのIPv4アドレスと二つのIPv6アドレスを追加します</comment>
+config_eth0=(
+	"192.168.0.2/24"
+	"4321:0:1:2:3:4:567:89ab"
+	"4321:0:1:2:3:4:567:89ac"
+)
+
+<comment># 既にインターフェースが有効になっていて、アドレスが割り当ててある場合は、何もしません。
+# インターフェースが無効になってしまっている場合、DHCP経由の新たなアドレスを割当てます。</comment>
+config_eth0=(
+	"noop"
+	"dhcp"
+)
+fallback_eth0=(
+	"null"
+	"apipa"
+)
+</pre>
+
+<note>
+<c>ifconfig</c>モジュールを使用して一つ以上のアドレスを追加する場合、二つ目以降のアドレスの各々に対しインターフェースの別名が生成されます。
+よって上二つの例では、インターフェース<c>eth0</c>、<c>eth0:1</c>、<c>eth0:2</c>が得られます。
+カーネルとその他プログラムが<c>eth0</c>として<c>eht0:1</c>と<c>eth0:2</c>を扱う場合、これらのインターフェースでは何も特別なことはできません。
+</note>
+
+<impo>
+fallback順は重要です! <c>null</c>オプションを指定していないと、<c>apipa</c>コマンドは、<c>noop</c>コマンドが失敗したときだけ実行されます。
+</impo>
+
+<note>
+<uri link="?part=4&amp;chap=3#apipa">APIPA</uri>と<uri
+link="?part=4&amp;chap=3#dhcp">DHCP</uri>については後で記述します。
+</note>
+
+</body>
+</section>
+
+<section>
+<title>ネットワーク依存設定</title>
+<body>
+
+<p>
+<path>/etc/init.d</path>にあるinitスクリプトは、特定のネットワークインターフェース、もしくはただ単にnetに依存することがあります。
+<c>net</c>サービスの意味を、<c>RC_NET_STRICT_CHECKING</c>変数を使用して異なる状況を示すように<path>/etc/conf.d/rc</path>で定義することができます。
+</p>
+
+<table>
+  <tr>
+    <th>値</th>
+    <th>説明</th>
+  </tr>
+  <tr>
+    <ti><c>none</c></ti>
+    <ti><path>net</path>サービスは常に起動されていると見なされます</ti>
+  </tr>
+  <tr>
+    <ti><c>no</c></ti>
+    <ti>
+      <path>net.lo</path>に加えて少なくとも一つの<path>net.*</path>サービスが起動していなければなりません。
+      WIFIと有線NICを持っていて、netサービスが起動しているように状況に応じて一つだけを起動させたいと思うノートブックのユーザによって利用されるでしょう。
+    </ti>
+  </tr>
+  <tr>
+    <ti><c>lo</c></ti>
+    <ti>
+      <c>no</c>オプションと同じですが、<path>net.lo</path>も数に含まれます。
+      起動時にどのインターフェースが起動するか気にしないユーザに便利です。
+    </ti>
+  </tr>
+  <tr>
+    <ti><c>yes</c></ti>
+    <ti>
+      <path>net</path>サービスが起動していると見なされるためには、すべてのネットワークインターフェースが起動していなければならない場合です。
+    </ti>
+  </tr>
+</table>
+
+<p>
+ですが、<path>net.eth0</path>と<path>net.eth1</path>に依存している<path>net.br0</path>の場合はどうでしょうか。
+<path>net.eth1</path>は、ブリッジに追加する前に設定される必要がある無線もしくはPPPデバイスかもしれません。
+その場合、<path>net.lo</path>へのシンボリックリンクとしての<path>/etc/init.d/net.br0</path>では実現できません。
+</p>
+
+<p>
+この状況への答えは、<path>/etc/conf.d/net</path>に<c>depend()</c>関数を書くことです。
+</p>
+
+<pre caption="/etc/conf.d/netでのnet.br0の依存設定">
+<comment># 現行のスクリプトに則って、すべての依存関係(use、after、before)が使用できます</comment>
+depend_br0() {
+	need net.eth0 net.eth1
+}
+</pre>
+
+<p>
+依存関係についての詳しい解説は、Gentooハンドブックの<uri
+link="?part=2&amp;chap=4#doc_chap4">Writing Init Scripts</uri>を参照してください。
+</p>
+
+</body>
+</section>
+
+<section id="variable_name">
+<title>変数名と値</title>
+<body>
+
+<p>
+変数名は可変です。
+通常は<c>variable_${interface|mac|essid|apmac}</c>の形式に従っています。
+例えば、変数<c>dhcpcd_eth0</c>は、eth0のdhcpcdオプションの値を保持しますし、<c>dhcpcd_essid</c>は、どれかのインターフェースがESSIDアクセスポイント"essid"に接続したときのdhcpcdオプションの値を保持します。
+</p>
+
+<p>
+しかし、インターフェースの名前が必ずethxでなければならないといっているわけではありません。
+実際、多くの無線インターフェースは、ethxと同じようにwlanx、raxのような名前です。
+さらに、ブリッジのようなユーザ定義のインターフェースは、fooなどのように任意の名前を付けることもできます。
+よりわかりやすいように、無線アクセスポイントは、アルファベットや数字以外の文字を使った名前にできます。このことはESSID毎にネットワークパラメータの設定を可能にするために、とても重要です。
+</p>
+
+<p>
+このことに関して何より弱点なのは、Gentooはネットワーク接続に関してbash変数を使うことです。
+そしてbashは英字のアルファベットと数字以外は使用できません。
+この制限を回避するために、英字のアルファベットと数字ではない全ての文字を<c>_</c>(アンダースコア)に変換します。
+</p>
+
+<p>
+もう一つのbashの弱点は、変数の内容に関してです。
+一部の文字はエスケープされてしまいます。
+これは、エスケープされる必要がある文字の前に<c>\</c>(バックスラッシュまたは円記号)を置くことで回避できます。次の文字は、この方法でエスケープする必要があります。<c>"</c>と<c>'</c>と<c>\</c>。
+</p>
+
+<p>
+この例では、特殊な文字を使用する無線ESSIDを使用しています。
+この場合、以下のようにESSID <c>My "\ NET</c>を使用することになります。
+</p>
+
+<pre caption="変数名の例">
+<comment>（これは機能しますが、ドメイン名としては不正です）</comment>
+dns_domain_My____NET="My "\\ NET"
+
+<comment>（上記は、無線LANカードがMy "\ NETのESSIDを持つアクセスポイン
+トに接続した場合、dnsドメインをMy "\ NETに設定します）</comment>
+</pre>
+
+</body>
+</section>
+
+</sections>

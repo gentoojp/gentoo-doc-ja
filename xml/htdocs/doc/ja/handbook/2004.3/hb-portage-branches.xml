@@ -1,0 +1,150 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-portage-branches.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+
+<!-- Original revision: 1.4 -->
+
+<sections>
+
+<version>1.1</version>
+<date>2004-10-21</date>
+
+<section>
+<title>１つのブランチを利用する</title>
+<subsection>
+<title>Stableブランチ</title>
+<body>
+
+<p>
+ACCEPT_KEYWORDS変数はシステムが利用するソフトウェアブランチを定義します。
+デフォルトではあなたのアーキテクチャ、例えば<c>x86</c>のstableソフトウェアブランチとなっています。
+</p>
+
+<p>
+stableブランチのみ利用することを推奨しています。
+しかし、安定性にそれほどこだわらず、<uri>http://bugs.gentoo.org</uri>へバグレポートをすることによってGentooに手を貸したいのなら、読み続けてください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Testingブランチ</title>
+<body>
+
+<p>
+より新しいソフトウェアを利用したいならtestingブランチを代わりに利用することを考えてください。
+Portageにtestingブランチを利用させるには、アーキテクチャの前に~を追加してください。
+</p>
+
+<p>
+例えば、x86アーキテクチャのtestingブランチを選択するには、<path>/etc/make.conf</path>を編集してこのように設定します。
+</p>
+
+<pre caption="ACCEPT_KEYWORDS変数の設定">
+ACCEPT_KEYWORDS="~x86"
+</pre>
+
+<p>
+今システムを更新すれば、<e>たくさん</e>のパッケージが更新されることを知るでしょう。
+注意してください: testingブランチを利用してシステムを更新したら、オフィシャルブランチであるstableに戻すのはたいてい優しい方法はありません(もちろんバックアップを取っている場合は除きます)。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>StableとTestingの混在</title>
+<subsection>
+<title>package.keywordsファイル</title>
+<body>
+
+<p>
+特定のパッケージに対してtestingブランチの利用を許可するがシステムにはstableブランチを利用するようにPortageに指示することができます。
+これを有効にするには、<path>/etc/portage/package.keywords</path>にtestingブランチを利用したいパッケージのカテゴリと名前と記述します。
+例えば、<c>gnumeric</c>でtestingブランチを利用するにはこうします。
+</p>
+
+<pre caption="gnumericの /etc/portage/package.keywords 設定">
+app-office/gnumeric
+</pre>
+
+<p>
+行の最後に正しいキーワードを追加しても同じことが可能です。例えばx86アーキテクチャなら、以下のようにします。
+</p>
+
+<pre caption="gnumericの /etc/portage/package.keywords 設定(完全な行)">
+app-office/gnumeric ~x86
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>特定のバージョンをテスト</title>
+<body>
+
+<p>
+特定のバージョンをtestingブランチから利用したいがその後はPortageに利用して欲しくないときには、<path>package.keywords</path>ファイルにバージョンを追加することができます。
+このときには = 演算子を利用<e>しなければなりません</e>。
+この他にも &lt;=、&lt;、&gt;そして&gt;= 演算子を利用してバージョンの範囲を入力することができます。
+</p>
+
+<p>
+どの場合でも、バージョン情報を追加するなら、演算子を使わ<e>なければなりません</e>。
+バージョン情報を入力しないのなら、演算子は利用<e>できません</e>。
+</p>
+
+<p>
+以下の例ではgnumeric-1.2.13を受け入れるようPortageに指示しています。
+</p>
+
+<pre caption="特定のバージョンのgnumericを利用する">
+=app-office/gnumeric-1.2.13 
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>マスクされたパッケージを利用する</title>
+<subsection>
+<title>package.unmaskファイル</title>
+<body>
+
+<p>
+パッケージがGentoo開発者によってマスクされているが、それでも<path>package.mask</path>ファイル(デフォルトでは<path>/usr/portage/profiles</path>にあります)に書かれている理由にかかわらず利用したいときには、<path>/etc/portage/package.unmask</path>に<e>正確な</e>同じ行を追加します。
+</p>
+
+<p>
+例えば、<c>=net-mail/hotwayd-0.8</c>がマスクされているなら、同じ行を<path>package.unmask</path>ファイルに追加することによってマスクを解除できます。
+</p>
+
+<pre caption="/etc/portage/package.unmask">
+=net-mail/hotwayd-0.8
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>package.maskファイル</title>
+<body>
+
+<p>
+Portageにあるパッケージや特定のバージョンのパッケージを利用して欲しくないときには、<path>/etc/portage/package.mask</path>に適当な行を追加してやることによってあなた自身でマスクすることができます。
+</p>
+
+<p>
+例えば、<c>development-sources-2.6.8.1</c>より新しいカーネルソースをインストールして欲しくないときには、以下の行を<path>package.mask</path>に追加します。
+</p>
+
+<pre caption="/etc/portage/package.mask 記入例">
+&gt;sys-kernel/development-sources-2.6.8.1
+</pre>
+
+</body>
+</subsection>
+</section>
+</sections>

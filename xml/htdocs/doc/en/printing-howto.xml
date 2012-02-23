@@ -1,0 +1,1094 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/printing-howto.xml,v 1.82 2011/03/02 08:59:09 nightmorph Exp $ -->
+
+<guide>
+<title>Gentoo Printing Guide</title>
+
+<author title="Author">
+  <mail link="swift"/>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This document covers the installation and maintenance of printers using CUPS and
+Samba. It covers local installation and networked installations and you'll
+also find instructions on using shared printers from other operating systems.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>5</version>
+<date>2011-03-02</date>
+
+<chapter>
+<title>Printing and Gentoo Linux</title>
+<section>
+<title>Use the Right Tools</title>
+<body>
+
+<p>
+Linux has great support for printers; the right tool for the job is called CUPS
+(<uri link="http://www.cups.org">Common Unix Printing System</uri>). Since the
+beginning of the project, back in 1999, the installation and maintenance of CUPS
+has improved dramatically.
+</p>
+
+<p>
+In this document we will cover how to use CUPS to setup a local or networked
+printer. We will not go in too much detail since the project has <uri
+link="http://www.cups.org/documentation.php">great documentation</uri> available
+for advanced usage.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configure your Kernel</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+When you want to install a printer on your system you need to know how your
+printer will be attached to your system. Is it through a local port like LPT or
+USB, or is it networked? And if it is, does it use the Internet Printing
+Protocol (IPP) or is it through the Microsoft Windows SMB-CIFS protocol
+(Microsoft Windows Sharing)?
+</p>
+
+<p>
+The next few sections explain what minimal kernel configuration you need. Of
+course, this depends on how your printer is going to be attached to your system,
+so for your convenience we have separated the instructions:
+</p>
+
+<ul>
+  <li><uri link="#lpt">Locally Attached Printer (LPT)</uri></li>
+  <li><uri link="#usb">Locally Attached Printer (USB)</uri></li>
+  <li><uri link="#ipp">Remotely Attached Printer (IPP)</uri></li>
+  <li><uri link="#smb-cifs">Remotely Attached Printer (SMB-CIFS)</uri></li>
+</ul>
+
+<p>
+So navigate to <path>/usr/src/linux</path> and run <c>make menuconfig</c> to
+enter the kernel configuration. If you used <c>genkernel</c> to configure your
+kernel, you should still perform these steps just to make sure nothing was
+missed out.
+</p>
+
+<p>
+In the next configuration examples, we will add the necessary support <e>in</e>
+the kernel, not as modules. This is not mandatory; if you want you can easily
+use modular support. Don't forget to load the appropriate modules afterwards.
+</p>
+
+<p>
+Now go to the appropriate section to configure (or check) your kernel.
+</p>
+
+</body>
+</section>
+<section id="lpt">
+<title>Locally Attached Printer (LPT)</title>
+<body>
+
+<p>
+The LPT port is generally used to identify the parallel printer port. You need
+to enable parallel port support first, then PC-style parallel port support
+(unless you are a SPARC user) after which you enable parallel printer support.
+</p>
+
+<pre caption="Parallel Port Printer Configuration">
+Device Drivers --&gt;
+  &lt;*&gt; Parallel port support
+  &lt;*&gt;   PC-style hardware
+
+Device Drivers --&gt;
+  Character Devices --&gt;
+    &lt;*&gt; Parallel printer support
+       [*]      IEEE 1284 transfer modes)
+</pre>
+
+<note>
+Some users might need to enable other options in the <c>Parallel port
+support</c> section. Check the kernel configuration <c>Help</c>
+function for more information.
+</note>
+
+<p>
+That's it; quit the kernel configuration and rebuild your kernel. Don't forget
+to copy the new kernel image to the <path>/boot</path> location (and don't
+forget to mount <path>/boot</path> if needed) and update your boot loader
+configuration prior to rebooting your system.
+</p>
+
+<p>
+Now continue with <uri link="#cups">Installing and Configuring CUPS</uri>.
+</p>
+
+</body>
+</section>
+<section id="usb">
+<title>Locally Attached Printer (USB)</title>
+<body>
+
+<p>
+To enable USB printing, you just need USB support in your kernel:
+</p>
+
+<pre caption="USB Port Printer Configuration">
+Device Drivers --&gt;
+  USB Support --&gt;
+    &lt;*&gt; Support for Host-side USB
+    <comment>(...)</comment>
+    --- USB Host Controller Drivers
+    <comment>(Select the HCD that your system uses. If you do not know which one
+     to select, run "lspci -v | grep HCI" from another terminal)</comment>
+    &lt;*&gt; EHCI HCD (USB 2.0) support <comment>( or )</comment>
+    &lt;*&gt; OHCI HCD support           <comment>( or )</comment>
+    &lt;*&gt; UHCI HCD (most Intel and VIA) support
+</pre>
+
+<p>
+That's it; quit the kernel configuration and rebuild your kernel. Don't forget
+to copy the new kernel image to the <path>/boot</path> location (and don't
+forget to mount <path>/boot</path> if needed) and update your boot loader
+configuration prior to rebooting your system.
+</p>
+
+<p>
+Now continue with <uri link="#cups">Installing and Configuring CUPS</uri>.
+</p>
+
+</body>
+</section>
+<section id="ipp">
+<title>Remotely Attached Printer (IPP)</title>
+<body>
+
+<p>
+To be able to connect to a remotely attached printer through the Internet
+Printing Protocol your kernel just needs to have networking support. Assuming
+your kernel has that already, continue with <uri link="#cups">Installing and
+Configuring CUPS</uri>.
+</p>
+
+</body>
+</section>
+<section id="smb-cifs">
+<title>Remotely Attached Printer (SMB-CIFS)</title>
+<body>
+
+<p>
+Your kernel must support SMB CIFS:
+</p>
+
+<pre caption="SMB-CIFS Printer Configuration">
+File systems --&gt;
+  Network File Systems --&gt;
+    &lt;*&gt; SMB file system support (to mount Windows shares etc.)
+    &lt;*&gt; CIFS support (advanced network file system for Samba, Windows and other CIFS compliant servers)
+</pre>
+
+<p>
+That's it; quit the kernel configuration and rebuild your kernel. Don't forget
+to copy the new kernel image to the <path>/boot</path> location (and don't
+forget to mount <path>/boot</path> if needed) and update your boot loader
+configuration prior to rebooting your system.
+</p>
+
+<p>
+Now continue with <uri link="#cups">Installing and Configuring CUPS</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="cups">
+<title>Installing and Configuring CUPS</title>
+<section>
+<title>Installation</title>
+<body>
+
+<p>
+Installing CUPS with Gentoo is a breeze. CUPS has a few optional features that
+might interest you. To enable or disable those features, use the USE flags
+associated with them.
+</p>
+
+<table>
+<tr>
+  <th>USE flag</th>
+  <th>Impact on CUPS</th>
+</tr>
+<tr>
+  <ti>dbus</ti>
+  <ti>Adds support for the <c>dbus</c> system message bus.</ti>
+</tr>
+<tr>
+  <ti>jpeg</ti>
+  <ti>Adds support for printing JPEG images.</ti>
+</tr>
+<tr>
+  <ti>nls</ti>
+  <ti>
+    Enable National Language Support. With nls in place, CUPS is able to deliver
+    localized feedback so you can hopefully enjoy CUPS in your native
+    language.
+  </ti>
+</tr>
+<tr>
+  <ti>pam</ti>
+  <ti>
+    If you need print job authentication through the Pluggable Authentication
+    Modules, this will activate PAM support for CUPS.
+  </ti>
+</tr>
+<tr>
+  <ti>php</ti>
+  <ti>Adds support for php scripting.</ti>
+</tr>
+<tr>
+  <ti>png</ti>
+  <ti>Adds support for printing PNG images.</ti>
+</tr>
+<tr>
+  <ti>ppds</ti>
+  <ti>
+    Adds support for automatically generated ppd (printing driver) files. See
+  <uri link="#installing_best">Installing the Best Driver</uri>.
+  </ti>
+</tr>
+<tr>
+  <ti>samba</ti>
+  <ti>
+    If you want to be able to share locally attached printers to Windows systems
+    on your network using the SMB-CIFS protocol, or you want to be able to use
+    shared printers from Windows systems, you need SAMBA support.
+  </ti>
+</tr>
+<tr>
+  <ti>slp</ti>
+  <ti>
+    In a managed environment the printer might be made available as a service to
+    others. With the Service Location Protocol you can easily find and configure
+    a service on your system. Enable this USE flag if your printer is available
+    as a service or should be made available as one.
+  </ti>
+</tr>
+<tr>
+  <ti>ssl</ti>
+  <ti>
+    If you want remote authentication and/or privacy, you need support for the
+    Secure Socket Layer, allowing for encrypted printing sessions. Support for
+    SSL must be available on all participating systems in your network.
+  </ti>
+</tr>
+<tr>
+  <ti>tiff</ti>
+  <ti>Adds support for printing TIFF images.</ti>
+</tr>
+<tr>
+  <ti>X</ti>
+  <ti>
+    Allows you to use your desktop menu to load the CUPS configuration webpage
+    into your preferred browser.
+  </ti>
+</tr>
+</table>
+
+<p>
+Check the current USE settings. If you want to deviate from your current USE
+settings for CUPS alone, add the appropriate USE flags to
+<path>/etc/portage/package.use</path>.
+</p>
+
+<pre caption="USE flag settings for CUPS">
+# <i>emerge -pv cups</i>
+[ebuild N     ] net-print/cups-1.2.6  "X dbus jpeg nls pam png ppds ssl -php -samba -slp -tiff" 0 kB
+
+<comment>(For instance, to enable SAMBA support for CUPS)</comment>
+# <i>nano -w /etc/portage/package.use</i>
+net-print/cups samba
+</pre>
+
+<p>
+If you are happy with the result, have Portage install CUPS.
+</p>
+
+<pre caption="Installing CUPS">
+# <i>emerge cups</i>
+</pre>
+
+<impo>
+Any users that need to print should be added to the <c>lp</c> group. Add them by
+running (as root) <c>gpasswd -a username lp</c>.
+</impo>
+
+<p>
+If the printer is attached to your system locally, you need to load CUPS
+automatically on start-up. Make sure your printer is attached and powered on
+before you start CUPS.
+</p>
+
+<pre caption="Automatically starting CUPS">
+# <i>/etc/init.d/cupsd start</i>
+# <i>rc-update add cupsd default</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Configuration</title>
+<body>
+
+<p>
+The default CUPS server configuration in <path>/etc/cups/cupsd.conf</path>
+is sufficient for most users. However, several users might need some changes
+to the CUPS configuration.
+</p>
+
+<p>
+In the next sections we cover a few changes that are often needed:
+</p>
+
+<ul>
+  <li>
+    In <uri link="#remote_usage">Remote Printer Access</uri> we allow other
+    systems to use the printer attached to this Linux workstation.
+  </li>
+  <li>
+    In <uri link="#remote_admin">CUPS Remote Administration</uri> we grant
+    access to the CUPS administration from remote systems
+  </li>
+  <li>
+    In <uri link="#windows_pcl">Enable Support for Windows PCL Drivers</uri> you
+    configure CUPS to support Windows PCL drivers. This is advised if you want
+    Windows systems to be able to use a Samba-shared printer as most Windows
+    drivers are PCL drivers.
+  </li>
+  <li>
+    In <uri link="#setup_remote">Setting Up a Remote Printer</uri> we
+    configure this system to use a printer attached to another system (not
+    Windows share).
+  </li>
+</ul>
+
+</body>
+</section>
+<section id="remote_usage">
+<title>Remote Printer Access</title>
+<body>
+
+<p>
+If you want other systems to use your printer through IPP you need to
+explicitly grant access to the printer in <path>/etc/cups/cupsd.conf</path>. If
+you want to share your printer using SAMBA, this change is not needed.
+</p>
+
+<p>
+Open up <path>/etc/cups/cupsd.conf</path> in your favorite editor and add in an
+<c>Allow</c> line for the system(s) that should be able to reach to your
+printer. In the next example, we grant access to the printer from localhost and
+from any system whose IP address starts with <c>192.168.0</c>.
+</p>
+
+<pre caption="Allowing remote access to the printer">
+&lt;Location /&gt;
+  Order allow,deny
+  <i>Allow localhost</i>
+  <i>Allow from 192.168.0.*</i>
+&lt;/Location&gt;
+
+<comment>(This broadcasts browsing information to the clients on the network)
+(This is so that they know the printer is available)</comment>
+BrowseAddress 192.168.0.*:631
+</pre>
+
+<p>
+Also, you will need to specify which port CUPS listens to, so that it will
+respond to printing requests from other machines on your network.
+</p>
+
+<pre caption="Port configuration in /etc/cups/cupsd.conf">
+Listen *:631
+<comment>(Make sure that localhost is commented out)</comment>
+#Listen localhost:631
+</pre>
+
+<note>
+If you are still using CUPS 1.1 (which is now deprecated), then you will need to
+use a different syntax for remote printing requests:
+</note>
+
+<pre caption="Deprecated CUPS 1.1 configuration">
+Port 631
+<comment>(Make sure the next two lines are commented out)</comment>
+#Listen 127.0.0.1:631
+#Listen localhost:631
+</pre>
+
+</body>
+</section>
+<section id="remote_admin">
+<title>CUPS Remote Administration</title>
+<body>
+
+<p>
+If you are interested in remote administration, you need to grant access from
+other systems than just localhost to the CUPS administration. Edit
+<path>/etc/cups/cupsd.conf</path> and have it explicitly grant access to the
+systems you want. For instance, to grant access to the system with IP address
+of 192.168.0.3:
+</p>
+
+<pre caption="Allowing remote access in /etc/cups/cupsd.conf">
+&lt;Location /admin&gt;
+<comment>(...)</comment>
+  Encryption Required
+  Order allow,deny
+  <i>Allow localhost</i>
+  <i>Allow 192.168.0.3</i>
+&lt;/Location&gt;
+</pre>
+
+<p>
+Do not forget to restart CUPS after making changes to
+<path>/etc/cups/cupsd.conf</path> by running <c>/etc/init.d/cupsd restart</c>.
+</p>
+
+</body>
+</section>
+<section id="windows_pcl">
+<title>Enable Support for Windows PCL Drivers</title>
+<body>
+
+<p>
+PCL drivers send raw data to the print server. To enable raw printing on CUPS,
+you need to edit <path>/etc/cups/mime.types</path> and uncomment the line
+<c>application/octet-stream</c> if it is not already uncommented. Then you need
+to edit <path>/etc/cups/mime.convs</path> and do the same, if it is not already
+uncommented.
+</p>
+
+<pre caption="Enable support for raw printing">
+# <i>vim /etc/cups/mime.types</i>
+<comment>(Uncomment the line so that the file contains:)</comment>
+application/octet-stream
+
+# <i>vim /etc/cups/mime.convs</i>
+<comment>(Uncomment the line so that the file contains:)</comment>
+application/octet-stream     application/vnd.cups-raw    0    -
+</pre>
+
+<p>
+Do not forget to restart CUPS after making these changes by running
+<c>/etc/init.d/cupsd restart</c>.
+</p>
+
+</body>
+</section>
+<section id="setup_remote">
+<title>Setting Up a Remote Printer</title>
+<body>
+
+<p>
+If the printers are attached to a remote CUPS-powered server you can easily
+set up your system to use the remote printer by changing the
+<path>/etc/cups/client.conf</path> file.
+</p>
+
+<p>
+Assuming the printer is attached to a system called <c>printserver.mydomain</c>,
+open up <path>/etc/cups/client.conf</path> with your favorite editor and set the
+<c>ServerName</c> directive:
+</p>
+
+<pre caption="Editing client.conf">
+# <i>vim /etc/cups/client.conf</i>
+
+<comment>(Substitute printserver.mydomain with your print server name)</comment>
+ServerName <i>printserver.mydomain</i>
+</pre>
+
+<p>
+The remote system will have a default printer setting which you will be using.
+If you want to change the default printer, use <c>lpoptions</c>:
+</p>
+
+<pre caption="Changing the default printer">
+<comment>(First list the available printers)</comment>
+# <i>lpstat -a</i>
+hpljet5p accepting requests since Jan 01 00:00
+hpdjet510 accepting requests since Jan 01 00:00
+
+<comment>(Set the HP LaserJet 5P as the default printer)</comment>
+# <i>lpoptions -d hpljet5p</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="configure_printer">
+<title>Configuring a Printer</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+If the printer you want to configure is remotely available through a different
+print server (running CUPS) you do not need to follow these instructions.
+Instead, read <uri link="#setup_remote">Setting Up a Remote Printer</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Detecting the Printer</title>
+<body>
+
+<p>
+If you have a USB printer or your parallel port printer was powered on when you
+booted your Linux system, you might be able to retrieve information from the
+kernel stating that it has successfully detected your printer. However this is
+merely an indication and not a requirement.
+</p>
+
+<pre caption="Retrieving kernel information">
+<comment>(For a parallel port printer)</comment>
+$ <i>dmesg | grep -i print</i>
+parport0: Printer, Hewlett-Packard HP LaserJet 2100 Series
+
+<comment>(For a USB printer)</comment>
+$ <i>lsusb</i>
+<comment>(...)</comment>
+Bus 001 Device 007: ID 03f0:1004 Hewlett-Packard DeskJet 970c/970cse
+</pre>
+
+</body>
+</section>
+<section>
+<title>Installing the Printer</title>
+<body>
+
+<p>
+To have the printer installed on your system, fire up your browser and have it
+point to <uri link="http://localhost:631">http://localhost:631</uri>. You will
+be greeted by the CUPS web interface from which you can perform all
+administrative tasks.
+</p>
+
+<note>
+If you use an HTTPS connection to CUPS, the first time you access the interface
+it <e>may</e> take a very long time before the site comes up. This is because
+the first request triggers the generation of the CUPS SSL certificates which can
+be a very time-consuming job.
+</note>
+
+<p>
+Go to <e>Administration</e> and enter your root login and password information
+at the box. Then, when you have reached the administrative interface, click on
+<e>Add Printer</e>. You will be greeted by a new screen allowing you to enter
+the following information:
+</p>
+
+<ul>
+  <li>
+    The <e>spooler name</e>, a short but descriptive name used on your system to
+    identify the printer. This name should not contain spaces or any special
+    characters. For instance, for the HP LaserJet 5P you could say
+    <c>hpljet5p</c>.
+  </li>
+  <li>
+    The <e>location</e>, a description where the printer is physically located
+    (for instance in your room, or in the kitchen right next to your dish
+    washer, ...). This is to help maintaining several printers.
+  </li>
+  <li>
+    The <e>description</e> in which you should place a full description of the
+    printer. A common use is the full printer name (like "HP LaserJet 5P").
+  </li>
+</ul>
+
+<p>
+The next screen asks you for the device where the printer listens to. You will
+have the choice of several devices. The next table covers a few possible
+devices, but the list is not exhaustive.
+</p>
+
+<table>
+<tr>
+  <th>Device</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti>AppSocket/HP JetDirect</ti>
+  <ti>
+    This special device allows for network printers to be accessible through a
+    HP JetDirect socket. Only specific printers support this.
+  </ti>
+</tr>
+<tr>
+  <ti>Internet Printing Protocol (IPP or HTTP)</ti>
+  <ti>
+    Use this to reach your remote printer through the IPP protocol either
+    directly (IPP) or through HTTP.
+  </ti>
+</tr>
+<tr>
+  <ti>LPD/LPR Host or Printer</ti>
+  <ti>
+    Select this if the printer is remote and attached to a LPD/LPR server.
+  </ti>
+</tr>
+<tr>
+  <ti>Parallel Port #1</ti>
+  <ti>
+    Select this when the printer is locally attached to your parallel port
+    (LPT). When the printer is automatically detected its name will be appended
+    to the device as well.
+  </ti>
+</tr>
+<tr>
+  <ti>USB Printer #1</ti>
+  <ti>
+    Select this when the printer is locally attached to a USB port. The printer
+    name should automatically be appended to the device name.
+  </ti>
+</tr>
+</table>
+
+<p>
+If you are installing a remote printer, you will be asked for the URI to the
+printer:
+</p>
+
+<ul>
+  <li>
+    An LPD printer server requires a <c>lpd://hostname/queue</c> syntax
+  </li>
+  <li>
+    An HP JetDirect printer requires a <c>socket://hostname</c> syntax
+  </li>
+  <li>
+    An IPP printer requires a <c>ipp://hostname/printers/printername</c> or
+    <c>http://hostname:631/printers/printername</c> syntax.
+    <!-- If for some reason a user wants to use HP's internal ipp syntax,
+    they'd use ipp://hostname/ipp/<name> , which used to be mentioned here.
+    However, this document describes using CUPS' ipp syntax, so that one was
+    dropped in favor of the correct working syntax, which is the first
+    example. -->
+  </li>
+</ul>
+
+<p>
+Next, select the printer manufacturer in the adjoining screen and the model
+type and number in the subsequent one. For many printers you will find
+multiple drivers. You can either select one now or search on
+<uri link="http://www.linuxprinting.org/printer_list.cgi">LinuxPrinting.org's
+Printer List</uri> for a good driver. You can change drivers easily later on.
+</p>
+
+<p>
+Once the driver is selected, CUPS will inform you that the printer has been
+added successfully to the system. You can now go to the printer management page
+on the administration interface and select <c>Configure Printer</c> to change
+the printer settings (resolution, page format, ...).
+</p>
+
+</body>
+</section>
+<section>
+<title>Testing and Reconfiguring the Printer</title>
+<body>
+
+<p>
+To verify if the printer is working correctly, go to the printer administration
+page, select your printer and click on <c>Print Test Page</c>.
+</p>
+
+<p>
+If the printer does not seem to work correctly, click on <c>Modify Printer</c>
+to reconfigure the printer. You will be greeted with the same screens as
+during the first installation but the defaults will now be your current
+configuration.
+</p>
+
+<p>
+If you have no idea why your printer does not function, you might get a clue by
+looking at <path>/var/log/cups/error_log</path>. In the next example we find out
+that there is a permission error, probably due to a wrong <c>Allow</c> setting
+in <path>/etc/cups/cupsd.conf</path>.
+</p>
+
+<pre caption="Looking for CUPS errors">
+# <i>tail /var/log/cups/error_log</i>
+<comment>(...)</comment>
+E [11/Jun/2005:10:23:28 +0200] [Job 102] Unable to get printer status (client-error-forbidden)!
+</pre>
+
+</body>
+</section>
+<section id="installing_best">
+<title>Installing the Best Driver</title>
+<body>
+
+<p>
+Many printer drivers exist; to find out which one has the best performance for
+your printer, visit the <uri
+link="http://www.linuxprinting.org/printer_list.cgi">LinuxPrinting Printer
+List</uri>. Select your brand and type to find out what driver the site
+recommends. For instance, for the HP LaserJet 5P, the site recommends the
+<c>ljet4</c> driver.
+</p>
+
+<p>
+Download the PPD file from the site and place it in
+<path>/usr/share/cups/model</path>, then run <c>/etc/init.d/cupsd restart</c>
+as root. This will make the driver available through the CUPS web interface.
+Now reconfigure your printer as described above.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Using Special Printer Drivers</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+Some printers require specific drivers or provide additional features that are
+not enabled through the regular configuration process as described above. This
+chapter will discuss a selection of printers and how they are made to work with
+Gentoo Linux.
+</p>
+
+<p>
+The following printers and/or drivers are covered:
+</p>
+
+<ul>
+  <li><uri link="#gutenprint">Gutenprint Driver</uri></li>
+  <li><uri link="#hplip">HPLIP Driver</uri></li>
+  <li><uri link="#pnm2ppa">PNM2PPA Driver</uri></li>
+</ul>
+
+</body>
+</section>
+<section id="gutenprint">
+<title>Gutenprint Driver</title>
+<body>
+
+<p>
+The <uri link="http://gutenprint.sourceforge.net">gutenprint</uri> drivers are
+high-quality, open source printer drivers for various Canon, Epson, HP,
+Lexmark, Sony, Olympus and PCL printers supporting CUPS, ghostscript, The Gimp
+and other applications.
+</p>
+
+<p>
+Gentoo's Portage Tree contains an ebuild for the gutenprint drivers. Just use
+<c>emerge</c> to install them. Note that the ebuild listens to quite a few USE
+flags (such as <c>cups</c> and <c>ppds</c>). You must have enabled at least
+these two flags!
+</p>
+
+<pre caption="Installing gutenprint drivers">
+# <i>emerge gutenprint</i>
+</pre>
+
+<p>
+When the emerge process has finished, the gutenprint drivers will be available
+through the CUPS web interface.
+</p>
+
+</body>
+</section>
+<section id="hplip">
+<title>HPLIP Driver</title>
+<body>
+
+<p>
+The <uri link="http://hplipopensource.com/hplip-web/index.html">HPLIP
+Project</uri> uses the hpcups printer driver. It also includes scanner and fax
+support and service tools for various multi-purpose peripherals. For printing
+support, it is recommended to use the new hpcups driver, which you can enable
+with the <c>hpcups</c> USE flag. The old hpijs driver is still included when you
+build <c>net-print/hplip</c> with the <c>hpijs</c> USE flag.
+</p>
+
+<p>
+The default install enables dynamically generated ppd files at runtime. Some
+printers may still require static ppd files. If you encounter problems when
+using <c>hp-setup</c> try enabling the <c>static-ppds</c> USE flag and
+rebuild <c>net-print/hplip</c>.
+</p>
+
+<p>
+For USB printers <c>net-print/cups</c> has to be built with the <c>usb</c> USE
+flag. This way it makes use of the <c>dev-libs/libusb</c> user space tool which
+replaces kernel usb printer support (CONFIG_USB_PRINTER). In case of problems
+you can disable the <c>usb</c> USE flag for <c>net-print/cups</c> and activate
+the kernel functionality again. All users who need to access the printer have
+to be a member of the <c>lp</c> group.
+</p>
+
+<p>
+To be able to set up a network printer <c>net-print/cups</c> has to be built
+with USE <c>slp</c>. With recent versions of <c>net-print/hplip</c> the default
+lookup method for networked printers is mDNS which requires
+<c>net-print/cups</c> to be built with USE <c>zeroconf</c>. (Note: this method
+does not work with the upcoming <c>net-print/cups-1.4</c> series). To be able
+to print on a network printer <c>net-print/hplip</c> needs to be built with USE
+<c>snmp</c>.
+</p>
+
+<pre caption="Installing the hplip drivers">
+# <i>emerge -vp hplip</i>
+These are the packages that would be merged, in order:
+
+Calculating dependencies            ... done!
+[ebuild  N    ] net-print/hplip-3.10.9  USE="X hpcups hpijs libnotify qt4 udev-acl
+-doc -fax -kde -minimal -parport -policykit -scanner -snmp -static-ppds" 21,307 kB
+
+Total: 1 package (1 new), Size of downloads: 21,307 kB
+
+# <i>emerge hplip</i>
+<comment>(Make sure your USB printer is plugged into your computer or your network
+printer into the network socket.)</comment>
+# <i>hp-setup</i>
+# <i>/etc/init.d/cupsd restart</i>
+</pre>
+
+<p>
+When the emerge process has finished, the <c>hp-setup</c> tool will attempt to
+detect and install the printer drivers for your printer on the system. Once
+finished, your printer will be available in the CUPS configuration. When
+upgrading <c>net-print/hplip</c> you should run <c>hp-setup -r</c> to remove
+all printers and configure them again. 
+</p>
+
+</body>
+</section>
+<section id="pnm2ppa">
+<title>PNM2PPA Driver</title>
+<body>
+
+<p>
+PPA is an HP technology that focuses on sending low-level processing to the
+system instead of to the printer which makes the printer cheaper but more
+resource consuming.
+</p>
+
+<p>
+If the <uri
+link="http://www.linuxprinting.org/printer_list.cgi">LinuxPrinting</uri> site
+informs you that the <uri link="http://pnm2ppa.sourceforge.net/">pnm2ppa</uri>
+driver is your best option, you need to install the <c>pnm2ppa</c> filter on
+your system:
+</p>
+
+<pre caption="Installing the pnm2ppa filter">
+# <i>emerge pnm2ppa</i>
+</pre>
+
+<p>
+Once installed, download the PPD file for your printer from the <uri
+link="http://www.linuxprinting.org/printer_list.cgi">LinuxPrinting</uri> site
+and put it in <path>/usr/share/cups/model</path>. Next, configure your printer
+using the steps explained above.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="windows">
+<title>Printing From and To Microsoft Windows</title>
+<section>
+<body>
+
+<note>
+You should read our <uri link="/doc/en/quick-samba-howto.xml">Samba/CUPS
+Guide</uri> for more detailed information on setting up CUPS with Samba.
+</note>
+
+</body>
+</section>
+<section>
+<title>Configuring a Windows Client for IPP</title>
+<body>
+
+<p>
+Microsoft Windows supports IPP (Windows 9x and ME users need to <uri
+link="http://support.microsoft.com/default.aspx?scid=kb;en-us;294439">install</uri>
+it separately). To install a printer that is attached to your Linux box on
+Windows, fire up the <c>Add Printer</c> wizard and select <c>Network
+Printer</c>. When you are asked for the URI, use the
+<c>http://hostname:631/printers/queue</c> syntax.
+</p>
+
+<p>
+Make sure that your systems <uri link="#remote_usage">can reach</uri> your
+printer!
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring a Windows Client for a Samba Shared Printer</title>
+<body>
+
+<p>
+To share the printer on the SMB-CIFS network, you must have SAMBA installed and
+configured correctly. How to do this is beyond the scope of this document, but
+we will quickly deal with the configuration of SAMBA for shared printers.
+</p>
+
+<p>
+Open <path>/etc/samba/smb.conf</path> with your favorite editor and add a
+<c>[printers]</c> section to it:
+</p>
+
+<pre caption="Adding a [printers] section">
+[printers]
+  comment      = All printers
+  path         = /var/spool/samba
+  browseable   = no
+  guest ok     = no
+  writable     = no
+  printable    = yes
+  public       = yes
+  printer name = hpljet5p
+</pre>
+
+<p>
+Now navigate to the top of the <path>smb.conf</path> file until you are inside
+the <c>[global]</c> section. Then locate the <c>printcap name</c> and
+<c>printing</c> settings and set each of them to <c>cups</c>:
+</p>
+
+<pre caption="Changing the [global] section">
+[global]
+  <comment>(...)</comment>
+  printcap name = <i>cups</i>
+  printing      = <i>cups</i>
+</pre>
+
+<p>
+Make sure you enabled the <uri link="#windows_pcl">Windows PCL drivers</uri>
+support in CUPS. Then, restart the <c>smb</c> service to have the changes take
+effect.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring a Linux Client for a Windows Print Server</title>
+<body>
+
+<p>
+First of all, make sure that the printer is shared on your Windows system.
+</p>
+
+<p>
+Next, in the CUPS web interface, configure your printer as described previously.
+You will notice that CUPS has added another driver called <c>Windows Printer via
+SAMBA</c>. Select it and use the
+<c>smb://username:password@workgroup/server/printername</c> or
+<c>smb://server/printername</c> syntax for the URI.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Printing-related Applications</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+Many tools exist that help you configure a printer, use additional printing
+filters, add features to your printing capabilities, etc. This chapter lists a
+few of them. The list is not exhaustive and not meant to discuss each tool in
+great detail.
+</p>
+
+</body>
+</section>
+<section>
+<title>Gtk-LP - A Gtk-powered Printer Configuration Tool</title>
+<body>
+
+<p>
+With <uri link="http://gtklp.sourceforge.net/index.shtml">Gtk-LP</uri> you can
+install, modify and configure your printer from a stand-alone Gtk application.
+It uses CUPS and provides all standard CUPS capabilities as well. Definitely
+worth checking out if you dislike the CUPS Web interface or want a stand-alone
+application for your day-to-day printing routines.
+</p>
+
+<p>
+To install it, emerge <c>gtklp</c>:
+</p>
+
+<pre caption="Installing Gtk-LP">
+# <i>emerge gtklp</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Troubleshooting</title>
+<section>
+<title>Error: Unable to convert file 0 to printable format</title>
+<body>
+
+<p>
+If you are having printing troubles and <path>/var/log/cups/error_log</path>
+shows this message:
+</p>
+
+<pre caption="Error log">
+Unable to convert file 0 to printable format
+</pre>
+
+<p>
+You need to re-emerge <c>ghostscript-gpl</c> with the <c>cups</c> USE flag. You
+can either add <c>cups</c> to your USE flags in <path>/etc/make.conf</path>, or
+you can enable it only for <c>ghostscript-gpl</c> as shown:
+</p>
+
+<pre caption="Adding cups to ghostscript-gpl">
+# <i>echo "app-text/ghostscript-gpl cups" &gt;&gt; /etc/portage/package.use</i>
+</pre>
+
+<p>
+Then emerge <c>ghostscript-gpl</c>. When it has finished compiling, be sure to
+restart <c>cupsd</c> afterward:
+</p>
+
+<pre caption="Restarting cupsd">
+# <i>/etc/init.d/cupsd restart</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+</guide>

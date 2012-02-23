@@ -1,0 +1,813 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/utf-8.xml,v 1.7 2006/09/10 12:27:17 idani Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/utf-8.xml" lang="ja">
+<title>GentooでのUTF-8の使用方法</title>
+
+<author title="Author">
+  <mail link="slarti@gentoo.org">Thomas Martin</mail>
+</author>
+<author title="Contributor">
+  <mail link="devil@gentoo.org.ua">Alexander Simonov</mail>
+</author>
+<author title="Editor">
+  <mail link="fox2mike@gentoo.org">Shyam Mani</mail>
+</author>
+<author title="翻訳">
+  <mail link="nakano@gentoo.org">中野 正智</mail>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+<author title="翻訳">
+  <mail link="murakami.taku@gmail.com">Taku Murakami</mail>
+</author>
+
+<abstract>
+このガイドでは、Unicode(特にUTF-8)の利点を解説した後で、
+Gentoo LinuxシステムでのUTF-8 Unicodeの設定方法と使い方について説明します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license />
+
+<version>2.22</version>
+<date>2006-08-28</date>
+<!-- Original revision: 1.44 -->
+
+<chapter>
+<title>文字コード</title>
+<section>
+<title>文字コードとは</title>
+<body>
+
+<p>
+コンピュータはテキストそれ自体を理解することができません。
+その代わりに、数字を用いてすべての文字を表します。
+伝統的に、それぞれのセットで使用できるアルファベットや文字(コーディングシステム、エンコーディングまたはキャラクタセットのこと)の数は、
+コンピュータハードウェアの能力により限界がありました。
+</p>
+
+</body>
+</section>
+<section>
+<title>文字コードの歴史</title>
+<body>
+
+<p>
+最も一般的な(少なくとも、最も広く受け入れられている)キャラクタセットは<b>ASCII</b>
+(American Standard Code for Information Interchange)です。
+ASCIIが今までで最も成功したソフトウェア標準であるということは、広く支持されていることです。
+現在のASCIIは1986年American National Standards Institute(米国規格協会)によって制定されました(ANSI X3.4, RFC 20, ISO/IEC 646:1991, ECMA-6)。
+</p>
+
+<p>
+ASCIIは7ビットに制限されています。これは7桁のバイナリで表されるビットパターンを使用するというです。
+十進数で言うと、0から127の範囲を使用可能ということになります。
+この範囲には、32の目に見えないコントロール文字が含まれています。
+大部分が0から31の間に、また最後のコントロール文字は、DELまたはdeleteで、127番目のところににあります。
+32から126には、目に見える文字、つまりスペース、句読点、ラテン文字、数字が入ります。
+</p>
+
+<p>
+ASCIIの8番目のビットはもともとは、エラーチェックのためのパリティビットとして使われていました。
+しかし、これが必要ではない場面では、0としておきます。
+これは、ASCIIでは、各文字はシングルバイトで表すことを意味します。
+</p>
+
+<p>
+近代の英語で、コミュニケーションをするためにはASCIIで十分でしたが、
+他のアクセント記号を含む他のヨーロッパ言語では、ことは簡単に行きませんでした。
+ISO 8859規格は、このニーズを満たすために誕生しました。
+これはASCIIへの互換性を残したまま、
+8番目のビットに空白にしておくのではなく、
+それぞれのエンコーディングごとに他の127文字を持たせるために使用しました。
+ISO 8859の限界はすぐに露見しましたが、
+現在15種類のISO 8859規格(8859-1から8859-15)が存在しています。
+これらの文字セットではASCII互換ではない部分で、
+しばしば文字の衝突が発生しました。
+Windows-1252がマイクロソフトウィンドウズで西ヨーロッパ言語として使用されたことは、
+文字エンコード間の透過性をさらに複雑化させることになりました。
+これは、ISO 8859-1の上位集合なのですが、いくつかの手法が異なっています。
+しかしながら、これらすべてのセットはASCIIとしての互換性は保持されています。
+</p>
+
+<p>
+日本語や韓国語(また少ない範囲での中国語)で使用されているEUC(Extended Unix Coding)のような、
+ラテン言語ではない文字のシングルバイトエンコーディングの開発はさらなる混乱を生みました。
+一方、他のOSでは、それでもやはり同じ言語で違う文字セット(例えばShift-JISとISO-2022-JP)を使用していました。
+キリル文字を表示させたいユーザーは、ロシア語やブルガリア語ではKOI8-Rを、
+ウクライナ語ではKOI8-U、
+または他のキリル文字のエンコード(うまくいっていないISO 8859-5またはWindows-1251セットなど)から選択する必要がありました。
+
+これらのキャラクタセットはASCIIとの互換性を持ちません。
+(KOI8エンコーディングはキリル文字をラテンの文字順に格納しますが、
+この場合8ビット目は省かれるので、
+テキストは大文字小文字が反転した形でASCII端末に表示され判読は可能です。)
+</p>
+
+<p>
+これは混乱を起こし、複数言語でのコミュニケーションをほぼ不可能にします。
+そしてUnicodeの出番です。
+</p>
+
+</body>
+</section>
+<section>
+<title>Unicodeとは</title>
+<body>
+
+<p>
+Unicodeは、昔ながらの文字セットのシングルバイト制限を取り払います。
+そして、Unicodeは65,536コードを持つ17のplaneで、最大1,114,112文字を表現します。
+"基本多言語面(Basic Multilingual Plane)"またはBMPとも呼ばれている最初のplaneには、使うであろうすべての文字が含まれているので、
+多くの人はUnicodeは16bit文字コードセットだと間違った想定をしてしまいがちです。
+</p>
+
+<p>
+Unicodeはたくさんの違った方法で文字が割り当てられています。
+その中で、<b>UTF</b> (Unicode Transformation Format)と<b>UCS</b> (Universal Character
+Set)が最も一般的です。
+UTFの後の数字は一単位で何ビットかを表します。
+また、UCSの後の数字は、バイト数を表します。
+UTF-8は、その8ビットクリーンな特性から、Unicodeで文章のやりとりをする目的では、
+最も広まりました。
+そして、UTF-8がこのドキュメントの主題です。
+</p>
+
+</body>
+</section>
+<section>
+<title>UTF-8</title>
+<body>
+
+<p>
+UTF-8は、1バイトから4バイトを使用する可変長の文字コードです
+これが意味するところは、ASCIIとラテン文字についてはわずかなデータ量の増加で相互変換可能だということです。
+なぜなら、これらの文字セットでは最初の1バイトしか使われないからです。
+日本語のような東洋の言語利用者はより多くのバイトを割り当てられ、あまり幸せではありません。
+結果として、最大50%のデータ冗長性が発生するからです。
+</p>
+
+</body>
+</section>
+<section>
+<title>UTF-8でできること</title>
+<body>
+
+<p>
+UTF-8は、標準的で国際的に受け入れられた多言語対応環境を比較的データの冗長をおさえて提供します。
+また、UTF-8はインターネット上で、メール、IRC、その他多くのメディアを通じて、ASCII以外の文字を送信する際に好まれています。
+この一方で、多くの人々はネットワークコミュニケーションにおいて、UTF-8には弊害があると考えています。
+<e>ASCII以外</e>のUTF-8を使用する前には、必ずそのメーリングリストやUsenetでのUTF-8の扱いを意識してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Gentoo LinuxでのUTF-8のセットアップ</title>
+<section>
+<title>UTF-8ロケールの発見、または作成</title>
+<body>
+
+<p>
+ここまでで、Unicodeの背景にある理念を説明してきました。
+さて、次にUTF-8を使い始める準備をします。
+</p>
+
+<p>
+UTF-8を使用するためには事前に、国際化言語サポートされたglibcがインストールされている必要があります。
+この作業を行うにあたり、推奨される方法が<path>/etc/locale.gen</path>ファイルです。
+このファイルの使用方法を説明するのは、このドキュメントの範疇を越えてしまいますが、
+<uri link="/doc/en/guide-localization.xml#doc_chap3_sect3">Gentoo Localization
+Guide</uri><uri link="/doc/ja/guide-localization.xml#doc_chap3_sect3">(日本語訳)</uri>で説明がされています。
+</p>
+
+<p>
+次に、どのUTF-8ロケールを使用するか、または新しく作成する必要があるのかを判断する必要があります。
+</p>
+
+<pre caption="既存のUTF-8ロケールを調べる">
+<comment>("en_GB"はあなたの望ましいロケールに置換してください。訳注：日本語ならja_JPでいいでしょう)</comment>
+# <i>locale -a | grep 'en_GB'</i>
+en_GB
+en_GB.UTF-8
+</pre>
+
+<p>
+このコマンドの出力結果から、<c>.UTF-8</c>のような拡張子のついたファイルがあるかどうか確認します。
+もし<c>.UTF-8</c>のような出力が得られなかった場合には、UTF-8互換のロケールを作成する必要があります。
+</p>
+
+<note>
+もしあなたの言語用にUTF-8ロケールが存在しなかった場合には下記コマンドを実行します。
+</note>
+
+<pre caption="UTF-8ロケールの作成">
+<comment>("en_GB"をあなたの望むロケールに変更してください)</comment>
+# <i>localedef -i en_GB -f UTF-8 en_GB.UTF-8</i>
+</pre>
+
+<p>
+またUTF-8ロケールをインストールする他の方法として、<path>/etc/locale.gen</path>ファイルにロケールを追加し、
+<c>locale-gen</c>コマンドで必要なロケールを再生成する方法があります。
+</p>
+  
+<pre caption="/etc/locale.genの該当行">
+en_GB.UTF-8 UTF-8
+</pre>
+
+</body>
+</section>
+<section>
+<title>ロケールの指定</title>
+<body>
+
+<p>
+UTF-8ロケールを使用するためには、<c>LC_ALL</c>(これは<c>LANG</c>設定を上書きします)の一つの環境変数を設定する必要があります。
+この値をセットする方法は色々ありますが、特定のユーザーにだけUTF-8環境変数を適用したい場合には、それらのユーザーの<path>~/.profile</path>(<c>/bin/sh</c>を使用している場合)、<path>~/.bash_profile</path>または<path>~/.bashrc</path> (<c>/bin/bash</c>を使用している場合)にセットします。
+</p>
+
+<p>
+またはシステム全体にセットしたい場合もあります。
+筆者が特に推奨する一つの方法は、<path>/etc/init.d/xdm</path>の中で設定する方法です。
+なぜならこの初期起動スクリプトは、上述のスクリプトを読み込む前、
+つまり環境変数が設定される前にディスプレイマネージャーとデスクトップを起動するからです。
+</p>
+
+<p>
+ロケールをグローバルに設定するには<path>/etc/env.d/02locale</path>を使用するべきです。
+このファイルは、次のようになります。
+</p>
+
+<pre caption="/etc/env.d/02localeの例">
+<comment>("en_GB.UTF-8"をあなたのロケールに変更してください。) </comment>
+LC_ALL="en_GB.UTF-8"
+</pre>
+
+<p>
+次にこの変更を使用して環境を更新します。
+</p>
+
+<pre caption="環境の更新">
+# <i>env-update</i>
+>>> Regenerating /etc/ld.so.cache...
+ * Caching service dependencies ...
+# <i>source /etc/profile</i>
+</pre>
+
+<p>
+では、<c>locale</c>コマンドを引数なしで実行し、環境変数に正しく設定されたかどうか見てみましょう。
+</p>
+
+<pre caption="環境変数にロケールが設定されたかどうかの確認">
+# <i>locale</i>
+LANG=
+LC_CTYPE="en_GB.UTF-8"
+LC_NUMERIC="en_GB.UTF-8"
+LC_TIME="en_GB.UTF-8"
+LC_COLLATE="en_GB.UTF-8"
+LC_MONETARY="en_GB.UTF-8"
+LC_MESSAGES="en_GB.UTF-8"
+LC_PAPER="en_GB.UTF-8"
+LC_NAME="en_GB.UTF-8"
+LC_ADDRESS="en_GB.UTF-8"
+LC_TELEPHONE="en_GB.UTF-8"
+LC_MEASUREMENT="en_GB.UTF-8"
+LC_IDENTIFICATION="en_GB.UTF-8"
+LC_ALL=en_GB.UTF-8
+</pre>
+
+<p>
+これで完了です。今、UTF-8ロケールを使用しています。
+次のハードルは、使用しているアプリケーションの設定です。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>アプリケーションのサポート</title>
+<section>
+<body>
+
+<p>
+Unicodeがソフトウェア界で勢いがついてきたころ、
+プログラマーが日々使用していたC言語などでは、マルチバイトの文字セットは適していませんでした。
+今日でさえ、UTF-8を正しく扱うことのできないプログラムがあります。
+しかし、幸いなことに多くのプログラムはUTF-8を扱えるようになっています!
+</p>
+
+</body>
+</section>
+<section>
+<title>NTFSやFATでのファイル名</title>
+<body>
+
+<p>
+Linuxカーネルの設定メニューにはいくつかのNLSオプションがあります。
+しかし大事なことは混乱しないことです！
+おそらく、必要なことはUTF-8 NLSをカーネルに組み込むことと、デフォルトのNLSオプションをutf8にするだけです。
+</p>
+
+<pre caption="UTF-8 NLSのためのカーネル設定">
+File Systems --&gt;
+  Native Language Support --&gt;
+    (utf8) Default NLS Option
+    &lt;*&gt; NLS UTF8
+    <comment>(お使いのFATファイルシステムやJoilet CD-ROMで使用している文字コードにも&lt;*&gt;を設定してください。)</comment>
+</pre>
+
+<p>
+NTFSパーティションをマウントする予定があるなら、<c>nls=</c>オプションをマウント時に指定する必要があります。
+FATパーティションをマウントする予定があるなら、<c>codepage=</c>オプションをマウント時に指定する必要があります。
+任意で、カーネル設定でFAT用のデフォルトcodepageを設定することも出来ます。
+mountの<c>codepage</c>オプションはカーネル設定を上書きすると言うことに注意してください。
+</p>
+
+<pre caption="カーネル設定でのFATの設定">
+File Systems --&gt;
+  DOS/FAT/NT Filesystems  --&gt;
+    (437) Default codepage for fat
+</pre>
+
+<p>
+<c>Default iocharset for fat</c>をUTF-8に設定することは避けるべきです。これは推奨されていません。
+その代わり、FATパーティションをマウントする際にutf8=trueオプションを渡すことが出来ます。
+これ以上の情報は、<c>man mount</c>や<path>/usr/src/linux/Documentation/filesystems/vfat.txt</path>にあるカーネルドキュメントを読んでください。
+</p>
+
+<p>
+ファイル名のエンコーディングを変更するには、<c>app-text/convmv</c>が便利です。
+</p>
+
+<pre caption="convmvの使用例">
+# <i>emerge --ask app-text/convmv</i>
+<comment>(コマンド形式)</comment>
+# <i>convmv -f &lt;現在のエンコード&gt; -t utf-8 &lt;ファイル名&gt;</i>
+<comment>(iso-8859-1を変更したい文字コードに置き換える)</comment>
+# <i>convmv -f iso-8859-1 -t utf-8 filename</i>
+</pre>
+
+<p>
+ファイルの<e>中身</e>を変更したい場合には、<c>glibc</c>に添付されている<c>iconv</c>を使用してください。
+</p>
+
+<pre caption="iconvの使用例">
+<comment>(iso-8859-1を変換元の文字コードで置換してください)</comment>
+<comment>(出力結果が正しいかどうか確認してください)</comment>
+# <i>iconv -f iso-8859-1 -t utf-8 filename</i> 
+<comment>(ファイルのコンバートを行うには、他のファイルを作成する必要があります)</comment>
+# <i>iconv -f iso-8859-1 -t utf-8 filename > newfile</i>
+</pre>
+
+<p>
+<c>app-text/recode</c>もまたこの目的で使うことができます。
+</p>
+
+</body>
+</section>
+<section>
+<title>システムコンソールでの使用</title>
+<body>
+
+<impo>
+コンソールでUnicodeを使うためには>=sys-apps/baselayout-1.11.9が必要です
+</impo>
+
+<p>
+UTF-8をコンソールで有効にするために、<path>/etc/rc.conf</path>を編集し<c>UNICODE="yes"</c>とセットします。
+そして、そのファイルのコメントを読むことも忘れないでください。
+Unicodeをできるだけ利用する計画があるなら、十分な文字コードの範囲を持ったフォントを持つことが重要です。
+</p>
+
+<p>
+<path>/etc/conf.d/keymaps</path>ファイルの中で定義されている<c>KEYMAP</c>変数にUnicodeキーマップを指定する必要があります。
+</p>
+
+<pre caption="/etc/conf.d/keymapsの設定例">
+<comment>(ukをあなたのロケールに変更してください。)</comment>
+KEYMAP="uk"
+</pre>
+
+</body>
+</section>
+<section>
+<title>ncursesとSlang</title>
+<body>
+
+<note>
+Slangをインストールしていない、または使用していない方は、この章を飛ばしてください。
+</note>
+
+<p>
+<c>unicode</c>を<path>/etc/make.conf</path>にグローバルUSEフラグとして追加するのはよい方法です。
+そして、<c>sys-libs/ncurses</c>と<c>sys-libs/slang</c>を必要なら再度mergeしてください。
+これは、システムの更新時にPortageが自動で行います。
+</p>
+
+<pre caption="システムの更新">
+# <i>emerge --update --deep --newuse world</i>
+</pre>
+
+<p>
+また、これらのライブラリにリンクされいてるパッケージを、このUSEの変更を有効にするために再度ビルドする必要があります。
+このために使う<c>revdep-rebuild</c>ツールは、<c>gentoolkit</c>パッケージに含まれています。
+</p>
+
+<pre caption="ncursesまたはslangにリンクされているプログラムの再ビルド">
+# <i>revdep-rebuild --soname libncurses.so.5</i>
+# <i>revdep-rebuild --soname libslang.so.1</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>KDEとGNOMEとXfce</title>
+<body>
+
+<p>
+この３つのメジャなデスクトップ環境は完全にUnicodeをサポートしています。
+また、このドキュメントで紹介した以上の設定も必要ありません。
+これはグラフィックツールキット(QtまたはGTK+2)がUTF-8に対応しているからです。
+また、これらのツールキット上で動くすべてのアプリケーションがUTF-8対応するはずです。
+</p>
+
+<p>
+例外は、XlibとGTK+1です。GTK+1は、iso-10646-1 FontSpecが~/.gtkrcに書かれている必要があります(例えば<c>-misc-fixed-*-*-*-*-*-*-*-*-*-*-iso10646-1</c>)。
+また、XlibまたはXawを使用するアプリケーションに、FontSpecのようなものを与える必要があります。そうしないと動きません。
+</p>
+
+<note>
+gnome1コントールセンターを使用していれば代わりに使うことができます。
+どれかiso10646-1フォントをそこから選択してください。
+</note>
+
+<pre caption="~/.gtkrc(GTK+1用)を編集して、Unicode互換フォントを設定する">
+style "user-font"
+{
+    fontset="-misc-fixed-*-*-*-*-*-*-*-*-*-*-iso10646-1"
+}
+widget_class "*" style "user-font"
+</pre>
+
+<p>
+アプリケーションがQTとGTK+2の両方のGUIをサポートしている場合、
+Unicodeに関してはGTK+2の方が一般的に良いです。
+</p>
+
+</body>
+</section>
+<section>
+<title>X11とフォント</title>
+<body>
+
+<impo>
+<c>x11-base/xorg-x11</c>は、XFree86よりもUnicodeのサポートが良く、
+<e>かなり</e>推奨されています。
+</impo>
+
+<p>
+TrueTypeフォントはUnicodeをサポートしています。
+また、Xorgに添付されて配布されているフォントの大部分には、文字に関するすばらしいサポートがあります。
+しかし、明らかに、Unicodeに存在するすべての文字がそのフォント用に作成されたものではありません。
+フォント(Bitstream Veraフォントセットを含む)をX用に東アジア文字を含めてビルドするためには、
+<c>cjk</c>USEフラグがセットされているか確認する必要があります。
+他の多くのアプリケーションも<c>cjk</c>USEフラグを使用しますので、
+恒久的なUSEフラグとしてセットしておくといいかもしれません。
+</p>
+
+<p>
+また、いくつかのUnicodeに対応したフォントパッケージがPortageにはあります。
+</p>
+
+<pre caption="任意選択: Unicode対応フォントのインストール">
+# <i>emerge terminus-font intlfonts freefonts cronyx-fonts corefonts</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>ウインドウマネージャとターミナルエミュレータ</title>
+<body>
+
+<p>
+GTKまたはQtを使用していないウインドウマネージャは、フォントを扱うためにXftを使用していることが多いので、
+Unicodeを非常にうまく使うことができます。
+
+あなたが使用中のウインドウマネージャがXftを使用していない場合には、
+前章で紹介したFontSpecをUnicodeフォントとして使用することができます。
+</p>
+
+<p>
+Xftを使用し、Unicodeをサポートしているターミナルエミュレータを見つけるのはもっと大変です。
+Konsoleとgnome-terminalは別として、Portageでの最良の選択肢は、
+<c>x11-terms/rxvt-unicode</c>、 <c>xfce-extra/terminal</c>、
+<c>gnustep-apps/terminal</c>、 <c>x11-terms/mlterm</c>、 
+または、<c>unicode</c> USEフラグ付きでビルドされ、<c>uxterm</c>として起動された<c>x11-terms/xterm</c>があります。
+また、<c>app-misc/screen</c>もUTF-8をサポートしてますが、<c>screen -U</c>で起動するか、または以下の行を<path>~/.screenrc</path>に追加する必要があります。
+</p>
+
+<pre caption="UTF-8のための~/.screenrc">
+defutf8 on
+</pre>
+
+</body>
+</section>
+<section>
+<title>Vim、Emacs、Xemacs、Nano</title>
+<body>
+
+<p>
+Vimは完全にUTF-8をサポートしています。
+また、UTF-8ファイルの自動認識機能も組み込まれています。
+Vimでの、さらに詳しい情報は<c>:help mbyte.txt</c>を使用してください。
+</p>
+
+<p>
+Emacs 22.x以降は完全にUTF-8をサポートしています。
+Xemacs 22.xはまだ文字コードの統合をサポートしていません。
+</p>
+
+<p>
+古いバージョンのEmacsやXemacsは<c>app-emacs/mule-ucs</c>や<c>app-xemacs/mule-ucs</c>をインストールし、UTF-8でCJKサポートを行うために以下のコードを<path>~/.emacs</path>に追加する必要があります。
+</p>
+
+<pre caption="EmacsのCJK UTF-8サポート">
+(require 'un-define)
+(require 'jisx0213)
+(set-language-environment "Japanese")
+(set-default-coding-systems 'utf-8)
+(set-terminal-coding-system 'utf-8)
+</pre>
+
+<p>
+Nanoはバージョン1.3.6からUTF-8をフルサポートしていませす。
+</p>
+
+</body>
+</section>
+<section>
+<title>シェル</title>
+<body>
+
+<p>
+現在のところ、<c>bash</c>はGUN readlineライブラリを使用して、Unicodeをサポートしています。
+zshユーザーには問題があります。zshでは、Unicodeがサポートされているところがありません。
+しかし、マルチバイト文字セットのサポートを加えるための取り組みもあります。
+</p>
+
+<p>
+csh、<c>tcsh</c>、<c>ksh</c>ではまったくUTF-8をサポートしていません。
+</p>
+
+</body>
+</section>
+<section>
+<title>Irssi</title>
+<body>
+
+<p>
+完全なUTF-8サポートがありますが、オプションをユーザーがセットする必要があります。
+</p>
+
+<pre caption="IrssiでUTF-8を使用する">
+/set term_charset UTF-8
+</pre>
+
+<p>
+ASCII文字以外のチャンネルではしばしばUTF-8以外の文字が使用されています。
+その場合には、<c>/recode</c>コマンドによって、変換することができるかもしれません。
+<c>/help recode</c>でさらなる情報を取得できます。
+</p>
+
+</body>
+</section>
+<section>
+<title>Mutt</title>
+<body>
+
+<p>
+MuttメールエージェントはUnicodeをサポートしています。
+UTF-8をMuttで使用するために、設定ファイルに何かする必要ありません。
+すべての設定ファイル(署名も含む)がUTF-8エンコードであれば、Muttは修正を行うことなくUnicode環境で動作します。
+</p>
+
+<note>
+それでもまだ'?'がMuttにてメールの中に現れるかもしれません。
+これは、そのユーザーが使用しているメールクライアントが、使用している文字セットを通知していないためです。
+そのユーザーにメールクライアントを正しく設定してもらうようにお願いする以外に、解決の方法はありません。
+</note>
+
+<p>
+さらなる情報は<uri link="http://wiki.mutt.org/index.cgi?MuttFaq/Charset">Mutt WikiWiki</uri>にあります。
+</p>
+
+</body>
+</section>
+<section>
+<title>Man</title>
+<body>
+
+<p>
+manページはすべてのLinuxマシンの必要不可欠な部分です。
+manページでunicodeが正しく表示されるために、<path>/etc/man.conf</path>を編集して以下の行を置き換えます。
+</p>
+
+<pre caption="Unicodeサポートのためにman.confを変更">
+<comment>(これは古い行です)</comment>
+NROFF           /usr/bin/nroff -Tascii -c -mandoc
+<comment>(上をこのように置き換えます)</comment>
+NROFF           /usr/bin/nroff -mandoc -c
+</pre>
+
+</body>
+</section>
+<section>
+<title>elinksとlinks</title>
+<body>
+
+<p>
+これらは一般にテキストブラウザとして使用されるので、これらでUTF-8サポートを有効にする方法を説明します。
+<c>elinks</c>と<c>links</c>では、これを行うための2つの方法があります。
+1つはブラウザのSetupオプションを使用することで、もう1つは設定ファイルを編集することです。
+ブラウザにオプションを設定するために、サイトを<c>elinks</c>や<c>links</c>で開き、<c>Alt+S</c>で設定メニューに入り、ターミナルオプションを選択するか、<c>T</c>を押します。
+そして保存し、メニューを終了します。
+<c>links</c>では<c>Alt+S</c>を繰り返し、保存するために<c>S</c>を押す必要があるかもしれません。
+設定ファイルオプションは以下に示します。
+</p>
+
+<pre caption="UTF-8をelinks/linksで有効にする">
+<comment>(elinksでは、/etc/elinks/elinks.confまたは~/.elinks/elinks.confを編集し、以下の行を追加します)</comment>
+set terminal.linux.utf_8_io = 1
+
+<comment>(linksでは、~/.links/links.cfgを編集し、以下の行を追加します)</comment>
+terminal "xterm" 0 1 0 us-ascii utf-8
+</pre>
+
+</body>
+</section>
+<section>
+<title>Samba</title>
+<body>
+
+<p>
+Sambaとは、SMB(Server Message Block)プロトコルをMac、
+Linux、FreeBSDのようなUNIXシステムで実装したソフトウェアスイートです。
+プロトコルは、Common Internet File System(CIFS)と呼ばれることもあります。
+また、SambaはNetBIOSシステム -- Windowsネットワーク上でファイル共有する際に使用されます --
+も含みます。
+</p>
+
+<pre caption="SambaでUTF-8の有効化">
+<comment>(/etc/samba/smb.confを編集し、[global]セクション以下に下記を追加します)</comment>
+dos charset = 1255
+unix charset = UTF-8
+display charset = UTF-8
+</pre>
+
+<note>
+訳注: 日本語環境では、dos charset = cp932と設定してください。
+</note>
+
+</body>
+</section>
+<section>
+<title>テストする</title>
+<body>
+
+<p>
+多くのUTF-8をテストするためのWebサイトがあります。
+
+<c>net-www/w3m</c>、<c>net-www/links</c>、 <c>net-www/elinks</c>、 <c>net-www/lynx</c>や、
+すべてのMozillaベースのブラウザ(Firefoxを含む)はUTF-8をサポートしています。
+また、KonquerorとOperaもUTF-8をサポートしています。
+</p>
+
+<p>
+テキストのみのブラウザを使用する場合には、Unicode対応のターミナルを使用してるかを必ず確認してください。
+</p>
+
+<p>
+UTF-8で使用する記号または文字が使用中のフォントに含まれていないときには、
+四角の中に文字または数字が入っているような文字が現れます。
+UTF-8の文字の16進数コードが四角と一緒に表示されることもあります。
+</p>
+
+<ul>
+  <li>
+    <uri link="http://www.w3.org/2001/06/utf-8-test/UTF-8-demo.html">W3C UTF-8テストページ</uri>
+  </li>
+  <li>
+    <uri link="http://titus.uni-frankfurt.de/indexe.htm?/unicode/unitest.htm">
+    フランクフルト大学によるUTF-8テストページ</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>入力方法</title>
+<body>
+
+<p>
+<e>dead key</e>をキーボードにない文字を入力するために使用するできるかもしれません。
+これは、右のAltキー(国によっては、AltGrキー)と、
+リターンキーの左側にあるアルファベットではない部分のオプションキーを同時に押し、その後両方のボタンを離し、さらに文字を押すことにより行うことができます。
+dead keyを使用すうことにより、文字を変更することができます。
+また、AltGrキーともう一つのキーと同時にシフトキーを押すことによって、入力をさらに変化させることができます。
+</p>
+
+<p>
+dead keyをXで有効にするには、それをサポートしているレイアウトが必要です。
+多くのヨーロッパ仕様のレイアウトでは、デフォルトの働きを持ったdead keyが既に設置されています。
+しかし、北米仕様のレイアウトではそうではありません。
+レイアウトにより違いはありますが、一番簡単な解決方法は、例えば"us"ではなく、"en_US"をレイアウトとして使うことです。
+レイアウトは次のように<path>/etc/X11/xorg.conf</path>で定義されています。
+</p>
+
+<pre caption="/etc/X11/xorg.confの一部分">
+Section "InputDevice"
+    Identifier "Keyboard0"
+    Driver     "kbd"
+    Option     "XkbLayout" "en_US" <comment>"us"ではなく</comment>
+    <comment>(その他のXkbオプションがここに続きます )</comment>
+EndSection
+</pre>
+
+<note>
+この変更は北米仕様のレイアウトや他のdead keyが動作していないようなレイアウトを使用している場合にのみ適用が必要です。
+ヨーロッパのユーザーは、そのままでdead keyが使えるはずです。
+</note>
+
+<p>
+この変更はXサーバーをリスタートしたときに有効になります。
+瞬時に変更を有効にするためには、<c>setxkbmap</c>ツールが使用できます。
+例えば、<c>setxkbmap en_US</c>としてください。
+</p>
+
+<p>
+おそらく、サンプル付きでdead keyについて説明するのが一番簡単な方法でしょう。
+結果はロケールに依存しますが、考え方はロケールによらずに同一です。
+この例はUTF-8を含んでいます。そのため参照するためには、
+UTF-8としてこのページをブラウザで開き直すか、
+UTF-8ロケールが既に設定されている必要があります。
+</p>
+
+<p>
+AltGrと[を同時に押し、そして離します。その後でaを押すと'ä' が現れます。
+AltGrと[を同時に押し、そして離します。その後でeを押すと'ë' が現れます。
+AltGrと;を同時に押し、そして離します。その後でaを押すと'á' が現れます。
+AltGrと;を同時に押し、そして離します。その後でeを押すと'á' が現れます。
+</p>
+
+<p>
+AltGrとシフトと[を同時に押し、話します。そしてaを押すとスカンジナビアの'å' が現れます。
+AltGrとシフトと[を同時に押し、[<e>だけ</e>をもう一度押すと、'˚'が現れます。
+これはあるものに見えますが、これ(U+02DA)は角度記号(U+00B0)とは別のものです。
+これはdead keyを使用して他のアクセントを表示させる働きです。
+AltGrと[を押し、[だけを一度離してから、もう一度押します。
+すると'¨' が現れます。
+</p>
+
+<p>
+AltGrは、アルファベットキーだけと使用することもできます。
+例えば、AltGrとmは、ギリシア文字の小文字muである'µ' を生成します。
+
+AltGrとsキーで、scharfes sまたはesszet 'ß'を生成します。
+多くのヨーロッパのユーザーが期待するように(なぜならキーボードに刻印されているので)、AltGrと4(キーボードレイアウトによってはE)はユーロ記号である'€'を生成します。
+</p>
+
+</body>
+</section>
+<section>
+<title>参考資料</title>
+<body>
+
+<ul>
+  <li>
+    <uri link="http://en.wikipedia.org/wiki/Unicode">WikipediaのUnicodeの項</uri>
+  </li>
+  <li>
+    <uri link="http://en.wikipedia.org/wiki/UTF-8">WikipediaのUTF-8の項</uri>
+  </li>
+  <li><uri link="http://www.unicode.org">Unicode.org</uri></li>
+  <li><uri link="http://www.utf-8.com">UTF-8.com</uri></li>
+  <li><uri link="http://www.ietf.org/rfc/rfc3629.txt">RFC 3629</uri></li>
+  <li><uri link="http://www.ietf.org/rfc/rfc2277.txt">RFC 2277</uri></li>
+  <li>
+    <uri
+    link="http://www.tbray.org/ongoing/When/200x/2003/04/26/UTF">Characters vs.
+    Bytes</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

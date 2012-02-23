@@ -1,0 +1,1187 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/shoutcast-config.xml,v 1.17 2010/07/13 19:42:13 nightmorph Exp $ -->
+<guide>
+<title>Streaming Radio With SHOUTcast</title>
+
+<author title="Author">
+  <mail link="chriswhite@gentoo.org">Chris White</mail>
+</author>
+<author title="Editor">
+  <mail link="fox2mike@gentoo.org">Shyam Mani</mail>
+</author>
+
+<abstract>
+This guide will walk through the steps needed to setup a streaming radio server
+with SHOUTcast Server and SHOUTcast Trans.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.5</version>
+<date>2006-11-02</date>
+
+<chapter>
+<title>Setting up SHOUTcast Server</title>
+<section>
+<title>Installing the files</title>
+<body>
+
+<p>
+The SHOUTcast Server can be found in media-sound/SHOUTcast-server-bin.  You can
+install it with the following command:
+</p>
+
+<pre caption="Emerging SHOUTcast">
+# <i>emerge shoutcast-server-bin</i>
+</pre>
+
+<p>
+The SHOUTcast Server will now be installed.  The next step is configuring your
+new SHOUTcast Server.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring SHOUTcast Server</title>
+<body>
+
+<p>
+Now that SHOUTcast Server is installed, it must be configured.  The
+configuration file can be found in <path>/etc/shoutcast/sc_serv.conf</path>.
+Let's begin with the configuration.  Make sure you are root, and open the
+configuration file with your favorite editor.  I choose vi for this example.
+Now I'll bring up the file with vi:
+</p>
+
+<pre caption="Opening the configuration file">
+# <i>vi /etc/shoutcast/sc_serv.conf</i>
+</pre>
+
+<p>
+This will bring up the SHOUTcast Server configuration file for viewing.
+From there you will see the configuration file and the different options
+that you can set.  Let's take a look on how to setup these particular options.
+</p>
+
+</body>
+</section>
+<section>
+<title>Mandatory Options</title>
+<body>
+
+<pre caption="Setting the user limit">
+<comment>; MaxUser.  The maximum number of simultaneous listeners allowed.
+; Compute a reasonable value for your available upstream bandwidth (i.e. if
+; you have 256kbps upload DSL, and want to broadcast at 24kbps, you would
+; choose 256kbps/24kbps=10 maximum listeners.)  Setting this value higher
+; only wastes RAM and screws up your broadcast when more people connect
+; than you can support.</comment>
+MaxUser=10
+</pre>
+
+<p>
+This is where the maximum number of users is set.  As the caption states,
+it is foolish to setup 100 users on a 256kbps upload (This is what I have set,
+as my upload is about that).  If you're running SHOUTcast Server to serve a
+LAN, you can probably set this MUCH higher (to the 100 mentioned easily).
+Please remember to not abuse whatever bandwidth you are using though.  Bandwidth
+comes at quite a high price to ISPs and some will cut your account, fine you
+high costs to makeup, or both.
+</p>
+
+<pre caption="Setting the password">
+<comment>; Password.  While SHOUTcast never asks a listener for a password, a
+; password is required to broadcast through the server, and to perform
+; administration via the web interface to this server.  This server should
+; consist of only letters and numbers, and is the same server your broadcaster
+; will need to enter in the SHOUTcast Source Plug-in for Winamp.  THIS VALUE
+; CANNOT BE BLANK.</comment>
+Password=a_hard_to_crack_password
+</pre>
+
+<p>
+Here is where you setup the password.  The password itself is clear text.  For
+security purposes, I STRONGLY recommend that you don't use passwords that are
+used to access critical system components or other sensitive information.
+Make this as random as possible, with a combination of letters and numbers.
+This password will be what SHOUTcast Trans (or any other content provider)
+will use to connect and provide streaming content.
+</p>
+
+<pre caption="Setting up your listening port">
+<comment>; PortBase. This is the port number your server will run on.  The
+; value, and the value + 1 must be available.  If you get a fatal error when
+; the DNAS is setting up a socket on startup, make sure nothing else on the
+; machine is running on the same port (telnet localhost port number -- if you
+; get connection refused then you're clear to use that port).  Ports less than 1024
+; may require root privileges on *nix machines.  The default port is 8000.</comment>
+PortBase=8000
+</pre>
+
+<p>
+This value sets up what port users will connect to on your SHOUTcast Server.
+The default is 8000, as it is what most mp3 server capable programs will
+default to (Audacious, winamp, etc.). As it states, if you wish to use a port
+less than 1024, you will need to be root.  However, I strongly urge against
+using any port lower than 1024 for your SHOUTcast Server.
+</p>
+
+<pre caption="Setting up logging">
+<comment>; LogFile: file to use for logging. Can be '/dev/null' or 'none'
+; or empty to turn off logging. The default is ./sc_serv.log
+; on *nix systems or sc_serv_dir\sc_serv.log on win32.
+; Note: on win32 systems if no path is specified the location is
+; in the same directory as the executable, on *nix systems it is in the
+; current directory.</comment>
+LogFile=/var/log/SHOUTcast.log
+</pre>
+
+<p>
+This sets the location of the SHOUTcast server log file. The ebuild
+has it set to /dev/null, so you will need to change it in order to get a real
+log.  I have it setup in the basic /var/log location.  You can have it log to
+wherever you need.
+</p>
+
+<pre caption="Enabling real time stats">
+<comment>; RealTime displays a status line that is updated every second
+; with the latest information on the current stream (*nix and win32
+; console systems only)</comment>
+RealTime=0
+</pre>
+
+<p>
+This displays information on the current song to stdout every second.  This
+is disabled by the ebuild so that the SHOUTcast daemon can run as silently
+as possible.  Set this to 1 if you want these updates each second.  However, I
+recommend you use the status page instead.
+</p>
+
+<pre caption="Enabling real time logging">
+<comment>; ScreenLog controls whether logging is printed to the screen or not
+; on *nix and win32 console systems. It is useful to disable this when
+; running servers in background without their own terminals. Default is 1</comment>
+ScreenLog=0
+</pre>
+
+<p>
+This is disabled by default in the ebuild to make the daemon run as
+silently as possible.  This will log any events (connects, disconnects, etc)
+to stdout as they happen in real time.  However, because the log file
+does the same thing, I recommend using it instead.
+</p>
+
+<pre caption="Setting the last number of songs displayed">
+<comment>; ShowLastSongs specifies how many songs to list in the /played.html
+; page.  The default is 10.  Acceptable entries are 1 to 20.</comment>
+ShowLastSongs=10
+</pre>
+
+<p>
+Just as it states, this value will set how many of the most recently played
+/played.html will display. If you put more than 20, you should probably
+consider more coffee.
+</p>
+
+<pre caption="Setting up filesystem modification logging">
+<comment>; TchLog decides whether or not the DNAS log file should track yp
+; directory touches.  Adds and removes still appear regardless of
+; this setting.
+; Default is yes
+; TchLog=yes</comment>
+</pre>
+
+<p>
+This setting enables or disables logging for directory modifications
+by the DNAS (Distributed Network Audio Server), or SHOUTcast for short.
+Recommended for those who wish to have the most secure logging possible.
+Basic home/casual users probably don't need this.
+</p>
+
+<pre caption="Enabling http request logging">
+<comment>; WebLog decides whether or not hits to http:// on this DNAS will
+; be logged.  Most people leave this off because the DSP plug-in
+; uses http:// calls to update titles and get the listener count,
+; which takes up a lot of log space eventually.  If you want to
+; see people making hits on your admin.cgi or index pages, turn
+; this back on.  Note that this setting does NOT affect XML stats
+; counters for hits to http:// pages.
+; Default is no.
+; WebLog=no</comment>
+</pre>
+
+<p>
+This specifies whether or not you want to log hits to the HTTP server that
+SHOUTcast provides. Once again, recommended for those who wish the most
+secure logging possible, but not recommended for home/casual users.
+</p>
+
+<pre caption="Enabling W3C Logging">
+<comment>; W3CEnable turns on W3C Logging.  W3C logs contain httpd-like accounts
+; of every track played for every listener, including byte counts those listeners
+; took.  This data can be parsed with tools like Analog and WebTrends, or given
+; to third parties like Arbitron and Measurecast for their reporting systems.
+; Default is Yes (enabled).</comment>
+W3CEnable=Yes
+
+<comment>; W3CLog describes the name of the log file for W3C logging.  Default log file is
+; sc_w3c.log, in the same directory wherever the DNAS gets started from.</comment>
+W3CLog=/dev/null
+</pre>
+
+<p>
+The first option enables W3C logging.  This type of logging can be easily parsed
+by the programs listed. This is highly recommended for those who wish to
+have the most in depth statistics possible.  The second option specifies where
+to store the W3C log.  This is set to /dev/null by the ebuild.
+</p>
+
+</body>
+</section>
+<section>
+<title>Network Configuration</title>
+<body>
+
+<pre caption="Setting the source IP">
+<comment>; SrcIP, the interface to listen for source connections on (or to make relay
+; connections on if relaying). Can and usually will be ANY or 127.0.0.1
+; (Making it 127.0.0.1 will keep other machines from being able to
+; broadcast using your SHOUTcast Server )</comment>
+SrcIP=ANY
+</pre>
+
+<p>
+The SrcIP variable sets what IP streaming content is coming from.  This can
+be another server (relaying), localhost (regular), or any other IP that your
+interface supports.  Setting to localhost prevents any other server from
+using your SHOUTcast Server as a broadcast source.  The default is ANY
+and will cause your SHOUTcast Server to source from any IP. Security wise, it
+is better to set this to something specific.
+</p>
+
+<pre caption="Setting the destination IP">
+<comment>; DestIP, IP to listen for clients on (and to contact yp.SHOUTcast.com)
+; can and usually will be be ANY. If your machine has multiple IP addresses,
+; set this to the one you want it to be accessed by.</comment>
+DestIP=ANY
+</pre>
+
+<p>
+This determines which IP on your interface you will allow users to connect to.
+This can be localhost (if you're anti-social and wish only to
+stream to yourself), a private IP (for instance, 192.168.0.101, for hosting to
+a local network), or your external IP (for instance, 209.204.249.201, for
+streaming to a WAN, but not a LAN). In most cases, you can reach your own
+stream by using 127.0.0.1 instead of what is listed here.  ANY lets your
+SHOUTcast Server bind to all IP addresses on all available interfaces.
+</p>
+
+<pre caption="Setting proxy/yp.SHOUTcast.com port">
+<comment>; Yport, port to connect to yp.SHOUTcast.com on. For people behind caching
+; web proxies, change this to the alternate port (666 is what it might be,
+; check www.SHOUTcast.com if you have problems). Otherwise, leave this at 80.
+; We're actively working on re-opening port 666, but as of release the only
+; working port is port 80.</comment>
+Yport=80
+</pre>
+
+<p>
+This has 2 functions.  First is the port to connect to yp.SHOUTcast.com with.
+yp.SHOUTcast.com is nullsoft's page for public servers so users know where to
+listen in on.  Users can search for your station from this page.  The
+secondary use is for web proxies.  Set this to the port you use for proxy
+connects, and set DestIP to your proxy for streaming.
+</p>
+
+<pre caption="Setting up reverse DNS">
+<comment>; NameLookups.  Specify 1 to perform reverse DNS on connections.
+; This option may increase the time it takes to connect to your
+; server if your DNS server is slow.  Default is 0 (off).</comment>
+NameLookups=0
+</pre>
+
+<p>
+This option specifies whether or not you want to perform reverse DNS lookups
+on clients. This would take an IP address and try to find out the corresponding
+host name. Use this for logging purposes to create a more detailed report.
+</p>
+
+<pre caption="Setting up relaying">
+<comment>; RelayPort and RelayServer specify that you want to be a relay server.
+; Relay servers act as clients to another server, and rebroadcast.
+; Set RelayPort to 0, RelayServer to empty, or just leave these commented
+; out to disable relay mode.
+; RelayPort=8000
+; RelayServer=192.168.1.58</comment>
+</pre>
+
+<p>
+This specifies that you are acting as a relay server. Relay servers are
+often used to take a low bandwidth connection that can only stream to one
+client, and use its own higher bandwidth to serve to more clients.  RelayPort
+specifies the port and IP address of the SHOUTcast Server you wish to
+relay for. Comment this out if you don't plan on using your server as a relay.
+</p>
+
+</body>
+</section>
+<section>
+<title>Server Configuration</title>
+<body>
+
+<pre caption="Setting the admin password">
+<comment>; AdminPassword.  This password (if specified) changes the
+; behavior of Password to be a broadcast-only password, and
+; limits HTTP administration tasks to the password specified
+; here.  The broadcaster, with the password above, can still
+; log in and view connected users, but only the AdminPassword
+; will grant the right to kick, ban, and specify reserve hosts.
+; The default is undefined (Password allows control for both
+; source and admin)
+; AdminPassword=adminpass</comment>
+</pre>
+
+<p>
+Setting this will create a broadcaster and administrator. The broadcaster can
+log in with Password, and view connections. However, should the person want
+to kick/ban/administer the server, they must have the Admin password. This
+option creates more specific roles for your server. This is recommended for
+instances where the system administrator is not the same person as the
+broadcaster.
+</p>
+
+<pre caption="Setting up auto user disconnect">
+<comment>; AutoDumpUsers controls whether listeners are disconnected if the source
+; stream disconnects. The default is 0.</comment>
+AutoDumpUsers=0
+</pre>
+
+<p>
+This specifies whether or not users are kicked out if the stream disconnects
+for any reason.  This is set to 0, so that clients will either timeout
+themselves, or keep trying to buffer a stream.  Use this if you expect
+short interruptions at any time.
+</p>
+
+<pre caption="Setting up the source timeout">
+<comment>; AutoDumpSourceTime specifies how long, in seconds, the source stream is
+; allowed to be idle before the server disconnects it. 0 will let the source
+; stream idle indefinitely before disconnecting. The default is 30.</comment>
+AutoDumpSourceTime=30
+</pre>
+
+<p>
+This specifies when the SHOUTcast Server should give up waiting for a source
+(mainly a relay server) to stream content from. Anywhere from 30 to 60 should be
+a reasonable value for this.
+</p>
+
+<pre caption="Setting up the content directory">
+<comment>; ContentDir specifies the directory location on disk of where to stream
+; on-demand content from. Subdirectories are supported as of DNAS 1.8.2.
+; Default is ./content/, meaning a directory named content in the same directory
+; as where sc_serv was invoked from.</comment>
+ContentDir=/opt/SHOUTcast/content/
+</pre>
+
+<p>
+The ContentDir specifies where to put on demand content. For example, if you
+wish to stream an announcement to employees, you could use this for that
+purpose. The SHOUTcast Server ebuild sets this to
+<path>/opt/SHOUTcast/content</path> for you. To use this, put an mp3 in the
+content directory, then point your browser to
+<c>http://example.com:[port]/content/mp3name.pls</c>. SHOUTcast Server will
+automatically create a streaming media compatible play list for the mp3, and
+stream it on demand. Use this as an alternative to SHOUTcast Trans for
+streaming media source.
+</p>
+
+<pre caption="Setting up an intro file">
+<comment>; IntroFile can specify a mp3 file that will be streamed to listeners right
+; when they connect before they hear the live stream.
+; Note that the intro file MUST be the same sample rate/channels as the
+; live stream in order for this to work properly. Although bit rate CAN
+; vary, you can use '%d' to specify the bit rate in the filename
+; (i.e. C:\intro%d.mp3 would be C:\intro64.mp3 if you are casting at 64kbps).
+; The default is no IntroFile
+; IntroFile=c:\intro%d.mp3</comment>
+</pre>
+
+<p>
+This allows you to configure an intro file. Every time users connect, they'll
+hear this file played.  As it states, the stream bit rate and the intro song
+bit rate must match, or else things will break.  You can, however, put
+something such as intro128.mp3 and intro64.mp3, and it will play intro128.mp3
+to users connecting to a 128kbps stream, and intro64.mp3 for users connecting
+at 64kbps.
+</p>
+
+<pre caption="Setting up a back file">
+<comment>; BackupFile can specify a mp3 file that will be streamed to listeners over
+; and over again when the source stream disconnects. AutoDumpUsers must be
+; 0 to use this feature. When the source stream reconnects, the listeners
+; are rejoined into the live broadcast.
+; Note that the backup file MUST be the same sample rate/channels as the
+; live stream in order for this to work properly. Although bit rate CAN
+; vary, you can use '%d' to specify the bit rate in the filename
+; (i.e. C:\backup%d.mp3 would be C:\backup32.mp3 if you are casting at 32kbps).
+; The default is no BackupFile
+; BackupFile=C:\intro%d.mp3</comment>
+</pre>
+
+<p>
+This is the same as above, but will be played when the stream source ends,
+instead of when users disconnect.  This will only work if AutoDumpUsers is set
+to 0.
+</p>
+
+<pre caption="Setting up a title format">
+<comment>; TitleFormat specifies a format string for what title is sent to the listener.
+; For example, a string of 'Justin Radio' forces the title 'Justin Radio' even
+; when the source changes the title. You can use up to one '%s' in the string
+; which lets you contain the title from the source. For example, if your
+; TitleFormat is 'Justin Radio: %s', and the source plug-in's title is
+; 'Billy plays the blues', then the net title is
+; 'Justin Radio: Billy plays the blues'. Note: only works on non-relay servers.
+; The default is no format string.</comment>
+TitleFormat=Chris Gentoo Beats: %s
+</pre>
+
+<p>
+This sets up a non-variable title for your SHOUTcast server.  Use this if your
+source stream differs from your SHOUTcast Server's name.  This will NOT work
+with relay servers.
+</p>
+
+<pre caption="Setting up a URL format">
+<comment>; URLFormat specifies a format string for what URL is sent to the listener.
+; Behaves like TitleFormat (see above).
+; The default is no format string.
+; URLFormat=http://www.server.com/redirect.cgi?url=%s</comment>
+</pre>
+
+<p>
+This is the same as TitleFormat except that the URL listed above is used
+instead of the source stream's URL.
+</p>
+
+<pre caption="Setting up the public status of a source stream">
+<comment>; PublicServer can be always, never, or default (the default, heh)
+; Any setting other than default will override the public status
+; of the source plug-in or of a SHOUTcast Server that is being relayed.</comment>
+PublicServer=default
+</pre>
+
+<p>
+This specifies whether or not you want to be listed as a public server even if
+your relay server/source plug-in is listed as such.
+</p>
+
+<pre caption="Allowing relaying">
+<comment>; AllowRelay determines whether or not other SHOUTcast Servers will be
+; permitted to relay this server.  The default is Yes.</comment>
+AllowRelay=Yes
+</pre>
+
+<p>
+AllowRelay determines if other servers are allowed to relay your content.
+If you don't think you'll ever relay at all, set this to No.
+</p>
+
+<pre caption="Allowing relays to publically display the source">
+<comment>; AllowPublicRelay, when set to No, will tell any relaying servers not
+; to list the server in the SHOUTcast directory (non-public), provided
+; the relaying server's Public flag is set to default.  The default is
+; Yes.</comment>
+AllowPublicRelay=Yes
+</pre>
+
+<p>
+AllowPublicRelay specifies whether or not you wish to be listed in the
+SHOUTcastpublic directory if the server you're relaying to is already listed.
+Note that PublicServer can override this setting.
+</p>
+
+<pre caption="Setting MetaInterval">
+<comment>; MetaInterval specifies how often, in bytes, meta data sent.
+; You should really leave this at the default of 32768, but the option is
+; provided anyway.</comment>
+MetaInterval=32768
+</pre>
+
+<p>
+Just leave this as is.
+</p>
+
+</body>
+</section>
+<section>
+<title>Access Configuration</title>
+<body>
+
+<pre caption="Setting the max listener time">
+<comment>; ListenerTimer is a value in minutes of maximum permitted time for
+; a connected listener.  If someone is connected for longer than this
+; amount of time, in minutes, they are disconnected.  When undefined,
+; there is no limit defined.  Default is undefined.
+; ListenerTimer=600</comment>
+</pre>
+
+<p>
+I'm not to sure why you'd need this one.  Basically, if a user is on for too
+many minutes, disconnect them.  Only thing I can think of is to kick idlers
+off, or people you think should be doing other things than listening to your
+stream.  Value is measured in minutes.
+</p>
+
+<pre caption="Setting up the ban file">
+<comment>; BanFile is the text file sc_serv reads and writes to/from
+; for the list of clients prohibited to connect to this
+; server.  It's automatically generated via the web
+; interface.
+; BanFile=sc_serv.ban</comment>
+</pre>
+
+<p>
+This is the filename for the list of clients that are banned from your server.
+The default is sc_serv.ban, but you can use whatever name you so desire with
+this setting.
+</p>
+
+<pre caption="Setting the Rip list">
+<comment>; RipFile is the text file sc_serv reads and writes to/from
+; for the list of client IP addresses which are *ALWAYS* permitted
+; to connect to this server (useful for relay servers).
+; This file is automatically generated via the web
+; interface.  Note that if your server is FULL, and someone
+; from a Reserved IP connects, the DNAS will force the person
+; listening for the longest time off to make room for the new
+; connection.
+; RipFile=sc_serv.rip</comment>
+</pre>
+
+<p>
+As grim as it sounds, Rip actually stands for "Reserved IP".  Use this for
+your friends or other people you consider more important than random users.
+If you are currently streaming to the max number of users possible, and one
+of your rip members tries to get on, it will kick the longest listening person
+from the server to get them on.
+</p>
+
+<pre caption="Setup if Rip only users can access your server">
+<comment>; RipOnly, when set to Yes, will only allow IP addresses listed in the Reserved
+; IP list to connect and relay.  All other connections for listening will be denied.
+; This is really only useful for servers whose sole purpose is to provide the
+; primary feed to all public relays.  Setting this value to Yes also forces the
+; server into Private mode, since listing this server in the directory would
+; be pointless.  Default is No.
+; RipOnly=No</comment>
+</pre>
+
+<p>
+This allows for only Rip members to connect to your SHOUTcast Server.  You can
+either use this for private radio streams, or to make it so that only certain
+relays will be able to access your stream.
+</p>
+
+</body>
+</section>
+<section>
+<title>Mass Configuration</title>
+<body>
+
+<pre caption="Setting Unique variables">
+<comment>; Unique: assigns a variable name for use in any configuration item which points to a
+; file.  Useful for servers running lots of SHOUTcast Servers that have similar
+; configuration parameters, excepting log file names, ban file names, etc.  Any
+; parameter that takes a pathname can include the character $, which will
+; substitute $ for the variable assigned here.  Keep in mind that the unique
+; variable can only be used after it is defined, so don't try to use a unique
+; variable substitution in a path before you define it.  For example, you
+; could set:
+; Unique=my_server
+; and then define Log=/usr/local/SHOUTcast/$.log in an included configuration
+; file.  Default is Unique=$, so that by default any file with $ in the name
+; won't substitute anything at all.</comment>
+</pre>
+
+<p>
+Basically, if you're running lots of SHOUTcast Servers, it would be a dire
+pain to change all the log/ban/etc. files to something unique for every
+configuration.  Instead, you can set Unique to something, and $ will be
+replaced with whatever Unique is set to.  For example, if one file had
+Unique=Jazz and another had Unique=Rock, then Log=/var/log/$.log would
+produce /var/log/Jazz.log on one configuration file and /var/log/Rock.log
+on another configuration file.  Much easier when dealing with multiple
+SHOUTcast Servers on similar configurations.
+</p>
+
+<pre caption="Setting up common configure variables">
+<comment>; Include: instructs the sc_serv to read from the named configuration file,
+; *at the point of insertion of the Include statement*, and process as though
+; the included file was part of itself.  Note that all configuration parameters
+; in the DNAS configuration file are processed first to last, so if an item is defined
+; twice in a configuration, the last item to process will be the one that takes
+; effect.  For this reason, it's usually a good idea to use the Includes first
+; in a configuration file.
+; example:
+; Include=/usr/local/SHOUTcast/common.conf
+; Default is not applicable.</comment>
+</pre>
+
+<p>
+If you're running multiple SHOUTcast Servers and wish to utilize similar
+configuration variables without setting them all for each configuration
+file, you can set this to point to a file that contains settings that are
+similar between multiple configurations.
+</p>
+
+</body>
+</section>
+<section>
+<title>Optimization Configuration</title>
+<body>
+
+<pre caption="Setup number of CPU's utilized">
+<comment>; CpuCount is used to explicitly limit the DNAS to dominating a finite
+; amount of processors in multiprocessor systems.  By default,
+; SHOUTcast creates one thread for every processor it detects in the
+; host system, and assigns listeners equally across all the threads.
+; In the event SHOUTcast doesn't correctly determine the number of
+; CPUs in your host, or if you for whatever reason want to force
+; the DNAS to not use other processors, you can say so here.
+; Default behavior is to use as many processors as the DNAS detects on
+; your system.
+; CpuCount=1</comment>
+</pre>
+
+<p>
+On multiple CPU systems, use this setting to force the SHOUTcast Server to
+utilize CpuCount # of processors.  The default to assign one thread to each
+processor, and have listeners across all the threads.  If you set this lower
+than your total processor count, this will leave processors free to do other
+things.
+</p>
+
+<pre caption="Setup data submission gap">
+<comment>; Sleep defines the granularity of the client threads for sending data.
+; DNAS 1.7.0, per client thread, will send up to 1,024 bytes of data
+; per socket (or less depending on the window available), and then
+; sleep for the provided duration before repeating the whole process.
+; Note that making this value smaller will vastly increase CPU usage on
+; your machine.  Increasing reduces CPU, but increasing this value too far
+; will cause skips.  The value which seems most optimal for 128kbps
+; streaming is 833 (833 microseconds per client poll) on our test labs.
+; We wouldn't recommend setting it any lower than 100, or any higher than
+; 1,024.  If you have a slower machine, set this number lower to fix
+; skips.
+; Default value is 833.
+; Sleep=833</comment>
+</pre>
+
+<p>
+The SHOUTcast Server will use the sleep value in determining the gap between
+sending data.  The higher the value, the longer the gap, the lower the value,
+the shorter the gap and the more CPU usage SHOUTcast Server will take up.  On
+slower systems, as it states, you might want to lower this so that the
+SHOUTcast Servers sends data more and more frequently to users.  Best to leave
+as is.
+</p>
+
+<pre caption="Setup XML output">
+<comment>; CleanXML strips some whitespace and line feeds from XML output which
+; confuses some (poorly written) XML parsers.  If you get XML rendering errors,
+; try turning this on.  Default is No (off).
+; CleanXML=No</comment>
+</pre>
+
+<p>
+Probably don't need to worry about this setting to much unless you use custom
+XML parsers to create custom statistics for you server.  If the XML parser
+cannot handle whitespace and line feeds in XML, set this to Yes, and all should
+work.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuration Conclusion</title>
+<body>
+
+<p>
+Your SHOUTcast Server should now be configured.  For businesses that are using
+SHOUTcast, I recommend turning on WC3 logging, as it can be easily parsed, and
+used for creating custom statistics. You should also enable the
+AdministratorPassword. You might also wish to enable some of the mass
+configuration options if you're creating multiple SHOUTcast Servers.
+</p>
+
+<p>
+With the configuration setup, we'll now work on getting SHOUTcast up and
+running.  We'll start with simple on demand streaming for a simple startup,
+then work on SHOUTcast Trans later (as it is somewhat more involved).
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Getting started with SHOUTcast Server</title>
+<section>
+<title>Setting up on demand streaming</title>
+<body>
+
+<p>
+On demand streaming, as shown in the configuration chapter, automatically sets
+up on demand play lists for mp3 files in the content directory.  The SHOUTcast
+server ebuild has a directory setup in /opt/SHOUTcast/content for all your on
+demand mp3's.  Let's get started by creating a simple on demand streaming mp3.
+</p>
+
+<p>
+First we'll need to get an mp3 from somewhere and put it in the content
+directory.  We'll take this sample.mp3 file from an /Mp3 directory I have
+created.
+</p>
+
+<pre caption="Copying an mp3 to the content directory">
+# <i>cp sample.mp3 /opt/SHOUTcast/content/</i>
+# <i>cd /opt/SHOUTcast/content/</i>
+# <i>ls</i>
+sample.mp3
+</pre>
+
+<p>
+OK, so the file is copied over now. Now we'll need to startup our SHOUTcast
+Server so the file can be accessed.
+</p>
+
+<pre caption="Starting up the SHOUTcast Server">
+# <i>/etc/init.d/shoutcast start</i>
+ * Starting Shoutcast Server...
+*******************************************************************************
+** SHOUTcast Distributed Network Audio Server
+** Copyright (C) 1998-2004 Nullsoft, Inc.  All Rights Reserved.
+** Use "sc_serv filename.ini" to specify an ini file.
+*******************************************************************************
+                                                                         [ ok ]
+</pre>
+
+<p>
+The little banner is there to make sure that nothing dies right away (i.e. so
+you know your server actually started). Your SHOUTcast Server is now started!
+Because of the nature of on demand content, you will ONLY be able to access it
+from a browser. MPlayer or anything else won't be able to stream it as is. I
+use kmplayer in order to access the stream directly from my browser. You can
+see the result on the next image.
+</p>
+
+<figure caption="On Demand Content" short="OnDemandContent"
+link="/images/docs/shoutcast-OnDemandContent.jpg" />
+
+<p>
+Some people have Audacious setup to handle their audio mime types, so your
+browser may spawn Audacious up in order to play the resulting streaming
+content. Now that you are able to work with on demand content, we'll now work
+on using SHOUTcast Trans to create a true streaming radio server.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Setting up SHOUTcast Trans</title>
+<section>
+<title>SHOUTcast Trans introduction</title>
+<body>
+
+<p>
+SHOUTcast Trans stands for SHOUTcast Trans(coder), as it is able to transcode
+mp3's to lower or higher bit rates.  SHOUTcast Trans works by streaming mp3's
+from a play list specified in the configuration file.  We'll begin to setup the
+configuration for SHOUTcast Trans, so that we can have a real to goodness
+streaming radio station.  We'll begin by opening the configuration file for
+SHOUTcast Trans, which just so happens to be located in
+/etc/shoutcast/sc_trans.conf.
+</p>
+
+<pre caption="Opening the SHOUTcast Trans configuration file">
+<comment>(First install SHOUTcast Trans)</comment>
+# <i>emerge shoutcast-trans-bin</i>
+<comment>(Next open the SHOUTcast Trans configuration file)</comment>
+# <i>vi /etc/shoutcast/sc_trans.conf</i>
+</pre>
+
+<p>
+Now that we have the SHOUTcast Trans configuration file open, we'll begin to
+setup the streaming source.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring SHOUTcast Trans</title>
+<body>
+
+<pre caption="Setting up the playlist">
+<comment>; PlaylistFile (required EVEN IF RELAYING) - play list file (to create, use
+; find /path/to/mp3/directory -type f -name "*.mp3" &gt; playlist_filename.lst</comment>
+PlaylistFile=/opt/SHOUTcast/playlists/playlist.lst
+</pre>
+
+<p>
+This setting tells SHOUTcast where to find its streaming media content from.
+This setting requires an existing file, so let's go ahead and create a
+play list.  I'll create one real quick from my /Mp3 directory referred to
+earlier.
+</p>
+
+<pre caption="Creating the playlist">
+# <i>find /Mp3 -type f -name "*.mp3" &gt; /opt/SHOUTcast/playlists/playlist.lst</i>
+</pre>
+
+<p>
+Now that the play list is setup, we point the configuration file to it, and
+SHOUTcast Trans will now know what files to stream.
+</p>
+
+<pre caption="Setting the server IP and port">
+<comment>; Serverip/ServerPort are the target server to send to</comment>
+Serverip=127.0.0.1
+ServerPort=8000
+</pre>
+
+<p>
+This setting decides where to send the streaming content.  In this guide,
+it will be the SHOUTcast Server's IP and port that you setup previously
+(DestIP and PortBase).
+</p>
+
+<pre caption="Setting the SHOUTcast Server password">
+<comment>; Password is the password on the sc_serv you're sending to.</comment>
+Password=password_you_setup_in_sc_serv.conf
+</pre>
+
+<p>
+The is the same password that you setup in the SHOUTcast Server configuration.
+</p>
+
+<pre caption="Setting up your stream information">
+<comment>; StreamTitle/URL/Genre define the data that appears on the directory and in the
+; stream info.</comment>
+StreamTitle=Chris Gentoo Beats
+StreamURL=http://www.gentoo.org
+Genre=JPOP Electronica And More!
+</pre>
+
+<p>
+This sets up the title of your stream (i.e. Radio One), the URL (i.e.
+http://www.radio-one.com), and the Genre (i.e. Electronica Trance Tribal).
+</p>
+
+<pre caption="Setting up your logfile">
+<comment>; Logfile optionally denotes a text file to log sc_Trans to.  a kill -HUP
+; will force a close and re-open of this file (but will also cease logging to
+; the console)</comment>
+LogFile=/var/log/sc_Trans.log
+</pre>
+
+<p>
+This will point to the log file for SHOUTcast Trans.  All your logging goes
+here.
+</p>
+
+<pre caption="Setting up shuffling">
+<comment>; Shuffle the play list</comment>
+Shuffle=1
+</pre>
+
+<p>
+Decide on whether or not you want your play list to play random songs from your
+list each time.  Most will set this to 1.  If you're going to be accepting
+song requests, set this to 0 and I'll explain how to do that later on.
+</p>
+
+<pre caption="Setting up the stream">
+<comment>; Bitrate/SampleRate/Channels recommended values:
+; 8kbps 8000/11025/1
+; 16kbps 16000/11025/1
+; 24kbps 24000/22050/1
+; 32kbps 32000/22050/1
+; 64kbps mono 64000/44100/1
+; 64kbps stereo 64000/22050/2
+; 96kbps stereo 96000/44100/2
+; 128kbps stereo 128000/44100/2</comment>
+Bitrate=128000
+SampleRate=44100
+Channels=2
+<comment>; Quality is from 1-10. 1 is best, 10 is fastest.</comment>
+Quality=1
+</pre>
+
+<p>
+Bitrate sets up the bit rate for your stream.  This can be from 8000 (8kbps) to
+128000 (128kbps).  SampleRate sets the sampling rate of the stream.  This can
+be anything from 11025 (11025kHz) to 44100 (44100kHz).  Channels sets how
+many channels your stream will broadcast.  This can be anything from 1 (mono)
+to 2 (stereo).  Quality sets the stream quality.  This is somewhat still
+controlled by the Bitrate/SampleRate/Channels.  This is where you deal with
+how compressed the stream is.  1 gives you best quality, 10 gives you the best
+speed.  Keep your connection in mind when you set these values!  Use the guide
+given in order to figure out what your mp3's should be streamed at.
+</p>
+
+<pre caption="Setting up crossfading">
+<comment>; Mode=0 for none, 1 for 100/100->100/0, 2 for 0/100->100/0</comment>
+CrossfadeMode=1
+<comment>; Length is ms.</comment>
+CrossfadeLength=8000
+</pre>
+
+<p>
+This sets up song cross fading.  Setting this to 0 will disable cross fading.
+If you set it to 1, Song 1 will fade out and Song 2 will fade in.  If you set
+it to 2, Song 1 will fade in and Song 2 will fade out.  The length is how long
+in ms the cross fade occurs.
+</p>
+
+<pre caption="Enabling ID3 usage">
+UseID3=1
+</pre>
+
+<p>
+This decides whether or not you wish to use the ID3 tag for information about
+the mp3.
+</p>
+
+<pre caption="Setting up public status">
+<comment>; Public determines whether or not this station will show up in the directory</comment>
+Public=0
+</pre>
+
+<p>
+This sets up whether or not streams should be publicly listed when relaying to
+a server.  Remember PublicServer in sc_serv.conf can over-ride this!
+</p>
+
+<pre caption="Setting up user interaction">
+<comment>; Put stuff here for user interaction (AOL IM, ICQ, IRC)</comment>
+AIM=AIMHandle
+ICQ=
+IRC=SHOUTcast
+</pre>
+
+<p>
+This sets up the information on how to reach you (the DJ).  You can setup AIM
+or ICQ channels for song requests/anything.  You can setup your own IRC channel
+as well, so that you can interact with multiple users at once.
+</p>
+
+</body>
+</section>
+<section>
+<title>SHOUTcast Trans Setup Conclusion</title>
+<body>
+
+<p>
+Your SHOUTcast Trans is now ready to stream to your SHOUTcast Server!  We'll
+now get started on streaming your mp3's.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Getting Started With SHOUTcast Trans</title>
+<section>
+<title>Starting up SHOUTcast Trans</title>
+<body>
+
+<p>
+As I most often use SHOUTcast Trans with SHOUTcast Server, I tend to startup
+SHOUTcast Trans, which in turns starts up SHOUTcast for you (much easier).  So
+we'll go ahead and get SHOUTcast Trans started.
+</p>
+
+<pre caption="Starting up SHOUTcast Trans and SHOUTcast Server">
+# <i>/etc/init.d/shoutcast_trans start</i>
+ * Starting Shoutcast Server...
+*******************************************************************************
+** SHOUTcast Distributed Network Audio Server
+** Copyright (C) 1998-2004 Nullsoft, Inc.  All Rights Reserved.
+** Use "sc_serv filename.ini" to specify an ini file.
+*******************************************************************************
+                                                  [ ok ]
+* Starting Shoutcast Trans...                     [ ok ]
+</pre>
+
+</body>
+</section>
+<section>
+<title>Listening to the SHOUTcast Trans stream</title>
+<body>
+
+<p>
+Now that SHOUTcast Trans is started, we'll start listening to the stream.  I
+use MPlayer in this example to play the stream.
+</p>
+
+<pre caption="Listening to your stream">
+# <i>mplayer -cache 1024 http://127.0.0.1:8000/</i>
+...
+Playing http://127.0.0.1:8000/.
+Connecting to server 127.0.0.1[127.0.0.1]:8000 ...
+Name   : Chris Gentoo Beats
+Genre  : JPOP Electronica And More!
+Website: http://www.gentoo.org
+Public : no
+Bitrate: 128kbit/s
+Cache size set to 1024 KBytes
+Connected to server: 127.0.0.1
+Cache fill:  9.38% (98304 bytes)    Audio file detected.
+==========================================================================
+Opening audio decoder: [mp3lib] MPEG layer-2, layer-3
+MP3lib: init layer2 and 3 finished, tables done
+mpg123: Can't rewind stream by 156 bits!
+AUDIO: 44100 Hz, 2 ch, 16 bit (0x10), ratio: 16000->176400 (128.0 kbit)
+Selected audio codec: [mp3] afm:mp3lib (mp3lib MPEG layer-2, layer-3)
+==========================================================================
+Checking audio filter chain for 44100Hz/2ch/16bit -> 44100Hz/2ch/16bit...
+AF_pre: af format: 2 bps, 2 ch, 44100 hz, little endian signed int
+AF_pre: 44100Hz 2ch Signed 16-bit (Little-Endian)
+AO: [oss] 44100Hz 2ch Signed 16-bit (Little-Endian) (2 bps)
+Building audio filter chain for 44100Hz/2ch/16bit -> 44100Hz/2ch/16bit...
+Video: no video
+Starting playback...
+</pre>
+
+<p>
+This was somewhat clipped.  The -cache variable was put in to over-ride my
+somewhat larger buffering settings.  And voilà!  You're now listening to
+streaming media!  In the next chapter, we'll show you how to do a little
+bit more with your SHOUTcast Server.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Advanced SHOUTcast Usage</title>
+<section>
+<title>Business Usage</title>
+<body>
+
+<p>
+Businesses can use SHOUTcast in a number of ways:
+</p>
+
+<ol>
+  <li>
+    Use on demand content streaming to make more interesting daily
+    announcements.
+  </li>
+  <li>
+    Have streaming public announcements available as they happen, let your
+    clients know what's going on, on the spot!  Then archive them as on
+    demand content streaming for future reference.
+  </li>
+  <li>
+    Do interviews as streaming media and archive them as on demand content
+    streaming.
+  </li>
+</ol>
+
+<p>
+There are more possibilities on how to utilize SHOUTcast Server for businesses.
+Use live streaming media instead of boring old text!
+</p>
+
+</body>
+</section>
+<section>
+<title>DJ-ing with SHOUTcast</title>
+<body>
+
+<p>
+SHOUTcast Server is one of the most popular servers for both new and veteran
+DJs alike.  For those just starting, there are a few ways to increase the
+user experience of your SHOUTcast Server.  Having an intro song is very key.
+It gives the users an idea of what your station is all about.  Be sure to
+include this!  Post your server on yp.SHOUTcast.com (described in the
+SHOUTcast Server configuration section) so that everyone knows where you
+are.  One of the most unique things is to be able to take requests.  To set
+up requesting, first turn Shuffle off in sc_Trans.conf.  Have about, I'd say,
+10 or so songs ready to get you started.  Then start requesting song requests
+in the middle.  When someone requests a song, simple add it to the end of your
+play list, and then you can use this script here to control what SHOUTcast
+Trans does with your play list:
+</p>
+
+<pre caption="djcontrol">
+<comment>#!/bin/bash</comment>
+
+case "$1" in
+  "reload")
+    kill -s USR1 `cat /var/run/SHOUTcast_Trans.pid`
+    ;;
+  "next")
+    kill -s WINCH `cat /var/run/SHOUTcast_Trans.pid`
+    ;;
+  *)
+    echo "Invalid command"
+    ;;
+esac
+</pre>
+
+<p>
+When you've added the song to the play list, you need to tell SHOUTcast Trans
+that your play list has changed with the new request entry.
+</p>
+
+<pre caption="Reloading the playlist">
+# <i>djcontrol reload</i>
+</pre>
+
+<p>
+You should now let the users know after what song the requests will start.  Or
+if you want, you can keep skipping with:
+</p>
+
+<pre caption="Skipping through the playlist">
+# <i>djcontrol next</i>
+</pre>
+
+<p>
+Be careful not to skip too much, as there is no previous control.  Once you
+hit their song, the requesting begins.  I'd get about 5 or so requests before
+you start requesting.  This way you don't run all the way back to the
+beginning.  If you start to lack in requests and expect that your request
+hour is over with, then simply copy your next session's play list over the
+requests play list and reload the play list.  Once the current song is over,
+it will go back to the new play list.
+</p>
+
+</body>
+</section>
+<section>
+<title>Conclusion</title>
+<body>
+
+<p>
+That ends it for the SHOUTcast Server and SHOUTcast Trans tutorial.  I hope
+you benefited from the information here and please email me any comments or
+suggestions for this page!  Enjoy your new streaming SHOUTcast Server!
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

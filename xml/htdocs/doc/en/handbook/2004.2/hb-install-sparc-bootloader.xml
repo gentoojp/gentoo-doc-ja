@@ -1,0 +1,132 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-install-sparc-bootloader.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.7</version>
+<date>September 24, 2004</date>
+
+<section>
+<title>Making your Choice</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Now that your kernel is configured and compiled and the necessary system
+configuration files are filled in correctly, it is time to install a
+program that will fire up your kernel when you start the system. Such a
+program is called a <e>bootloader</e>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Installing the SPARC Bootloader: SILO</title>
+<body>
+
+<p>
+It is now time to install and configure <uri
+link="http://www.sparc-boot.org">SILO</uri>, the Sparc Improved boot
+LOader.
+</p>
+
+<pre caption = "Installing SILO">
+# <i>emerge --usepkg silo</i>
+</pre>
+
+<p>
+Now open up your favorite editor (we use <c>nano</c> as an example) and
+create <path>/etc/silo.conf</path>.
+</p>
+
+<pre caption = "Creating /etc/silo.conf">
+# <i>nano -w /etc/silo.conf</i>
+</pre>
+
+<p>
+Below you'll find an example <path>silo.conf</path> file. It uses the
+partitioning scheme we use throughout this book and
+<path>kernel-2.4.24</path> as kernelimage.
+</p>
+
+<pre caption = "Example /etc/silo.conf">
+partition = 1         <comment># Boot partition</comment>
+root = /dev/hda4      <comment># Root partition</comment>
+timeout = 150          <comment># Wait 15 seconds before booting the default section</comment>
+
+image = /boot/kernel-2.4.24
+  label = linux
+</pre>
+
+<p>
+If you use the example <path>silo.conf</path> delivered by Portage, be
+sure to comment out <e>all</e> lines that you do not need.
+</p>
+
+<p>
+If the physical disk on which you want to install SILO (as bootloader) differs
+from the physical disk on which <path>/etc/silo.conf</path> resides, you must
+copy over <path>/etc/silo.conf</path> to a partition on that disk. Assuming that
+<path>/boot</path> is a separate partition on that disk, copy over the
+configuration file to <path>/boot</path> and run <c>/sbin/silo</c>:
+</p>
+
+<pre caption = "Only if /boot and the SILO destination are on the same disk">
+# <i>cp /etc/silo.conf /boot</i>
+# <i>/sbin/silo -C /boot/silo.conf</i>
+/boot/silo.conf appears to be valid
+</pre>
+
+<p>
+Otherwise just run <c>/sbin/silo</c>:
+</p>
+
+<pre caption = "Run silo">
+# <i>/sbin/silo</i>
+/etc/silo.conf appears to be valid
+</pre>
+
+<p>
+Now continue with <uri link="#reboot">Rebooting the System</uri>.
+</p>
+
+</body>
+</section>
+<section id="reboot">
+<title>Rebooting the System</title>
+<subsection>
+<body>
+
+<p>
+Exit the chrooted environment and unmount all mounted partitions. Then type in 
+that one magical command you have been waiting for: <c>reboot</c>.
+</p>
+
+<pre caption="Exiting the chroot, unmounting all partitions and rebooting">
+# <i>exit</i>
+cdimage ~# <i>cd</i>
+cdimage ~# <i>umount /mnt/gentoo/boot /mnt/gentoo/proc /mnt/gentoo</i>
+cdimage ~# <i>reboot</i>
+</pre>
+
+<p>
+Of course, don't forget to remove the bootable CD, otherwise the CD will be
+booted again instead of your new Gentoo system.
+</p>
+
+<p>
+Once rebooted in your Gentoo installation, finish up with <uri
+link="?part=1&amp;chap=11">Finalizing your Gentoo Installation</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

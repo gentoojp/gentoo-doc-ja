@@ -1,0 +1,955 @@
+<?xml version='1.0' encoding="UTF-8"?>
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/gentoo-ppc-install.xml">
+<title>Gentoo Linux/PPC 1.4_rc7 インストール説明書</title>
+<author title="Gentoo PPC Developer"><mail link="pvdabeel@gentoo.org">Pieter Van den Abeele</mail></author>
+<author title="Contributor, Maintainer"><mail link="rajiv@gentoo.org">Rajiv Manglani</mail></author>
+<author title="Contributor"><mail link="zhen@gentoo.org">John P. Davis</mail></author>
+<author title="Chief Architect"><mail link="drobbins@gentoo.org">Daniel Robbins</mail></author>
+<author title="翻訳"><mail link="088@t.email.ne.jp">Takashi Ota</mail></author><author title="翻訳"><mail link="makoto@dsb.club.ne.jp">yamakura</mail></author>
+<abstract>Gentoo Linux/PPC 1.4のインストールについて順を追って説明します。
+Gentoo Linux のインストールプロセスは、いろいろなインストール方法をサポートしていて、スクラッチからの特別仕様などいろいろなシステムを思いどおりに構築できます。</abstract>
+
+<version>1.6.2</version>
+<date>25 June 2003</date>
+<!-- Original revision: 1.17 -->
+<chapter>
+<title>CDを手に入れる</title>
+<section>
+<body>
+
+<p>Gentoo/PPC 1.4 CDは、どのGentooミラーサイトでも<path>releases</path>ディレクトリで見つけることができます。同じくExperimental(実験的)バージョンは<path>experimental</path>ディレクトリから入手できます。Gentooミラーサイトリスト(<uri>http://www.gentoo.org/main/en/mirrors.xml</uri>)を見てお住まいの地域に最も近いミラーサイトを選んでください。迷っているなら、以下のうちひとつをクリックしてください:</p>
+
+<p>
+<table>
+<tr><th>タイプ</th><th>リンク</th></tr>
+<tr><ti>Experimental</ti><ti><uri>http://www.ibiblio.org/gentoo/releases/ppc/</uri></ti></tr>
+<tr><ti>Released</ti><ti>http://www.ibiblio.org/gentoo/releases/ppc/</ti></tr>
+</table>
+</p>
+
+
+<p>ミラーサイトではお好みのCDが入手できます:</p>
+
+</body>
+</section>
+<section>
+<title>* allstages</title>
+<body>
+<p>このタイプのCDはすべてのppcステージを同梱しています。ステージというのは最小限のLinuxシステムを含むUNIXでよく使われるtar形式圧縮ファイルで、Gentooをインストールしたいハードディスクの空きパーティションに解凍する必要があるものです。
+ステージには違ったサイズのものがあります:
+ステージ1はとても小さなシステムで(ディレクトリ構成とブートストラップできないコンパイラのみ)、ステージ2圧縮ファイルはステージ1に比べると少し大きいです
+(コンパイラはすでにブートストラップ可能なので、インストール作業がかなり助かります)。
+ステージ3は基本的なLinuxシステムが含まれています(ブートストラップ可能なコンパイラと基本ツール)。あなたはこのドキュメントで後ほどこれらのステージのうち１つを選ぶ必要があります。各ステージはGentooミラーサイトから別々に入手できますが、
+allstages CD にはすべてのステージが同梱されています。</p>
+</body>
+</section>
+
+<section>
+<title>* nostages</title>
+<body>
+<p>allstages CDと同じですが、どのステージも同梱されていません。</p>
+</body>
+</section>
+
+<section>
+<title>* developer</title>
+<body>
+<p>nostages CDと似ていますがデバックが有効になっていたり、先進的な機能を持つなど、
+実験的な仕様となっています。このCDにはmanページ、ドキュメント、i18n資料と完全なコンパイラが同梱されています。このタイプのCDは開発者のために作られていて彼らがHFS(アップルファイルシステム)の容量可変アルゴリズムを実行したり、
+LiveCDベースのdistcc、ccacheを有効にして、Gentooがインストールされたネットワーク内のワークステーション(x86、PPC、SPARCのどれであっても)と協調しスピードアップが図れるようになっています。</p>
+</body>
+</section>
+
+<section>
+<title>* smallestcd</title>
+<body>
+<p>このCDは単に過去の経緯で作られています。サイズが15Mしかありません
+(AirPortやPPCサポートもありません)。</p>
+</body>
+</section>
+
+<section>
+<body>
+<p>
+すべてのGentoo Linux/PPC 1.4ブートCDはどんなNew World マックでも起動するでしょう。どの1.4ブートCDでも BootXをダウンロードし、(HFSパーティションから)正しい引数を渡すことでOld Worldマックでも簡単に起動させることができます
+(<path>/boot/initrd.img.gz</path>をinitrdに選び、<path>/boot/vmlinux</path>は
+kernelに、initrd-sizeを11000とし、rootを<path>/dev/ram</path>、
+initを<path>/linuxrc</path>にしてください)。多くの人はGentoo/PPCを
+Old Worldマシンにインストールしています。(それ以前の<uri>http://support.apple.com</uri> ANSマシン(訳注:Apple Network Serverマシン)でさえ現在Gentoo/PPCが動作しています)。気軽にirc.freenode.netの#gentoo-ppcチャンネルを訪れてあなたのPPCについての体験を開発者と共有してください。
+irssiとbitchXはどちらもインストールcdromに含まれています。</p>
+
+<p>
+build CDからインストールするには、PowerPC 603かPowerPC PCIベースシステムより新しいもの、より速いプロセッサが必要になるでしょう。
+RAMが128MB以下の環境ではビルドプロセスがとても遅くプロセスが死ぬことになります。執筆している時点ではNuBusマシンは公式的にはサポートしていません。しかしNuBusマシンで開発者が(クロスコンパイラとdistccを使って)Gentooをインストールすることに成功したことは特筆すべきでしょう。
+</p>
+
+<p>それでは簡単にインストール手順を見てみましょう。パーティションを作り、ファイルシステムを作ります、そしてステージ1かステージ2、
+もしくはステージ3の圧縮ファイルを解凍します。もしステージ1かステージ2の圧縮ファイルを使うなら、適切なステップを踏んでステージ3のシステムにします。
+一度ステージ3のシステムにしてしまえば、いろいろな設定(設定ファイルをいじったり、ブートローダーをインストールしたり、などなど)をすることができ、ブートしたあとは、
+充分な機能を備えたGentoo Linuxシステムとなります。ビルドプロセスをどのステージから始めるかに応じて、それぞれ必要となるインストールについては、次のとおり:</p>
+
+<p>
+<table>
+<tr><th>ステージ圧縮ファイル</th><th>必要な手順</th></tr>
+<tr><ti>1</ti><ti>partition/file system setup, emerge sync, bootstrap, emerge system, emerge ppc-sources, final configuration</ti></tr>
+<tr><ti>2</ti><ti>partition/file system setup, emerge sync, emerge system, emerge linux sources, final configuration</ti></tr>
+<tr><ti>3</ti><ti>partition/file system setup, emerge sync (optional), final configuration</ti></tr>
+</table>
+</p>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ブート</title>
+<section>
+<body>
+
+<p>使いたいCDを選んだら、起動時に'C'を押しながら、あるいはOld Worldブートローダー(BootX、quik)から
+起動して先に進みましょう。
+あなたは友好的な歓迎メッセージと画面下部の<c>boot:</c>プロンプトに迎えらます。
+このプロンプトでenterを押せば、完全なGentoo Linux環境がCDから読み込まれます。</p>
+
+<p>ユーザー名をrootとしパスワードはブランクのままでLiveCDにログインしてください
+("live" Gentoo/PPCシステム)。ログインはsmallestcdでは必要ありません。
+</p>
+
+<p>もしUSキーマップではないシステムでインストールをしているなら、loadkeysコマンドを使いキーマップを設定してください。
+キーマップは<path>/usr/share/keymaps</path>で見つけることができます。smallestcdは起動中に表示されるメニュー(configuration system)を使ってキーマップを設定します。</p>
+
+<p>たくさんのLinuxカーネルモジュールが利用可能であり必要ならば自動的に読み込まれます。
+LiveCD (smallestcdを除く)はどれもマルチメディアスタッフ(ALSA、mplayerなど)
+が同梱されていてインストール中にライブミュージックを再生することができます
+(大きいバンド幅で再生するとインストールはたぶん少し遅くなることに注意してください)。</p>
+
+<p>たくさんのプログラム (IRCクライアント、
+ウェブブラウザ、ssh、telnet、samba、talkなどのような)がLiveCDからインストールの際、Linuxコンソールから同時に利用できます。現在のコンソールにはrootプロンプトが出てきますが、ctrl+alt+f2、ctrl+alt+f3と入力することで新しいコンソールを開くこともできます(PowerBook/iBookでは ctrl+alt+fn+f2 です)。</p>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>カーネルモジュールの読み込み</title>
+<section>
+<body>
+
+<p>Gentoo Linuxをインストールする用意がほとんどできました、Gentoo PPCのISOカーネルはもっとも標準的なMacのドライバ(AirPort、10/100/1000Mbit イーサネット)の多くを含んでいますが、
+特別なものが必要になっても十分対応できるモジュールをあらかじめ用意しています。
+<path>/lib/modules/*/kernel/drivers/*</path>にあるすべてのモジュールを見てください。特別なモジュールを読み込むためには、次のように入力してください:</p>
+
+<pre>
+# <i>modprobe modulename</i>
+	<comment>(あなたの望むモジュールでmodulenameを置き換えてください)</comment>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ネットワークのインストールと設定</title>
+<section>
+<body>
+
+<p>新しいブートCDでは、インストール作業を始める前に必要とされるような<c>ssh</c>や<c>scp</c>、<c>wget</c>などが使用でき、稼働中のネットワークに応じた設定が可能です。
+もしそれらのものが今必要なければ、ネットワークの設定に進みましょう。たった一度の設定で、Portage (Gentooパッケージマネージャー)はあなたのネットワーク設定を使うことができます。
+ネットワークの設定にはいろんな方法があります。たぶん一番簡単でよく使われるのはDHCPです:</p>
+</body>
+</section>
+
+<section>
+<title>DHCP</title>
+<body>
+<p>
+DHCPを使って簡単にネットワークを設定します。もしISPがDHCPを提供していないなら、静的な設定の節へ進んでください。
+</p>
+<pre caption="Network configuration with DHCP">
+# <i>dhcpcd eth0</i>
+</pre>
+<note>
+いくつかのISPはホストネームを提示するよう要求します。その場合、
+<c>-h myhostname</c>フラグを上記のdhcpcdコマンドラインに付け加えてください。
+</note>
+<p>もし<i>dhcpConfig</i>警告を受け取っても、慌てないでください。このエラーは誇張されています。ネットワークテストに進んでください。</p>
+<p>多くのPPC LiveCDでは内蔵ネットワークアダプタがeht0に割り当てられます。
+AirPortをGentooのインストールに使いたいなら次を実行します:</p>
+
+<pre caption="ネットワーク(AirPort)のDHCPを使った設定">
+# <i>dhcpcd eth1</i>
+</pre>
+<p>もしAirPortベースステーションを持っていてWEP暗号化通信を設定してるなら、
+iwconfigコマンドを使って正しいパラメータを設定してください。</p>
+</body>
+</section>
+<section>
+<title>静的な設定</title>
+<body>
+<p>
+必須のlocalhostインターフェースと同様、システム構築のためにはソースのダウンロードのため必要最低限のネットワーク設定をする必要があります。
+次のコマンドを入力しますが、$IFACE はネットワークインターフェース(通常<c>eth0</c>)、$IPNUMはIPアドレス、$BCASTはブロードキャストアドレス、
+そして$NMASKはネットワークマスクで置き換えます。<c>route</c>コマンドでは、
+$GTWAYをデフォルトゲートウェイで置き換えます。
+</p>
+<pre>
+# <i>/sbin/ifconfig $IFACE $IPNUM broadcast $BCAST netmask $NMASK</i>
+# <i>/sbin/route add -net default gw $GTWAY netmask 0.0.0.0 metric 1</i>
+</pre>
+<p>今度は、名前解決(IPアドレスではなくWeb/FTPサイトを名前で検索)が働くように<path>/etc/resolv.conf</path>
+ファイルを作成しましょう。</p>
+
+<note>
+過去の経緯から、Gentooは<c>nano</c>と呼ばれる小さなテキストエディタ(<c>pico</c>クローン)
+をインストールで使います。
+すべてのGentoo/PPC CDにはもっと人気のあるvimとemacsも含まれています。他のエディタはLiveCDメンテナー(<mail link="pvdabeel@gentoo.org">Pieter Van den abeele</mail>)
+に簡単な依頼をすることで追加することができます。
+</note>
+
+<p>ここでは次のようなテンプレートで<path>/etc/resolv.conf</path>ファイルを作成します:
+</p>
+<pre caption="/etc/resolv.conf テンプレート">
+domain mydomain.com
+nameserver 10.0.0.1
+nameserver 10.0.0.2
+</pre>
+<p><c>10.0.0.1</c>と<c>10.0.0.2</c>は、それぞれあなたのプライマリとセカンダリDNSサーバーIPアドレスで置き換えてください。</p>
+</body>
+</section>
+<section>
+<title>ネットワークのテスト</title>
+<body>
+<p>ネットワークが設定できました。<c>/sbin/ifconfig -a</c>コマンドでネットワークカードの動作確認が表示されます(たぶん!) 。
+(出力で<e>UP</e>と<e>RUNNING</e>を見てください)。
+</p>
+<pre caption="/sbin/ifconfig でのネットワークカードの状態">
+eth0      Link encap:Ethernet  HWaddr 00:50:BA:8F:61:7A
+          inet addr:192.168.0.2  Bcast:192.168.0.255  Mask:255.255.255.0
+          inet6 addr: fe80::50:ba8f:617a/10 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:1498792 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:1284980 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:1984 txqueuelen:100
+          RX bytes:485691215 (463.1 Mb)  TX bytes:123951388 (118.2 Mb)
+          Interrupt:11
+</pre>
+<!--
+<todo>
+If you have a static ppp link, ...
+If you have an ADSL pppoe link, ...
+</todo>
+-->
+<note>
+もしあなたのISPで HTTPプロクシ設定が必須なら<c>export http_proxy=http://myISPproxy:port</c>あるいは<c>export http_proxy=myISPproxy:port</c>を使って設定してください。
+</note>
+
+<note>
+Gentoo/PPCは違うタイプ(ADSL、PPPなど)の接続もサポートしています。
+Gentoo/PPCマシンでそれらの接続設定をする必要があるならGentoo/x86インストールドキュメントを見てください。
+</note>
+</body>
+</section>
+<section>
+<title>ネットワークは動作しました!</title>
+<body>
+<p>ネットワークはこれで設定され使うことができるはずです。含まれている
+<c>ssh</c>、<c>scp</c>、<c>wget</c>、 などのコマンドを使ってLAN内の他のマシンやインターネットを利用できるでしょう。</p>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>パーティションのセットアップ</title>
+<section>
+<body>
+
+<p>カーネルがネットワークカードとディスクコントローラーを認識できるようになったので、ここからはGentoo Linuxのためにディスクパーティションを設定します。</p>
+
+<p>まず簡単に基本的なGentoo Linuxのパーティション構成をみてみましょう。
+少なくとも３つのパーティションを作ります: swapパーティション、
+rootパーティション(Gentoo Linuxの大半が入ります)、そして特別なbootstrapパーティション。
+bootstrapパーティションにはYabootブートローダー情報が入ります。
+Old Worldユーザーの場合、マシンにあるMacOSによって初期の起動が行われ、
+そしてBootXがLinuxカーネルの初期化とinitスクリプトを実行するので、このbootstrapパーティションは必要ありません。
+</p>
+
+<p>次に、ファイルシステムタイプです。現在、４つのファイルシステムオプションがあります:
+XFS、ext2、ext3 (ジャーナリング) そして ReiserFS。
+ext2 は信頼出来る真のLinuxファイルシステムですがメタデータジャーナリングを持ちません。
+ext3はext2の新しいバージョンでメタデータジャーナルとデータ書き込み時の整序化機能を持ち、
+十分なデータジャーナリングを提供します。GentooPPCの場合にはこれらのタイプが推奨されます。
+ReiserFSとXFSはどちらも新しい高機能なファイルシステムですが、通常PPCではかなり実験的であり推奨しません。
+もしあなたのマシンが基幹業務のマシンでなければ自由にこれらのファイルシステムで実験してください。
+</p>
+
+<note>パーティションを作成するときのポイントは、<c>mac-fdisk /dev/hdx</c>
+(xにはa、b、c のようなドライブレターが入ります。
+scsiディスクの場合は<path>/dev/sdx</path>です)のようにしてmac-fdiskを使うことです。
+最小限のbootstrapパーティション(mac-fdiskでは<c>b</c> ) (New Worldユーザー限定)、
+swapパーティション(通常は搭載しているRAMの1.5倍程度でよいでしょう、でももし大きなパッケージをコンパイルする計画があるなら最低でも512MBのswapパーティションを推奨します)、
+そしてrootパーティション。mac-fdiskのプロンプトで<c>?</c>を入力すればオプションリストが表示されます。
+</note>
+
+<p>一旦<c>mac-fdisk</c>を使ってパーティションを作成すれば、今度はデータを格納することができるようにファイルシステムの初期化をします。swapの初期化は次のとおり:</p>
+<pre>
+# <i>mkswap /dev/hda3</i>
+</pre>
+<p>ext2ファイルシステムを作成するには<c>mke2fs</c>コマンドを使います:</p>
+<pre>
+# <i>mke2fs /dev/hda4</i>
+</pre>
+<p>もしext3を使いたいなら、<c>mke2fs -j</c>を使ってext3ファイルシステムを作成できます:</p>
+<pre>
+# <i>mke2fs -j /dev/hda4</i>
+</pre>
+
+<note>Linux 2.4 でext3を使う方法についてもっと詳しく知りたければ<uri>http://www.zip.com.au/~akpm/linux/ext3/ext3-usage.html</uri>を見てください。</note>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>パーティションのマウント</title>
+<section>
+<body>
+<p>
+さて、 追加の仮想メモリが必要なので以下のようにして、新しいswapを
+有効にします:
+</p>
+<pre>
+# <i>swapon /dev/hda3</i>
+</pre>
+<p>次に、<path>/mnt/gentoo</path>マウントポイントを作成し、
+そしてこのマウントポイントにファイルシステムをマウントします。
+</p>
+<pre>
+# <i>mkdir /mnt/gentoo</i>
+# <i>mount /dev/hda4 /mnt/gentoo</i>
+</pre>
+<p>もし<path>/usr</path>や<path>/var</path>を切り離してGentoo
+   Linuxを設定するなら、おのおの、
+   <path>/mnt/gentoo/usr</path>と<path>/mnt/gentoo/var</path>にマウントしてください。
+</p>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>CD-ROMのマウント</title>
+<section>
+<body>
+<p>
+LiveCDでは、cdromデバイスは自動的に見つかり/mnt/cdromにマウントされます。
+</p>
+<p>
+もしsmallestcdを使って起動しているなら(このCDは長い時間、積極的にはメンテナンスされていません。
+ただ過去の経緯で存在していることに注意してください(ワイヤレス、PPPなどはサポートされていません)) 最小限のLinuxブートCD環境であるsmallestcdではcdromデバイスはマウントされません。
+CD-ROMに同梱されたtarball形式の圧縮された構築イメージにアクセスするためにはマウントする必要があります。
+CD-ROMをマウントするには、一般的に次のように入力します:
+</p>
+
+<pre>
+# <i>mount /dev/cdroms/cdrom0 /mnt/cdrom -o ro -t iso9660</i>
+</pre>
+<p>CD-ROMがマウントされれば、<c>stage???.tbz2</c>ファイルは<c>ls /mnt/cdrom/build</c>と入力することで見つかります
+。</p>
+
+<note>もしcdromデバイスをマウントすることができなくても、次のようしてibiblioサイトからステージ1/2/3を持ってくることが可能です。
+<c>wget http://www.ibiblio.org/pub/Linux/distributions/gentoo/releases/build/1.2/stage1-ppc-1.2.tbz2</c></note>
+</body>
+</section>
+</chapter>
+
+<chapter>
+    <title>使いたいステージの解凍</title>
+<section>
+<body>
+<p>
+allstages CD-ROMがマウントされれば、stage???.tbz2 圧縮ファイルを/mnt/cdrom/ppc-stages、/mnt/cdrom/g3-stages、もしくは/mnt/cdrom/g4-stagesディレクトリで見つけることができるでしょう。
+</p>
+<p>
+ステージを含まないLiveCDを使っていたり最新のLiveCDを使いたいなら、
+lynxやwgetでGentooミラーに行き、最新のオフィシャルなppcステージなら<c>releases/1.4_*</c>ディレクトリから、
+最新の実験的なppcステージなら<c>experimental/1.4_*</c>からそれぞれダウンロードします。過去の経緯で、
+1.2の各ステージはreleases/buildディレクトリで利用可能ですが、
+時代遅れで、もはや積極的にメンテナンスされていません。
+</p>
+
+<impo><c>tar</c>には<c>p</c>オプションを必ず使ってください。これを忘れるとファイルが不適当なパーミッションを持つ原因となるでしょう。</impo>
+
+<impo>本当になにもかもスクラッチから構築し、プロセッサに最適化したいなら
+ステージ1イメージを使うべきですが、ステージ2とステージ3イメージという選択肢もあります。
+これらのイメージでは設定に煩わされる時間を節約できます(すでにコンパイラの最適化とデフォルトのUSE設定が選択されています)。</impo>
+
+<pre>
+# <i>cd /mnt/gentoo</i>
+# <i>tar -xvjpf /mnt/cdrom/build/stage?-*.tbz2</i>
+# <i>mount -o bind /proc /mnt/gentoo/proc</i>
+# <i>cp /etc/resolv.conf /mnt/gentoo/etc/resolv.conf</i>
+</pre>
+
+<pre>
+# <i>chroot /mnt/gentoo /bin/bash</i>
+# <i>env-update</i>
+&gt;&gt;&gt; Regenerating /etc/ld.so.cache...
+# <i>source /etc/profile</i>
+#
+</pre>
+
+<p>コマンドを実行したら、新しいGentoo Linux環境の"内部"にいます。
+</p>
+<note>env-updateがPortageツリー(Gentooパッケージディレクトリ)が見つからないことについて警告をしますが無視してください、このディレクトリは次の段階で作成されます。</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>rsync</title>
+<section>
+<body>
+<p>さて、<c>emerge sync</c>を実行しrsync.gentoo.orgに接続して
+最新バージョンのPortage portsツリーをダウンロードします:</p>
+
+<pre>
+# <i>emerge sync</i>
+</pre>
+<p>Portageツリーがダウンロードされます。およそ10MBのサイズです。</p>
+<impo>rsyncサーバーのアドレスは現在rsync://rsync.gentoo.org/gentoo-portageです。
+何らかのトラブルでGentoo rsyncにアクセスできない場合は、<path>/etc/make.conf</path>の中のSYNC変数がこのアドレス使っているか確認してください。
+</impo>
+<note>rsyncコマンドでは、ファイアウォール内にありHTTPプロクシを使用している場合
+追加の設定をする必要があります。設定は<path>/etc/make.conf</path>で<i>RSYNC_PROXY="hostname:port"</i>の項目を環境にあわせて変更することでできます。
+</note>
+
+<note>
+<path>/etc/make.conf</path>にはそれ以外にもたくさんの設定項目があるので必要に応じて変更してください。自動的に最適なミラーを選んでくれるもの(<c>emerge mirrorselect &amp;&amp; mirrorselect -a</c>)やuseフラグを設定してくれるもの(<c>emerge ufed &amp;&amp; ufed</c>)などいくつかツールもあります。
+CFLAGS設定がGentooをインストールしたマシンのプロセッサと一致しているか確認してください。
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ステージ1からステージ2へ進む</title>
+<section>
+<body>
+
+<impo>もしステージ2かステージ3の圧縮ファイルを使っているなら、すでにブートストラップは用意されています。
+ブートストラップは明確に<c>emerge sync</c>をして今現在のGentoo Linuxシステムを確かなものにするという以外、再度入れる理由はありません。
+多くの人はステージ2かステージ3圧縮ファイルを使いブートストラップを再度<i>入れません</i>。
+なぜならかなり速いマシンでも１時間前後かかるからです。</impo>
+
+<p>さてPortageツリーの作業コピーができたところで、
+ステージ1を使っている人は次のようにしてGentoo Linuxシステムにブートストラップをインストールする必要があります。
+最初に<path>/etc/make.conf</path>ファイルを編集します。このファイルには、
+構築したいパッケージに対してオプション機能を与える<c>USE</c>フラグを設定してください。
+通常、デフォルト(<e>空</e>かUSE変数が設定されていない)がよいでしょう。
+作りたいマシンの種類に応じて適切な<c>CHOST</c>、<c>CFLAGS</c>そして<c>CXXFLAGS</c>を設定してください(ファイルを更に読み進めればコメントの中に例がみつかるでしょう)。
+ファイアウォールの内側から接続するなど、必要ならプロクシ情報を設定することもできます。</p>
+
+<pre>
+# <i>nano -w /etc/make.conf</i> <comment>(いろいろな設定をします)</comment>
+</pre>
+<note>
+構築プロセスを根本的に微調整する必要のある人は<path>/etc/make.globals</path>ファイルを見るべきです。
+このファイルはGentooのデフォルト値を構成していますが決して触れてはいけません。
+もしデフォルト値が満足できなくても、
+新しい値は<path>/etc/make.conf</path>に入れられるべきであり、しかも<path>make.globals</path>の項目は<path>make.conf</path>の項目で<comment>上書き</comment>されます。
+もし USE設定の微調整に興味があるなら、<path>/etc/make.profile/make.defaults</path>を見てください。
+ここで見つかるUSE設定を無効にしたいなら、適切な<c>USE="-foo"</c>(<c>foo</c>というUSE設定を無効にしたい場合)を<path>/etc/make.conf</path>に追加してください。
+</note>
+<p>さあ、「ブートストラップ」プロセスを始めます。このプロセスはあなたのマシンがどれだけ速いかによりますが1-4時間かかります。
+この間ずっと展開された構築イメージは、システムの他の部分のコンパイルのために準備されてます。
+GNUコンパイラセットはGNU Cライブラリと同様構築されます。
+この構築には多くの時間を費やしブートストラッププロセスの大半を占めます:</p>
+<pre>
+# <i>cd /usr/portage</i>
+# <i>scripts/bootstrap.sh</i>
+</pre>
+<p>「ブートストラップ」プロセスが始まりました。</p>
+<note>
+デフォルトのPortageではパッケージを構築している間<path>/var/tmp</path>を使いますが、しばしば一時領域は数百MBにもなります。
+もし一時的なファイルをPortageが保存する場所を変えたければ、次のようにしてブートストラッププロセスを始める<e>前に</e>新しいPORTAGE_TMPDIRを設定します:
+</note>
+<pre>
+# <i>export PORTAGE_TMPDIR="/otherdir/tmp"</i>
+</pre>
+<p>
+The
+<c>bootstrap.sh</c>は<c>binutils</c>、<c>gcc</c>、<c>gettext</c>、
+そして<c>glibc</c>を構築し、<c>glibc</c>が構築された後<c>binutils</c>、<c>gcc</c>、そして<c>gettext</c>
+を再構築します。いうまでもありませんが、このプロセスは少し時間がかかります。
+よいうたた寝を。一度このプロセスが完了すれば、システムは「ステージ2」状態になります。
+</p>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ステージ2からステージ3へ進む</title>
+<section>
+<body>
+
+<note>
+もしまだそうしていないなら、<path>/etc/make.conf</path>をあなたの好みに応じて編集してください。
+</note>
+
+<p>ブートストラッププロセスを実行したか、ステージ2の構築イメージなら(再度、もし
+ステージ3圧縮ファイルを使っているならこれらのステップは必要ありません)
+今度は次のようにしてベースシステムの残りを構築し、インストールします:</p>
+
+<pre>
+# <i>export CONFIG_PROTECT=""</i>
+# <i>emerge --pretend system</i>
+	<comment>[インストールされるべきパッケージのリスト]</comment>
+# <i>emerge system</i>
+</pre>
+
+<note><c>export CONFIG_PROTECT=""</c>の行はどんな新しいスクリプトでも
+<path>/etc</path>以下の古いスクリプト(<path>sys-apps/baselayout</path>で配置された)を上書きできるようにし、
+Portageの新しい設定ファイルの管理サポートを無視します。
+<c>emerge --help config</c>と入力すれば詳細を得られます。</note>
+
+<p>全体のベースシステムを構築し終わるのにしばらく時間がかかります。
+でもその見返りにあなたのシステムは完全に最適化されます。
+問題はその時がくるまでなにかすることを見つけなければならないことです。
+著者はPS2用の"スターウォーズ - Super Bombad Racing"を提案します。
+<c>emerge system</c>が完了すれば、ステージ3のGentoo Linuxシステムです。</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>最終段階: タイムゾーン</title>
+<section>
+<body>
+
+<note>
+もしまだそうしていないなら、<path>/etc/make.conf</path>をあなたの好みに応じて編集してください。
+</note>
+
+<p>この時点で、最終的な設定をするためにはステージ3システムでなければなりません。
+タイムゾーンを設定するプロセスに入りましょう。タイムゾーンの設定をカーネル構築の前にすることで
+正しい<c>uname -a</c>出力が得られます。</p>
+<p>タイムゾーン(グリニッジ標準時を使いたいならならGMT)を<path>/usr/share/zoneinfo</path>で確認してください。それから、次のように入力しシンボリックリンクを作ります:
+</p><pre>
+# <i>ln -sf /usr/share/zoneinfo/path/to/timezonefile /etc/localtime</i>
+</pre>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>カーネル、システムロガーとcron</title>
+<section>
+<body>
+<p>
+ppcカーネルソースをemergeする必要があるので、<c>emerge sys-kernel/ppc-sources</c>としてください。
+</p>
+<p>Linuxカーネルソースが利用できるようになったら、今度はあなた自身の特製カーネルをコンパイルします:
+</p>
+<pre>
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+# <i>make dep &amp;&amp; make clean vmlinux modules modules_install</i>
+# <i>cp vmlinux System.map /boot</i>
+</pre>
+<note>PowerPCベースのマシンではGentooカーネル<c>sys-kernel/ppc-sources</c><e>だけ</e>を使うべきです。</note>
+
+<warn>カーネルが正しく機能するために、いくつかのオプションはカーネルで適切に選択しなければなりません -- それは、<i>有効にすべきであって、モジュールとしてコンパイルされてはいけない</i>ものです。 
+<i>"Code maturity level options --> Prompt for development and/or incomplete code/drivers"</i>
+オプションを有効にして今回選択するオプションを見える状態にしなければいけません。
+"File systems"セクション以下では、<i>Device File System</i>を有効にすべきです (注意
+"/dev/pts file system support"オプションをを有効にする必要は<e>ありません</e> )。また<i>Virtual Memory File system</i>も有効にします。それに<i>Macintosh Device Drivers</i>で<i>Support for ADB raw keycodes</i>をデフォルトで無効にした方がよいでしょう。 <i>Enhanced RTC</i>オプション("Character devices"にある)はATMとPPCの相性がよくないので<e>無効</e>にします。しかし"General setup"の<i>Support for /dev/rtc</i>は<e>有効</e>にします。ext2を使っているかいないかにかかわらずいつも有効にしておくのはいい考えです。Old WorldマシンユーザーはMacOSパーティションにコンパイル済みのカーネルをコピーすることが必要なのでHFS supportを必要とします。
+</warn>
+<impo>
+IDE CD-RW、DVD±R/RW/-ROMドライブを持っているなら、カーネルでSCSIエミュレーションを有効にする必要があります。"ATA/IDE/MFM/RLL support" ---> "IDE, ATA and ATAPI Block
+devices" ---> "SCSI emulation support" (私はいつもモジュールにしています)を有効にします、それから"SCSI support"以下の"SCSI support"、"SCSI CD-ROM support"そして"SCSI generic support" 
+(もう一度、私はいつもモジュールで作成しています)を有効にします。モジュールを選択したなら、
+<c>echo -e "ide-scsi\nsg\nsr_mod" >> /etc/modules.autoload</c>として起動時に自動的に読み込まれるようにします。
+<path>/etc/yaboot.conf</path>ファイルに<c>append="hdc=ide-scsi"</c>の行を追加することも忘れずに。
+</impo>
+<impo>Old Worldマシンを持っていてHFS (MacOS)パーティションをマウントする必要があるなら、BootX起動時に読み込むことができるところにカーネルをコピーします。BootXは自動的にシステムフォルダーにある<path>Linux Kernels</path>フォルダーからカーネルを自動的に探し出すでしょう。</impo>
+<p>
+新しい特製のカーネル(そしてモジュール)はインストールされました。今度は好みのインストールしたいシステムロガーを選ぶ必要があります。
+sysklogdを提案します、それは正統的なシステムログ収集デーモンセットです。
+またMetalogも提案します。パワーユーザー達はsysklogd (パフォーマンスがよくありません)から離れMetalogへと引きつけられるているようです。
+迷っているなら、Metalogを試してみてください、とても人気があるようです。
+ロガーの選択が終わったら組み込みましょう。次の２つのうち<e>ひとつ</e>を入力します:
+</p>
+
+<pre>
+# <i>emerge app-admin/sysklogd</i>
+# <i>rc-update add sysklogd default</i>
+<comment>もしくは</comment>
+# <i>emerge app-admin/metalog</i>
+# <i>rc-update add metalog default</i>
+</pre>
+
+<warn>もしバージョン1.2のステージ3圧縮ファイルを使っていたらシステムロガーをインストールする必要はありません。stage3-ppc-1.2.tbz2はsysklogd (古いか新しいかのバージョンにかかわらず)が含まれています。もし代わりにMetalogを使いたければ、最初にsysklogdを取り除く必要があります: インストールが完成した後、
+<c>rc-update del sysklogd default</c>でsysklogdが起動時に自動的に動作するのをやめさせます。それから<c>emerge unmerge sysklogd</c>で取り除きます。
+また<path>/etc</path>以下の(unmergeされるときのファイルリストで<c>cfgpro</c>を見てください)sysklogd設定ファイルを手動で削除する必要があります。
+Metalogをインストールするには、<c>emerge Metalog</c>を実行し、それから<c>rc-update add metalog default</c>。
+</warn>
+<impo>
+Metalogは一括して出力をディスクに書き込みますので、メッセージが直ちにシステムログに記録されません。
+デーモンのデバックをする時など、このパフォーマンス向上機能はかえって邪魔です。
+Gentoo Linuxシステムが起動し動作しているときに、MetalogにUSR1 signalを送ることで一時的にメッセージバッファリング機能を無効にすることができ(これは<i>tail -f <path>/var/log/everything/current</path></i>がリアルタイムで期待どおりに動作することを意味します)、
+そしてUSR2シグナルを送れば再びバッファリングが有効になります。
+</impo>
+<p>最後に、好みの使いたいcronパッケージを選びます。現在、dcron、fcronそしてvcronが提供されています。
+どれを選んでよいかわからなかったら、vcronを手に入れるのがよいでしょう。 次のようにしてインストールします:</p>
+<pre>
+# <i>emerge sys-apps/dcron</i>
+# <i>crontab /etc/crontab</i>
+<comment>もしくは</comment>
+# <i>emerge sys-apps/fcron</i>
+# <i>crontab /etc/crontab</i>
+<comment>あるいは</comment>
+# <i>emerge sys-apps/vcron</i>
+</pre>
+<p>ブート時にいつでもスタートできるように、cronをデフォルトランレベルに追加することを忘れないでください。</p>
+<pre caption="デフォルトランレベルへのcronの追加">
+# <i>rc-update add &lt;name-of-/etc/init.d/cronscript&gt; default</i>
+</pre>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>追加パッケージのインストール</title>
+<section>
+<body>
+<p>
+もしラップトップユーザーならpcmciaスロットを最初の再起動直後から使いたいでしょう、
+そのためにはpcmcia-csパッケージをインストールする必要があります。
+</p>
+<pre>
+# <i>emerge sys-apps/pcmcia-cs</i>
+</pre>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>最終段階: システム設定</title>
+<section>
+<title>最終段階: /etc/fstab</title>
+<body>
+<p>Gentoo Linuxシステムの準備はほとんどできました。あと必要なものはいくつかの重要なシステムファイルの設定とYabootブートローダーのインストールです。
+最初に設定すべきファイルは<path>/etc/fstab</path>です。
+適正な<c>ext2</c>もしくは<c>ext3</c>ファイルシステムタイプを明記することを忘れないでください。</p>
+<p>次のような<path>/etc/fstab</path>とし、しかしもちろん"ROOT"と"SWAP"はあなたが使っている(たとえば<c>hda2</c>のように)実際のブロックデバイスで置き換えてください。
+New worldユーザーはbootstrapパーティションをこのファイルに追加する必要は<e>ない</e>ことに注意してください。</p>
+<pre caption="/etc/fstab">
+<comment>
+# /etc/fstab: 静的なファイル情報
+#
+# noatime はパフォーマンスを向上させます
+#(atimesは通常は必要ありません)
+# notail は ReiserFS のパフォーマンスを向上させます (ディスク効率が犠牲になります)
+# noatimeを削っても安全です。また、notailとtailは自由に切り替えられます。
+# &lt;fs&gt;           &lt;mountpoint&gt;   &lt;type&gt;   &lt;opts&gt;          &lt;dump/pass&gt;
+</comment>
+/dev/ROOT           /           ext3	 noatime         0 1
+/dev/SWAP           none        swap	 sw              0 0
+/dev/cdroms/cdrom0  /mnt/cdrom  iso9660	 noauto,ro       0 0
+proc                /proc       proc	 defaults        0 0
+</pre>
+</body>
+</section>
+
+
+<section>
+<title>最終段階:rootパスワードの設定</title>
+<body>
+<p>忘れないうちに、rootパスワードを次のようにして設定します:</p>
+<pre>
+# <i>passwd</i>
+</pre>
+</body>
+</section>
+<section>
+<title>最終段階: /etc/hostname</title>
+<body>
+<p>このファイルには完全修飾ドメイン名を１行で書きます、すなわち<c>mymachine.mydomain.com</c>のように。
+</p>
+</body>
+</section>
+
+<section>
+<title>最終段階: /etc/hosts</title>
+<body>
+<p>このファイルにはIPアドレスのリストとそれに関連づけられたホスト名を記載します。これはネームサーバーにはない任意ホスト名のIPアドレス解決をするために、システムにより使用されます。ここにこのファイルのテンプレートがあります:
+</p><pre caption="/etc/hosts">
+127.0.0.1      localhost
+<comment># 次の行にははLAN内のIPと関連づけられるマシン名を書きます</comment>
+192.168.1.1    mymachine.mydomain.com	mymachine
+</pre>
+</body>
+</section>
+
+<section>
+<title>最終ネットワーク設定</title>
+<body>
+<p>
+システムが正しく機能するように<path>/etc/modules.autoload</path>ファイル(同じ行に任意のオプションを追加することもできます)に任意のモジュール名を追加する必要があります。
+そうすれば、Gentoo Linuxが起動するとき、それらのモジュールは自動的に読み込まれます。とりわけ重要なのはイーサネットカードモジュールがモジュールとしてコンパイルされている場合、起動するには次のように追加するということです:
+</p>
+<pre caption="/etc/modules.autoload">
+sungem
+</pre>
+<p><path>/etc/conf.d/net</path>スクリプト編集して、起動時に最初からネットワーク設定がされるよう
+にします:
+</p>
+<pre>
+# <i>nano -w /etc/conf.d/net</i>
+# <i>rc-update add net.eth0 default</i>
+</pre>
+<p>
+もし複数のネットワークカードを持っているなら追加の<path>net.eth<comment>x</comment></path>
+(<comment>x</comment> = 1, 2, ...)スクリプトを個別に作成する必要があります:
+</p>
+<pre caption="複数のネットワークインターフェース">
+# <i>cd /etc/init.d</i>
+# <i>cp net.eth0 net.eth<comment>x</comment></i>
+# <i>rc-update add net.eth<comment>x</comment> default</i>
+</pre>
+<p>
+もしPCMCIAカードがインストールされている場合、
+<path>/etc/init.d/pcmcia</path>を確認し、正しく設定されているか検証したら、
+次のものを追加して下さい。
+<pre>
+depend() {
+	need pcmcia
+}
+</pre>
+<path>/etc/init.d/net.eth<comment>x</comment></path>ファイルの最初に追加することで、
+ネットワークが読み込まれるときにはいつでもPCMCIAドライバが自動的に読み込まれるようになります。
+</p>
+</body>
+</section>
+
+
+<section>
+<title>最終段階: 基本設定(国際化キーマップ設定を含みます)</title>
+<body>
+<pre caption="基本設定">
+# <i>nano -w /etc/rc.conf</i>
+</pre>
+<p>
+ファイルの指示に従って基本設定をしてください。
+すべてのユーザーは自分の好みに応じて正しい<c>CLOCK</c>を設定しましょう。
+国際化キーボードユーザーは<c>KEYMAP</c>変数を設定ましょう(設定できる値は<path>/usr/share/keymaps</path>を見てください)。
+</p>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ブートローダーの設定</title>
+<section>
+<body>
+<p>x86 Linuxとの主な違いは、ブートローダーが違うことです。New worldマシンはYabootを使います。Old WorldマシンはBootXを使います。</p>
+</body>
+</section>
+
+<section>
+<title>New worldマシンのためのYaboot(yabootconfigを使った自動設定)</title>
+<body>
+<p>Yabootの自動設定に、yaboot-1.3.8-r1かそれより新しいものに含まれる、新たに改良された<c>yabootconfig</c>を使うことができます。<c>yabootconfig</c>はマシンのパーティションを自動検知してLinux、Mac OS、Mac OS Xの組みあわせから２つないし３つの起動を設定するでしょう。</p>
+
+<p><c>yabootconfig</c>を使うには、ドライブにbootstrapパーティションがあり、そして <path>/etc/fstab</path>にLinuxパーティションが設定されていなければなりません。これら二つのことはこれより前の段階ですでに終えていなければなりません。設定を始めるにはまず、<c>emerge -u yaboot</c>で最新バージョンのYabootであることを確認します。ステージファイルによっては作成しない場合もあるため、必ずPortage経由で最新バージョンを利用してください。</p>
+
+<p>コマンドプロンプトで<c>yabootconfig</c>を実行します。プログラムは動作しbootstrapパーティションのある場所の確認を求めるでしょう。正しければ<c>Y</c>を入力します。もしそうでなければ、<path>/etc/fstab</path>を再度見直します。<c>yabootconfig</c>はシステム設定を走査し、<path>/etc/yaboot.conf</path>の作成と<c>mkofboot</c>の実行を促します。(mkofbootはbootstrapパーティションをフォーマットして、Yaboot設定をインストールします。)</p>
+
+<p><path>/etc/yaboot.conf</path>の内容を確認する必要があります。もし<path>/etc/yaboot.conf</path>の設定を変更したら (デフォルト/起動 OSの設定のように)、 <c>ybin -v</c>を再実行しbootstrapパーティションに変更を反映します。</p>
+</body>
+</section>
+
+<section>
+<title>New worldマシンのためのYaboot(yaboot.confの手動設定)</title>
+<body>
+
+<p>なんらかの理由で自動的に <path>/etc/yaboot.conf</path>を設定する<c>yabootconfig</c>を動作させたくないときには、すでにシステムにインストールされているサンプルファイルを編集することができます。以下は完璧なyaboot.confファイルです:</p>
+
+<pre caption="/etc/yaboot.conf">
+## /etc/yaboot.conf
+##
+## run: "man yaboot.conf" for details. Do not make changes until you have!!
+## see also: /usr/share/doc/yaboot/examples for example configurations.
+##
+## For a dual-boot menu, add one or more of:
+## bsd=/dev/hdaX, macos=/dev/hdaY, macosx=/dev/hdaZ
+
+## our bootstrap partition:
+boot=/dev/hda9
+
+##hd: is open firmware speak for hda
+device=hd:
+partition=11
+
+root=/dev/hda11
+delay=5
+defaultos=macosx
+timeout=30
+install=/usr/lib/yaboot/yaboot
+magicboot=/usr/lib/yaboot/ofboot
+
+#################
+## This section can be duplicated if you have more than one kernel or set of
+## boot options
+#################
+image=/boot/vmlinux
+	label=Linux
+	sysmap=/boot/System.map
+	read-only
+##################
+
+macos=/dev/hda13
+macosx=/dev/hda12
+enablecdboot
+enableofboot
+</pre>
+
+<p><path>yaboot.conf</path>を望みどおり設定できれば、
+<c>mkofboot -v</c>を動作させbootstrapパーティションに設定をインストールします。これを忘れないでください! 
+すべてがうまく行って、示したサンプルと同じオプションを指定した場合には、次の起動時に、５項目の起動メニューが表示されます。後でYaboot設定を更新した時は、
+bootstrapパーティションの更新のために<c>ybin -v</c>を実行します - mkofbootは最初の設定時にのみ使用します。
+</p>
+
+<note>
+Yabootは起動時にいくつかの機能を設定することができます、詳しくは
+<uri>http://penguinppc.org/projects/yaboot</uri>の情報を見てください。
+</note>
+</body>
+</section>
+
+<section>
+<title>Old WorldマシンのためのBootX</title>
+<body>
+<impo>次に記載したステップはマシンを再起動した後にしてください。</impo>
+<p>マシンのMacOSを起動してBootXコントロールパネルを開きます。<c>オプション</c>を選択し、<c>RAMディスクの使用</c>のチェックをはずします。BootXメイン画面に戻ったら、マシンのrootディスクとパーティションを入力する項目が見つかるでしょう。正しい値で埋めてください。</p>
+<p>BootXはLinuxを自動的に起動するように設定することもできます。こうすれば、最初にMacOSが起動された後BootXはLinuxを自動的に起動します。詳しくは<uri link="http://penguinppc.org/projects/BootX/">BootXホームページ</uri>を見てください。</p>
+</body>
+</section>
+
+</chapter>
+
+<chapter>
+<title>インストールは完了しました!</title>
+<section>
+<body>
+<p>Gentoo Linuxはインストールされました。唯一残っているステップはchrootシェルから抜け出し、安全にパーティションをアンマウントしシステムを再起動させることです:</p>
+<pre>
+# <i>exit</i>  <codenote>chrootシェルから抜け出します。<c>^D</c>を入力しても大丈夫です</codenote>
+# <i>cd / </i>
+# <i>umount /mnt/gentoo/proc</i>
+# <i>umount /mnt/gentoo</i>
+# <i>reboot</i>
+</pre>
+<note>
+再起動の後、<c>update-modules</c>コマンドを実行し<path>/etc/modules.conf</path>ファイルを作成するのはよい考えです。直接このファイルを変更するのではなく、
+<path>/etc/modules.d</path>にあるファイルを変更するのが一般的です。
+</note>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>その他</title>
+<section>
+<title>複数のマウスボタンのエミュレーション</title>
+<body>
+<p>起動時にいつも複数のマウスボタンのエミュレーションを有効にしたければ次のような行を<path>/etc/sysctl.conf</path>に追加します。キーの値は<c>showkey</c>コマンドラインユーティリティで得ることができます。ここでは例としてF11とF12を使います。
+<pre>
+# Enable mouse button emulation
+dev.mac_hid.mouse_button_emulation = 1
+# Set 2nd button to 87 - F11
+dev.mac_hid.mouse_button2_keycode = 87
+# Set 3rd button to 88 - F12
+dev.mac_hid.mouse_button3_keycode = 88
+</pre>
+</p>
+</body>
+</section>
+
+<section>
+<title>Gentoo利用統計</title>
+<body>
+<p>Gentoo Linux 利用統計プログラムは、開発者にユーザの動向を把握する手段を提供することを目的に始められました。この gentoo-stats プログラムは Gentoo Linuxの利用状況に関する情報を収集し、開発の優先順位を決定するために使われます。あくまでもオプションとして提供していますが、参加してもらえるととても嬉しく思います。集計結果は、<uri>http://stats.gentoo.org/</uri>で見ることができます。</p>
+
+<p>Gentoo利用統計サーバはあなたのシステムに対してIDを割り当てます。これはそれぞれのシステムが間違いなく１度だけカウントされるようにするためのものです。IDを使ってあなたのシステムを識別したり、IPアドレスやその他の情報とマッチングしたりすることはありません。あらゆる予防措置を講じて、あなたのシステムのプライバシーが守られるようにこのシステムを構築しています。	以下が、現在&quot;gentoo-stats&quot;プログラムで監視している項目です:</p>
+<ul>
+<li>インストール済みパッケージとそのバージョン</li>
+<li>CPU情報: 速度(MHz)、ベンダ、モデル、CPUフラグ (&quot;mmx&quot;や&quot;3dnow&quot;など)</li>
+<li>メモリ情報 (物理メモリ量、スワップスペース量)</li>
+<li>PCIカードとネットワークコントローラチップ</li>
+<li>使われているプロファイル(/etc/make.profileがどこへリンクしているか)</li>
+</ul>
+
+<p>我々は、機密情報が公開されることが、多くのGentoo Linuxのユーザにとって(開発者にとってもそうですが)、脅威となることを承知しています。</p>
+
+<ul>
+<li>gentoo-statsプログラムを変更しない限り、次のような機密情報を通信することはありません: パスワード類、設定情報、靴のサイズ…</li>
+<li>e-mailアドレスの送信はオプションです。デフォルトでは送信されません。</li>
+<li>送信元のIPアドレスもあなたを識別できるような方法で記録されることは決してありません。「IPアドレスとシステムIDのペア」はどこにも記録されていません。</li>
+</ul>
+
+<p>インストールは簡単です。次のように入力してください:</p>
+
+<pre caption="gentoo-statsのインストール">
+# <c>emerge gentoo-stats</c>   <codenote>gentoo-statsのインストール</codenote>
+# <c>gentoo-stats --new</c>    <codenote>システムIDの取得</codenote>
+</pre>
+
+<p>上記の2番目のコマンドは新しいシステムIDをサーバに要求し、それを<path>/etc/gentoo-stats/gentoo-stats.conf</path> に自動的に記録します。このファイルにはさらに設定オプションを指定することができます。</p>
+
+<p>その後は、定期的に起動する必要があります(rootとして実行する必要はありません)。あなたのcrontabに次の行を追加してください:</p>
+
+<pre caption="cronでgentoo-statsを更新する">
+<c>0 0 * * 0,4 /usr/sbin/gentoo-stats --update > /dev/null</c>
+</pre>
+
+<p><c>gentoo-stats</c>プログラムは単純なPerlスクリプト(<path>/usr/sbin/gentoo-stats</path>)ですので、お好みのページャやエディタで見ることができます。</p>
+
+</body>
+
+</section>
+
+<section>
+<title>ここからどこへ行くべきか</title>
+<body>
+
+<p>
+Gentooメインサイトのドキュメントセクションにはすべてのアーキテクチャに通じる
+とてもすばらしいドキュメントがあります。危険を伴うパフォーマンス(KDE起動時間を最低でも50%短縮)が欲しければ、
+システムをPrelink化するよう助言します(必ずしも必要ではありません)。
+ALSA (Advanced Linux Sound Architecture)はPPCマシン(とりわけ新しいPowerBookで)に
+とってまたとてもよいものです。高度な設定のできるオーディオシステムを望むならドキュメントを調べてみてください。macマシンを検査したり設定するなら、
+pmud(APM:アドバンスド・パワー・マネージメント)やpbbuttons (PowerBookの
+所有者なら)を是非チェックしてください。PPCマシンでXFreeを設定することはとても簡単です。<c>emerge xeasyconf
+&amp;&amp; Xeasyconf</c>はすべきです。
+</p>
+
+	<p>何か疑問があったり、Gentoo Linuxの開発に携わりたい人は、gentoo-userメーリングリストやgentoo-devメーリングリストへの参加も考えてみてください
+	(詳しい情報は<uri link="http://www.gentoo.org/main/en/lists.xml">メーリングリスト</uri>のページにあります)。
+	また、<uri link="/doc/en/desktop.xml">Desktop configuration guide</uri><uri link="/doc/ja/desktop.xml">（日本語訳）</uri>はGentoo Linuxシステムを設定するときに役に立ちますし、<uri link="/doc/en/portage-user.xml">Portage user guide</uri><uri link="/doc/ja/portage-user.xml">（日本語訳）</uri>はPortageの基礎知識を得るのに役立ちます。
+	その他のドキュメントは<uri link = "/main/en/docs.xml">こちら</uri>を参照してください。
+	インストールやその他の問題で質問したいことがあるなら、Gentoo Linux <uri link = "/main/en/faq.xml">FAQ</uri><uri link="/doc/ja/faq.xml">（日本語訳）</uri>も見てください。
+	Gentoo Linuxへようこそ！お楽しみください！</p>
+
+<p><uri link="/doc/en/gentoo-ppc-faq.xml">Gentoo Linux/PowerPC FAQ</uri><uri link="/doc/ja/gentoo-ppc-faq.xml">（日本語訳）</uri>はGentoo Linux/PPCを動作させる上でよく尋ねられる質問と回答を網羅しています。一般的なことは<uri link="/doc/en/faq.xml">Gentoo Linux FAQ</uri><uri link="/doc/ja/faq.xml">（日本語訳）</uri>)がx86インストール向けに書かれてはいるものの、始めるにあたっては助けとなるでしょう。<uri link="http://forums.gentoo.org/viewforum.php?f=24">Gentoo on PPC</uri> (forums.gentoo.orgにあります)はすべてのPowerPC問題を討論する自由な掲示板です。また、IRCではいつでも活発な討論が行われています。<i>irc.freenode.net</i>にある<i>#gentoo-ppc</i>に参加してください。</p>
+
+<p>ありがとうそしてGentooを楽しんでください!</p>
+
+</body>
+</section>
+
+</chapter>
+
+</guide>

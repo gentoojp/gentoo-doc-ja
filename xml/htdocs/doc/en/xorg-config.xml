@@ -1,0 +1,632 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/xorg-config.xml,v 1.48 2011/09/02 19:07:12 swift Exp $ -->
+
+<guide>
+<title>The X Server Configuration HOWTO</title>
+
+<author title="Author">
+  <mail link="swift"/>
+</author>
+<author title="Author">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+Xorg is the X Window server which allows users to have a graphical
+environment at their fingertips. This HOWTO explains what Xorg is, how to
+install it and what the various configuration options are.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>10</version>
+<date>2011-09-02</date>
+
+<chapter>
+<title>What is the X Window Server?</title>
+<section>
+<title>Graphical vs Command-Line</title>
+<body>
+
+<p>
+The average user may be frightened at the thought of having to type in commands.
+Why wouldn't he be able to point and click his way through the freedom provided
+by Gentoo (and Linux in general)? Well, of course you are able to
+do this! Linux offers a wide variety of flashy user interfaces and
+environments which you can install on top of your existing installation.
+</p>
+
+<p>
+This is one of the biggest surprises new users come across: a graphical user
+interface is nothing more than an application which runs on your system. It is
+<e>not</e> part of the Linux kernel or any other internals of the system. It is
+a powerful tool that fully enables the graphical abilities of your workstation.
+</p>
+
+<p>
+As standards are important, a standard for drawing and moving windows on a
+screen, interacting with the user through mouse, keyboard and other basic, yet
+important aspects has been created and named the <e>X Window System</e>,
+commonly abbreviated as <e>X11</e> or just <e>X</e>. It is used on Unix, Linux
+and Unix-like operating systems throughout the world.
+</p>
+
+<p>
+The application that provides Linux users with the ability to run graphical
+user interfaces and that uses the X11 standard is Xorg-X11, a fork of
+the XFree86 project. XFree86 has decided to use a license that might not be
+compatible with the GPL license; the use of Xorg is therefore recommended.
+The official Portage tree does not provide an XFree86 package anymore.
+</p>
+
+</body>
+</section>
+<section>
+<title>The X.org Project</title>
+<body>
+
+<p>
+The <uri link="http://www.x.org">X.org</uri> project created and
+maintains a freely redistributable, open-source implementation of the X11
+system. It is an open source X11-based desktop infrastructure.
+</p>
+
+<p>
+Xorg provides an interface between your hardware and the graphical software
+you want to run. Besides that, Xorg is also fully network-aware, meaning you
+are able to run an application on one system while viewing it on a different
+one.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Installing Xorg</title>
+<section>
+<body>
+
+<p>
+Before you can install Xorg, you need to prepare your system for it. First,
+we'll set up the kernel to support input devices and video cards. Then we'll
+prepare <path>/etc/make.conf</path> so that the right drivers and Xorg packages
+are built and installed.
+</p>
+
+</body>
+</section>
+<section>
+<title>Input driver support</title>
+<body>
+
+<p>
+By default, Xorg uses <c>evdev</c>, a generic input driver. You'll need to
+activate support for <c>evdev</c> by making a change to your kernel
+configuration. Read the <uri link="/doc/en/kernel-config.xml">Kernel
+Configuration Guide</uri> if you don't know how to setup your kernel.
+</p>
+
+<pre caption="Enabling evdev in the kernel">
+Device Drivers ---&gt;
+  Input device support ---&gt;
+  &lt;*&gt;  Event interface
+</pre>
+
+</body>
+</section>
+<section>
+<title>Kernel modesetting</title>
+<body>
+
+<p>
+Modern open-source video drivers rely on kernel modesetting (KMS). KMS provides
+an improved graphical boot with less flickering, faster user switching, a
+built-in framebuffer console, seamless switching from the console to Xorg, and
+other features. KMS conflicts with legacy framebuffer drivers, which must remain
+<b>disabled</b> in your kernel configuration.
+</p>
+
+<p>
+First, prepare your kernel for KMS. You need to do this step regardless of which
+Xorg video driver you're using.
+</p>
+
+<pre caption="Configuring framebuffers">
+Device Drivers ---&gt;
+  Graphics support ---&gt;
+    Support for frame buffer devices ---&gt;
+    <comment>(Disable all drivers, including VGA, Intel, nVidia, and ATI)</comment>
+
+    <comment>(Further down, enable basic console support. KMS uses this.)</comment>
+    Console display driver support ---&gt;
+      &lt;*&gt;  Framebuffer Console Support
+</pre>
+
+<p>
+Next, configure your kernel to use the proper KMS driver for your video card.
+Intel, nVidia, and AMD/ATI are the most common cards, so follow code listing for
+your card below.
+</p>
+
+<p>
+For Intel cards:
+</p>
+
+<pre caption="Intel settings">
+Device Drivers ---&gt;
+  Graphics support ---&gt;
+    /dev/agpgart (AGP Support) ---&gt;
+    &lt;*&gt;  Intel 440LX/BX/GX, I8xx and E7x05 chipset support
+    Direct Rendering Manager (XFree86 4.1.0 and higher DRI support) ---&gt;
+    &lt;*&gt;  Intel 830M, 845G, 852GM, 855GM, 865G (i915 driver)
+         i915 driver
+    [*]    Enable modesetting on intel by default
+</pre>
+
+<p>
+For nVidia cards:
+</p>
+
+<pre caption="nVidia settings">
+<comment>(Enable DRM)</comment>
+Device Drivers ---&gt;
+  Graphics support ---&gt;
+  &lt;*&gt;  Direct Rendering Manager ---&gt;
+
+<comment>(Nouveau is currently in the Staging drivers section)</comment>
+Device Drivers ---&gt;
+  Staging drivers ---&gt;
+  [ ]  Exclude Staging drivers from being built
+  &lt;*&gt;    Nouveau (nVidia) cards
+</pre>
+
+<p>
+For newer AMD/ATI cards (<uri link="/doc/en/ati-faq.xml">RadeonHD 2000 and
+up</uri>), you will need to emerge <c>radeon-ucode</c> or
+<c>linux-firmware</c>. Once you have installed one of these packages,
+configure your kernel as shown:
+</p>
+
+<pre caption="AMD/ATI settings">
+<comment>(Setup the kernel to use the radeon-ucode firmware)</comment>
+Device Drivers ---&gt;
+  Generic Driver Options ---&gt;
+  [*]  Include in-kernel firmware blobs in kernel binary
+  <comment># RadeonHD 2000, 3000, and 4000 series cards:</comment>
+  (radeon/R600_rlc.bin radeon/R700_rlc.bin) External firmware blobs
+  <comment># RadeonHD 5000, a.k.a Evergreen, and newer cards:</comment>
+  (radeon/CEDAR_me.bin radeon/CEDAR_pfp.bin radeon/CEDAR_rlc.bin
+   radeon/CYPRESS_me.bin radeon/CYPRESS_pfp.bin radeon/CYPRESS_rlc.bin
+   radeon/JUNIPER_me.bin radeon/JUNIPER_pfp.bin radeon/JUNIPER_rlc.bin
+   radeon/REDWOOD_me.bin radeon/REDWOOD_pfp.bin 
+   radeon/REDWOOD_rlc.bin) External firmware blobs
+  <comment># Radeon HD 6000 series Fusion APUs:</comment>
+  (radeon/PALM_me.bin radeon/PALM_pfp.bin radeon/SUMO2_me.bin
+   radeon/SUMO2_pfp.bin radeon/SUMO_me.bin radeon/SUMO_pfp.bin
+   radeon/SUMO_rlc.bin) External firmware blobs
+  <comment># Radeon HD 6400-6900 aka. Northern Islands:</comment>
+  (radeon/BARTS_mc.bin radeon/BARTS_me.bin radeon/BARTS_pfp.bin
+   radeon/BTC_rlc.bin radeon/CAICOS_mc.bin radeon/CAICOS_me.bin
+   radeon/CAICOS_pfp.bin radeon/CAYMAN_mc.bin radeon/CAYMAN_me.bin
+   radeon/CAYMAN_pfp.bin radeon/CAYMAN_rlc.bin radeon/TURKS_mc.bin
+   radeon/TURKS_me.bin radeon/TURKS_pfp.bin) External firmware blobs
+   (/lib/firmware/) Firmware blobs root directory
+
+<comment>(Enable Radeon KMS support)</comment>
+Device Drivers ---&gt;
+  Graphics support ---&gt;
+  &lt;*&gt;  Direct Rendering Manager ---&gt;
+  &lt;*&gt;    ATI Radeon
+  [*]      Enable modesetting on radeon by default
+</pre>
+
+<note>
+Old Radeon cards (X1900 series and older) don't need the <c>radeon-ucode</c>
+package or any firmware configuration. Just enable the Direct Rendering Manager
+and ATI Radeon modesetting.
+</note>
+
+<p>
+Now that you're done setting up KMS, continue with preparing
+<path>/etc/make.conf</path> in the next section.
+</p>
+
+</body>
+</section>
+<section>
+<title>make.conf configuration</title>
+<body>
+
+<p>
+Now that your kernel is prepared, you have to configure two important variables
+in the <path>/etc/make.conf</path> file before you can install Xorg.
+</p>
+
+<p>
+The first variable is <c>VIDEO_CARDS</c>. This is used to set the video drivers
+that you intend to use and is usually based on the kind of video card you have.
+The most common settings are <c>nouveau</c> for nVidia cards or <c>radeon</c>
+for ATI cards. Both have actively developed, well-supported open-source
+drivers.
+</p>
+
+<note>
+You may also try the proprietary drivers from nVidia and AMD/ATI, <c>nvidia</c>
+and <c>fglrx</c> respectively. However, setting up the proprietary drivers is
+beyond the scope of this guide. Please read the <uri
+link="/doc/en/nvidia-guide.xml">Gentoo Linux nVidia Guide</uri> and <uri
+link="/doc/en/ati-faq.xml">Gentoo Linux ATI FAQ</uri>. If you don't know which
+drivers you should choose, refer to these guides for more information.
+</note>
+
+<p>
+The <c>intel</c> driver may be used for desktops or laptops with common Intel
+integrated graphics chipsets.
+</p>
+
+<note>
+<c>VIDEO_CARDS</c> may contain more than one driver, each separated with a
+space.
+</note>
+
+<p>
+The second variable is <c>INPUT_DEVICES</c> and is used to determine which
+drivers are to be built for input devices. In most cases setting it to
+<c>evdev</c> should work just fine. If you use alternative input
+devices, such as a Synaptics touchpad for a laptop, be sure to add it to
+<c>INPUT_DEVICES</c>.
+</p>
+
+<p>
+Now you should decide which drivers you will use and add necessary settings to
+the <path>/etc/make.conf</path> file:
+</p>
+
+<pre caption="Sample make.conf entries">
+<comment>(For mouse, keyboard, and Synaptics touchpad support)</comment>
+INPUT_DEVICES="evdev synaptics"
+<comment>(For nVidia cards)</comment>
+VIDEO_CARDS="nouveau"
+<comment>(For AMD/ATI cards)</comment>
+VIDEO_CARDS="radeon"
+</pre>
+
+<p>
+If the suggested settings don't work for you, you should run <c>emerge -pv
+xorg-drivers</c>, check all the options available and choose those which apply to
+your system. This example is for a system with a keyboard, mouse, Synaptics
+touchpad, and a Radeon video card.
+</p>
+
+<pre caption="Displaying all the driver options available">
+# <i>emerge -pv xorg-drivers</i>
+
+These are the packages that would be merged, in order:
+
+Calculating dependencies... done!
+[ebuild   R   ]  x11-base/xorg-drivers-1.9  INPUT_DEVICES="evdev synaptics
+-acecad -aiptek -elographics% -fpit% -joystick -keyboard -mouse -penmount -tslib
+-virtualbox -vmmouse -void -wacom"
+VIDEO_CARDS="radeon -apm -ark -ast -chips -cirrus -dummy -epson -fbdev -fglrx
+(-geode) -glint -i128 (-i740) (-impact) -intel -mach64 -mga -neomagic (-newport)
+-nouveau -nv -nvidia -r128 -rendition -s3 -s3virge -savage -siliconmotion -sis
+-sisusb (-sunbw2) (-suncg14) (-suncg3) (-suncg6) (-sunffb) (-sunleo) (-suntcx)
+-tdfx -tga -trident -tseng -v4l -vesa -via -virtualbox -vmware (-voodoo) (-xgi)"
+0 kB
+</pre>
+
+<p>
+After setting all the necessary variables you can install the Xorg package.
+</p>
+
+<pre caption="Installing Xorg">
+<comment>(Make sure udev is in your USE flags)</comment>
+# <i>echo "x11-base/xorg-server udev" >> /etc/portage/package.use</i>
+<comment>(Install Xorg)</comment>
+# <i>emerge xorg-server</i>
+</pre>
+
+<note>
+You could install the <c>xorg-x11</c> metapackage instead of the more
+lightweight <c>xorg-server</c>. Functionally, <c>xorg-x11</c> and
+<c>xorg-server</c> are the same. However, <c>xorg-x11</c> brings in many more
+packages that you probably don't need, such as a huge assortment of fonts in
+many different languages. They're not necessary for a working desktop.
+</note>
+
+<p>
+When the installation is finished, you will need to re-initialise some
+environment variables before you continue:
+</p>
+
+<pre caption="Re-initialising the environment variables">
+# <i>env-update</i>
+# <i>source /etc/profile</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring Xorg</title>
+<section>
+<body>
+
+<p>
+The X server is designed to work out-of-the-box, with no need to manually edit
+Xorg's configuration files. It should detect and configure devices such as
+displays, keyboards, and mice.
+</p>
+
+<p>
+You should first try <uri link="#using_startx">starting X</uri> without editing
+any configuration files. If Xorg won't start, or there's some other problem,
+then you'll need to manually configure Xorg as shown in the next section.
+</p>
+
+</body>
+</section>
+<section>
+<title>The xorg.conf.d directory</title>
+<body>
+
+<note>
+Configuring files in <path>xorg.conf.d</path> should be seen as a "last resort"
+option. It really desirable to run without any special configuration if
+possible. If you still can't get a working configuration, then read on.
+</note>
+
+<p>
+The configuration files of Xorg are stored in
+<path>/etc/X11/xorg.conf.d/</path>. Each file is given a unique name and ends in
+<path>.conf</path>. If the filenames start with a number, then Xorg will read
+the files in numeric order. <path>10-evdev.conf</path> will be read before
+<path>20-synaptics.conf</path>, and so on. You don't <e>have</e> to give them
+numbers, but it may help you organize them.
+</p>
+
+<note>
+Xorg provides example configurations in
+<path>/usr/share/doc/xorg-server-${version}/xorg.conf.example.bz2</path>.  You
+can use these to create your own configuration files in
+<path>/etc/X11/xorg.conf.d/</path>. The examples are heavily commented, but if
+you are in need of more documentation regarding the syntax, read <c>man
+xorg.conf</c>. Other examples can be found in the <uri
+link="#resources">Resources</uri> chapter at the end of this guide.
+</note>
+
+</body>
+</section>
+<section id="using_startx">
+<title>Using startx</title>
+<body>
+
+<p>
+Now try <c>startx</c> to start up your X server. <c>startx</c> is a script
+that executes an <e>X session</e>; that is, it starts the X server and some
+graphical applications on top of it. It decides which applications to run
+using the following logic:
+</p>
+
+<ul>
+  <li>
+    If a file named <path>.xinitrc</path> exists in the home directory, it will
+    execute the commands listed there.
+  </li>
+  <li>
+    Otherwise, it will read the value of the XSESSION variable and will execute
+    one of the sessions available in <path>/etc/X11/Sessions/</path>
+    accordingly. You can set the value of XSESSION in
+    <path>/etc/env.d/90xsession</path> to make it a default for all the users
+    on the system. For example, as root, run <c>echo XSESSION="Xfce4" >
+    /etc/env.d/90xsession</c>. This will create the <path>90xsession</path> file
+    and set the default X session to <uri
+    link="/doc/en/xfce-config.xml">Xfce</uri>. Remember to run <c>env-update</c>
+    after changing <path>90xsession</path>.
+  </li>
+</ul>
+
+<pre caption="Starting X">
+$ <i>startx</i>
+</pre>
+
+<p>
+If you haven't yet installed a window manager, all you'll see is a black screen.
+Since this can also be a sign that something's wrong, you may want to emerge
+<c>twm</c> and <c>xterm</c> <e>only to test X</e>.
+</p>
+
+<p>
+Once those two programs are installed, run <c>startx</c> again. A few
+<c>xterm</c> windows should appear, making it easier to verify that X is working
+correctly. Once you're satisfied with the results, run <c>emerge --unmerge twm
+xterm</c> as root to get rid of the testing packages. You won't need them once
+you've setup a proper desktop environment.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Tweaking X settings</title>
+<section>
+<title>Setting your Resolution</title>
+<body>
+
+<p>
+If you feel that the screen resolution is wrong, you will need to check two
+sections in your <path>xorg.conf.d</path> configuration. First of all, you have
+the <e>Screen</e> section which lists the resolutions that your X server will
+run at. This section might not list any resolutions at all. If this is the case,
+Xorg will estimate the resolutions based on the information in the second
+section, <e>Monitor</e>.
+</p>
+
+<p>
+Now let us change the resolution. In the next example from
+<path>/etc/X11/xorg.conf.d/40-monitor.conf</path> we add the
+<c>PreferredMode</c> line so that our X server starts at 1440x900 by default.
+The <c>Option</c> in the <c>Device</c> section must match the name of your
+monitor (<c>DVI-0</c>), which can be obtained by running <c>xrandr</c>. You'll
+need to <c>emerge xrandr</c> just long enough to get this information. The
+argument after the monitor name (in the <c>Device</c> section) must match the
+<c>Identifier</c> in the <c>Monitor</c> section.
+</p>
+
+<pre caption="Changing the Monitor section">
+# <i>nano -w /etc/X11/xorg.conf.d/40-monitor.conf</i>
+
+Section "Device"
+  Identifier  "RadeonHD 4550"
+  Option      "Monitor-DVI-0" "DVI screen"
+EndSection
+Section "Monitor"
+  Identifier  "DVI screen"
+  Option      "PreferredMode" "1440x900"
+EndSection
+</pre>
+
+<p>
+Run X (<c>startx</c>) to discover it uses the resolution you want.
+</p>
+
+</body>
+</section>
+<section>
+<title>Multiple monitors</title>
+<body>
+
+<p>
+You can configure more than one monitor in <path>/etc/X11/xorg.conf.d/</path>.
+All you have to do is give each monitor an identifer, then list its physical
+position, such as "RightOf" or "Above" another monitor. The following example
+shows how to configure a DVI and a VGA monitor, with the VGA monitor as the
+right-hand screen:
+</p>
+
+<pre caption="Configuring multiple monitors">
+# <i>nano -w /etc/X11/xorg.conf.d/40-monitor.conf</i>
+
+Section "Device"
+  Identifier "RadeonHD 4550"
+  Option     "Monitor-DVI-0" "DVI screen"
+  Option     "Monitor-VGA-0" "VGA screen"
+EndSection
+Section "Monitor"
+  Identifier "DVI screen"
+EndSection
+Section "Monitor"
+  Identifier "VGA screen"
+  Option     "RightOf" "DVI screen"
+EndSection
+</pre>
+
+</body>
+</section>
+<section>
+<title>Configuring your keyboard</title>
+<body>
+
+<p>
+To setup X to use an international keyboard, you just have to create the
+appropriate config file in <path>/etc/X11/xorg.conf.d/</path>. This example
+features a Czech keyboard layout:
+</p>
+
+<pre caption="Using an international keyboard">
+# <i>nano -w /etc/X11/xorg.conf.d/30-keyboard.conf</i>
+
+Section "InputClass"
+        Identifier "keyboard-all"
+        Driver "evdev"
+        Option "XkbLayout" "us,cz"
+        Option "XkbModel" "logitech_g15"
+        Option "XkbRules" "xorg"
+        Option "XkbOptions" "grp:alt_shift_toggle,grp:switch,grp_led:scroll,compose:rwin,terminate:ctrl_alt_bksp"
+        Option "XkbVariant" ",qwerty"
+        MatchIsKeyboard "on"
+EndSection
+</pre>
+
+<p>
+The "terminate" command (<c>terminate:ctrl_alt_bksp</c>) lets you kill the X
+session by using the Ctrl-Alt-Backspace key combination. This will, however,
+make X exit disgracefully -- something that you might not always want. It can be
+useful when programs have frozen your display entirely, or when you're
+configuring and tweaking your Xorg environment. Be careful when killing your
+desktop with this key combination -- most programs really don't like it when you
+end them this way, and you may lose some (or all) of what you were working on.
+</p>
+
+</body>
+</section>
+<section>
+<title>Finishing up</title>
+<body>
+
+<p>
+Run <c>startx</c> and be happy about the result. Congratulations, you now
+(hopefully) have a working Xorg on your system. The next step is to install a
+useful window manager or desktop environment such as KDE, GNOME, or Xfce, but
+that's not part of this guide. Information on installing these desktop
+environments can be found in our <uri link="/doc/en/?catid=desktop">Gentoo
+Desktop Documentation Resources</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="resources">
+<title>Resources</title>
+<section>
+<title>Creating and editing config files</title>
+<body>
+
+<p>
+First of all, <c>man xorg.conf</c> and <c>man evdev</c> provide quick yet
+complete references about the syntax used by these configuration files. Be sure
+to have them open on a terminal when you edit your configuration files!
+</p>
+
+<p>
+There are also many online resources on editing config files in
+<path>/etc/X11/</path>. We only list few of them here; be sure to <uri
+link="http://www.google.com">Google</uri> for more.
+</p>
+
+</body>
+</section>
+<section>
+<title>Other resources</title>
+<body>
+
+<p>
+More information about installing and configuring various graphical desktop
+environments and applications can be found in the <uri
+link="/doc/en/?catid=desktop">Gentoo Desktop Documentation Resources</uri>
+section of our documentation.
+</p>
+
+<p>
+If you're upgrading to <c>xorg-server</c> 1.9 from an earlier version, then be
+sure to read the <uri
+link="/proj/en/desktop/x/x11/xorg-server-1.9-upgrade-guide.xml">migration
+guide</uri>.
+</p>
+
+<p>
+X.org provides many <uri link="http://www.x.org/wiki/FAQ">FAQs</uri> on their
+website, in addition to their other documentation.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

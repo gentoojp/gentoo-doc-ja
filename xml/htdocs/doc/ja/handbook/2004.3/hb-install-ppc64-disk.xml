@@ -1,0 +1,573 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-install-ppc64-disk.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+
+<!-- Original revision: 1.12 -->
+
+<sections>
+
+<version>1.8</version>
+<date>2004-11-21</date>
+
+<section>
+<title>ブロックデバイス入門</title>
+<subsection>
+<title>ブロックデバイス</title>
+<body>
+
+<p>
+Linuxファイルシステム、パーティション、ブロックデバイスを含めて、Gentoo LinuxとLinux全般でのディスクに適している側面を詳しく見て行きましょう。そして、ディスクとパーティションの一部始終を理解してもらった上で、Gentoo Linuxのインストールの為にパーティションとファイルシステムのセットアップの手順を案内します。
+</p>
+
+<p>
+初めに、<e>ブロックデバイス</e>を紹介します。おそらく最も有名なブロックデバイスはLinux上では1番目のIDEドライブ、すなわち<path>/dev/hda</path>を指しているものでしょう。もし、あなたのシステムがSCSIドライブを使っているなら, 1番目のハードディスクは<path>/dev/sda</path>になるでしょう。また、IDEドライブがあったとしても、Serial ATAドライブは<path>/dev/sda</path>になります。
+</p>
+
+<p>
+上記のブロックデバイスはディスクへの抽象的インターフェイスを表しています。ユーザープログラムはドライブがIDEやSCSIもしくは他のどんなものかどうかを気にする事無くディスクにアクセスできます。プログラムは簡単にディスク上の記憶領域をランダムアクセス可能な512バイト毎の連続した束としてアドレッシングできます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>パーティションとスライス</title>
+<body>
+
+<p>
+Linuxシステムを格納するのにディスクの全体を使用する事は理論上可能ですが、実際にはほとんどそうはされません。代わりにディスク全体のブロックデバイスはもっと扱いやすいブロックデバイスにより小さく分割されます。ほとんどのシステムではこれら分割されたものを<e>パーティション</e>と呼びます。別のアーキテクチャーは同様の手法を使い、<e>スライス</e>と呼びます。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>パーティション構成を計画する</title>
+<subsection>
+<title>通常のパーティション構成</title>
+<body>
+
+<p>
+もしシステムのパーティション構成を編集するのに興味が無ければ、このハンドブックを通して使っているパーティション構成を使用できます。
+</p>
+
+<table>
+<tr>
+  <th>パーティション</th>
+  <th>ファイルシステム</th>
+  <th>サイズ</th>
+  <th>種別</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>Partition map</ti>
+  <ti>31.5k</ti>
+  <ti>Partition map</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>(bootstrap)</ti>
+  <ti>800k</ti>
+  <ti>Apple_Bootstrap</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>(swap)</ti>
+  <ti>512M</ti>
+  <ti>スワップパーティション</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda4</path></ti>
+  <ti>ext3</ti>
+  <ti>残りのディスク領域</ti>
+  <ti>ルートパーティション</ti>
+</tr>
+</table>
+
+<note>
+次のように命名されたいくつかのパーティションがあります。<path>Apple_Driver43、Apple_Driver_ATA、Apple_FWDriver、Apple_Driver_IOKit、Apple_Patches</path>。もしMacOS 9を使用するつもりでなければ、MacOS XとLinuxはこれらを必要としないため削除することができます。まだmac-fdiskではこれらのパーティションを削除することができないので、これらを削除するためにpartedを使う必要があるかもしれません。
+</note>
+
+<p>
+もしパーティションがどれぐらいのサイズにすればいいのか、どれだけの数のパーティションかにすべきかを知りたいのならば読み進んでください。そうでなければ、今から<uri link="#mac-fdisk">Apple G5: パーティション作成にmac-fdiskを使う</uri>または<uri link="#fdisk">IBM pSeries: パーティション作成にfdiskを使う</uri>に進んでください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>パーティション数とその大きさ</title>
+<body>
+
+<p>
+パーティションの数は環境に大きく依存します。例えば、多数のユーザーがいるのならセキュリティを強めバックアップを容易にする為に多分<path>/home</path>を別にしたいでしょう。もしメールサーバーとして稼働させる為にGentooをインストールしようとしているのなら、全てのメールは<path>/var</path>内に保存されるので<path>/var</path>は別にすべきでしょう。ファイルシステムの良い選択はパフォーマンスを最大限にするでしょう。ゲームサーバーではほとんどのゲームサーバーパッケージが<path>/opt</path>にインストールされるので、そこは別にされます。理由は<path>/home</path>をセキュリティとバックアップの為に別にするのと同じようなものです。
+</p>
+
+<p>
+こういったように、どういうシステムにしたいのかにかなり依存します。分割されたパーティションまたはボリュームには以下の利点があります。
+</p>
+
+<ul>
+<li>
+  それぞれのパーティションまたはボリュームに最適なパフォーマンスを上げるファイルシステムを選択できます。
+</li>
+<li>
+  パーティションを分けておくと、あるゾンビプロセスがパーティションまたはボリュームにデータを書き込み続けてシステム全体の空き容量を使い果たすのを防ぐ事が出来ます。
+</li>
+<li>
+  必要ならば、並行した複数のチェックを行えるのでファイルシステムのチェック時間を減らせます。(この利点は複数のパーティションでよりも複数のディスクでより有効ですが)。
+</li>
+<li>
+  セキュリティは読込専用、nosuid(setuidビットは無視されます)、noexec(実行ビットは無視されます)等でいくつかのパーティションをマウントする事で増大します。
+</li>
+</ul>
+
+<p>
+しかし、複数のパーティションには一つ大きな欠点があります。 
+正しく設定しないと、空き容量がかなりあるパーティションと空き容量の無いパーティションのあるシステムになってしまうでしょう。また、SCSIとSATAでは15個迄というパーティション数の制限があります。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="mac-fdisk">
+<title>一般的な選択: パーティション作成にmac-fdiskを使う (Apple G5)</title>
+<body>
+
+<p>
+現時点では、パーティション作成に<c>mac-fdisk</c>を使います。
+</p>
+
+<pre caption="mac-fdiskの開始">
+# <i>mac-fdisk /dev/sda</i>
+</pre>
+
+<p>
+最初に、Linuxパーティションに場所を空けるため以前に作成したパーティションを削除してください。パーティションを削除するためにはmac-fdiskの中でdを使用してください。それは、削除するパーティション番号を尋ねます。
+</p>
+
+<p>
+次に、bを使って<e>Apple_Bootstrap</e>を作成してください。それは、どのブロックから始めるか尋ねます。先に空いているパーティション番号を入力し、その後に続けてpを入力します。例えば、これは<c>1p</c>です。
+</p>
+
+<note>
+このパーティションは「ブート」パーティションでは<e>ありません</e>。これはLinuxによって全く使用されません。つまり、どんなファイルシステムも配置する必要はありませんし、これをマウントするべきではありません。PPCユーザーは<path>/boot</path>のための余分のパーティションを必要としません。
+</note>
+
+<p>
+それから、cを押してスワップパーティションを作成してください。再び、<c>mac-fdisk</c>はどのブロックからこのパーティションを始めるか尋ねます。以前に私たちがApple_Bootstrapを作成するために<c>1</c>を使用したので、今は<c>2p</c>を入力する必要があります。サイズを尋ねられた時は、<c>512M</c>(または望んでいるどんなサイズでも -- 512MBを推奨しますが)を入力してください。名前を尋ねられた時は、<c>swap</c>(必須です)を入力してください。
+</p>
+
+<p>
+ルートパーティションを作成するためには、ルートパーティションがどのブロックから始まるべきであるかを選ぶために、<c>c</c>を入力した後に続けて<c>3p</c>を入力してください。サイズを尋ねられた時は、再び<c>3p</c>を入力してください。<c>mac-fdisk</c>はこれを「使用可能なスペースを全て使用してください」と解釈するでしょう。名前を尋ねられた時は、<c>root</c>(必須です)を入力してください。
+</p>
+
+<p>
+完了するためには、<c>w</c>を使ってパーティションをディスクに書き、<c>q</c>を使って<c>mac-fdisk</c>を終了してください。
+</p>
+
+<note>
+全く問題がないことを確かめるために、もう一度mac-fdiskを実行し、すべてのパーティションがそこにあるかどうかを調べるべきです。もし、作成したパーティションまたは行った変更のいずれかを見ないならば、mac-fdiskにおいて「i」を押してパーティションの再初期化をするべきです。これがパーティションマップを再作成し、それからすべてのパーティションを取り去るということに注意してください。
+</note>
+
+<p>
+これでパーティションが作成されましたので、<uri link="#filesystems">ファイルシステムの作成</uri>に進む事ができます。
+</p>
+
+</body>
+</section>
+<section id="fdisk">
+<title>IBM pSeries: パーティション作成にfdiskを使う</title>
+<subsection>
+<body>
+
+<p>
+以下の部分では先に紹介した例のパーティション設定の作成方法を説明します。
+</p>
+
+<table>
+<tr>
+  <th>パーティション</th>
+  <th>種別</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>PPC PReP ブートパーティション</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>スワップパーティション</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>ルートパーティション</ti>
+</tr>
+</table>
+
+<p>
+パーティションの割当てを自分の望むように変更してください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>現在のパーティションの割当てを見る</title>
+<body>
+
+<p>
+<c>fdisk</c>はディスクをパーティションに分割するのに高機能かつ普及しているツールです。
+さあ<c>fdisk</c>を実行しましょう。(例では<path>/dev/sda</path>を使っています)。</p>
+
+<pre caption="fdiskを起動する">
+# <i>fdisk /dev/sda</i>
+</pre>
+
+<p>
+<c>fdisk</c>を起動すると、下記の様なプロンプトが出ます。
+</p>
+
+<pre caption="fdiskプロンプト">
+Command (m for help):
+</pre>
+
+<p>
+現在のディスクのパーティション情報を表示するには<c>p</c>を入力します。
+</p>
+
+<pre caption="パーティション情報例">
+Command (m for help): p
+
+Disk /dev/sda: 30.7 GB, 30750031872 bytes
+141 heads, 63 sectors/track, 6761 cylinders
+Units = cylinders of 8883 * 512 = 4548096 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1               1          12       53266+  83  Linux
+/dev/sda2              13         233      981571+  82  Linux swap
+/dev/sda3             234         674     1958701+  83  Linux
+/dev/sda4             675        6761    27035410+   5  Extended
+/dev/sda5             675        2874     9771268+  83  Linux
+/dev/sda6            2875        2919      199836   83  Linux
+/dev/sda7            2920        3008      395262   83  Linux
+/dev/sda8            3009        6761    16668918   83  Linux
+
+Command (m for help):
+</pre>
+
+<p>
+このディスクの例では6つのLinuxファイルシステム("Linux"と表示されている)とスワップパーティション("Linux swap"と表示)で構成するように設定されています。 
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>全てのパーティションを削除する</title>
+<body>
+
+<p>
+最初に現在の全てのパーティションをディスクから削除します。<c>d</c>を入力するとパーティションを削除します。例えば、現在の<path>/dev/sda1</path>を削除するには、以下のようにします。 
+
+</p>
+
+<note>
+ただ、全てのパーティションを削除したくなければ、削除したいパーティションを削除してください。この時、筆者はデータを失うことを避けるためバックアップを勧めます。
+</note>
+
+<pre caption="パーティションを削除する">
+Command (m for help): <i>d</i>
+Partition number (1-4): <i>1</i>
+</pre>
+
+<p>
+パーティションの削除準備ができました。これで<c>p</c>と入力してもパーティションは表示されませんが、変更が保存されるまで実際には削除されません。もし間違えてしまって変更を保存せずに取消たい時はすぐに<c>q</c>と入力し、エンターキーを押してください。これでパーティションは削除されません。
+</p>
+
+<p>
+さあ、これでシステム上の全パーティションを削除したい！と思っているでしょう？パーティションを表示するのに<c>p</c>を、 削除するのに<c>d</c>とパーティション番号を繰り返し入力してください。最後にパーティションテーブルに何も無くなれば終了です。
+</p>
+
+<pre caption="空のパーティションテーブル">
+Disk /dev/sda: 30.7 GB, 30750031872 bytes
+141 heads, 63 sectors/track, 6761 cylinders
+Units = cylinders of 8883 * 512 = 4548096 bytes
+
+Device Boot    Start       End    Blocks   Id  System
+
+Command (m for help):
+</pre>
+
+<p>
+さて今はメモリー上のパーティション構成は空になりました。パーティションを作成する準備が整いました。先程検討したように、通常のパーティション構成を使う事にしましょう。同じパーティション構成にしたくなければ、当然ですがこのハンドブックの例の通りにしてはいけません。もちろん同じパーティション構成にしたくなければ、厳密に案内にならわないでください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>PPC PRePブートパーティションを作成する</title>
+<body>
+
+<p>
+最初に小さなPRePブートパーティションを作成します。新しいパーティションを作成するには<c>n</c>と入力します。そして基本パーティションを選択するのに<c>p</c>と入力するのに続き、1番目の基本パーティションを選択するのに<c>1</c>と入力します。最初のシリンダーが表示されると、エンターキーを押してください。最後のシリンダーが表示されたら、7Mバイトサイズのパーティションを作成するのに<c>+7M</c>と入力してください。この作業の後、パーティションタイプを設定するのに<c>t</c>と入力します。先程作成したパーティションを選択するのに<c>1</c>と入力して、このパーティションタイプを"PPC PReP Boot"にする為に<c>41</c>と入力します。
+</p>
+
+<note>
+PRePパーティションは8Mバイト未満でなければなりません!
+</note>
+
+<pre caption="PRePブートパーティションを作成する">
+Command (m for help): <i>p</i>
+
+Disk /dev/sda: 30.7 GB, 30750031872 bytes
+141 heads, 63 sectors/track, 6761 cylinders
+Units = cylinders of 8883 * 512 = 4548096 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+
+Command (m for help): <i>n</i>
+Command action
+      e   extended
+      p   primary partition (1-4)
+<i>p</i>
+Partition number (1-4): <i>1</i>
+First cylinder (1-6761, default 1): 
+Using default value 1
+Last cylinder or +size or +sizeM or +sizeK (1-6761, default
+6761): <i>+8M</i>
+
+Command (m for help): <i>t</i>
+Selected partition 1
+Hex code (type L to list codes): <i>41</i>
+Changed system type of partition 1 to 41 (PPC PReP Boot)
+
+Command (m for help):
+</pre>
+
+<p>
+さて、<c>p</c>と入力すれば以下のパーティションテーブル表示が見られるはずです。
+</p>
+
+<pre caption="作成されたブートパーティション">
+Command (m for help): <i>p</i>
+
+Disk /dev/sda: 30.7 GB, 30750031872 bytes
+141 heads, 63 sectors/track, 6761 cylinders
+Units = cylinders of 8883 * 512 = 4548096 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1               1           3       13293   41  PPC PReP Boot
+
+Command (m for help):
+</pre>
+</body>
+</subsection>
+<subsection>
+<title>スワップパーティションを作成する</title>
+<body>
+
+<p>
+さあスワップパーティションを作成しましょう。この作業のためには、新規パーティションを作成するのに<c>n</c>、基本パーティションを選択するのに<c>p</c>を入力します. そして2番目の基本パーティション、この例では<path>/dev/sda2</path>を作成するのに<c>2</c>と入力します。最初のシリンダーが表示されると、エンターキーを押してください。最後のシリンダーが表示されたら、512Mバイトサイズののパーティションを作成するのに<c>+512M</c>と入力してください。この作業の後、パーティションタイプを設定するのに<c>t</c>と入力します。先程作成したパーティションを選択するのに<c>2</c>と入力して、このパーティションタイプを"Linux Swap"にする為に<c>82</c>と入力します。これらの手順が完了後、<c>p</c>を入力すれば下記のようなパーティションテーブルが表示されるはずです。
+</p>
+
+<pre caption="スワップパーティション作成後のパーティションテーブル">
+Command (m for help): <i>p</i>
+
+Disk /dev/sda: 30.7 GB, 30750031872 bytes
+141 heads, 63 sectors/track, 6761 cylinders
+Units = cylinders of 8883 * 512 = 4548096 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1               1           3       13293   41  PPC PReP Boot
+/dev/sda2               4         117      506331   82  Linux swap
+
+Command (m for help):
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>ルートパーティションを作成する</title>
+<body>
+
+<p>
+最後にルートパーティションを作成しましょう。この作業のためには、新規パーティションを作成するのに<c>n</c>、基本パーティションを選択するのに<c>p</c>を入力します. そして3番目の基本パーティション、この例では<path>/dev/sda3</path>を作成するのに<c>3</c>と入力します。最初のシリンダーが表示されると、エンターキーを押してください。最後のシリンダーが表示されたら、ディスクの残りの空き容量を確保する為にエンターキーを押します。これらの手順が完了後、<c>p</c>を入力すれば下記のようなパーティションテーブルが表示されるはずです。
+</p>
+
+<pre caption="ルートパーティション作成後のパーティションテーブル">
+Command (m for help): p
+
+Disk /dev/sda: 30.7 GB, 30750031872 bytes
+141 heads, 63 sectors/track, 6761 cylinders
+Units = cylinders of 8883 * 512 = 4548096 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1               1           3       13293   41  PPC PReP Boot
+/dev/sda2               4         117      506331   82  Linux swap
+/dev/sda3             118        6761    29509326   83  Linux
+
+Command (m for help):
+</pre>
+</body>
+</subsection>
+<subsection>
+<title>パーティションの割当てを保存する</title>
+<body>
+
+<p>
+パーティションの割当てを保存して、<c>fdisk</c>を終了するには<c>w</c>を入力します。
+</p>
+
+<pre caption="保存してfdiskを終了する">
+Command (m for help): <i>w</i>
+</pre>
+
+<p>
+これでパーティションが作成されましたので、<uri link="#filesystems">ファイルシステムの作成</uri>に進む事ができます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>ファイルシステムとは</title>
+<body>
+
+<note>
+いくつかのファイルシステムは利用可能です。Ext2とext3はPPC64アーキテクチャー上で安定しているように感じられます。reiserfsとxfsは実験的な段階です。jfsはサポートされません。
+</note>
+
+<p>
+<b>ext2</b>は実証済みで真のLinuxファイルシステムですがメタデータジャーナリングを持ちません。これは起動時の定期のext2ファイルシステムのチェックにかなりの時間が掛かる事もあるという事です。現在、整合性のチェックをとても早く終わらせることのできる次世代のジャーナリングファイルシステムの選択肢があります。そのために一般的には非ジャーナリングファイルシステムより好まれています。ジャーナリングファイルシステムはファイルシステムの不整合状態の発生やシステム起動時の大幅な遅延を防ぎます。
+</p>
+
+<p>
+<b>ext3</b>はfull data及びordered dataジャーナリングの様に他の優れたジャーナリングモードに加えて素早い回復のためのメタデータジャーナルを提供するext2ファイルシステムのジャーナル化バージョンです。ext3はとても信頼できる良いファイルシステムです。ほとんど全ての状況下で高いパフォーマンスを上げる事ができるハッシュ化されたb-treeインデックスの追加オプションがあります。要するにext3は素晴らしいファイルシステムということです。
+</p>
+
+<p>
+<b>ReiserFS</b>は全般的にとても良い性能であり、小さいファイル(4k以下のファイル)を扱う時はext2やext3よりもとても時には10-15倍の高い性能を発揮するB*-ツリーベースのファイルシステムです。またReiserFSはとても良くできていて、メタデータジャーナリングを持ちます。カーネル2.4.18以降では、 ReiserFSは一般的な目的と大規模ファイルシステムの作成、たくさんの小さいファイルの利用、とても大きいファイルや大多数のファイルが含まれるディレクトリなどを扱う極端なケースにも堅実で使用に適しています。
+</p>
+
+<p>
+<b>XFS</b>はGentoo Linuxのxfs-sourcesカーネルのもとで完全にサポートされるメタデータジャーナリングを持つファイルシステムです。これは強健な特徴を持ち、拡張性のために最適化されています。Linuxでのこのファイルシステムの使用はSCSI/ファイバーチャンネル記憶装置と無停電電源供給をもつ高機能なシステム以外はお勧めしません。XFSは積極的にRAM上に処理中のデータをキャッシュするので、 不適切な設計のプログラム(ディスクにファイルを書き込む時に適切な注意を取らないもの。そういったものは非常に少ないですが)では、不意ににシステムがダウンした時、かなりのデータを失う可能性があります。
+</p>
+
+<p>
+<b>JFS</b>はIBMの高性能なジャーナリングファイルシステムです。最近あともう少しで製品という所まで来てますが現時点では一般的な安定性において肯定的か否定的かを述べるのに十分な実績がありません。
+</p>
+
+</body>
+</subsection>
+<subsection id="filesystems-apply">
+<title>パーティションにファイルシステムを適用する</title>
+<body>
+
+<p>
+パーティションやボリュームにファイルシステムを作成するには、それぞれのファイルシステムに合った利用可能なツールがあります。
+</p>
+
+<table>
+<tr>
+  <th>ファイルシステム</th>
+  <th>作成コマンド</th>
+</tr>
+<tr>
+  <ti>ext2</ti>
+  <ti><c>mke2fs</c></ti>
+</tr>
+<tr>
+  <ti>ext3</ti>
+  <ti><c>mke2fs -j</c></ti>
+</tr>
+<tr>
+  <ti>reiserfs</ti>
+  <ti><c>mkreiserfs</c></ti>
+</tr>
+<tr>
+  <ti>xfs</ti>
+  <ti><c>mkfs.xfs</c></ti>
+</tr>
+<tr>
+  <ti>jfs</ti>
+  <ti><c>mkfs.jfs</c></ti>
+</tr>
+</table>
+
+<p>
+例えば、ルートパーティション(この例では<path>/dev/hda3</path>)をext3(今回の例として)にするには、以下の様にします。
+</p>
+
+<pre caption="パーティションにファイルシステムを適用する">
+# <i>mke2fs -j /dev/sda4</i>
+</pre>
+
+<p>
+さあ新しく作成されたパーティション(もしくは論理ボリューム)にファイルシステムを作成しましょう。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>スワップパーティションを有効にする</title>
+<body>
+
+<p>
+<c>mkswap</c>はスワップパーティションを初期化するのに使うコマンドです。
+</p>
+
+<pre caption="スワップパーティションを初期化する">
+# <i>mkswap /dev/sda3</i>
+</pre>
+
+<p>
+スワップパーティションを有効にするには<c>swapon</c>を使用します。
+</p>
+
+<pre caption="スワップパーティションを有効にする">
+# <i>swapon /dev/sda3</i>
+</pre>
+
+<p>
+さあ、スワップを作成して有効にしましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>マウント</title>
+<body>
+
+<p>
+さてパーティションが初期化されてファイルシステムが収まったので、それらのパーティションをマウントする時が来ました。<c>mount</c>というコマンドを使います。作成したそれぞれのパーティション用にマウントに必要なディレクトリを作成するのを忘れないでください。例ではマウントポイントを作成し、ルートとブートパーティションをマウントします。
+</p>
+
+<pre caption="パーティションをマウントする">
+# <i>mkdir /mnt/gentoo</i>
+# <i>mount /dev/sda4 /mnt/gentoo</i> 
+</pre>
+
+<note>
+もし<path>/tmp</path>を別のパーティションとして置きたいのであれば、マウント後に<c>chmod 1777 /mnt/gentoo/tmp</c>を実行してパーミッションを変更するのを忘れないでください。これは<path>/var/tmp</path>も同様です。
+</note>
+
+<p>
+最後に、Gentooをインストールしようとしているマウントポイントの中で<path>/dev</path>ファイルを作成しなければなりません。これはbootloaderをインストールする際に必要です。これは、LiveCDから<path>/dev</path>ファイルシステムを「bind」マッピングを行うことでできます。
+</p>
+
+<pre caption="/devファイルシステムをBindマウントする">
+# <i>mkdir /mnt/gentoo/dev</i>
+# <i>mount -o bind /dev /mnt/gentoo/dev</i>
+</pre>
+
+<p>
+procファイルシステム(カーネルとの仮想インターフェイス)も<path>/proc</path>にマウントする必要があります。しかし、最初にパーティション上に色々なファイルを置く必要があります。
+</p>
+
+<p>
+<uri link="?part=1&amp;chap=5">Gentooインストールファイルをインストールする</uri>に進みましょう。
+</p>
+
+</body>
+</section>
+</sections>

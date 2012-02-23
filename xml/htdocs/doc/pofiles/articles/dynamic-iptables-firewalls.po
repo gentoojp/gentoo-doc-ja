@@ -1,0 +1,648 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/articles/dynamic-iptables-firewalls.xml:6
+#, no-wrap
+msgid "Dynamic iptables firewalls"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/articles/dynamic-iptables-firewalls.xml:13
+#, no-wrap
+msgid ""
+"Firewalls are good and fun, but what do you do when you need to make rapid,\n"
+"complex changes to your firewall rules? Easy. Use Daniel Robbins' dynamic\n"
+"firewall scripts that are demonstrated in this article. You can use these\n"
+"scripts to increase your network security and responsiveness, and to inspire\n"
+"your own creative designs.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/dynamic-iptables-firewalls.xml:29
+#, no-wrap
+msgid "Introduction"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/dynamic-iptables-firewalls.xml:31
+#, no-wrap
+msgid "Flexible (and fun) network security"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:35
+#, no-wrap
+msgid ""
+"The best way to see the benefits of dynamic firewall scripts is to see them in\n"
+"action. To do this, let's imagine that I'm a sysadmin at an ISP, and I've\n"
+"recently set up a Linux-based firewall to protect my customers and internal\n"
+"systems from malicious users on the Internet. To do this, my firewall uses the\n"
+"new Linux 2.4 iptables stateful functionality to allow new outgoing connections\n"
+"to be established by my customers and servers, and of course to allow new\n"
+"incoming connections, but only to \"public\" services, such as web, ftp, ssh, and\n"
+"SMTP. Since I used a deny-by-default design, any from-Internet connections to\n"
+"non-public services, such as the squid proxy cache or Samba server, are\n"
+"automatically rejected. So far, I have a pretty decent firewall that offers a\n"
+"good level of protection for everyone at my ISP.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:49
+#, no-wrap
+msgid ""
+"For the first week or so, the firewall works great, but then something ugly\n"
+"happens: Bob, my arch-nemesis (who works at a competing ISP) decides that he\n"
+"wants to flood my network with packets in an attempt to deny service to my\n"
+"customers. Unfortunately, Bob has carefully studied my firewall and knows that\n"
+"while I'm protecting many internal services, port 25 and 80 must be publicly\n"
+"accessible so that I can receive mail and serve HTTP requests. Bob decides to\n"
+"take advantage of this fact by launching a bandwidth-sucking attack against my\n"
+"web and mail server.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:60
+#, no-wrap
+msgid ""
+"About a minute or so after Bob begins his attack, I notice that my uplinks start\n"
+"becoming saturated with packets. After taking a look at the situation with\n"
+"<c>tcpdump</c> I determine that this is yet another Bob attack, and I figure out\n"
+"what IP addresses he's using to launch it. Now that I have this information, all\n"
+"that I need to do is block these IP addresses, and that should solve the problem\n"
+"-- a simple solution, or so I think.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/dynamic-iptables-firewalls.xml:72
+#, no-wrap
+msgid "Responding to an attack"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:76
+#, no-wrap
+msgid ""
+"I quickly load my firewall setup script into vi and begin hacking away at my\n"
+"iptables rules, modifying my firewall so that it'll block those evil incoming\n"
+"Bob packets. After a minute or so, I find the exact place to make the\n"
+"appropriate DROP rule additions, and I add them. Then, I start and stop the\n"
+"firewall...ooops, made a bit of a mistake when I added the rules. I load up the\n"
+"firewall scripts again, fix the problem, and thirty seconds later the firewall\n"
+"has been tweaked to block Bob's attack of the month. At first, it seems like I\n"
+"successfully thwarted the attack...until the helpdesk phones begin ringing.\n"
+"Apparently, Bob was able to disrupt my network for about 10 minutes, and now my\n"
+"customers are calling to find out what's going on. Even worse, after a few\n"
+"minutes pass, I notice that our uplinks again start to become saturated. This\n"
+"time, Bob appears to be using a brand-new set of IP addresses for his attacks.\n"
+"In response, I begin feverishly hacking away at our firewall scripts, except\n"
+"this time, I'm a bit panicky -- maybe my solution isn't so good after all.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:93
+#, no-wrap
+msgid ""
+"Here's what went wrong in the above scenario. Although I had a decent firewall\n"
+"in place and also quickly identified the cause of the network problem, I was\n"
+"unable to modify the behavior of my firewall to respond to the threat in time.\n"
+"Of course, when your network is under attack, you want to be able to respond\n"
+"immediately, and being forced to hack away at your master firewall setup script\n"
+"in a panicked state is not only stressful, but also very inefficient.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/dynamic-iptables-firewalls.xml:106
+#, no-wrap
+msgid "Scripts"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/dynamic-iptables-firewalls.xml:108
+#, no-wrap
+msgid "ipdrop"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:112
+#, no-wrap
+msgid ""
+"It would be far better if I had a special <c>ipdrop</c> script that's\n"
+"specifically designed to insert just the rules you need to block the IP address\n"
+"that I specify. With such a script, blocking a firewall is no longer a\n"
+"two-minute ordeal; instead, it takes five seconds. And since the script shields\n"
+"me from the task of editing firewall rules by hand, it eliminates a major source\n"
+"of errors. All that's left for me to do is to determine the IP address that I'd\n"
+"like to block, and then type:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:121
+#, no-wrap
+msgid "Dropping IP"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:122
+#, no-wrap
+msgid ""
+"# <i>ipdrop 129.24.8.1 on</i>\n"
+"IP 129.24.8.1 drop on.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:127
+#, no-wrap
+msgid ""
+"Immediately, the ipdrop script would block 129.24.8.1, Bob's current evil IP\n"
+"address of the week. This script dramatically improves your defenses, because\n"
+"now an IP block is a no-brainer. Now, let's take a look at my implementation of\n"
+"the ipdrop script:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:133
+#, no-wrap
+msgid "ipdrop script"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:134
+#, no-wrap
+msgid ""
+"#!/bin/bash\n"
+"\n"
+"source /usr/local/share/.sh\n"
+"\n"
+"args 2 $# \"${0} IPADDR {on/off}\" \n"
+"\n"
+"<comment># Drops packets to/from IPADDR. Good for obnoxious\n"
+"networks/hosts/DoS\"</comment>\n"
+"\n"
+"if [ \"$2\" == \"on\" ] \n"
+"then\n"
+"<comment># Rules will be appended or inserted as normal</comment>\n"
+" APPEND=\"-A\"\n"
+"  INSERT=\"-I\"\n"
+"  rec_check ipdrop $1 \"$1 already blocked\" on\n"
+"  record ipdrop $1\n"
+"elif [ \"$2\" == \"off\" ]\n"
+"then\n"
+"<comment># Rules will be deleted instead</comment>\n"
+" APPEND=\"-D\"\n"
+"  INSERT=\"-D\"\n"
+"  rec_check ipdrop $1 \"$1 not currently blocked\" off \n"
+"  unrecord ipdrop $1\n"
+"else\n"
+"  echo \"Error: \\\"off\\\" or \\\"on\\\" expected as second argument\"\n"
+"  exit 1\n"
+"fi  \n"
+"\n"
+"<comment># Block outside IP address that's causing problems</comment>\n"
+"<comment># Attacker's incoming TCP connections will take a minute or so to time\n"
+"out, reducing DoS effectiveness</comment>\n"
+"\n"
+"iptables $INSERT INPUT   -s $1 -j DROP\n"
+"iptables $INSERT OUTPUT  -d $1 -j DROP\n"
+"iptables $INSERT FORWARD -d $1 -j DROP\n"
+"iptables $INSERT FORWARD -s $1 -j DROP\n"
+"\n"
+"echo \"IP ${1} drop ${2}.\"\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/dynamic-iptables-firewalls.xml:178
+#, no-wrap
+msgid "ipdrop: the explanation"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:182
+#, no-wrap
+msgid ""
+"If you take a look at the last four highlighted lines, you'll see the actual\n"
+"commands that insert the appropriate rules into the firewall tables. As you can\n"
+"see, the definition of the $INSERT environment variable varies, depending on\n"
+"whether we're running in \"on\" or \"off\" mode. When the iptables lines execute,\n"
+"the particular rules will be inserted or deleted appropriately.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:190
+#, no-wrap
+msgid ""
+"Now, let's look at the function of the rules themselves, which should work\n"
+"perfectly with any type of existing firewall, or even on a system with no\n"
+"firewall; all you need is iptables support built-in to your 2.4 kernel. We block\n"
+"incoming packets arriving from the evil IP (first iptables line), block outgoing\n"
+"packets headed for the evil IP (next iptables line), and then turn off\n"
+"forwarding in either direction for this particular IP (last two iptables lines.)\n"
+"Once these rules are in place, your system will simply discard any packets that\n"
+"fall into one of these categories.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:201
+#, no-wrap
+msgid ""
+"Another quick note: you'll also notice calls to \"rec_check\", \"unrecord\",\n"
+"\"record\", and \"args\". These are special helper bash functions defined in\n"
+"<path>dynfw.sh</path>. The \"record\" function records the blocked ip in the\n"
+"<path>/root/.dynfw-ipdrop</path> file, while the \"unrecord\" removes the entry\n"
+"from <path>/root/.dynfw-ipdrop</path>. The \"rec_check\" function is used to abort\n"
+"the script with an error message if you attempt to re-block an already-blocked\n"
+"IP, or unblock an IP that isn't currently being blocked. The \"args\" function\n"
+"takes care of making sure that we receive the correct number of command-line\n"
+"arguments, and also handles printing helpful usage information. I've created a\n"
+"<uri\n"
+"link=\"http://www-128.ibm.com/developerworks/library/l-fw/dynfw-1.0.tar.gz\">dynfw-1.0.tar.gz</uri>\n"
+"that contains all these tools; see the <uri link=\"#resources\">Resources</uri>\n"
+"section at the end of this article for more information.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/dynamic-iptables-firewalls.xml:220
+#, no-wrap
+msgid "tcplimit"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:224
+#, no-wrap
+msgid ""
+"This next dynamic firewall script is useful if you need to limit the usage of a\n"
+"particular TCP-based network service, possibly something that generates a heavy\n"
+"CPU load on your end. Called \"tcplimit\", this script takes a TCP port, a rate, a\n"
+"scale, and \"on\" or \"off\" as an argument:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:230
+#, no-wrap
+msgid "Limiting of particular TCP-based network service usage"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:231
+#, no-wrap
+msgid ""
+"# <i>tcplimit 873 5 minute on</i>\n"
+"Port 873 new connection limit (5/minute, burst=5) on.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:236
+#, no-wrap
+msgid ""
+"<c>tcplimit</c> uses the new iptables \"state\" module (make sure you've enabled\n"
+"this in your kernel or loaded the module) to allow only a certain number of new,\n"
+"incoming connections in a specific period of time. In this example, the firewall\n"
+"will allow only five new connections to my rsync server (port 873) per minute --\n"
+"and it's possible to specify the desired number of connections you'd like per\n"
+"second/minute/hour or day, as needed.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:245
+#, no-wrap
+msgid ""
+"<c>tcplimit</c> offers a good way of limiting non-essential services -- so that\n"
+"a flood of traffic to a non-essential service doesn't disrupt your network or\n"
+"server. In my case, I use <c>tcplimit</c> to set a maximum upper bound for rsync\n"
+"usage to prevent my DSL line from becoming saturated by too many rsync\n"
+"connections. Connection-limited services are recorded in\n"
+"<path>/root/.dynfw-tcplimit</path>, and if I ever want to turn the new\n"
+"connection limiting off, I can simply type:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:254
+#, no-wrap
+msgid "Turning off the connection limiting"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:255
+#, no-wrap
+msgid ""
+"# <i>tcplimit 873 5 minute off</i>\n"
+"Port 873 new connection limit off.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:260
+#, no-wrap
+msgid ""
+"<c>tcplimit</c> works by creating a completely new chain in the \"filter\" table.\n"
+"This new chain will reject all packets that exceed our specified limit. Then, a\n"
+"single rule is inserted into the INPUT chain that redirects all incoming NEW\n"
+"connection packets headed to the target port (873 in this case) to this special\n"
+"chain, effectively placing a limit on new, incoming connections while not\n"
+"affecting packets that are part of an established connection.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:269
+#, no-wrap
+msgid ""
+"When <c>tcplimit</c> is turned off, the INPUT rule and special chain are\n"
+"deleted. This is the kind of fancy stuff that really highlights the importance\n"
+"of having a well-tested, reliable script manage the firewall rules for you. As\n"
+"with <c>ipblock</c>, the <c>tcplimit</c> script should be compatible with any\n"
+"type of firewall, or even no firewall, as long as you have the proper iptables\n"
+"functionality enabled in your kernel.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/dynamic-iptables-firewalls.xml:281
+#, no-wrap
+msgid "host-tcplimit"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:285
+#, no-wrap
+msgid ""
+"<c>host-tcplimit</c> is a lot like <c>tcplimit</c>, but it limits new TCP\n"
+"connections coming in from a particular IP address and heading for a particular\n"
+"TCP port on your server(s). <c>host-tcplimit</c> is particularly useful for\n"
+"preventing a particular person from abusing your network resources. For example,\n"
+"let's say you're running a CVS server, and you discover that a particular new\n"
+"developer appears to have set up a script that updates his sources with the\n"
+"repository every 10 minutes, using up a huge amount of unnecessary network\n"
+"resources over the course of a day. However, while you're in the process of\n"
+"composing an e-mail to him explaining the error of his ways, you receive an\n"
+"incoming message that reads as follows:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:297
+#, no-wrap
+msgid "Incoming message"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:298
+#, no-wrap
+msgid ""
+"Hi guys!\n"
+"\n"
+"I'm really excited to be part of your development project. I just set up a\n"
+"script to update my local copy of the code every ten minutes. I'm about to\n"
+"leave on a two-week cruise, but when I get back, my sources will be totally\n"
+"up-to-date and I'll be ready to help out! I'm heading out the door now...see\n"
+"you in two weeks!\n"
+"\n"
+"Sincerely,\n"
+"\n"
+"Mr. Newbie\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:312
+#, no-wrap
+msgid ""
+"For such situations, a simple <c>host-tcplimit</c> command will solve the\n"
+"problem:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:316
+#, no-wrap
+msgid "host-tcplimit command"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:317
+#, no-wrap
+msgid "# <i>host-tcplimit 1.1.1.1 2401 1 day on</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:321
+#, no-wrap
+msgid ""
+"Now, Mr. Newbie (IP address 1.1.1.1) is limited to one CVS connection (port\n"
+"2401) per day, saving oodles of network bandwidth.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/dynamic-iptables-firewalls.xml:329
+#, no-wrap
+msgid "user-outblock"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:333
+#, no-wrap
+msgid ""
+"The last and possibly most intriguing of all my dynamic firewall scripts is\n"
+"<c>user-outblock</c>. This script provides an ideal way to allow a particular\n"
+"user to telnet or ssh into your system, yet not allow this user to establish any\n"
+"new outgoing connections from the command-line. Here's an example of a situation\n"
+"where user-outblock would come in handy. Let's say that a particular family has\n"
+"an account at my ISP. Mom and Dad use a graphical e-mail client to read their\n"
+"mail and occasionally surf the Web, but their son happens to be an aspiring\n"
+"hacker, and generally uses his shell access to do naughty things to other\n"
+"people's computers.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:345
+#, no-wrap
+msgid ""
+"One day, you find that he's established ssh connections with several systems\n"
+"that appear to belong to the Pakistani military -- ouch. You'd like to help\n"
+"direct this youth towards more beneficial activities, so you do the following:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:351
+#, no-wrap
+msgid ""
+"First, you do an audit of your system and make sure that you remove the suid bit\n"
+"from all your network binaries, like ssh:U\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:355
+#, no-wrap
+msgid "Removing suid bit from all the network binaries"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:356
+#, no-wrap
+msgid "# <i>chmod u-s /usr/bin/ssh</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:360
+#, no-wrap
+msgid ""
+"Now, any processes that he tries to use to interact with the network will be\n"
+"owned by his UID. You can now use user-outblock to block all outgoing TCP\n"
+"connections initiated by this UID (which happens to be 2049):\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:365
+#, no-wrap
+msgid "Blocking all outgoing TCP connections initiated by some UID"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:366
+#, no-wrap
+msgid ""
+"# <i>user-outblock 2049 on</i>\n"
+"UID 2049 block on.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:371
+#, no-wrap
+msgid ""
+"Now, he can log in and read his mail, but he's not going to be using your\n"
+"servers to establish ssh connections and the like. Now, he could install an ssh\n"
+"client on his home PC. However, it's not too hard to whip up another dynamic\n"
+"firewall script that limits his home PC to Web, mail, and outgoing ssh\n"
+"connections (to your servers only).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/dynamic-iptables-firewalls.xml:383
+#, no-wrap
+msgid "Resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/dynamic-iptables-firewalls.xml:385
+#, no-wrap
+msgid "Tarballs"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:389
+#, no-wrap
+msgid ""
+"Because I've found these dynamic firewall scripts so helpful, I've put together\n"
+"a neat little tarball (<uri\n"
+"link=\"/doc/en/articles/files/dynfw-1.0.1.tar.bz2\">dynfw-1.0.1.tar.bz2</uri>)\n"
+"that you can download and install on your machine.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:396
+#, no-wrap
+msgid ""
+"To install, extract the tarball and run the included <c>install.sh</c> script.\n"
+"This script will install a shared bash script to\n"
+"<path>/usr/local/share/dynfw.sh</path>, and install the dynamic firewall scripts\n"
+"themselves to <path>/usr/local/sbin</path>. If you'd like them to end up in\n"
+"<path>/usr/share</path> and <path>/usr/sbin</path> instead, simply type this\n"
+"before running <c>install.sh</c>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:404
+#, no-wrap
+msgid "Exporting location of install directory"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/dynamic-iptables-firewalls.xml:405
+#, no-wrap
+msgid "# <i>export PREFIX=/usr</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:409
+#, no-wrap
+msgid ""
+"I've also added a <uri link=\"/proj/en/dynfw.xml\">dynamic\n"
+"firewall scripts</uri> page to the Gentoo Linux Web site that you can visit to\n"
+"get the latest version of the tarball. I'd like to continue improving and adding\n"
+"to the collection, making a truly useful resource for sysadmins planetwide. Now\n"
+"that we have iptables in the kernel, it's time to start taking advantage of it!\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:417
+#, no-wrap
+msgid ""
+"If all this iptables firewall stuff is new to you, I highly recommend my Linux\n"
+"<uri link=\"http://www-128.ibm.com/developerworks/edu/l-dw-linuxfw-i.html\">2.4\n"
+"stateful firewall tutorial</uri> (registration required), containing complete\n"
+"instructions on how to design your own iptables-based stateful firewall.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:424
+#, no-wrap
+msgid ""
+"<uri link=\"http://www.tcpdump.org/\">tcpdump</uri> is an essential tool for\n"
+"exploring low-level packet exchanges and verifying that your firewall is working\n"
+"correctly. If you don't have it, get it. If you've got it, start using it. If\n"
+"you're using it... good for you. :) \n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:431
+#, no-wrap
+msgid ""
+"Visit the <uri link=\"http://netfilter.samba.org\">home page for the netfilter\n"
+"team</uri> to find lots of excellent resources, including the iptables sources,\n"
+"and Rusty's excellent <uri\n"
+"link=\"http://netfilter.samba.org/unreliable-guides/index.html\">unreliable\n"
+"guides</uri>. These include a basic networking concepts HOWTO, a netfilter\n"
+"(iptables) HOWTO, a NAT HOWTO, and a netfilter hacking HOWTO for developers.\n"
+"There's also a <uri\n"
+"link=\"http://netfilter.org/documentation/index.html#documentation-faq\">netfilter FAQ</uri>\n"
+"available, as well as other things.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:443
+#, no-wrap
+msgid ""
+"Thankfully, there are a lot of good online netfilter resources; however, don't\n"
+"forget the basics. The iptables man page is very detailed and is a shining\n"
+"example of what a man page should be. \n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:449
+#, no-wrap
+msgid ""
+"There's now an <uri link=\"http://www.ds9a.nl/2.4Routing/\">Advanced Linux Routing\n"
+"and Traffic Control HOWTO</uri> available.\n"
+"There's a good section that shows how to use iptables to mark packets, and then\n"
+"use Linux routing functionality to route the packets based on these marks. \n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/dynamic-iptables-firewalls.xml:456
+#, no-wrap
+msgid ""
+"There's a <uri link=\"http://netfilter.org/mailinglists.html#ml-user\">netfilter\n"
+"(iptables) mailing list</uri> available, as well as one for\n"
+"<uri link=\"http://netfilter.org/mailinglists.html#ml-devel\">netfilter\n"
+"developers</uri>. You can also access the mailing list archives at these\n"
+"URLs.\n"
+msgstr ""

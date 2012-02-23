@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-net-wireless.xml,v 1.5 2009/05/06 06:24:57 shindo Exp $ -->
+
+<sections>
+
+<abstract>
+無線は一筋縄ではいきません。願わくばちゃんと動きますように。
+</abstract>
+<version>8.1</version>
+<date>2009-04-15</date>
+
+<!-- Original revision: 1.16 -->
+<!-- Translator: kobayashi,Shindo -->
+
+<section>
+<title>はじめに</title>
+<body>
+
+<p>
+現在、<c>wireless-tools</c>や<c>wpa_supplicant</c>によって無線のセットアップがサポートされています。
+覚えておくべき重要なことは、無線ネットワークの設定をインターフェース毎ではなく、全体的に行うと言うことです。
+</p>
+
+<p>
+<c>wpa_suppliant</c>は最良の選択ですが、全てのドライバをサポートしている訳ではありません。
+サポート済みのドライバリストは<uri link="http://hostap.epitest.fi/wpa_supplicant">read the wpa_supplicant site</uri>で確認することが出来ます。
+また、現在<c>wpa_supplicant</c>は設定されたSSIDにのみ接続することが出来ます。
+</p>
+
+<p>
+<c>wireless-tools</c>はほぼ全てのカードとドライバをサポートしていますが、WPAのみのアクセスポイントには接続することは出来ません。
+</p>
+
+<warn>
+現時点では<c>linux-wlan-ng</c>はbaselayoutではサポートされていません。
+これは、<c>linux-wlan-ng</c>は人それぞれによって全く異なる独自のセットアップと設定を行うからです。
+<c>linux-wlan-ng</c>開発者達はセットアップを<c>wireless-tools</c>へと変更するのではと噂されています。
+これが実現した場合、baselayoutでlinux-wlan-ngが使えるかもしれません。
+</warn>
+
+</body>
+</section>
+<section>
+<title>WPA Supplicant</title>
+<body>
+
+<p>
+<uri link="http://hostap.epitest.fi/wpa_supplicant">WPA Supplicant</uri>とは、
+WPAが有効なアクセスポイントへの接続を可能にするパッケージです。
+これはまだベータ版なのでセットアップはかなり変わりやすいですが、ほとんどの部分でうまく動作します。
+</p>
+
+<pre caption="wpa_supplicantのインストール">
+# <i>emerge net-wireless/wpa_supplicant</i>
+</pre>
+
+<impo>
+<c>wpa_supplicant</c>を動作させるにはカーネルで<c>CONFIG_PACKET</c>を有効にしなければなりません。
+</impo>
+
+<p>
+では、<c>wpa_supplicant</c>を<c>wireless-tools</c>より優先させるために<path>/etc/conf.d/net</path>を設定しましょう。（両方がインストールされているのなら、<c>wireless-tools</c>がデフォルトとなります）
+</p>
+
+<pre caption="wpa_supplicant向けに/etc/conf.d/netを設定">
+<comment># wpa_supplicantをwireless-toolsよりも優先させる</comment>
+modules=( "wpa_supplicant" )
+
+<comment># どのドライバを使用すべきかwpa_supplicantに教えることが重要です。
+# まだ自動識別はうまく動作しません</comment>
+wpa_supplicant_eth0="-Dmadwifi"
+</pre>
+
+<note>
+host-apドライバを使用しているのなら、<c>wpa_suppliacnat</c>で正しく使用するために、
+カードを<e>Managed</e>モードにする必要があります。
+<path>/etc/conf.d/net</path>に<e>iwconfig_eth0="mode managed"</e>
+を記述することによりこれを行うことが出来ます。
+</note>
+
+<p>
+簡単でしょう？
+ですが、まだ<c>wpa_supplicant</c>自身の設定をしなければいけません。
+これは、接続しようとするアクセスポイントがどれくらいセキュアかによって、
+設定の複雑さも変わってきます。
+以下は<c>wpa_supplicant</c>と共にインストールされる
+<path>/usr/share/doc/wpa_supplicant-&lt;version&gt;/wpa_supplicant.conf.gz</path>
+からの抜粋です。
+</p>
+
+<pre caption="/etc/wpa_supplicant/wpa_supplicant.confの例">
+<comment># 以下の行は変更しないでください。動作しなくなります。</comment>
+ctrl_interface=/var/run/wpa_supplicant
+
+<comment># rootのみがWPA設定を読めることを確実にします</comment>
+ctrl_interface_group=0
+
+<comment># wpa_supplicantにスキャンとアクセスポイントの選択を行わせます</comment>
+ap_scan=1
+
+<comment># 単純な例。PSKをASCIIパスフレーズで指定し、WPA-PSKはすべての有効な暗号方式を許可します。</comment>
+network={
+  ssid="simple"
+  psk="very secret passphrase"
+  <comment># 優先度を上げれば上げるほどより早くに照合されます</comment>
+  priority=5
+}
+
+<comment># 上と同じですが、特定のSSIDの検出を要求します。
+# (ブロードキャストSSIDを拒否するアクセスポイント向け)</comment>
+network={
+  ssid="second ssid"
+  scan_ssid=1
+  psk="very secret passphrase"
+  priority=2
+}
+
+<comment># WPA-PSKのみが使用されます。どんな暗号の組み合わせでも認めます。</comment>
+network={
+  ssid="example"
+  proto=WPA
+  key_mgmt=WPA-PSK
+  pairwise=CCMP TKIP
+  group=CCMP TKIP WEP104 WEP40
+  psk=06b4be19da289f475aa46a33cb793029d4ab3db7a23ee92382eb0106c72ac7bb
+  priority=2
+}
+
+<comment># 平文接続 (WPA、IEEE 802.1X無し)</comment>
+network={
+  ssid="plaintext-test"
+  key_mgmt=NONE
+}
+
+<comment># 共有WEPキー接続 (WPA、IEEE 802.1X無し)</comment>
+network={
+  ssid="static-wep-test"
+  key_mgmt=NONE
+  <comment># Keys in quotes are ASCII keys</comment>
+  wep_key0="abcde"
+  <comment># Keys specified without quotes are hex keys</comment>
+  wep_key1=0102030405
+  wep_key2="1234567890123"
+  wep_tx_keyidx=0
+  priority=5
+}
+
+<comment># 共有キーIEEE 802.11認証を使った共有WEPキー接続 (WPA、IEEE 802.1X無し)</comment>
+network={
+  ssid="static-wep-test2"
+  key_mgmt=NONE
+  wep_key0="abcde"
+  wep_key1=0102030405
+  wep_key2="1234567890123"
+  wep_tx_keyidx=0
+  priority=5
+  auth_alg=SHARED
+}
+
+<comment># WPA-None/TKIPを使ったIBSS/ad-hocネットワーク</comment>
+network={
+  ssid="test adhoc"
+  mode=1
+  proto=WPA
+  key_mgmt=WPA-NONE
+  pairwise=NONE
+  group=TKIP
+  psk="secret passphrase"
+}
+</pre>                  
+
+</body>
+</section>
+<section>
+<title>Wireless Tools</title>
+
+<subsection>
+<title>最初の設定とmanagedモード</title>
+<body>
+
+<p>
+<uri link="http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html">Wireless Tools</uri>は、
+基本的な無線インターフェースを起動することからWEPセキュリティレベルまでを設定する一般的な方法です。
+WEPはセキュリティの手段としては弱いですが、最も普及しています。
+</p>
+
+<p>
+Wireless Toolsの設定は少数の要となる変数によって制御されます。
+以下の設定ファイルの例は必要となる全てを記述しています。
+何も設定しないと「最も信号が強く暗号化されていないアクセスポイントへ接続する」事になり、
+いつも何かに接続しようとしていることを心に留めておいてください。
+</p>
+
+<pre caption="wireless-toolsのインストール">
+# <i>emerge net-wireless/wireless-tools</i>
+</pre>
+
+<note>
+無線の設定を<path>/etc/conf.d/wireless</path>に保存することも出来ますが、このガイドでは<path>/etc/conf.d/net</path>に保存することを推奨します。
+</note>
+
+<impo>
+<uri link="?part=4&amp;chap=2#variable_name">変数名</uri>ドキュメントを参照する必要がある<e>でしょう</e>。
+</impo>
+
+<pre caption="/etc/conf.d/netでのiwconfig設定例">
+<comment># iwconfigをwpa_supplicantより優先させる</comment>
+modules=( "iwconfig" )
+
+<comment># ESSID1やESSID2と呼ばれるアクセスポイント向けのWEPキーを設定します</comment>
+<comment># WEPキーは4つまで設定することが出来ますが、いかなる場合においても有効となるのは1つだけです
+# そのため、デフォルトのインデックスである[1]をkey [1]に適用し、アクティブなキーを[1]へと変更します
+# 1以外のWEPキーを使用するために他のESSIDを定義する場合にこれを行います
+#
+# キーの前にs:を付けるとASCIIキーとなり、付けなければHEXキーになります
+#
+# enc openはオープンセキュリティを指定します(最も安全)
+# enc restrictedは制限セキュリティを指定します(最小限の安全)</comment>
+key_ESSID1="[1] s:yourkeyhere key [1] enc open"
+key_ESSID2="[1] aaaa-bbbb-cccc-dd key [1] enc restricted"
+
+<comment># 以下は利用可能なアクセスポイントをスキャンしたときにのみ動作します</comment>
+
+<comment># 時々2つ以上のアクセスポイントが利用可能となるので、接続優先順位を定義する必要があります</comment>
+preferred_aps=( "ESSID1" "ESSID2" )
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>アクセスポイントの選択を微調整する</title>
+<body>
+
+<p>
+アクセスポイントの選択を微調整するために、いくつかの特別なオプションを追加することが出来ます。
+ですが、これらは通常では必要ではありません。
+</p>
+
+<p>
+優先されたアクセスポイントのみに接続するかどうかを選択することが出来ます。
+デフォルトでは、設定された全てが失敗したのなら、暗号化されていないアクセスポイントへ接続します。
+これは<c>associate_order</c>変数で制御することが出来ます。
+以下に値と詳細を示します。
+</p>
+
+<table>
+<tr>
+  <th>値</th>
+  <th>詳細</th>
+</tr>
+<tr>
+  <ti><c>any</c></ti>
+  <ti>デフォルトの振る舞い</ti>
+</tr>
+<tr>
+  <ti><c>preferredonly</c></ti>
+  <ti>優先リストにある接続可能なアクセスポイントのみ接続する</ti>
+</tr>
+<tr>
+  <ti><c>forcepreferred</c></ti>
+  <ti>
+    スキャンで見つからなければ優先リストにあるアクセスポイントへ強制接続を試みる
+  </ti>
+</tr>
+<tr>
+  <ti><c>forcepreferredonly</c></ti>
+  <ti>
+    アクセスポイントのスキャンを行わず、リストにある物に接続を試みる
+  </ti>
+</tr>
+<tr>
+  <ti><c>forceany</c></ti>
+  <ti>forcepreferredと同じで、それに加えて利用可能なアクセスポイントへ接続する</ti>
+</tr>
+</table>
+
+<p>
+最後に<c>blacklist_aps</c>と<c>unique_ap</c>の選択を行います。
+<c>blacklist_aps</c>は<c>preferred_aps</c>と同じような動作を行います。
+<c>unique_ap</c>には<c>yes</c>か<c>no</c>が設定され、
+2番目の無線インターフェースが1番目と同じアクセスポイントへ接続できるかを決定します。
+</p>
+
+<pre caption="blacklist_apsとunique_apの例">
+<comment># 決して接続したくないアクセスポイントを記述します</comment>
+blacklist_aps=( "ESSID3" "ESSID4" )
+
+<comment># 2つ以上の無線カードを持っているのなら、それぞれのカードが
+# 同じアクセスポイントと接続することを許可するかしないかを決定します
+# 値は"yes"と"no"です
+# デフォルトは"yes"です</comment>
+unique_ap="yes"
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Ad-HocとMasterモード</title>
+<body>
+
+<p>
+managedモードになっているアクセスポイント全てで接続失敗した場合に、
+Ad-Hocノードに設定を切り替えたいのなら、
+以下のように設定することでこれを行うことが出来ます。
+</p>
+
+<pre caption="Ad-Hocモードへのフォールバック">
+adhoc_essid_eth0="This Adhoc Node"
+</pre>
+
+<p>
+Ad-Hocネットワークへ接続したり、アクセスポイントとなるためにMasterモードで起動してはどうですか？
+そのためには以下のように設定します。上で述べたようにしてWEPキーを指定する必要があるかもしれません。
+</p>
+
+<pre caption="Ad-Hoc/Master設定の例">
+<comment># モードを設定します。managed (デフォルト)、ad-hoc、masterから選びます。
+# 全てのドライバが全てのモードをサポートしているわけではありません</comment>
+mode_eth0="ad-hoc"
+
+<comment># インターフェースのESSIDを設定します
+# managedモードでは、インターフェースに特定のESSIDへ強制的に接続させ、それ以外は何も行いません</comment>
+essid_eth0="This Adhoc Node"
+
+<comment># 何も設定しなければチャンネル3を使用します</comment>
+channel_eth0="9"
+</pre>
+
+<impo>
+以下は<uri link="http://www.netbsd.org/Documentation/network/wavelan.html">the NetBSD documentation</uri>にあるBSD wavelanドキュメントを丸写ししたものです。
+14のチャンネルが利用可能であり、北アメリカではチャンネル1-11が合法で、
+ヨーロッパの多くではチャンネル1-13、フランスではチャンネル10-13、そして日本ではチャンネル14のみです。
+疑うのであれば、カードやアクセスポイントに付属するドキュメントを参照してください。
+選択したチャンネルがアクセスポイントのチャンネル（もしくはAd-Hocネットワークの他のカード）
+と一致するようにしてください。
+北アメリカやヨーロッパの多くで売られているカードのデフォルトは3で、
+フランスで売られているカードのデフォルトは11、そして日本で売られているカードのデフォルトは14です。
+</impo>
+
+</body>
+</subsection>
+<subsection>
+<title>無線ツールのトラブルシューティング</title>
+<body>
+
+<p>
+ドライバや環境の問題で、無線を接続し稼働の手助けになる変数がいくつかあります。
+以下に一覧を示します。
+</p>
+
+<table>
+<tr>
+  <th>変数</th>
+  <th>初期値</th>
+  <th>詳細</th>
+</tr>
+<tr>
+  <ti><c>iwconfig_eth0</c></ti>
+  <ti/>
+  <ti><c>iwconfig</c>に何を送るかについての詳細はiwconfigのマニュアルを参照してください</ti>
+</tr>
+<tr>
+  <ti><c>iwpriv_eth0</c></ti>
+  <ti/>
+  <ti><c>iwpriv</c>に何を送るかについての詳細はiwprivのマニュアルを参照してください</ti>
+</tr>
+<tr>
+  <ti><c>sleep_scan_eth0</c></ti>
+  <ti><c>0</c></ti>
+  <ti>
+    スキャンを試みる前にスリープを行う秒数です。ドライバやファームウェアが利用可能になるまでにより長い時間がかかるのであればこれが必要です。
+  </ti>
+</tr>
+<tr>
+  <ti><c>sleep_associate_eth0</c></ti>
+  <ti><c>5</c></ti>
+  <ti>
+    接続先のアクセスポイントを次へと変更するためにインターフェースを待機させる秒数です
+  </ti>
+</tr>
+<tr>
+  <ti><c>associate_test_eth0</c></ti>
+  <ti><c>MAC</c></ti>
+  <ti>
+    いくつかのドライバでは接続の解放やテスト時に無効なMACアドレスをリセットしません。いくらかのドライバでは接続の解放やテスト時に品質レベルをリセットしません。<c>MAC</c>、<c>quality</c>と<c>all</c>が設定可能です。
+  </ti>
+</tr>
+<tr>
+  <ti><c>scan_mode_eth0</c></ti>
+  <ti/>
+  <ti>
+    いくつかのドライバではad-hocモードでスキャンを行うため、スキャンが失敗したらここで<c>ad-hoc</c>の設定を試みます
+  </ti>
+</tr>
+<tr>
+  <ti><c>iwpriv_scan_pre_eth0</c></ti>
+  <ti/>
+  <ti>
+    スキャン前にいくつかの<c>iwpriv</c>コマンドをインターフェースへ送信します。詳細はiwprivのマニュアルを参照してください。
+  </ti>
+</tr>
+<tr>
+  <ti>iwpriv_scan_post_eth0</ti>
+  <ti/>
+  <ti>
+    スキャン後にいくつかの<c>iwpriv</c>コマンドをインターフェースへ送信します。詳細はiwprivのマニュアルを参照してください。
+  </ti>
+</tr>
+</table>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>ESSIDごとにネットワーク設定を定義する</title>
+<body>
+
+<p>
+ESSID1に接続するときには固定IPが必要で、ESSID2に接続するときにはDHCPが必要なことがあります。
+実際、ほとんどのモジュール変数はESSIDごとに変更可能です。
+以下に例を示します。
+</p>
+
+<note>
+WPA Supplicantや無線ツールを使用しているのならこれらは動作します。
+</note>
+
+<impo>
+<uri link="?part=4&amp;chap=2#variable_name">変数名</uri>ドキュメントを参照する必要がある<e>でしょう</e>。
+</impo>
+
+<pre caption="ESSIDごとにネットワーク設定を上書きする">
+config_ESSID1=( "192.168.0.3/24 brd 192.168.0.255" )
+routes_ESSID1=( "default via 192.168.0.1" )
+
+config_ESSID2=( "dhcp" )
+fallback_ESSID2=( "192.168.3.4/24" )
+fallback_route_ESSID2=( "default via 192.168.3.1" )
+
+<comment># ネームサーバやその他も設定することが出来ます</comment>
+<comment># 注意: 禁止されていなければDHCPはこれらを上書きします</comment>
+dns_servers_ESSID1=( "192.168.0.1" "192.168.0.2" )
+dns_domain_ESSID1="some.domain"
+dns_search_domains_ESSID1="search.this.domain search.that.domain"
+
+<comment># アクセスポイントのMACアドレスで上書きします
+# 同じESSIDを持つ異なった場所へ移動するのならこれは便利です</comment>
+config_001122334455=( "dhcp" )
+dhcpcd_001122334455="-t 10"
+dns_servers_001122334455=( "192.168.0.1" "192.168.0.2" )
+</pre>
+
+</body>
+</section>
+</sections>

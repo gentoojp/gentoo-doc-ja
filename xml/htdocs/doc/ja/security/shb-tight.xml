@@ -1,0 +1,170 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/security/shb-tight.xml,v 1.5 2008/06/21 14:02:13 shindo Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.1</version>
+<date>2006-03-04</date>
+
+<!-- Original revision: 1.4 -->
+
+<section>
+<title>USEフラグ</title>
+<body>
+
+<p>
+<path>make.conf</path>ファイルはユーザが定義したUSEフラグを、また、
+<path>/etc/make.profile/make.defaults</path>はGentoo Linuxで定義されるデフォルトのUSEフラグを、それぞれ含みます。
+このガイドにおける重要なフラグは、<c>pam</c>(Pluggable Authentication Module)、
+<c>tcpd</c>(TCP wrapper)、そして<c>ssl</c>(Secure Socket Layer)です。
+これらは全て、デフォルトのUSEフラグに含まれます。
+</p>
+
+</body>
+</section>
+<section id = "passwording_GRUB">
+<title>GRUBにパスワードプロテクトを組み込む</title>
+<body>
+
+<p>
+GRUBではブートローダにパスワードプロテクトを組み込む方法として、
+2種類の異なる形式がサポートされています。
+1つは平文形式で、もう1つは、md5にsaltを組み合わせた暗号化形式です。
+</p>
+
+<pre caption="/boot/grub/grub.conf">
+timeout 5
+password changeme
+</pre>
+
+<p>
+これにより、パスワード<c>changeme</c>が加えられます。
+ブート時にパスワードの入力がされなければ、
+GRUBは単にデフォルトのブート設定を使用します。
+</p>
+
+<p>
+md5形式のパスワードを加える場合は、
+パスワードをcryptフォーマットに変換しなくてはいけません。
+これは、<path>/etc/shadow</path>で使用されるのと同じフォーマットです。
+詳しくは、<c>man crypt</c>を参照して下さい。例えば、
+暗号化されたパスワード<e>changeme</e>は、以下のようになります。
+<c>$1$T7/dgdIJ$dJM.n2wZ8RG.oEiIOwJUs</c>
+</p>
+
+<p>
+パスワードを暗号化するには、GRUBのシェル上から直接行います。
+</p>
+
+<pre caption="GRUBのシェル上から、md5形式に暗号化する">
+#<i>/sbin/grub</i>
+
+GRUB version 0.92 (640K lower / 3072K upper memory)
+
+   [ Minimal BASH-like line editing is supported. For the first word, TAB lists
+     possible command completions. Anywhere else TAB lists the possible
+     completions of a device/filename. ]
+
+grub> <i>md5crypt</i>
+
+Password: <i>********</i>
+<comment>(changemeと入力)</comment> 
+Encrypted: $1$T7/dgdIJ$dJM.n2wZ8RG.oEiIOwJUs.
+
+grub> <i>quit</i>
+</pre>
+
+<p>
+次に、パスワードを<path>/boot/grub/grub.conf</path>にカット＆ペーストします。
+</p>
+
+<pre caption="/boot/grub/grub.conf">
+timeout 5 
+password --md5 $1$T7/dgdIJ$dJM.n2wZ8RG.oEiIOwJUs.
+</pre>
+
+<p>
+システムがリモートで、かつ、キーボードからの介入なしでリブートできるようにするには、
+タイムアウトを5秒にするのが手ごろでしょう。GRUBパスワードに関する詳細は、
+<c>info grub</c>を実行して、手に入れて下さい。
+</p>
+
+</body>
+</section>
+<section id = "passwording_LILO">
+<title>LILOにパスワードプロテクトを組み込む</title>
+<body>
+
+<p>
+同様に、LILOにおいても、パスワード処理を行う方法として、2種類の方法がサポートされています。
+グローバル設定とイメージごとの設定です。なお、両方とも平文形式になります。
+</p>
+
+<p>
+グローバル設定のパスワードは、構成ファイル初めに定義され、各ブートイメージに対し適用されます。
+</p>
+
+<pre caption="/etc/lilo.conf">
+password=changeme 
+restricted 
+delay=3
+</pre>
+
+<p>
+イメージごとの設定では、パスワードが以下のように定義されます。
+</p>
+
+<pre caption="/etc/lilo.conf">
+image=/boot/bzImage 
+      read-only 
+      password=changeme 
+      restricted
+</pre>
+
+<p>
+<c>restricted</c>オプションが入力されていなければ、パスワードの入力が毎回求められます。
+</p>
+
+<p>
+<path>lilo.conf</path>において、新規設定を保存するには、
+<c>/sbin/lilo</c>を実行しなくてはいけません。
+</p>
+
+</body>
+</section>
+<section>
+<title>コンソールの使用を制限する</title>
+<body>
+
+<p>
+<path>/etc/securetty</path>ファイルにより、どの<c>tty</c>(ターミナル)デバイスで、
+rootがログインできるかを制御できます。
+</p>
+
+<p>
+devfsを使用している場合は<c>vc/1</c>を除く全ての行を、
+udevを使用している場合は<c>tty1</c>を除く全ての行を、
+それぞれコメントアウトするのをお勧めします。これにより、
+rootは1度しか、また、ターミナルにも1つしかログインできなくなります。
+</p>
+
+<note>
+"wheel"グループに所属するユーザであれば、<c>su -</c>を実行し、他のTTY上でrootになれます。
+</note>
+
+<pre caption="/etc/securetty">
+<comment>(devfs用)</comment>
+vc/1
+<comment>(udev用)</comment>
+tty1
+</pre>
+
+</body>
+</section>
+
+
+</sections>

@@ -1,0 +1,1020 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/hpc-howto.xml,v 1.15 2010/06/07 09:08:37 nightmorph Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>High Performance Computing on Gentoo Linux</title>
+
+<author title="Author">
+  <mail link="marc@adelielinux.com">Marc St-Pierre</mail>
+</author>
+<author title="Author">
+  <mail link="benoit@adelielinux.com">Benoit Morin</mail>
+</author>
+<author title="Assistant/Research">
+  <mail link="jean-francois@adelielinux.com">Jean-Francois Richard</mail>
+</author>
+<author title="Assistant/Research">
+  <mail link="olivier@adelielinux.com">Olivier Crete</mail>
+</author>
+<author title="Reviewer">
+  <mail link="dberkholz@gentoo.org">Donnie Berkholz</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<!-- No licensing information; this document has been written by a third-party
+     organisation without additional licensing information.
+
+     In other words, this is copyright adelielinux R&D; Gentoo only has
+     permission to distribute this document as-is and update it when appropriate
+     as long as the adelie linux R&D notice stays
+-->
+
+<abstract>
+This document was written by people at the Adelie Linux R&amp;D Center
+&lt;http://www.adelielinux.com&gt; as a step-by-step guide to turn a Gentoo
+System into a High Performance Computing (HPC) system.
+</abstract>
+
+<version>1.7</version>
+<date>2010-06-07</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<body>
+
+<p>
+Gentoo Linux, a special flavor of Linux that can be automatically optimized
+and customized for just about any application or need. Extreme performance,
+configurability and a top-notch user and developer community are all hallmarks
+of the Gentoo experience.
+</p>
+
+<p>
+Thanks to a technology called Portage, Gentoo Linux can become an ideal secure
+server, development workstation, professional desktop, gaming system, embedded
+solution or... a High Performance Computing system. Because of its
+near-unlimited adaptability, we call Gentoo Linux a metadistribution.
+</p>
+
+<p>
+This document explains how to turn a Gentoo system into a High Performance
+Computing system. Step by step, it explains what packages one may want to
+install and helps configure them.
+</p>
+
+<p>
+Obtain Gentoo Linux from the website <uri>http://www.gentoo.org</uri>, and
+refer to the <uri link="/doc/en/">documentation</uri> at the same location to
+install it.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring Gentoo Linux for Clustering</title>
+<section>
+<title>Recommended Optimizations</title>
+<body>
+
+<note>
+We refer to the <uri link="/doc/en/handbook/">Gentoo Linux Handbooks</uri> in
+this section.
+</note>
+
+<p>
+During the installation process, you will have to set your USE variables in
+<path>/etc/make.conf</path>. We recommended that you deactivate all the
+defaults (see <path>/etc/make.profile/make.defaults</path>) by negating them in
+make.conf. However, you may want to keep such use variables as 3dnow, gpm,
+mmx, nptl, nptlonly, sse, ncurses, pam and tcpd. Refer to the USE documentation
+for more information.
+</p>
+
+<pre caption="USE Flags">
+USE="-oss 3dnow -apm -avi -berkdb -crypt -cups -encode -gdbm -gif gpm -gtk
+-imlib -java -jpeg -kde -gnome -libg++ -libwww -mikmod mmx -motif -mpeg ncurses
+-nls nptl nptlonly -ogg -opengl pam -pdflib -png -python -qt4 -qtmt
+-quicktime -readline -sdl -slang -spell -ssl -svga tcpd -truetype -vorbis -X
+-xml2 -xv -zlib"
+</pre>
+
+<p>
+Or simply:
+</p>
+
+<pre caption="USE Flags - simplified version">
+USE="-* 3dnow gpm mmx ncurses pam sse tcpd"
+</pre>
+
+<note>
+The <e>tcpd</e> USE flag increases security for packages such as xinetd.
+</note>
+
+<p>
+In step 15 ("Installing the kernel and a System Logger") for stability
+reasons, we recommend the vanilla-sources, the official kernel sources
+released on <uri>http://www.kernel.org/</uri>, unless you require special
+support such as xfs.
+</p>
+
+<pre caption="Installing vanilla-sources">
+# <i>emerge -a syslog-ng vanilla-sources</i>
+</pre>
+
+<p>
+When you install miscellaneous packages, we recommend installing the
+following:
+</p>
+
+<pre caption="Installing necessary packages">
+# <i>emerge -a nfs-utils portmap tcpdump ssmtp iptables xinetd</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Communication Layer (TCP/IP Network)</title>
+<body>
+
+<p>
+A cluster requires a communication layer to interconnect the slave nodes to
+the master node. Typically, a FastEthernet or GigaEthernet LAN can be used
+since they have a good price/performance ratio. Other possibilities include
+use of products like <uri link="http://www.myricom.com/">Myrinet</uri>, <uri
+link="http://quadrics.com/">QsNet</uri> or others.
+</p>
+
+<p>
+A cluster is composed of two node types: master and slave. Typically, your
+cluster will have one master node and several slave nodes.
+</p>
+
+<p>
+The master node is the cluster's server. It is responsible for telling the
+slave nodes what to do. This server will typically run such daemons as dhcpd,
+nfs, pbs-server, and pbs-sched. Your master node will allow interactive
+sessions for users, and accept job executions.
+</p>
+
+<p>
+The slave nodes listen for instructions (via ssh/rsh perhaps) from the master
+node. They should be dedicated to crunching results and therefore should not
+run any unnecessary services.
+</p>
+
+<p>
+The rest of this documentation will assume a cluster configuration as per the
+hosts file below. You should maintain on every node such a hosts file
+(<path>/etc/hosts</path>) with entries for each node participating node in the
+cluster.
+</p>
+
+<pre caption="/etc/hosts">
+# Adelie Linux Research &amp; Development Center
+# /etc/hosts
+
+127.0.0.1       localhost
+
+192.168.1.100   master.adelie master
+
+192.168.1.1     node01.adelie node01
+192.168.1.2     node02.adelie node02
+</pre>
+
+<p>
+To setup your cluster dedicated LAN, edit your <path>/etc/conf.d/net</path>
+file on the master node.
+</p>
+
+<pre caption="/etc/conf.d/net">
+# Global config file for net.* rc-scripts
+
+# This is basically the ifconfig argument without the ifconfig $iface
+#
+
+iface_eth0="192.168.1.100 broadcast 192.168.1.255 netmask 255.255.255.0"
+# Network Connection to the outside world using dhcp -- configure as required for you network
+iface_eth1="dhcp"
+</pre>
+
+
+<p>
+Finally, setup a DHCP daemon on the master node to avoid having to maintain a
+network configuration on each slave node.
+</p>
+
+<pre caption="/etc/dhcp/dhcpd.conf">
+# Adelie Linux Research &amp; Development Center
+# /etc/dhcp/dhcpd.conf
+
+log-facility local7;
+ddns-update-style none;
+use-host-decl-names on;
+
+subnet 192.168.1.0 netmask 255.255.255.0 {
+        option domain-name "adelie";
+        range 192.168.1.10 192.168.1.99;
+        option routers 192.168.1.100;
+
+        host node01.adelie {
+                # MAC address of network card on node 01
+                hardware ethernet 00:07:e9:0f:e2:d4;
+                fixed-address 192.168.1.1;
+        }
+        host node02.adelie {
+                # MAC address of network card on node 02
+                hardware ethernet 00:07:e9:0f:e2:6b;
+                fixed-address 192.168.1.2;
+        }
+}
+</pre>
+
+</body>
+</section>
+<section>
+<title>NFS/NIS</title>
+<body>
+
+<p>
+The Network File System (NFS) was developed to allow machines to mount a disk
+partition on a remote machine as if it were on a local hard drive. This allows
+for fast, seamless sharing of files across a network.
+</p>
+
+<p>
+There are other systems that provide similar functionality to NFS which could
+be used in a cluster environment. The <uri
+link="http://www.openafs.org">Andrew File System
+from IBM</uri>, recently open-sourced, provides a file sharing mechanism with
+some additional security and performance features. The <uri
+link="http://www.coda.cs.cmu.edu/">Coda File System</uri> is still in
+development, but is designed to work well with disconnected clients. Many
+of the features of the Andrew and Coda file systems are slated for inclusion
+in the next version of <uri link="http://www.nfsv4.org">NFS (Version 4)</uri>.
+The advantage of NFS today is that it is mature, standard, well understood,
+and supported robustly across a variety of platforms.
+</p>
+
+<pre caption="Ebuilds for NFS-support">
+# <i>emerge -a nfs-utils portmap</i>
+</pre>
+
+<p>
+Configure and install a kernel to support NFS v3 on all nodes:
+</p>
+
+<pre caption="Required Kernel Configurations for NFS">
+CONFIG_NFS_FS=y
+CONFIG_NFSD=y
+CONFIG_SUNRPC=y
+CONFIG_LOCKD=y
+CONFIG_NFSD_V3=y
+CONFIG_LOCKD_V4=y
+</pre>
+
+<p>
+On the master node, edit your <path>/etc/hosts.allow</path> file to allow
+connections from slave nodes. If your cluster LAN is on 192.168.1.0/24,
+your <path>hosts.allow</path> will look like:
+</p>
+
+<pre caption="hosts.allow">
+portmap:192.168.1.0/255.255.255.0
+</pre>
+
+<p>
+Edit the <path>/etc/exports</path> file of the master node to export a work
+directory structure (/home is good for this).
+</p>
+
+<pre caption="/etc/exports">
+/home/  *(rw)
+</pre>
+
+<p>
+Add nfs to your master node's default runlevel:
+</p>
+
+<pre caption="Adding NFS to the default runlevel">
+# <i>rc-update add nfs default</i>
+</pre>
+
+<p>
+To mount the nfs exported filesystem from the master, you also have to
+configure your salve nodes' <path>/etc/fstab</path>. Add a line like this
+one:
+</p>
+
+<pre caption="/etc/fstab">
+master:/home/  /home  nfs  rw,exec,noauto,nouser,async  0 0
+</pre>
+
+<p>
+You'll also need to set up your nodes so that they mount the nfs filesystem by
+issuing this command:
+</p>
+
+<pre caption="Adding nfsmount to the default runlevel">
+# <i>rc-update add nfsmount default</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>RSH/SSH</title>
+<body>
+
+<p>
+SSH is a protocol for secure remote login and other secure network services
+over an insecure network. OpenSSH uses public key cryptography to provide
+secure authorization. Generating the public key, which is shared with remote
+systems, and the private key which is kept on the local system, is done first
+to configure OpenSSH on the cluster.
+</p>
+
+<p>
+For transparent cluster usage, private/public keys may be used. This process
+has two steps:
+</p>
+
+<ul>
+  <li>Generate public and private keys</li>
+  <li>Copy public key to slave nodes</li>
+</ul>
+
+<p>
+For user based authentication, generate and copy as follows:
+</p>
+
+<pre caption="SSH key authentication">
+# <i>ssh-keygen -t dsa</i>
+Generating public/private dsa key pair.
+Enter file in which to save the key (/root/.ssh/id_dsa): /root/.ssh/id_dsa
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /root/.ssh/id_dsa.
+Your public key has been saved in /root/.ssh/id_dsa.pub.
+The key fingerprint is:
+f1:45:15:40:fd:3c:2d:f7:9f:ea:55:df:76:2f:a4:1f root@master
+
+<comment>WARNING! If you already have an "authorized_keys" file,
+please append to it, do not use the following command.</comment>
+
+# <i>scp /root/.ssh/id_dsa.pub node01:/root/.ssh/authorized_keys</i>
+root@master's password:
+id_dsa.pub   100%  234     2.0MB/s   00:00
+
+# <i>scp /root/.ssh/id_dsa.pub node02:/root/.ssh/authorized_keys</i>
+root@master's password:
+id_dsa.pub   100%  234     2.0MB/s   00:00
+</pre>
+
+<note>
+Host keys must have an empty passphrase. RSA is required for host-based
+authentication.
+</note>
+
+<p>
+For host based authentication, you will also need to edit your
+<path>/etc/ssh/shosts.equiv</path>.
+</p>
+
+<pre caption="/etc/ssh/shosts.equiv">
+node01.adelie
+node02.adelie
+master.adelie
+</pre>
+
+<p>
+And a few modifications to the <path>/etc/ssh/sshd_config</path> file:
+</p>
+
+<pre caption="sshd configurations">
+# $OpenBSD: sshd_config,v 1.42 2001/09/20 20:57:51 mouring Exp $
+# This sshd was compiled with PATH=/usr/bin:/bin:/usr/sbin:/sbin
+
+# This is the sshd server system-wide configuration file. See sshd(8)
+# for more information.
+
+# HostKeys for protocol version 2
+HostKey /etc/ssh/ssh_host_rsa_key
+</pre>
+
+<p>
+If your application require RSH communications, you will need to emerge
+<c>net-misc/netkit-rsh</c> and <c>sys-apps/xinetd</c>.
+</p>
+
+<pre caption="Installing necessary applicaitons">
+# <i>emerge -a xinetd</i>
+# <i>emerge -a netkit-rsh</i>
+</pre>
+
+<p>
+Then configure the rsh deamon. Edit your <path>/etc/xinet.d/rsh</path> file.
+</p>
+
+<pre caption="rsh">
+# Adelie Linux Research &amp; Development Center
+# /etc/xinetd.d/rsh
+
+service shell
+{
+        socket_type     = stream
+        protocol        = tcp
+        wait            = no
+        user            = root
+        group           = tty
+        server          = /usr/sbin/in.rshd
+        log_type        = FILE /var/log/rsh
+        log_on_success  = PID HOST USERID EXIT DURATION
+        log_on_failure  = USERID ATTEMPT
+        disable         = no
+}
+</pre>
+
+<p>
+Edit your <path>/etc/hosts.allow</path> to permit rsh connections:
+</p>
+
+<pre caption="hosts.allow">
+# Adelie Linux Research &amp; Development Center
+# /etc/hosts.allow
+
+in.rshd:192.168.1.0/255.255.255.0
+</pre>
+
+<p>
+Or you can simply trust your cluster LAN:
+</p>
+
+<pre caption="hosts.allow">
+# Adelie Linux Research &amp; Development Center
+# /etc/hosts.allow
+
+ALL:192.168.1.0/255.255.255.0
+</pre>
+
+<p>
+Finally, configure host authentication from <path>/etc/hosts.equiv</path>.
+</p>
+
+<pre caption="hosts.equiv">
+# Adelie Linux Research &amp; Development Center
+# /etc/hosts.equiv
+
+master
+node01
+node02
+</pre>
+
+<p>
+And, add xinetd to your default runlevel:
+</p>
+
+<pre caption="Adding xinetd to the default runlevel">
+# <i>rc-update add xinetd default</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>NTP</title>
+<body>
+
+<p>
+The Network Time Protocol (NTP) is used to synchronize the time of a computer
+client or server to another server or reference time source, such as a radio
+or satellite receiver or modem. It provides accuracies typically within a
+millisecond on LANs and up to a few tens of milliseconds on WANs relative to
+Coordinated Universal Time (UTC) via a Global Positioning Service (GPS)
+receiver, for example. Typical NTP configurations utilize multiple redundant
+servers and diverse network paths in order to achieve high accuracy and
+reliability.
+</p>
+
+<p>
+Select a NTP server geographically close to you from <uri
+link="http://www.eecis.udel.edu/~mills/ntp/servers.html">Public NTP Time
+Servers</uri>, and configure your <path>/etc/conf.d/ntp</path> and
+<path>/etc/ntp.conf</path> files on the master node.
+</p>
+
+<pre caption="Master /etc/conf.d/ntp">
+# /etc/conf.d/ntpd
+
+# NOTES:
+#  - NTPDATE variables below are used if you wish to set your
+#    clock when you start the ntp init.d script
+#  - make sure that the NTPDATE_CMD will close by itself ...
+#    the init.d script will not attempt to kill/stop it
+#  - ntpd will be used to maintain synchronization with a time
+#    server regardless of what NTPDATE is set to
+#  - read each of the comments above each of the variable
+
+# Comment this out if you dont want the init script to warn
+# about not having ntpdate setup
+NTPDATE_WARN="n"
+
+# Command to run to set the clock initially
+# Most people should just uncomment this line ...
+# however, if you know what you're doing, and you
+# want to use ntpd to set the clock, change this to 'ntpd'
+NTPDATE_CMD="ntpdate"
+
+# Options to pass to the above command
+# Most people should just uncomment this variable and
+# change 'someserver' to a valid hostname which you
+# can acquire from the URL's below
+NTPDATE_OPTS="-b ntp1.cmc.ec.gc.ca"
+
+##
+# A list of available servers is available here:
+# http://www.eecis.udel.edu/~mills/ntp/servers.html
+# Please follow the rules of engagement and use a
+# Stratum 2 server (unless you qualify for Stratum 1)
+##
+
+# Options to pass to the ntpd process that will *always* be run
+# Most people should not uncomment this line ...
+# however, if you know what you're doing, feel free to tweak
+#NTPD_OPTS=""
+
+</pre>
+
+<p>
+Edit your <path>/etc/ntp.conf</path> file on the master to setup an external
+synchronization source:
+</p>
+
+<pre caption="Master ntp.conf">
+# Adelie Linux Research &amp; Development Center
+# /etc/ntp.conf
+
+# Synchronization source #1
+server ntp1.cmc.ec.gc.ca
+restrict ntp1.cmc.ec.gc.ca
+# Synchronization source #2
+server ntp2.cmc.ec.gc.ca
+restrict ntp2.cmc.ec.gc.ca
+stratum 10
+driftfile /etc/ntp.drift.server
+logfile /var/log/ntp
+broadcast 192.168.1.255
+restrict default kod
+restrict 127.0.0.1
+restrict 192.168.1.0 mask 255.255.255.0
+</pre>
+
+<p>
+And on all your slave nodes, setup your synchronization source as your master
+node.
+</p>
+
+<pre caption="Node /etc/conf.d/ntp">
+# /etc/conf.d/ntpd
+
+NTPDATE_WARN="n"
+NTPDATE_CMD="ntpdate"
+NTPDATE_OPTS="-b master"
+</pre>
+
+<pre caption="Node ntp.conf">
+# Adelie Linux Research &amp; Development Center
+# /etc/ntp.conf
+
+# Synchronization source #1
+server master
+restrict master
+stratum 11
+driftfile /etc/ntp.drift.server
+logfile /var/log/ntp
+restrict default kod
+restrict 127.0.0.1
+</pre>
+
+<p>
+Then add ntpd to the default runlevel of all your nodes:
+</p>
+
+<pre caption="Adding ntpd to the default runlevel">
+# <i>rc-update add ntpd default</i>
+</pre>
+
+<note>
+NTP will not update the local clock if the time difference between your
+synchronization source and the local clock is too great.
+</note>
+
+</body>
+</section>
+<section>
+<title>IPTABLES</title>
+<body>
+
+<p>
+To setup a firewall on your cluster, you will need iptables.
+</p>
+
+<pre caption="Installing iptables">
+# <i>emerge -a iptables</i>
+</pre>
+
+<p>
+Required kernel configuration:
+</p>
+
+<pre caption="IPtables kernel configuration">
+CONFIG_NETFILTER=y
+CONFIG_IP_NF_CONNTRACK=y
+CONFIG_IP_NF_IPTABLES=y
+CONFIG_IP_NF_MATCH_STATE=y
+CONFIG_IP_NF_FILTER=y
+CONFIG_IP_NF_TARGET_REJECT=y
+CONFIG_IP_NF_NAT=y
+CONFIG_IP_NF_NAT_NEEDED=y
+CONFIG_IP_NF_TARGET_MASQUERADE=y
+CONFIG_IP_NF_TARGET_LOG=y
+</pre>
+
+<p>
+And the rules required for this firewall:
+</p>
+
+<pre caption="rule-save">
+# Adelie Linux Research &amp; Development Center
+# /var/lib/iptables/rule-save
+
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -s 192.168.1.0/255.255.255.0 -i eth1 -j ACCEPT
+-A INPUT -s 127.0.0.1 -i lo -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -j LOG
+-A INPUT -j REJECT --reject-with icmp-port-unreachable
+COMMIT
+*nat
+:PREROUTING ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A POSTROUTING -s 192.168.1.0/255.255.255.0 -j MASQUERADE
+COMMIT
+</pre>
+
+<p>
+Then add iptables to the default runlevel of all your nodes:
+</p>
+
+<pre caption="Adding iptables to the default runlevel">
+# <i>rc-update add iptables default</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>HPC Tools</title>
+<section>
+<title>OpenPBS</title>
+<body>
+
+<p>
+The Portable Batch System (PBS) is a flexible batch queueing and workload
+management system originally developed for NASA. It operates on networked,
+multi-platform UNIX environments, including heterogeneous clusters of
+workstations, supercomputers, and massively parallel systems. Development of
+PBS is provided by Altair Grid Technologies.
+</p>
+
+<pre caption="Installing openpbs">
+# <i>emerge -a openpbs</i>
+</pre>
+
+<note>
+OpenPBS ebuild does not currently set proper permissions on var-directories
+used by OpenPBS.
+</note>
+
+<p>
+Before starting using OpenPBS, some configurations are required. The files
+you will need to personalize for your system are:
+</p>
+
+<ul>
+  <li>/etc/pbs_environment</li>
+  <li>/var/spool/PBS/server_name</li>
+  <li>/var/spool/PBS/server_priv/nodes</li>
+  <li>/var/spool/PBS/mom_priv/config</li>
+  <li>/var/spool/PBS/sched_priv/sched_config</li>
+</ul>
+
+<p>
+Here is a sample sched_config:
+</p>
+
+<pre caption="/var/spool/PBS/sched_priv/sched_config">
+#
+# Create queues and set their attributes.
+#
+#
+# Create and define queue upto4nodes
+#
+create queue upto4nodes
+set queue upto4nodes queue_type = Execution
+set queue upto4nodes Priority = 100
+set queue upto4nodes resources_max.nodect = 4
+set queue upto4nodes resources_min.nodect = 1
+set queue upto4nodes enabled = True
+set queue upto4nodes started = True
+#
+# Create and define queue default
+#
+create queue default
+set queue default queue_type = Route
+set queue default route_destinations = upto4nodes
+set queue default enabled = True
+set queue default started = True
+#
+# Set server attributes.
+#
+set server scheduling = True
+set server acl_host_enable = True
+set server default_queue = default
+set server log_events = 511
+set server mail_from = adm
+set server query_other_jobs = True
+set server resources_default.neednodes = 1
+set server resources_default.nodect = 1
+set server resources_default.nodes = 1
+set server scheduler_iteration = 60
+</pre>
+
+<p>
+To submit a task to OpenPBS, the command <c>qsub</c> is used with some
+optional parameters. In the example below, "-l" allows you to specify
+the resources required, "-j" provides for redirection of standard out and
+standard error, and the "-m" will e-mail the user at beginning (b), end (e)
+and on abort (a) of the job.
+</p>
+
+<pre caption="Submitting a task">
+<comment>(submit and request from OpenPBS that myscript be executed on 2 nodes)</comment>
+# <i>qsub -l nodes=2 -j oe -m abe myscript</i>
+</pre>
+
+<p>
+Normally jobs submitted to OpenPBS are in the form of scripts. Sometimes, you
+may want to try a task manually. To request an interactive shell from OpenPBS,
+use the "-I" parameter.
+</p>
+
+<pre caption="Requesting an interactive shell">
+# <i>qsub -I</i>
+</pre>
+
+<p>
+To check the status of your jobs, use the qstat command:
+</p>
+
+<pre caption="Checking the status of the jobs">
+# <i>qstat</i>
+Job id  Name  User   Time Use S Queue
+------  ----  ----   -------- - -----
+2.geist STDIN adelie 0        R upto1nodes
+</pre>
+
+</body>
+</section>
+<section>
+<title>MPICH</title>
+<body>
+
+<p>
+Message passing is a paradigm used widely on certain classes of parallel
+machines, especially those with distributed memory. MPICH is a freely
+available, portable implementation of MPI, the Standard for message-passing
+libraries.
+</p>
+
+<p>
+The mpich ebuild provided by Adelie Linux allows for two USE flags:
+<e>doc</e> and <e>crypt</e>. <e>doc</e> will cause documentation to be
+installed, while <e>crypt</e> will configure MPICH to use <c>ssh</c> instead
+of <c>rsh</c>.
+</p>
+
+<pre caption="Installing the mpich application">
+# <i>emerge -a mpich</i>
+</pre>
+
+<p>
+You may need to export a mpich work directory to all your slave nodes in
+<path>/etc/exports</path>:
+</p>
+
+<pre caption="/etc/exports">
+/home  *(rw)
+</pre>
+
+<p>
+Most massively parallel processors (MPPs) provide a way to start a program on
+a requested number of processors; <c>mpirun</c> makes use of the appropriate
+command whenever possible. In contrast, workstation clusters require that each
+process in a parallel job be started individually, though programs to help
+start these processes exist. Because workstation clusters are not already
+organized as an MPP, additional information is required to make use of them.
+Mpich should be installed with a list of participating workstations in the
+file <path>machines.LINUX</path> in the directory
+<path>/usr/share/mpich/</path>. This file is used by <c>mpirun</c> to choose
+processors to run on.
+</p>
+
+<p>
+Edit this file to reflect your cluster-lan configuration:
+</p>
+
+<pre caption="/usr/share/mpich/machines.LINUX">
+# Change this file to contain the machines that you want to use
+# to run MPI jobs on. The format is one host name per line, with either
+#    hostname
+# or
+#    hostname:n
+# where n is the number of processors in an SMP. The hostname should
+# be the same as the result from the command "hostname"
+master
+node01
+node02
+# node03
+# node04
+# ...
+</pre>
+
+<p>
+Use the script <c>tstmachines</c> in <path>/usr/sbin/</path> to ensure that
+you can use all of the machines that you have listed. This script performs
+an <c>rsh</c> and a short directory listing; this tests that you both have
+access to the node and that a program in the current directory is visible on
+the remote node. If there are any problems, they will be listed. These
+problems must be fixed before proceeding.
+</p>
+
+<p>
+The only argument to <c>tstmachines</c> is the name of the architecture; this
+is the same name as the extension on the machines file. For example, the
+following tests that a program in the current directory can be executed by
+all of the machines in the LINUX machines list.
+</p>
+
+<pre caption="Running a test">
+# <i>/usr/local/mpich/sbin/tstmachines LINUX</i>
+</pre>
+
+<note>
+This program is silent if all is well; if you want to see what it is doing,
+use the -v (for verbose) argument:
+</note>
+
+<pre caption="Running a test verbosively">
+# <i>/usr/local/mpich/sbin/tstmachines -v LINUX</i>
+</pre>
+
+<p>
+The output from this command might look like:
+</p>
+
+<pre caption="Output of the above command">
+Trying true on host1.uoffoo.edu ...
+Trying true on host2.uoffoo.edu ...
+Trying ls on host1.uoffoo.edu ...
+Trying ls on host2.uoffoo.edu ...
+Trying user program on host1.uoffoo.edu ...
+Trying user program on host2.uoffoo.edu ...
+</pre>
+
+<p>
+If <c>tstmachines</c> finds a problem, it will suggest possible reasons and
+solutions. In brief, there are three tests:
+</p>
+
+<ul>
+  <li>
+    <e>Can processes be started on remote machines?</e> tstmachines attempts
+    to run the shell command true on each machine in the machines files by
+    using the remote shell command.
+  </li>
+  <li>
+    <e>Is current working directory available to all machines?</e> This
+    attempts to ls a file that tstmachines creates by running ls using the
+    remote shell command.
+  </li>
+  <li>
+    <e>Can user programs be run on remote systems?</e> This checks that shared
+    libraries and other components have been properly installed on all
+    machines.
+  </li>
+</ul>
+
+<p>
+And the required test for every development tool:
+</p>
+
+<pre caption="Testing a development tool">
+# <i>cd ~</i>
+# <i>cp /usr/share/mpich/examples1/hello++.c ~</i>
+# <i>make hello++</i>
+# <i>mpirun -machinefile /usr/share/mpich/machines.LINUX -np 1 hello++</i>
+</pre>
+
+<p>
+For further information on MPICH, consult the documentation at <uri
+link="http://www-unix.mcs.anl.gov/mpi/mpich/docs/mpichman-chp4/mpichman-chp4.htm">http://www-unix.mcs.anl.gov/mpi/mpich/docs/mpichman-chp4/mpichman-chp4.htm</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>LAM</title>
+<body>
+
+<p>
+(Coming Soon!)
+</p>
+
+</body>
+</section>
+<section>
+<title>OMNI</title>
+<body>
+
+<p>
+(Coming Soon!)
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Bibliography</title>
+<section>
+<body>
+
+<p>
+The original document is published at the <uri
+link="http://www.adelielinux.com">Adelie Linux R&amp;D Centre</uri> web site,
+and is reproduced here with the permission of the authors and <uri
+link="http://www.cyberlogic.ca">Cyberlogic</uri>'s Adelie Linux R&amp;D
+Centre.
+</p>
+
+<ul>
+  <li><uri>http://www.gentoo.org</uri>, Gentoo Foundation, Inc.</li>
+  <li>
+    <uri link="http://www.adelielinux.com">http://www.adelielinux.com</uri>,
+    Adelie Linux Research and Development Centre
+  </li>
+  <li>
+    <uri link="http://nfs.sourceforge.net/">http://nfs.sourceforge.net</uri>,
+    Linux NFS Project
+  </li>
+  <li>
+    <uri link="http://www-unix.mcs.anl.gov/mpi/mpich/">http://www-unix.mcs.anl.gov/mpi/mpich/</uri>,
+    Mathematics and Computer Science Division, Argonne National Laboratory
+  </li>
+  <li>
+    <uri link="http://www.ntp.org/">http://ntp.org</uri>
+  </li>
+  <li>
+    <uri link="http://www.eecis.udel.edu/~mills/">http://www.eecis.udel.edu/~mills/</uri>,
+    David L. Mills, University of Delaware
+  </li>
+  <li>
+    <uri link="http://www.ietf.org/html.charters/secsh-charter.html">http://www.ietf.org/html.charters/secsh-charter.html</uri>,
+    Secure Shell Working Group, IETF, Internet Society
+  </li>
+  <li>
+    <uri link="http://www.linuxsecurity.com/">http://www.linuxsecurity.com/</uri>,
+    Guardian Digital
+  </li>
+  <li>
+    <uri link="http://www.openpbs.org/">http://www.openpbs.org/</uri>,
+    Altair Grid Technologies, LLC.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+</guide>

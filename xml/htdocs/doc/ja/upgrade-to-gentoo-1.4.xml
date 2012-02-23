@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/upgrade-to-gentoo-1.4.xml">
+
+<title> Gentoo 1.4 アップグレード・ガイド</title>
+<author title="Author"><mail link="gustavo@felisberto.net">
+	Gustavo Felisberto</mail>
+</author>
+<author title="Author"><mail link="rjlouro@rjlouro.org">
+	Ricardo Loureiro</mail>
+</author>
+<author title="翻訳"><mail link="hagi@p1d.com">
+	萩原佳明</mail>
+</author>
+
+<author title="Copy Editor"><mail link="zhen@gentoo.org"></mail></author>
+
+<abstract>このガイドでは、Gentoo 1.1aや1.2、1.3などの古いシステムから、新しいバージョンである1.4にアップグレードするための方法を説明します。</abstract>
+
+
+
+<version>0.3</version>
+<date>17 September 2002</date>
+<!-- Original revision: 1.3 -->
+
+<chapter>
+	<title>始める前に</title>
+<section>
+<title>早く始めたくてしょうがないそこのアナタ</title>
+<body>
+<p><b>このガイドをきちんと順を追って読むつもりがない場合でも、</b>第2節にある「作業手順のまとめ」だけは読むようにしてください。</p>
+</body>
+</section>
+
+<section>
+	<title>「テキトーにやっちゃえば何とかなるでしょ」と思ってるアナタ</title>
+	<body>
+<warn>これからやる作業は広範囲にテストされてはいますが、あなたのシステムが起動しなくなる恐れもあります。</warn>
+<p>この作業は危険で、かつ、結構時間がかかるということを忘れないでください。
+ステージ1でつまづくようなら、アップグレードはしない方が無難です。
+実際に作業を始める前にこのガイド全体を良く読んで、考えてください。一度考えたら、もう一度考えてみてください。Linuxの経験が浅いようなら、アップグレードは諦めた方が良いです。
+</p>
+<p>このガイドでは、一部の文章を、<mail link="carpaski@gentoo.org">Nicholas Jones</mail>さんによるアップグレード用スクリプトのREADMEから抜粋して使用しています。</p>
+	</body>
+
+</section>
+
+<section>
+	<title>必要ファイルと概要</title>
+	<body>
+		<p>まず、Nicholas Jonesさんが作った4つのスクリプトを<uri link="http://www.gentoo.org/~carpaski/system_update/">ここ</uri>から入手する必要があります。必要なものはそれぞれ、update-step1.sh、update-step2.sh、update-step3.sh、update-step4.shです。ダウンロードしたら実行可能なようにパーミッションの変更をしておいてください。
+		</p>
+
+<warn><b>手抜きして一気にスクリプトを実行しないでください。</b> ダメな例: <i>update-step1.sh &amp;&amp; update-step2.sh &amp;&amp; ...</i></warn>
+
+		<p><uri link="http://www.gentoo.org/~carpaski/system_update/update-step1.sh">スクリプト1</uri>はまず、現在の状態で全て問題ないかどうかテストします。それから、gcc、glibc、binutils、ncurses、gettext、texinfoのバックアップを行います。 
+		何か本当にマズいことが起こった場合のためです。問題が起こることはないと思いますが(まだ見たことはないですが、可能性はあります)、準備しておくに越したことはないでしょう。
+		</p>
+		<p><uri link="http://www.gentoo.org/~carpaski/system_update/update-step2.sh">スクリプト2</uri>はアップグレードの最初のパートで、make.profileのリンク先を変更してportageをemergeしたあと、gccとbinutilsの、ビルドとブートストラップ構築を行います。
+<note>このスクリプトをx86ではないマシンで動かす際は、スクリプトの先頭にあるARCHの値を変更してください。ARCHに設定できるのはx86、ppc、sparc、それからsparc64です。</note>		</p>
+		<p><uri link="http://www.gentoo.org/~carpaski/system_update/update-step3.sh">スクリプト3</uri>は引き続きアップグレードを行い、<path>/etc/make.conf</path>の設定に基いてgcc、glibc、binutilsをビルドしてステージ3の完全なブートストラップ構築を行います。
+                </p>
+		<p><uri link="http://www.gentoo.org/~carpaski/system_update/update-step4.sh">スクリプト4</uri>はオマケです。スクリプト3の後に残った、破損している全パッケージをunmergeし、再度emergeします。システムをgcc 3.2と新しいCFLAGSで再構築するために、スクリプト4を実行する代わりに<i>emerge -e world</i>としても良いと思います。ただし、それをやると無茶苦茶時間がかかることを忘れないでください。
+                </p>
+	</body>
+</section>
+<section>
+	<title>筆者からの忠告</title>
+	<body>
+		<p><e>アップグレード中はオーバークロックしないでください！　</e>私(Gustavo Felisberto)は自分のアップグレードの際、とてもイタイ思いをしました。
+		私のデュアルP3/866MHzのシステムは、1007MHzにオーバークロックしてあったのですが、メモリはそれに追従してくれなかったらしく、何度も何度もセグメンテーション・フォルトが起きました。
+		</p>
+		<p>ふたつ目のスクリプト実行後は、3つ目のスクリプトが終了するまで絶対にログアウトしないでください。アップグレード処理はinitやloginに影響を与えるので、一旦ログアウトしてしまうとライブラリが見つからずコンソールがロックされてしまいます。
+		「respawning to quickly, disabling」というメッセージが表示されることでしょう。恐らくC++アプリケーションではないからだと思いますが、SSHのようなコンソール経由でない方法なら処理を続けることができます。
+		</p>
+		<p>スクリプト2が完了する前にCFLAGSを変更するのもやめてください。スクリプト3以前にgcc3のフラグを設定してしまうと、スクリプトの一部が失敗してしまいます。</p>
+	</body>
+</section>
+</chapter>
+
+<chapter>
+	<title>アップグレード作業</title>
+<section>
+
+<title>作業手順のまとめ</title>
+<body>
+<pre>
+# <i>emerge rsync</i>      <codenote>最新のPortage treeを反映しとかないと。</codenote>
+# <i>emerge -u world</i>   <codenote>こうしとけば、たぶん時間を節約できるし面倒も避けられる。</codenote>
+
+#                        <codenote>ブートストラップ用にCFLAGSを設定。</codenote>
+# <i>nano -w /etc/make.conf</i> <codenote>ただしgcc 3.2専用のフラグは設定<b>しないこと</b>。</codenote>
+
+# <i>./update-step1.sh</i> <codenote>では早速。 -- gccとかglibcなどをバックアップする。</codenote>
+
+<warn>スクリプト2を実行したら<b>リブートしないでください</b>。スクリプト3が終わらないとちゃんと起動できないと思います。</warn>
+<note>この時点で、スクリプト3が終わるまでに利用しようと思ってるできるだけ多くのコンソールにログインしておきましょう。</note>
+# <i>nano -w update-step2.sh</i> <codenote>ARCH変数を確認(x86、ppc、sparc、sparc64)。</codenote>
+# <i>./update-step2.sh</i>       <codenote>profileの変更、そしてgccとglibcのブートストラップ構築。</codenote>
+
+# <i>emerge gcc-compat</i>       <codenote>必要であれば。 -- Code Listing 5を参照のこと。</codenote>
+
+<warn>ここまででエラー等が起こった場合、CFLAGS関連だと思われます。</warn>
+# <i>nano -w /etc/make.conf</i>  <codenote>ここでCFLAGSを変更。</codenote>
+# <i>./update-step3.sh</i>       <codenote>gccのブートストラップ、ログイン処理に関わるパッケージのリビルド。</codenote>
+# <i>etc-update</i>              <codenote>変更が行われた<b>全ファイル</b>をチェック。</codenote>
+
+# <codenote>この時点で、全部をリビルドしなおすか、とりあえず動くようになったシステムを使うようにするか、選択できます。</codenote>
+# <i>./update-step4.sh</i> <codenote>必要であれば。破損したパッケージのみをリビルド。</codenote>
+<warn>この作業は破損パッケージをきちんとリビルドするため、一旦全破損パッケージをunmergeします。</warn>
+# <i>emerge -e world</i>   <codenote>必要であれば。指定した、gcc 3.2用に最適化されたオプションで全てをリビルド。</codenote>
+<note>上に挙げたふたつの方法のうちどちらでも全く問題ありません。</note></pre>
+</body>
+</section>
+
+<section>
+	<title>スクリプト1</title>
+	<body>
+		<p>アップグレードに使用するスクリプトを動作させる前に、Portage treeをアップグレードし、必要であればあなたのシステムもアップグレードしておいてください。</p>
+<pre>
+# <i>emerge rsync</i>
+# <i>emerge -u world</i>  <codenote> 必須ではありませんが、アップグレード前にやっておくのはとても良いことだと思います。</codenote>
+# <i>./update-step1.sh</i></pre>
+
+<p>スクリプト1はシステムの簡単なチェックを行い、まだインストールされていないようであれば<i>gentoolkit</i>をインストールします。
+このスクリプトが行う最も大事な作業は、基本的なパッケージを<path>/usr/portage/packages/All</path>にバックアップすることです。この作業はだいたい10分ほどかかります。
+</p>
+	</body>
+</section>
+<section>
+	<title>スクリプト2</title>
+	<body>
+		<p>このスクリプトは<path>/etc/make.profile</path>のリンク先をアップグレードに適切な場所へ変更します。
+		<warn>あなたが利用しているのがx86アーキテクチャではないようなら、このスクリプトの先頭で指定されているARCHの値を<b>あなたのマシンのアーキテクチャ</b>に合わせて変更することが必須です
+(再度書きますが、指定できるのはx86、ppc、sparc、そしてsparc64です)。</warn></p>
+<pre>
+<codenote>上に書いたWarningに当てはまるようであれば:</codenote>
+# <i>nano -w update-step2.sh</i></pre>
+		<p>このスクリプトはひとつ前のスクリプトに比べるととても時間がかかります。256MBのRAMを積んだデュアルP3/866MHzのマシンで約30分かかりました。</p>
+<pre>
+# <i>./update-step2.sh</i>
+</pre>
+
+    <p>以下の作業はgccのライブラリを全て引っ張ってきて、アップグレード後に必要となる場所に置きます。
+    こうすることで、「壊れた」C++ライブラリを使うことなく、gcc 3.2を使った1.4のプロファイルへアップグレードすることができます。
+    つまり、基本的には、XとかQTとかKDEとかGNOMEとか、
+    そういったものをリビルドすることなくgcc 3.2を使えるようになるということです。
+    </p>
+<pre>
+<codenote>必要であれば。これをやっておけばステップ4は不要なわけです。ま、とりあえずやっておきましょう。</codenote>
+# <i>emerge gcc-compat</i>
+</pre>
+</body>
+
+</section>
+
+<section>
+	<title>スクリプト3</title>
+	<body>
+		<p>さて。これでブートストラップ環境も整い、メインパッケージは一般的なフラグでビルドされました。
+		それでは、今度はgcc 3.2用の、そしてあなたが使いたいフラグを指定して再度ブートストラップしましょう。<path>make.conf</path>を編集して、全てあなたの思い通りになってるかどうか確認してください。</p>
+<pre>
+# <i>nano -w /etc/make.conf</i>
+# <i>./update-step3.sh</i></pre>
+
+	      <note>gcc 2系からアップグレードしているようなら、gcc 3以上では新しいarchプラグが採用されていること注意してください。
+	      <uri>http://www.freehackers.org/gentoo/gccflags/</uri>にあるarchフラグやその他のgcc用のフラグの情報を見ておくと良いでしょう。</note>
+	      
+	      <p>では、スクリプトを実行してください。 私の場合は時間を把握したい、つまりいまどのくらいのところまで来ているか把握しておきたいわけですが、ま、それは本当に私はそうしたいというだけの話です。 
+	      ですから、とりあえずスクリプトを実行させちゃってください。今回のスクリプトはかなり時間を食います。デュアルAthlon MP/1.5GHzで156分かかりました。筆者としては、スター・ウォーズ エピソードIVでも見ることをオススメします。そしたら、時間が過ぎるのも速いでしょうから。</p>
+	      <p>スクリプトの終了後、いくつか作業をやるように表示されているはずです。たくさんの設定ファイルが変更されているので、この作業はかなり重要です。一番簡単なやり方は<c>etc-update</c>を実行することです。</p>
+<pre>
+# <i>etc-update</i></pre>
+	      <p>このアップグレードで、おそらくinitとloginに問題が生じるでしょう。解消するためにはふたつ方法があります。<c>sync ; init u</c>とタイプするか、単純にマシンを再起動するかです。
+	      SSHはちゃんと動いているはずなので、ちょっと中を覗きたくなったらいつでもマシンにログインすることができます。もし「respawning too quickly」というメッセージが表示されたり、コンソールがハングしてしまうようなら、マシンを再起動してください。</p>
+<pre>
+# <i>sync</i>
+# <i>init u</i>
+
+<codenote>コンソールがハングしたり「respawning too quickly」というメッセージが表示されるようなら:</codenote>
+# <i>reboot</i></pre>
+
+	</body>
+</section>
+<section>
+	<title>スクリプト4</title>
+	<body>
+		<p>さてさて、これでgcc 3.2なシステムができました。
+    ただ、まだ問題があって、いくつかのパッケージは破損しているはずです。
+    スクリプト4は、この問題をなんとかしようとしてくれます。
+    忘れないで欲しいんですが、この作業は必須ではなくて、
+    あなたのシステムはすでに1.4のプロファイルに応じて更新されています。
+    どうして破損したパッケージができてしまうかは簡単です。
+    共有ライブラリにはリビルドされたものがあるので、
+    それに依存しているプログラムは
+    自分たちもリビルドされるまでうまく動かないわけです。
+		</p>
+    
+    <note>gcc-compatのebuildはこのステップを不要にしてくれますが、
+    ちゃんと全部が動作するか確認する意味でも、やっておいた方が良いでしょう。 
+    このスクリプトは、破損パッケージをリビルドしたくなったときに実行すれば良いです。
+    互換性のために引っ張ってきたライブラリを削除したくなったら、
+    gcc-compatをunmergeして、スクリプト4を実行してください。
+    </note>
+    
+<pre>
+# <i>./update-step4.sh</i></pre>
+<p>このプロセスは他の全てを合わせたものより時間がかかります。なので、もうスター・ウォーズ エピソード IVを見ちゃったようなら、残りの4つのエピソードも全部見ちゃうのが良いんじゃないかと思いますよ、私としては。
+あなたのマシンがかなり遅いようなら、となりのサインフェルド(訳注：アメリカンコメディ)を全巻見る方が良いかもしれません(そうそう、全部180分だし)。参考までに言うと、
+私のデュアルAthlon MP/1.5GHzのマシンで400分かかり、evolutionだとかmozillaだとか、いくつかのパッケージはビルドに失敗してたので、スクリプト完了後にそいつらをリコンパイルしました。ご存知のように、mozillaのビルドにはものすごい時間がかかるわけで。</p>
+		<p>終了時に、スクリプト4はコンパイルに失敗したパッケージを表示します。そのうちのいくつかは、まだgcc 3.2に対応していないせいで失敗したんでしょう。
+		その場合はしばらく待つか、自信があるようならebuildを書き変えても良いでしょう。</p>
+		<note>スクリプト4は、インストールされた全てのパッケージをコンパイルしなおすわけではありません。もし全部リコンパイルしたいと本当に思うなら、<i>emerge -e world</i>を実行する必要があります。
+		これはスクリプト4の代わりにやっても良いですし、実行後にやっても大丈夫です。ただし、パッケージの中にはコンパイルできないものもあることはお忘れなく。スクリプト4の後に実行した方が、全部をリビルドしている最中に動いているC++アプリケーションにとっては都合が良いです。</note>
+	</body>
+</section>
+
+</chapter>
+<chapter>
+	<title>最終調整</title>
+<section>
+	<body>
+		<p>ご覧のように、このアップグレードはかなりトリッキーな更新です。筆者のひとりと、あと数人の別の人たちにとっては、このアップグレードはとても満足の行くものでした。
+		もうひとりの筆者にはちょっと問題があって、しかも、かなりヤな問題です(KDEが、emergeは成功してるのに動かないんです)。
+		</p>
+		<p>アップグレードするもうひとつの方法は、1.4システムを最初からインストールすることです。<path>/home</path>と<path>/etc</path>をバックアップしておけば、
+		あなたのマシンのユーザーもファイルを保存してもらってハッピーですし、自分の設定ファイルをバックアップしてあれば新しいシステムをインストールする際にもラクでしょう。
+		あなたのシステムの全てのパッケージをちゃんとアップデートしたか、そしてその設定ファイルが最新のものになっているかどうか、起動する前にちゃんとチェックすることが強く推奨されます。この新しいシステムでは、全てのパッケージが最新版になっているわけですから。
+		設定ファイルがぶつかっていると、アップリケーションが起動しなかったり、起動しても正常ではない動作をすることになります。
+		</p>
+	</body>
+
+</section>
+</chapter>
+</guide>

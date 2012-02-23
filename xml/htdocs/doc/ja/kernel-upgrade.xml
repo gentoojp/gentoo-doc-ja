@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/kernel-upgrade.xml,v 1.7 2010/02/14 08:02:36 shindo Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<guide link="/doc/ja/kernel-upgrade.xml" lang="ja">
+<title>Gentoo Linuxカーネルアップグレードガイド</title>
+<author title="Author">
+	<mail link="dsd@gentoo.org">Daniel Drake</mail>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+<author title="翻訳">
+  <mail link="murakami.taku@gmail.com">Taku Murakami</mail>
+</author>
+
+
+<abstract>
+このドキュメントは別のカーネルへアップグレードする手順について説明します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>0.6</version>
+<date>2007-06-22</date>
+
+<!-- Original revision: 1.18 -->
+
+<chapter>
+<title>はじめに</title>
+<section>
+<body>
+
+<p>
+カーネルは、Portageにおいて、アップグレードを完了するためにはユーザが手動で何かしなければならない、数少ないパッケージクラスの一つです。
+Portageはカーネルソースをダウンロードしインストールしてくれますが、変更による効果を得るために新しいカーネルに手を加えてコンパイルするのはあなたの責任です。
+</p>
+
+<p>
+このガイドは別のカーネルへアップグレードするユーザをターゲットにしていますが、別のカーネルパッケージへ移行するユーザにも役立ちます。
+</p>
+
+<p>
+このドキュメントでは例として<c>gentoo-sources</c>を使いますが、ここでの説明はPortageツリーが提供する他のパッケージにも適用できます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>何故カーネルをアップグレードするの？</title>
+<section>
+<body>
+
+<p>
+一般的に、あるカーネルのマイナーリリースから次のカーネルにアップグレードすることに主立った変更はほとんどありません。
+カーネルをアップグレードする理由は様々です。
+新しい機能やドライバーを利用するためと言うのもあれば、セキュリティの脆弱性を修正し、もしくは単にシステムを最新で正常に保つためと言うのもあります。
+</p>
+
+<p>
+たとえ毎回新しいカーネルリビジョンへアップグレードしないとしても、最低でも時々アップグレードすることが推奨されています。
+新しいリリースがセキュリティ問題を解決したのなら新しいカーネルへとアップグレードすることが強く推奨されています。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Portageを通して新しいソースを得る</title>
+<section>
+<body>
+
+<p>
+他のパッケージを<c>emerge</c>ユーティリティを使って更新するのと同じようにカーネルソースを更新します。
+多分カーネルをアップグレードしたいと思う時は、world更新リストに更新が現れた時でしょう。例えば以下のようなときです。
+</p>
+
+<pre caption="更新リストに新しいカーネルソースが登場">
+# <i>emerge -Dup world</i>
+Calculating dependencies ...done!
+[ebuild    NS ] sys-kernel/gentoo-sources-2.6.9-r2 [2.6.8-r5]
+</pre>
+
+<note>
+上の出力にある"NS"ラベルは、新しいカーネルが個別に（New Slot）にインストールされるという意味です。
+すなわち、古いカーネルのソースは手動で削除するまで保存されます。
+</note>
+
+<p>
+それでは更新をインストールしましょう。例を以下に示します。
+</p>
+
+<pre caption="カーネルソースを更新">
+# <i>emerge -u gentoo-sources</i>
+</pre>
+
+<p>
+カーネルソースは<path>/usr/src</path>のサブディレクトリにインストールされます。
+上の例では、新しいカーネルソースは<path>/usr/src/linux-2.6.9-gentoo-r2</path>にインストールされます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>/usr/src/linuxへのシンボリックリンクの更新</title>
+<section>
+<body>
+
+<p>
+Gentooでは<path>/usr/src/linux</path>のシンボリックリンクが実行しているカーネルのソースを示している必要があります。
+</p>
+
+<p>
+新しいカーネルソースをemergeする時にPortageが自動的にシンボリックリンクを更新するようにすることも出来ます。
+必要なことは<path>/etc/make.conf</path>のUSE変数に<c>symlink</c>フラグを追加するだけです。
+</p>
+
+<pre caption="/etc/make.confのUSE変数の例">
+<comment>(ymlinkキーワードを追加)</comment>
+USE="<i>symlink</i> x86 3dnow 3dnowex X aac aalib adns alsa apache2"
+</pre>
+
+<p>
+もう1つの方法として、シンボリックリンクの修正に<c>app-admin/eselect</c>を使用できます。
+</p>
+
+<pre caption="シンボリックリンクにeselectを使用">
+<comment>(eselectをインストールしていない場合、インストールをする)</comment>
+# <i>emerge eselect</i>
+<comment>(利用可能なカーネルの一覧を見る)</comment>
+# <i>eselect kernel list</i>
+Available kernel symlink targets:
+  [1]   linux-2.6.9-gentoo-r1
+  [2]   linux-2.6.9-gentoo-r2
+<comment>(正しいカーネルを選択する)</comment>
+# <i>eselect kernel set 1</i>
+</pre>
+
+<p>
+本当に自分で行いたいのなら、リンクが<path>linux-2.6.9-gentoo-r2</path>を示すようにする方法を示した次の例が役立つでしょう。
+</p>
+
+<pre caption="/usr/src/linuxソフトリンクを手動で更新">
+# <i>cd /usr/src</i>
+# <i>ln -sfn linux-2.6.9-gentoo-r2 linux</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="install">
+<title>新しいカーネルの設定、コンパイル、インストール</title>
+<section>
+<body>
+
+<p>
+これらの選択肢のどれを選ぶにしても、<e>カーネルの設定</e>と<e>ブートローダーの設定</e>に関する<uri link="/doc/en/handbook/">Gentoo Handbook</uri><uri link="/doc/ja/handbook/index.xml">(日本語訳)</uri>の説明を参照してください。
+以下は必要な処理手続きの概要です。
+</p>
+
+</body>
+</section>
+<section>
+<title>第１の選択: genkernelを使った自動的なカーネルのセットアップ</title>
+<body>
+
+<p>
+もしgenkernelユーザーなら、最初にカーネルをインストールした時に行った手順を繰り返すだけです。
+</p>
+
+<p>
+genkernelを普通の方法で実行するだけです。
+</p>
+
+<pre caption="genkernelの呼び出し">
+# <i>genkernel all</i>
+</pre>
+
+<p>
+その他のgenkernelの機能のための特別なパラメータを使うこともできます。
+例えば、<c>menuconfig</c>を使って特別なカーネルのオプションを設定し、genkernelにブートローダーのgrubの設定を自動的に更新して欲しいのなら、genkernelを以下のようにして呼び出します。
+</p>
+
+<pre caption="一般的な引数でgenkernelを呼び出す">
+# <i>genkernel --menuconfig --bootloader=grub all</i>
+</pre>
+
+<p>
+より多くの情報は、<uri link="/doc/en/genkernel.xml">Gentoo Linux Genkernel Guide</uri><uri link="/doc/ja/genkernel.xml">(日本語訳)</uri>か、<uri link="/doc/en/handbook/">Gentoo Handbook</uri><uri link="/doc/ja/handbook/index.xml">(日本語訳)</uri>を参照してください。
+<c>genkernel</c>の設定ファイルである<path>/etc/genkernel.conf</path>には多くのオプションを設定することが出来ます。
+</p>
+
+</body>
+</section>
+<section>
+<title>第２の選択: 手動設定</title>
+<body>
+
+<p>
+まずは、カーネルソースツリーで<c>menuconfig</c>ユーティリティを開きます。
+</p>
+
+<pre caption="menuconfigの呼び出し">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+ハードウェアと実行環境で要求されるオプションを選択します。
+カーネルの設定に関する追加の情報は、<uri link="/doc/en/handbook/index.xml">Gentoo Handbook</uri><uri link="/doc/ja/handbook/index.xml">(日本語訳)</uri>の<e>カーネルの設定</e>を参照してください。
+</p>
+
+<p>
+次に、カーネルをコンパイルしブートパーティションにコピーします。
+繰り返しますが、<uri link="/doc/en/handbook/index.xml">Gentoo Handbook</uri><uri link="/doc/ja/handbook/index.xml">(日本語訳)</uri>の<e>ブートローダーの設定</e>にある説明に従ってください。
+もし<path>/boot</path>が別のパーティションなら、コンパイル済みのカーネルをこのディレクトリにコピーする前にマウントしてください。
+これを行わないと、システムを新しいカーネルで起動することが出来ません。
+</p>
+
+<pre caption="新しいカーネルのコンパイルとインストール">
+# <i>make &amp;&amp; make modules_install</i>
+# <i>mount /boot</i>
+# <i>cp arch/i386/boot/bzImage /boot/bzImage-2.6.9-gentoo-r2</i>
+</pre>
+
+<p>
+最後に、新しいカーネルの項目を追加(まだ古い物は削除しないでください！)してブートローダーの設定を更新し、<path>/boot</path>パーティションをマウント解除してください。
+繰り返しますが、<uri link="/doc/en/handbook/index.xml">Gentoo Handbook</uri><uri link="/doc/ja/handbook/index.xml">(日本語訳)</uri>の説明に従ってください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>外部モジュールの再インストール</title>
+<section>
+<body>
+
+<p>
+カーネルソースツリーには含まれていないがPortageのどこかで提供されるモジュール(ALSAドライバーやNVIDIAやATIグラフィックドライバーなど)を使うなら、カーネルのアップグレードごとにそれらを再インストールしなければなりません。
+これは関連したパッケージを再マージするのと同じくらい簡単です。
+より詳しい情報は、<uri link="/doc/en/handbook/">Gentoo Handbook</uri><uri link="/doc/ja/handbook/">(日本語訳)</uri>の<e>カーネルの設定</e>の章を参照してください。
+</p>
+
+<p>
+<path>/usr/src/linux</path>にあるカーネル向けに別々のebuildでインストールされたカーネルモジュールを全て再ビルドすることができる簡単なツール(<c>sys-kernel/module-rebuild</c>)があります。
+これは非常に分かり易く使用することができます。
+emergeでインストールした後、単に<c>module-rebuild populate</c>を実行して、カーネルの更新後に再ビルドが必要なパッケージの一覧をデータベースに入力します。
+カーネルの更新もしくは再コンパイルが完了したら、再起動する前に<c>module-rebuild rebuild</c>を実行してドライバーを新しいカーネル向けに再ビルドします。
+</p>
+
+<p>
+詳しい情報は、<c>module-rebuild</c>をオプションをつけずに実行することで、ユーティリティに渡すことができるコマンドの一覧を見ることができます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>新しいカーネルで再起動</title>
+<section>
+<body>
+
+<p>
+次に、全てのアプリケーションを終了してシステムを再起動します。
+上記の説明に正しく従っているなら、ブートローダーに新しいカーネルの項目が追加されているでしょう。
+新しいカーネルを選択してシステムを起動します。
+</p>
+
+<p>
+うまくいけば、新しいカーネルでのシステム起動に成功し、いつもと同じようにログインし作業を開始することができます。
+全てが動作しているなら、これでアップグレードは完了です。
+</p>
+ 
+<p>
+もし何か失敗してシステムが新しいカーネルで起動しないなら、システムを再起動し、最後に正常動作していたと思われるカーネルに対応するブートローダーの項目を選択します。
+その後適切に変更することであなたの間違いを訂正するために、<uri link="#install">新しいカーネルの設定、コンパイル、インストール</uri>の段階から再度開始してください。
+いくつかの場合では(オーディオデバイスやイーサネットドライバの間違いなど)これを行うためにリブートする必要はないかもしれません。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>複数のカーネルで起動</title>
+<section>
+<body>
+
+<p>
+新しいカーネルをインストールしている時に、以前のカーネルのソースは削除されていないことに気付いたかもしてません。
+これは意図して行われていることであり、これを行うことによって起動している違うカーネル間を簡単に切り替えることができます。
+</p>
+
+<p>
+複数のカーネルを切り替えるには<path>/usr/src/</path>のカーネルソースと<path>/boot</path>パーティションの<path>bzImage</path>バイナリ(ブートローダーの設定で参照されている)を残すだけです。
+起動する時にはいつでも、どのカーネルで起動するかを聞かれることでしょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>古いカーネルを削除</title>
+<section>
+<body>
+
+<p>
+最後の章からの設定で、新しいカーネルを手に入れ古いバージョンのカーネルを保持する必要が無くなったかもしれません。
+簡単に現在の物を除いたカーネルのソースを削除するには、<c>emerge</c>の<e>prune</e>オプションを利用します。
+<c>gentoo-sources</c>を利用する例を続けます。
+</p>
+
+<pre caption="古いバージョンを削除">
+# <i>emerge -P gentoo-sources</i>
+</pre>
+
+<p>
+ほとんどの場合、コンパイル中に使われた一時ファイルは未だ<path>/usr/src</path>以下のソースディレクトリに残っています。
+<c>rm</c>を使うことでこれらを安全に削除することができます。
+</p>
+
+<p>
+カーネルで使われたモジュールも安全に削除することができます。
+これは削除したカーネルバージョンで参照されている<path>/lib/modules/</path>以下の適当なディレクトリを削除することで実行できます。
+まだ利用しているカーネルが所有しているモジュールを削除しないように気をつけてください！
+</p>
+
+<p>
+最後に<path>/boot</path>パーティションをマウントして、取り除こうとしているカーネルの<path>bzImage</path>ファイルを削除できます。
+ブートローダーの設定を編集してこのカーネルを参照しないように設定しておくべきです。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>上級: 古いカーネルの.configを新しいカーネルを設定するために使用する</title>
+<section>
+<body>
+
+<p>
+新しいカーネルを設定するときに古いカーネルの設定ファイルを再利用することで時間を節約することが可能なときがあります。
+これは普通安全ではないと言うことに注意してください。
+それぞれのリリース間での変更が多すぎると、更新方法としての信頼が無くなります。
+</p>
+
+<p>
+これが使用できるただ一つの状況は、あるGentooカーネルリビジョンを別の物に変更するときです。
+例えば、<c>gentoo-sources-2.6.9-r1</c>と<c>gentoo-sources-2.6.9-r2</c>の間の変更点はとても少ないので、以下の方法を使用するには普通大丈夫です。
+ですが、2.6.8から2.6.9への更新と言った、このドキュメントを通して使用されている例に対しては適当ではありません。
+オフィシャルリリース間で多くの変更があり、以下に説明されている方法はユーザに十分な前後関係を表示しないので、しばしば本当は必要なオプションを無効にしてユーザが問題を引き起こす結果となります。
+</p>
+
+<p>
+古い<path>.config</path>を再利用するには、単に上書きして、<c>make oldconfig</c>を実行するだけです。
+以下の例では、<c>gentoo-sources-2.6.9-r1</c>から<c>gentoo-sources-2.6.9-r2</c>へ設定ファイルをもっていきます。
+</p>
+
+<pre caption="古い設定を再利用する">
+# <i>cd /usr/src/linux-2.6.9-gentoo-r2</i>
+# <i>cp ../linux-2.6.9-gentoo-r1/.config .</i>
+# <i>make oldconfig</i>
+</pre>
+
+<pre caption="genkernelで、古い設定を再利用する">
+# <i>cd /etc/kernels</i>
+# <i>cp kernel-config-x86-2.6.9-gentoo-r1 kernel-config-x86-2.6.9-gentoo-r2</i>
+# <i>genkernel all</i>
+</pre>
+
+<p>
+この時点で、2つのバージョンで変更があった設定オプションに関する質問が表示されるでしょう。
+質問への回答が完了すれば、<c>menuconfig</c>での設定過程を行うことなく、普通と同じようにカーネルをコンパイルしインストールすることができます。
+</p>
+
+<p>
+より安全なアップデート方法は以前のコンフィグをコピーし、
+単純に<c>make menuconfig</c>を実行するだけです。
+これで、<c>make menuconfig</c>で以前のコンフィグが可能な限りメニューにロードされ、
+先に触れた<c>make oldconfig</c>の問題を避けることができます。
+これで、各選択肢について確認し、新しいセクションや無くなったセクションなどを探せばよいだけです。
+<c>menuconfig</c>を使うことで、新しく変更されたものの背景や、新たな選択肢と解説をスクリーン上で簡単に見ることができます。
+2.6.8から2.6.9といったアップグレードにも利用できますが、選択肢については注意してください。
+一旦終わったら、基準としてカーネルをコンパイルしインストールしてください。
+</p>
+
+
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>カーネルの更新後に問題が起きましたか？</title>
+<section>
+<body>
+
+<p>
+Linuxカーネルの開発は急速に行われているため、カーネルを移行することで問題を引き起こすかもしれないということは避けられません。
+もし<uri link="/doc/en/gentoo-kernel.xml#doc_chap2">Gentooがサポートするカーネル</uri>の最新版で問題があるのなら、それを私たちに報告してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

@@ -1,0 +1,737 @@
+<?xml version='1.0' encoding="UTF-8"?>
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/bluetooth-guide.xml,v 1.2 2008/07/06 15:00:09 shindo Exp $ -->
+
+<guide link="/doc/ja/bluetooth-guide.xml" lang="ja">
+<title>Gentoo Linux Bluetoothガイド</title>
+
+<author title="Author">
+  <mail link="deathwing00@gentoo.org">Ioannis Aslanidis</mail>
+</author>
+<author title="Contributor">
+  <mail link="puggy@gentoo.org">Douglas Russell</mail>
+</author>
+<author title="Contributor">
+  <mail link="marcel@holtmann.org">Marcel Holtmann</mail>
+</author>
+<author title="Author">
+  <mail link="fox2mike@gentoo.org">Shyam Mani</mail>
+</author>
+<author title="Editor">
+  <mail link="rane@gentoo.org">Łukasz Damentko</mail>
+</author>
+<author title="翻訳">
+  <mail link="yuya-web@sd-net.ath.cx">田中 裕也</mail>
+</author>
+<abstract>
+このガイドには、Bluetoothデバイスをホストに導入しカーネルを正しく構成する手順が書かれています。
+さらに、Blutooth技術にできることやBlutoothの使い方も紹介します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.10</version>
+<date>2007-10-21</date>
+<!-- Original revision: 1.15 -->
+
+<chapter id="introduction">
+<title>はじめに</title>
+<section>
+<title>Bluetoothとは</title>
+<body>
+
+<p>
+BluetoothはパーソナルコンピュータやPDA、携帯電話などを相互接続するための通信規格です。
+Bluetoothを使うことで、デバイス間の無線での音声及びデータの通信が低いコストで利用可能となります。
+さらに、Bluetoothで小さな無線LANを構築することも、機器を同期することもできます。
+</p>
+
+</body>
+</section>
+<section>
+<title>このガイドの内容について</title>
+<body>
+
+<p>
+初めに、どのBluetoothデバイスが適切であるかを確認する方法を説明します。
+これによって、ユーザは動作することが確認されているデバイスを購入することができます。
+その後に、システムカーネルの構成の手順や、システムに取り付けられているかカーネルに認識されているBluetoothデバイスを確認する方法、
+そして必要なBluetooth用基本ツールをインストールする方法を解説します。
+
+</p>
+
+<p>
+次に、リモートデバイスを認識させる手順と、
+RFCOMMまたはパーソナルエリアネットワーク(PAN)を構成することでデバイス間の接続を確立する手順を解説します。
+</p>
+
+<p>
+ガイドの最後では、Bluetooth技術を使うことができるアプリケーションを詳しく紹介しています。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="devices">
+<title>サポートされているデバイス</title>
+<section>
+<title>Bluetoothをサポートする認可を受けたデバイスと受けていないデバイス</title>
+<body>
+
+<impo>
+認可を受けていないBluetooth製品も動作することがありますが、Gentooでサポートされることはありません。
+それらのデバイスはただ動作する「かもしれない」だけなのです。
+(訳注：Bluetooth SIGによる認可のことを指しているようです。市場に出回っている製品は普通は認可されています。)
+</impo>
+
+<p>
+サポートされているデバイスの一覧はこちらにあります。<uri
+link="http://www.holtmann.org/linux/bluetooth/features.html">
+Marcel HoltmannによるBluetoothデバイスの機能とリビジョン情報（英語）
+(訳注：このリストはLinuxに正式に動作するデバイスのリストとして使われているようです。)</uri>
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="kernel">
+<title>システムの構成</title>
+<section>
+<title>カーネルの構築</title>
+<body>
+
+<p>
+最新の安定版Linuxカーネルは2.6なので、2.6系列のカーネルを使って説明します。
+多くのBluetoothデバイスはUSBポートに接続されるので、USBも有効にする必要があるでしょう。<uri
+link="/doc/en/usb-guide.xml">Gentoo Linux USBガイド</uri><uri
+link="/doc/ja/usb-guide.xml">(日本語訳)</uri>も参考にしてください。
+</p>
+
+<pre caption="カーネル2.6を設定">
+Networking ---&gt;
+
+&lt;*&gt; Bluetooth subsystem support  ---&gt;
+
+--- Bluetooth subsystem support
+&lt;M&gt;   L2CAP protocol support
+&lt;M&gt;   SCO links support
+&lt;M&gt;   RFCOMM protocol support
+[*]     RFCOMM TTY support
+&lt;M&gt;   BNEP protocol support
+[*]     Multicast filter support
+[*]     Protocol filter support
+&lt;M&gt;   HIDP protocol support
+
+Bluetooth device drivers  ---&gt;
+&lt;M&gt; HCI USB driver
+[*]   SCO (voice) support
+&lt;M&gt; HCI UART driver
+[*]   UART (H4) protocol support
+[*]   BCSP protocol support
+[*]   Transmit CRC with every BCSP packet
+&lt;M&gt; HCI BCM203x USB driver
+&lt;M&gt; HCI BPA10x USB driver
+&lt;M&gt; HCI BlueFRITZ! USB driver
+<comment>（以下の４つのドライバはPCMCIA Bluetoothデバイスのもので、
+カーネルのPCMCIAサポートを有効にした場合にのみ表示されます。)</comment>
+&lt;M&gt; HCI DTL1 (PC Card) driver
+&lt;M&gt; HCI BT3C (PC Card) driver
+&lt;M&gt; HCI BlueCard (PC Card) driver
+&lt;M&gt; HCI UART (PC Card) device driver
+<comment>(以下のドライバはHCIエミュレーションソフトウェアのためのものです。)</comment>
+&lt;M&gt; HCI VHCI (Virtual HCI device) driver
+
+<comment>(Device Driversまで3レベル戻り、USBが有効になっているか確認します。
+これは、BluetoothドングルがUSBベースである場合が多いためです。)</comment>
+USB support  ---&gt;
+
+&lt;*&gt; Support for Host-side USB
+--- USB Host Controller Drivers
+&lt;M&gt; EHCI HCD (USB 2.0) support
+[ ]   Full speed ISO transactions (EXPERIMENTAL)
+[ ]   Root Hub Transaction Translators (EXPERIMENTAL)
+&lt;*&gt; OHCI HCD support
+&lt;*&gt; UHCI HCD (most Intel and VIA) support
+&lt; &gt; SL811HS HCD support
+</pre>
+
+<p>
+ここで、新しいカーネルを使ってリブートします。
+うまくいけば、Bluetooth対応のシステムが手に入るでしょう。
+</p>
+
+<impo>
+USBデバイスには2つのモードがあることが多く、デフォルトモードは大概HCIではなくHIDでしょう。
+これに該当するならば、<c>hid2hci</c>を使ってHCIモードに設定してください。
+この変更はリブートによってリセットされます。
+</impo>
+
+<pre caption="Bluetoothデバイスを確認">
+<comment>(デバイスをチェックする方法の一つ)</comment>
+# <i>cat /proc/bus/usb/devices | grep -e^[TPD] | grep -e Cls=e0 -B1 -A1</i>
+<comment>("Cls=e0(unk. )"はBluetoothデバイスを識別するためにあります。)</comment>
+T:  Bus=02 Lev=02 Prnt=03 Port=00 Cnt=01 Dev#=  4 Spd=12  MxCh= 0
+D:  Ver= 1.10 Cls=e0(unk. ) Sub=01 Prot=01 MxPS=64 #Cfgs=  1
+P:  Vendor=0a12 ProdID=0001 Rev= 5.25
+<comment>(sys-apps/usbutilsに含まれるlsusbが何かを示すかもしれません。)</comment>
+# <i>lsusb</i>
+Bus 003 Device 002: ID 046d:c00e Logitech, Inc. Optical Mouse
+Bus 003 Device 001: ID 0000:0000
+Bus 002 Device 002: ID 0db0:1967 Micro Star International Bluetooth Dongle
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="bluez">
+<title>BlueZ - Bluetoothスタック</title>
+<section>
+<title>BlueZのインストール</title>
+<body>
+
+<p>
+カーネルにデバイスが認識されたら、次に、アプリケーションにBluetoothデバイスとの通信を実現するにするレイヤが必要です。
+BlueZは公式のLinux Bluetoothスタックを提供します。
+<c>bluez-libs</c>と<c>bluez-utils</c>の２つのebuildが必要な機能を提供します。
+Broadcom社のファームウェアのファイルや同様のものを必要とするデバイスは<c>bluez-firmware</c>が必要でしょう。
+</p>
+
+<pre caption="bluez-libsとbluez-utilsをインストール">
+# <i>emerge net-wireless/bluez-libs net-wireless/bluez-utils</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>BlueZの設定とペアリング</title>
+<body>
+
+<p>
+ここで、Bluetoothデバイスがシステムに正しく認識されているか確認してみます。
+先に必要なBluetoothサービスを開始します。
+</p>
+
+<pre caption="hciconfigを起動">
+<comment>(Bluetoothを開始)</comment>
+# <i>/etc/init.d/bluetooth start</i>
+* Starting Bluetooth ...
+*     Starting hcid ...                                                 [ ok ]
+*     Starting sdpd ...                                                 [ ok ]
+*     Starting rfcomm ...                                               [ ok ]
+
+# <i>hciconfig</i>
+hci0:   Type: USB
+        BD Address: 00:01:02:03:04:05 ACL MTU: 192:8  SCO MTU: 64:8
+        DOWN
+        RX bytes:131 acl:0 sco:0 events:18 errors:0
+        TX bytes:565 acl:0 sco:0 commands:17 errors:0
+</pre>
+
+<p>
+これはBluetoothデバイスが認識されていることを示します。
+デバイスが<e>DOWN</e>となっていることに気づいたかもしれません。
+これからそれをUPにするために設定しましょう。
+設定ファイルは<path>/etc/bluetooth/hcid.conf</path>にあります。
+設定ファイルの中で変更する必要がある箇所は以下のとおりです。
+その他の詳細については<c>man hcid.conf</c>を参照してください。
+</p>
+
+<pre caption="/etc/bluetooth/hcid.confを編集">
+<comment>(設定ファイルへの推奨される変更を示しています)</comment>
+
+# HCIdのオプション
+options {
+        # 新しいデバイスを自動で初期化
+        autoinit yes;
+
+<comment>(securityを"auto"に変更します)</comment>
+        # セキュリティマネージャのモード
+        #   none - セキュリティマネージャを無効化
+        #   auto - 外部からの接続にローカルのパスキー(PINコード)を使用
+        #   user - 常にユーザにパスキー(PINコード)を問い合わせ
+        #
+        security auto;
+
+        # ペアリングのモード
+        pairing multi;
+
+<comment>(&lt;=bluez-libs-2.xと&lt;=bluez-utils-2.xを使用している場合のみPINヘルパーを必要とします。)
+(pin_helperの値を/etc/bluetooth/pin-helperに変更します)</comment>
+        # PINヘルパー
+        pin_helper /etc/bluetooth/pin-helper;
+}
+
+# HCIデバイスのデフォルト設定
+device {
+<comment>(デバイスの名前を自由に設定します)</comment>
+        # ローカルデバイス名
+        #   %d - デバイスID
+        #   %h - ホスト名
+        name "BlueZ at %h (%d)";
+
+        # ローカルデバイスクラス
+        class 0x3e0100;
+
+        # 他のデバイスからの検出の許可(Inquiry scan: iscan)と接続の受け付け(Page scan: pscan)
+        iscan enable; pscan enable;
+
+        # デフォルトのリンクモード
+        lm accept;
+
+        # デフォルトのリンクポリシー
+        lp rswitch,hold,sniff,park;
+
+<comment>(これらが何を意味するのか正確に知らないのならそのままにしてください)</comment>
+        # 認証と暗号化(セキュリティモード3)
+        #auth enable;
+        #encrypt enable;
+}
+</pre>
+
+<p>
+その後に、Bluetoothデバイスのパスキー(PINコード)を設定する必要があります。
+これは他のデバイスとペアリングさせる際に役に立ちます。
+</p>
+
+<pre caption="/etc/bluetooth/pinを編集">
+<comment>("123456"をお好みのパスキー(PINコード)に置き換えてください。)</comment>
+123456
+</pre>
+
+<impo>
+ここで設定した番号は、ペアリングできるようにする、Bluetoothデバイスを備えるすべてのホストで一致していなくてはなりません。
+また、この番号を知るいかなる人物も、この番号が設定されたデバイスに基本的に接続することができてしまうので、この番号は 秘密にされなくてはなりません。
+</impo>
+
+<note>
+<c>&lt;=bluez-libs-2.x</c>と<c>&lt;=bluez-utils-2.x</c>を使用しているのであれば、
+複数のPINヘルパーの中から使用するものを選択することができます。
+使用できるPINヘルパーは<c>/usr/lib/kdebluetooth/kbluepin</c>
+(net-wireless/kdebluetooth)か<c>/usr/bin/bluepin</c>または<c>/etc/bluetooth/pin-helper</c>に限られます。
+</note>
+
+<note>
+<c>>=bluez-libs-3.x</c>と<c>>=bluez-utils-3.x</c>からは、PINヘルパーはパスキーエージェントによって置き換えられました。
+<c>bluez-gnome</c>や<c>kdebluetooth</c>などの、パスキー(PINコード)の管理の手助けをする視覚的なパスキーエージェントがいくつかあります。
+また、コマンドラインからは<c>bluez-utils</c>に含まれる<c>passkey-agent</c>を使うこともできます。
+</note>
+
+</body>
+</section>
+<section>
+<title>サービスの設定</title>
+<body>
+
+<p>
+BlueZの構成を完了したら、必要なサービスを再起動しましょう。
+</p>
+
+<pre caption="Bluetoothデーモンの開始">
+# <i>/etc/init.d/bluetooth restart</i>
+<comment>(defaultランレベルに追加することもできます。)</comment>
+# <i>rc-update add bluetooth default</i>
+ * bluetooth added to runlevel default
+ * rc-update complete.
+</pre>
+
+<p>
+Bluetoothデーモンが正しく起動されたか確認してください。
+<c>hcid</c>と<c>sdpd</c>が実行中であるなら、Bluetoothは正しく構成されています。
+ここまでできれば、デバイスが構成された設定どおりに動作中であるかどうか確認できます。
+</p>
+
+<pre caption="Bluetoothデーモンが正しく起動されたか確認">
+<comment>(サービスが実行中であるか確認してください)</comment>
+# <i>ps -ae | grep hcid</i>
+26050 ?        00:00:00 hcid
+# <i>ps -ae | grep sdpd</i>
+26054 ?        00:00:00 sdpd
+
+# <i>hciconfig -a</i>
+hci0:   Type: USB
+        BD Address: 00:0A:0B:0C:0D:0E ACL MTU: 192:8 SCO MTU: 64:8
+        UP RUNNING PSCAN ISCAN
+        RX bytes:125 acl:0 sco:0 events:17 errors:0
+        TX bytes:565 acl:0 sco:0 commands:17 errors:0
+        Features: 0xff 0xff 0x0f 0x00 0x00 0x00 0x00 0x00
+        Packet type: DM1 DM3 DM5 DH1 DH3 DH5 HV1 HV2 HV3
+        Link policy: RSWITCH HOLD SNIFF PARK
+        Link mode: SLAVE ACCEPT
+        Name: 'BlueZ at bluehat (0)'
+        Class: 0x3e0100
+        Service Classes: Networking, Rendering, Capturing, Object Transfer,
+        Audio
+        Device Class: Computer, Uncategorized
+        HCI Ver: 1.1 (0x1) HCI Rev: 0x1e7 LMP Ver: 1.1 (0x1) LMP Subver: 0x1e7
+        Manufacturer: Cambridge Silicon Radio (10)
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="detect">
+<title>リモートデバイスの検出と接続</title>
+<section>
+<title>他のホストのBluetoothデバイスの検出</title>
+<body>
+
+<p>
+この時点で、他の機器に取り付けられたBluetoothデバイスを検出する準備ができています。
+この操作はホストOSとは無関係です。これには<c>hcitool</c>コマンドを使います。
+</p>
+
+<pre caption="ローカルデバイスを確認">
+# <i>hcitool dev</i>
+Devices:
+        hci0    00:01:02:03:04:05
+</pre>
+
+<pre caption="リモートデバイスを検索しデバイス名を表示">
+# <i>hcitool scan</i>
+Scanning ...
+        00:0A:0B:0C:0D:0E       Grayhat
+</pre>
+
+<pre caption="リモートデバイスを検索しクロックオフセットとクラスを表示">
+# <i>hcitool inq</i>
+Inquiring ...
+        00:0A:0B:0C:0D:0E       clock offset: 0x5579    class: 0x72010c
+</pre>
+
+<p>
+リモートBluetoothデバイスのMACアドレスを知ることができたので、そららが正しくペアリングできているか確認します。
+</p>
+
+<pre caption="l2pingを実行">
+# <i>l2ping 00:0A:0B:0C:0D:0E</i>
+Ping: 00:0A:0B:0C:0D:0E from 00:01:02:03:04:05 (data size 20) ...
+20 bytes from 00:0A:0B:0C:0D:0E id 200 time 69.85ms
+20 bytes from 00:0A:0B:0C:0D:0E id 201 time 9.97ms
+20 bytes from 00:0A:0B:0C:0D:0E id 202 time 56.86ms
+20 bytes from 00:0A:0B:0C:0D:0E id 203 time 39.92ms
+4 sent, 4 received, 0% loss
+</pre>
+
+</body>
+</section>
+<section>
+<title>RFCOMMの構成</title>
+<body>
+
+<note>
+RFCOMMの構成は任意です。
+</note>
+
+<p>
+<c>rfcomm</c>コマンドを使うことでBluetoothデバイス間のRFCOMM接続が可能になります。
+特にBluetoothをサポートするデバイスをいくつも持っているようなユーザにとっては、
+<path>/etc/bluetooth/rfcomm.conf</path>にあるrfcommのデフォルトの設定を変更することが賢明でしょう。
+</p>
+
+<p>
+<c>rfcomm0{</c>で始まり<c>}</c>で終わる区切りの中のすべての内容は、
+<path>/dev/rfcomm0</path>に関連付けられるデバイスのものです。
+今回は、rfcomm0の場合の例のみをあげます。
+環境にあわせてより多くのデバイスを追加することもできます。
+</p>
+
+<pre caption="/etc/bluetooth/rfcomm.confを編集">
+<comment>(変更が必要であるかもしれない箇所のみを示しています)</comment>
+rfcomm0 {
+        # 起動時にデバイスを割り当て
+        <comment>(起動時にデバイスノード/dev/rfcomm0を作成します)</comment>
+        bind yes;
+
+        # デバイスのBluetoothアドレス
+        <comment>(接続したいデバイスのアドレスを入力します)</comment>
+        device 00:0A:0B:0C:0D:0E;
+
+}
+</pre>
+
+<p>
+RFCOMMの設定構成が終われば、あらゆるデバイスに接続することができます。
+必要な設定を<path>/etc/bluetooth/rfcomm.conf</path>に記述したため、以下のコマンドを実行するだけでよいのです。
+設定ファイルを編集していない場合のための代替手段も続けて示されています。
+</p>
+
+<pre caption="RFCOMM接続を確立">
+<comment>("0"は設定ファイルの中のrfcomm0を参照させています)</comment>
+# <i>rfcomm connect 0 </i>
+Connected /dev/rfcomm0 to 00:0A:0B:0C:0D:0E on channel 1
+Press CTRL-C for hangup
+
+<comment>(/etc/bluetooth/rfcomm.confを変更していない場合)</comment>
+# <i>rfcomm connect 0 00:0A:0B:0C:0D:0E 1</i>
+Connected /dev/rfcomm0 to 00:0F:DE:69:50:24 on channel 1
+Press CTRL-C for hangup
+</pre>
+
+<p>
+connectコマンドの後の最初のパラメータは、使用するRFCOMM TTYデバイスノードです(多くの場合は0)。
+2つ目のパラメータは、リモートデバイスのMACアドレスです。3つめのパラメータは任意で、使用するチャネルを指定します。
+デバイスに接続する場合は、接続先のデバイスが外部からの接続を受け付けていなくてはならないことに注意してください。
+そのためには、接続を受け付けるように明示的に指示する必要があります。接続はCTRL+Cを押すだけで中止できます。
+</p>
+
+<pre caption="RFCOMM接続を受け付け">
+# <i>rfcomm listen 0 1</i>
+Waiting for connection on channel 1
+</pre>
+
+<p>
+listenコマンドは、connectコマンドと同じような2つのパラメータを取ることができます。
+1つ目は接続の受付に使用するRFCOMM TTYデバイスを指定し(多くの場合は0)、2つ目は接続を受け付けるチャネルを指定します。
+</p>
+
+<p>
+<c>rfcomm</c>コマンドを実行する際に、どの物理デバイスを使用するかを指定することもできます。
+物理デバイスを指定して上記の2つのコマンドを利用する一例を以下にあげておきます。
+</p>
+
+<pre caption="物理デバイスを指定した上でRFCOMM接続を利用">
+# <i>rfcomm -i hci0 listen 0 1</i>
+Waiting for connection on channel 1
+<comment>(特定のデバイスへの接続を受け付けます)</comment>
+# <i>rfcomm -i hci0 connect 0 00:0A:0B:0C:0D:0E 1</i>
+<comment>(接続を開始する際に特定のデバイスを使用します)</comment>
+</pre>
+
+</body>
+</section>
+<section>
+<title>パーソナルエリアネットワーク(PAN)の構成</title>
+<body>
+
+<note>
+PANの構成は任意です。このセクションでは、
+ネットワークアクセスポイント(NAP)の設定とNAPへの接続の手順について説明しますが、
+グループアドホックネットワーク(GN)も同じような手順で構築できます。
+</note>
+
+<p>
+まず最初に、<c>bnep</c>モジュールをロードする必要があります。
+これはコンピュータの起動のたびにロードしなくてはならないでしょう。
+</p>
+
+<pre caption="bnepモジュールをロード">
+# <i>modprobe bnep</i>
+# <i>echo "bnep" &gt;&gt; /etc/modules.autoload.d/kernel-2.6</i>
+</pre>
+
+<p>
+NAPを提供するホストでは<c>pand</c>デーモンを開始する必要があります。
+また、NAPサービスを提供することと、このホストがマスタになることを明記します。
+従って他のホストには、スレーブとしてマスタに接続することを明記します。
+他に使用可能なサービスにはGN(グループアドホックネットワーク)があります。
+</p>
+
+<pre caption="pandデーモンを開始">
+# <i>pand --listen --role NAP --master --autozap</i>
+</pre>
+
+<p>
+これで接続を受け入れるホストができたので、残りのホストはそれに接続するだけです。
+</p>
+
+<pre caption="NAPへ接続">
+# <i>pand --connect 00:0A:0B:0C:0D:0E --service NAP --autozap</i>
+</pre>
+
+<p>
+すべてうまくいけば、ホストのIPアドレスを設定することができます。
+</p>
+
+<pre caption="bnepのIPアドレスを設定">
+host0 #<i> ifconfig bnep0 192.168.2.1</i>
+host1 #<i> ifconfig bnep0 192.168.2.2</i>
+
+host0 #<i> ifconfig bnep0</i>
+bnep0     Link encap:Ethernet  HWaddr 00:0A:0B:0C:0D:0E
+          inet addr:192.168.2.1  Bcast:192.168.2.255  Mask:255.255.255.0
+          inet6 addr: fe80::210:60ff:fea3:cb41/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:5 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:208 (208.0 b)  TX bytes:188 (188.0 b)
+
+host1 #<i> ifconfig bnep0</i>
+bnep0     Link encap:Ethernet  HWaddr 00:01:02:03:04:05
+          inet addr:192.168.2.2  Bcast:192.168.2.255  Mask:255.255.255.0
+          inet6 addr: fe80::210:60ff:fea2:dd2a/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:5 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:208 (208.0 b)  TX bytes:188 (188.0 b)
+</pre>
+
+<p>
+最後に、ネットワークが正しく動作してるか確認するために簡単なテストを行うことができます。
+</p>
+
+<pre caption="bnepインタフェース間でIP pingを実行">
+host1 #<i> ping 192.168.2.1</i>
+PING 192.168.2.1 (192.168.2.1) 56(84) bytes of data.
+64 bytes from 192.168.2.1: icmp_seq=1 ttl=64 time=34.0 ms
+64 bytes from 192.168.2.1: icmp_seq=2 ttl=64 time=37.3 ms
+
+--- 192.168.2.1 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1000ms
+rtt min/avg/max/mdev = 34.045/35.690/37.336/1.656 ms
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="apps">
+<title>Bluetooth用のデスクトップアプリケーション</title>
+<section>
+<title>はじめに</title>
+<body>
+
+<p>
+デスクトップで動作するBluetoothアプリケーションはかなり多く、この章は3つに分かれています。
+Gnome用、KDE用、そしてその他のアプリケーションです。
+</p>
+
+</body>
+</section>
+<section>
+<title>Gnome用</title>
+<body>
+
+<p>
+Gnomeユーザであれば、ほとんどの場合<c>gnome-bluetooth</c>を使うことでしょう。
+これは、以下にあるように、最も基本的でよく使われる機能を提供します。
+</p>
+
+<ul>
+  <li><c>gnome-bluetooth-manager</c>: リモートBluetoothデバイスを管理します。</li>
+  <li><c>gnome-obex-send</c>: 他のデバイスにファイルを送信します。</li>
+  <li><c>gnome-obex-server</c>: ファイルを受信します。</li>
+</ul>
+
+<pre caption="gnome-bluetoothをインストール">
+# <i>emerge gnome-bluetooth</i>
+</pre>
+
+<p>
+これをインストールすると、アプリケーション-&gt;システムツールに、
+マネージャやファイル共有を簡単に開始するためのメニューエントリが追加されます。
+</p>
+
+<p>
+簡単にファイルを転送する:
+</p>
+
+<ul>
+  <li>
+    携帯電話からコンピュータへ - Bluetoothを使って携帯電話からファイルを送信すると、
+    常にあなたの<path>/home</path>に保存されるでしょう。
+  </li>
+<!--FIXME : Doesn't work on Nautilus 2.10.x. Bug #103464 for details -->
+<!--
+  <li>
+    From the Computer to the Phone - Fire up <c>nautilus</c> and select the
+    file you want to send and right click on it. Select the Send via Bluetooth
+    option and ask your phone to accept the file.
+  </li>
+-->
+</ul>
+
+<p>
+<c>gnome-phone-manager</c>はあなたのコンピュータだけを使って、
+メッセージを送信したり受信するためのすばらしいツールです。
+このアプリケーションを使えば、携帯電話に触らずにメッセージを読んだり送ったりすることができます。
+また、設定を有効にすれば新着メッセージを画面に表示して知らせることもできます。
+インストールはとても簡単です。
+</p>
+
+<pre caption="gnome-phone-managerをインストール">
+# <i>emerge gnome-phone-manager</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>KDE用</title>
+<body>
+
+<p>
+KDEは<c>kdebluetooth</c>を利用して、以下のようにGnomeに対応する部分に比べて多くのユーティリティを提供します。
+</p>
+
+<ul>
+  <li><c>kbluetoothd</c>: Bluetoothメタサーバ</li>
+  <li><c>kbtsearch</c>: Bluetoothデバイス・サービス検索ユーティリティ</li>
+  <li><c>khciconfig</c>: KDE Bluetoothモニタ</li>
+  <li><c>kioclient</c>: KIOコマンドラインクライアント</li>
+  <li><c>qobexclient</c>: obexテスト・開発用の高度なクライアント</li>
+  <li><c>kbtobexclient</c>: KDE Bluetoothフレームワークアプリケーション</li>
+  <li><c>kioobex_start</c></li>
+  <li><c>kbtserialchat</c></li>
+  <li><c>kbemusedsrv</c>: KDE Bemusedサーバ</li>
+  <li><c>kbtobexsrv</c>: KDE Bluetooth用OBEX Pushサーバ</li>
+  <li><c>kbluepin</c>: KDE KPartアプリケーション</li>
+  <li>
+    <c>auth-helper</c>: 与えられたACLリンクに対して認証要求を送信する、kbtobexsrvのためのヘルパーです。
+  </li>
+</ul>
+
+<pre caption="kdebluetoothをインストール">
+# <i>emerge kdebluetooth</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>その他のアプリケーション</title>
+<body>
+
+<ul>
+  <li>
+    <c>app-mobilephone/obexftp</c>: 携帯電話用OBEXファイル転送ソフト
+  </li>
+  <li>
+    <c>app-mobilephone/bemused</c>: Bemusedは音楽のコレクションをBluetoothを使って携帯電話から管理するためのシステムです。
+  </li>
+  <li>
+    Multisyncを使うと携帯電話とコンピュータとの間でBluetoothやその他の接続方法を使って、
+    電話帳やカレンダーの項目、そしてメモを同期することができます。
+    これらの情報のバックアップや復元をしたり、Evolution電子メールクライアントと同期したりする機能もあります。
+    <c>multisync</c>にBluetoothをサポートさせるためには<c>irmc</c> USEフラグを設定する必要があります。
+  </li>
+  <li>
+    <c>net-wireless/opd</c>と<c>net-wireless/ussp-push</c>は、
+    携帯電話にファイルを送信するための、コマンドラインのサーバとクライアントです。
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>謝辞</title>
+<section>
+<body>
+
+<p>
+Bluetoothでの開発に時間を割いて貢献し、このガイドの査読を行った<mail link="marcel@holtmann.org">Marcel Holtmann</mail>に心から感謝します。
+また、追加のハードウェアテストを行い、このガイドを改良した<mail link="puggy@gentoo.org">Douglas Russell</mail>にも大いに感謝します。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

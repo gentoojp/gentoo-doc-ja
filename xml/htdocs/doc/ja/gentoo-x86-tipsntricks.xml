@@ -1,0 +1,435 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/gentoo-x86-tipsntricks.xml,v 1.11 2008/08/20 16:22:20 shindo Exp $ -->
+
+<guide link="/doc/ja/gentoo-x86-tipsntricks.xml" lang="ja">
+<title>Gentoo/x86 インストールの Tips &amp; Tricks</title>
+<author title="Author">
+    <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Editor"> 
+    <mail link="neysx@gentoo.org">Xavier Neys</mail> 
+</author> 
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+
+<abstract>
+Gentooのインストールは様々なインストール方法にとても柔軟に対応します。
+すべての単独なtip &amp; trickをインストールドキュメントに記述するのは不可能なので、このドキュメントで投稿されたtip &amp; trickを参照目的で扱うことにします。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.15</version>
+<date>2007-09-18</date>
+
+<!-- Original revision: 1.26 -->
+
+<chapter>
+<title>初めに</title>
+<section>
+<title>前置き</title>
+<body>
+
+<p>
+このドキュメントはGentoo/x86のインストールに関する様々なtips and tricksを扱っています。
+このドキュメントには、たくさんの情報がつめこまれています。
+そしてこのことは、このtips and tricksがインストールガイドに対する追加情報になりますが、代替にはならないことを意味しています。
+</p>
+
+</body>
+</section>
+<section>
+<title>目次</title>
+<body>
+
+<p>
+<b>上級インストール</b>
+</p>
+
+<ul>
+  <li><uri link="#software-raid">ソフトウェアRAID</uri></li>
+  <li><uri link="#ata-raid-2.4">2.4カーネルを使ったATA RAID</uri></li>
+  <li><uri link="#livecd-kernel">インストールCDのカーネルを使う</uri></li>
+</ul>
+
+<p>
+<b>インストールの単純化</b>
+</p>
+
+<ul>
+  <li><uri link="#leave_terminal">ターミナルを止める</uri></li>
+</ul>
+
+<p>
+<b>エラーや問題の修正</b>
+</p>
+
+<ul>
+  <li><uri link="#checking-disks">ディスクの広域テスト</uri></li>
+  <li>
+    <uri link="#recover">誤ったインストールからの回復</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>上級インストール</title>
+<section id="software-raid">
+<title>ソフトウェアRAID</title>
+<body>
+
+<note>
+もしソフトウェアRAIDについて知らなければ、<uri link="http://tldp.org/HOWTO/Software-RAID-HOWTO.html">Software-RAID-HOWTO</uri>を読んでください。
+</note>
+
+<note>
+より詳細な手順は<uri
+link="/doc/en/gentoo-x86+raid+lvm2-quickinstall.xml">Software Raid and LVM2 x86
+Quick Install Guide</uri>に書かれています。
+</note>
+
+<p>
+いったんインストールCDから起動し、適当なRAIDモジュールを読み込みます。
+例えば、RAID-1を使おうと思っているのなら以下のようにします。
+</p>
+
+<pre caption="RAID-1モジュールの読み込み">
+# <i>modprobe raid1</i>
+</pre>
+
+<p>
+あなたのディスクを区切るときに、パーティションタイプに<c>83</c>(Linux native)の代わりに<c>fd</c>(Linux raid autodetect)を使うようにしてください。
+<c>fdisk</c>の<c>t</c>コマンドを使うとパーティションタイプを変更できます。
+</p>
+
+<p>
+RAIDアレイを作成し始める前に、デバイスファイルを作成する必要があります。
+</p>
+
+<pre caption="デバイスファイルの作成">
+# <i>mknod /dev/md1 b 9 1</i>
+# <i>mknod /dev/md2 b 9 2</i>
+# <i>mknod /dev/md3 b 9 3</i>
+</pre>
+
+<p>
+パーティションの作成を行ったら、<uri link="http://www.linuxdevcenter.com/pub/a/linux/2002/12/05/RAID.html">RAID管理</uri>用の上級ツールである<c>mdadm</c>を使って<path>/etc/mdadm.conf</path>ファイルを作成(もちろんインストールCD環境上で)します。
+例えば、<path>/dev/sda</path>と<path>/dev/sdb</path>にRAID-1でミラーされているboot、swap、そしてrootパーティションを作成したのなら、以下のようにします。
+</p>
+
+<pre caption="mdadmコマンドでRAIDデバイスを作成">
+# <i>mdadm --create --verbose /dev/md1 --level=1 --raid-devices=2 /dev/sda1 /dev/sdb1</i>
+# <i>mdadm --create --verbose /dev/md2 --level=1 --raid-devices=2 /dev/sda2 /dev/sdb2</i>
+# <i>mdadm --create --verbose /dev/md3 --level=1 --raid-devices=2 /dev/sda3 /dev/sdb3</i>
+</pre>
+
+<impo>
+RAID-0やRAID-5のようなストライピング設定したディスクをブートパーティションにするべきではありません。
+</impo>
+
+<p>
+LinuxソフトウェアRAIDドライバーはmetadevicesの作成を開始するでしょう。
+その経過を<path>/proc/mdstat</path>で見ることができます。
+続行する前にmetadevicesが完全に完了するまで待ってください。
+</p>
+
+<pre caption="作成したデバイス情報を保存"> 
+# <i>mdadm --detail --scan > /etc/mdadm.conf</i> 
+</pre> 
+
+
+<p>
+ここからは、<path>/dev/md1</path>をbootパーティション、<path>/dev/md2</path>をswapパーティション、そして<path>/dev/md3</path>をrootパーティションに使ってください。
+</p>
+
+<p>
+chrootをする前に、忘れずに<path>/etc/mdadm.conf</path>を<path>/mnt/gentoo/etc</path>へコピーしてください。
+</p>
+
+<p>
+カーネルの設定をするとき、モジュールではなくカーネル<e>内部に</e>RAIDサポートを有効にするようにしてください。
+</p>
+
+<p>
+外部ツールをインストールする時、<c>mdadm</c>をemergeしてください。
+このツールは全てのインストールCDに含まれているわけではないので、ネットワークなしのインストールでは、ソフトウェアRAIDでGentooをインストールできないかもしれないことに注意してください。
+</p>
+
+<p>
+ミラーリングを使用する場合には、ブートローダーの設定をするときにブートローダーが<e>両方の</e>ディスクにインストールされていることを確認してください。
+</p>
+
+</body>
+</section>
+<section id="ata-raid-2.4">
+<title>2.4カーネルを使ったATA RAID</title>
+<body>
+
+<p>
+<c>doataraid</c>オプションを使ってインストールCDで起動するようにしてください。
+起動したら、<path>/dev/ataraid</path>を確認してください。
+それにはATA RAIDが利用可能なそれぞれのハードディスク用の様々な<path>disc*</path>ディレクトリが含まれているはずです。
+全てのディスクが<path>disc</path>と表示されている一方、パーティションは<path>part*</path>となっています。
+</p>
+
+<p>
+Gentooをインストールする<path>/dev/ataraid/disc*/*</path>デバイスファイルを書き留めておいてください。
+インストール中に<path>/dev/hda</path>をこのパスで置き換える必要があります。
+</p>
+
+<p>
+chrootをする前に、新しい環境で<path>/dev</path>構造をbindマウントします。
+</p>
+
+<pre caption="/devをbindマウント">
+# <i>mount -o bind /dev /mnt/gentoo/dev</i>
+</pre>
+
+<p>
+カーネルを設定する時、ATA RAIDチップセットのサポートとオプションを有効にするようにしてください。
+例えば、一般的なATA RAIDシステムの<e>Promise FastTrack built-in RAID</e>ではカーネル内に<c>Promise FastTrack Options</c>をビルドする必要があります。
+</p>
+
+<p>
+GRUBの設定をする時、まずGRUBブートディスクを作成してください。
+これは考えているほど難しくはありません。
+まずGRUBをいつものようにインストールしますが、GRUBがMBRにインストールされる部分まできたら、以下の指示に従ってください。
+</p>
+
+<pre caption="GRUBブートディスクの作成">
+# <i>cd /boot/grub</i>
+# <i>dd if=stage1 of=/dev/fd0 bs=512 count=1</i>
+# <i>dd if=stage2 of=/dev/fd0 bs=512 seek=1</i>
+</pre>
+
+<p>
+まだ<path>grub.conf</path>ファイルを書く必要があります。
+これは通常のインストール手順と何ら変わりないですが、ただ<c>root=</c>がATA RAIDデバイスを示すようにします。
+</p>
+
+<p>
+インストールが完了したら、GRUBブートディスクで起動します。
+GRUBプロンプトが表示されるでしょう。
+ではATA RAIDデバイスから起動できるようにGRUBを設定します。
+</p>
+
+<pre caption="GRUBをATA RAIDにインストール">
+grub&gt; root (hd0,x)
+grub&gt; setup (hd0)
+grub&gt; quit
+</pre>
+
+<p>
+では再起動します。GRUBブートフロッピーは取り出しておいてください。
+</p>
+
+<p>
+LILOユーザはインストール指示にある指示を使って差し支え有りません。
+</p>
+
+</body>
+</section>
+<section id="livecd-kernel">
+<title>インストールCDのカーネルを使う</title>
+<body>
+
+<p>
+カーネルを自分でコンパイルしたくないなら、インストールCDのカーネルを使ってシステムにコピーすることができます。
+カーネルをコンパイルするか聞かれる場所まできたら、別のターミナルに行って(Alt-F2を押す)インストールの最初で提供されたrootパスワードを使ってログインします。
+</p>
+
+<p>
+カーネルとモジュールをGentooシステムにコピーします。
+</p>
+
+<pre caption="インストールCDカーネルのコピー">
+<comment>(${KN}はカーネル名です。たいてい'gentoo'か'smp'の様になっています)</comment>
+cdimage ~# <i>cp /mnt/cdrom/isolinux/${KN} /mnt/cdrom/isolinux/${KN}.igz /mnt/gentoo/boot</i>
+cdimage ~# <i>mkdir -p /mnt/gentoo/lib/modules</i>
+cdiamge ~# <i>cp -Rp /lib/modules/`uname -r` /mnt/gentoo/lib/modules</i>
+</pre>
+
+<p>
+Gentooシステムの起動中に現在実行している(インストールCD上で)全てのモジュールを読み込むためには、chroot環境で以下のコマンドを実行します。
+</p>
+
+<pre caption="すべての実行しているモジュールをmodules.confファイルに追加">
+# <i>cat /proc/modules | cut -d ' ' -f 1 &gt;&gt; \</i>
+  <i>/etc/modules.autoload.d/kernel-`uname -r | cut -d . -f -2`</i>
+# <i>update-modules</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>インストールの単純化</title>
+<section id="leave_terminal">
+<title>ターミナルを止める</title>
+<body>
+
+<p>
+多くの人はコンパイル中にシステムから離れたいと思います。
+皆を信じることができない公共の環境でインストールをするといった場合これはかなり難しいです。
+もしそのようならば、コンパイルをバックグラウンドで行い全てのターミナルからログアウトしたいでしょう。
+</p>
+
+<p>
+このための様々な解決方法があります。
+最初のものは<c>screen</c>を使うことです。
+インストールCDで起動したら、rootのパスワードを設定してscreenセッションを起動します。
+</p>
+
+<note>
+全てのインストールCDがscreenを提供するわけではありません。
+もしそのようならば、この章で後述する別の方法を使います。
+</note>
+
+<pre caption="screenセッションの起動">
+# <i>screen -S gentoo</i>
+</pre>
+
+<p>
+一度screenの内部に入れば全てのインストールを行うことができます。
+ターミナルから離れたい時には<c>Ctrl-a, d</c>(controlとaを同時に押し、その後にdを押します)を押してscreenセッションを<e>分離</e>します。
+これで安全にシステムからログアウトできます。
+</p>
+
+<p>
+ターミナルへのアクセスを取り戻すには、再びrootでログインして起動しているscreenセッションを<e>取り付け</e>ます。
+</p>
+
+<pre caption="screenセッションの取り付け">
+# <i>screen -x gentoo</i>
+</pre>
+
+<p>
+screenを使うことができない場合にも、ターミナルから離れる方法はまだあります。
+インストールドキュメントに従ってインストールを進めてください。
+しかし長いコンパイルが開始される場所(例えば<c>./scripts/bootstrap.sh</c>の段階)まできたら、ログアウトしても処理を継続させる<c>nohup</c>を使います。
+後ろに"&amp;"を付けるのを忘れないでください。そうしなければ処理はバックグラウンドで行われません。
+後でどこにいたのか知る必要があるかもしれないので今どこにいるか(<c>pwd</c>コマンドが教えてくれます)を覚えておいてください。
+</p>
+
+<pre caption="nohupを使う">
+# <i>pwd</i>
+/usr/portage
+# <i>nohup ./scripts/bootstrap.sh &amp;</i>
+</pre>
+
+<p>
+ではchroot環境(<c>exit</c>)とインストールCDセッションを終了します。
+コンパイルはバックグラウンドで続いています。
+</p>
+
+<p>
+コンパイルを確認する時にはrootで(インストールCDに)ログインして再びchroo環境に入り最後にいたディレクトリに行きます。
+</p>
+
+<pre caption="再びchrootする">
+# <i>chroot /mnt/gentoo /bin/bash</i>
+# <i>env-update &amp;&amp; source /etc/profile</i>
+# <i>cd /usr/portage</i>
+</pre>
+
+<p>
+ではディレクトリ内にある<path>nohup.out</path>ファイルに対して<c>less</c>コマンドを使いましょう。
+コンパイルは出力をこのファイルに追加するので、コンパイル進度を追うなら<c>less nohup.out</c>を実行し<c>F</c>を押して変更を追ってください。
+コンパイルが終わったら、インストール指示の次の段階へ進むことができます。
+</p>
+
+<p>
+変更を追うのに飽きたら、<c>Ctrl-C</c>に続いて<c>q</c>を押してください。
+これはコンパイル作業を止めずに、<c>less</c>のみを停止させます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>エラーや問題の修正</title>
+<section id="checking-disks">
+<title>ディスクの広域テスト</title>
+<body>
+
+<p>
+もしディスクに厳密な検査(バッドセクターなど)が必要だと考えるなら、(<c>mke2fs</c>を使って)ext2やext3ファイルシステムを作成している時に<c>-c</c>オプションを使うことができます。
+これは読み取りテストを実行し、バッドセクターに印を付けます。
+もしあなたが極度の心配性なら、<c>-c -c</c>を使ってディスクをフォーマットし、
+広域読み取り・書き取りテストを実行することができます。
+</p>
+
+<pre caption="ディスクの検査">
+# <i>mke2fs -j -c /dev/hda3</i>
+</pre>
+
+</body>
+</section>
+<section id="recover">
+<title>誤ったインストールからの回復</title>
+<body>
+
+<p>
+もし何らかの理由でGentooのインストールが失敗したのなら、もう一度全てをやり直す必要はありません。
+その代わり、失敗したと思われる(もしくは指示に不具合があったと思う)場所に移動して違う方法を試しても差し支え有りません。
+</p>
+
+<p>
+まず第一にGentooLinux環境に再びchrootする必要があります。
+もう一度指示に従いますが、パーティションが既に作成され、安定しているのならパーティションの作成は無視してください。
+そのため、すぐにパーティションを<path>/mnt/gentoo</path>にマウントすることができます。
+ステージの展開と<path>make.conf</path>の編集の段階も飛ばすことができます。ファイルを上書きしたくはないでしょう？
+</p>
+
+<p>
+一度GentooLinux環境にchrootしたら、すぐに別の方法を試したいと思う場所に進んでください。
+その場所自身が間違っていたとあなたが思わない限りは、ブートストラッピングなどのすべての手順を再び行わないでください。
+</p>
+
+<p>
+例えば、<path>grub.conf</path>の設定を失敗したと思うなら、すぐにエディターで<path>/boot/grub/grub.conf</path>を更新します。
+</p>
+
+<p>
+別の方法を試したなら、どれくらいの後の段階をもう一度実行する必要があるのかよく考えるべきです。
+もし後の段階が今回の変更に関係しているのなら、それらをやり直す必要があるでしょう。
+</p>
+
+<p>
+例えば、
+</p>
+
+<ul>
+  <li>
+    <path>make.conf</path>の変数を変更したのなら、<path>make.conf</path>の設定に依存する全てのコンパイルを実行する必要があります。
+  </li>
+  <li>
+    <path>/boot/grub/grub.conf</path>を変更したのなら、<path>grub.conf</path>に関係する段階はないのですぐにchroot環境を終了して再起動できます。
+  </li>
+  <li>
+    カーネルを再コンパイルした場合には、ブートローダーの設定が正しいカーネルイメージを参照しているかどうかだけを確認してから(<path>/boot</path>をマウントしたかもう一度確認してください!)、chroot環境を終了して再起動できます。
+  </li>
+  <li>
+    <path>/etc/fstab</path>を変更したのなら、chroot環境を終了して再起動します。
+  </li>
+</ul>
+
+<p>
+この様に、ほとんどの回復作業ではすぐに再起動することができます。
+一部の場合のみ後のインストール段階をやり直す必要があります。
+</p>
+
+</body>
+</section>
+
+</chapter>
+
+</guide>

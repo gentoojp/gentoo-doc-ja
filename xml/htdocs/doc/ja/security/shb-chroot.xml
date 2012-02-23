@@ -1,0 +1,103 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/security/shb-chroot.xml,v 1.2 2008/06/20 01:08:49 shindo Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.1</version>
+<date>2005-12-15</date>
+<!-- Original revision: 1.3 -->
+<!-- Translator: kobayashi -->
+
+<section>
+<title>Chrooting</title>
+<body>
+
+<p>
+Chrootとは、サービス(またはユーザ)の環境をアクセスすべき場所にのみ制限し、rootでのアクセスを行うことが出来るアクセス(または情報)を得ることがないように制限する方法です。
+サービスを<c>root</c>以外のユーザ(<c>nobody</c>、<c>apache</c>、<c>named</c>)で動作させることにより、攻撃者はこのユーザに許可されているファイルのみアクセスすることが出来ます。
+これはつまり、サービスにセキュリティ上の欠陥があったとしても、攻撃者は<c>root</c>アクセスを得ることが出来ないと言うことです。
+</p>
+
+<p>
+<c>pure-ftpd</c>や<c>bind</c>といったいくつかのサービスにはchrootを行う機能があり、他にはありません。
+サービスがこれをサポートしているのなら、それを使用します。
+そうでなければ自分自身で作成する方法を理解しなければなりません。
+chrootの作成方法を知ったり、chrootの動作方法に関する基本的な理解を行うために、<c>bash</c>でテストしましょう(学ぶための簡単な方法です)。
+</p>
+
+<p>
+<c>mkdir /chroot</c>で<path>/chroot</path>ディレクトリを作成します。
+そして、<c>bash</c>とともにコンパイルされたダイナミックライブラリを探します(<c>-static</c>を用いてコンパイルされたのなら、この行程は必要ありません)。
+</p>
+
+<p>
+以下のコマンドは、<c>bash</c>が使用するライブラリの一覧を作成します。
+</p>
+
+<pre caption="使用されるライブラリの一覧を取得">
+# <i>ldd /bin/bash</i>
+  libncurses.so.5 => /lib/libncurses.so.5 (0x4001b000)
+  libdl.so.2 => /lib/libdl.so.2 (0x40060000)
+  libc.so.6 => /lib/libc.so.6 (0x40063000)
+  /lib/ld-linux.so.2 => /lib/ld-linux.so.2 (0x40000000)
+</pre>
+
+<p>
+では<c>bash</c>用の環境を作成しましょう。
+</p>
+
+<pre caption="bash用のchroot環境の作成">
+# <i>mkdir /chroot/bash</i>
+# <i>mkdir /chroot/bash/bin</i>
+# <i>mkdir /chroot/bash/lib</i>
+</pre>
+
+<p>
+次に、<c>bash</c>によって使用されるファイル(<path>/lib</path>)をchrootされた<path>lib</path>にコピーし、bashコマンドをchroot環境の<path>bin</path>ディレクトリにコピーします。
+これは、機能性を損なうことなく、全く同じ環境を作成します。
+コピーが完了したら、<c>chroot /chroot/bash /bin/bash</c>を行います。
+プロンプトが<path>/</path>となったら、動作しています。
+そうでなければ、どのファイルが欠けているかをしっかりと報告してくれるでしょう。
+いくつかの共有ライブラリはお互いに依存しあっています。
+</p>
+
+<p>
+chroot内では、<c>echo</c>以外が動作しないと言うことに気づくでしょう。
+これは、bash以外のコマンドをchroot環境に入れていないからであり、<c>echo</c>はビルドインの機能だからです。
+</p>
+
+<p>
+これは、chrootサービスを作成するのと基本的には同じ方法です。
+唯一異なる点は、サービスはしばしばデバイスや<path>/etc</path>にある設定ファイルに依存しているということです。
+単にそれらをchroot環境にコピーし(デバイスは<c>cp -a</c>でコピーできます)、実行する前にchrootを使用するようにinitスクリプトを編集します。
+どのデバイスと設定ファイルがサービスに必要かを見つけることは困難です。
+これには、<c>strace</c>コマンドが便利です。
+サービスを<c>/usr/bin/strace</c>とともに起動し、open、read、stat、そしてconnectを探します。(訳注：原文では<c>/usr/bin/strace</c> bashとなっていますが、誤りであると思われるのでbashを削除しました)
+これは、どのファイルをコピーするかの手がかりになります。
+ですが、ほとんどの場合はpasswdファイル(コピーを編集し、サービスに不要なユーザを削除します)、<path>/dev/zero</path>、<path>/dev/log</path>、そして<path>/dev/random</path>をコピーするだけです。
+</p>
+
+</body>
+</section>
+<section>
+<title>User Mode Linux</title>
+<body>
+
+<p>
+より安全な環境を作成する別の方法に、仮想マシンの実行があります。
+仮想マシンとは、その名が示すとおり、実際のOS上で動作し、単一のマシンとして存在するようにハードウェアとOS環境を提供するプロセスです。
+セキュリティ上の利点として、仮想マシンで動作しているサーバに障害が発生しても、仮想サーバのみが影響し、別のインストールには影響しません。
+</p>
+
+<p>
+User Mode Linuxの設定方法に関するより詳しい情報は、<uri link="/doc/en/uml.xml">User Mode Linux Guide</uri>を参照してください。
+</p>
+
+</body>
+</section>
+
+</sections>

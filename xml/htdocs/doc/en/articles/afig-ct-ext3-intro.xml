@@ -1,0 +1,414 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide disclaimer="articles">
+
+<title>Advanced Filesystem Implementor's Guide : Introducing ext3</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<!--<author title="Editor">
+<mail link=" dhaskew@earthlink.net">David H. Askew</mail>
+</author>-->
+
+<!-- The original version of this article was first published on IBM 
+developerWorks, and is property of Westtech Information Services. This 
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<abstract>
+With the 2.4 release of Linux come a host of new filesystem possibilities,
+including Reiserfs, XFS, GFS, and others. These filesystems sound cool, but
+what exactly can they do, what are they good at, and exactly how do you go
+about safely using them in a production Linux environment? Daniel Robbins
+answers these questions by showing you how to set up these new advanced
+filesystems under Linux 2.4. In this installment, Daniel takes a look at ext3,
+a new improved version of ext2 with journaling capabilities.
+</abstract>
+
+<version>1.1</version>
+<date>2005-10-09</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<body>
+
+<p>
+In the past few installments, we've taken a bit of a detour by looking at
+non-traditional filesystems such as tmpfs and devfs. Now, it's time to get back
+to disk-based filesystems, and we do this by taking a look at ext3. The ext3
+filesystem, designed by Dr. Stephen Tweedie, is built on the framework of the
+existing ext2 filesystem; in fact, ext3 is very similar to ext2 except for one
+small (but important) difference -- it supports journaling. Yet even with this
+small addition, I think you'll find that that ext3 has several surprising and
+intriguing capabilities.  In this article, I'll give you a good understanding
+of how ext3 compares to the other journaling filesystems currently available.
+In my next article, we'll get ext3 up and running.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Understanding Ext3</title>
+<section>
+<body>
+
+<p>
+So, how does ext3 compare to ReiserFS? In previous articles, I explained how
+ReiserFS is well suited to handling small files (under 4K), and in certain
+situations, ReiserFS' small file performance is ten to fifteen times greater
+than that of ext2 and ext3. However, while ReiserFS has many strengths, it also
+has weaknesses. In the current implementation of ReiserFS (version 3.6),
+certain file access patterns can actually result in significantly worse
+performance than ext2 and ext3, particularly when reading large mail
+directories. Also, ReiserFS doesn't have a good track record of NFS
+compatibility and has poor sparse file performance. In contrast, ext3 is a very
+well-rounded filesystem. It's a lot like ext2; it's not going to give you the
+blazingly fast small-file performance that ReiserFS gives you, but it's not
+going to give you any unexpected performance or functionality hiccups either.
+</p>
+
+<p>
+One of the nice things about ext3 is that because it is based on the ext2 code,
+ext2 and ext3's on-disk format is identical; this means that a cleanly
+unmounted ext3 filesystem can be remounted as an ext2 filesystem with
+absolutely no problems. And that's not all. Thanks to the fact that ext2 and
+ext3 use identical metadata, it's possible to perform in-place ext2 to ext3
+filesystem upgrades. Yes, you read that right. By upgrading a few key system
+utilities, installing a modern 2.4 kernel and typing in a single tune2fs
+command per filesystem, you can convert your existing ext2 servers into
+journaling ext3 systems. You can even do this while your ext2 filesystems are
+mounted. The transition is safe, reversible, and incredibly easy, and unlike a
+conversion to XFS, JFS, or ReiserFS, you don't need to back up and recreate
+your filesystems from scratch. Now, for a moment, consider the thousands of
+production ext2 servers in existence that are just minutes away from an ext3
+upgrade; then, you'll have a good grasp of ext3's importance to the Linux
+community.
+</p>
+
+<p>
+If I had to describe ext3 in one word, I'd call it "comfortable". It's
+incredibly easy to ext3-enable an existing ext2 system, and after you do,
+you're not going to run into any unexpected performance quirks. And there's yet
+another way that ext3 excels in the comfort department; ext3 happens to be one
+of the most reliable journaled filesystems available for Linux, as I explain
+below. 
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Ext3 reliability</title>
+
+<section>
+<body>
+
+<p>
+In addition to being ext2-compatible, ext3 inherits other benefits by sharing
+ext2's metadata format. For one, ext3 users gain access to a rock-solid fsck
+tool. You'll recall that one of the points of using a journaling filesystem is
+to avoid the need for an exhaustive fsck in the first place; however if you do
+end up getting corrupt metadata, either from a flaky kernel, bad hard drive, or
+something else, you'll greatly appreciate the fact that ext3 inherits ext2's
+fsck. In contrast, ReiserFS' fsck is in its infancy, and fixing flaky metadata
+when it does show up can be a difficult and dangerous process. 
+</p>
+
+</body>
+</section>
+
+<section>
+<title>Metadata-only journaling</title>
+<body>
+
+<p>
+Interestingly, ext3 handles journaling very differently than ReiserFS and other
+journaling filesystems do. With ReiserFS, XFS, and JFS, the filesystem driver
+journals metadata, but makes no provisions for journaling data. With
+metadata-only journaling, your filesystem metadata is going to be rock solid,
+and you will probably never need to perform an exhaustive fsck. However,
+unexpected reboots and system lock-ups can result in significant corruption of
+recently-modified data. Ext3 uses a couple of innovative solutions to avoid
+these problems, which we'll look at in a bit.
+</p>
+
+<p>
+But first, it's important to understand exactly how metadata-only journaling
+could end up biting you. As an example, let's say that you were modifying a
+file called /tmp/myfile.txt when the machine unexpectedly locked up, forcing a
+reboot. If you were using a metadata-only journaling filesystem such as
+ReiserFS, XFS or JFS, your filesystem metadata would be easily repaired, thanks
+to the metadata journal, and you wouldn't need to sit through a laborious fsck.
+</p>
+
+<p>
+However, there's the distinct possibility that when you load /tmp/myfile.txt
+into a text editor, your file will not simply be missing recent changes, but
+will contain a good amount of garbage and may even be completely unreadable.
+This isn't something that will always happen, but it could happen and often
+does.
+</p>
+
+<p>
+Here's why. Typical journaled filesystems like ReiserFS, XFS, and JFS take
+extra special care of metadata, but don't pay too much attention to data. In
+our above example, the filesystem driver was in the process of modifying
+several filesystem blocks. The filesystem driver updated the appropriate
+metadata, but didn't have time to flush the data from its caches to the new
+blocks on disk. Thus, when you loaded up /tmp/myfile.txt into a text editor,
+part or all of the file contained garbage -- blocks of data that didn't get
+initialized in time before the system locked up.
+</p>
+
+</body>
+</section>
+
+</chapter>
+
+<chapter>
+<title>The ext3 approach</title>
+<section>
+<body>
+
+<p>
+Now that we have a good general understanding of this problem, let's look how
+ext3 implements journaling. In ext3, the journaling code uses a special API
+called the Journaling Block Device layer, or JBD. The JBD has been designed for
+the express purpose of implementing a journal on any kind of block device.
+Ext3 implements its journaling by "hooking in" to the JBD API. For example, the
+ext3 filesystem code will inform the JBD of modifications it is performing, and
+will also request permission from the JBD before modifying certain data on
+disk. By doing so, the JBD is given the appropriate opportunities to manage the
+journal on behalf of the ext3 filesystem driver.  It's quite a nice
+arrangement, and because the JBD is being developed as a separate, generic
+entity, it could be used to add journaling capabilities to other filesystems in
+the future.
+</p>
+
+<p>
+Here are a couple of neat things about the JBD-managed ext3 journal. For one,
+ext3's journal is stored in an inode -- a file, basically. Depending on how you
+"ext3-enable" your filesystem, you may or may not be able to see this file,
+located at /.journal. Of course, by storing the journal in an inode, ext3 is
+able to add the needed journal to the filesystem without requiring incompatible
+extensions to the ext2 metadata. This is one of the key ways that an ext3
+filesystem maintains backwards compatibility with ext2 metadata, and in turn,
+the ext2 filesystem driver. 
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Different journaling approaches</title>
+<section>
+<body>
+
+<p>
+Not surprisingly, it turns out that there are a number of ways to implement a
+journal. For example, a filesystem developer could design a journal that stores
+spans of bytes that need to be modified on the host filesystem. The advantage
+of this approach is that your journal would be able to store lots of tiny
+little modifications to the filesystem in a very efficient way, since it would
+only record the individual bytes that need to be modified and nothing more.
+</p>
+
+<p>
+JBD takes another, and in some ways better, approach. Rather than recording
+spans of bytes that must be changed, JBD stores the complete modified
+filesystem blocks themselves. The ext3 filesystem driver also uses this
+approach and stores complete replicas of the modified blocks (either 1K, 2K, or
+4K) in memory to track pending IO operations. At first, this may seem a bit
+wasteful. After all, complete blocks contain modified data but may also contain
+unmodified (already on disk) data as well.
+</p>
+
+<p>
+The approach that the JBD uses is called physical journaling, which means that
+the JBD uses complete physical blocks as the underlying currency for
+implementing the journal. In contrast, the approach of only storing modified
+spans of bytes rather than complete blocks is called logical journaling, and is
+the approach used by XFS. Because ext3 uses physical journaling, an ext3
+journal will have a larger relative on-disk footprint than, say, an XFS
+journal. But because ext3 uses complete blocks internally and in the journal,
+ext3 doesn't deal with as much complexity as it would if it were to implement
+logical journaling. In addition, the use of full blocks allows ext3 to perform
+some additional optimizations, such as "squishing" multiple pending IO
+operations within a single block into the same in-memory data structure. This,
+in turn, allows ext3 to write these multiple changes to disk in a single write
+operation, rather than many. In addition, because the literal block data is
+stored in memory, little or no massaging of the in-memory data is required
+before writing it to disk, greatly reducing CPU overhead.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Ext3, protector of data</title>
+<section>
+<body>
+
+<p>
+And now, we finally get to see how the ext3 filesystem effectively provides
+both metadata and data journaling, avoiding the data corruption problem I
+described earlier in this article. In fact, ext3 actually has two methods to
+ensure data and metadata integrity.
+</p>
+
+<p>
+Originally, ext3 was designed to perform full data and metadata journaling.  In
+this mode (called "data=journal" mode), the JBD journals all changes to the
+filesystem, whether they are made to data or metadata. Because both data and
+metadata are journaled, JBD can use the journal to bring both metadata and data
+back to a consistent state. The drawback of full data journaling is that it can
+be slow, although you can reduce the performance penalty by setting up a
+relatively large journal.
+</p>
+
+<p>
+Recently, a new journaling mode has been added to ext3 that provides the
+benefits of full journaling but without introducing a severe performance
+penalty. This new mode works by journaling metadata only. However, the ext3
+filesystem driver keeps track of the particular data blocks that correspond
+with each metadata update, grouping them into a single entity called a
+transaction. When a transaction is applied to the filesystem proper, the data
+blocks are written to disk first. Once they are written, the metadata changes
+are then written to the journal. By using this technique (called "data=ordered"
+mode), ext3 can provide data and metadata consistency, even though only
+metadata changes are recorded in the journal. ext3 uses this mode by default.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Conclusion</title>
+<section>
+<body>
+
+<p>
+These days, a lot of people are trying to determine which Linux journaling
+filesystem is "best". In truth, there is no one "right" filesystem for every
+application; each one has its own strengths. This is one of the benefits from
+having so many next-generation Linux filesystems from which to choose. So,
+instead of picking an arbitrary "best" filesystem and using it for every
+conceivable application, it's far preferable to understand each filesystem's
+strengths and weaknesses so that you can make an educated decision as to which
+one to use.
+</p>
+
+<p>
+Ext3 has a number of strengths. It has been designed to be extremely easy to
+deploy. It's based on the solid ext2 filesystem code and it inherits a great
+fsck tool. And ext3's journaling capabilities have been specially designed to
+ensure the integrity of both metadata and data. All in all, ext3 is a truly
+great filesystem, and a worthy successor to the now-venerable ext2 filesystem.
+Join me in my next article, when we get ext3 up and running. Until then, you
+may want to check out the following resources.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Resources</title>
+<section>
+<body>
+
+<!-- Let's link to parts 1-6 once they've been GuideXMLified
+<p>
+Read Daniel's other articles in this series, where he describes:
+</p>
+
+<ul>
+  <li>The benefits of journaling and ReiserFS (Part 1)</li>
+  <li>Setting up a ReiserFS system (Part 2) </li>
+  <li>Using the tmpfs virtual memory filesystem and bind mounts (Part 3)</li>
+  <li>The benefits of devfs, the device management filesystem (Part 4) </li>
+  <li>Beginning the conversion to devfs (Part 5) </li>
+  <li>Completing the conversion to devfs using an init wrapper (Part 6)</li>
+</ul>
+-->
+
+<p>
+Read a <uri
+link="http://olstrans.sourceforge.net/release/OLS2000-ext3/OLS2000-ext3.html">complete
+transcript</uri> of Dr. Stephen Tweedie's Ext3, Journaling Filesystem
+presentation, which was featured at the Ottawa Linux Symposium in July 2000. 
+</p>
+
+
+<p>
+Find out more about using ext3 with 2.4 kernels at Andrew Morton's <uri
+link="http://www.zip.com.au/~akpm/linux/ext3/index.html">ext3 for 2.4</uri>
+page. Andrew Morton is the man responsible for porting ext3 to the 2.4 kernel,
+and provided invaluable assistance in writing this article. If you can't wait
+until my next article, Andrew has a very nice <uri
+link="http://www.zip.com.au/~akpm/linux/ext3/ext3-usage.html">ext3 and 2.4
+usage page</uri> that will show you how to get ext3 up and running on your
+system in no time.
+</p>
+
+<p>
+To keep abreast of the latest ext3 developments, be sure to visit the <uri
+link="https://listman.redhat.com/archives/ext3-users/">ext3-users mailing list
+archive</uri>. Of course, you can also <uri
+link="https://listman.redhat.com/mailman/listinfo/ext3-users">subscribe</uri>.
+</p>
+
+<p>
+Take Daniel Robbins' free <uri
+link="http://www-128.ibm.com/developerworks/edu/os-dw-linuxjfs-i.html">JFS
+fundamentals tutorial</uri> on developerWorks.
+</p>
+
+<p>
+Browse <uri link="http://www-130.ibm.com/developerworks/linux/?article=lr">more
+Linux resources</uri> on developerWorks.
+</p>
+
+<p>
+Browse <uri
+link="http://www-130.ibm.com/developerworks/opensource/?article=osr">more Open
+source resources</uri> on developerWorks.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>About the author</title>
+<section>
+<body>
+
+<p>
+Residing in Albuquerque, New Mexico, Daniel Robbins is the President/CEO of
+Gentoo Technologies, Inc., the creator of Gentoo Linux, an advanced Linux for
+the PC, and the Portage system, a next-generation ports system for Linux. He
+has also served as a contributing author for the Macmillan books Caldera
+OpenLinux Unleashed, SuSE Linux Unleashed, and Samba Unleashed. Daniel has been
+involved with computers in some fashion since the second grade, when he was
+first exposed to the Logo programming language as well as a potentially
+dangerous dose of Pac Man. This probably explains why he has since served as a
+Lead Graphic Artist at SONY Electronic Publishing/Psygnosis. Daniel enjoys
+spending time with his wife, Mary, and their daughter, Hadassah. You can
+contact Daniel at <mail link="drobbins@gentoo.org">drobbins@gentoo.org</mail>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

@@ -1,0 +1,176 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/new-upgrade-to-gentoo-1.4.xml,v 1.4 2003/11/15 07:42:10 nakano Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/new-upgrade-to-gentoo-1.4.xml">
+
+<title>Gentoo 1.4 アップグレード・ガイド</title>
+
+	<author title = "Author">
+<mail link = "rac@gentoo.org">Robert Coie</mail>
+</author>
+
+	<author title = "Copy Editor">
+<mail link = "avenj@gentoo.org">Jon Portnoy</mail>
+</author>
+
+	<author title = "翻訳">
+<mail link = "hagi@p1d.com">萩原佳明</mail>
+</author>
+
+	<version>0.1</version>
+	<date>3 March 2003</date>
+<!-- Original revision: 1.6 -->
+
+  <license/>
+
+	<abstract>古いGentooがインストールされたマシンを、そのままGentoo 1.4にアップグレードする方法を説明します。</abstract>
+
+	<chapter>
+		<title>始める前に</title>
+		<section>
+			<title>準備をしましょう</title>
+			<body>
+				<p>あなたのGentooシステムの核の部分にメジャー・アップグレードを加えるときはいつでも、
+				いままで見たことが無いような問題が立て続けに起こる可能性があります。
+				この作業をする前に全ての重要なデータをバックアップしておくことは、
+				いつだって用心深くて良い習慣でしょう。
+				できれば、焦ってしまうことがないように、
+				このアップグレードのためにまとまった時間を用意してください。
+				あなたのマシンにインストールされている全てのソフトウェアを再度コンパイルする必要があります。</p>
+			</body>
+		</section>
+		<section>
+			<title>他の方法</title>
+			<body>
+				<p>これから紹介する方法があなたのシステムをアップグレードする唯一の方法だというわけではありません。
+				新しい1.4のシステムを別のパーティションにインストールして、
+				既存のシステム設定を再利用するという手もあります。
+				この方法を取ればいつでも以前のシステムにすぐに戻れるわけですから、
+				そう考えると利点もあります。
+				アップグレードするのをやめてしまうというのもひとつの方法でしょう。
+				やっぱり同じマシンでアップグレードしたいと思ったなら、そのまま読み進めてください。</p>
+			</body>
+		</section>
+		<section>
+			<title>注意して欲しいこと</title>
+			<body>
+				<p>Code listingの部分に<c>emerge</c>を実行するように書いてある場合は、
+				そのたびに<c>-p</c>や<c>--pretend</c>オプションを使ってテストをしてみると良いでしょう。 
+				そうすれば、
+				いまからやろうとしていることが本当に自分が望んでいることなのか、
+				チェックすることができます。</p>
+			</body>
+		</section>
+	</chapter>
+	<chapter>
+		<title>同じマシンでアップグレードする</title>
+		<section>
+			<title>Portageをできるだけ最新の状態にする</title>
+			<body>
+				<p>最新のebuildの構文の中には、古いバージョンのPortageでは利用できないものがあります。
+				2.0.44より前のPortageを使っているようなら、Portageをアップグレードしてみてください。</p>
+				<pre>
+# <i>emerge sync</i>
+# <i>emerge -u portage</i>
+</pre>
+				<note>Portageのバージョンがかなり古い場合は、
+				"unscriptable object"というメッセージを含んだエラーが表示されるかもしれません。
+				<path>/usr/portage/sys-apps/portage/files/README.RESCUE</path>
+				を読んでその指示に従ってください。
+				その後、
+				あなたのPortageは最新の状態になるはずです。</note>
+</body></section>
+
+		<section>
+			<title>GCCの共存の準備をする</title>
+			<body>
+				<p>このアップグレードの際、あなたは新しいバージョンのGCCをインストールすることになります。
+				2.95.3-r8より古いGCCは、
+				複数バージョンのGCCのインストールには対応していません。
+				そのため、最低でも2.95.3-r8というバージョンまでGCCをアップグレードしなくてはいけません。
+				また、GCCのアップグレードをすると、
+				あなたのシステムに<c>gcc-config</c>がインストールされるという嬉しい副作用もあります。
+				gcc-configを使うと、インストールされたいろいろなバージョンのGCCを、
+				あれこれ切り替えて使うことができます。</p>
+
+				<pre>
+# <i>emerge -u gcc</i>
+</pre>
+
+				<p>gcc-configがちゃんと動いているかチェックしてみましょう：</p>
+				<pre>
+# <c>gcc-config --get-current-profile</c>
+</pre>
+				<p>たいていのx86システムではi686-pc-linux-gnu-2.95.3と表示されるはずです。もっと古いシステムではi586-pc-linux-gnu-2.95.3となるかもしれません。</p>
+			</body>
+		</section>
+		<section>
+			<title>GCC 3をインストールする</title>
+			<body>
+				<p>これで現在インストールされているコンパイラをダメにしてしまうことなく、
+				新しいバージョンのGCCをインストールできるようになりました。
+				<path>/usr/portage/sys-devel/gcc</path>以下を探して、
+				最低でも3.2.1-r6より新しいバージョンのGCCのebuildを探してください。
+				あなたのマシンのアーキテクチャでstableとマークされている一番新しいものを選びます。
+				あるebuildがあなたのマシンのアーキテクチャでstableかどうかは、
+				そのebuild中のKEYWORDSという行を見ればわかります。
+				もし先頭に「~(チルダ)」の無いアーキテクチャ名がリストの中に入っていれば、
+				そのebuildはstableだということです。
+				3.2.2が一番新しいバージョンだったとすると、以下のようなコマンドを実行します：</p>
+<pre>
+# <i>emerge /usr/portage/sys-devel/gcc/gcc-3.2.2.ebuild</i>
+</pre>
+			</body>
+		</section>
+		<section>
+			<title>profileを変更する</title>
+			<body>
+				<p>次に、2種類のprofileを変更する必要があります：
+				gcc-config用のprofileとPortage用のprofileです。</p>
+				<pre>
+# <i>cd /etc</i>
+# <i>rm make.profile</i>
+# <i>ln -s ../usr/portage/profiles/default-x86-1.4 make.profile</i> <codenote>「x86」はアーキテクチャに合わせて変更してください</codenote>
+</pre>
+
+				<pre>
+# <i>gcc-config --list-profiles</i> <codenote>リストの中から先程emergeしたバージョンを控えてください。次で使います</codenote>
+# <i>gcc-config i686-pc-linux-gnu-3.2.2</i> <codenote>バージョン部分は控えておいたものに変更してください</codenote>
+</pre>
+			</body>
+		</section>
+		<section>
+			<title>toolchainを再コンパイルする</title>
+			<body>
+				<p>今度は、あなたの新しいコンパイラを使って、核となるtoolchainを再コンパイル必要があります。
+				同じシェルで続けて作業をしている場合は、
+				gcc-configの指示どおりに<c>source /etc/profile</c>と実行します。
+				それでは新しいコンパイラを使って、
+				glibcとbinutilsをemergeしましょう：</p>
+<pre>
+# <i>emerge glibc binutils</i>
+</pre>
+				<warn>この作業で、おそらくglibcを2.2などの古いバージョンから、
+				2.3へアップグレードすることになるでしょう。
+				作業後にglibcをダウングレードしないようにしてください。
+				glibc 2.3を使ってコンパイルしたソフトが全て動かなくなってしまい、
+				そのせいであなたのシステムが使えなくなってしまう場合があります。</warn>
+			</body>
+		</section>
+		<section>
+			<title>新しいコンパイラで全てを再コンパイルする</title>
+			<body><p>これで、新しいコンパイラを使って全てを再コンパイルすることができるようになりました：</p>
+<pre>
+# <i>emerge -e world</i>
+</pre>
+				<note>このコマンドがエラーのせいで止まってしまった場合は、
+				どこで止まっても、<c>emerge --resume</c>とすることで止まった時点から処理をやり直すことができます。
+				そのためにはPortage 2.0.47以降が必要です。</note>
+			</body>
+		</section>
+	</chapter>
+</guide>
+
+
+

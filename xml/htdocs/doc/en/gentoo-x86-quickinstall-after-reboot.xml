@@ -1,0 +1,227 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE included SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-x86-quickinstall-after-reboot.xml,v 1.6 2011/02/16 15:37:12 jkt Exp $ -->
+
+<included>
+
+<version>6</version>
+<date>2011-02-16</date>
+
+<section id="after-reboot">
+<title>Finalizing the Installation</title>
+<body>
+
+<note>
+The <b>total</b> elapsed time between the display of the boot prompt on the
+minimal CD and the display of the login prompt after the reboot was
+<b>00:42:31</b> on our test box. Yes, less than one hour! Note that this time
+also includes the stage3, Portage snapshot and several packages download time
+and the time spent configuring the kernel.
+</note>
+
+<p>
+Log in as <c>root</c>, then add one or more users for daily use with
+<c>useradd</c>.
+</p>
+
+<pre caption="Connect to your new box from another PC">
+<comment>(Clean up your known_hosts file because your new box
+has generated a new definitive hostkey)</comment>
+$ <i>nano -w ~/.ssh/known_hosts</i>
+<comment>(Look for the IP of your new PC and delete the line,
+then save the file and exit nano)</comment>
+
+<comment>(Use the IP address of your new box)</comment>
+$ <i>ssh root@192.168.1.10</i>
+The authenticity of host '192.168.1.10 (192.168.1.10)' can't be established.
+RSA key fingerprint is 96:e7:2d:12:ac:9c:b0:94:90:9f:40:89:b0:45:26:8f.
+Are you sure you want to continue connecting (yes/no)? <i>yes</i>
+Warning: Permanently added '192.168.1.10' (RSA) to the list of known hosts.
+Password: <comment>type_the_password</comment>
+</pre>
+
+<pre caption="Add a new user">
+mybox ~ # <i>useradd -g users -G lp,wheel,audio,cdrom,portage,cron -m john</i>
+mybox ~ # <i>passwd john</i>
+New UNIX password: <comment>Set John's password</comment>
+Retype new UNIX password: <comment>Type John's password again</comment>
+passwd: password updated successfully
+</pre>
+
+</body>
+</section>
+<section>
+<title>Last configuration touches</title>
+<body>
+
+<p>
+Start by selecting nearby mirrors either by defining the <c>SYNC</c> and
+<c>GENTOO_MIRRORS</c> variables in <path>/etc/make.conf</path> or by using
+<c>mirrorselect</c>. You can also define the number of concurrent compilation
+processes at this point.
+</p>
+
+<pre caption="Use mirrorselect and set MAKEOPTS">
+mybox ~ # <i>emerge mirrorselect</i>
+mybox ~ # <i>mirrorselect -i -o >> /etc/make.conf</i>
+mybox ~ # <i>mirrorselect -i -r -o >> /etc/make.conf</i>
+<comment>(Usually, (the number of processors + 1) is a good value)</comment>
+mybox ~ # <i>echo 'MAKEOPTS="-j2"' >> /etc/make.conf</i>
+</pre>
+
+<p>
+Now is a good time to enable or disable some USE flags. Run <c>emerge -vpe
+world</c> to list all currently installed packages and their enabled and
+disabled USE flags. Either edit <path>/etc/make.conf</path> or use the
+following command to define the USE variable:
+</p>
+
+<pre caption="View USE flags in use and enable or disable some">
+mybox ~ # <i>emerge -vpe world</i>
+<comment>(Portage displays the packages and their USE flags, as an example, let's
+disable fortran, and enable ipv6 and unicode)</comment>
+mybox ~ # <i>echo 'USE="nptl nptlonly ipv6 -fortran unicode"' >> /etc/make.conf</i>
+</pre>
+
+<p>
+Recent versions of glibc use <path>/etc/locale.gen</path> to define locale
+settings.
+</p>
+
+<pre caption="Define locales">
+mybox ~ # <i>cd /etc</i>
+mybox etc # <i>nano -w locale.gen</i>
+mybox etc # <i>locale-gen</i>
+</pre>
+
+<p>
+Last but not least, you may want to alter the <c>CFLAGS</c> variable in your
+<path>/etc/make.conf</path> to optimise the code to your specific needs. Please
+note that using a long list of flags is rarely needed and can even lead to a
+broken system. It is recommended to specify the processor type in the
+<c>march</c> option and stick to <c>-O2 -pipe</c>.
+</p>
+
+<p>
+You may also want to switch to <b>~x86</b>. You should only do this if you can
+deal with the odd broken ebuild or package. If you'd rather keep your system
+stable, <e>don't</e> add the <c>ACCEPT_KEYWORDS</c> variable.
+</p>
+
+<pre caption="Last edit of make.conf">
+mybox etc # <i>nano -w make.conf</i>
+<comment>(Set -march to your CPU type in CFLAGS)</comment>
+CFLAGS="-O2 -march=<i>athlon-xp</i> -pipe"
+<comment>(Only add the following if you know what you're doing)</comment>
+ACCEPT_KEYWORDS="~x86"
+</pre>
+
+<p>
+You might want to recompile your whole system twice to make full use of your
+latest configuration changes. It would take quite a long time to complete and
+yield minimal speed benefits. You can let your system optimise itself gradually
+over time when new versions of packages are released. However, recompiling is
+a still good idea from the standpoint of maintaining system consistency. Please
+see the <uri link="/doc/en/gcc-upgrading.xml">Gentoo GCC Upgrading Guide</uri>
+for a discussion on the benefits of ensuring a consistently built system and
+world.
+</p>
+
+<p>
+Recompiling only the packages that have already been updated since the release
+or that are affected by your new USE flags will take enough time.  You might
+also have to remove packages that block your upgrade. Look for "[blocks
+<brite>B</brite>     ]" in the output of <c>emerge -vpuD --newuse world</c> and
+use <c>emerge -C</c> to remove them.
+</p>
+
+<pre caption="Update your packages">
+<comment>(Please note that the switch to ~x86 causes many packages to be upgraded)</comment>
+mybox etc # <i>emerge -vpuD --newuse world</i>
+<comment>(Take a good look at the package list and their USE flags,
+remove blocking packages if any, and start the lengthy process)</comment>
+mybox etc # <i>time emerge -vuD --newuse world</i>
+<comment>(79 packages have been (re)compiled)</comment>
+
+real  180m13.276s
+user  121m22.905s
+sys   36m31.472s
+
+<comment>(Remerge libtool to avoid further potential problems)</comment>
+mybox etc # <i>emerge --oneshot libtool</i>
+
+<comment>(Update config files, make sure you <b>do not</b> let dispatch-conf
+update config files you have edited)</comment>
+mybox etc # <i>dispatch-conf</i>
+
+<comment>(If perl has been updated, you should run the perl-cleaner script)</comment>
+mybox etc # <i>time perl-cleaner all</i>
+real  1m6.495s
+user  0m42.699s
+sys   0m10.641s
+
+<comment>(In case of a major upgrade of python, you should run the python-updater script)</comment>
+mybox etc # <i>python-updater</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>What to do next</title>
+<body>
+
+<p>
+Depending on what your new Gentoo machine is supposed to do, you will probably
+want to install server applications or a desktop system. Just as an example,
+<c>emerge gnome</c> and <c>emerge kde</c> have been timed on the ~x86 system
+installed as describe above. Both have been installed from the same starting
+point.
+</p>
+
+<p>
+You should check our <uri link="/doc/en/">documentation index</uri> to find out
+how to install and configure the applications of your choice.
+</p>
+
+<impo>
+The following is only an example. It is in no way meant as a recommended setup.
+</impo>
+
+<pre caption="Emerge GNOME">
+mybox etc # <i>emerge -vp gnome</i>
+<comment>(Look at the list of packages and their USE flags,
+then edit make.conf if required.</comment>
+mybox etc # <i>nano -w /etc/make.conf</i>
+<comment>(The following USE flags have been defined)</comment>
+USE="nptl nptlonly -ipv6 -fortran unicode svg hal dbus \
+     -kde -qt4 -arts -eds -esd gnome gstreamer gtk firefox"
+
+mybox etc # <i>time emerge gnome</i>
+<comment>(326 packages have been emerged)</comment>
+
+real  520m44.532s
+user  339m21.144s
+sys   146m22.337s
+</pre>
+
+<pre caption="Emerge KDE">
+mybox etc # <i>emerge -vp kde-meta</i>
+<comment>(Look at the list of packages and their USE flags,
+then edit make.conf if required.</comment>
+mybox etc # <i>nano -w /etc/make.conf</i>
+<comment>The following USE flags have been defined)</comment>
+USE="nptl nptlonly -ipv6 -fortran unicode svg hal dbus \
+     kde qt4 -arts -eds -esd -gnome -gstreamer -gtk -firefox"
+
+mybox etc # <i>time emerge kde-meta</i>
+<comment>(391 packages have been emerged)</comment>
+
+real  1171m25.318s
+user  851m26.393s
+sys   281m45.629s
+</pre>
+
+</body>
+</section>
+
+</included>

@@ -1,0 +1,1169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: gentoo-howto.xml,v 1.8 2004/01/03 05:24:18 nakano Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/gentoo-howto.xml">
+<title>Gentoo Linux 開発者 HOWTO</title>
+<author title="Author"><mail link="woodchip@gentoo.org">Donny Davies</mail></author>
+<author title="Author"><mail link="drobbins@gentoo.org">Daniel Robbins</mail></author>
+<author title="Author"><mail link="pete@gentoo.org">Peter Gavin</mail></author>
+<author title="Author"><mail link="karltk@gentoo.org">Karl Trygve Kalleberg</mail></author>
+<author title="Author"><mail link="zhen@gentoo.org">John P. Davis</mail></author>
+<author title="翻訳"><mail link="t-shige@humatec.co.jp">千里</mail></author>
+<abstract>
+このドキュメントはGentoo LinuxのPortageについて記述します。 Gentooの新
+しいパッケージを作成する方法、またさらに多少はGentoo開発者のための基準
+であるというつもりです。 これは進行中の作業であり絶えず更新されかつ変
+更されています。従って、決して完全と言うわけではありません。
+</abstract>
+<version>1.3.1</version>
+<date>05 December 2002</date>
+<!-- Original revision: 1.10 -->
+
+<chapter>
+<title>Portageツリー</title>
+
+<section>
+<title>はじめに</title>
+<body>
+<p>Portageツリーは通常 <path>/usr/portage</path>の下にあり、指定
+のパッケージ・ディレクトリに続づけて分類ディレクトリの階層的な構造で構
+成されます。 たとえば、<path>util-linux-2.11g.ebuild</path> は
+<path>/usr/portage/sys-apps/util-linux</path>ディレクトリにあります。
+そこには、<path>util-linux-2.11g.ebuild</path>と一緒に
+<c>util-linux</c>のいくつかのebuildファイルのバージョンがあるかもしれ
+ません。 それは、<e>特定のパッケージ(不規則バージョンなし)用のebuildファ
+イルはすべて</e>、<path>/usr/portage</path>の中の同じ
+<path>mycat/mypkg</path>ディレクトリを共有するからです。
+</p>
+</body>
+</section>
+
+<section>
+<title>CVSからPortageツリーのチェックアウト</title>
+<body>
+<p>もし、あなたがCVSシステムに不案内なら、詳しくは
+<uri link="http://www.gentoo.org/doc/en/cvs-tutorial.xml">CVS
+Tutorial</uri><uri link="http://www.gentoo.org/doc/ja/cvs-tutorial.xml">（日本語訳）</uri>をチェックしてください。
+</p>
+
+<p>
+Portageツリーは<i>gentoo-x86</i>パッケージのGentoo Linuxツリーにありま
+す。パッケージ(やや大きめです)をチェックするために、最初に上記のガイドに
+よってCVSをセットアップし、次に、<i>gentoo-x86</i>ツリーをチェックアウ
+トします。
+</p>
+</body>
+</section>
+
+<section>
+<title> なにをPortageツリーに置くか(または置かないか)</title>
+
+<body>
+<p>
+あらゆるebuildを書く前に、あなたが書こうとしているebuildに該当するもの
+が既にPortageツリーの中に入っていないことを<uri
+link="http://bugs.gentoo.org">bugs.gentoo.org</uri>で チェックして下さ
+い。
+<uri link="http://bugs.gentoo.org">bugs.gentoo.org</uri>へ行き,
+productで"Gentoo Linux"、componentで"ebuilds"を選択して質問を決定して
+ください。
+検索項目にはebuildの名前を置き、ステータスとしてNEW、
+ASSIGNED、REOPENEDおよびRESOLVED(RESOLVEDは重要です)を選択したうえで質
+問をサブミットします。
+</p>
+
+<p>
+通常、Portageツリーはパッチやサンプル設定ファイルのような、比較的小さ
+い関連する<path>.ebuild</path>ファイルの保存に使用します。 メインの
+<path>mycat/mypkg</path>ディレクトリを混乱を避けて、これらのタイプのファ
+イルは、 <path>/usr/portage/mycat/mypkg/files</path>ディレクトリに置く
+べきでしょう。 さらに、開発者がCVSにバイナリ(非ASCII)ファイルを加える
+ことはよくないと言えます。 しかし、どうしてもこれが必要な場合(例えば、
+何らかの理由でグラフィック用の小さなPNGを加える必要があれば）、
+<c>-kb</c>オプションの使用することによりCVSにそれを追加します:</p>
+
+<pre>
+# <i>cvs add -kb myphoto.png</i>
+</pre>
+
+<p>
+<c>-kb</c>-kbオプションは、<path>myphoto.png</path>が特別にバイナリファ
+イルで扱われるべきであるとCVSに伝えます。たとえば、バイナリファイルの2
+つの異なるバージョンのマージが起こることが許されないことは明白です。
+さらに、変更マージについて言えば、Portageに加えるどんなパッチも通
+常は<e>圧縮しない</e>こととします。 これによりCVSは変更マージが可能と
+なり、矛盾があれば開発者に正確に通知できることとなります。
+</p>
+
+<p>
+安定しているものとしてコミットされた時、コミットするパッケージがエンド
+ユーザのために「箱から取り出す」<e>準備</e>ができているに違いないとい
+うことを覚えておいてください。
+パッケージを使用する大多数のシステムおよびユーザを満たすデフォルト・セッ
+ティングの、より良い設定がなされていることを確認してください。
+あなたのパッケージが壊れており、正常でなかった場合、それを動作させる方
+法や、パッケージの自分のバージョンを行った他のいくつかのディストリビュー
+ションをチェックして下さい。
+<uri link="http://cvs.mandrakesoft.com/cgi-bin/cvsweb.cgi/SPECS/">Mandrake</uri>または<uri
+link="http://www.debian.org/distrib/packages">Debian</uri>の例を参考に
+してチェックしてみてください。
+</p>
+
+<p>
+CVSにコミットする場合、開発者はそれらのebuildを<c>cvs commit</c>する代
+わりに<c>repoman commit</c>コマンドを使用するべきです。
+コミットする前に、<c>lintool</c>にあなたの要約、変更記録およびebuildを
+通してください。
+</p>
+</body>
+</section>
+
+<section>
+<title>CVSコミット方針</title>
+<body>
+
+<warn>
+警告しておきますが<c>lintool</c>はとても破損しやすいです。代わりに
+repomanを使用するようにしてください。
+</warn>
+
+<ul>
+<li>コミットする前に、常にrepomanでスキャンを実行してください。</li> 
+<li>コミットする前に、lintoolを実行してください。</li> 
+<li>
+あなたがコミットする前に、常に'emerge --pretend glibc'を行ないpackage.maskがOKであるテストをして、それが矛盾を含まないことをチェックします。
+</li> 
+<li>
+コミットする前に、常に更新記録をアップデートすること。
+</li> 
+<li>
+あなたがpackage.maskをコミットする間に矛盾が生じる場合に備え、パッケー
+ジのアップデートの前に、最新のpackage.maskを常にコミットするようにして
+ください。
+</li> 
+<li>
+常に最小限のコミットで。もし、新規のライセンスでコミットする場合、ユー
+ザのインストール状態を破壊したくなければ、それをマスクして、最初に改訂
+されたpackage.maskをコミットしてください。さらにebuild、変更記録、使い
+たいライセンスの順に行ないます。
+</li>
+</ul>
+
+</body>
+</section>
+
+<section>
+<title>ファイルディレクトリ</title>
+<body>
+
+<p>
+前述のとおり、各パッケージのもとではサブディレクトリは
+<path>files</path>ディレクトリです。 パッケージに要求される全てのパッ
+チ、設定ファイルあるいは他の付随的なファイルも、このディレクトリに納め
+られるべきものです。 <path>mypkg-1.0-gentoo.diff</path>のようなバージョ
+ンに特有の名前で、 パッケージを単にビルドさせるためにあなた自身が作る
+パッチが指定されることも考慮したいでしょう。 さらに<path>Gentoo</path>
+の拡張がこのパッチは私たちGentoo Linux開発者によって作られたと皆さんに
+通知されたり、メーリングリストまたはどこかほかの有力な情報元から知らさ
+れます。 再度いいますが、CVSがバイナリファイルでは上手く動作しないので、
+これらのdiffファイルを圧縮してはなりません。
+</p>
+
+<p>
+<path>files</path>ディレクトリの中に入れる、すべてのファイルの後ろに
+<path>mypkg-1.0</path>のようなサフィックスを加えることを考慮する結果、
+あなたのebuildスクリプトの個々のバージョンのために使用された ファイル
+は互いから識別が可能であり、異なるリビジョン間の変更を見ることができま
+す。 これは一般なことであり実際によい考えです。:) よりおおざっぱ、また
+はきめ細かさが要求される場合は、異なるサフィックスを使用したくなること
+と思います。
+</p>
+
+<p>
+filesディレクトリに入るべき多くのファイルを持っている場合は、
+<path>files/mypkg-1.0</path>のような サブディレクトリを作成し適切なサ
+ブディレクトリにあったファイルを入れることを考えてください。 この方法
+なら、 このディレクトリ(それは他の方法より便利です)中のファイルの名前
+にはサフィックスを加える必要がありません。
+</p>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ebuildスクリプト</title>
+<section>
+<title>イントロダクション</title>
+<body>
+
+<p>
+ebuildスクリプトはPortageシステム全体の基本となるものです。 それらは、
+どんなオプションのpre/postまた install/removeも実行する方法と同様に1セッ
+トのソースをダウンロードし、解凍し、コンパイルし、かつインストール す
+るのに必要な情報をすべて含んでいます。 ほとんどのPortageがPythonの中で
+書かれている一方、私たちがコマンド ラインからbashのコマンドとして実行
+できるよう、ebuildスクリプトはそれら自身bashの範囲で書かれています。
+ebuildスクリプトの背後にある重要な設計基盤のうちの1つはこのコマンドで
+あることです。 アナログ的にそれらのパッケージを手動でインストールする
+場合、普通はコマンドラインからタイプするでしょう。 この目的のために、
+bashの構文を持っていることはよいことだと言えます。 
+</p> 
+
+<p>
+Ebuildスクリプトは<c>ebuild</c>と<c>emerge</c>コマンドによって解釈されます。
+<c>ebuild</c>コマンドは低レベルのビルドツールと見なしてください。 それは単一の
+ebuildでありビルドしインストールすることは出来ますが、それ以上のもので
+はありません。 また、依存性を満足するかどうかチェックすることは出来ま
+すが、自動的な問題解決は行われません。 いっぽう<c>emerge</c>は、<c>ebuild</c>
+のためのハイ・レベルのエンジンであり、依存性を自動マージする能力を持ってい
+ますので、もし必要ならば"pretend"mergesを実行することで、どんなebuild
+がマージされるかなどを、さらに参照することができます。 
+一般に、<c>emerge</c>は、1つのエリア以外においては<c>ebuild</c>を完全
+に破壊します。 <c>ebuild</c>で、パッケージのインストール作業(取得・解
+凍・コンパイル・インストール・マージすること)手順を一度に進むことがで
+きます。 
+開発者にとって、構造プロセスの特定の部分のebuildに派生する問題を分離す
+ることが可能であり、非常に貴重なデバッギング・ツールとなります。
+</p>
+</body>
+</section>
+
+<section>
+<title>ebuildファイルの命名法</title>
+<body>
+
+<p>
+Ebuildファイル名は4つの論理セクションから成ります:
+</p>
+
+<p>
+第1のセクションはパッケージ名であり、それは英小文字、数字0-9および任意
+の数のハイフン('-')で構成されています。 いくつかの例として
+<c>util-linux</c>, <c>sysklogd</c> および<c>glibc</c>などがあります。
+</p>
+
+<p>
+第2のセクションはパッケージのバージョン(それは、メインソースのtarball
+上のバージョンと通常同じはず)です。 バージョンは通常、 <c>1.2</c>ある
+いは<c>4.5.2</c>(非常に長いピリオドで分割された番号シーケンスもサポー
+トされています)のようなピリオドで分離された2つあるいは3つの数から構成
+され、 最後の数字に接続して(例えば<c>1.4b</c>または<c>2.6h</c>のように)
+一個の文字があっても構いません。 パッケージ・バージョンはハイフンでパッ
+ケージ名に接続します。 例えば<c>foo-1.0</c>, <c>bar-2.4.6</c>等々。
+</p>
+
+<impo>
+あなたのバージョン文字列中に付加文字を使用しようと思っている場合は、
+alphaまたはbetaが<e>プレリリース</e>であり、 文字修正がより<e>新しいバー
+ジョン</e>であるので、パッケージ用、 アルファあるいはベータ・ステータ
+スを示すためには、 付加文字に使用しては<e>ならない</e>ことに注意が必要
+です。
+Portageが、それが同じカテゴリおよび名称である他のパッケージの新旧を決
+定するのにebuildの バージョン番号を使用するため、これは重要な区分です。
+Portageがその依存性をチェックするという役割を適切に実行するためには、
+バージョン番号が誠実にパッケージの バージョンを表わすことは非常に重要
+です。
+
+</impo>
+
+<p>
+第3(オプション)セクションは特別の接尾辞を含んでいます。 これは
+<c>_alpha</c>, <c>_beta</c>, <c>_pre</c>または<c>_rc</c>の組み合わせの
+いずれかです。 これらの接尾辞のうち、自分の番号として
+(<c>linux-2.4.0_pre10</c>のように)どれが続いても構いません。 同一のバー
+ジョン部分を仮定して、<c>_alpha</c>パッケージは<c>_beta</c>より古く、
+<c>_beta</c>は<c>_pre</c>、および<c>_pre</c>は<c>_rc</c>より古いものと
+見なします。 
+</p>
+
+<note>
+<c>_rc</c>を持つパッケージは、下線のない(<c>linux-2.4.0</c>のような)パッ
+ケージより古いものです。 また<c>linux-2.4.0</c>は、単一の文字接頭辞(つ
+まり<c>linux-2.4.0b</c>)で示すパッケージより古いと言えます。 もうお分
+かりのように、<c>linux-2.4.0b</c>パッケージは<c>linux-2.4.0c</c>より古
+いと考えられます。 繰り返しますが、Portageが1つのパッケージあるいは
+ebuildが同じカテゴリーおよび名前である場合に別のものより新しいかどうか
+決めるためにそれを内部に使用しますので、このバージョニングに関する情報
+は重要です。
+</note>
+
+<p>
+パッケージ名の第4の(オプション)セクションはGentoo Linux特有の<e>リビジョ
+ン</e>番号で、<c>-r#</c>のように指定されます。この場合の<c>#</c>は
+(<c>package-4.5.3-r3</c>等)整数となります。このリビジョン番号はソース
+のバージョンに依存せず、新しく改善された特定のGentoo Linuxリビジョンパッ
+ケージが利用可能であると通知するために使用されます。 
+</p>
+
+<p>
+既存のebuildファイルへの有益な改良を作れば、1つインクリメントされたリ
+ビジョン番号の新しいファイルにebuildファイルをコピーしましょう。 初期
+のリリースは通常<path>package-4.5.3</path>のようにリビジョン番号を持っ
+ていません。
+そしてこれはPortageによって、いわゆる0のリビジョン番号であると解釈され
+ます。 つまりカウントは次のように行なわれることを意味しています:<c>1.0</c>
+(初期のバージョン)、<c>1.0-r1</c>, <c>1.0-r2</c>など。
+<e>いつも</e>忘れずにあなたの変更を変更記録をメンテナンスするようにし
+てください。
+これを行なわないと、あなたのCVSアクセスが無効にされ、大変困ったことに
+なるかもしれません。
+</p>
+
+<p>
+また、現実には私たちはebuild名の<e>5番目</e>のセクションを持っていると
+思います。 つまり<c>.ebuild</c>拡張子自身です。
+</p>
+</body>
+</section>
+
+<section>
+<title><e>ebuild</e>ファイルの内容</title>
+<body><p>1. 変数の設定:</p>
+<p>
+すべてのebuildファイルの第1の部品は多くの変数設定から構成されます。 セッ
+トすることができる変数は次のとおりです。 
+</p>
+
+<table>
+<tr><ti><c>P</c></ti><ti>
+パッケージの名前およびバージョン;ebuildファイルの名前から決定されます
+ので、これをセットする必要がありません
+</ti></tr>
+
+<tr><ti><c>S</c></ti><ti>パッケージのソースディレクトリ; 通常は
+${WORKDIR}/${P}です
+</ti></tr>
+
+<tr><ti><c>D</c></ti><ti>
+ルートディレクトリ:これはインストール時に仮想の/(root)として扱われます
+</ti></tr>
+
+<tr><ti><c>SLOT</c></ti><ti>
+Portageの同じインストールプログラムの異なるバージョンを扱います。
+あなたがGCC 2.95およびGCC 3.xがインストールしているとしたら、各ebuildの中で
+スロットを指定します。
+すなわち、GCC 2.95はスロット0であり、GCC 3.xはスロット1になるでしょう
+</ti></tr>
+
+<tr><ti><c>LICENSE</c></ti><ti>
+この変数はどのプログラムライセンスのものにあるかを明記します。
+すなわち、GPL, GPL2のように
+</ti></tr>
+
+<tr><ti><c>ARCH</c></ti><ti>
+
+この変数は2、3の異なる機能をサポートします。
+第一にこの変数は、ebuildがどのアーキテクチャー用に意味されるか明示します。
+これらのキーワードは次のものを含んでいます:<e>x86, ppc, alpha, sparc,
+sparc64 </e>。
+これにより、ターゲットマシンのアーキテクチャを明確に反映させるようにな
+ります。
+Portageは<i>ARCH</i>USE変数によって指定されるx86マシンがx86以外で決し
+て構築しないことを可能にします。
+在来のアーキテクチャーでないパッケージは、Portageによって自動的にmask
+されます。
+<i>ARCH</i>フラグがpreceedingする<e>~</e>を持っている場合、それは特別
+のebuildが働くことを示すが、与えられたキーワードで安定していると考えら
+れません。
+ARCHフラグがpreceeding―を持っている場合、パッケージは与えられたキーワー
+ドで作動しません。<i>ARCH</i>をリードするものが何もない場合、パッケー
+ジは安定していると考えられます。
+<path>make.conf</path>によってこれらのインストールに異なるタイプのパッ
+ケージを与えることができます。
+</ti></tr>
+<tr><ti><c>DESCRIPTION</c></ti><ti>
+パッケージの備考として簡潔に１行で示したものです。
+</ti></tr>
+<tr><ti><c>SRC_URI</c></ti><ti>
+パッケージの全てのソースファイルのあるURIでスペースにより分割されます。 
+通常は、トップに&quot;ftp://ftp.company.com/pub/somepackage/${A}&quot;
+のように記述されます。
+</ti></tr>
+<tr><ti><c>HOMEPAGE</c></ti><ti>
+あなたのパッケージのホームページです。
+</ti></tr>
+<tr><ti><c>IUSE</c></ti><ti>
+これはあなたのパッケージがどのようなUSE変数を使用するかセットします。
+もし、パッケージが使用しなければ、<c>IUSE="" </c>をセットする必要があ
+ります。
+</ti></tr>
+<tr><ti><c>DEPEND</c></ti><ti>
+ビルド時の依存関係;次を参考にしてください：<uri link="#dependencies">
+パッケージの依存関係</uri>
+</ti></tr>
+<tr><ti><c>RDEPEND</c></ti><ti>
+ランタイムの依存関係; 次を参考にしてください：<uri
+link="#dependencies">パッケージの依存関係</uri>
+</ti></tr>
+</table>
+
+<p>2. ebuildの機能</p>
+<p>
+ここには、あなたのパッケージのビルドおよびインストールプロセスをコントロールするebuildファイルに定義するための様々な機能があります。 
+</p>
+<table>
+<tr><ti><c>pkg_setup</c></ti><ti>
+この機能の使用により、多岐にわたる先行条件のタスクを実行します。 こ
+れはシステム・アカウントを加えるか既存の設定ファイルをチェックすること
+を含んでいるかもしれません。 この機能は、処理が進むために0を返すことで
+しょう。
+</ti></tr>
+
+<tr><ti><c>src_unpack</c></ti><ti>	
+
+Usこの機能の使用により、あなたのソースを解凍し、また必要なら
+autoconf/automake/などを実行します。 デフォルトにより、<c>${A}</c>$の
+中のパッケージを解凍します。 デフォルトの開始ディレクトリは
+<c>${WORKDIR}</c>で示されます。
+</ti></tr>
+
+<tr><ti><c>src_compile</c></ti><ti>
+この機能の使用により、パッケージを設定し構築します。 デフォルトの開始
+ディレクトリは${S}で示されます。 ディレクトリを始めるデフォルトは
+<c>${S}</c>です。
+</ti></tr>
+
+<tr><ti><c>src_install</c></ti><ti>
+この機能の使用により、<c>${D}</c> へイメージへのパッケージをインストー
+ルします。 あなたのパッケージがautomakeを使用する場合、単に<c>make
+DESTDIR=${D}</c>でインストールすることができます。 もちろんパッ
+ケージが<c>${D}</c>を使用するためにrootで全てインストールできることを
+確認してください。
+</ti></tr>
+
+<tr><ti><c>pkg_preinst</c></ti><ti>
+このファンクションのコマンドはファイルシステムへパッケージ・イメージを
+マージする前に実行されます。
+</ti></tr>
+
+<tr><ti><c>pkg_postinst</c></ti><ti>
+このファンクションのコマンドはファイルシステムへパッケージ・イメージを
+マージした後に実行されます。
+</ti></tr>
+
+<tr><ti><c>pkg_prerm</c></ti><ti>
+このファンクションのコマンドはファイルシステムからのパッケージ・イメー
+ジのマージを解消するのに先立って実行されます。
+</ti></tr>
+
+<tr><ti><c>pkg_postrm</c></ti><ti>
+このファンクションのコマンドはファイルシステムからのパッケージ・イメー
+ジのマージを解消したあとに実行されます。
+</ti></tr>
+
+<tr><ti><c>pkg_config</c></ti><ti>
+このファンクションを使用してセットアップし、その後のパッケージのための
+初期設定がインストールされます。 このファンクション中のパスはすべて
+${ROOT}を前に付けられるべきです。ユーザが実行すると、このファンクショ
+ンが単に次のものを実行します:<c> ebuild
+/var/db/pkg/${CATEGORY}/${PF}/${PF}.ebuild config</c>
+</ti></tr>
+</table>
+
+</body>
+</section>
+
+<section>
+<title>ebuildファイルを書くときの規則 </title>
+<body>
+<p>
+ebuildファイルは実際には単なるにシェルスクリプトですので、それらの編集
+のた めにエディタのシェルスクリプトモードを使用するべきです。 タブ文字
+だけ を使用して、適切なインデントを使用してください。 この場合、スペー
+スではありませ ん。4つのスペースでタブ・ストップを置くためにエディタが
+セットされていることを確認してください。 環境変数のまわりのブレースを
+使用することを常に確認してください;例えば<c>$P</c>と書くべきところ
+は<c>${P}</c>とします。 
+</p>
+
+<p>長い行の場合は次のように'\'を付けて折り返しを行ないます:</p>
+<pre>
+./configure \
+	--prefix=/usr || die "configure failed"
+</pre>
+
+<p>
+その他の詳細に関しては、<path>skel.ebuild</path>(skel.ebuildの中にあり
+ます)を参照してください。
+</p>
+
+<p>
+Vimを使用していれば、Gentooに関連するものをすべて編集する場合に正しい
+セッティングを使用していることを確実にするために.vimrcの最下行に次の行
+を追加することができます。 
+</p>
+
+<pre>
+if (getcwd() =~ 'gentoo-x86\|gentoo-src\|portage')
+	set tabstop=4 shiftwidth=4 noexpandtab
+endif
+</pre>
+<p>Emacsを使っているならば、.emacsrc file (for GNU Emacs) または init.el
+(for XEmacs)に以下の設定を記述することで、Gentoo関連の編集をするときに、
+正しい設定になります。</p>
+
+<pre>
+(defun ebuild-mode ()
+  (shell-script-mode)
+  (sh-set-shell "bash")
+  (make-local-variable 'tab-width)
+  (setq tab-width 4))
+(setq auto-mode-alist (cons '("\\.ebuild\\'" . ebuild-mode) auto-mode-alist))
+(setq auto-mode-alist (cons '("\\.eclass\\'" . ebuild-mode) auto-mode-alist))
+</pre>
+</body>
+
+
+</section>
+
+<section>
+<title><c>USE</c>変数</title>
+
+<body>
+
+<p>
+USE変数の目的は、あなたが全体的におよび自動的にある<e>build-time</e>オプショ
+ンを有効か無効にするPortageを形成することを可能にすることです。 一例と
+して、あなたがGNOMEファンであるとしましょう。 そうすると、コンパイル中
+のオプションのGNOMEサポートのオプションを持っているすべてのebuildを好
+まれると思います。 
+この場合、<path>/etc/make.conf</path>の中の<c>USE</c>変数に<c>gnome</c>を加え
+ることと思います。次に、それが利用可能な場合、Portageは自動的にパッケージに
+オプションのGNOME対応を加えるでしょう。同様に、それらが利用可能な場合
+に、オプションのGNOMEサポートをebuildに加えたくないなら、単に
+<path>/etc/make.conf</path>を編集して、<c>gnome</c>が<c>USE</c>変数の中でセットされて<e>いない</e>ことを
+確認します。 Gentoo Linuxは、あなたが望むようにシステムを形成できる数
+多くのUSEオプションを持っています。
+
+<note> 
+あなたがUSE変数(例えば<c>USE</c>から<c>gnome</c>を取り除くなど) をセッ
+トしなおしても、これはGNOMEのbuild-timeサポートの<e>オプション</e>を不
+能にするようにPortageに単に命じるだけです。 
+しかし、あなたがGNOMEを<e>要求する</e>ebuildを<c>emerge</c>すれば、期
+待通りパッケージは明白にGNOMEサポートを可能にするでしょう。 これは、さ
+らにGNOMEがまだインストールされていない場合は(依存性として)自動的にイ
+ンストールされるだろうということを意味します。 
+そのため、"実際"の<c>emerge</c>の前に<c>emerge --pretend</c>を実行する
+ことはうまい方法です。 
+取り込むパッケージを事前に知ることが出来ます。
+</note>
+
+自分のebuildsでは、<c>use &lt;variable&gt;</c>コマンドの使用により、
+USE変数がセットされるかどうかチェックすることができます。 
+<c>use</c>コマンドは、<c>USE</c>およびそのコマンドラインの両方の中にあ
+る、すべての変数の名前を出力します。
+通常は以下のように使用します: 
+</p>
+
+<p><c>if [ &quot;`use X`&quot; ]; then commands; fi</c>
+</p>
+
+<p>
+USE変数も依存性をセットするためだけに使用することができます。 例えば、
+あるUSE変数がセットされている場合、パッケージを単に要求したいと思うで
+しょう。 これはあなたのebuildのためのDEPEND変数の中で<c>variable? (
+mycat/mypackage-1.0-r1 )</c>の記述により行われます。 この例において、
+<c>変数</c>が<c>USE</c>の中にある場合、<c>mycat/mypackage-1.0-r1</c>は
+単に要求されるだけです。あたの作成したebuildがこの構文を使い、"if"構文
+を使っていないことを確認してください。Bashの条件式はPortage依存キャッシュ
+(Portage's dependency caching)に干渉してしまい、あなたのebuildを
+ボロボロに壊してしまいます。
+</p>
+
+<p>
+次に、<c>USE</c>を使用する方法に関して重要なTipsを示します。 通常、パッ
+ケージはコンフィギュレーションステップを実施するために
+<c>./configure</c>スクリプトを使用するでしょう。
+一般的には、あなたのebuildが<c>./configure</c>を使用する場合、あらゆる
+オプションのbuild-time機能も、適切な引き数を<c>./configure</c>コマンド
+へ渡すことにより有効か無効になります。
+ここに、これを扱う適切な方法があります。まず、あなたが<c>USE</c>サポー
+トを加えたい特別の<c>./configure</c>オプションを探し出し、デフォルトに
+より<e>enabled</e>または<e>disabled</e>とします。 そしてデフォルトで
+<e>enabled</e>になる場合は、以下のような手順をとって下さい:
+</p>
+<pre>
+DEPEND="gnome? ( &gt;=gnome-base/gnome-1.4 )
+	mysql? ( &gt;=dev-db/mysql-3.23.49 )"
+
+src_compile() {
+	local myconf
+	use gnome || myconf="--disable-gnome"
+	use mysql || myconf="${myconf} --disable-mysql"
+
+	./configure ${myconf} --prefix=/usr --host=${CHOST} || die
+	emake || die
+}
+</pre>
+<p>
+上記では、<c>gnome</c>および<c>mysql</c>の<c>USE</c>変数が無効であるか
+をどうかをチェックします。 
+<c>use gnome || </c>の部分は、<c>gnome</c>が<c>USE</c>変数に存在するか
+テストし、そうでなければ次に<c>myconf="--disable-gnome"</c>にセットします。
+このパッケージについては、それらが両方ともデフォルトにより有効になるの
+で、明示的にGNOMEまたはMySQLを有効にする必要はありません。 しかしなが
+ら、特定の組み込みがデフォルトにより<e>無効</e>になる場合、次のアプローチ方法
+を用いてもかまいません:
+</p>
+<pre>
+DEPEND="gnome? ( &gt;=gnome-base/gnome-1.4 )
+	mysql? ( &gt;=dev-db/mysql-3.23.49 )"
+
+src_compile() {
+	local myconf
+	use gnome &amp;&amp; myconf="--enable-gnome"
+	use mysql &amp;&amp; myconf="${myconf} --enable-mysql"
+
+	./configure ${myconf} --prefix=/usr --host=${CHOST} || die
+	emake || die
+}
+</pre>
+<p>
+この時、それぞれ<c>USE</c>変数でセットされている場合でも、明示的にGNOME
+とMySQLサポートを可能にします。
+<c>use mysql &amp;&amp;</c>部分は<c>USE</c>変数に<c>mysql</c>があるなしに拘わらず、
+<c>myconf="${myconf} --enable-mysql"</c>の設定をテストします。
+</p>
+
+<p>
+USE変数の常時更新の最新テーブルは、<uri
+link="http://www.gentoo.org/dyn/use-index.xml">ここを</uri>参照してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ファイルシステムの配置</title>
+
+<section>
+<title>FHSとは</title>
+<body>
+<p>
+Gentoo Linuxの中で使用されるファイルシステム・レイアウトの標準は
+FHS(<e>Filesystem Hierarchy Standard</e>の略)に準拠します。
+標準のシンプルな記述はここで記述しますが、完全な詳細については、
+<uri>http://www.pathname.com/fhs/</uri>を参照して下さい。 
+</p>
+<note> 
+ <path>/opt</path>階層はFHSのセクション3.12にアドレスされます。セクション4.4は
+<path>/usr/X11R6</path>ディレクトリに対応します。 KDEとGNOMEは特にアド
+ レスされず、要するにFHSの現行バージョンで公平に言及されていません。
+</note>
+</body>
+</section>
+
+<section>
+<title>いかにあなたのパッケージをファイルシステムの中へあてはめるか
+</title>
+<body><p>
+通常、パッケージがautoconfおよびautomakeを使用する場合、デフォルトのイ
+ンストール先は少数の例外を除いて適切になっています。
+</p>
+<ul>
+
+<li>
+あなたが、<path>/bin</path>, <path>/sbin</path>,<path>/usr/bin</path>あるいは
+<path>/usr/sbin</path>へプログラムをインストールしていれば、プログラムの対応
+するmanページが<path>/usr/share/man</path>のツリーへインストールされるべきでしょう。
+これはebuildの中の<c>./configure --mandir=/usr/share/man</c>の指定により大抵の場合
+は行なえます。
+</li>
+
+<li>
+X11、GNOMEあるいはKDEに特有のプログラムかツールに関係していたとして
+もGNU infoファイルは<path>/usr/share/info</path>に常にインストールされるべきです。
+重要事項:<path>/usr/share/info</path>はGNU infoファイルのための<e>唯一</e>の公式な
+場所です。 ほとんどの<c>./configure</c>スクリプトが自動的に<c>/usr/info</c>にGNU
+infoファイルをインストールすることになるので、<c>./configure</c>に
+<c>--infodir=/usr/share/info</c>引数で呼ぶことは、多くの場合に必要になります。
+</li>
+
+<li>
+ドキュメンテーション・ファイルは、特定のプログラム名、バージョンおよ
+びリビジョンを反映するサブディレクトリの<path>/usr/share/doc</path>に
+インストールされます。 これはGNOME、KDE、X11およびコンソール等々、すべ
+てのプログラムに当てはまります。しかしながら、いくつかのプログラムは補
+足のドキュメンテーションおよびサポートファイルを、自分の目的にあった
+<path>/usr/share</path>の階層へインストールするかもしれません。
+</li>
+
+<li>
+X11に特有のプログラムおよびライブラリは、<path>/usr/X11R6</path>に直接ではなく
+<path>/usr</path>へインストールされるべきです。 私たちは、Xウィンドウ・
+システムのバージョン11リリース6<e>自体</e>のために
+<path>/usr/X11R6</path>の階層を確保しておきます。これは恐らく他のディ
+ストリビューションが作ったFHSの拡大解釈です。
+</li>
+
+<li>
+GNOMEとKDEのプログラムは、同様に<path>/usr</path>へ常にインストールさ
+れるべきです。
+</li>
+
+</ul>
+<impo> 
+いくつかのディストリビューションでは<path>/opt</path>へGNOMEとKDEをイ
+ンストールするようになっています。 現実にそれらのファイルをインストー
+ルするべき場所として、これらのデスクトップ環境のための基準はありません。
+単純化と一貫性のために、私たちは<path>/usr</path>階層へKDEおよびGNOME
+パッケージをすべてインストールすることにします。 
+</impo>
+
+<p>
+一般的には、ebuildsに<path>/usr</path>ツリーへそれらのファイルをインス
+トールさせるべきでしょう。 <e>いくつかの</e>プログラムはGNOME、KDEおよ
+びX11ライブラリ(それらは混乱の原因となる)を使用、または使用せずにコン
+パイルしリンクすることができます。 私たちの解決方法は、ebuild作者の曖
+昧さおよび不必要な複雑さを回避するために、<path>/usr</path>へすべてを
+インストールすることです。
+プログラムのファイルをインストールする位置は、特定の<c>USE</c>変数の存
+在か不在かに依存しては<e>いけません</e>。したがって、Portageツリーの
+ebuildは、ほとんど常に排他的に<path>/usr</path>階層へインストールする
+ことにします。
+</p>
+
+<note>
+<path>/opt</path>ディレクトリはGentoo Linuxの中でバイナリのみのパッケー
+ジのために予約してあります。 例えばmozilla-bin、acroread、Netscapeおよ
+びRealPlayerなどが含まれています。 ここにインストールされるパッケージ
+は通常<path>/etc/env.d/foo</path>などのスタブ・ファイルが要求されます。
+システム環境へパスおよび追加の変数を含むことができるようにそうしていま
+す。 
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Portageスクリプトとユーティリティ群</title>
+
+<section>
+<title>公開スクリプト</title>
+<body><p>
+これらはパッケージをインストールし削除し、かつパッケージ・データベース
+を維持するためにシステム管理者によって使用されるスクリプトです。 
+</p>
+<p>
+<c>ebuild</c>はPortageシステムの主要なエンジンです。それは、解凍し、コンパイ
+ルし、インストールし、マージし、マージの解消するような主なタスクをすべ
+て実行します。 これは<c>ebuild path/to/package.ebuild command</c>のような形式
+でコマンドが呼び出されます。 利用可能なコマンドは次のとおりです。 
+</p>
+<table>
+<tr><th>コマンド</th><th>備考</th><th><c>ebuild</c>機能との関連 </th></tr>
+<tr><ti>*<c>setup</c></ti><ti>
+ebuildが進行する前に要求されたあらゆるコマンドの実行
+</ti><ti><c>pkg_setup</c></ti></tr>
+<tr><ti><c>depend</c></ti><ti>
+パッケージを構築する際に要求される依存性の表示
+</ti><ti>n/a</ti></tr>
+<tr><ti><c>check</c></ti><ti>
+パッケージ依存関係が満たされていることのチェック
+</ti><ti>n/a</ti></tr>
+<tr><ti><c>rcheck</c></ti><ti>
+パッケージのランタイム依存関係が満たされていることのチェック
+</ti><ti>n/a</ti></tr>
+<tr><ti><c>merge</c></ti><ti>
+解凍、コンパイル、インストールおよびファイルシステムへのマージ
+</ti><ti>n/a</ti></tr>
+<tr><ti>*<c>qmerge</c></ti><ti>
+既に解凍、コンパイル、インストールされたものと見なしてファイルシステム
+へパッケージをマージ
+</ti><ti>n/a</ti></tr>
+<tr><ti>*<c>unpack</c></ti><ti>
+作業ディレクトリへのソース圧縮ファイルの解凍
+</ti><ti><c>src_unpack</c></ti></tr>
+<tr><ti>*<c>compile</c></ti><ti>
+パッケージのコンパイル
+</ti><ti><c>src_compile</c></ti></tr>
+<tr><ti><c>rpm</c></ti><ti>
+パッケージからRPMの作成
+</ti><ti>n/a</ti></tr>
+<tr><ti><c>package</c></ti><ti>
+Gentoo の<c>tbz2</c>パッケージ作成
+</ti><ti>n/a</ti></tr>
+<tr><ti>*<c>prerm</c></ti><ti>
+パッケージの事前削除ステージを実行
+</ti><ti><c>pkg_prerm</c></ti></tr>
+<tr><ti>*<c>postrm</c></ti><ti>
+パッケージの事後削除ステージを実行
+</ti><ti><c>pkg_postrm</c></ti></tr>
+<tr><ti>*<c>preinst</c></ti><ti>
+パッケージの事前インストールステージの実行
+</ti><ti><c>pkg_preinst</c></ti></tr>
+<tr><ti>*<c>postinst</c></ti><ti>
+パッケージの事後インストールステージの実行
+</ti><ti><c>pkg_postinst</c></ti></tr>
+<tr><ti><c>config</c></ti><ti>
+パッケージがマージされていれば、デフォルトコンフィグレーションをセットアップ
+</ti><ti><c>pkg_config</c></ti></tr>
+<tr><ti>*<c>touch</c></ti><ti>
+パッケージでの各ソースアーカイブのmtimesを更新
+</ti><ti>n/a</ti></tr>
+<tr><ti>*<c>clean</c></ti><ti>
+パッケージの作業ディレクトリをクリア
+</ti><ti>n/a</ti></tr>
+<tr><ti>*<c>fetch</c></ti><ti>
+パッケージソースの圧縮ファイルを取得
+</ti><ti>n/a</ti></tr>
+<tr><ti>*<c>digest</c></ti><ti>
+パッケージ用の要約ファイルを作成
+</ti><ti>n/a</ti></tr>
+<tr><ti>*<c>install</c></ti><ti>
+イメージ・ディレクトリーへパッケージをインストール
+</ti><ti><c>src_install</c></ti></tr>
+<tr><ti><c>unmerge</c></ti><ti>
+ファイルシステムからのパッケージのマージ解消
+</ti><ti>n/a</ti></tr>
+</table>
+<p>注:アスタリスク(*)のあるコマンドは、通常、開発者により使用されるも
+のです。
+</p>
+
+<p>
+<c>emerge</c>eは再帰的にあなたのファイルシステムへパッケージおよびその
+依存性のすべてをマージします。 このコマンドは多くのオプションを持って
+います。<c>emerge --help</c>コマンドを試してしてみて下さい。
+</p>
+
+<p>
+<c>env-update</c>は、インストールされたパッケージによって行なわれた変更を含め
+るために(<path>/etc/ld.so.conf</path>および
+<path>/etc/profile.env</path>に制限されずに取り込まれた) コンフィグレー
+ションファイルを更新します。
+</p>
+</body>
+</section>
+
+<section>
+<title>内部スクリプトとコマンド群</title>
+<body>
+
+<p>
+これらは共通のタスクを実行するためにebuildファイルの中で使用することが
+できるスクリプトです。 
+</p>
+
+<p>
+より詳細な指示については、<path>/usr/lib/portage/bin</path>にあるスク
+リプト自身を参照してください。
+</p>
+
+<table>
+<tr><ti>into</ti><ti>
+<c>dobin</c>,<c>dolib</c>, <c>dolib.a</c>, <c>dolib.so</c>, <c>domo</c>,
+<c>dosbin</c>へのターゲットprefix(<path>DESTTREE</path>)のセット
+</ti></tr>
+<tr><ti>dobin</ti><ti>
+<path>DESTTREE/bin</path>への特定のバイナリファイルのインストール
+</ti></tr>
+<tr><ti>dodoc</ti><ti>
+パッケージドキュメンテーションの<c>docinto</c>にある
+<path>DOCDESTREE</path>の指定したディレクトリ
+(<path>/usr/share/doc/${PF}/DOCDESTTREE</path>)への特定のファイルをイ
+ンストール
+</ti></tr>
+<tr><ti>doexe</ti><ti>
+<path>EXEDESTTREE</path>へ<e>EXEOPTIONS</e>モードを指定して特定のファ
+イルをインストールする。<e>EXEOPTIONS</e>のデフォルトは -m0755であり、
+<c>exeopts</c>コマンドを経由してセットする。 <path>EXEDESTTREE</path>
+は<c>exeinto</c>コマンドを経由してセットする
+</ti></tr>
+<tr><ti>dohard</ti><ti>
+${D}を透過的に扱いハードリンクを作成する
+</ti></tr>
+<tr><ti>dohtml</ti><ti>
+<path>/usr/share/doc/${PF}/html</path>ディレクトリへ特定ファイルをイン
+ストール
+</ti></tr>
+<tr><ti>doinfo</ti><ti>
+gzip形式で圧縮して/usr/share/infoに特定ファイルをインストール
+</ti></tr>
+<tr><ti>doins</ti><ti>
+<path>INSDESTTREE</path>の中に<e>INSOPTIONS</e>モードで特定ファイルを
+インストールする。<e>INSOPTIONS</e>のデフォルトは-m0644であり、
+<c>insopts</c>コマンド経由で設定できる。<path>INSDESTTREE</path>は
+<c>insinto</c>コマンド経由で設定できる
+</ti></tr>
+<tr><ti>dolib</ti><ti>
+<path>DESTTREE/lib</path>の中に<e>LIBOPTIONS</e>モードで特定ファイルを
+インストールする。 <e>LIBOPTIONS</e>のデフォルトは-m0644であり、
+<c>libopts</c>コマンド経由て設定できる
+</ti></tr>
+<tr><ti>dolib.a</ti><ti>
+<path>DESTTREE/lib</path>へ0644モードで特定ライブラリをインストール
+</ti></tr>
+<tr><ti>dolib.so</ti><ti>
+<path>DESTTREE/lib</path>へ0755モードで特定ライブラリをインストール
+</ti></tr>
+<tr><ti>doman</ti><ti>
+<path>/usr/share/man/manX</path>の中へ特定ファイルをインストールする。
+Xのサフィックスに従う
+</ti></tr>
+<tr><ti>domo</ti><ti>
+.moファイル(ローカライズされたストリング・データの格納のために使用) を
+手動でインストールするために使用される
+</ti></tr>
+<tr><ti>donewins</ti><ti>
+<c>newins</c>と同様です。現実にはシンボリックリンクです。これは不本意
+ですが、旧ebuildとの互換性のために存在します。<c>newins</c>の代わりに
+使用してください
+</ti></tr>
+<tr><ti>dosbin</ti><ti>
+<path>DESTTREE/sbin</path>の中へバイナリファイルをインストールする。こ
+れは実行可能ファイルとして作成されているものです
+</ti></tr>
+<tr><ti>dosed</ti><ti>
+指定されたファイルの中で${D}(インストール・プレフィックスパス)の作成し
+たものをすべて削除
+</ti></tr>
+<tr><ti>dosym</ti><ti>
+${D}を透過的に扱いシンボリックリンクを作成
+</ti></tr>
+<tr><ti>emake</ti><ti>
+並行makeの実行をします。いくつかのプロジェクトでは並行makeができません
+のでmakeを使用して下さい
+</ti></tr>
+<tr><ti>fowners</ti><ti>
+chownコマンドによって指定されたファイル(第2引数)に指定された所有権(第1
+引数)を適用し、${D}を透過的に扱います
+</ti></tr>
+<tr><ti>fperms</ti><ti>
+chmodコマンドによって指定されたファイル(第2引数)に指定されたパーミッショ
+ン(第1引数)を適用し、${D}を透過的に扱います
+</ti></tr>
+<tr><ti>newbin</ti><ti>
+<path>DESTTREE/bin</path>へ指定のバイナリファイル(第1引数)を透過的に第
+2引数の名称へリネームしてインストールする<c>dobin</c>まわりのラッパー
+です
+</ti></tr>
+<tr><ti>newdoc</ti><ti>
+<path>/usr/share/doc/${PF}/DOCDESTTREE</path>へ指定のファイル(第1引数)
+を透過的に第2引数の名称へリネームしてインストールする<c>dodoc</c>まわ
+りのラッパーです
+</ti></tr>
+<tr><ti>newexe</ti><ti>
+<path>EXEDESTTREE</path>へ<e>EXEOPTIONS</e>モードで指定のファイル(第1
+引数)を透過的に第2引数の名称へリネームしてインストールする<c>doexe</c>
+まわりのラッパーです
+</ti></tr>
+<tr><ti>newins</ti><ti>
+<path>INSDESTTREE</path>へI<e>INSOPTIONS</e>ードで指定のファイル(第1引
+数)を透過的に第2引数の名称へリネームしてインストールする<c>doins</c>ま
+わりのラッパーです
+</ti></tr>
+<tr><ti>newlib.a</ti><ti>
+<path>DESTTREE/lib</path>へ指定のライブラリファイル(第1引数)を透過的に
+第2引数の名称へリネームしてインストールする<c>dolib.a</c>まわりのラッ
+パーです
+</ti></tr>
+<tr><ti>newlib.so</ti><ti>
+<path>DESTTREE/lib</path>へ指定のライブラリファイル(第1引数)を透過的に
+第2引数の名称へリネームしてインストールする<c>dolib.so</c>まわりのラッ
+パーです
+</ti></tr>
+<tr><ti>newman</ti><ti>
+<path>/usr/share/man/manX</path>へ指定のライブラリファイル(第1引数)を
+透過的に第2引数の名称へリネームしてインストールする<c>doman</c>まわり
+のラッパーです 
+</ti></tr>
+<tr><ti>newsbin</ti><ti>
+<path>DESTTREE/sbin</path>へ指定のファイル(第1引数)を透過的に第2引数の
+名称へリネームしてインストールする<c>dosbin</c>まわりのラッパーです
+</ti></tr>
+<tr><ti>pmake</ti><ti>
+不本意ですが、emakeの代わりに使います
+</ti></tr>
+<tr><ti>prepalldocs</ti><ti>
+<path>/usr/share/doc</path>のシンボリックリンクパスも含めて救済用に全
+てのdocをgzipします
+</ti></tr>
+<tr><ti>prepallinfo</ti><ti>
+<path>/usr/share/info</path>の救済用に全てのinfoファイルをgzipします
+</ti></tr>
+<tr><ti>prepallman</ti><ti>
+<path>/opt/*/man/*</path>,<path>/usr/share/man/*</path>, 
+<path>/usr/local/man/*</path>,<path>/usr/X11R6/share/man/*</path>およ
+びシンボリックリンクにあるものもひっくるめて救済用に全てのmanページを
+gzipします
+</ti></tr>
+<tr><ti>prepall</ti><ti>
+<c>prepallman</c>, <c>prepallinfo</c>および<c>prepallstrip</c>まわりの
+ラッパーです。同じく<path>/opt/*/lib</path>, <path>/lib</path>,
+<path>/usr/lib</path>および<path>/usr/X11R6/lib</path>、同じく<path>/usr/share/aclocal</path>のaclocalマクロについてもgzipを行なえます
+</ti></tr>
+<tr><ti>try</ti><ti>
+不本意ですが、|| die 構文の代わりに使用します
+</ti></tr>
+</table>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>パッケージの依存関係</title>
+
+<section>
+<title>なぜ依存性が重要か</title>
+<body>
+<p>
+Portageは便利なスクリプトである以上に、あなたのどんなプロジェクト(プロ
+グラムやライブラリ) の構築方法に統一性を与えます。さらに、あなたが
+ebuildの中でこれらを注意深く指定すれば、それはどんな必要な依存関係も取
+得してインストールします。 
+</p>
+
+<p>
+公式のebuildsでは、全部の依存関係が既に指定されています。 したがって、
+あなたが<c>emerge net-www/mozilla/mozilla-1.0</c>のコマンドを発行する時、
+Portageは Mozilla自身が構築される前にMozillaの構築および実行するのに必
+要なライブラリがすべて適切にインストールされることを保証できます。 
+</p>
+
+<p>
+Portageは構築時依存関係とランタイム依存関係をさらに識別します。 (警告:
+現在、Portageは構築時およびランタイム依存関係をすべてインストールする
+場合の成り行きにまかせています。 あとの段階では、ランタイム依存関係だ
+けがインストールされており、あなたのインストールを整えることが可能でしょ
+う)。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>いかにしてebuildファイルの依存性を指定するか </title>
+<body>
+<p>
+<path>foo-x.y.z.ebuild</path>内の<c>DEPEND</c>変数は、<path>foo</path>
+を構築するために必要なパッケージをPortageへ伝えます。<c>RDEPEND</c>変
+数は、<path>foo</path>を実行するためにどのパッケージが必要かを明示しま
+す。 例えば: 
+</p>
+<pre>
+DEPEND="virtual/glibc
+        sys-libs/zlib"
+RDEPEND="virtual/glibc"
+</pre>
+
+<p>
+これはPortageに<path>foo-x.y.z</path>を構築するように命令するのには、パッケージ
+<path>virtual/glibc</path>(ビット中のvirtualsについて詳細) および
+<path>sys-libs/zlib</path>は必要です。それは、どれに関して必要なglibc
+あるいはzlibのバージョンであるかについて言及していません。それは"何で
+も実行"することを意味します。
+</p>
+
+<p>
+"何でも行く"にはもちろん少し恐い気がしますし、一般的な場合はうまく働か
+ないでしょう。 glibc(それは100%バイナリのために非常に忙しく働きます)の
+よう中心となるライブラリが必要としないならば、それは現実に作動します。
+他のライブラリについても、もちろんバージョン依存性を指定することができ
+ます。これを行なうためには多数の方法があります: 
+</p>
+<pre>
+&gt;=sys-apps/bar-1.2
+=sys-apps/baz-1.0
+</pre>
+
+<p> 
+&gt;=と=は、あなたが期待するように動作します。 sys-apps/bar バージョン
+1.2か、より新しいく(sys-apps/bar-2.0ならOKという意味)、sys-apps/bazバー
+ジョン1.0が受け入れられるただ一つのバージョンであるならOKです。 
+</p>
+
+<p>
+Portageは、バージョン番号への4つの特別の接尾辞のことを知っています。
+<c>-rX</c>, <c>-preX</c>,<c>-alphaX</c>および<c>-betaX</c>-rX等(この場
+合のXはあなたの好きな数字)です。
+<c>&gt;=sys-apps/foo-1.0</c>の条件は以下のようになります。 
+</p>
+<pre>
+sys-apps/frob-1.0-r1
+sys-apps/frob-1.0
+sys-apps/frob-1.0_pre1
+sys-apps/frob-1.0_beta1
+sys-apps/frob-1.0_alpha1
+</pre>
+<p>
+Portageはリストされた順に内部で調整し、先頭であるものを選択するでしょ
+う。 これは<c>_alphaX</c>より<c>_beta</c>,<c>_betaX</c>より
+<c>_preX</c>、<c>_preX</c>よりサフィックスなし、サフィックスなしより
+<c>-rX</c>を採用することを意味します。 
+</p>
+
+<p>
+バージョン依存性を指定する他の方法について、次にあげておきます: 
+</p>
+<pre>
+~sys-apps/qux-1.0
+=sys-apps/foo-1.2*
+</pre>
+
+<p>
+~sys-apps/qux-1.0 は、qux-1.0の最新のリビジョンを選択するでしょう。 
+</p>
+
+<p>
+=sys-apps/foo-1.2* は1.2のシリーズの中で最新のメンバーを選択しますが、
+1.3以降のシリーズを無視するでしょう。 すなわち、foo-1.2.3および
+foo-1.2.0は両方とも有効であるのに対し、foo-1.3.3およびfoo-1.3.0は無視
+されることになります。 
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>テストおよび展開</title>
+
+<section>
+<title>変更記録</title>
+<body>
+<p>
+さらに、ebuildを更新する(あるいは新しく書く)場合は常に、その変更記録を
+更新(あるいは新しく作成)しなければなりません。
+<path>skel.ChangeLog</path>は、ベースとして使用してもよい変更記録のサ
+ンプルを含んでいます。
+</p>
+
+<p>
+変更記録の目的は、<i>「何が」</i><i>「なぜ」</i><i>「誰によって」</i>
+行われているか文書で明らかにすることです。これは、開発者およびユーザの
+両方が容易な方法で行なわれた変更をトレースすることを可能にします。
+</p>
+
+<p>
+変更記録は、まずユーザをターゲットにしています。したがってあなたが書くために必ず守るポイントとして、短いこと、また内部技術的な詳細に関して冗長を避けます。
+</p>
+</body>
+</section>
+
+<section>
+<title>有用なテストツール</title>
+<body>
+<p>
+私たちはあなたのebuildの記述やメンテナンスの助けとなる有用なツールをい
+くつか用意しています。
+</p>
+
+<warn><c>lintool</c>について他の警告が出たら, これは破損しています。代
+わりにrepomanを使用して下さい. 
+</warn>
+<ul>
+<li><c>lintool</c> - 変更記録と要約のファイルの構文的な確認のためのebuildのチェック。</li>
+<li><c>change</c> - Can create a new ChangeLog or add an entry to an existing one.</li>
+<li><c>gentool-bump-revision</c> - 開発者専用ツール これはリビジョン番号に対照してCVSに新しい修正を加えるとともに古い修正を削除し、変更記録を適切に更新します。
+</li>
+<li><c>repoman</c> - 開発者専用ツール CVSチェックイン手続きを支援するものです。</li>
+</ul>
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,836 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/articles/l-posix3.xml:6
+#, no-wrap
+msgid "POSIX threads explained, part 3"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/articles/l-posix3.xml:13
+#, no-wrap
+msgid ""
+"In this article, the last of a three-part series on POSIX threads, Daniel takes\n"
+"a good look at how to use condition variables. Condition variables are POSIX\n"
+"thread structures that allow you to \"wake up\" threads when certain conditions\n"
+"are met. You can think of them as a thread-safe form of signalling. Daniel wraps\n"
+"up the article by using all that you've learned so far to implement a\n"
+"multi-threaded work crew application.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/l-posix3.xml:30
+#, no-wrap
+msgid "Improve efficiency with condition variables"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix3.xml:32
+#, no-wrap
+msgid "Condition variables explained"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:36
+#, no-wrap
+msgid ""
+"I ended my <uri link=\"/doc/en/articles/l-posix2.xml\">previous article</uri> by\n"
+"describing a particular dilemma how does a thread deal with a situation where\n"
+"it is waiting for a specific condition to become true? It could repeatedly lock\n"
+"and unlock a mutex, each time checking a shared data structure for a certain\n"
+"value. But this is a waste of time and resources, and this form of busy polling\n"
+"is extremely inefficient. The best way to do this is to use the\n"
+"pthread_cond_wait() call to wait on a particular condition to become true.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:46
+#, no-wrap
+msgid ""
+"It's important to understand what pthread_cond_wait() does -- it's the heart of\n"
+"the POSIX threads signalling system, and also the hardest part to understand.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:51
+#, no-wrap
+msgid ""
+"First, let's consider a scenario where a thread has locked a mutex, in order to\n"
+"take a look at a linked list, and the list happens to be empty. This particular\n"
+"thread can't do anything -- it's designed to remove a node from the list, and\n"
+"there are no nodes available. So, this is what it does.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:58
+#, no-wrap
+msgid ""
+"While still holding the mutex lock, our thread will call\n"
+"pthread_cond_wait(&amp;mycond,&amp;mymutex). The pthread_cond_wait() call is\n"
+"rather complex, so we'll step through each of its operations one at a time.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:64
+#, no-wrap
+msgid ""
+"The first thing pthread_cond_wait() does is simultaneously unlock the mutex\n"
+"mymutex (so that other threads can modify the linked list) and wait on the\n"
+"condition mycond (so that pthread_cond_wait() will wake up when it is\n"
+"\"signalled\" by another thread). Now that the mutex is unlocked, other threads\n"
+"can access and modify the linked list, possibly adding items. \n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:72
+#, no-wrap
+msgid ""
+"At this point, the pthread_cond_wait() call has not yet returned. Unlocking the\n"
+"mutex happens immediately, but waiting on the condition mycond is normally a\n"
+"blocking operation, meaning that our thread will go to sleep, consuming no CPU\n"
+"cycles until it is woken up. This is exactly what we want to happen. Our thread\n"
+"is sleeping, waiting for a particular condition to become true, without\n"
+"performing any kind of busy polling that would waste CPU time. From our thread's\n"
+"perspective, it's simply waiting for the pthread_cond_wait() call to return. \n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:82
+#, no-wrap
+msgid ""
+"Now, to continue the explanation, let's say that another thread (call it \"thread\n"
+"2\") locks mymutex and adds an item to our linked list. Immediately after\n"
+"unlocking the mutex, thread 2 calls the function\n"
+"pthread_cond_broadcast(&amp;mycond). By doing so, thread 2 will cause all\n"
+"threads waiting on the mycond condition variable to immediately wake up. This\n"
+"means that our first thread (which is in the middle of a pthread_cond_wait()\n"
+"call) will now wake up.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:92
+#, no-wrap
+msgid ""
+"Now, let's take a look at what happens to our first thread. After thread 2\n"
+"called pthread_cond_broadcast(&amp;mymutex) you might think that thread 1's\n"
+"pthread_cond_wait() will immediately return. Not so! Instead,\n"
+"pthread_cond_wait() will perform one last operation: relock mymutex. Once\n"
+"pthread_cond_wait() has the lock, it will then return and allow thread 1 to\n"
+"continue execution. At that point, it can immediately check the list for any\n"
+"interesting changes.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix3.xml:104
+#, no-wrap
+msgid "Stop and review!"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix3.xml:127
+#, no-wrap
+msgid "queue.h"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix3.xml:128
+#, no-wrap
+msgid ""
+"/* queue.h\n"
+"<comment>** Copyright 2000 Daniel Robbins, Gentoo Technologies, Inc.\n"
+"** Author: Daniel Robbins\n"
+"** Date: 16 Jun 2000</comment>\n"
+"*/\n"
+"typedef struct node {\n"
+"  struct node *next;\n"
+"} node;\n"
+"typedef struct queue {\n"
+"  node *head, *tail; \n"
+"} queue;\n"
+"void queue_init(queue *myroot);\n"
+"void queue_put(queue *myroot, node *mynode);\n"
+"node *queue_get(queue *myroot);\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix3.xml:144
+#, no-wrap
+msgid "queue.c"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix3.xml:145
+#, no-wrap
+msgid ""
+"/* queue.c\n"
+"<comment>** Copyright 2000 Daniel Robbins, Gentoo Technologies, Inc.\n"
+"** Author: Daniel Robbins\n"
+"** Date: 16 Jun 2000\n"
+"**\n"
+"** This set of queue functions was originally thread-aware.  I\n"
+"** redesigned the code to make this set of queue routines\n"
+"** thread-ignorant (just a generic, boring yet very fast set of queue\n"
+"** routines).  Why the change?  Because it makes more sense to have\n"
+"** the thread support as an optional add-on.  Consider a situation\n"
+"** where you want to add 5 nodes to the queue.  With the\n"
+"** thread-enabled version, each call to queue_put() would\n"
+"** automatically lock and unlock the queue mutex 5 times -- that's a\n"
+"** lot of unnecessary overhead.  However, by moving the thread stuff\n"
+"** out of the queue routines, the caller can lock the mutex once at\n"
+"** the beginning, then insert 5 items, and then unlock at the end.\n"
+"** Moving the lock/unlock code out of the queue functions allows for\n"
+"** optimizations that aren't possible otherwise.  It also makes this\n"
+"** code useful for non-threaded applications.\n"
+"**\n"
+"** We can easily thread-enable this data structure by using the\n"
+"** data_control type defined in control.c and control.h.</comment> */\n"
+"#include &lt;stdio.h&gt;\n"
+"#include \"queue.h\"\n"
+"void queue_init(queue *myroot) {\n"
+"  myroot->head=NULL;\n"
+"  myroot->tail=NULL;\n"
+"}\n"
+"void queue_put(queue *myroot,node *mynode) {\n"
+"  mynode->next=NULL;\n"
+"  if (myroot->tail!=NULL)\n"
+"    myroot->tail->next=mynode;\n"
+"  myroot->tail=mynode;\n"
+"  if (myroot->head==NULL)\n"
+"    myroot->head=mynode;\n"
+"}\n"
+"node *queue_get(queue *myroot) {\n"
+"  //get from root\n"
+"  node *mynode;\n"
+"  mynode=myroot->head;\n"
+"  if (myroot->head!=NULL)\n"
+"    myroot->head=myroot->head->next;\n"
+"  return mynode;\n"
+"}\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix3.xml:191
+#, no-wrap
+msgid "control.h"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix3.xml:192
+#, no-wrap
+msgid ""
+"#include &lt;pthread.h&gt;\n"
+"typedef struct data_control {\n"
+"  pthread_mutex_t mutex;\n"
+"  pthread_cond_t cond;\n"
+"  int active;\n"
+"} data_control;\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix3.xml:200
+#, no-wrap
+msgid "control.c"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix3.xml:201
+#, no-wrap
+msgid ""
+"/* control.c\n"
+"<comment>** Copyright 2000 Daniel Robbins, Gentoo Technologies, Inc.\n"
+"** Author: Daniel Robbins\n"
+"** Date: 16 Jun 2000\n"
+"**\n"
+"** These routines provide an easy way to make any type of\n"
+"** data-structure thread-aware.  Simply associate a data_control\n"
+"** structure with the data structure (by creating a new struct, for\n"
+"** example).  Then, simply lock and unlock the mutex, or\n"
+"** wait/signal/broadcast on the condition variable in the data_control\n"
+"** structure as needed.\n"
+"**\n"
+"** data_control structs contain an int called \"active\".  This int is\n"
+"** intended to be used for a specific kind of multithreaded design,\n"
+"** where each thread checks the state of \"active\" every time it locks\n"
+"** the mutex.  If active is 0, the thread knows that instead of doing\n"
+"** its normal routine, it should stop itself.  If active is 1, it\n"
+"** should continue as normal.  So, by setting active to 0, a\n"
+"** controlling thread can easily inform a thread work crew to shut\n"
+"** down instead of processing new jobs.  Use the control_activate()\n"
+"** and control_deactivate() functions, which will also broadcast on\n"
+"** the data_control struct's condition variable, so that all threads\n"
+"** stuck in pthread_cond_wait() will wake up, have an opportunity to\n"
+"** notice the change, and then terminate.</comment>\n"
+"*/\n"
+"#include \"control.h\"\n"
+"int control_init(data_control *mycontrol) {\n"
+"  int mystatus;\n"
+"  if (pthread_mutex_init(&amp;(mycontrol->mutex),NULL))\n"
+"    return 1;\n"
+"  if (pthread_cond_init(&amp;(mycontrol->cond),NULL))\n"
+"    return 1;\n"
+"  mycontrol->active=0;\n"
+"  return 0;\n"
+"}\n"
+"int control_destroy(data_control *mycontrol) {\n"
+"  int mystatus;\n"
+"  if (pthread_cond_destroy(&amp;(mycontrol->cond)))\n"
+"    return 1;\n"
+"  if (pthread_mutex_destroy(&amp;(mycontrol->cond)))\n"
+"    return 1;\n"
+"  mycontrol->active=0;\n"
+"  return 0;\n"
+"}\n"
+"int control_activate(data_control *mycontrol) {\n"
+"  int mystatus;\n"
+"  if (pthread_mutex_lock(&amp;(mycontrol->mutex)))\n"
+"    return 0;\n"
+"  mycontrol->active=1;\n"
+"  pthread_mutex_unlock(&amp;(mycontrol->mutex));\n"
+"  pthread_cond_broadcast(&amp;(mycontrol->cond));\n"
+"  return 1;\n"
+"}\n"
+"int control_deactivate(data_control *mycontrol) {\n"
+"  int mystatus;\n"
+"  if (pthread_mutex_lock(&amp;(mycontrol->mutex)))\n"
+"    return 0;\n"
+"  mycontrol->active=0;\n"
+"  pthread_mutex_unlock(&amp;(mycontrol->mutex));\n"
+"  pthread_cond_broadcast(&amp;(mycontrol->cond));\n"
+"  return 1;\n"
+"}\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix3.xml:268
+#, no-wrap
+msgid "Debug time"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:272
+#, no-wrap
+msgid ""
+"One more miscellaneous file before we get to the biggie. Here's\n"
+"<path>dbug.h</path>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix3.xml:276
+#, no-wrap
+msgid "dbug.h"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix3.xml:277
+#, no-wrap
+msgid ""
+"#define dabort() \\\n"
+" {  printf(\"Aborting at line %d in source file %s\\n\",__LINE__,__FILE__);  abort(); }\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:282
+#, no-wrap
+msgid "We use this code to handle unrecoverable errors in our work crew code.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix3.xml:288
+#, no-wrap
+msgid "The work crew code"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:292
+#, no-wrap
+msgid "Speaking of the work crew code, here it is:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix3.xml:295
+#, no-wrap
+msgid "workcrew.c&gt;"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix3.xml:296
+#, no-wrap
+msgid ""
+"#include &lt;stdio.h&gt;\n"
+"#include &lt;stdlib.h&gt;\n"
+"#include \"control.h\"\n"
+"#include \"queue.h\"\n"
+"#include \"dbug.h\"\n"
+"/* <comment>the work_queue holds tasks for the various threads to complete.</comment>*/\n"
+"struct work_queue {\n"
+"  data_control control;\n"
+"  queue work;\n"
+"} wq;\n"
+"/* <comment>I added a job number to the work node.  Normally, the work node\n"
+"   would contain additional data that needed to be processed. </comment>*/\n"
+"typedef struct work_node {\n"
+"  struct node *next;\n"
+"  int jobnum;\n"
+"} wnode;\n"
+"/* <comment>the cleanup queue holds stopped threads.  Before a thread\n"
+"   terminates, it adds itself to this list.  Since the main thread is\n"
+"   waiting for changes in this list, it will then wake up and clean up\n"
+"   the newly terminated thread. </comment>*/\n"
+"struct cleanup_queue {\n"
+"  data_control control;\n"
+"  queue cleanup;\n"
+"} cq;\n"
+"/* <comment>I added a thread number (for debugging/instructional purposes) and\n"
+"   a thread id to the cleanup node.  The cleanup node gets passed to\n"
+"   the new thread on startup, and just before the thread stops, it\n"
+"   attaches the cleanup node to the cleanup queue.  The main thread\n"
+"   monitors the cleanup queue and is the one that performs the\n"
+"   necessary cleanup.</comment> */\n"
+"typedef struct cleanup_node {\n"
+"  struct node *next;\n"
+"  int threadnum;\n"
+"  pthread_t tid;\n"
+"} cnode;\n"
+"void *threadfunc(void *myarg) {\n"
+"  wnode *mywork;\n"
+"  cnode *mynode;\n"
+"  mynode=(cnode *) myarg;\n"
+"  pthread_mutex_lock(&amp;wq.control.mutex);\n"
+"  while (wq.control.active) {\n"
+"    while (wq.work.head==NULL &amp;&amp; wq.control.active) {\n"
+"      pthread_cond_wait(&amp;wq.control.cond, &amp;wq.control.mutex);\n"
+"    }\n"
+"    if (!wq.control.active) \n"
+"      break;\n"
+"    //we got something!\n"
+"    mywork=(wnode *) queue_get(&amp;wq.work);\n"
+"    pthread_mutex_unlock(&amp;wq.control.mutex);\n"
+"    //perform processing...\n"
+"    printf(\"Thread number %d processing job %d\\n\",mynode->threadnum,mywork->jobnum);\n"
+"    free(mywork);\n"
+"    pthread_mutex_lock(&amp;wq.control.mutex);\n"
+"  }\n"
+"  pthread_mutex_unlock(&amp;wq.control.mutex);\n"
+"  pthread_mutex_lock(&amp;cq.control.mutex);\n"
+"  queue_put(&amp;cq.cleanup,(node *) mynode);\n"
+"  pthread_mutex_unlock(&amp;cq.control.mutex);\n"
+"  pthread_cond_signal(&amp;cq.control.cond);\n"
+"  printf(\"thread %d shutting down...\\n\",mynode-&gt;threadnum);\n"
+"  return NULL;\n"
+"  \n"
+"}\n"
+"#define NUM_WORKERS 4\n"
+"int numthreads;\n"
+"void join_threads(void) {\n"
+"  cnode *curnode;\n"
+"  printf(\"joining threads...\\n\");\n"
+"  while (numthreads) {\n"
+"    pthread_mutex_lock(&amp;cq.control.mutex);\n"
+"    /* <comment>below, we sleep until there really is a new cleanup node. This\n"
+"       takes care of any false wakeups... even if we break out of\n"
+"       pthread_cond_wait(), we don't make any assumptions that the\n"
+"       condition we were waiting for is true.  </comment>*/\n"
+"    while (cq.cleanup.head==NULL) {\n"
+"      pthread_cond_wait(&amp;cq.control.cond,&amp;cq.control.mutex);\n"
+"    }\n"
+"    /* <comment>at this point, we hold the mutex and there is an item in the\n"
+"       list that we need to process.  First, we remove the node from\n"
+"       the queue.  Then, we call pthread_join() on the tid stored in\n"
+"       the node.  When pthread_join() returns, we have cleaned up\n"
+"       after a thread.  Only then do we free() the node, decrement the\n"
+"       number of additional threads we need to wait for and repeat the\n"
+"       entire process, if necessary</comment> */\n"
+"      curnode = (cnode *) queue_get(&amp;cq.cleanup);\n"
+"      pthread_mutex_unlock(&amp;cq.control.mutex);\n"
+"      pthread_join(curnode->tid,NULL);\n"
+"      printf(\"joined with thread %d\\n\",curnode->threadnum);\n"
+"      free(curnode);\n"
+"      numthreads--;\n"
+"  }\n"
+"}\n"
+"int create_threads(void) {\n"
+"  int x;\n"
+"  cnode *curnode;\n"
+"  for (x=0; x&lt;NUM_WORKERS; x++) {\n"
+"    curnode=malloc(sizeof(cnode));\n"
+"    if (!curnode)\n"
+"      return 1;\n"
+"    curnode->threadnum=x;\n"
+"    if (pthread_create(&amp;curnode->tid, NULL, threadfunc, (void *) curnode))\n"
+"      return 1;\n"
+"    printf(\"created thread %d\\n\",x);\n"
+"    numthreads++;\n"
+"  }\n"
+"  return 0;\n"
+"}\n"
+"void initialize_structs(void) {\n"
+"  numthreads=0;\n"
+"  if (control_init(&amp;wq.control))\n"
+"    dabort();\n"
+"  queue_init(&amp;wq.work);\n"
+"  if (control_init(&amp;cq.control)) {\n"
+"    control_destroy(&amp;wq.control);\n"
+"    dabort();\n"
+"  }\n"
+"  queue_init(&amp;wq.work);\n"
+"  control_activate(&amp;wq.control);\n"
+"}\n"
+"void cleanup_structs(void) {\n"
+"  control_destroy(&amp;cq.control);\n"
+"  control_destroy(&amp;wq.control);\n"
+"}\n"
+"int main(void) {\n"
+"  int x;\n"
+"  wnode *mywork;\n"
+"  initialize_structs();\n"
+"  /* CREATION */\n"
+"  \n"
+"  if (create_threads()) {\n"
+"    printf(\"Error starting threads... cleaning up.\\n\");\n"
+"    join_threads();\n"
+"    dabort();\n"
+"  }\n"
+"  pthread_mutex_lock(&amp;wq.control.mutex);\n"
+"  for (x=0; x&lt;16000; x++) {\n"
+"    mywork=malloc(sizeof(wnode));\n"
+"    if (!mywork) {\n"
+"      printf(\"ouch! can't malloc!\\n\");\n"
+"      break;\n"
+"    }\n"
+"    mywork->jobnum=x;\n"
+"    queue_put(&amp;wq.work,(node *) mywork);\n"
+"  }\n"
+"  pthread_mutex_unlock(&amp;wq.control.mutex);\n"
+"  pthread_cond_broadcast(&amp;wq.control.cond);\n"
+"  printf(\"sleeping...\\n\");\n"
+"  sleep(2);\n"
+"  printf(\"deactivating work queue...\\n\");\n"
+"  control_deactivate(&amp;wq.control);\n"
+"  /* CLEANUP  */\n"
+"  join_threads();\n"
+"  cleanup_structs();\n"
+"}\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix3.xml:455
+#, no-wrap
+msgid "Code walkthrough"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:459
+#, no-wrap
+msgid ""
+"Now it's time for a quick code walkthrough. The first struct defined is called\n"
+"\"wq\", and contains a data_control and a queue header. The data_control structure\n"
+"will be used to arbitrate access to the entire queue, including the nodes in the\n"
+"queue. Our next job is to define the actual work nodes. To keep the code lean to\n"
+"fit in this article, all that's contained here is a job number.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:467
+#, no-wrap
+msgid ""
+"Next, we create the cleanup queue. The comments explain how this works. OK, now\n"
+"let's skip the threadfunc(), join_threads(), create_threads() and\n"
+"initialize_structs() calls, and jump down to main(). The first thing we do is\n"
+"initialize our structures -- this includes initializing our data_controls and\n"
+"queues, as well as activating our work queue.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix3.xml:477
+#, no-wrap
+msgid "Cleanup special"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:481
+#, no-wrap
+msgid ""
+"Now it's time to initialize our threads. If you look at our create_threads()\n"
+"call, everything will look pretty normal -- except for one thing. Notice that we\n"
+"are allocating a cleanup node, and initializing its threadnum and TID\n"
+"components. We also pass a cleanup node to each new worker thread as an initial\n"
+"argument. Why do we do this?\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:489
+#, no-wrap
+msgid ""
+"Because when a worker thread exits, it'll attach its cleanup node to the cleanup\n"
+"queue, and terminate. Then, our main thread will detect this addition to the\n"
+"cleanup queue (by use of a condition variable) and dequeue the node.  Because\n"
+"the TID (thread id) is stored in the cleanup node, our main thread will know\n"
+"exactly which thread terminated. Then, our main thread will call\n"
+"pthread_join(tid), and join with the appropriate worker thread. If we didn't\n"
+"perform such bookkeeping, our main thread would need to join with worker threads\n"
+"in an arbitrary order, possibly in the order that they were created.  Because\n"
+"the threads may not necessarily terminate in this order, our main thread could\n"
+"be waiting to join with one thread while it could have been joining with ten\n"
+"others. Can you see how this design decision can really speed up our shutdown\n"
+"code, especially if we were to use hundreds of worker threads?\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix3.xml:506
+#, no-wrap
+msgid "Creating work"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:510
+#, no-wrap
+msgid ""
+"Now that we've started our worker threads (and they're off performing their\n"
+"threadfunc(), which we'll get to in a bit), our main thread begins inserting\n"
+"items into the work queue. First, it locks wq's control mutex, and then\n"
+"allocates 16000 work packets, inserting them into the queue one-by-one. After\n"
+"this is done, pthread_cond_broadcast() is called, so that any sleeping threads\n"
+"are woken up and able to do the work. Then, our main thread sleeps for two\n"
+"seconds, and then deactivates the work queue, telling our worker threads to\n"
+"terminate. Then, our main thread calls the join_threads() function to clean up\n"
+"all the worker threads.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix3.xml:524
+#, no-wrap
+msgid "threadfunc()"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:528
+#, no-wrap
+msgid ""
+"Time to look at threadfunc(), the code that each worker thread executes. When a\n"
+"worker thread starts, it immediately locks the work queue mutex, gets one work\n"
+"node (if available) and processes it. If no work is available,\n"
+"pthread_cond_wait() is called. You'll notice that it's called in a very tight\n"
+"while() loop, and this is very important. When you wake up from a\n"
+"pthread_cond_wait() call, you should never assume that your condition is\n"
+"definitely true -- it will probably be true, but it may not. The while loop will\n"
+"cause pthread_cond_wait() to be called again if it so happens that the thread\n"
+"was mistakenly woken up and the list is empty.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:540
+#, no-wrap
+msgid ""
+"If there's a work node, we simply print out its job number, free it, and exit.\n"
+"Real code would do something more substantial. At the end of the while() loop,\n"
+"we lock the mutex so we can check the active variable as well as checking for\n"
+"new work nodes at the top of the loop. If you follow the code through, you'll\n"
+"find that if wq.control.active is 0, the while loop will be terminated and the\n"
+"cleanup code at the end of threadfunc() will begin.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:549
+#, no-wrap
+msgid ""
+"The worker thread's part of the cleanup code is pretty interesting. First, it\n"
+"unlocks the work_queue, since pthread_cond_wait() returns with the mutex locked.\n"
+"Then, it gets a lock on the cleanup queue, adds our cleanup node (containing our\n"
+"TID, which the main thread will use for its pthread_join() call), and then it\n"
+"unlocks the cleanup queue. After that, it signals any cq waiters\n"
+"(pthread_cond_signal(&amp;cq.control.cond)) so that the main thread will know\n"
+"that there's a new node to process. We don't use pthread_cond_broadcast()\n"
+"because it's not necessary -- only one thread (the main thread) is waiting for\n"
+"new entries in the cleanup queue. Our worker thread prints a shutdown message,\n"
+"and then terminates, waiting to be pthread_joined() by the main thread when it\n"
+"calls join_threads().\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix3.xml:565
+#, no-wrap
+msgid "join_threads()"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:569
+#, no-wrap
+msgid ""
+"If you want to see a simple example of how condition variables should be used,\n"
+"take a look at the join_threads() function. While we still have worker threads\n"
+"in existence, join_threads() loops, waiting for new cleanup nodes in our cleanup\n"
+"queue. If there is a new node, we dequeue the node, unlock the cleanup queue (so\n"
+"that other cleanup nodes can be added by our worker threads), join with our new\n"
+"thread (using the TID stored in the cleanup node), free the cleanup node,\n"
+"decrement the number of threads \"out there\", and continue.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix3.xml:581
+#, no-wrap
+msgid "Wrapping it up"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix3.xml:585
+#, no-wrap
+msgid ""
+"We've reached the end of the \"POSIX threads explained\" series, and I hope that\n"
+"you're now ready to begin adding multithreaded code to your own applications.\n"
+"For more information, please see the <uri link=\"#resources\">Resources</uri>\n"
+"section, which also contains a tarball of all the sources used in this article.\n"
+"I'll see you next series!\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/l-posix3.xml:597
+#, no-wrap
+msgid "Resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix3.xml:603
+#, no-wrap
+msgid ""
+"    A <uri link=\"/doc/en/files/l-posix-thread-3.tar.gz\">tarball of the\n"
+"    sources</uri> used in this article is available.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix3.xml:607
+#, no-wrap
+msgid ""
+"    Read Daniel's POSIX threads explained <uri link=\"l-posix1.xml\">Part 1</uri>\n"
+"    and <uri link=\"l-posix2.xml\">Part 2</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix3.xml:611
+#, no-wrap
+msgid ""
+"    Your friendly Linux pthread man pages (<c>man -k pthread</c>) are an\n"
+"    excellent resource.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix3.xml:615
+#, no-wrap
+msgid ""
+"    For a thorough treatment of POSIX threads, I recommend this book:\n"
+"    <uri\n"
+"    link=\"http://search.borders.com/fcgi-bin/db2www/search/search.d2w/Details?&amp;mediaType=Book&amp;prodID=2362607\">Programming\n"
+"    with POSIX Threads</uri>, by David R. Butenhof (Addison-Wesley,\n"
+"    1997). This is arguably the best POSIX threads book available.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix3.xml:622
+#, no-wrap
+msgid ""
+"    POSIX threads are also covered in this book: <uri\n"
+"    link=\"http://search.borders.com/fcgi-bin/db2www/search/search.d2w/Details?&amp;mediaType=Book&amp;prodID=2362607\">UNIX\n"
+"    Network Programming - Networking APIs: Sockets and XTI</uri>, by W. Richard\n"
+"    Stevens (Prentice Hall, 1997). This is a classic book, but it doesn't cover\n"
+"    threads in as much detail as does Programming with POSIX Threads, above.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix3.xml:629
+#, no-wrap
+msgid ""
+"    See documentation on <uri\n"
+"    link=\"http://metalab.unc.edu/pub/Linux/docs/faqs/Threads-FAQ/html/\">Linux\n"
+"    threads</uri>, by Sean Walton, KB7rfa.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix3.xml:634
+#, no-wrap
+msgid ""
+"    Take a POSIX threads <uri\n"
+"    link=\"http://www.math.arizona.edu/swig/pthreads/threads.html\">tutorial</uri>\n"
+"    by Mark Hays at the University of Arizona.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix3.xml:639
+#, no-wrap
+msgid ""
+"    In <uri link=\"http://hwaci.com/sw/pttcl/pttcl.html\">An Introduction to\n"
+"    Pthreads-Tcl</uri>, see changes to Tcl that enable it to be used with POSIX\n"
+"    threads.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix3.xml:644
+#, no-wrap
+msgid ""
+"    Take another tutorial, <uri\n"
+"    link=\"http://dis.cs.umass.edu/~wagner/threads_html/tutorial.html\">Getting\n"
+"    Started with POSIX Threads</uri>, by Tom Wagner and Don Towsley of the\n"
+"    Computer Science Department at the University of Massachusetts, Amherst.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix3.xml:650
+#, no-wrap
+msgid ""
+"    <uri link=\"http://moss.csc.ncsu.edu/~mueller/pthreads/\">FSU PThreads</uri> is a\n"
+"    C library that implements POSIX threads for SunOS 4.1.x, Solaris 2.x, SCO\n"
+"    UNIX, FreeBSD, Linux, and DOS.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix3.xml:655
+#, no-wrap
+msgid ""
+"    Refer to the home page for <uri\n"
+"    link=\"http://www.sai.msu.su/sal/C/2/PCTHREADS.html\">POSIX and DCE threads</uri>\n"
+"    for Linux.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix3.xml:660
+#, no-wrap
+msgid ""
+"    See <uri link=\"http://pauillac.inria.fr/~xleroy/linuxthreads/\">The\n"
+"    LinuxThreads library</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix3.xml:664
+#, no-wrap
+msgid ""
+"    <uri link=\"http://www.users.itl.net.ua/~prool/proolix.html\">Proolix</uri> is\n"
+"    a simple POSIX-compliant operating system for i8086+ under permanent\n"
+"    development.\n"
+"  "
+msgstr ""

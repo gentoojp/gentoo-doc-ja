@@ -1,0 +1,251 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-working-features.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+
+<sections>
+
+<version>1.23</version>
+<date>2004-11-26</date>
+<!-- Original revision: 1.26 -->
+
+<section>
+<title>Portageの機能</title>
+<body>
+
+<p>
+PortageはあなたのGentoo環境をより良くしてくれるいくつかの追加の機能があります。
+これらの機能の多くはパフォーマンス、信頼性、セキュリティなどを改良してくれるソフトウェアツールに頼っています。
+</p>
+
+<p>
+Portageの機能を有効にしたり無効にするには<path>/etc/make.conf</path>の<c>FEATURES</c>変数を編集する必要があります。
+いくつかのケースでは機能が依存している追加のツールをインストールする必要があります。
+</p>
+
+<p>
+Portageがサポートしている機能が全てここで紹介されているわけではありません。
+全てを知るには、<path>make.conf</path>のmanページを調べてください。
+</p>
+
+<pre caption="make.confのmanページを調べる">
+$ <i>man make.conf</i>
+</pre>
+
+<p>
+デフォルトでFEATURESに何が設定されているかを知るには、<c>emerge info</c>を実行してFEATURES変数を検索するかgrepを利用します。
+</p>
+
+<pre caption="既に設定されているFEATURESを知る">
+$ <i>emerge info | grep FEATURES</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>分散コンパイル</title>
+<subsection>
+<title>distccを使う</title>
+<body>
+
+<p>
+<c>distcc</c>はネットワーク上のそれぞれのマシン(同一である必要はない)にコンパイル作業を分散させるプログラムです。
+<c>distcc</c>クライアントは利用可能な(<c>distccd</c>が実行されている)distccサーバに必要な情報の全てを送信するので、
+それらサーバはクライアントのためにソースコードの断片をコンパイルすることができます。
+この結果、コンパイルの時間が高速化されます。
+</p>
+
+<p>
+<c>distcc</c>に関するより多くの情報(そしてどのようにしてGentooで動作するのか)については<uri link="/doc/en/distcc.xml">Gentoo Distcc Documentation</uri><uri link="/doc/ja/distcc.xml">(日本語訳)</uri>を見てください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>distccのインストール</title>
+<body>
+
+<p>
+distccはコンピュータが送信したコンパイルタスクを監視するグラフィカルモニターを提供します。
+もしGnomeを使っているのならUSEフラグに'gnome'を追加してください。
+しかし、Gnomeを使っていないがモニターを利用したいときはUSEフラグに'gtk'を追加してください。
+</p>
+
+<pre caption="distccのインストール">
+# <i>emerge distcc</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Portageのサポートを有効化する</title>
+<body>
+
+<p>
+<path>/etc/make.conf</path>内のFEATURES変数に<c>distcc</c>を追加してください。
+次に、MAKEOPTS変数をあなたの好みに編集してください。
+よく知られたガイドラインには"-jX"と埋めうるように指示されています。
+Xは<c>distccd</c>を実行している(現在のホストも含める)CPUの数+1ですが、他の数字の方が良い結果が得られるかもしれません。
+</p>
+
+<p>
+では<c>distcc-config</c>を実行して利用可能なdistccサーバのリストを入力しましょう。
+簡単な例ではdistccサーバが192.168.1.102(現在のホスト)、192.168.1.103、192.168.1.104(２つのリモートホスト)で利用可能であると仮定します。
+</p>
+
+<pre caption="distccが３つのサーバを使うように設定">
+# <i>distcc-config --set-hosts "192.168.1.102 192.168.1.103 192.168.1.104"</i>
+</pre>
+
+<p>
+忘れずに<c>distccd</c>デーモンを実行してください。
+</p>
+
+<pre caption="distccdデーモンを起動">
+# <i>rc-update add distccd default</i>
+# <i>/etc/init.d/distccd start</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>キャッシングコンパイル</title>
+<subsection>
+<title>ccacheについて</title>
+<body>
+
+<p>
+<c>ccache</c>は高速なコンパイラーキャッシュです。
+プログラムをコンパイルすると、中間結果をキャッシュするので、同じプログラムを再コンパイルしたときはいつでも、コンパイル時間は大いに減少します。
+この結果、普通のコンパイルでは５～１０倍のコンパイル時間の高速化となります。
+</p>
+
+<p>
+ccacheに関する特徴に興味があるなら、<uri link="http://ccache.samba.org">ccacheのホームページ</uri>を訪れてください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>ccacheのインストール</title>
+<body>
+
+<p>
+<c>ccache</c>をインストールするには、<c>emerge ccache</c>を実行してください。
+</p>
+
+<pre caption="ccacheのインストール">
+# <i>emerge ccache</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Portageのサポートを有効化する</title>
+<body>
+
+<p>
+<path>/etc/make.conf</path>を開いてFEATURES変数に<c>ccache</c>を追加します。
+次にCCACHE_SIZEという変数を追加して"2G"と設定します。
+</p>
+
+<pre caption="/etc/make.confのCCACHE_SIZEを編集">
+CCACHE_SIZE="2G"
+</pre>
+
+<p>
+ccacheが動作しているかを確認するには、ccacheに統計を提供するよう問い合わせてください。
+</p>
+
+<pre caption="ccacheの統計を見る">
+# <i>ccache -s</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>ccacheをnon-PortageでないCのコンパイルに使う</title>
+<body>
+
+<p>
+もしPortageでないコンパイルにccacheを使いたいのなら、PATH変数の最初(<path>/usr/bin</path>より前)に<path>/usr/lib/ccache/bin</path>を追加してください。
+これは<path>/etc/profile</path>を編集することで完了します。
+</p>
+
+<pre caption="/etc/profileを編集">
+PATH="<i>/usr/lib/ccache/bin</i>:${PATH}"
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>バイナリパッケージのサポート</title>
+<subsection>
+<title>予めビルドされたパッケージを作成する</title>
+<body>
+
+<p>
+Portageは予めビルドされたパッケージのインストールをサポートしています。
+Gentoo自身は(GRPスナップショットをのぞいて)ビルドされたパッケージを提供しませんが、Portageはビルドされたパッケージを作成することができます。
+</p>
+
+<p>
+パッケージが既にインストールされているなら<c>quickpkg</c>を使うことができますし、そうでなければ<c>emerge</c>に<c>--buildpkg</c>もしくは<c>--buildpkgonly</c>オプションを付けることでビルドされたパッケージを作成することができます。
+</p>
+
+<p>
+Portageにインストールするパッケージごとにビルドされたパッケージを作成して欲しいのなら、FEATURES変数に<c>buildpkg</c>を追加します。
+</p>
+
+<p>
+より拡張されたビルドされたパッケージセットの作成が<c>catalyst</c>によってサポートされています。
+catalystについての詳しい説明は<uri link="/proj/en/releng/catalyst/reference.xml">Catalyst Reference Manual</uri>と<uri link="/proj/en/releng/catalyst/catalyst-howto.xml">Catalyst Howto</uri>を見てください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>予めビルドされたパッケージのインストール</title>
+<body>
+
+<p>
+Gentooは提供してくれませんが、ビルドされたパッケージを置いておく中央レポジトリを作ることができます。
+このレポジトリを作りたいのなら、Portageが理解するためにPORTAGE_BINHOST変数で示されていなければなりません。
+例えば、ビルドされたパッケージがftp://buildhost/gentooにあるならこうします。
+</p>
+
+<pre caption="/etc/make.confにPORTAGE_BINHOSTを設定">
+PORTAGE_BINHOST="ftp://buildhost/gentoo"
+</pre>
+
+<p>
+ビルドされたパッケージをインストールしたいときには、emergeコマンドに<c>--getbinpkg</c>オプションを<c>--usepkg</c>と並べて記述します。、
+前者が前に定義したサーバからビルドされたパッケージをダウンロードするようにemergeに伝えているのに対し、
+後者はソースをダウンロードしてコンパイルする前にビルドされたパッケージのインストールを試すように言っています。
+</p>
+
+<p>
+例えば、<c>gnumeric</c>をビルドされたパッケージからインストールするにはこうします。
+</p>
+
+<pre caption="ビルドされたgnumericパッケージをインストール">
+# <i>emerge --usepkg --getbinpkg gnumeric</i>
+</pre>
+
+<p>
+emergeの予めビルドされたパッケージに関するより多くの情報はemergeのmanページにあります。
+</p>
+
+<pre caption="emergeのmanページを読む">
+$ <i>man emerge</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+</sections>

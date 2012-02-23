@@ -1,0 +1,211 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-x86-quickinstall.xml,v 1.85 2011/05/09 19:59:08 nightmorph Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoo Linux x86 Quick Install Guide</title>
+
+<values>
+ <key id="raid+lvm">no</key>
+ <key id="root">/dev/sda3</key>
+</values>
+
+<author title="Author">
+  <mail link="neysx"/>
+</author>
+<author title="Author">
+  <mail link="swift"/>
+</author>
+<author title="Author">Steven Wagner</author>
+
+<abstract>
+The Quick Install guide covers the Gentoo install process in a non-verbose
+manner. Its purpose is to allow users to perform a stage3 install in no time.
+Users should already have prior experience with installing Gentoo Linux if they
+want to follow this guide.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>26</version>
+<date>2011-05-09</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<body>
+
+<p>
+This guide contains all the commands you should use to complete a stage3
+installation of Gentoo. You need a connection to the Internet to download the
+stage3 and Portage snapshots.
+</p>
+
+<impo>
+New users should read the <uri link="/doc/en/handbook/index.xml">Handbook</uri>
+as it gives a better overview about the installation process. The Quick Install
+guide is designed for experienced users who just need a checklist to follow.
+</impo>
+
+<p>
+Timing output follows all commands that take more than a couple of seconds to
+finish. Commands were timed on an AMD 2000 1.66 Ghz PC with 512 MB of RAM and
+two SATA disks connected to a hardware controller.
+</p>
+
+<pre caption="Test box specs">
+<comment>(The following specs and the timing information should help you determine
+a rough estimate of the time you need to complete your install)</comment>
+
+# <i>grep bogo /proc/cpuinfo</i>
+bogomips       : 3337.81
+
+# <i>hdparm -tT /dev/sda</i>
+/dev/sda:
+ Timing cached reads:   1100 MB in  2.00 seconds = 549.97 MB/sec
+ Timing buffered disk reads:  224 MB in  3.01 seconds =  74.36 MB/sec
+
+# <i>grep MemTotal /proc/meminfo</i>
+MemTotal:       509248 kB
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Quick Install Guide</title>
+
+<section>
+ <include href="gentoo-x86-quickinstall-media.xml"/>
+</section>
+
+<section>
+<title>Preparing the Disks</title>
+<body>
+
+<p>
+Use <c>fdisk</c> or <c>cfdisk</c> to create your partition layout. You need at
+least a swap partition (type 82) and one Linux partition (type 83). The
+following scenario creates a <path>/boot</path>, a swap and a main partition as
+used in our handbook. Replace <path>sda</path> with your disk. Most systems
+ignore the bootable flag, but a few need it. Set this flag on your boot
+partition with fdisk's <c>a</c> command.
+</p>
+
+<pre caption="Create the partitions">
+livecd ~ # <i>fdisk /dev/sda</i>
+
+<comment>(The rest of this guide uses the following partitioning scheme)</comment>
+livecd ~ # <i>fdisk -l /dev/sda</i>
+
+Disk /dev/sda: 599.9 GB, 599978409984 bytes
+255 heads, 63 sectors/track, 72943 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *           1          12       96358+  83  Linux
+/dev/sda2              13         110      787185   82  Linux swap / Solaris
+/dev/sda3             111       72943   585031072+  83  Linux
+</pre>
+
+<p>
+Use <c>mke2fs</c>, <c>mke2fs -j</c>, <c>mkreiserfs</c>, <c>mkfs.xfs</c> and
+<c>mkfs.jfs</c> to create file systems on your Linux partitions. Initialize your
+swap partition using <c>mkswap</c> and <c>swapon</c>.
+</p>
+
+<pre caption="Create the file systems and activate swap">
+<comment>(ext2 is all you need on the /boot partition)</comment>
+livecd ~ # <i>mke2fs /dev/sda1</i>
+
+<comment>(Let's use ext3 on the main partition)</comment>
+livecd ~ # <i>mke2fs -j /dev/sda3</i>
+
+<comment>(Create and activate swap)</comment>
+livecd ~ # <i>mkswap /dev/sda2 &amp;&amp; swapon /dev/sda2</i>
+</pre>
+
+<p>
+Mount the freshly created file systems on <path>/mnt/gentoo</path>. Create
+directories for the other mount points (like <path>/mnt/gentoo/boot</path>) if
+you need them and mount them too.
+</p>
+
+<pre caption="Mount the file systems">
+livecd ~ # <i>mount /dev/sda3 /mnt/gentoo</i>
+livecd ~ # <i>mkdir /mnt/gentoo/boot</i>
+livecd ~ # <i>mount /dev/sda1 /mnt/gentoo/boot</i>
+livecd ~ # <i>cd /mnt/gentoo</i>
+</pre>
+
+</body>
+</section>
+
+<section>
+ <include href="gentoo-x86-quickinstall-stage.xml"/>
+</section>
+
+<section>
+<title>Kernel Configuration</title>
+<body>
+
+<p>
+Install a kernel source (usually <c>gentoo-sources</c>), configure it, compile
+it and copy the <path>arch/i386/boot/bzImage</path> file to <path>/boot</path>.
+</p>
+
+<pre caption="Install a kernel source, compile it and install the kernel">
+livecd etc # <i>time emerge gentoo-sources</i>
+
+real  2m51.435s
+user  0m58.220s
+sys   0m29.890s
+livecd etc # <i>cd /usr/src/linux</i>
+livecd linux # <i>make menuconfig</i>
+<comment>(Configure your kernel)</comment>
+livecd linux # <i>time make -j2</i>
+
+<comment>(Elapsed time depends highly on the options you selected)</comment>
+real  3m51.962s
+user  3m27.060s
+sys   0m24.310s
+
+livecd linux # <i>make modules_install</i>
+livecd linux # <i>cp arch/i386/boot/bzImage /boot/kernel</i>
+</pre>
+
+</body>
+</section>
+
+<section>
+ <include href="gentoo-x86-quickinstall-system.xml"/>
+</section>
+
+<section id="reboot">
+<title>Reboot</title>
+<body>
+
+<p>
+Exit the chrooted environment, unmount all file systems and reboot:
+</p>
+
+<pre caption="Reboot">
+livecd conf.d # <i>exit</i>
+livecd / # <i>umount -l /mnt/gentoo/dev{/shm,/pts,}</i>
+livecd / # <i>umount -l /mnt/gentoo{/proc,/boot,}</i>
+livecd / # <i>reboot</i>
+<comment>(Don't forget to remove the CD)</comment>
+</pre>
+
+</body>
+</section>
+
+<section>
+ <include href="gentoo-x86-quickinstall-after-reboot.xml"/>
+</section>
+
+</chapter>
+</guide>

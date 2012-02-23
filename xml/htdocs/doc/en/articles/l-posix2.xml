@@ -1,0 +1,578 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/l-posix2.xml,v 1.5 2011/09/04 17:53:41 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide disclaimer="articles">
+<title>POSIX threads explained, part 2</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+
+<abstract>
+POSIX threads are a great way to increase the responsiveness and performance of
+your code. In this second article of a three-part series, Daniel Robbins shows
+you how to protect the integrity of shared data structures in your threaded code
+by using nifty little things called mutexes.
+</abstract>
+
+<!-- The original version of this article was published on IBM developerWorks,
+and is property of Westtech Information Services. This document is an updated
+version of the original article, and contains various improvements made by the
+Gentoo Linux Documentation team -->
+
+<version>1.2</version>
+<date>2005-10-09</date>
+
+<chapter>
+<title>The little things called mutexes</title>
+<section id="thread3c">
+<title>Mutex me!</title>
+<body>
+
+<p>
+In my <uri link="/doc/en/articles/l-posix1.xml">previous article</uri>, I talked
+about threaded code that did unusual and unexpected things. Two threads each
+incremented a global variable twenty times.  The variable was supposed to end up
+with a value of 40, but ended up with a value of 21 instead. What happened? The
+problem occurred because one thread repeatedly "cancelled out" the increment
+performed by the other thread. Let's take a look at some corrected code that
+uses a <b>mutex</b> to solve the problem:
+</p>
+
+<pre caption="thread3.c">
+#include &lt;pthread.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;stdio.h&gt;
+
+int myglobal;
+pthread_mutex_t mymutex=PTHREAD_MUTEX_INITIALIZER;
+
+void *thread_function(void *arg) {
+  int i,j;
+  for ( i=0; i&lt;20; i++ ) {
+    pthread_mutex_lock(&amp;mymutex);
+    j=myglobal;
+    j=j+1;
+    printf(".");
+    fflush(stdout);
+   sleep(1);
+    myglobal=j;
+    pthread_mutex_unlock(&amp;mymutex);
+  }
+  return NULL;
+}
+
+int main(void) {
+
+  pthread_t mythread;
+  int i;
+
+  if ( pthread_create( &amp;mythread, NULL, thread_function, NULL) ) {
+    printf("error creating thread.");
+    bort();
+  }
+
+  for ( i=0; i&lt;20; i++) {
+    pthread_mutex_lock(&amp;mymutex);
+    myglobal=myglobal+1;
+    pthread_mutex_unlock(&amp;mymutex);
+    printf("o");
+    fflush(stdout);
+    sleep(1);
+  }
+
+  if ( pthread_join ( mythread, NULL ) ) {
+    printf("error joining thread.");
+    abort();
+  }
+
+  printf("\nmyglobal equals %d\n",myglobal);
+
+  exit(0);
+
+}
+</pre>
+
+</body>
+</section>
+<section>
+<title>Comprehension time</title>
+<body>
+
+<p>
+If you compare this code to the version in my <uri
+link="/doc/en/articles/l-posix1.xml">previous article</uri>, you'll notice the
+addition of the calls pthread_mutex_lock() and pthread_mutex_unlock(). These
+calls perform a much-needed function in threaded programs. They provide a means
+of mutual exclusion (hence the name). No two threads can have the same mutex
+locked at the same time.
+</p>
+
+<p>
+This is how mutexes work. If thread "a" tries to lock a mutex while thread "b"
+has the same mutex locked, thread "a" goes to sleep. As soon as thread "b"
+releases the mutex (via a pthread_mutex_unlock() call), thread "a" will be able
+to lock the mutex (in other words, it will return from the pthread_mutex_lock()
+call with the mutex locked). Likewise, if thread "c" tries to lock the mutex
+while thread "a" is holding it, thread "c" will also be put to sleep
+temporarily. All threads that go to sleep from calling pthread_mutex_lock() on
+an already-locked mutex will "queue up" for access to that mutex.
+</p>
+
+<p>
+pthread_mutex_lock() and pthread_mutex_unlock() are normally used to protect
+data structures. That is, you make sure that only one thread at a time can
+access a certain data structure by locking and unlocking it. As you may have
+guessed, the POSIX threads library will grant a lock without having put the
+thread to sleep at all if a thread tries to lock an unlocked mutex.
+</p>
+
+<figure link="/images/docs/l-posix-mutex.gif" caption="For your enjoyment, four
+znurts re-enact a scene from recent pthread_mutex_lock() calls"/>
+
+<p>
+The thread in this image that has the mutex locked gets to access the complex
+data structure without worrying about having other threads mess with it at the
+same time. The data structure is in effect "frozen" until the mutex is unlocked.
+It's as if the pthread_mutex_lock() and pthread_mutex_unlock() calls are "under
+construction" signs that surround a particular piece of shared data that's being
+modified or read. The calls act as a warning to other threads to go to sleep and
+wait their turn for the mutex lock. Of course this is only true if your surround
+every read and write to a particular data structure with calls to
+pthread_mutex_lock() and pthread_mutex_unlock().
+</p>
+
+</body>
+</section>
+<section>
+<title>Why mutex at all?</title>
+<body>
+
+<p>
+Sounds interesting, but why exactly do we want to put our threads to sleep?
+After all, isn't the main advantage of threads their ability to work
+independently and in many cases simultaneously? Yes, that's completely true.
+However, every non-trivial threads program will require at least some use of
+mutexes. Let's refer to our example program again to understand why.
+</p>
+
+<p>
+If you take a look at thread_function(), you'll notice that the mutex is locked
+at the beginning of the loop and released at the very end. In this example
+program, mymutex is used to protect the value of myglobal. If you look carefully
+at thread_function() you'll notice that the increment code copies myglobal to a
+local variable, increments the local variable, sleeps for one second, and only
+then copies the local value back to myglobal. Without the mutex,
+thread_function() will overwrite the incremented value when it wakes up if our
+main thread increments myglobal during thread_function()'s one-second nap. Using
+a mutex ensures that this doesn't happen. (In case you're wondering, I added the
+one-second delay to trigger a flawed result. There is no real reason for
+thread_function() to go to sleep for one second before writing the local value
+back to myglobal.) Our new program using mutex produces the desired result:
+</p>
+
+<pre caption="Output of program using mutex">
+$ <i>./thread3</i>
+o..o..o.o..o..o.o.o.o.o..o..o..o.ooooooo
+myglobal equals 40
+</pre>
+
+<p>
+To further explore this extremely important concept, let's take a look at the
+increment code from our program:
+</p>
+
+<pre caption="Incremented code">
+thread_function() increment code: 
+   j=myglobal;
+    j=j+1;
+    printf(".");
+    fflush(stdout);
+    sleep(1);
+    myglobal=j;
+
+main thread increment code:
+    myglobal=myglobal+1;
+</pre>
+
+<p>
+If this code were in a single-threaded program we'd expect the
+thread_function() code to execute in its entirety. The execution would then be
+followed by the main thread code (or the other way around). In a threaded
+program without mutexes, the code can (and often will, thanks to the sleep()
+call) end up executing in the following order:
+</p>
+
+<pre caption="Executing order">
+  thread_function() thread        main thread
+
+  j=myglobal;
+  j=j+1;
+  printf(".");
+  fflush(stdout);
+  sleep(1);                        myglobal=myglobal+1;
+  myglobal=j;
+</pre>
+
+<p>
+When the code executes in this particular order, the main thread's modification
+to myglobal gets overwritten. We then end up with an incorrect value at the end
+of our program. If we were manipulating pointers we'd probably end up with a
+segfault. Notice that our thread_function() thread executes all its
+instructions in order. It's not as if thread_function() does anything out of
+order. The problem is that we have another thread performing the other
+modifications to the same data structure effectively at the same time.
+</p>
+
+</body>
+</section>
+<section>
+<title>Inside threads 1</title>
+<body>
+
+<p>
+Before I explain how to figure out where to use mutexes, I'll offer a little
+insight into the internal working of threads. Here's our first example:
+</p>
+
+<p>
+Let's say you have a main thread that creates three new threads: threads "a",
+"b", and "c". Let's say that thread "a" is created first, thread "b", second and
+thread "c" last.
+</p>
+
+<pre caption="Thread creating order">
+  pthread_create( &amp;thread_a, NULL, thread_function, NULL);
+  pthread_create( &amp;thread_b, NULL, thread_function, NULL);
+  pthread_create( &amp;thread_c, NULL, thread_function, NULL);
+</pre>
+
+<p>
+After the first pthread_create() call completes, you can assume either that
+thread "a" exists or that it has finished and is now stopped. After the second
+pthread_create() call, both the main thread and thread "b" can assume that
+thread "a" exists (or has stopped).
+</p>
+
+<p>
+However, immediately after the second create() call returns, the main thread
+can't assume which thread (a or b) will actually start running first. Although
+both threads exist it's up to the kernel and threads library to give them a
+slice of CPU time. And there is no hard rule as to who goes first. Now, it's
+very likely that thread "a" will start executing before thread "b", but it isn't
+guaranteed. This is especially true on a multi-processor machine. If you write
+code that assumes that thread "a" will actually start executing its code before
+thread "b" starts, you'll end up with a program that works 99% of the time. Or
+worse, a program that works 100% of the time on your machine but 0% of the time
+on your client's quad-processor server.
+</p>
+
+<p>
+Another thing that we can learn from this example is that the threads library
+preserves the order of code execution for each individual thread. In other
+words, those three pthread_create() calls will in fact execute in the order that
+they appear. From the main thread's perspective, all the code is executing in
+order. Sometimes we can take advantage of this to optimize parts of our threaded
+programs. For instance, in the above example, thread "c" can assume that thread
+"a" and "b" are running or have already terminated. It does not have to worry
+about the possibility that threads "a" and "b" haven't been created yet. You can
+use this logic to optimize your threaded programs.
+</p>
+
+</body>
+</section>
+<section>
+<title>Inside threads 2</title>
+<body>
+
+<p>
+OK, now for another hypothetical example. Let's say we have a bunch of threads
+that are executing the following code:
+</p>
+
+<pre caption="Code being executed">
+  myglobal=myglobal+1;
+</pre>
+
+<p>
+Do we need to lock and unlock the mutex before and after the increment
+respectively? Some of you may say "no". The compiler will after all very likely
+compile the above assignment into a single machine instruction. As you know a
+single machine instruction cannot be interrupted "mid-stream". Even hardware
+interrupts will respect the atomicity of machine instructions. Because of this
+tendency it's tempting to leave out the pthread_mutex_lock() and
+pthread_mutex_unlock() calls entirely. Don't do it.
+</p>
+
+<p>
+Am I being a wimp? Not really. First, you shouldn't assume that the above
+assignment would be compiled as a single machine instruction unless you
+personally verify the machine code yourself. Even if you insert some inline
+assembly to ensure that the increment happens atomically -- or even if you wrote
+the compiler yourself! -- you may still have problems.
+</p>
+
+<p>
+Here's why. Using a single inline assembly opcode will probably work wonderfully
+on a uni-processor machine. Each increment will happen atomically, and chances
+are you'll get the desired result. But a multi-processor machine is another
+story. On a multi-CPU machine, you can have two separate processors executing
+the above assignment at nearly (or at times exactly) the same time. And remember
+that this memory modification will need to trickle down from L1 to L2 cache, and
+then to main memory. (An SMP machine is not just an additional processor; it
+also has special hardware that arbitrates access to RAM.) In the end, you'll
+really have no idea which CPU "wins" the race of writing to main memory. To
+produce predictable code, you'll want to use mutexes. Mutexes will insert a
+"memory barrier," which ensures that the writes to main memory occur in the
+order the threads lock the mutex.
+</p>
+
+<p>
+Consider an SMP architecture that updates main memory in 32-bit blocks. If you
+are incrementing a 64-bit integer without mutexes, the uppermost 4 bytes might
+come from one CPU and the other four might come from another. Bummer! Worst of
+all, using poor technique will probably make your program bomb out once in a
+blue moon or at 3 AM on an important client's system. David R. Butenhof covers
+the possible permutations of not using mutexes in his book, Programming with
+POSIX Threads (see <uri link="#resources">Resources</uri> at the end of this
+article).
+</p>
+
+</body>
+</section>
+<section>
+<title>Many mutexes</title>
+<body>
+
+<p>
+If you place too many mutexes, your code won't have any kind of concurrency and
+will run slower than a single-threaded solution. If you place too few, your code
+will have weird and embarrassing bugs. Fortunately, there is a middle ground.
+First of all, mutexes are used to serialize access to *shared data*. Don't use
+them for non-shared data, and don't use them if your program's logic ensures
+that only one thread is accessing a particular data structure at a single time.
+</p>
+
+<p>
+Second of all, if you are using shared data, use mutexes for both reading and
+writing. Surround your read and write sections with pthread_mutex_lock() and
+pthread_mutex_unlock(), or use them any time a program's invariant is
+temporarily broken. Learn to view your code from the perspective of a single
+thread and make sure each individual thread in your program has a consistent,
+friendly view of memory. It'll probably take you several hours of writing your
+own code to get the hang of mutexes, but they will soon become second nature and
+you'll be able to use them properly without thinking <e>too</e> much.
+</p>
+
+</body>
+</section>
+<section>
+<title>Using the calls: initialization</title>
+<body>
+
+<p>
+OK, now it's time to see all the different ways to use mutexes. First, we'll
+start with initialization. In our <uri link="#thread3c">thread3.c example</uri>,
+we used a static initialization method. This involved declaring a
+pthread_mutex_t variable and assigning it the constant
+PTHREAD_MUTEX_INITIALIZER:
+</p>
+
+<pre caption="Initialization example">
+pthread_mutex_t mymutex=PTHREAD_MUTEX_INITIALIZER;
+</pre>
+
+<p>
+That's pretty easy. But you can also create a mutex dynamically. Use this
+dynamic method whenever your code allocates a new mutex using malloc(). In this
+case, the static initialization method won't do, and the routine
+pthread_mutex_init() should be used:
+</p>
+
+<pre caption="Dynamic way of creating mutex">
+int pthread_mutex_init( pthread_mutex_t *mymutex, const pthread_mutexattr_t*attr)
+</pre>
+
+<p>
+As you can see, pthread_mutex_init accepts a pointer to an already-allocated
+region of memory to initialize as a mutex. As a second argument, it can also
+accept an optional pthread_mutexattr_t pointer. This structure can be used to
+set various mutex attributes. But usually these attributes are not needed, so
+specifying NULL is the norm.
+</p>
+
+<p>
+Whenever you initialize a mutex using pthread_mutex_init(), it should be
+destroyed using pthread_mutex_destroy(). pthread_mutex_destroy() accepts a
+single pointer to a pthread_mutex_t and frees any resources allocated to the
+mutex when it was created. Be sure to note that pthread_mutex_destroy() does not
+free the memory used to store the pthread_mutex_t. It's up to you to free() your
+own memory. Also remember that both pthread_mutex_init() and
+pthread_mutex_destroy() return zero on success.
+</p>
+
+</body>
+</section>
+<section>
+<title>Using the calls: locking</title>
+<body>
+
+<pre caption="Locking example">
+pthread_mutex_lock(pthread_mutex_t *mutex)
+</pre>
+
+<p>
+pthread_mutex_lock() accepts a single pointer to a mutex to lock. If the mutex
+already happens to be locked, the caller will go to sleep. When the function
+returns, the caller will be woken up (obviously), and the caller will also now
+hold the lock. This call either returns zero on success or a non-zero error code
+on failure.
+</p>
+
+<pre caption="Unlocking example">
+pthread_mutex_unlock(pthread_mutex_t *mutex)
+</pre>
+
+<p>
+pthread_mutex_unlock() complements pthread_mutex_lock() and unlocks a mutex that
+the thread has already locked. You should always unlock a mutex that you've
+locked as soon as safely possible (to increase performance). And you should
+never unlock a mutex that you don't hold a lock for (otherwise, the
+pthread_mutex_unlock() call will fail with a non-zero EPERM return value).
+</p>
+
+<pre caption="Trying the lock example">
+pthread_mutex_trylock(pthread_mutex_t *mutex)
+</pre>
+
+<p>
+This call is handy when you want to lock a mutex while your thread is doing
+something else (because the mutex is currently locked). When you call
+pthread_mutex_trylock() you'll attempt to lock the mutex. If the mutex is
+currently unlocked you'll get the lock, and this function will return zero.
+However, if the mutex is locked this call won't block. Rather, it will return a
+non-zero EBUSY error value. Then you can go about your business and try to lock
+at a later time.
+</p>
+
+</body>
+</section>
+<section>
+<title>Waiting on conditions</title>
+<body>
+
+<p>
+Mutexes are necessary tools for threaded programs, but they can't do everything.
+What happens, for instance, if your thread is waiting for a certain condition to
+appear in shared data? Your code could repeatedly lock and unlock the mutex,
+checking for any changes to the value. At the same time it will also quickly
+unlock the mutex so that others can make any necessary changes. But this is a
+horrible approach because this thread will need to busy-loop to detect a change
+in a reasonable time frame.
+</p>
+
+<p>
+You could put the calling thread to sleep for a little bit, say three seconds
+between each check, but then your threaded code wouldn't be optimally
+responsive. What you really need is a way to put a thread to sleep while it
+waits for some condition to be met. Once the condition is met you need a method
+to wake up the thread(s) that are waiting for that particular condition to
+become true. If you can do this, your threaded code will be really efficient and
+it won't tie up valuable mutex locks. That's precisely what POSIX condition
+variables can do for you!
+</p>
+
+<p>
+And POSIX condition variables are the subject of my next article, where I'll
+show you exactly how to use them. Then you'll have all the resources to create
+sophisticated threaded programs that model work crews, assembly lines, and more.
+I'm going to pick up the pace in the next article now that you're getting more
+familiar with threads. I'm hoping this will allow me to squeeze in a reasonably
+sophisticated threaded program at the end of the next article. And speaking of
+waiting on conditions, I'll see you then!
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="resources">
+<title>Resources</title>
+<section>
+<body>
+
+<ul>
+  <li>
+    Read Daniel's POSIX threads explained <uri link="l-posix1.xml">Part 1</uri>
+    and <uri link="l-posix3.xml">Part 3</uri>.
+  </li>
+  <li>
+    See documentation on <uri
+    link="http://metalab.unc.edu/pub/Linux/docs/faqs/Threads-FAQ/html/">Linux
+    threads</uri>, by Sean Walton, KB7rfa.
+  </li>
+  <li>
+    Always go to your friendly Linux pthread man pages (<c>man -k pthread</c>).
+  </li>
+  <li>
+    See <uri link="http://pauillac.inria.fr/~xleroy/linuxthreads/">The
+    LinuxThreads Library.</uri>
+  </li>
+  <li>
+    <uri link="http://www.users.itl.net.ua/~prool/proolix.html">Proolix</uri> is
+    a simple POSIX-compliant operating system for i8086+ under permanent
+    development.
+  </li>
+  <li>
+    Take a look at David R. Butenhof's book <uri
+    link="http://www.amazon.com/exec/obidos/ASIN/0201633922/o/qid=961544788/sr=8-1/ref=aps_sr_b_1_1/002-2882413-1227240">Programming
+    with POSIX Threads</uri>, in which he covers, among other things, the
+    possible permutations of not using
+    mutexes.
+  </li>
+  <li>
+    Check out W. Richard Stevens' book <!-- FIXME not available out there,
+    commenting out and leaving finding it pleasure to readers<uri
+    link="http://devworks.krcinfo.com/WebForms/ProductDetails.aspx?ProductID=0139498761">-->"UNIX
+    Network Programming".
+  </li>
+  <li>
+    Find more resources for Linux developers in the <uri
+    link="http://www.ibm.com/developerworks/linux/">developerWorks Linux
+    zone</uri>. 
+  </li>
+  <li>
+    Get involved in the developerWorks community by participating in
+    <uri link="http://www.ibm.com/developerworks/blogs/">developerWorks
+    blogs</uri>.
+  </li>
+  <!-- FIXME Ugly advertisement
+  15:25  <rane> is that ok to put such advertisment at gentoo.org?
+  15:26  * neysx would not copy them
+  15:27  <SwifT> I wouldn't keep it
+  <li>
+    Purchase <uri
+    link="http://devworks.krcinfo.com/WebForms/ProductList.aspx?Search=Category&id=300&parent=Linux">Linux
+    books at discounted prices</uri> in the Linux section of the
+    Developer Bookstore.
+  </li>
+  <li>
+    Order the no-charge SEK for Linux, a two-DVD set containing the latest IBM
+    trial software for Linux from DB2&registered;, Lotus&registered;,
+    Rational&registered;, Tivoli&registered;, and WebSphere&registered;.
+  </li>
+  <li>
+    Innovate your next Linux development project with <uri
+    link="http://www.ibm.com/developerworks/downloads/?S_TACT=105AGX03">IBM trial software
+    </uri>, available for download directly from developerWorks.
+  </li>
+  -->
+</ul>
+
+</body>
+</section>
+</chapter>
+
+</guide>

@@ -1,0 +1,548 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-working-portage.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.42</version>
+<date>October 24, 2004</date>
+
+<section>
+<title>Welcome to Portage</title>
+<body>
+
+<p>
+Portage is probably Gentoo's most notable innovation in software management.
+With its high flexibility and enormous amount of features it is frequently seen
+as the best software management tool available for Linux.
+</p>
+
+<p>
+Portage is completely written in <uri link="http://www.python.org">Python</uri>
+and <uri link="http://www.gnu.org/software/bash">Bash</uri> and therefore fully
+visible to the users as both are scripting languages.
+</p>
+
+<p>
+Most users will work with Portage through the <c>emerge</c> tool. This chapter
+is not meant to duplicate the information available from the emerge man page. 
+For a complete rundown of emerge's options, please consult the man page:
+</p>
+
+<pre caption="Reading the emerge man page">
+$ <i>man emerge</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>The Portage Tree</title>
+<subsection>
+<title>Ebuilds</title>
+<body>
+
+<p>
+When we talk about packages, we often mean software titles that are available to
+the Gentoo users through the Portage tree. The Portage tree is a collection of
+<e>ebuilds</e>, files that contain all information Portage needs to maintain
+software (install, search, query, ...). These ebuilds reside in
+<path>/usr/portage</path> by default.
+</p>
+
+<p>
+Whenever you ask Portage to perform some action regarding software titles, it
+will use the ebuilds on your system as a base. It is therefore important that
+you regularly update the ebuilds on your system so Portage knows about new
+software, security updates, etc.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Updating the Portage Tree</title>
+<body>
+
+<p>
+The Portage tree is usually updated with <uri
+link="http://rsync.gentoo.org">rsync</uri>, a fast incremental file transfer
+utility. Updating is fairly simple as the <c>emerge</c> command provides a
+front-end for rsync:
+</p>
+
+<pre caption="Updating the Portage tree">
+# <i>emerge --sync</i>
+</pre>
+
+<p>
+If you are unable to rsync due to firewall restrictions you can still update
+your Portage tree by using our daily generated Portage tree snapshots. The
+<c>emerge-webrsync</c> tool automatically fetches and installs the latest
+snapshot on your system:
+</p>
+
+<pre caption="Running emerge-webrsync">
+# <i>emerge-webrsync</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Maintaining Software</title>
+<subsection>
+<title>Searching for Software</title>
+<body>
+
+<p>
+To search through the Portage tree after software titles, you can use
+<c>emerge</c> built-in search capabilities. By default, <c>emerge search</c>
+returns the names of packages whose title matches (either fully or partially)
+the given search term.
+</p>
+
+<p>
+For instance, to search for all packages who have "pdf" in their name:
+</p>
+
+<pre caption="Searching for pdf-named packages">
+$ <i>emerge search pdf</i>
+</pre>
+
+<p>
+If you want to search through the descriptions as well you can use the
+<c>--searchdesc</c> (or <c>-S</c>) switch:
+</p>
+
+<pre caption="Searching for pdf-related packages">
+$ <i>emerge --searchdesc pdf</i>
+</pre>
+
+<p>
+When you take a look at the output, you'll notice that it gives you a lot of
+information. The fields are clearly labelled so we won't go further into their
+meanings:
+</p>
+
+<pre caption="Example emerge search output">
+*  net-print/cups-pdf
+      Latest version available: 1.5.2
+      Latest version installed: [ Not Installed ]
+      Size of downloaded files: 15 kB
+      Homepage:    http://cip.physik.uni-wuerzburg.de/~vrbehr/cups-pdf/
+      Description: Provides a virtual printer for CUPS to produce PDF files.
+      License:     GPL-2
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Installing Software</title>
+<body>
+
+<p>
+Once you've found a software title to your liking, you can easily install it
+with <c>emerge</c>: just add the package name. For instance, to install
+<c>gnumeric</c>:
+</p>
+
+<pre caption="Installing gnumeric">
+# <i>emerge gnumeric</i>
+</pre>
+
+<p>
+Since many applications depend on each other, any attempt to install a certain
+software package might result in the installation of several dependencies as
+well. Don't worry, Portage handles dependencies well. If you want to find out
+what Portage <e>would</e> install when you ask it to install a certain package,
+add the <c>--pretend</c> switch. For instance:
+</p>
+
+<pre caption="Pretend to install gnumeric">
+# <i>emerge --pretend gnumeric</i>
+</pre>
+
+<p>
+When you ask Portage to install a package, it will download the necessary source
+code from the internet (if necessary) and store it by default in
+<path>/usr/portage/distfiles</path>. After this it will unpack, compile and
+install the package. If you want Portage to only download the sources without
+installing them, add the <c>--fetchonly</c> option to the <c>emerge</c> command:
+</p>
+
+<pre caption="Download the sourcecode for gnumeric">
+# <i>emerge --fetchonly gnumeric</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Removing Software</title>
+<body>
+
+<p>
+When you want to remove a software package from your system, use <c>emerge
+unmerge</c>. This will tell Portage to remove all files installed by that
+package from your system <e>except</e> the configuration files of that
+application if you have altered those after the installation. Leaving the
+configuration files allows you to continue working with the package if you ever
+decide to install it again.
+</p>
+
+<p>
+However, a <brite>big warning</brite> applies: Portage will <e>not</e> check if 
+the package you want to remove is required by another package. It will however
+warn you when you want to remove an important package that breaks your system 
+if you unmerge it.
+</p>
+
+<pre caption="Removing gnumeric from the system">
+# <i>emerge unmerge gnumeric</i>
+</pre>
+
+<p>
+When you remove a package from your system, the dependencies of that package
+that were installed automatically when you installed the software are left. To
+have Portage locate all dependencies that can now be removed, use
+<c>emerge</c>'s <c>depclean</c> functionality. We will talk about this later on.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Updating your System</title>
+<body>
+
+<p>
+To keep your system in perfect shape (and not to mention install the latest
+security updates) you need to update your system regularly. Since Portage only
+checks the ebuilds in your Portage tree you first have to update your Portage
+tree. When your Portage tree is updated, you can update your system with
+<c>emerge --update world</c>:
+</p>
+
+<pre caption="Updating your system">
+# <i>emerge --update world</i>
+</pre>
+
+<p>
+Portage will then search for newer version of the applications you have
+installed. However, it will only verify the versions for the applications you
+have explicitly installed - not the dependencies. If you want to update every
+single package on your system, add the <c>--deep</c> argument:
+</p>
+
+<pre caption="Updating your entire system">
+# <i>emerge --update --deep world</i>
+</pre>
+
+<p>
+If you have altered any of your <uri link="?part=2&amp;chap=2">USE flags</uri>
+lately you might want to add <c>--newuse</c> as well. Portage will then verify
+if the change requires the installation of new packages or recompilation of
+existing ones:
+</p>
+
+<pre caption="Performing a full update">
+# <i>emerge --update --deep --newuse world</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Stub Packages</title>
+<body>
+
+<p>
+Some packages in the Portage tree don't have any real content but are used to
+install a collection of packages. For instance, the <c>kde</c> package will
+install a complete KDE environment on your system by pulling in various
+KDE-related packages as dependencies.
+</p>
+
+<p>
+If you ever want to remove such a package from your system, running <c>emerge
+unmerge</c> on the package won't have much effect as the dependencies remain on
+the system. 
+</p>
+
+<p>
+Portage has the functionality to remove orphaned dependencies as well, but since
+the availability of software is dynamically dependent you first need to update
+your entire system fully, including the new changes you applied when changing
+USE flags. After this you can run <c>emerge depclean</c> to remove the orphaned
+dependencies. When this is done, you need to rebuild the applications that were
+dynamically linked to the now-removed software titles but don't require them
+anymore.
+</p>
+
+<p>
+All this is handled with the following three commands:
+</p>
+
+<pre caption="Removing orphaned dependencies">
+# <i>emerge --update --deep --newuse world</i>
+# <i>emerge depclean</i>
+# <i>revdep-rebuild</i>
+</pre>
+
+<p>
+<c>revdep-rebuild</c> is provided by the <c>gentoolkit</c> package; don't forget
+to emerge it first:
+</p>
+
+<pre caption="Installing the gentoolkit package">
+# <i>emerge gentoolkit</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>When Portage is Complaining...</title>
+<subsection>
+<title>About SLOTs, Virtuals, Branches, Architectures and Profiles</title>
+<body>
+
+<p>
+As we stated before, Portage is extremely powerful and supports many features
+that other software management tools lack. To understand this, we explain a few
+aspects of Portage without going in too much detail.
+</p>
+
+<p>
+With Portage different versions of a single package can coexist on a system.
+While other distributions tend to name their package to those versions (like
+<c>freetype</c> and <c>freetype2</c>) Portage uses a technology called
+<e>SLOT</e>s. An ebuild declares a certain SLOT for its version. Ebuilds with
+different SLOTs can coexist on the same system. For instance, the
+<c>freetype</c> package has ebuilds with <c>SLOT="1"</c> and <c>SLOT="2"</c>.
+</p>
+
+<p>
+There are also packages that provide the same functionality but are implemented
+differently. For instance, <c>metalogd</c>, <c>sysklogd</c> and <c>syslog-ng</c>
+are all system loggers. Applications that rely on the availability of "a system
+logger" cannot depend on, for instance, <c>metalogd</c>, as the other system
+loggers are as good a choice as any. Portage allows for <e>virtuals</e>: each
+system logger provides <c>virtual/syslog</c> so that applications can depend on
+<c>virtual/syslog</c>.
+</p>
+
+<p>
+Software in the Portage tree can reside in different branches. By default your
+system only accepts packages that Gentoo deems stable. Most new software titles,
+when committed, are added to the testing branch, meaning more testing needs to
+be done before it is marked as stable. Although you will see the ebuilds for
+those software in the Portage tree, Portage will not update them before they are
+placed in the stable branch.
+</p>
+
+<p>
+Some software is only available for a few architectures. Or the software doesn't
+work on the other architectures, or it needs more testing, or the developer that
+committed the software to the Portage tree is unable to verify if the package
+works on different architectures.
+</p>
+
+<p>
+Each Gentoo installation adheres to a certain <c>profile</c> which contains,
+amongst other information, the list of packages that are required for a system 
+to function normally.
+</p>
+
+</body>
+</subsection>
+<subsection id="blocked">
+<title>Blocked Packages</title>
+<body>
+
+<pre caption="Portage warning about blocked packages (with --pretend)">
+[blocks B     ] gnome-base/bonobo-activation (from pkg gnome-base/libbonobo-2.4.0)
+</pre>
+
+<pre caption="Portage warning about blocked packages (without --pretend)">
+!!! Error: the gnome-base/bonobo-activation package conflicts with another package.
+!!!        both can't be installed on the same system together.
+!!!        Please use 'emerge --pretend' to determine blockers. 
+</pre>
+
+<p>
+Ebuilds contain specific fields that inform Portage about its dependencies.
+There are two possible dependencies: build dependencies, declared in 
+<c>DEPEND</c> and run-time dependencies, declared in <c>RDEPEND</c>. When one of
+these dependencies explicitly marks a package or virtual as being <e>not</e>
+compatible, it triggers a blockage.
+</p>
+
+<p>
+To fix a blockage, you can choose to not install the package or unmerge the
+conflicting package first. In the given example, you can opt not to install
+<c>libbonobo</c> or to remove <c>bonobo-activation</c> first.
+</p>
+
+</body>
+</subsection>
+<subsection id="masked">
+<title>Masked Packages</title>
+<body>
+
+<pre caption="Portage warning about masked packages">
+!!! all ebuilds that could satisfy "bootsplash" have been masked. 
+</pre>
+
+<pre caption="Portage warning about masked packages - reason">
+!!! possible candidates are:
+
+- gnome-base/gnome-2.8.0_pre1 (masked by: <i>~x86 keyword</i>)
+- lm-sensors/lm-sensors-2.8.7 (masked by: <i>-sparc keyword</i>)
+- sys-libs/glibc-2.3.4.20040808 (masked by: <i>-* keyword</i>)
+- dev-util/cvsd-1.0.2 (masked by: <i>missing keyword</i>)
+- media-video/ati-gatos-4.3.0 (masked by: <i>package.mask</i>)
+- sys-libs/glibc-2.3.2-r11 (masked by: <i>profile</i>)
+</pre>
+
+<p>
+When you want to install a package that isn't available for your system, you
+will receive this masking error. You should try installing a different
+application that is available for your system or wait until the package is put
+available. There is always a reason why a package is masked:
+</p>
+
+<ul>
+  <li>
+    <b>~arch keyword</b> means that the application is not tested sufficiently
+    to be put in the stable branch. Wait a few days or weeks and try again.
+  </li>
+  <li>
+    <b>-arch keyword</b> or <b>-* keyword</b> means that the application does 
+    not work on your architecture. If you believe the package does work file 
+    a bug at our <uri link="http://bugs.gentoo.org">bugzilla</uri> website.
+  </li>
+  <li>
+    <b>missing keyword</b> means that the application has not been tested on
+    your architecture yet. Ask the architecture porting team to test the package
+    or test it for them and report your findings on our <uri
+    link="http://bugs.gentoo.org">bugzilla</uri> website.
+  </li>
+  <li>
+    <b>package.mask</b> means that the package has been found corrupt, unstable
+    or worse and has been deliberately marked as do-not-use.
+  </li>
+  <li>
+    <b>profile</b> means that the package has been found not suitable for your
+    profile. The application might break your system if you installed it or is
+    just not compatible with the profile you use.
+  </li>
+</ul>
+
+</body>
+</subsection>
+<subsection id="missingdependencies">
+<title>Missing Dependencies</title>
+<body>
+
+<pre caption="Portage warning about missing dependency">
+emerge: there are no ebuilds to satisfy "&gt;=sys-devel/gcc-4.2-r4".
+
+!!! Problem with ebuild sys-devel/gcc-3.4.2-r2
+!!! Possibly a DEPEND/*DEPEND problem. 
+</pre>
+
+<p>
+The application you are trying to install depends on another package that is not
+available for your system. Please check <uri
+link="http://bugs.gentoo.org">bugzilla</uri> if the issue is known and if not,
+please report it. Unless you are mixing branches this should not occur and is
+therefore a bug.
+</p>
+
+</body>
+</subsection>
+<subsection id="ambiguousebuild">
+<title>Ambiguous Ebuild Name</title>
+<body>
+
+<pre caption="Portage warning about ambiguous ebuild names">
+!!! The short ebuild name "aterm" is ambiguous.  Please specify
+!!! one of the following fully-qualified ebuild names instead:
+
+    dev-libs/aterm
+    x11-terms/aterm
+</pre>
+
+<p>
+The application you want to install has a name that corresponds with more than
+one package. You need to supply the category name as well. Portage will inform
+you of possible matches to choose from.
+</p>
+
+</body>
+</subsection>
+<subsection id="circulardependencies">
+<title>Circular Dependencies</title>
+<body>
+
+<pre caption="Portage warning about circular dependencies">
+!!! Error: circular dependencies: 
+
+ebuild / net-print/cups-1.1.15-r2 depends on ebuild / app-text/ghostscript-7.05.3-r1
+ebuild / app-text/ghostscript-7.05.3-r1 depends on ebuild / net-print/cups-1.1.15-r2 
+</pre>
+
+<p>
+Two (or more) packages you want to install depend on each other and can
+therefore not be installed. This is most likely a bug in the Portage tree.
+Please resync after a while and try again. You can also check <uri
+link="http://bugs.gentoo.org">bugzilla</uri> if the issue is known and if not,
+report it.
+</p>
+
+</body>
+</subsection>
+<subsection id="fetchfailed">
+<title>Fetch failed</title>
+<body>
+
+<pre caption="Portage warning about fetch failed">
+!!! Fetch failed for sys-libs/ncurses-5.4-r5, continuing...
+<comment>(...)</comment>
+!!! Some fetch errors were encountered.  Please see above for details.
+</pre>
+
+<p>
+Portage was unable to download the sources for the given application and will
+try to continue installing the other applications (if applicable). This failure
+can be due to a mirror that has not synchronised correctly or because the ebuild
+points to an incorrect location. The server where the sources reside can also be
+down for some reason.
+</p>
+
+<p>
+Retry after one hour to see if the issue still persists.
+</p>
+
+</body>
+</subsection>
+<subsection id="profileprotect">
+<title>System Profile Protection</title>
+<body>
+
+<pre caption="Portage warning about profile-protected package">
+!!! Trying to unmerge package(s) in system profile. 'sys-apps/portage'
+!!! This could be damaging to your system.
+</pre>
+
+<p>
+You have asked to remove a package that is part of your system's core packages.
+It is listed in your profile as required and should therefore not be removed
+from the system.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

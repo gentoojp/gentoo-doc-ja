@@ -1,0 +1,495 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/openssh-key-management-p1.xml,v 1.4 2009/08/21 16:19:26 neysx Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide disclaimer="articles">
+<title>OpenSSH key management, Part 1</title>
+<author title="Author">
+  <mail link="drobbins"/>
+</author>
+<!-- xmlified by Max Lorenz (anarchyisgoodforthee@gmail.com) -->
+
+<abstract>
+In this series, you'll learn how RSA and DSA authentication work, and see how
+to set up passwordless authentication the right way. In the first article of
+the series, Daniel Robbins focuses on introducing the RSA and DSA
+authentication protocols and showing you how to get them working over the
+network.
+</abstract>
+
+<!-- The original version of this article was first published on IBM 
+developerWorks, and is property of Westtech Information Services. This 
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>1.2</version>
+<date>2005-10-09</date>
+
+<chapter>
+<title>Understanding RSA/DSA authentication</title>
+<section>
+<body>
+
+<p>
+Many of us use the excellent OpenSSH (see <uri
+link="#resources">Resources</uri> later in this article) as a secure, encrypted
+replacement for the venerable <c>telnet</c> and <c>rsh</c> commands. One of
+OpenSSH's more intriguing features is its ability to authenticate users using
+the RSA and DSA authentication protocols, which are based on a pair of
+complementary numerical keys. As one of its main appeals, RSA and DSA
+authentication promise the capability of establishing connections to remote
+systems <e>without supplying a password</e>. While this is appealing, new
+OpenSSH users often configure RSA/DSA the quick and dirty way, resulting in
+passwordless logins, but opening up a big security hole in the process.
+</p>
+
+</body>
+</section>
+<section>
+<title>What is RSA/DSA authentication?</title>
+<body>
+
+<p>
+SSH, specifically OpenSSH (a completely free implementation of SSH), is an
+incredible tool. Like <c>telnet</c> or <c>rsh</c>, the ssh client can be used
+to log in to a remote machine. All that's required is for this remote machine
+to be running <c>sshd</c>, the <c>ssh</c> server process. However, unlike
+<c>telnet</c>, the ssh protocol is very secure. It uses special algorithms to
+encrypt the data stream, ensure data stream integrity and even perform
+authentication in a safe and secure way.
+</p>
+
+<p>
+However, while <c>ssh</c> is really great, there is a certain component of
+<c>ssh</c> functionality that is often ignored, dangerously misused, or simply
+misunderstood. This component is OpenSSH's RSA/DSA key authentication system,
+an alternative to the standard secure password authentication system that
+OpenSSH uses by default.
+</p>
+
+<p>
+OpenSSH's RSA and DSA authentication protocols are based on a pair of specially
+generated cryptographic keys, called the <e>private key</e> and the <e>public
+key</e>. The advantage of using these key-based authentication systems is that
+in many cases, it's possible to establish secure connections without having to
+manually type in a password.
+</p>
+
+<p>
+While the key-based authentication protocols are relatively secure, problems
+arise when users take certain shortcuts in the name of convenience, without
+fully understanding their security implications. In this article, we'll take a
+good look at how to correctly use RSA and DSA authentication protocols without
+exposing ourselves to any unnecessary security risks. In my next article, I'll
+show you how to use <c>ssh-agent</c> to cache decrypted private keys, and 
+introduce <c>keychain</c>, an <c>ssh-agent</c> front-end that offers a number 
+of convenience advantages without sacrificing security. If you've always wanted 
+to get the hang of the more advanced authentication features of OpenSSH, then 
+read on.
+</p>
+
+</body>
+</section>
+<section>
+<title>How RSA/DSA keys work</title>
+<body>
+
+<p>
+Here's a quick general overview of how RSA/DSA keys work. Let's start with a 
+hypothetical scenario where we'd like to use RSA authentication to allow a 
+local Linux workstation (named <e>localbox</e>) to open a remote shell on 
+<e>remotebox</e>, a machine at our ISP. Right now, when we try to connect to 
+<e>remotebox</e> using the <c>ssh</c> client, we get the following prompt:
+</p>
+
+<pre caption="Connecting to remotebox">
+$ <i>ssh drobbins@remotebox</i>
+drobbins@remotebox's password:
+</pre>
+
+<p>
+Here we see an example of the <c>ssh</c> <e>default</e> way of handling
+authentication. Namely, it asks for the password of the <e>drobbins</e> account
+on <e>remotebox</e>. If we type in our password for <e>remotebox</e>,
+<c>ssh</c> uses its secure password authentication protocol, transmitting our
+password over to <e>remotebox</e> for verification. However, unlike what
+<c>telnet</c> does, here our password is encrypted so that it can not be
+intercepted by anyone sniffing our data connection. Once <e>remotebox</e>
+authenticates our supplied password against its password database, if
+successful, we're allowed to log on and are greeted with a <e>remotebox</e>
+shell prompt. While the <c>ssh</c> default authentication method is quite
+secure, RSA and DSA authentication open up some new possibilities.
+</p>
+
+<p>
+However, unlike the <c>ssh</c> secure password authentication, RSA
+authentication requires some initial configuration. We need to perform these
+initial configuration steps only once. After that, RSA authentication between
+<e>localbox</e> and <e>remotebox</e> will be totally painless. To set up RSA
+authentication, we first need to generate a pair of keys, one private and one
+public. These two keys have some very interesting properties. The public key
+can be used to encrypt a message, and only the holder of the private key can
+decrypt it. The public key can only be used for <e>encryption</e>, and the
+private key can only be used for <e>decryption</e> of a message encoded by the
+matching public key. The RSA (and DSA) authentication protocols use the special
+properties of key pairs to perform secure authentication, without needing to
+transmit any confidential information over the network.
+</p>
+
+<p>
+To get RSA or DSA authentication working, we perform a single one-time
+configuration step. We copy our <e>public key</e> over to <e>remotebox</e>.
+The public key is called "public" for a reason. Since it can only be used to
+<e>encrypt</e> messages for us, we don't need to be too concerned about it
+falling into the wrong hands. Once our public key has been copied over to
+<e>remotebox</e> and placed in a special file
+(<path>~/.ssh/authorized_keys</path>) so that <e>remotebox</e>'s <c>sshd</c>
+can locate it, we're ready to use RSA authentication to log onto
+<e>remotebox</e>.
+</p>
+
+<p>
+To do this, we simply type <c>ssh drobbins@remotebox</c> at <e>localbox</e>'s
+console, as we always have. However, this time, <c>ssh</c> lets
+<e>remotebox</e>'s <c>sshd</c> know that it would like to use the RSA
+authentication protocol. What happens next is rather interesting.
+<e>Remotebox</e>'s <c>sshd</c> generates a random number, and encrypts it using
+our public key that we copied over earlier. Then, it sends this encrypted
+random number back to the <c>ssh</c> running on <e>localbox</e>. In turn, our
+<c>ssh</c> uses our <e>private key</e> to decrypt this random number, and then
+sends it back to <e>remotebox</e>, saying in effect "See, I really <e>do</e>
+hold the matching private key; I was able to successfully decrypt your
+message!" Finally, <c>sshd</c> concludes that we should be allowed to log in,
+since we hold a matching private key. Thus, the fact that we hold a matching
+private key grants us access to <e>remotebox</e>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Two observations</title>
+<body>
+
+<p>
+There are two important observations about the RSA and DSA authentication. The
+first is that we really only need to generate one pair of keys. We can then
+copy our public key to the remote machines that we'd like to access and they
+will all happily authenticate against our single private key. In other words,
+we don't need a key pair for <e>every</e> system we'd like to access. Just one
+pair will suffice.
+</p>
+
+<p>
+The other observation is that our <e>private key should not fall into the wrong
+hands</e>. The private key is the one thing that grants us access to our remote
+systems, and anyone that possesses our private key is granted exactly the same
+privileges that we are. Just as we wouldn't want strangers to have keys to our
+house, we should protect our private key from unauthorized use. In the world of
+bits and bytes, this means that no one should be able to read or copy our
+private key.
+</p>
+
+<p>
+Of course, the <c>ssh</c> developers are aware of the private keys' importance,
+and have built a few safeguards into <c>ssh</c> and <c>ssh-keygen</c> so that
+our private key is not abused. First, <c>ssh</c> is configured to print out a
+big warning message if our key has file permissions that would allow it to be
+read by anyone but us. Secondly, when we create our public/private key pair
+using <c>ssh-keygen</c>, <c>ssh-keygen</c> will ask us to enter a passphrase.
+If we do, our private key will be encrypted using this passphrase, so that even
+if it is stolen, it will be useless to anyone who doesn't happen to know the
+passphrase. Armed with that knowledge, let's take a look at how to configure
+<c>ssh</c> to use the RSA and DSA authentication protocols.
+</p>
+
+</body>
+</section>
+<section>
+<title>ssh-keygen up close</title>
+<body>
+
+<p>
+The first step in setting up RSA authentication begins with generating a
+public/private key pair. RSA authentication is the original form of <c>ssh</c>
+key authentication, so RSA should work with any version of OpenSSH, although I
+recommend that you install the most recent version available, which was
+openssh-2.9_p2 at the time this article was written. Generate a pair of RSA
+keys as follows:
+</p>
+
+<pre caption="Using ssh-keygen">
+$ <i>ssh-keygen</i>
+Generating public/private rsa1 key pair.
+Enter file in which to save the key (/home/drobbins/.ssh/identity): <comment>(hit enter)</comment>
+Enter passphrase (empty for no passphrase): <comment>(enter a passphrase)</comment>
+Enter same passphrase again: <comment>(enter it again)</comment>
+Your identification has been saved in /home/drobbins/.ssh/identity.
+Your public key has been saved in /home/drobbins/.ssh/identity.pub.
+The key fingerprint is:
+a4:e7:f2:39:a7:eb:fd:f8:39:f1:f1:7b:fe:48:a1:09 drobbins@localbox
+</pre>
+
+<p>
+When <c>ssh-keygen</c> asks for a default location for the key, we hit enter 
+to accept the default of <path>/home/drobbins/.ssh/identity</path>.
+<c>ssh-keygen</c> will store the private key at the above path, and the
+<e>public</e> key will be stored right next to it, in a file called 
+identity.pub.
+</p>
+
+<p>
+Also note that <c>ssh-keygen</c> prompted us to enter a passphrase. When
+prompted, we entered a good passphrase (seven or more hard-to-predict
+characters). <c>ssh-keygen</c> then encrypted our private key
+(<path>~/.ssh/identity</path>) using this passphrase so that our private key
+will be useless to anyone who does not know it.
+</p>
+
+</body>
+</section>
+<section>
+<title>The quick compromise</title>
+<body>
+
+<p>
+When we specify a passphrase, it allows <c>ssh-keygen</c> to secure our private
+key against misuse, but it also creates a minor inconvenience. Now, every time
+we try to connect to our <e>drobbins@remotebox</e> account using <c>ssh</c>,
+<c>ssh</c> will prompt us to enter the passphrase so that it can decrypt our
+private key and use it for RSA authentication. Again, we won't be typing in our
+password for the <e>drobbins</e> account on <e>remotebox</e>, we'll be typing
+in the passphrase needed to locally decrypt our private key.  Once our private
+key is decrypted, our <c>ssh</c> client will take care of the rest. While the
+mechanics of using our remote password and the RSA passphrase are completely
+different, in practice we're still prompted to type a "secret phrase" into
+<c>ssh</c>.
+</p>
+
+<pre caption="Logging in with passphrase">
+$ <i>ssh drobbins@remotebox</i>
+Enter passphrase for key '/home/drobbins/.ssh/identity': <comment>(enter passphrase)</comment>
+Last login: Thu Jun 28 20:28:47 2001 from localbox.gentoo.org 
+
+Welcome to remotebox!
+
+$
+</pre>
+
+<p>
+Here's where people are often mislead into a quick compromise. A lot of the
+time, people will create unencrypted private keys just so that they don't need
+to type in a password. That way, they simply type in the ssh command, and
+they're immediately authenticated via RSA (or DSA) and logged in.
+</p>
+
+<pre caption="Logging in with passphrase">
+$ <i>ssh drobbins@remotebox</i>
+Last login: Thu Jun 28 20:28:47 2001 from localbox.gentoo.org 
+
+Welcome to remotebox!
+
+$
+</pre>
+
+<p>
+However, while this is convenient, you shouldn't use this approach without
+fully understanding its security impact. With an unencrypted private key, if
+anyone ever hacks into <e>localbox</e>, they'll also get automatic access to
+<e>remotebox</e> and any other systems that have been configured with the
+public key.
+</p>
+
+<p>
+I know what you're thinking. Passwordless authentication, despite being a bit
+risky does seem really appealing. I totally agree. But <e>there is a better
+way!</e> Stick with me, and I'll show you how to gain the benefits of
+passwordless authentication without compromising your private key security.
+I'll show you how to masterfully use <c>ssh-agent</c> (the thing that makes
+<e>secure</e> passwordless authentication possible in the first place) in my
+next article. Now, let's get ready to use <c>ssh-agent</c> by setting up RSA
+and DSA authentication. Here step-by-step directions.
+</p>
+
+</body>
+</section>
+<section>
+<title>RSA key pair generation</title>
+<body>
+
+<p>
+To set up RSA authentication, we'll need to perform the one-time step of
+generating a public/private key pair. We do this by typing:
+</p>
+
+<pre caption="Generating keys...">
+$ <i>ssh-keygen</i>
+</pre>
+
+<p>
+Accept the default key location when prompted (typically
+<path>~/.ssh/identity</path> and <path>~/.ssh/identity.pub</path> for the
+public key), and provide <c>ssh-keygen</c> with a secure passphrase. Once
+<c>ssh-keygen</c> completes, you'll have a public key as well as a
+passphrase-encrypted private key.
+</p>
+
+</body>
+</section>
+<section>
+<title>RSA public key install</title>
+<body>
+
+<p>
+Next, we'll need to configure remote systems running <c>sshd</c> to use our
+<e>public</e> RSA key for authentication. Typically, this is done by copying
+the public key to the remote system as follows:
+</p>
+
+<pre caption="Copying the public key">
+$ <i>scp ~/.ssh/identity.pub drobbins@remotebox:</i>
+</pre>
+
+<p>
+Since RSA authentication isn't fully set up yet, we'll be prompted to enter our
+password on <e>remotebox</e>. Do so. Then, log in to <e>remotebox</e> and
+append the public key to the <path>~/.ssh/authorized_keys</path> file like so:
+</p>
+
+<pre caption="Installing the public key">
+$ <i>ssh drobbins@remotebox</i>
+drobbins@remotebox's password: <comment>(enter password)</comment>
+Last login: Thu Jun 28 20:28:47 2001 from localbox.gentoo.org 
+
+Welcome to remotebox!
+
+$ <i>cat identity.pub >> ~/.ssh/authorized_keys</i>
+$ <i>exit</i>
+</pre>
+
+<p>
+Now, with RSA authentication configured, we should be prompted to enter our RSA
+<e>passphrase</e> (rather than our <e>password</e>) when we try to connect to 
+<e>remotebox</e> using <c>ssh</c>.
+</p>
+
+<pre caption="Logging in with pubkey authentication">
+$ <i>ssh drobbins@remotebox</i>
+Enter passphrase for key '/home/drobbins/.ssh/identity': 
+</pre>
+
+<p>
+Hurray, RSA authentication configuration complete! If you weren't prompted for
+a passphrase, here are a few things to try. First, try logging in by typing
+<c>ssh -1 drobbins@remotebox</c>. This will tell ssh to only use version 1 of
+the ssh protocol, and may be required if for some reason the remote system is
+defaulting to DSA authentication. If that doesn't work, make sure that you
+don't have a line that reads <c>RSAAuthentication no</c> in your
+<path>/etc/ssh/ssh_config</path>. If you do, comment it out by pre-pending it
+with a "#". Otherwise, try contacting the <e>remotebox</e> system administrator
+and verifying that they have enabled RSA authentication on their end and have
+the appropriate settings in <path>/etc/ssh/sshd_config</path>.
+</p>
+
+</body>
+</section>
+<section>
+<title>DSA key generation</title>
+<body>
+
+<p>
+While RSA keys are used by version 1 of the <c>ssh</c> protocol, DSA keys are
+used for protocol level 2, an updated version of the <c>ssh</c> protocol. Any
+modern version of OpenSSH should be able to use both RSA and DSA keys.
+Generating DSA keys using OpenSSH's <c>ssh-keygen</c> can be done similarly to
+RSA in the following manner:
+</p>
+
+<pre caption="Generating a DSA key pair">
+$ <i>ssh-keygen -t dsa</i>
+</pre>
+
+<p>
+Again, we'll be prompted for a passphrase. Enter a secure one. We'll also be
+prompted for a location to save our DSA keys. The default, normally
+<path>~/.ssh/id_dsa</path> and <path>~/.ssh/id_dsa.pub</path>, should be fine.
+After our one-time DSA key generation is complete, it's time to install our DSA
+public key to remote systems.
+</p>
+
+</body>
+</section>
+<section>
+<title>DSA public key install</title>
+<body>
+
+<p>
+Again, DSA public key installation is almost identical to RSA. For DSA, we'll
+want to copy our <path>~/.ssh/id_dsa.pub</path> file to <e>remotebox</e>, and
+then append it to the <path>~/.ssh/authorized_keys2</path> on <e>remotebox</e>.
+Note that this file has a different name than the RSA
+<path>authorized_keys</path> file. Once configured, we should be able to log in
+to <e>remotebox</e> by typing in our DSA private key passphrase rather than
+typing in our actual <e>remotebox</e> password.
+</p>
+
+<note>
+Nowadays you should only use version 2 of the ssh protocol, as version 1 has
+weaknesses.
+</note>
+
+</body>
+</section>
+<section>
+<title>Next time</title>
+<body>
+
+<p>
+Right now, you should have RSA or DSA authentication working, but you still
+need to type in your passphrase for every new connection. In my next article,
+we'll see how to use <c>ssh-agent</c>, a really nice system that allows us to
+establish connections <e>without</e> supplying a password, but also allows us
+to keep our private keys encrypted on disk. I'll also introduce
+<c>keychain</c>, a very handy <c>ssh-agent</c> front-end that makes
+<c>ssh-agent</c> even more secure, convenient, and fun to use. Until then,
+check out the handy resources below to keep yourself on track.
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter id="resources">
+<title>Resources</title>
+<section>
+<body>
+
+<ul>
+  <li>
+    Read Daniel's other two articles in this series, <uri
+    link="/doc/en/articles/openssh-key-management-p2.xml">OpenSSH key 
+    management, Part 2</uri> and <uri 
+    link="/doc/en/articles/openssh-key-management-p3.xml">OpenSSH key 
+    management, Part 3</uri>
+  </li>
+  <li>
+    Be sure to visit the home of <uri
+    link="http://www.openssh.com">OpenSSH</uri> development.
+  </li>
+  <li>
+    Check out the <uri link="http://www.openssh.com/faq.html">OpenSSH
+    FAQ</uri>.
+  </li>
+  <li>
+    <uri link="http://www.chiark.greenend.org.uk/~sgtatham/putty/">PuTTY</uri>
+    is an excellent <c>ssh</c> client for Windows machines.
+  </li>
+  <li>
+    You may find O'Reilly's <e>SSH, The Secure Shell: The Definitive Guide</e>
+    to be helpful. The <uri link="http://www.snailbook.com/">authors'
+    site</uri> contains information about the book, a FAQ, news, and updates.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,470 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/sudo-guide.xml,v 1.6 2008/06/20 00:44:56 shindo Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/sudo-guide.xml" lang="ja">
+<title>Gentoo Sudo(ers) ガイド</title>
+
+<author title="Author">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="翻訳">
+ <mail link="qqk82k8m9@cotton.ocn.ne.jp">村上 卓</mail>
+</author>
+
+<abstract>
+一部の人たちに対し、すべてのrootアクセスを与えずに、
+特定のシステム管理を行わせたい場合は、
+sudoの使用は最も良い選択になります。
+sudoで、誰が何をできるかを制御できます。
+このガイドでは、このすばらしいツールを少しだけ紹介しています。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.6</version>
+<date>2006-07-14</date>
+
+<!-- Original revision: 1.12 -->
+
+<chapter>
+<title>Sudoについて</title>
+<section>
+<title>許可の付与</title>
+<body>
+
+<p>
+<c>app-admin/sudo</c>パッケージにより、
+システム管理者は実行権限を通常持たない他のユーザに、
+アプリケーションを複数実行させる許可を与えることができます。
+<e>setuid</e>ビットをアプリケーションに用いるのとは異なり、
+<c>sudo</c>は、あるコマンドを<e>誰が</e>実行できるのか、
+また、<e>いつ</e>実行できるのかということに対し、
+より細かな制御を与えてくれます。
+</p>
+
+<p>
+<c>sudo</c>で、<e>誰が</e>特定のアプリケーションを実行できるかの明確な許可リストを、
+作成できます。
+もし、setuidビットをセットすれば、
+どのユーザでもこのアプリケーションを実行できてしまうでしょう。
+(用いられるパーミッションにもよりますが、
+特定のグループに所属するユーザについても同様です)
+ユーザに対し、アプリケーション実行時にパスワードの提示を求めることは可能であり(おそらく、
+そうするべきですが)、
+ユーザのロケーション−直接システムからログオンしているか、もしくは
+遠隔地からSSHを使用してログオンしているか−をベースに、
+許可を微調整することさえできるのです。
+</p>
+
+</body>
+</section>
+<section>
+<title>活動をロギングする</title>
+<body>
+
+
+<p>
+<c>sudo</c>に関する別の利点は、
+アプリケーション実行の試み（成功、失敗に関わらず）を記録してくれることです。
+あなたが修正するのに10時間かかった致命的なミスを、
+誰が行ったものなのかを追跡するのに、これはとても役に立ちます。
+</p>
+
+</body>
+</section>
+<section>
+<title>Sudoを設定する</title>
+<body>
+
+<p>
+<c>sudo</c>の設定は、<path>/etc/sudoers</path>ファイルにより管理されます。
+このファイルは、<c>nano /etc/sudoers</c>または<c>vim /etc/sudoers</c>を介して、
+もしくはあなたのお好みのエディタで、
+決して編集されてはいけません。このファイルを変更したい場合は、
+<c>visudo</c>を使用するようにします。
+</p>
+
+<p>
+このツールは、2人のシステム管理者がこのファイルを同時に編集していないことを保障し、
+ファイルのパーミッションを維持し、
+また構文チェックを行いファイル中に致命的なミスが無いことを確かめてくれます。
+</p>
+
+</body>
+</section>
+<section>
+<title>このガイドについて</title>
+<body>
+
+<p>
+このガイドは、簡単な紹介を目的としています。<c>sudo</c>パッケージは、
+このガイドで述べられているよりもずっと強力なものです。
+それは、別ユーザとしてファイルを編集したり（<c>sudoedit</c>）、
+スクリプト中から実行したり(つまり、バックグラウンドにおいて、
+キーボードではなく標準入力からパスワードを読みます)等の機能も持っています。
+</p>
+
+<p>
+より詳細な情報は、<c>sudo</c>や<c>sudoers</c>のマニュアルページを参照して下さい。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Sudoersの構文</title>
+<section>
+<title>基本構文</title>
+<body>
+
+<p>
+<c>sudo</c>において、最も難しい部分は、<path>/etc/sudoers</path>の構文になります。
+基本的な構文はこのようになります。
+</p>
+
+<pre caption="/etc/sudoers基本構文">
+user  host = commands
+</pre>
+
+<p>
+この構文は、<e>user</e>により識別され、かつ、システム<e>host</e>にログオンしたユーザは、
+<e>commands</e>でリストされたどんなコマンドでもrootとして実行できることを、
+<c>sudo</c>に伝えています。
+より実例を出した方が、わかりやすいかもしれませんね。
+システム上にログオンしているのであれば（SSH経由ではなく）、
+ユーザ<e>swift</e>に<c>emerge</c>の実行を許可してみます。
+</p>
+
+<pre caption="/etc/sudoersの実例">
+swift  localhost = /usr/bin/emerge
+</pre>
+
+<p>
+<brite>警告</brite>：権限の昇格を許可するアプリケーションの実行を、
+ユーザに許可してはいけません。例えば、
+rootとして<c>emerge</c>の実行をユーザに許可することは、
+実際には、システムに対するすべてのrootアクセスを与えることになりかねません。
+なぜなら、<c>emerge</c>が不正に操作されて、そのユーザに有利になるように
+実システムを変更する可能性があるからです。
+もし、<c>sudo</c>ユーザを信用しないのであれば、
+どんな権限も彼らに与えないで下さい。
+</p>
+
+<note>
+訳注:<c>emerge</c>の大部分の作業は、sandboxと呼ばれる
+<path>/var/tmp/portage</path>で行われるため安全です。
+しかし最後に実システムへマージしますので、その時に不正操作される危険性があります。
+</note>
+
+<!--
+  Wrappers are no real advantage here either, see #71750
+-->
+
+<p>
+ユーザ名はグループ名でも置き換えられます - この場合は、
+グループ名を<c>%</c>記号で始めなければなりません。
+例えば、<c>wheel</c>グループに所属する誰もが、
+<c>emerge</c>の実行を許可されるには、このようにします。
+</p>
+
+<pre caption="emergeの実行をwheelグループメンバーに許可する">
+%wheel  localhost = /usr/bin/emerge
+</pre>
+
+<p>
+先ほどの一文を拡張し、
+複数のコマンドを許可することもできます。（コマンドごとに一つずつ登録していくのではなくて）
+例えば、同じユーザに<c>emerge</c>だけでなく、
+<c>ebuild</c>や<c>emerge-webrsync</c>の実行をrootとして許可するには以下のようにします。
+</p>
+
+<pre caption="複数のコマンド">
+swift  localhost = /usr/bin/emerge, /usr/bin/ebuild, /usr/sbin/emerge-webrsync
+</pre>
+
+<p>
+また、そのツール自身ではなく、厳密なコマンドを指定することも可能です。
+これは、特定のツールの使用を指定された一連のコマンドオプションのみに制限できるため、とても便利です。
+同様に、<c>sudo</c>ではシェルスタイルのワイルドカード(またの名をメタキャラクタ、
+もしくはglob)をsudoersファイルのパス名、さらにはコマンドライン引数において使用できます。
+但し、これは正規表現では<e>ない</e>ということには注意して下さい。
+</p>
+
+<p>
+それでは、テストしてみましょう。
+</p>
+
+<pre caption="sudoを使用したシステムアップデートの試み">
+$ <i>sudo emerge -uDN world</i>
+
+We trust you have received the usual lecture from the local System
+Administrator. It usually boils down to these three things:
+
+    #1) Respect the privacy of others.
+    #2) Think before you type.
+    #3) With great power comes great responsibility.
+
+Password: <comment>(ユーザのパスワードを入力して下さい、rootのではありません!)</comment>
+</pre>
+
+<p>
+<c>sudo</c>が要求するパスワードはユーザ自身のパスワードです。
+これにより、あなたがうっかり開いたままにしてしまった端末を、
+他の人達が悪用できないことを保障してくれます。
+</p>
+
+<p>
+<c>sudo</c>が、<c>${PATH}</c>変数を変更しないことは知っておくべきでしょう。
+<c>sudo</c>の後に置いたどんなコマンドでも<e>あなたの</e>環境変数から、
+扱われるのです。
+ユーザに対し、例えば<path>/sbin</path>にあるツールを実行させたいのであれば、
+このように、<c>sudo</c>に対して、絶対パスを与えてあげなくてはいけません。
+</p>
+
+<pre caption="ツールに対し、絶対パスを使用する">
+$ <i>sudo /usr/sbin/emerge-webrsync</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>エイリアスを使用する</title>
+<body>
+
+<p>
+より大きな環境においては、すべてのユーザ（または、ホストやコマンド）を、
+何度も何度も入力しなくてはいけないのは、気の遠くなる作業になりえます。
+<path>/etc/sudoers</path>の管理を簡単にするために、
+<e>エイリアス</e>を定義できます。エイリアスを宣言するフォーマットは、
+極めてシンプルです。
+</p>
+
+<pre caption="/etc/sudoersにおいて、エイリアスを宣言する">
+Host_Alias hostalias = hostname1, hostname2, ...
+User_Alias useralias = user1, user2, ...
+Cmnd_Alias cmndalias = command1, command2, ...
+</pre>
+
+<p>
+どの位置でも有効なエイリアスの一つに<c>ALL</c>エイリアスがあります。
+（エイリアスとエイリアスでないものとをうまく区別できるよう、
+エイリアスには大文字の使用を薦めます。）あなたがきっと推測したように、
+<c>ALL</c>エイリアスは、あらゆる可能性を含んだ設定に対し指定するエイリアスです。
+</p>
+
+<p>
+サンプルでは、<c>ALL</c>エイリアスを使用して、ローカルにログオンしているのであれば、
+<e>どの</e>ユーザでも<c>shutdown</c>コマンドを実行できるよう許可しています。
+</p>
+
+<pre caption="どのユーザにもシャットダウンの実行を許可する">
+ALL  localhost = /sbin/shutdown
+</pre>
+
+<p>
+次の例では、ユーザ<c>swift</c>に、どこからログインしているかに関わらず、
+rootとして<c>emerge</c>コマンドを実行できるよう許可しています。
+</p>
+
+<pre caption="ロケーションに関わらず、ユーザにアプリケーションの実行を許可する">
+swift   ALL = /usr/bin/emerge
+</pre>
+
+<p>
+より興味深いことは、
+管理で使用するアプリケーション（<c>emerge</c>や<c>ebuild</c>のような）を、
+システム上で実行できる一連のユーザを定義したり、
+どのユーザ（rootを除いてね！）のパスワードでも変更できる管理者グループを定義することです。
+</p>
+
+<pre caption="ユーザとコマンドにエイリアスを使用する">
+User_Alias  <i>SOFTWAREMAINTAINERS</i> = swift, john, danny
+User_Alias  <i>PASSWORDMAINTAINERS</i> = swift, sysop
+Cmnd_Alias  <i>SOFTWARECOMMANDS</i>    = /usr/bin/emerge, /usr/bin/ebuild
+Cmnd_Alias  <i>PASSWORDCOMMANDS</i>    = /usr/bin/passwd [a-zA-Z0-9_-]*, !/usr/bin/passwd root
+
+<i>SOFTWAREMAINTAINERS</i>  localhost = <i>SOFTWARECOMMANDS</i>
+<i>PASSWORDMAINTAINERS</i>  localhost = <i>PASSWORDCOMMANDS</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>非ルートユーザによる実行</title>
+<body>
+
+<p>
+ユーザに、別の非ルートユーザとしてアプリケーションを実行させることもできます。
+もし、あなたがアプリケーションを別のユーザとして実行していて（例えば、Webサーバ
+における<c>apache</c>）、そのユーザ権限で、
+特定のユーザにシステム管理（ゾンビプロセスを終了させたり）をさせたいのであれば、
+これはとても興味深いかもしれません。
+</p>
+
+<p>
+<path>/etc/sudoers</path>中において、コマンド前の<c>(</c>と<c>)</c>の間に、
+一人または複数のユーザを記載してやります。
+</p>
+
+<pre caption="非ルートユーザでの実行構文">
+users  hosts = (run-as) commands
+</pre>
+
+<p>
+例えば、<c>swift</c>に<c>kill</c>ツールの実行を、
+<c>apache</c>や<c>gorg</c>ユーザとして許可するには、このようにします。
+</p>
+
+<pre caption="非ルートユーザでの実行例">
+Cmnd_Alias KILL = /bin/kill, /usr/bin/pkill
+
+swift   ALL = (apache, gorg) KILL
+</pre>
+
+<p>
+この設定では、ユーザは<c>sudo&nbsp;-u</c>を実行し
+アプリケーションを実行したいユーザを選択し、
+そのユーザとしてアプリケーションを実行します。
+</p>
+
+<pre caption="pkillをapacheユーザとして実行">
+$ <i>sudo -u apache pkill apache</i>
+</pre>
+
+<p>
+<c>Runas_Alias</c>指示文を使用することで、ユーザ用のエイリアスを設定し、
+アプリケーションを実行することもできます。
+その使用法は、今までに見てきた他の<c>_Alias</c>指示文と全く同じです。
+</p>
+
+</body>
+</section>
+<section>
+<title>パスワードとデフォルト設定</title>
+<body>
+
+<p>
+デフォルトでは、 <c>sudo</c>はユーザ自身のパスワードを使用して、
+ユーザ認証を行います。一旦、パスワードが入力されると、
+<c>sudo</c>は5分間、それを記憶しておきます。そのため、
+ユーザは自分の仕事に集中でき、パスワードを再入力しなくてすみます。
+</p>
+
+<p>
+もちろん、この動作は変更できます。<c>Defaults:</c>指示文を、
+<path>/etc/sudoers</path>中に定義し、そのデフォルト動作をユーザ用に、
+変えることができます。
+</p>
+
+<p>
+例えば、デフォルトの5分を0分(記憶させない)にするには以下のようにします。
+</p>
+
+<pre caption="タイムアウトの値を変更する">
+Defaults:swift  timestamp_timeout=0
+</pre>
+
+<p>
+<c>-1</c>に設定すると、パスワードは無期限（システムがリブートするまで）に記憶されます。
+</p>
+
+<p>
+異なる環境では、ユーザ個人のパスワードではなく、
+コマンドが実行されるべきユーザのパスワードが要求されることになるかもしれません。
+これは、<c>runaspw</c>を使用することで達成されます。以下の例では、
+リトライ（<c>sudo</c>が失敗する前に、
+ユーザは何回パスワードを入力できるか）の回数もデフォルトの3回ではなく、
+<c>2回</c>に設定しています。
+</p>
+
+<pre caption="ユーザのパスワードではなく、rootのパスワードを要求する">
+Defaults:john   runaspw, passwd_tries=2
+</pre>
+
+<p>
+別の興味深い機能に、グラフィカルツールを実行できるよう、
+<c>DISPLAY</c>変数をセットしておくことがあげらます。
+</p>
+
+<pre caption="DISPLAY変数をセットしておく">
+Defaults:john env_keep=DISPLAY
+</pre>
+
+<p>
+多数のデフォルト設定を、<c>Defaults:</c>指示文を使って変更できます。
+<c>sudo</c>のマニュアルページを開いて、<c>Defaults</c>を探して下さい。
+</p>
+
+<p>
+しかしながら、何があってもパスワードなしで、
+ユーザに特定の一連のコマンドを実行させるのを許可したいのであれば、
+以下のように、コマンドを<c>NOPASSWD:</c>で始める必要があります。
+</p>
+
+<pre caption="パスワードを聞かずに、rootとしてemergeの実行を許可する">
+swift     localhost = NOPASSWD: /usr/bin/emerge
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Sudoを使う</title>
+<section>
+<title>特権を表示する</title>
+<body>
+
+<p>
+自分自身にどんな権限があるのかを知るには、
+<c>sudo&nbsp;-l</c>とします。
+</p>
+
+<pre caption="権限を表示する">
+$ <i>sudo -l</i>
+User swift may run the following commands on this host:
+    (root)   /usr/libexec/xfsm-shutdown-helper
+    (root)   /usr/bin/emerge
+    (root)   /usr/bin/passwd [a-zA-Z0-9_-]*
+    (root)   !/usr/bin/passwd root
+    (apache) /usr/bin/pkill
+    (apache) /bin/kill
+</pre>
+
+<p>
+<path>/etc/sudoers</path>中に、パスワード入力を求めないコマンドがひとつでもあれば、
+エントリーを表示するのにも、パスワードを要求されることはないでしょう。
+そうでなければ、パスワードが記憶されてない場合に、
+聞かれることがあるかもしれません。
+</p>
+
+</body>
+</section>
+<section>
+<title>パスワードのタイムアウトを延長する</title>
+<body>
+
+<p>
+デフォルトでは、ユーザがパスワードを入力し<c>sudo</c>に対し認証されれば、
+そのことは5分間記憶されます。もし、この期間を延長したければ、
+ユーザは<c>sudo&nbsp;-v</c>を実行し、タイムスタンプをリセットすることで、
+<c>sudo</c>が、パスワードを問い返す前に、もう5分間延長できます。
+</p>
+
+<pre caption="パスワードのタイムアウトを延長する">
+$ <i>sudo -v</i>
+</pre>
+
+<p>
+その逆はタイムスタンプを短縮することで、<c>sudo&nbsp;-k</c>を使用します。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

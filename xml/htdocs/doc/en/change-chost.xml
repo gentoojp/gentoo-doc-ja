@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/change-chost.xml,v 1.6 2011/09/04 17:53:40 swift Exp $ -->
+
+<guide lang="en">
+
+<title>Changing the CHOST variable</title>
+
+<author title="Author">
+  <mail link="amne@gentoo.org">Wernfried Haas</mail>
+</author>
+<author title="Reviewer">
+  <mail link="vapier@gentoo.org">Mike Frysinger</mail>
+</author>
+<author title="Editor">
+  <mail link="chriswhite@gentoo.org">Chris White</mail>
+</author>
+
+<abstract>
+This document explains how to change the CHOST variable of an existing system.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>3</version>
+<date>2008-07-29</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<body>
+
+<p>
+Changing the CHOST is a big issue that can seriously screw up your system - so
+why is there a guide for that it at all?
+</p>
+
+<p>
+There are certain situations where changing the CHOST is inevitable, e.g. if
+you want to upgrade to glibc 2.4 which only supports nptl and you find out that
+your CHOST is i386, which makes it impossible to use nptl. In this case, you
+don't have a lot of options, and changing CHOST is one of them.
+</p>
+
+<p>
+Even if following these instructions, problems may arise, so please make sure
+you read and execute them very carefully. In this example the CHOST will be
+changed from i386 to i686, if you do another change, please change the commands
+accordingly.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Changing the CHOST variable</title>
+<section>
+<title>Building the packages</title>
+<body>
+
+<p>
+To start out with the CHOST change, edit the <path>/etc/make.conf</path> file
+and change <b>CHOST</b> value to suit your needs. Then, rebuild the following
+packages in this order:
+</p>
+
+<pre caption="Rebuilding important system tools">
+# <i>emerge -av1 binutils gcc glibc</i>
+</pre>
+
+<impo>
+Please be aware that major gcc upgrades at the same time as changing CHOST
+(e.g. starting with gcc 3.3, CHOST i386 and switching to gcc 4.1, CHOST i686)
+can lead to severe side effects. While it may not be impossible to do so, it is
+hard to predict which potential problems may arise and document them in this
+guide. As a consequence, please do one thing at a time, e.g. upgrade gcc first
+according to our <uri link="/doc/en/gcc-upgrading.xml">gcc upgrade guide</uri>
+and change your CHOST afterwards. If you are on a system with CHOST=i386, you
+will need to mask glibc 2.4 (or newer) during the gcc upgrade as it cannot be
+used with i386 and unmask it once you're done.
+</impo>
+
+</body>
+</section>
+<section>
+<title>Verifying things work</title>
+<body>
+
+<p>
+Now it is time to make sure that your <c>gcc-config</c> and
+<c>binutils-config</c> settings are sane and you do not have any leftovers in
+<path>/etc/env.d/</path>.
+</p>
+
+<p>
+The output of <c>gcc-config</c> and <c>binutils-config</c> should look like
+this (may differ according to your gcc version and chost, gcc 4.1.1 and i686
+here):
+</p>
+
+<pre caption="Verifying a sane setup">
+# <i>gcc-config -l</i>
+ [1] i686-pc-linux-gnu-4.1.1 *
+# <i>gcc-config -c</i>
+i686-pc-linux-gnu-4.1.1
+
+# <i>binutils-config -l</i>
+ [1] i686-pc-linux-gnu-2.16.1 *
+# <i>binutils-config -c</i>
+i686-pc-linux-gnu-2.16.1
+</pre>
+
+<p>
+Next, check to see if there are references to the old CHOST in
+<path>/etc/env.d/</path>:
+</p>
+
+<pre caption="Checking for old CHOST references">
+# <i>cd /etc/env.d/</i>
+# <i>grep 386 *</i>
+05gcc-i386-pc-linux-gnu:PATH="/usr/i386-pc-linux-gnu/gcc-bin/4.1.1"
+05gcc-i386-pc-linux-gnu:ROOTPATH="/usr/i386-pc-linux-gnu/gcc-bin/4.1.1"
+</pre>
+
+<note>
+This may not happen to you, but in this case 05gcc-i386-pc-linux-gnu contains
+references to the old CHOST. Things may look differently on your system
+depending on which CHOST you are changing to/from, or even be just fine. The
+name may also be 05gcc-your_new_CHOST-pc-linux-gnu.
+</note>
+
+<p>
+Before deleting the file, let's check for files with the updated CHOST:
+</p>
+
+<pre caption="Checking for files with the updated CHOST">
+# <i>grep 686 *</i>
+05binutils:MANPATH=/usr/share/binutils-data/i686-pc-linux-gnu/2.16.1/man
+05binutils:INFOPATH=/usr/share/binutils-data/i686-pc-linux-gnu/2.16.1/info
+05binutils:LDPATH=/usr/i686-pc-linux-gnu/lib
+05gcc:PATH="/usr/i686-pc-linux-gnu/gcc-bin/4.1.1"
+05gcc:ROOTPATH="/usr/i686-pc-linux-gnu/gcc-bin/4.1.1"
+05gcc:MANPATH="/usr/share/gcc-data/i686-pc-linux-gnu/4.1.1/man"
+05gcc:INFOPATH="/usr/share/gcc-data/i686-pc-linux-gnu/4.1.1/info"
+05gcc:LDPATH="/usr/lib/gcc/i686-pc-linux-gnu/4.1.1"
+</pre>
+
+<p>
+This one looks good as there should always be only one file for <c>gcc</c> in
+<path>/etc/env.d/</path> (05gcc in this example), so let's delete the one with
+the wrong references:
+</p>
+
+<pre caption="Removing the files with incorrect references">
+# <i>rm 05gcc-i386-pc-linux-gnu</i>
+</pre>
+
+<p>
+The same also applies to <c>binutils</c> - if there's an extra one, see which
+is the outdated one and delete it. Next, check your
+<path>/etc/env.d/binutils/</path>
+</p>
+
+<pre caption="Checking for correct binutils">
+# <i>cd /etc/env.d/binutils/</i>
+# <i>ls -la</i>
+total 8
+-rw-r--r-- 1 root root  15 Sep  3 13:48 config-i686-pc-linux-gnu
+-rw-r--r-- 1 root root 126 Sep  3 13:48 i686-pc-linux-gnu-2.16.1
+
+# <i>cat config-i686-pc-linux-gnu</i>
+CURRENT=2.16.1
+# <i>cat i686-pc-linux-gnu-2.16.1</i>
+TARGET="i686-pc-linux-gnu"
+VER="2.16.1"
+LIBPATH="/usr/lib/binutils/i686-pc-linux-gnu/2.16.1"
+FAKE_TARGETS="i686-pc-linux-gnu"
+</pre>
+
+<p>
+That one looks good, those two files actually should be there. Time to move on
+to the gcc directory.
+</p>
+
+<pre caption="Checking for correct gcc">
+# <i>cd /etc/env.d/gcc</i>
+# <i>ls -la</i>
+total 12
+-rw-r--r-- 1 root root  32 Sep  3 16:43 config
+-rw-r--r-- 1 root root  32 Aug  3 14:25 config-i386-pc-linux-gnu
+-rw-r--r-- 1 root root 292 Sep  3 16:43 i686-pc-linux-gnu-4.1.1
+
+# <i>cat config</i>
+CURRENT=i686-pc-linux-gnu-4.1.1
+
+# <i>cat config-i386-pc-linux-gnu</i>
+CURRENT=i386-pc-linux-gnu-4.1.1
+
+# <i>cat i686-pc-linux-gnu-4.1.1</i>
+PATH="/usr/i686-pc-linux-gnu/gcc-bin/4.1.1"
+ROOTPATH="/usr/i686-pc-linux-gnu/gcc-bin/4.1.1"
+LDPATH="/usr/lib/gcc/i686-pc-linux-gnu/4.1.1"
+GCCBITS="32"
+MANPATH="/usr/share/gcc-data/i686-pc-linux-gnu/4.1.1/man"
+INFOPATH="/usr/share/gcc-data/i686-pc-linux-gnu/4.1.1/info"
+STDCXX_INCDIR="g++-v4"
+</pre>
+
+<p>
+<path>config</path> and <path>i686-pc-linux-gnu-4.1.1</path> are fine, but
+<path>config-i386-pc-linux-gnu</path> is another leftover that needs removal.
+</p>
+
+<note>
+Again, the name of the file containing references to an outdated gcc version
+may have a different name, e.g. config-i686-pc-linux-gnu even though you are
+changing to i686. It is important you identify the file on its content, not
+only the name.
+</note>
+
+<pre caption="Removing the incorrect gcc config file">
+# <i>rm config-i386-pc-linux-gnu</i>
+</pre>
+
+<p>
+Now run the following commands to update your environment:
+</p>
+
+<pre caption="Updating the environment">
+# <i>env-update &amp;&amp; source /etc/profile</i>
+</pre>
+
+<p>
+Then verify everything is fixed:
+</p>
+
+<pre caption="Verifying refernces to the old CHOST are removed">
+# <i>grep -r 386 /etc/env.d/</i>
+</pre>
+
+<p>
+If you still find something, you must have missed some file, try to track it
+down before going on.
+</p>
+
+</body>
+</section>
+<section>
+<title>Finishing The Change</title>
+<body>
+
+<p>
+Now it is necessary to re-emerge <c>libtool</c> and run
+<c>/usr/share/gcc-data/$CHOST/&lt;gcc-version&gt;/fix_libtool_files.sh</c>. Make
+sure to use the correct gcc version (your current one, 4.1.1 here, and the old
+architecture, i386 here). Replace $CHOST with your new CHOST, and
+&lt;gcc-version&gt; with your gcc version. This example assumes a CHOST of
+i686.
+</p>
+
+<pre caption="Ensuring library sanity">
+# <i>emerge -av1 libtool</i>
+# <i>/usr/share/gcc-data/i686-pc-linux-gnu/4.1.1/fix_libtool_files.sh 4.1.1 --oldarch i386-pc-linux-gnu</i>
+</pre>
+
+<p>
+You may want to rebuild all your packages:
+</p>
+
+<pre caption="Rebuilding world">
+# <i>emerge -e world</i>
+</pre>
+
+<p>
+Now, in theory it should not be necessary to do so, but it can not be 100%
+guaranteed that this is actually the case. If you do not recompile the world
+target, I have been told at least some packages need recompiling, so you should
+do:
+</p>
+
+<pre caption="Remerging python">
+# <i>emerge -av1 python</i>
+</pre>
+
+<p>
+All packages using perl install to the CHOST directory and hence need
+remerging. In case you haven't installed <c>qfile</c>, you will need to install
+<c>app-portage/portage-utils</c> first.
+</p>
+
+<pre caption="Remerging perl packages">
+# <i>emerge -av portage-utils</i>
+# <i>emerge -av1 `qfile /usr/lib/perl* -Cq | sort -u`</i>
+</pre>
+
+<p>
+If you encounter other packages that need recompiling, please let the author of
+this document know.
+</p>
+
+</body>
+</section>
+<section>
+<title>Common problems</title>
+<body>
+
+<p>
+When upgrading from gcc 3.3 to 4.1 at the same time as changing the CHOST
+(please don't do that anyway), a couple of users reported broken packages that
+need recompiling, such as groff and courier:
+</p>
+
+<pre caption="Error messsage">
+error while loading shared libraries: libstdc++.so.5: cannot open shared object file: No such file or directory
+</pre>
+
+<p>
+This happens because during the upgrade, the CHOST doesn't exactly match
+CTARGET and the compiler assumes cross-compiling. As a consequence, LDPATH
+isn't inserted into <path>ld.so.conf</path>, resulting in this error.
+</p>
+
+<p>
+Please see our <uri link="/doc/en/gcc-upgrading.xml">gcc upgrade guide</uri>
+for what needs to be rebuilt after a gcc upgrade.
+</p>
+
+<p>
+In some rare cases, this can break old versions of python, too. This may be
+fixed by adding <path>/usr/lib/gcc-lib/i386-pc-linux-gnu/3.3.6</path> (change
+accordingly to your old chost and gcc version) to <path>/etc/ld.so.conf</path>,
+running <c>ldconfig</c> and then <c>emerge libstdc++-v3</c>. However, as you
+can see, you really should avoid running into this problem - don't change CHOST
+and your gcc version at the same time.
+</p>
+
+</body>
+</section>
+<section>
+<title>Feedback</title>
+<body>
+
+<p>
+That should be all, feedback (both if it worked, failed or other problems were
+encountered) is welcome, please send an email to <mail>amne@gentoo.org</mail>
+or post to <uri link="http://forums.gentoo.org/viewtopic-t-494147.html">this
+forums thread</uri>. Much in this howto comes from vapier, thanks for your
+help!
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

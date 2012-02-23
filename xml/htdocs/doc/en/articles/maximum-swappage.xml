@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/maximum-swappage.xml,v 1.6 2011/09/04 17:53:41 swift Exp $ -->
+
+<guide disclaimer="articles">
+<title>Maximum swappage</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<!--<author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>-->
+
+<abstract>
+Learn how to improve the swap performance on your Linux server by several
+orders of magnitude. Author Daniel Robbins takes you through this quick tip on
+getting the most from your server.
+</abstract>
+
+<!-- The original version of this article was first published on IBM
+developerWorks, and is property of Westtech Information Services. This
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>1.3</version>
+<date>2005-10-09</date>
+
+<chapter>
+<title>Getting the most out of swap</title>
+<section>
+<body>
+
+<p>
+When you set up a brand new Linux server, do you create a single 128 MB swap
+partition? If so, did you know that you are severely limiting swap performance?
+Would you like to increase swap performance by several orders of magnitude, and
+to create swap partitions larger than 1 GB? It's possible, requiring no kernel
+patches or special hardware, just pure geek know-how!
+</p>
+
+<p>
+Some of you may not really care about swap. After all, Linux systems are
+typically very memory efficient, and swap is often barely touched. While often
+true on desktop systems, servers are another story. Because servers may handle
+unexpected stresses, such as runaway processes, denial of service attacks, or
+even the Slashdot effect, they need to have adequate high-speed swap so that
+they do not grind to a halt and possibly crash when all physical memory (and
+then some) is exhausted.
+</p>
+
+<p>
+Still not convinced that this is a big deal? I'll show you how easy it is to
+bring down a server by launching a massive amount of new processes.
+</p>
+
+<warn>
+Please, if you try this, do it only on a non-production server that you
+actually administer!
+</warn>
+
+<p>
+Let's say you have two customized <c>grep</c> commands in
+<path>/usr/bin</path>, called <c>bobgrep</c> and <c>jimgrep</c>. Now, let's
+assume that <c>bobgrep</c> is simply a shell script that calls the ELF
+executable <c>jimgrep</c>, as follows:
+</p>
+
+<pre caption="The bobgrep script">
+#!/bin/bash
+jimgrep -r $*
+</pre>
+
+<p>
+Everything looks good so far, but what happens if <c>jimgrep</c> gets
+accidentally replaced with a symbolic link to <c>bobgrep</c>? Well, in that
+case, calling <c>bobgrep</c> or <c>jimgrep</c> will cause an infinite loop,
+causing hundreds of bash processes to be spawned in mere seconds. This actually
+happened to me once, and believe me, it hurt!
+</p>
+
+<p>
+If a server doesn't have adequate swap, a situation like this can cause the
+machine to lock up in much less than a minute. How do we fix the problem? One
+way is to increase the swap size beyond 128 MB. Fortunately for us, there is
+absolutely no 128 MB limit on swap under Linux 2.2.x+ and later kernels, as
+there was in the past. The current limits are approximately 2 GB on x86,
+PowerPC, and MC680x0 systems, 512 MB on MIPS systems, 128 GB on Alpha, and a
+whopping 3 terabytes on UltraSparc platforms!
+</p>
+
+<pre caption="Swap partition size limits under modern Linux kernels">
+x86                 2 Gigabytes
+PowerPC             2 Gigabytes
+Motorola 680x0      2 Gigabytes
+Sparc               1 Gigabyte
+MIPS                512 Megabytes
+Alpha               128 Gigabytes
+UltraSparc          3 Terabytes
+</pre>
+
+<p>
+While it's nice to be able to increase swap partition size to beyond 128 MB,
+how about increasing performance? Ideally, it would be nice if we could set up
+swap partitions in a RAID 0 stripe, so that reads and writes are equally
+distributed between all partitions. If these partitions are on separate drives
+and/or controllers, this will multiply swap file performance, allowing your
+servers to handle temporary memory usage "spikes" without getting dramatically
+bogged down.
+</p>
+
+<p>
+Amazingly, all modern Linux kernels, by default (with no special kernel options
+or patches) allow you to parallelize swap, just like a RAID 0 stripe. By using
+the <c>pri</c> option in <path>/etc/fstab</path> to set multiple swap
+partitions to the same priority, we tell Linux to use them in parallel:
+</p>
+
+<pre caption="Set multiple swap partitions to the same priority">
+/dev/sda2       none    swap    sw,pri=3        0       0
+/dev/sdb2       none    swap    sw,pri=3        0       0
+/dev/sdc2       none    swap    sw,pri=3        0       0
+/dev/sdd2       none    swap    sw,pri=1        0       0
+</pre>
+
+<p>
+In the above example, Linux will use swap partitions sda2, sdb2, and sdc2 in
+parallel. Since these partitions are on different drives, and possibly even
+different SCSI controllers, read and write throughput will nearly triple. The
+fourth swap partition, sdd2, will be used only after the first three partitions
+have been exhausted.
+</p>
+
+<p>
+The <c>pri</c> option is really easy to use. The priority must be a number
+between 0 and 32767, with 32767 being the highest priority. The swap partitions
+will be used from highest priority to lowest priority, meaning that a partition
+with a priority of x will only be used only if all partitions with a priority
+greater than x are already full. If several partitions have the same priority,
+Linux will automatically parallelize access between them. This allows you to
+not only parallelize swap, but also prioritize access so that the partitions on
+the fastest drives (or regions of the drives) are used first. So, you can set
+up an emergency swap partition on an old, slower drive that will be used only
+if all high-speed swap is exhausted first.
+</p>
+
+<p>
+Now it's time to put some of this swapping knowledge into action. To loosely
+quote Mr. Miyagi of Karate Kid fame: "Swap on, swap off, geek-san!"
+</p>
+
+</body>
+</section>
+<section>
+<title>Resources</title>
+<body>
+
+<ul>
+  <li>
+    In <uri link="/doc/en/articles/partitioning-p1.xml">Partitioning in action:
+    Moving /home</uri>, I show you step-by-step how to move <path>/home</path>
+    to a new partition.
+  </li>
+  <li>
+    In <uri link="/doc/en/articles/partitioning-p2.xml">Partitioning in
+    action</uri>, I show you step-by-step how to move <path>/var</path> and
+    <path>/tmp</path> to a new partition.
+  </li>
+  <li>
+    In my second tip, <uri
+    link="/doc/en/articles/partition-planning-tips.xml">Partition planning
+    tips</uri>, I share several ways of effectively organizing your partition
+    layout.
+  </li>
+  <li>
+    The <uri link="http://www.redhat.com/mirrors/LDP/LDP/sag/index.html">Linux
+    system administrator's guide</uri> mirrored on Red Hat's home page.
+  </li>
+<!-- Link doesn't work anymore, commenting for the time being - fox2mike
+  <li>
+    A good high-level <uri link="http://www.gwdg.de/gs-2.0/chapter2_6.html">
+    overview of Linux system administration</uri>.
+  </li>
+-->
+  <li>
+    For more information on optimizing file system performance, take a look at
+    Linas Vepstas' <uri link="http://www.tldp.org">Linux Software RAID
+    HOWTO</uri>. Since the most recent software RAID code has been merged into
+    the 2.3 series kernels, it is a viable option for further enhancing Linux
+    disk performance.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>About the author</title>
+<body>
+
+<p>
+Daniel Robbins lives in Albuquerque, New Mexico. He was the President/CEO of
+Gentoo Technologies Inc., the Chief Architect of the Gentoo Project and is a
+contributing author of several books published by MacMillan: Caldera OpenLinux
+Unleashed, SuSE Linux Unleashed, and Samba Unleashed. Daniel has been involved
+with computers in some fashion since the second grade when he was first exposed
+to the Logo programming language and a potentially lethal dose of Pac Man. This
+probably explains why he has since served as a Lead Graphic Artist at SONY
+Electronic Publishing/Psygnosis. Daniel enjoys spending time with his wife Mary
+and his new baby daughter, Hadassah. You can contact Daniel at
+<mail>drobbins@gentoo.org</mail>.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

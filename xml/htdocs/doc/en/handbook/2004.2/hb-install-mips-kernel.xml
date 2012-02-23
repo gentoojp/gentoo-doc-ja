@@ -1,0 +1,439 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-install-mips-kernel.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.6</version>
+<date>September 1, 2004</date>
+
+<section>
+<title>Timezone</title>
+<body>
+
+<p>
+You first need to select your timezone so that your system knows where it is
+located. Look for your timezone in <path>/usr/share/zoneinfo</path>, then make a
+symlink to <path>/etc/localtime</path> using <c>ln</c>:
+</p>
+
+<pre caption="Setting the timezone information">
+# <i>ls /usr/share/zoneinfo</i>
+<comment>(Suppose you want to use GMT)</comment>
+# <i>ln -sf /usr/share/zoneinfo/GMT /etc/localtime</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Installing the Sources</title>
+<subsection>
+<title>Choosing a Kernel</title>
+<body>
+
+<p>
+The core around which all distributions are built is the Linux kernel. It is the
+layer between the user programs and your system hardware. Gentoo provides its
+users several possible kernel sources. A full listing with description is
+available at the <uri link="/doc/en/gentoo-kernel.xml">Gentoo Kernel
+Guide</uri>. 
+</p>
+
+<p>
+MIPS-based systems can choose from <c>mips-sources</c> (the default kernel
+source for the MIPS architecture) and <c>mips-prepatch-sources</c> (prerelease
+kernel tree).
+</p>
+
+<p>
+Choose your kernel source and install it using <c>emerge</c>. 
+Of course substitute with your choice of sources, this is merely an example:
+</p>
+
+<pre caption="Installing a kernel source">
+# <i>emerge mips-sources</i>
+</pre>
+
+<p>
+When you take a look in <path>/usr/src</path> you should see a symlink called
+<path>linux</path> pointing to your kernel source:
+</p>
+
+<pre caption="Viewing the kernel source symlink">
+# <i>ls -l /usr/src/linux</i>
+lrwxrwxrwx    1 root     root           12 Oct 13 11:04 /usr/src/linux -&gt; linux-2.4.24
+</pre>
+
+<p>
+If this isn't the case (i.e. the symlink points to a different kernel source) 
+change the symlink before you continue:
+</p>
+
+<pre caption="Changing the kernel source symlink">
+# <i>rm /usr/src/linux</i>
+# <i>cd /usr/src</i>
+# <i>ln -s linux-2.4.24 linux</i>
+</pre>
+
+<p>
+Now it is time to configure and compile your kernel source. 
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Manual Configuration</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Manually configuring a kernel is often seen as the most difficult procedure a
+Linux user ever has to perform. Nothing is less true -- after configuring a
+couple of kernels you don't even remember that it was difficult ;)
+</p>
+
+<p>
+However, one thing <e>is</e> true: you must know your system when you start
+configuring a kernel manually. Most information can be gathered by viewing the
+contents of <path>/proc/pci</path> (or by using <c>lspci</c> if available). You
+can also run <c>lsmod</c> to see what kernel modules the LiveCD uses (it might
+provide you with a nice hint on what to enable).
+</p>
+
+<p>
+Now go to your kernel source directory and execute <c>make menuconfig</c>. This
+will fire up an ncurses-based configuration menu.
+</p>
+
+<pre caption="Invoking menuconfig">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+You will be greeted with several configuration sections. We'll first list some
+options you must activate (otherwise Gentoo will not function, or not function
+properly without additional tweaks).
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating Required Options</title>
+<body>
+
+<p>
+First of all, activate the use of development and experimental code/drivers.
+You need this, otherwise some very important code/drivers won't show up:
+</p>
+
+<pre caption="Selecting experimental code/drivers">
+Code maturity level options ---&gt;
+  [*] Prompt for development and/or incomplete code/drivers
+</pre>
+
+<p>
+Now go to <c>File Systems</c> and select support for the filesystems you use.
+<e>Don't</e> compile them as modules, otherwise your Gentoo system will not be
+able to mount your partitions. Also select <c>Virtual memory</c>, <c>/proc
+file system</c>, <c>/dev file system</c> + <c>Automatically mount at boot</c>:
+</p>
+
+<pre caption="Selecting necessary file systems">
+<comment>(With a 2.4.x kernel)</comment>
+File systems ---&gt;
+  [*] Virtual memory file system support (former shm fs)
+  [*] /proc file system support
+  [*] /dev file system support (EXPERIMENTAL)
+  [*]   Automatically mount at boot
+  [ ] /dev/pts file system for Unix98 PTYs
+
+<comment>(With a 2.6.x kernel)</comment>
+File systems ---&gt;
+  Pseudo Filesystems ---&gt;
+    [*] /proc file system support
+    [*] /dev file system support (OBSOLETE)
+    [*]   Automatically mount at boot
+    [*] Virtual memory file system support (former shm fs)
+
+<comment>(Select one or more of the following options as needed by your system)</comment>
+  &lt;*&gt; Reiserfs support
+  &lt;*&gt; Ext3 journalling file system support
+  &lt;*&gt; JFS filesystem support
+  &lt;*&gt; Second extended fs support
+  &lt;*&gt; XFS filesystem support
+</pre>
+
+<p>
+If you are using PPPoE to connect to the Internet or you are using a dial-up
+modem, you will need the following options in the kernel:
+</p>
+
+<pre caption="Selecting PPPoE necessary drivers">
+<comment>(With a 2.4.x kernel)</comment>
+Network device support ---&gt;
+  &lt;*&gt; PPP (point-to-point protocol) support
+  &lt;*&gt;   PPP support for async serial ports
+  &lt;*&gt;   PPP support for sync tty ports
+
+<comment>(With a 2.6.x kernel)</comment>
+Device Drivers ---&gt;
+  Networking support ---&gt;
+    &lt;*&gt; PPP (point-to-point protocol) support
+    &lt;*&gt;   PPP support for async serial ports
+    &lt;*&gt;   PPP support for sync tty ports
+</pre>
+
+<p>
+The two compression options won't harm but are not definitely needed, neither
+does the <c>PPP over Ethernet</c> option, that might only be used by 
+<c>rp-pppoe</c> when configured to do kernel mode PPPoE.
+</p>
+
+<p>
+If you require it, don't forget to include support in the kernel for your
+ethernet card.
+</p>
+
+<p>
+If you are using an Indy/Indigo2 based system, you need to activate support for
+it.
+</p>
+
+<pre caption="Activating SGI IP22">
+Machine selection ---&gt;
+  [*] Support for SGI IP22 (Indy/Indigo2)
+</pre>
+
+<p>
+If you want to run Irix binaries, include the following option:
+</p>
+
+<pre caption="Including IRIX Binary support">
+General setup ---&gt;
+  [*] Include IRIX binary compatibility
+</pre>
+
+<p>
+If you have ISA/EISA cards in your SGI Indigo2, enable support for it.
+</p>
+
+<pre caption="Enabling ISA/EISA support for SGI Indigo2">
+General setup ---&gt;
+  [*] Indigo-2 (IP22) EISA bus support
+  [*]   ISA bus support
+</pre>
+
+<p>
+If you have a SGI parallel port, you can enable support for it. If you have an
+ISA parallel port you should select "PC-style hardware" instead.
+</p>
+
+<pre caption="Enabling SGI Parallel Port Support">
+Parallel port support  ---&gt;
+  &lt;*&gt; Parallel port support
+  &lt;*&gt;   SGI Indy/Indigo2 hardware (EXPERIMENTAL) (NEW)
+  &lt;*&gt;   IEEE 1284 transfer modes (NEW)
+</pre>
+
+<p>
+If you want to use the Indigo2 ISA slots, enable the plug and play support.
+</p>
+
+<pre caption="Enabling PnP support for ISA">
+Plug and Play configuration  ---&gt;
+  &lt;*&gt; Plug and Play support
+  &lt;*&gt;   ISA Plug and Play support
+</pre>
+
+<p>
+Don't forget to enable SCSI support, and use the SGI WD93C93 Driver:
+</p>
+
+<pre caption="Enabling WD93C93 Driver Support">
+SCSI low-level drivers  ---&gt;
+  &lt;*&gt; SGI WD93C93 SCSI Driver
+</pre>
+
+<p>
+For network cards you probably need support for the SGI Seeq ethernet
+controller:
+</p>
+
+<pre caption="Enabling SGI Seeq Support">
+Network device support  ---&gt;
+  Ethernet (10 or 100Mbit)  ---&gt;
+    [*] Ethernet (10 or 100Mbit)
+    [*]   SGI Seeq ethernet controller support
+</pre>
+
+<p>
+Don't forget to enable serial console support and enable support for the SGI
+Zilog85C30:
+</p>
+
+<pre caption="Enable SGI Zilog85C30 Support">
+Character devices ---&gt;
+  [*] Non-standard serial port support
+  [*]   SGI Zilog85C30 serial support
+</pre>
+
+<p>
+Also don't forget to enable the Indy/I2 Watchdog support as well as the SGI
+DS1286 RTC support:
+</p>
+
+<pre caption="Enable Watchdog and RTC Support">
+Character Devices ---&gt;
+  [*] SGI DS1286 RTC support
+  Watchdog Cards  ---&gt;
+    [*] Watchdog Timer Support
+    &lt;*&gt;   Indy/I2 Hardware Watchdog
+</pre>
+
+<p>
+You should also enable support for SGI partitions :)
+</p>
+
+<pre caption="Enabling Support for SGI Partitions">
+File Systems ---&gt;
+  Partition Types ---&gt;
+    [*] Advanced partition selection
+    [*]   SGI partition support
+</pre>
+
+<p>
+If you have an SGI Newport (XL Gfx) Card and want to use it, then you'll want to
+enable support for it:
+</p>
+
+<pre caption="Enabling Support for the SGI Newport Card">
+Console drivers  ---&gt;
+  &lt;*&gt; SGI Newport Console support (NEW)
+</pre>
+
+<p>
+If you want sound support on your Indy/Indigo2, enable support for it:
+</p>
+
+<pre caption="Enabling Support for the SGI HAL2">
+Sound  ---&gt;
+  &lt;*&gt; Sound card support
+  &lt;*&gt;   SGI HAL2 sound (EXPERIMENTAL)
+</pre>
+
+<p>
+When you're done configuring your kernel, continue with <uri
+link="#compiling">Compiling and Installing</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection id="compiling">
+<title>Compiling and Installing</title>
+<body>
+
+<p>
+Now that your kernel is configured, it is time to compile and install it. Exit 
+the configuration and run <c>make dep &amp;&amp; make vmlinux modules 
+modules_install</c>:
+</p>
+
+<pre caption="Compiling the kernel">
+<comment>(For 2.4 kernel)</comment>
+# <i>make dep &amp;&amp; make vmlinux modules modules_install</i>
+
+<comment>(For 2.6 kernel)</comment>
+# <i>make &amp;&amp; make modules_install</i>
+</pre>
+
+<p>
+When the kernel has finished compiling, copy the kernel image to
+<path>/boot</path>. 
+</p>
+
+<pre caption="Installing the kernel">
+# <i>cp vmlinux /boot/kernel-2.4.24</i>
+# <i>cp System.map /boot/System.map-2.4.24</i>
+</pre>
+
+<p>
+It is also wise to copy over your kernel configuration file to
+<path>/boot</path>, just in case :)
+</p>
+
+<pre caption="Backing up your kernel configuration">
+# <i>cp .config /boot/config-2.4.24</i>
+</pre>
+
+<p>
+If your system doesn't boot ELF kernels, compile the
+kernel using <c>make vmlinux.ecoff</c> instead of <c>make vmlinux</c>. The
+kernel image will be saved as <path>arch/mips/boot/vmlinux.ecoff</path> instead
+of <path>vmlinux</path>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="kernel_modules">
+<title>Installing Separate Kernel Modules</title>
+<subsection>
+<title>Configuring the Modules</title>
+<body>
+
+<p>
+You should list the modules you want automatically loaded in 
+<path>/etc/modules.autoload.d/kernel-2.4</path> (or <path>kernel-2.6</path>). 
+You can add extra options to the modules too if you want.
+</p>
+
+<p>
+To view all available modules, run the following <c>find</c> command. Don't
+forget to substitute "&lt;kernel version&gt;" with the version of the kernel you
+just compiled:
+</p>
+
+<pre caption="Viewing all available modules">
+# <i>find /lib/modules/&lt;kernel version&gt;/ -type f -iname '*.o' -or -iname '*.ko'</i>
+</pre>
+
+<p>
+For instance, to automatically load the <c>3c59x.o</c> module, edit the
+<path>kernel-2.4</path> or <path>kernel-2.6</path> file and enter the module
+name in it.
+</p>
+
+<pre caption="Editing /etc/modules.autoload.d/kernel-2.4">
+<comment>(Example for 2.4 kernels)</comment>
+# <i>nano -w /etc/modules.autoload.d/kernel-2.4</i>
+</pre>
+
+<pre caption="/etc/modules.autoload.d/kernel-2.4 or kernel-2.6">
+3c59x
+</pre>
+
+<p>
+Now run <c>modules-update</c> to commit your changes to the
+<path>/etc/modules.conf</path> file:
+</p>
+
+<pre caption="Running modules-update">
+# <i>modules-update</i>
+</pre>
+
+<p>
+Continue the installation with <uri link="?part=1&amp;chap=8">Configuring 
+your System</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

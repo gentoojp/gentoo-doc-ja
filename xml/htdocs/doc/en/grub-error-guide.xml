@@ -1,0 +1,745 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/grub-error-guide.xml,v 1.18 2011/12/26 15:22:40 swift Exp $ -->
+
+<guide>
+<title>Gentoo Grub Error Collection</title>
+
+<author title="Thread Reviewer">Hartwig Brandl</author>
+<author title="Editor">
+  <mail link="deathwing00@gentoo.org">Ioannis Aslanidis</mail>
+</author>
+<author title="Editor">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+
+<abstract>
+The objective of this error collection is to list the GRUB problems and errors
+people can be facing. All these solutions have been acquired through the
+cooperation of many users of the Gentoo Forums.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2</version>
+<date>2011-12-26</date>
+
+<chapter>
+<title>Starting notes</title>
+
+<section>
+<title>Acknowledgements</title>
+<body>
+
+<p>
+Many thanks to
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=18420">Earthwings</uri>,
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=39305">penetrode</uri>,
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=41638">loyaltonone</uri>,
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=4980">pilla</uri>,
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=3139">airhead</uri>,
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=13816">nephros</uri>,
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=25859">yamakawa</uri>
+and all the others for the suggestions on the original
+<uri link="http://forums.gentoo.org/viewtopic.php?t=122656">thread</uri>.
+</p>
+
+</body>
+</section>
+
+<section>
+<title>Disclaimer warning</title>
+<body>
+
+<p>
+The examples provided are just examples. Be sure to change partition numbers
+and the like according to your systems specs. Follow the solutions provided
+by this document at your own risk.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Grub loading, please wait...</title>
+<section>
+<title>Situation</title>
+<body>
+
+<pre caption="Grub output">
+GRUB loading stage 1.5
+GRUB loading, please wait...
+</pre>
+
+<p>
+After this message, the system stops. If you attempt to boot the system using a
+grub floppy, the problem disappears.
+</p>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+According to
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=3134">The_Bell</uri>
+you could change the boot order in your BIOS.
+</p>
+
+<p>
+Tell your BIOS to not boot from your floppy first.
+</p>
+
+<p>
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=39305">penetrode</uri>
+wrote that this may also be due to bad CFLAGS settings.
+Although the current grub ebuild filters out <c>-fstack-protector</c>, it can't
+hurt to recompile grub with clean CFLAGS if nothing else helps.
+</p>
+
+<pre caption="Using a clean CFLAG to rebuild GRUB">
+# <i>CFLAGS="-O2 -march=i686 -fomit-frame-pointer -pipe" emerge grub</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Grub Error 12</title>
+<section>
+<title>Situation</title>
+<body>
+
+<pre caption="Grub Output">
+12 : Invalid device requested.
+</pre>
+
+<p>
+This error is returned if the device strings syntax is correct but other than
+that, an error occurred that isn't defined by any other error.
+</p>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+When you installed grub in your boot record using the interactive commands,
+did you execute the two lines below in the grub prompt?
+</p>
+
+<pre caption="Interactive installation commands">
+grub&gt; <i>root (hd0,0)</i>
+grub&gt; <i>setup (hd0)</i>
+</pre>
+
+<p>
+(hd0,0) must be replaced with your boot partition and (hd0) with the HDD
+you have chosen. Remember that (hd0) will install the bootloader in the
+Master Boot Record of the first hard disk, the primary master.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Grub Error 15</title>
+<section>
+<title>Situation</title>
+<body>
+
+<p>
+This error can occur in two different stages of the GRUB configuration, either
+during the initial configuration (installing GRUB in the master boot record) or
+after booting the system and attempting to launch Linux (or any other entry).
+</p>
+
+<pre caption="Grub Output - Initial Configuration">
+grub&gt; <i>root (hd0,0)</i>
+ Filesystem type is xfs, partition type 0x83
+
+grub&gt; <i>setup (hd0)</i>
+ Checking if "/boot/grub/stage1" exists... no
+ Checking if "/grub/stage1" exists... no
+
+Error 15: File not found
+</pre>
+
+<pre caption="Grub Output - Booting an Entry">
+Booting 'gentoo Linux'
+
+root (hd0,0)
+Filesystem type is ext2fs, partition type 0x83
+kernel (hd0,0)/boot/kernel-2.4.20 root=/dev/sda3 vga=792
+
+Error 15: File not found
+Press any key to continue...
+</pre>
+
+</body>
+</section>
+<section>
+<title>Solution - Initial Configuration</title>
+<body>
+
+<p>
+This error is returned if the specified file name cannot be found, but
+everything else (like the disk/partition info) is OK.
+</p>
+
+<p>
+Frequently, the error notes a missing kernel image file. Make sure that
+the file it is referring to exists on your boot partition.
+</p>
+
+<p>
+To find out the exact name of your kernel, boot from the installation cd, mount
+your root and (if applicable) boot partition. Next, chroot into your Gentoo
+system and do a listing of the available files to see what kernel images you
+have available:
+</p>
+
+<pre caption="Verifying kernel image existence">
+# <i>cd /boot</i>
+# <i>ls</i>
+</pre>
+
+<p>
+This will list all the kernels that you've got on your boot partition.
+If your kernel is missing make sure that you compiled a kernel (using
+<c>genkernel</c> or manually):
+</p>
+
+<pre caption="Recompile the kernel">
+# <i>cd /usr/src/linux/</i>
+# <i>make menuconfig</i>
+# <i>make</i>
+</pre>
+
+<p>
+And that you copied it to your boot partition:
+</p>
+
+<pre caption="Copying the kernel">
+# <i>cp /usr/src/linux/arch/i386/boot/bzImage /boot</i>
+</pre>
+
+<p>
+Verify that the name of the kernel is exactly the same as the one mentioned in
+your <path>grub.conf</path> file. Also make sure that the <c>kernel</c> line in
+your <path>grub.conf</path> file is referring to that partition (either
+explicitly or implicitly).
+</p>
+
+<p>
+Another reported mistake is to have the BIOS ignore the disk on which the kernel
+or grub stages reside. Also, the partition on which grub stores its stages
+should not use a software RAID-5 (or other striping technology) configuration.
+</p>
+
+</body>
+</section>
+<section>
+<title>Solution - Booting an Entry</title>
+<body>
+
+<p>
+First, verify that the <c>root</c> and <c>setup</c> lines you have used are
+correct.
+</p>
+
+<p>
+If you are certain they are valid, then you <e>might</e> be using a flawed GRUB
+version (0.93.20031222). Upgrade your Portage tree or mask this version of
+grub:
+</p>
+
+<pre caption="Masking Grub">
+<comment>(Execute this from within the chrooted environment)</comment>
+# <i>echo "=sys-boot/grub-0.93.20031222" &gt;&gt; /etc/portage/package.mask</i>
+# <i>emerge grub -p</i>
+</pre>
+
+<p>
+You could also try to use the <c>grub-install</c> script as is recommended by
+the GRUB authors:
+</p>
+
+<pre caption="Using grub-install">
+<comment>(The --root-directory is needed if you are using a separate boot
+partition,
+ otherwise you should leave it out)</comment>
+# <i>grub-install --root-directory=/boot /dev/sda</i>
+</pre>
+
+<p>
+When all this fails, your boot partition may be corrupt. Check the partition for
+errors:
+</p>
+
+<pre caption="Checking a partition for errors">
+<comment>(Make sure the boot partition, /dev/sda1 in this case, is unmounted)</comment>
+# <i>fsck -y /dev/sda1</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Grub Error 17</title>
+<section>
+<title>Situation</title>
+<body>
+
+<pre caption="Grub Output">
+root (hd0,0)
+filesystem type unknown partition type 0x7
+
+Error 17 : Cannot mount selected partition
+</pre>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+This error is returned if the partition requested exists, but the
+filesystem type cannot be recognized by GRUB.
+</p>
+
+<p>
+Be sure to check your root(x,y) settings in your grub.conf.
+</p>
+
+<p>
+Also, if you are trying to boot Windows, make sure that your
+<path>grub.conf</path> file has the <c>root (hdX,Y)</c> (or <c>rootnoverify
+(hdX,Y)</c>) and <c>chainloader (hdX,Y)+1</c> in it.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Grub Error 18</title>
+<section>
+<title>Situation</title>
+<body>
+
+<pre caption="Grub Output">
+kernel (hd1,4)/bzImage root=/dev/sdb7
+
+Error 18: Selected cylinder exceeds max supported by BIOS
+</pre>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+This error is returned when a read is attempted at a linear block address beyond
+the end of the BIOS translated area. This generally happens if your
+disk is larger than the BIOS can handle (512MB for (E)IDE disks on
+older machines or larger than 8GB in general).
+</p>
+
+<p>
+Try an update for your BIOS and/or move your boot partition to the
+front (or at least into the appropriate range).
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GRUB GRUB GRUB GRUB GRUB ...</title>
+<section>
+<title>Situation</title>
+<body>
+
+<pre caption="Grub Output">
+GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB
+  GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB
+...
+</pre>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+According to
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=3139">airhead</uri>
+this can be caused by having your bios detect your disks automatically. Try to
+set your bios entry to User Type HDD.
+</p>
+
+<p>
+Another possibility is that you had Grub installed on your MBR and tried
+reinstalling it (for instance due to hard disk changes) but used the wrong
+<c>setup</c> and <c>root</c> commands.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Probing Devices to Guess BIOS Drives. This May Take a Long Time.</title>
+<section>
+<title>Situation</title>
+<body>
+
+<p>
+While trying to install grub, it hangs after displaying the following line:
+</p>
+
+<pre caption="Grub Output">
+# <i>grub</i>
+
+Probing devices to guess BIOS drives. This may take a long time.
+</pre>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+One reported cause was an exotic configuration of disk devices, like
+ultra/non-ultra DMA disks on one cable.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>When Installing Grub, It Just Hangs</title>
+<section>
+<title>Situation</title>
+<body>
+
+<p>
+When installing grub, it hangs:
+</p>
+
+<pre caption="Grub Output">
+# <i>grub</i>
+<comment>(At this stage, the installation stops)</comment>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+If you haven't got a floppy drive, have you used the --no-floppy switch?
+</p>
+
+<pre caption="Installing grub using the --no-floppy switch">
+# <i>grub --no-floppy</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Uncompressing Linux... Ok, booting the kernel.</title>
+<section>
+<title>Situation</title>
+<body>
+
+<p>
+The system hangs after displaying the following line:
+</p>
+
+<pre caption="Linux Output">
+Uncompressing Linux... Ok, booting the kernel.
+</pre>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+Strictly speaking, this is no grub error. One possible cause is that ACPI is
+not working correctly but is enabled in the kernel. Try to disable it in your
+bios or in your kernel.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Grub Just Shows a Grub Prompt</title>
+<section>
+<title>Situation</title>
+<body>
+
+<p>
+When booting the system, you receive a grub prompt instead of a list of entries
+you have defined in your <path>grub.conf</path> file.
+</p>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+Mount your boot partition and verify if the <path>grub/grub.conf</path> file
+exists.
+</p>
+
+<pre caption="Mounting and verifying">
+# <i>mount /dev/sda1 /mnt/gentoo/boot</i>
+# <i>cat /mnt/gentoo/boot/grub/grub.conf</i>
+</pre>
+
+<p>
+Also make sure that the <path>menu.lst</path> symbolic link exists:
+</p>
+
+<pre caption="Verifying the symbolic link">
+# <i>ls -l /mnt/gentoo/boot/grub/menu.lst</i>
+lrwxrwxrwx  1 root root 9 Mar  7 14:00 /mnt/gentoo/boot/grub/menu.lst -> grub.conf
+</pre>
+
+<p>
+If not, recreate the symbolic link:
+</p>
+
+<pre caption="Recreating the menu.lst symbolic link">
+# <i>cd /mnt/gentoo/boot/grub</i>
+# <i>ln -snf grub.conf menu.lst</i>
+</pre>
+
+<p>
+If this is the case, reinstall grub:
+</p>
+
+<pre caption="Reinstalling Grub">
+<comment>(Run from within the chrooted environment)</comment>
+# <i>grub-install --root-directory=/boot /dev/sda</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Could Not Find Device For /boot/boot: Not Found Or Not a Block Device</title>
+<section>
+<title>Situation</title>
+<body>
+
+<p>
+When running <c>grub-install</c> during the GRUB installation, you receive the
+following error:
+</p>
+
+<pre caption="Grub Output">
+# <i>grub-install --root-directory=/boot /dev/sda</i>
+Could not find device for /boot/boot: not found or not a block device
+</pre>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+Check that you didn't forget the following:
+</p>
+
+<pre caption="Updating the mtab file">
+# <i>grep -v rootfs /proc/mounts > /etc/mtab</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>The System Reboots After Hitting Return At The Grub Menu</title>
+<section>
+<title>Situation</title>
+<body>
+
+<p>
+After hitting Return at the Grub menu during the system boot, the system
+reboots.
+</p>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+Try disabling framebuffer support in your kernel.
+If this does not help, disable APM and ACPI.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>After Hitting Return At The Grub Menu, The Screen Blanks Out</title>
+<section>
+<title>Situation</title>
+<body>
+
+<p>
+After hitting Return at the Grub menu during system boot, the screen blanks out,
+but the system is responsive (for instance, your numlock led is switcheable).
+</p>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+Turn off framebuffer (typically remove <c>vga=XYZ</c> from your
+<path>grub.conf</path>) and check the processor architecture in your
+kernel config.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Missing Grub Image</title>
+<section>
+<title>Situation</title>
+<body>
+
+<p>
+When booting the system, you do not see that spify Gentoo splashscreen.
+</p>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+First of all check if the splashscreen file you are referring to in your
+<path>grub.conf</path> really exists. If that is the case, go and check
+the grub ebuild. Maybe the patch for the splash image is commented out in the
+version that you are using.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Failing To Boot Windows From a Second Harddrive</title>
+<section>
+<title>Situation</title>
+<body>
+
+<p>
+After selecting the Windows entry, the system refuses to boot without any clear
+reason as to why.
+</p>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+<uri
+link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=14595">cyrillic</uri>
+informed us that you can "map" your disks in a different order by changing your
+<path>grub.conf</path>'s Windows entry like so:
+</p>
+
+<pre caption="Mapping disks">
+title Windows XP
+  map (hd0) (hd1)
+  map (hd1) (hd0)
+  chainloader (hd1,0)+1
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Grub segfaults when trying to install</title>
+<section>
+<title>Situation</title>
+<body>
+
+<p>
+The situation described below is only relevant for grub-0.95.x at the moment
+of installing grub at the boot sector.
+</p>
+
+<pre caption="Installing Grub">
+grub&gt; root (hd0,0)
+
+grub&gt; setup (hd0)
+
+Segmentation fault
+</pre>
+
+</body>
+</section>
+<section>
+<title>Solution</title>
+<body>
+
+<p>
+This is a known bug related to this problem and has been fixed
+in grub 0.96. It is also known that grub 0.94 r1 and grub 0.94 r2
+should work correctly. If that fails too, you can try to emerge
+grub-static which is currently stable on amd64 and unstable on x86
+(~x86). Check out bug
+<uri link="http://bugs.gentoo.org/show_bug.cgi?id=79378">#79378</uri>
+for additional information.
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

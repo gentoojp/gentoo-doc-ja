@@ -1,0 +1,265 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/portage-utils.xml,v 1.6 2011/09/04 17:53:40 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+
+<title>Portage-utils</title>
+
+<author title="Author">
+  <mail link="rane@gentoo.org">Łukasz Damentko</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+<author title="Editor">
+  <mail link="vanquirius@gentoo.org">Marcelo Góes</mail>
+</author>
+
+<abstract>
+This guide covers some common uses of portage-utils, a set of fast Portage
+helper applications written in C.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.3</version>
+<date>2007-05-23</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<body>
+
+<p>
+<c>portage-utils</c> is a collection of very fast utilities written in C, which
+are meant to offer a faster but more limited alternative to their
+<c>gentoolkit</c> counterparts. Please note that <c>portage-utils</c> is not
+meant to replace <c>gentoolkit</c>. Its utilities are much more efficient than
+the equivalent ones from <c>gentoolkit</c> and might be better suited to be
+used in scripts that need to call Portage repeatedly, but <c>portage-utils</c>
+does not offer the same functionalities. It does not consider eclasses at all
+and does not provide tools like <c>revdep-rebuild</c> and <c>glsa-check</c>.
+</p>
+
+<p>
+More information about <c>gentoolkit</c> can be found in the <uri
+link="/doc/en/gentoolkit.xml">Gentoolkit</uri> guide.
+</p>
+
+<p>
+You can view the complete list of applications in <c>portage-utils</c> by typing
+<c>man q</c> or <c>q --help</c>. Please read the man page for each utility
+described, as this guide is only meant to be a short reference for the most
+useful functions and does not include all the information about each
+application.
+</p>
+
+<p>
+The first step of using <c>portage-utils</c> is to install the package:
+</p>
+
+<pre caption="Installing portage-utils">
+# <i>emerge portage-utils</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Usage</title>
+<section>
+<title>How to find a package to which a file belongs</title>
+<body>
+
+<p>
+<c>qfile</c> finds the package to which a file belongs:
+</p>
+
+<pre caption="Finding the package to which a file belongs">
+$ <i>qfile /etc/fonts/fonts.conf</i>
+media-libs/fontconfig (/etc/fonts/fonts.conf)
+$ <i>qfile /usr/share/keymaps/atari/atari-uk-falcon.map.gz</i>
+sys-apps/kbd (/usr/share/keymaps/atari/atari-uk-falcon.map.gz)
+</pre>
+
+</body>
+</section>
+<section>
+<title>Verifying package integrity</title>
+<body>
+
+<p>
+If you want to check MD5 sums or mtimes of the files installed by some package,
+you can do it using the <c>qcheck</c> application:
+</p>
+
+<pre caption="Checking package integrity">
+$ <i>qcheck portage-utils</i>
+Checking app-portage/portage-utils-0.1.13 ...
+  * 36 out of 36 files are good
+</pre>
+
+<p>
+Of course, all the files which were changed after installation will be reported
+here. If the application reports configuration files which you have manually
+edited after installation, there's nothing to worry about.
+</p>
+
+</body>
+</section>
+<section>
+<title>Listing packages which depend on some package</title>
+<body>
+
+<p>
+Of course there's also an application which allows you to list all the packages
+which depend on some package. This is done using <c>qdepends</c>.  Use the
+<c>-a</c> flag to show all the DEPEND, RDEPEND, and PDEPEND information for a
+package.
+</p>
+
+<pre caption="Listing packages which depend on some package">
+$ <i>qdepends -a pygtk</i>
+ * DEPEND
+dev-python/pygtk-2.8.2: &gt;=dev-lang/python-2.3 &gt;=x11-libs/gtk+-2.8.0
+&gt;=dev-libs/glib-2.8.0 &gt;=x11-libs/pango-1.10.0 &gt;=dev-libs/atk-1.8.0
+&gt;=gnome-base/libglade-2.5.0 &gt;=dev-python/pycairo-0.9.0 dev-python/numeric
+virtual/opengl dev-python/pyopengl &gt;=x11-libs/gtkglarea-1.99
+&gt;=dev-util/pkgconfig-0.9 sys-devel/patch
+ * RDEPEND
+dev-python/pygtk-2.8.2: &gt;=dev-lang/python-2.3 &gt;=x11-libs/gtk+-2.8.0
+&gt;=dev-libs/glib-2.8.0 &gt;=x11-libs/pango-1.10.0 &gt;=dev-libs/atk-1.8.0
+&gt;=gnome-base/libglade-2.5.0 &gt;=dev-python/pycairo-0.9.0 dev-python/numeric
+virtual/opengl dev-python/pyopengl &gt;=x11-libs/gtkglarea-1.99
+ * PDEPEND
+</pre>
+
+</body>
+</section>
+<section>
+<title>Listing files that belong to an ebuild</title>
+<body>
+
+<p>
+<c>qlist</c> gives you a list of all files that belong to an ebuild.
+</p>
+
+<pre caption="Listing files which belong to an ebuild file">
+$ <i>qlist vim</i>
+/usr/bin/gvim
+/usr/bin/gvimdiff
+/usr/bin/evim
+/usr/bin/eview
+/usr/bin/gview
+/usr/bin/rgvim
+[...]
+</pre>
+
+</body>
+</section>
+<section>
+<title>Looking for packages that use some USE flag</title>
+<body>
+
+<p>
+This is done with <c>quse</c>, which must be run as root. It may take some time
+to first create/update the ebuild cache.
+</p>
+
+<pre caption="Looking for packages with the 'firefox' USE flag">
+# <i>quse firefox</i>
+app-office/openoffice/openoffice-2.0.2_rc1.ebuild binfilter curl eds firefox gnome gtk java kde ldap xml2
+dev-haskell/gtk2hs/gtk2hs-0.9.10.ebuild doc glade gnome firefox
+dev-java/swt/swt-3.1-r1.ebuild accessibility cairo firefox gnome
+[...]
+</pre>
+
+</body>
+</section>
+<section>
+<title>Finding package sizes</title>
+<body>
+
+<p>
+This is done with <c>qsize</c> application and is as simple as:
+</p>
+
+<pre caption="Finding package size">
+$ <i>qsize vim</i>
+app-editors/gvim-6.4: 10 files, 7 non-files, 2327.516 KB
+app-editors/vim-6.4: 6 files, 2 non-files, 2058.14 KB
+app-editors/vim-core-6.4: 1024 files, 68 non-files, 10950.984 KB
+[...]
+</pre>
+
+</body>
+</section>
+<section>
+<title>Searching the Portage tree</title>
+<body>
+
+<p>
+One of the most powerful tools of <c>portage-utils</c> is <c>qsearch</c>. This
+tool allows you to search your Portage tree much faster than default <c>emerge
+-s</c>.
+</p>
+
+<p>
+Here are some examples of its usage:
+</p>
+
+<pre caption="Using qsearch to search the tree">
+<comment>(I forgot the name of the package with my favorite fonts)</comment>
+$ <i>qsearch terminus</i>
+media-fonts/terminus-font A clean fixed font for the console and X11
+
+<comment>(I want to thank the guy who made them. What's his homepage?)</comment>
+$ <i>qsearch -H terminus</i>
+media-fonts/terminus-font http://www.is-vn.bg/hamster/jimmy-en.html
+
+<comment>(I need a jabber client and I need it now)</comment>
+$ <i>qsearch -S "jabber client"</i>
+app-emacs/emacs-jabber A Jabber client for Emacs.
+net-im/gajim Jabber client written in PyGTK
+net-im/gnome-jabber Gnome Jabber Client
+net-im/gossip Lightweight Jabber client for GNOME
+net-im/imcom Python commandline Jabber Client
+net-im/psi QT 3.x Jabber Client, with Licq-like interface
+net-im/tkabber Featureful Jabber client for tcl/tk.
+x11-themes/psi-themes Iconsets for Psi, a QT 3.x Jabber Client
+</pre>
+
+</body>
+</section>
+<section>
+<title>Extracting information from emerge logs</title>
+<body>
+
+<p>
+There is also a tool that allows you to extract useful information from your
+<path>emerge.log</path> file. It's called <c>qlop</c> and it can be useful when
+you want to estimate package compilation times or compare with your friends
+whose computer compiles faster. It also allows you to check what's compiling at
+the moment and how long it will take - which is handy when you're working in the
+console and don't have any other means to check it.
+</p>
+
+<pre caption="Reading emerge logs with qlop">
+<comment>(I'm starting to emerge perl and I want an estimate on how long it usually takes)</comment>
+$ <i>qlop -tH perl</i>
+perl: 7 minutes, 52 seconds for 4 merges
+<comment>(Now let's see what's emerging at the moment)</comment>
+$ <i>qlop -c</i>
+* perl-5.8.8-r23
+    started: Mon May 21 12:41:11 2007
+    elapsed: 19 seconds
+</pre>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,827 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-22 22:53+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/mysql-upgrading.xml:6
+#, fuzzy, no-wrap
+msgid "Upgrade guide to MySQL 4.* or 5.0.*"
+msgstr "MySQl 4.1.xへのアップグレードガイド"
+
+#. type: Content of: <guide><abstract>
+#: en/mysql-upgrading.xml:16
+#, fuzzy, no-wrap
+msgid ""
+"The MySQL herd is proud to announce that MySQL 5.0 will soon be found in\n"
+"Gentoo's stable tree. This document describes how to upgrade to MySQL 4.* and\n"
+"to 5.0.*.\n"
+msgstr ""
+"MySQLチームはMySQL 4.1がGentooのUnstableツリー(~arch)に取り込まれたことお知らせでき、\n"
+"光栄に思っています。チームの目標としては、早くこのebuildを安定化したいと考えており、\n"
+"この文書は希望するテスターの皆さんに向けたアップグレード手順です。\n"
+"\n"
+
+#. type: Content of: <guide><chapter><title>
+#: en/mysql-upgrading.xml:29
+#, no-wrap
+msgid "Straight upgrade, suggested for 4.1 =&gt; 5.0 migration"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:34
+#, no-wrap
+msgid ""
+"The myisam storage engine in version 4.1 was already mature enough to allow a\n"
+"direct upgrade to the next major version of MySQL.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/mysql-upgrading.xml:39
+#, no-wrap
+msgid ""
+"This is not true for MERGE tables. You will likely run into trouble if you\n"
+"attempt a direct upgrade for this (rarely used) type of table. You should dump\n"
+"and recreate those tables and restore their contents in the process of\n"
+"upgrading. If unsure, you should begin with <uri link=\"#doc_chap2\">Upgrading\n"
+"from old versions of MySQL</uri>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:47
+#, no-wrap
+msgid ""
+"For this step two shells are required because locks belong to the mysql\n"
+"session.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:51
+#, fuzzy, no-wrap
+msgid "Straight upgrade from 4.1 to 5.0.*"
+msgstr "直接アップグレード"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:52
+#, no-wrap
+msgid ""
+"# <i>quickpkg dev-db/mysql</i>\n"
+"# <i>alias MYSQL=\"mysql --user=root --password=</i><comment>'your_password'</comment><i>\"</i>\n"
+"# <i>DATADIR=$(MYSQL --batch --raw --silent --skip-column-names \\</i>\n"
+"     <i>--execute='SHOW variables LIKE \"datadir\";' \\</i>\n"
+"     <i>| sed -e 's|datadir[ \\t]||')</i>\n"
+"\n"
+"<comment>(This next step should be done in the second shell)</comment>\n"
+"# <i>mysql --user=root --password=</i><comment>'your_password'</comment>\n"
+"mysql&gt; <i>FLUSH TABLES WITH READ LOCK;</i>\n"
+"\n"
+"<comment>(Return to the first shell to run this command)</comment>\n"
+"# <i>tar -cjpvf ~/mysql.$(date +%F\"T\"%H-%M).tar.bz2 \\</i>\n"
+"     <i>/etc/conf.d/mysql /etc/mysql/my.cnf \"${DATADIR}\"</i>\n"
+"\n"
+"<comment>(The following commands should be done in the second shell)</comment>\n"
+"mysql&gt; <i>UNLOCK TABLES;</i>\n"
+"mysql&gt; <i>quit</i>\n"
+"\n"
+"<comment>(Return to the first shell for the rest of the upgrade)</comment>\n"
+"# <i>tar -tjvf ~/mysql.*.tar.bz2</i>\n"
+"# <i>emerge -av \"&gt;dev-db/mysql-5.0\"</i>\n"
+"# <i>dispatch-conf</i>\n"
+"# <i>revdep-rebuild</i>\n"
+"# <i>/etc/init.d/mysql restart</i>\n"
+"# <i>mysql_upgrade_shell --user=root --password=</i><comment>'your_password'</comment><i> \\</i>\n"
+"     <i>--protocol=tcp --datadir=\"${DATADIR}\"</i>\n"
+"# <i>/etc/init.d/mysql restart</i>\n"
+"# <i>unset DATADIR</i>\n"
+"# <i>unalias MYSQL</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/mysql-upgrading.xml:88
+#, fuzzy, no-wrap
+msgid "Upgrading from old versions of MySQL"
+msgstr "以前のMySQLバージョンからのアップグレード"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:93
+#, fuzzy, no-wrap
+msgid ""
+"Users upgrading from an old version (&lt;4.0.24) of MySQL will first have to\n"
+"install MySQL 4.0.25. If you are already running a more recent version, you can\n"
+"skip this section and continue with the <uri link=\"#backup\">next one</uri>.\n"
+msgstr ""
+"4.0.24以前のバージョンからアップグレードするユーザーは、まずMySQL 4.0.25をインストールしてください。\n"
+"もし、すでに4.0.25を稼動させている場合は、このセクションをスキップし、次のセクションに進んでください。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:98
+#, fuzzy, no-wrap
+msgid "Simple upgrade"
+msgstr "単純アップグレード"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:99
+#, fuzzy, no-wrap
+msgid "# <i>emerge -av --buildpkg \"&lt;mysql-4.1\"</i>\n"
+msgstr "# <i>emerge -av --buildpkg \"&lt;mysql-4.1\"</i>\n"
+
+#. type: Content of: <guide><chapter><title>
+#: en/mysql-upgrading.xml:107
+#, fuzzy, no-wrap
+msgid "Creating a backup of your current data"
+msgstr "現行データのバックアップ"
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/mysql-upgrading.xml:112
+#, no-wrap
+msgid ""
+"Values inside primary keys are handled differently in various MySQL versions,\n"
+"see <uri link=\"http://bugs.gentoo.org/108502\">bug #108502</uri> for more\n"
+"details, it is higly recommended to scan your tables for values of \"0\" (zero)\n"
+"or less and update them to a value greater than or equal to \"1\".\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:119
+#, fuzzy, no-wrap
+msgid ""
+"One of the most important tasks that every database administrator has to\n"
+"perform is backing up data. Here we go:\n"
+msgstr ""
+"どのデータベース管理者にとっても、もっとも重要な作業の一つにデータのバックアップがあります。\n"
+"では、やってみましょう。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:123
+#, fuzzy, no-wrap
+msgid "Dump of all databases"
+msgstr "すべてのデータベースをダンプする"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:124
+#, fuzzy, no-wrap
+msgid ""
+"# <i>mysqldump \\</i>\n"
+"  <i>-uroot \\</i>\n"
+"  <i>--password=</i><comment>'your_password'</comment><i> \\</i>\n"
+"  <i>-hlocalhost \\</i>\n"
+"  <i>--all-databases \\</i>\n"
+"  <i>--opt \\</i>\n"
+"  <i>--allow-keywords \\</i>\n"
+"  <i>--flush-logs \\</i>\n"
+"  <i>--hex-blob \\</i>\n"
+"  <i>--master-data \\</i>\n"
+"  <i>--max_allowed_packet=16M \\</i>\n"
+"  <i>--quote-names \\</i>\n"
+"  <i>--result-file=BACKUP_MYSQL_4.0.SQL</i>\n"
+msgstr ""
+"# <i>mysqldump \\</i>\n"
+"  <i>-uroot \\</i>\n"
+"  <i>--password=</i><comment>'あなたのパスワード'</comment><i> \\</i>\n"
+"  <i>-hlocalhost \\</i>\n"
+"  <i>--all-databases \\</i>\n"
+"  <i>--opt \\</i>\n"
+"  <i>--allow-keywords \\</i>\n"
+"  <i>--flush-logs \\</i>\n"
+"  <i>--hex-blob \\</i>\n"
+"  <i>--master-data \\</i>\n"
+"  <i>--max_allowed_packet=16M \\</i>\n"
+"  <i>--quote-names \\</i>\n"
+"  <i>--result-file=BACKUP_MYSQL_4.0.SQL</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:140
+#, fuzzy, no-wrap
+msgid ""
+"Now a file named <path>BACKUP_MYSQL_4.0.SQL</path> should exist, which can be\n"
+"used later to recreate your data. The data is described in the MySQL dialect of\n"
+"SQL, the Structured Query Language.\n"
+msgstr ""
+"コマンドを実行すると<path>BACKUP_MYSQL_4.0.SQL</path>というファイルが存在しているはずで、\n"
+"これが後でデータを復元するのに使われます。このデータはSQL(the Standard Query Language)の\n"
+"MySQL方言で書かれています。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:146
+#, fuzzy, no-wrap
+msgid "Now would also be a good time to see if the backup you have created is working.\n"
+msgstr "また、取得したバックアップが稼動するかどうか見ておいたほうがよいでしょう。\n"
+
+#. type: Content of: <guide><chapter><title>
+#: en/mysql-upgrading.xml:154
+#, fuzzy, no-wrap
+msgid "Upgrading from recent versions of MySQL"
+msgstr "最新のバージョンからのアップグレード"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:159
+#, fuzzy, no-wrap
+msgid ""
+"If you have skipped step #1, you now have to create a backup package (of the\n"
+"database server, not the data) of the currently installed version:\n"
+msgstr ""
+"もし、ステップ#1をスキップしたならば、現在インストールされているバージョンのバックアップパッケージ\n"
+"(データではなく、データベースサーバーのもの)を作成します。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:163
+#, fuzzy, no-wrap
+msgid "Binary package backup"
+msgstr "バイナリーパッケージバックアップ"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:164
+#, fuzzy, no-wrap
+msgid "# <i>quickpkg dev-db/mysql</i>\n"
+msgstr "# <i>quickpkg dev-db/mysql</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:168
+#, fuzzy, no-wrap
+msgid "Now it's time to clean out the current version and all of its data:\n"
+msgstr "今度は現在のバージョンと全てのデータをきれいに削除します。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:171
+#, fuzzy, no-wrap
+msgid "Uninstall MySQL"
+msgstr "MySQLのアンインストール"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:172
+#, fuzzy, no-wrap
+msgid ""
+"# <i>/etc/init.d/mysql stop</i>\n"
+"# <i>emerge -C mysql</i>\n"
+"# <i>tar cjpvf ~/mysql.$(date +%F\"T\"%H-%M).tar.bz2 /etc/mysql/my.cnf /var/lib/mysql/</i>\n"
+"# <i>ls -l ~/mysql.*</i>\n"
+"# <i>rm -rf /var/lib/mysql/ /var/log/mysql</i>\n"
+msgstr ""
+"# <i>/etc/init.d/mysql stop</i>\n"
+"# <i>emerge -C mysql</i>\n"
+"# <i>tar cjpvf ~/mysql.$(date +%F_%H-%M).tar.bz2 /etc/mysql/my.cnf /var/lib/mysql/</i>\n"
+"# <i>ls -l ~/mysql.*</i>\n"
+"# <i>rm -rf /var/lib/mysql/ /var/log/mysql</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/mysql-upgrading.xml:180
+#, fuzzy, no-wrap
+msgid ""
+"Now two different backups should exist: the SQL one, which is portable between\n"
+"various versions of MySQL, and the other one that will allow you to quickly\n"
+"restore your database. This is covered later in this document in more detail.\n"
+msgstr ""
+"ここでは二つの異なるバックアップがなければなりません。\n"
+"一つはSQLのバックアップでMySQLの各バージョン間で互換性があるものと、\n"
+"もう一つはデータベースを素早く戻すためのものです。\n"
+"これについてはこのドキュメントの後半でより詳しく触れます。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:186
+#, fuzzy, no-wrap
+msgid ""
+"After you get rid of your old MySQL installation, you can now install the new\n"
+"version. Note that <c>revdep-rebuild</c> is necessary for rebuilding packages\n"
+"linking against MySQL.\n"
+msgstr ""
+"古いMySQLを削除した後に新しいバージョンをインストールできます。\n"
+"MySQLに対してリンクしているパッケージのリビルドのため<c>revdep-rebuild</c>が必要です。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:191
+#, fuzzy, no-wrap
+msgid "Upgrading the binaries"
+msgstr "バイナリーのアップデート"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:192
+#, fuzzy, no-wrap
+msgid ""
+"# <i>emerge -av \"&gt;mysql-4.1\"</i>\n"
+"<comment>(Update your config files, you may also use dispatch-conf)</comment>\n"
+"# <i>etc-update</i>\n"
+"# <i>revdep-rebuild</i>\n"
+msgstr ""
+"# <i>emerge -av \"&gt;mysql-4.1\"</i>\n"
+"# <i>dispatch-conf</i>\n"
+"# <i>revdep-rebuild</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:199
+#, fuzzy, no-wrap
+msgid "Now configure the newly installed version of MySQL and restart the daemon:\n"
+msgstr "インストールした新バージョンのMySQLを設定し、デーモンをリスタートさせましょう。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:202
+#, fuzzy, no-wrap
+msgid "Configure MySQL 4.1 base setup"
+msgstr "MySQL 4.1ベースの設定"
+
+#. type: Content of: <guide><chapter><section><body><pre><i>
+#: en/mysql-upgrading.xml:203
+#, fuzzy, no-wrap
+msgid "# <i>emerge --config =mysql-4.1."
+msgstr "# <i>emerge -av --buildpkg \"&lt;mysql-4.1\"</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><pre><i><comment>
+#: en/mysql-upgrading.xml:203
+#, no-wrap
+msgid "&lt;micro_version&gt;"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:203
+#, fuzzy, no-wrap
+msgid ""
+"</i>\n"
+"# <i>/etc/init.d/mysql start</i>\n"
+msgstr "# <i>/etc/init.d/mysql restart</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:208
+#, fuzzy, no-wrap
+msgid "Finally you can import the backup you have created during step #2.\n"
+msgstr "最後にステップ2で作成したバックアップをインポートすることができます。\n"
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/mysql-upgrading.xml:212
+#, fuzzy, no-wrap
+msgid ""
+"The default <path>/etc/mysql/my.cnf</path> file sets binary logging on\n"
+"(<c>log-bin</c>) by default. This will log every single transaction that\n"
+"modifies data. If run on a very large database (1GB or more), this could create\n"
+"extremely large files that take up disk space rather quickly. If you are low on\n"
+"space, disabling binary logging might be a good idea.\n"
+msgstr "標準の<path>/etc/mysql/my.cnf</path>ファイルでは、標準でバイナリでのログ出力(<c>log-bin</c>)が設定されています。これは、データを更新する単一トランザクション毎に記録します。もしとても大きなデータベース(たとえば1GB)を扱った場合、これはとても早くディスクスペースを消費する、きわめて大きなファイルを作成することになります。ディスクスペースがあまりないのでしたら、バイナリでのログ出力を無効にした方がよいでしょう。\n"
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/mysql-upgrading.xml:220
+#, no-wrap
+msgid ""
+"The default character set in MySQL 4.1 and above is <c>utf8</c>. If the data\n"
+"contain <e>non</e>-ASCII characters, you may want to preserve the default\n"
+"character set of the database replacing all occurrences of <c>utf8</c> with\n"
+"<c>latin1</c> in the <path>/etc/mysql/my.cnf</path> config file. More\n"
+"information can be found <uri link=\"#On_charset_conversion\">Charset\n"
+"conversion</uri> chapter.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/mysql-upgrading.xml:229
+#, no-wrap
+msgid ""
+"The administrative <c>mysql</c> database that contains user names, passwords\n"
+"amongst other things is and <b>must</b> be encoded in utf8.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:234
+#, no-wrap
+msgid ""
+"Older mysqldump utilities may export tables in the wrong order when foreign keys\n"
+"are involved. To work around this problem, surround the SQL with the following\n"
+"statements:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:239
+#, no-wrap
+msgid "Fixing foreign key checks"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:240
+#, no-wrap
+msgid ""
+"SET FOREIGN_KEY_CHECKS=0\n"
+"SET FOREIGN_KEY_CHECKS=1\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:245
+#, fuzzy, no-wrap
+msgid "Next, import the backup.\n"
+msgstr "SQLバックアップをインポートする"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:248
+#, fuzzy, no-wrap
+msgid "Importing the SQL backup"
+msgstr "SQLバックアップをインポートする"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:249
+#, fuzzy, no-wrap
+msgid ""
+"# <i>cat BACKUP_MYSQL_4.0.SQL \\</i>\n"
+"     <i>| mysql \\</i>\n"
+"     <i>-uroot \\</i>\n"
+"     <i>--password=</i><comment>'your_password'</comment><i> \\</i>\n"
+"     <i>-hlocalhost \\</i>\n"
+"     <i>--max_allowed_packet=16M</i>\n"
+"\n"
+"# <i>mysql_fix_privilege_tables \\</i>\n"
+"     <i>--defaults-file=/etc/mysql/my.cnf \\</i>\n"
+"     <i>--user=root \\</i>\n"
+"     <i>--password=</i><comment>'your_password'</comment><i></i>\n"
+msgstr ""
+"# <i>cat BACKUP_MYSQL_4.0.SQL \\</i>\n"
+"     <i>| mysql \\</i>\n"
+"     <i>-uroot \\</i>\n"
+"     <i>--password=</i><comment>'あなたのパスワード'</comment><i> \\</i>\n"
+"     <i>-hlocalhost \\</i>\n"
+"     <i>--max_allowed_packet=16M</i>\n"
+"\n"
+"# <i>mysql_fix_privilege_tables \\</i>\n"
+"     <i>--defaults-file=/etc/mysql/my.cnf \\</i>\n"
+"     <i>--user=root \\</i>\n"
+"     <i>--password=</i><comment>'あなたのパスワード'</comment><i></i>\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:263
+#, fuzzy, no-wrap
+msgid ""
+"If you restart your MySQL daemon now and everything goes as expected, you have\n"
+"a fully working version of 4.1.x.\n"
+msgstr "MySQLをリスタートし、期待どおり万事うまくいって、4.1.x バージョンでの稼動が可能です。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:267
+#, fuzzy, no-wrap
+msgid "Restart the MySQL instance"
+msgstr "MySQL インスタンスのリスタート"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:268
+#, fuzzy, no-wrap
+msgid "# <i>/etc/init.d/mysql restart</i>\n"
+msgstr "# <i>/etc/init.d/mysql restart</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:272
+#, fuzzy, no-wrap
+msgid ""
+"If you encountered any problems during the upgrade process, please report them\n"
+"on <uri link=\"http://bugs.gentoo.org\">Bugzilla</uri>.\n"
+msgstr ""
+"アップグレード手順のなかで何か問題が生じた場合、\n"
+"Gentooの<uri link=\"https://bugs.gentoo.org\">Bugzilla</uri>に問題を報告してください。\n"
+
+#. type: Content of: <guide><chapter><title>
+#: en/mysql-upgrading.xml:281
+#, fuzzy, no-wrap
+msgid "Recover the old installation of MySQL 4.0"
+msgstr "古いMySQL 4.0に戻すには"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:286
+#, fuzzy, no-wrap
+msgid "If you are not happy with MySQL 4.1, it's possible to go back to MySQL 4.0.\n"
+msgstr "MySQL 4.1 に何か不満があれば、MySQL 4.0 に戻すことが可能です。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:289
+#, no-wrap
+msgid "Reverting to the previous version"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:290
+#, fuzzy, no-wrap
+msgid ""
+"# <i>/etc/init.d/mysql stop</i>\n"
+"# <i>emerge -C mysql</i>\n"
+"# <i>rm -rf /var/lib/mysql/ /var/log/mysql</i>\n"
+"# <i>emerge --usepkgonly \"&lt;mysql-4.1\"</i>\n"
+"<comment>(Replace &lt;timestamp&gt; with the one used when creating the backup.)</comment>\n"
+"# <i>tar -xjpvf mysql.&lt;timestamp&gt;.tar.bz2 -C /</i>\n"
+"# <i>/etc/init.d/mysql start</i>\n"
+msgstr ""
+"# <i>/etc/init.d/mysql stop</i>\n"
+"# <i>emerge -C mysql</i>\n"
+"# <i>rm -rf /var/lib/mysql/ /var/log/mysql</i>\n"
+"# <i>emerge --usepkgonly \"&lt;mysql-4.1\"</i>\n"
+"# <i>tar -xjpvf mysql.[tag] -C /</i>\n"
+"# <i>/etc/init.d/mysql start</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/mysql-upgrading.xml:300
+#, no-wrap
+msgid ""
+"If packages other than <c>dev-db/mysql</c> have been emerged following this\n"
+"guide, you need to run <c>revdep-rebuild</c> to ensure that every client is\n"
+"using the correct mysqlclient shared object.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/mysql-upgrading.xml:310
+#, no-wrap
+msgid "On charset conversion:"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/mysql-upgrading.xml:312
+#, no-wrap
+msgid "Introduction"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:316
+#, no-wrap
+msgid ""
+"This chapter is not intended to be an exhaustive guide on how to do such\n"
+"conversions, rather a short list of hints on which the reader can elaborate.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:321
+#, no-wrap
+msgid ""
+"Converting a database may be a complex task and difficulty increases with data\n"
+"variancy. Things like serialized object and blobs are one example where it's\n"
+"difficult to keeps pieces together.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/mysql-upgrading.xml:329
+#, no-wrap
+msgid "Indexes"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:333
+#, no-wrap
+msgid ""
+"Every utf-8 character is considered 3 bytes long within an index. Indexes in\n"
+"MySQL can be up to 1000 bytes long (767 bytes for InnoDB tables). Note that the\n"
+"limits are measured in bytes, whereas the length of a column is interpreted as\n"
+"number of characters.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:340
+#, no-wrap
+msgid ""
+"MySQL can also create indexes on parts of a column, this can be of some help.\n"
+"Below are some examples:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:344
+#, no-wrap
+msgid "Indexing using prefixes"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre><i>
+#: en/mysql-upgrading.xml:345
+#, no-wrap
+msgid "$ <i>mysql -uroot -p'"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre><i><comment>
+#: en/mysql-upgrading.xml:345
+#, no-wrap
+msgid "your_password"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:345
+#, no-wrap
+msgid ""
+"' test</i>\n"
+"\n"
+"mysql> <i>SHOW variables LIKE \"version\" \\G</i>\n"
+"*************************** 1. row ***************************\n"
+"Variable_name: version\n"
+"    Value: <comment>5.0.24-log</comment>\n"
+"1 row in set (0.00 sec)\n"
+"\n"
+"mysql> <i>CREATE TABLE t1 (</i>\n"
+"  ->   <i>c1 varchar(255) NOT NULL default '',</i>\n"
+"  ->   <i>c2 varchar(255) NOT NULL default ''</i>\n"
+"  ->   <i>) ENGINE=MyISAM DEFAULT CHARSET=utf8;</i>\n"
+"Query OK, 0 rows affected (0.01 sec)\n"
+"\n"
+"mysql> <i>ALTER TABLE t1</i>\n"
+"  ->   <i>ADD INDEX idx1 ( c1 , c2 );</i>\n"
+"<comment>ERROR 1071 (42000): Specified key was too long; max key length is 1000 bytes</comment>\n"
+"\n"
+"mysql> <i>ALTER TABLE t1</i>\n"
+"  ->   <i>ADD INDEX idx1 ( c1(165) , c2(165) );</i>\n"
+"Query OK, 0 rows affected (0.01 sec)\n"
+"Records: 0  Duplicates: 0  Warnings: 0\n"
+"\n"
+"mysql> <i>CREATE TABLE t2 (</i>\n"
+"  ->   <i>c1 varchar(255) NOT NULL default '',</i>\n"
+"  ->   <i>c2 varchar(255) NOT NULL default ''</i>\n"
+"  ->   <i>) ENGINE=MyISAM DEFAULT CHARSET=sjis;</i>\n"
+"Query OK, 0 rows affected (0.00 sec)\n"
+"\n"
+"mysql> <i>ALTER TABLE t2</i>\n"
+"  ->   <i>ADD INDEX idx1 ( c1(250) , c2(250) );</i>\n"
+"Query OK, 0 rows affected (0.03 sec)\n"
+"Records: 0  Duplicates: 0  Warnings: 0\n"
+"\n"
+"mysql> <i>CREATE TABLE t3 (</i>\n"
+"  ->   <i>c1 varchar(255) NOT NULL default '',</i>\n"
+"  ->   <i>c2 varchar(255) NOT NULL default ''</i>\n"
+"  ->   <i>) ENGINE=MyISAM DEFAULT CHARSET=latin1;</i>\n"
+"Query OK, 0 rows affected (0.00 sec)\n"
+"\n"
+"mysql> <i>ALTER TABLE t3</i>\n"
+"  ->   <i>ADD INDEX idx1 ( c1 , c2 );</i>\n"
+"Query OK, 0 rows affected (0.03 sec)\n"
+"Records: 0  Duplicates: 0  Warnings: 0\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/mysql-upgrading.xml:394
+#, no-wrap
+msgid "Environment"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:398
+#, no-wrap
+msgid ""
+"The system must be configured to support the UTF-8 locale. You will find more\n"
+"information in our <uri link=\"/doc/en/utf-8.xml\">Using UTF-8 with Gentoo</uri>\n"
+"and <uri link=\"/doc/en/guide-localization.xml\">Localization Guide</uri>\n"
+"documents.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:405
+#, no-wrap
+msgid ""
+"In this example, we set some shell environment variables to make use of the\n"
+"English UTF-8 locale in <path>/etc/env.d/02locale</path>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:409
+#, no-wrap
+msgid "/etc/env.d/02locale"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:410
+#, no-wrap
+msgid ""
+"LC_ALL=en_US.UTF-8\n"
+"LANG=en_US.UTF-8\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:415
+#, no-wrap
+msgid "Be sure to run <c>env-update &amp;&amp; source /etc/profile</c> afterward.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/mysql-upgrading.xml:421
+#, no-wrap
+msgid "iconv"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:425
+#, no-wrap
+msgid ""
+"<c>iconv</c>, provided by <c>sys-libs/glibc</c>, is used to convert text files\n"
+"from one charset to another. The <c>app-text/recode</c> package can be used as\n"
+"well.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:430
+#, no-wrap
+msgid "Using iconv"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/mysql-upgrading.xml:431
+#, no-wrap
+msgid ""
+"<comment>(From latin1 to utf8)</comment>\n"
+"$ <i>iconv -f ISO-8859-15 -t UTF-8 file1.sql &gt; file2.sql</i>\n"
+"\n"
+"<comment>(From Japanese to utf8)</comment>\n"
+"$ <i>iconv -f ISO2022JP -t UTF-8 file1.sql &gt; file2.sql</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:439
+#, no-wrap
+msgid ""
+"<c>iconv</c> can be used to recode a sql dump even if the environment is not\n"
+"set to utf8.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/mysql-upgrading.xml:446
+#, no-wrap
+msgid "SQL Mangling"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:450
+#, no-wrap
+msgid ""
+"It's possible to use the <c>CONVERT()</c> and <c>CAST()</c> MySQL functions to\n"
+"convert data in your SQL scripts.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/mysql-upgrading.xml:457
+#, no-wrap
+msgid "Apache (webserver)"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/mysql-upgrading.xml:461
+#, no-wrap
+msgid ""
+"To use utf-8 with apache, you need to adjust the following variables in\n"
+"<path>httpd.conf</path>: AddDefaultCharset, CharsetDefault, CharsetSourceEnc.\n"
+"If your source html files aren't encoded in utf-8, they <b>must</b> be\n"
+"converted with <c>iconv</c> or <c>recode</c>.\n"
+msgstr ""
+
+#, fuzzy
+#~ msgid ""
+#~ "# <i>emerge --config =mysql-4.1.&lt;micro_version&gt;</i>\n"
+#~ "# <i>/etc/init.d/mysql start</i>\n"
+#~ msgstr ""
+#~ "# <i>emerge --config =mysql-4.1.&lt;micro_version&gt;</i>\n"
+#~ "# <i>/etc/init.d/mysql start</i>\n"
+
+#, fuzzy
+#~ msgid "Back to the past"
+#~ msgstr "以前の状態に戻す"
+
+#, fuzzy
+#~ msgid "Straight upgrade, not supported, dangerous"
+#~ msgstr "直接アップグレードの方法、ただしサポートされおらず危険"
+
+#, fuzzy
+#~ msgid ""
+#~ "Under certain conditions it's possible to directly upgrade to the next major \n"
+#~ "version of MySQL. If you know what you're doing and think that applies to your\n"
+#~ "case, here's a little trick that makes it possible to directly upgrade to \n"
+#~ "MySQl 4.1.\n"
+#~ msgstr ""
+#~ "ある条件によっては次メジャーバージョンにそのままアップグレードすることができます。\n"
+#~ "以下で何をしているのか理解し、あなたのシステムに適するか考えた上であれば、\n"
+#~ "ちょっとした要領で、MySQL 4.1 に直接アップグレードできます。\n"
+#~ "\n"
+
+#, fuzzy
+#~ msgid ""
+#~ "# <i>quickpkg dev-db/mysql</i>\n"
+#~ "# <i>/etc/init.d/mysql stop</i>\n"
+#~ "# <i>tar -cjpvf ~/mysql.$(date +%F_%H-%M).tar.bz2 /etc/mysql/my.cnf /var/lib/mysql/</i>\n"
+#~ "# <i>ls -l ~/mysql.*</i>\n"
+#~ "# <i>export MYSQL_STRAIGHT_UPGRADE=1</i>\n"
+#~ "# <i>emerge -av \"&gt;mysql-4.1\"</i>\n"
+#~ "# <i>unset MYSQL_STRAIGHT_UPGRADE</i>\n"
+#~ "# <i>dispatch-conf</i>\n"
+#~ "# <i>revdep-rebuild</i>\n"
+#~ "# <i>/etc/init.d/mysql start</i>\n"
+#~ "# <i>mysql_fix_privilege_tables --defaults-file=/etc/mysql/my.cnf \\</i>\n"
+#~ "     <i>-uroot --password=</i><comment>'your_password'</comment><i></i>\n"
+#~ "# <i>mysql --database=mysql -uroot --password=</i><comment>'your_password'</comment><i> &lt; /tmp/new_pieces.sql</i>\n"
+#~ "# <i>/etc/init.d/mysql restart</i> # just to be sure\n"
+#~ msgstr ""
+#~ "# <i>quickpkg dev-db/mysql</i>\n"
+#~ "# <i>/etc/init.d/mysql stop</i>\n"
+#~ "# <i>tar -cjpvf ~/mysql.$(date +%F_%H-%M).tar.bz2 /etc/mysql/my.cnf /var/lib/mysql/</i>\n"
+#~ "# <i>ls -l ~/mysql.*</i>\n"
+#~ "# <i>export MYSQL_STRAIGHT_UPGRADE=1</i>\n"
+#~ "# <i>emerge -av \"&gt;mysql-4.1\"</i>\n"
+#~ "# <i>unset MYSQL_STRAIGHT_UPGRADE</i>\n"
+#~ "# <i>dispatch-conf</i>\n"
+#~ "# <i>revdep-rebuild</i>\n"
+#~ "# <i>/etc/init.d/mysql start</i>\n"
+#~ "# <i>mysql_fix_privilege_tables --defaults-file=/etc/mysql/my.cnf \\</i>\n"
+#~ "     <i>-uroot --password=</i><comment>'あなたのパスワード'</comment><i></i>\n"
+#~ "# <i>mysql --database=mysql -uroot --password=</i><comment>'あなたのパスワード'</comment><i> &lt; /tmp/new_pieces.sql</i>\n"
+#~ "# <i>/etc/init.d/mysql restart</i> # just to be sure\n"
+
+#, fuzzy
+#~ msgid "Good luck and if something fails, don't say we didn't warn you! ;-)\n"
+#~ msgstr "グッドラック！何かあっても、私たちが何も注意してない、なんていわないでね;-)\n"

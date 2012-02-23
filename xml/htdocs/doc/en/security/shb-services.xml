@@ -1,0 +1,623 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/security/shb-services.xml,v 1.9 2008/06/13 20:02:26 swift Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.5</version>
+<date>2008-06-13</date>
+
+<section>
+<title>Apache</title>
+<body>
+
+<p>
+Apache comes with a pretty decent configuration file but again, we need to
+improve some things, like binding Apache to one address and preventing it from
+leaking information. Below are the options that you should apply the
+configuration file.
+</p>
+
+<p>
+If you did not disable <c>ssl</c> in your <path>/etc/make.conf</path> before
+installing Apache, you should have access to an ssl enabled server. Inside
+<path>/etc/apache2/vhosts.d</path> example configuration files can be found.
+These are working examples and it is best to verify those or disable them.
+</p>
+
+<p>
+It is important to define your configuration(s) to listen to a particular IP
+address (rather than all available IP addresses on your system). For instance,
+for the <path>00_default_vhost.conf</path> file:
+</p>
+
+<pre caption="/etc/apache2/vhosts.d/00_default_vhost.conf">
+<comment># Make it listen on your ip</comment>
+Listen 127.0.0.1
+</pre>
+
+<p>
+We also recommend you to disable showing any information about your Apache
+installation to the world. By default, the configuration will add server version
+and virtual host name to server-generated pages. To disable this, change the
+<c>ServerSignature</c> variable to <c>Off</c>:
+</p>
+
+<pre caption="/etc/apache2/modules.d/00_default_settings.conf">
+ServerSignature Off
+</pre>
+
+<p>
+Apache is compiled with <c>--enable-shared=max</c> and
+<c>--enable-module=all</c>. This will by default enable all modules, so you
+should comment out all modules in the <c>LoadModule</c> section
+(<c>LoadModule</c> and <c>AddModule</c>) that you do not use in the main
+<path>/etc/apache2/httpd.conf</path> configuration file. Restart the
+service by executing <c>/etc/init.d/apache2 restart</c>.
+</p>
+
+<p>
+Documentation is available at <uri>http://www.apache.org</uri>.
+</p>
+
+</body>
+</section>
+
+<section>
+<title>Bind</title>
+<body>
+
+<p>
+One can find documentation at the <uri
+link="http://www.isc.org/products/BIND/bind9.html">Internet Software
+Consortium</uri>. The BIND 9 Administrator Reference Manual is also in
+the <path>doc/arm</path>.
+</p>
+
+<p>
+The newer BIND ebuilds support chrooting out of the box. After emerging
+<c>bind</c> follow these simple instructions:
+</p>
+
+<pre caption="Chrooting BIND">
+# <i>emerge --config bind</i>
+<comment>(Before running the above command you might want to change the chroot
+directory in /etc/conf.d/named. Otherwise /chroot/dns will be used.)</comment>
+
+</pre>
+</body>
+</section>
+<section>
+<title>Djbdns</title>
+<body>
+
+<p>
+Djbdns is a DNS implementation on the security of which its author is willing to
+bet <uri link="http://cr.yp.to/djbdns/guarantee.html">money</uri>. It is very
+different from how Bind 9 works but worth a try.  More information can be
+obtained from <uri>http://www.djbdns.org</uri>.
+</p>
+
+</body>
+</section>
+
+<section>
+<title>FTP</title>
+<body>
+
+<p>
+Generally, using FTP (File Transfer Protocol) is a bad idea. It uses unencrypted
+data (ie. passwords are sent in clear text), listens on 2 ports (normally port
+20 and 21), and attackers are frequently looking for anonymous logins for
+trading warez. Since the FTP protocol contains several security problems you
+should instead use <c>sftp</c> or HTTP. If this is not possible, secure your
+services as well as you can and prepare yourself.
+</p>
+
+</body>
+</section>
+<section>
+<title>Mysql</title>
+<body>
+
+<p>
+If you only need local applications to access the <c>mysql</c> database,
+uncomment the following line in <path>/etc/mysql/my.cnf</path>.
+</p>
+
+<pre caption="Disable network access">
+skip-networking
+</pre>
+
+<p>
+Then we disable the use of the LOAD DATA LOCAL INFILE command. This is to
+prevent against unauthorized reading from local files. This is relevant when new
+SQL Injection vulnerabilities in PHP applications are found.
+</p>
+
+<pre caption="Disable LOAD DATA LOCAL INFILE in the [mysqld] section">
+set-variable=local-infile=0
+</pre>
+
+<p>
+Next, we must remove the sample database (test) and all accounts except the
+local <c>root</c> account.
+</p>
+
+<pre caption="Removing sample database and all unnecessary users">
+mysql> <i>drop database test;</i>
+mysql> <i>use mysql;</i>
+mysql> <i>delete from db;</i>
+mysql> <i>delete from user where not (host="localhost" and user="root");</i>
+mysql> <i>flush privileges;</i>
+</pre>
+
+<warn>
+Be careful with the above if you have already configured user accounts.
+</warn>
+
+<note>
+If you have been changing passwords from the MySQL prompt, you should always
+clean out <path>~/.mysql_history</path> and
+<path>/var/log/mysql/mysql.log</path> as they store the executed SQL commands
+with passwords in clear text.
+</note>
+
+</body>
+</section>
+<section>
+<title>Proftpd</title>
+<body>
+
+<p>
+Proftpd has had several security problems, but most of them seem to have been
+fixed. Nonetheless, it is a good idea to apply some enhancements:
+</p>
+
+<pre caption="/etc/proftpd/proftpd.conf">
+ServerName "My ftp daemon"
+#Don't show the ident of the server
+ServerIdent on "Go away"
+
+#Makes it easier to create virtual users
+RequireValidShell off
+
+#Use alternative password and group file (passwd uses crypt format)
+AuthUserFile "/etc/proftpd/passwd"
+AuthGroupFile "/etc/proftpd/group"
+
+# Permissions
+Umask 077
+
+# Timeouts and limitations
+MaxInstances 30
+MaxClients 10 "Only 10 connections allowed"
+MaxClientsPerHost 1 "You have already logged on once"
+MaxClientsPerUser 1 "You have already logged on once"
+TimeoutStalled 10
+TimeoutNoTransfer 20
+TimeoutLogin 20
+
+#Chroot everyone
+DefaultRoot ~
+
+#don't run as root
+User  nobody
+Group nogroup
+
+#Log every transfer
+TransferLog /var/log/transferlog
+
+#Problems with globbing
+DenyFilter \*.*/
+</pre>
+
+<p>
+One can find documentation at <uri>http://www.proftpd.org</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Pure-ftpd</title>
+<body>
+
+<p>
+Pure-ftpd is an branch of the original trollftpd, modified for security reasons
+and functionality by Frank Dennis.
+</p>
+
+<p>
+Use virtual users (never system accounts) by enabling the <c>AUTH</c> option.
+Set this to <c>-lpuredb:/etc/pureftpd.pdb</c> and create your users by using
+<c>/usr/bin/pure-pw</c>.
+</p>
+
+<pre caption="/etc/conf.d/pure-ftpd">
+AUTH="-lpuredb:/etc/pureftpd.pdb"
+
+## Misc. Others ##
+MISC_OTHER="-A -E -X -U 177:077 -d -4 -L100:5 -I 15"
+</pre>
+
+<p>
+Configure your <c>MISC_OTHER</c> setting to deny anonymous logins (<c>-E</c>),
+chroot everyone (<c>-A</c>), prevent users from reading or writing to files
+beginning with a . (dot) (<c>-X</c>), max idle time (<c>-I</c>), limit recursion
+(<c>-L</c>), and a reasonable <c>umask</c>.
+</p>
+
+<warn>
+Do <e>not</e> use the <c>-w</c> or <c>-W</c> options! If you want to have a
+warez site, stop reading this guide!
+</warn>
+
+<p>
+One can find documentation at <uri>http://www.pureftpd.org</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Vsftpd</title>
+<body>
+
+<p>
+Vsftpd (short for very secure ftp) is a small ftp daemon running a reasonably
+default configuration. It is simple and does not have as many features as
+pureftp and proftp.
+</p>
+
+<pre caption="/etc/vsftpd">
+anonymous_enable=NO
+local_enable=YES
+
+#read only
+write_enable=NO
+
+#enable logging of transfers
+xferlog_std_format=YES
+
+idle_session_timeout=20
+data_connection_timeout=20
+nopriv_user=nobody
+
+chroot_list_enable=YES
+chroot_list_file=/etc/vsftpd/chrootlist
+
+ls_recurse_enable=NO
+</pre>
+
+<p>
+As you can see, there is no way for this service to have individual permissions,
+but when it comes to anonymous settings it is
+quite good. Sometimes it can be nice to have an anonymous ftp server (for
+sharing open source), and vsftpd does a really good job at this.
+</p>
+
+</body>
+</section>
+<section>
+<title>Netqmail</title>
+<body>
+
+<p>
+Netqmail is often considered to be a very secure mail server. It is written with
+security (and paranoia) in mind. It does not allow relaying by default and has
+not had a security hole since 1996. Simply <c>emerge netqmail</c> and go
+configure!
+</p>
+</body>
+</section>
+<section>
+<title>Samba</title>
+<body>
+
+<p>
+Samba is a protocol to share files with Microsoft/Novell networks and it
+should <e>not</e> be used over the Internet. Nonetheless, it still needs
+securing.
+</p>
+
+<pre caption="/etc/samba/smb.conf">
+[global]
+  #Bind to an interface
+  interfaces = eth0 10.0.0.1/32
+
+  #Make sure to use encrypted password
+  encrypt passwords = yes
+  directory security mask = 0700
+
+  #allow traffic from 10.0.0.*
+  hosts allow = 10.0.0.
+
+  #Enables user authentication
+  #(don't use the share mode)
+  security = user
+
+  #Disallow privileged accounts
+  invalid users = root @wheel
+
+  #Maximum size smb shows for a share (not a limit)
+  max disk size = 102400
+
+  #Uphold the password policy
+  min password length = 8
+  null passwords = no
+
+  #Use PAM (if added support)
+  obey pam restrictions = yes
+  pam password change = yes
+</pre>
+
+<p>
+Make sure that permissions are set correct on every share and remember to read
+the <uri link="http://www.samba.org">documentation</uri>.
+</p>
+
+<p>
+Now restart the server and add the users who should have access to this
+service. This is done though the command <path>/usr/bin/smbpasswd</path> with
+the parameter <c>-a</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>ssh</title>
+<body>
+
+<p>
+The only securing that OpenSSH needs is turning on a stronger authentication
+based on public key encryption. Too many sites (like
+<uri>http://www.sourceforge.net</uri>, <uri>http://www.php.net</uri> and
+<uri>http://www.apache.org</uri>) have suffered unauthorized intrusion
+due to password leaks or bad passwords.
+</p>
+
+<pre caption="/etc/ssh/sshd_config">
+#Only enable version 2
+Protocol 2
+
+#Disable root login. Users have to su to root
+PermitRootLogin no
+
+#Turn on Public key authentication
+PubkeyAuthentication yes
+AuthorizedKeysFile      .ssh/authorized_keys
+
+#Disable .rhost and normal password authentication
+HostbasedAuthentication no
+PasswordAuthentication no
+PermitEmptyPasswords no
+
+#Only allow userin the wheel or admin group to login
+AllowGroups wheel admin
+
+#In those groups only allow the following users
+#The @&lt;domainname&gt; is optional but replaces the
+#older AllowHosts directive
+AllowUsers kn@gentoo.org bs@gentoo.org
+
+#Logging
+SyslogFacility AUTH
+LogLevel INFO
+
+<comment>(Change this to your address)</comment>
+ListenAddress 127.0.0.1
+</pre>
+
+<p>
+Also verify that you don't have <c>UsePAM yes</c> in your configuration file as
+it overrides the public key authentication mechanism, or you can disable either
+<c>PasswordAuthentication</c> or <c>ChallengeResponseAuthentication</c>. More
+information about these options can be found in the <path>sshd_config</path>
+manual page.
+</p>
+
+<p>
+Now all that your users have to do is create a key (on the machine
+they want to login from) with the following command:
+</p>
+
+<pre caption="Create a DSA keypair">
+# <i>/usr/bin/ssh-keygen -t dsa</i>
+</pre>
+
+<p>
+And type in a pass phrase.
+</p>
+
+<pre caption="Output of ssh-keygen">
+Generating public/private dsa key pair.
+Enter file in which to save the key (/home/kn/.ssh/id_dsa):<i>[Press enter]</i>
+Created directory '/home/kn/.ssh'.
+Enter passphrase (empty for no passphrase): <i>[Enter passphrase]</i>
+Enter same passphrase again: <i>[Enter passphrase again]</i>
+Your identification has been saved in /home/kn/.ssh/id_dsa.
+Your public key has been saved in /home/kn/.ssh/id_dsa.pub.
+The key fingerprint is:
+07:24:a9:12:7f:83:7e:af:b8:1f:89:a3:48:29:e2:a4 kn@knielsen
+</pre>
+
+<p>
+This will add two files in your <path>~/.ssh/</path> directory called
+<path>id_dsa</path> and <path>id_dsa.pub</path>. The file called
+<path>id_dsa</path> is your private key and should be kept from other people
+than yourself. The other file <path>id_dsa.pub</path> is to be distributed to
+every server that you have access to. Add the key to the users home directory
+in <path>~/.ssh/authorized_keys</path> and the user should be able to login:
+</p>
+
+<pre caption="Adding the id_dsa.pub file to the authorized_keys file">
+$ <i>scp id_dsa.pub other-host:/var/tmp/currenthostname.pub</i>
+$ <i>ssh other-host</i>
+password:
+$ <i>cat /var/tmp/currenthostname.pub >> ~/.ssh/authorized_keys</i>
+</pre>
+
+<p>
+Now your users should guard this private key well. Put it on a media that they
+always carry with them or keep it on their workstation (put this in the <uri
+link="?part=1&amp;chap=1#security_policies">password</uri> policy).
+</p>
+
+<p>
+For more information go to the <uri
+link="http://www.openssh.org">OpenSSH</uri> web site.
+</p>
+
+</body>
+</section>
+<section>
+<title>Using xinetd</title>
+<body>
+
+<p>
+xinetd is a replacement for <c>inetd</c> (which Gentoo does not have),
+the Internet services daemon. It supports access control based on the address of
+the remote host and the time of access. It also provide extensive logging
+capabilities, including server start time, remote host address, remote user
+name, server run time, and actions requested.
+</p>
+
+<p>
+As with all other services it is important to have a good default configuration.
+But since <c>xinetd</c> is run as root and supports protocols
+that you might not know how they work, we recommend not to use it. But if you
+want to use it anyway, here is how you can add some security to it:
+</p>
+
+<pre caption="Install xinetd">
+# <i>emerge xinetd tcp-wrappers</i>
+</pre>
+
+<p>
+And edit the configuration file:
+</p>
+
+<pre caption="/etc/xinetd.conf">
+defaults
+{
+ only_from = localhost
+ instances = 10
+ log_type = SYSLOG authpriv info
+ log_on_success = HOST PID
+ log_on_failure = HOST
+ cps = 25 30
+}
+
+# This will setup pserver (cvs) via xinetd with the following settings:
+# max 10 instances (10 connections at a time)
+# limit the pserver to tcp only
+# use the user cvs to run this service
+# bind the interfaces to only 1 ip
+# allow access from 10.0.0.*
+# limit the time developers can use cvs from 8am to 5pm
+# use tpcd wrappers (access control controlled in
+# <i>/etc/hosts.allow</i> and <i>/etc/hosts.deny</i>)
+# max_load on the machine set to 1.0
+# The disable flag is per default set to no but I like having
+# it in case of it should be disabled
+service cvspserver
+{
+ socket_type = stream
+ protocol = tcp
+ instances = 10
+ protocol = tcp
+ wait = no
+ user = cvs
+ bind = 10.0.0.2
+ only_from = 10.0.0.0
+ access_times = 8:00-17:00
+ server = /usr/sbin/tcpd
+ server_args = /usr/bin/cvs --allow-root=/mnt/cvsdisk/cvsroot pserver
+ max_load = 1.0
+ log_on_failure += RECORD
+ disable = no
+}
+</pre>
+
+<p>
+For more information read <c>man 5 xinetd.conf</c>.
+</p>
+
+</body>
+</section>
+
+<section>
+<title>X</title>
+<body>
+
+<p>
+By default Xorg is configured to act as an Xserver. This can be dangerous since
+X uses unencrypted TCP connections and listens for xclients.
+</p>
+
+<impo>
+If you do not need this service disable it!
+</impo>
+
+<p>
+But if you depend on using your workstation as a Xserver use the
+<c>/usr/X11R6/bin/xhost</c> command with caution. This command allows clients
+from other hosts to connect and use your display. This can become handy if you
+need an X application from a different machine and the only way is through the
+network, but it can also be exploited by an attacker. The syntax of this
+command is <c>/usr/X11R6/bin/xhost +hostname</c>
+</p>
+
+<warn>
+Do not ever use the <c>xhost +</c> feature! This will allow any client to
+connect and take control of your X. If an attacker can get access to your X,
+he can log your keystrokes and take control over your desktop. If you have to
+use it always remember to specify a host.
+</warn>
+
+<p>
+A more secure solution is to disable this feature completely by starting X with
+<c>startx -- -nolisten tcp</c> or disable it permanently in the configuration.
+</p>
+
+<pre caption="/usr/X11R6/bin/startx">
+defaultserverargs="-nolisten tcp"
+</pre>
+
+<p>
+To make sure that <path>startx</path> does not get overwritten when emerging a
+new version of Xorg you must protect it. Add the following line to
+<path>/etc/make.conf</path>:
+</p>
+
+<pre caption = "/etc/make.conf">
+CONFIG_PROTECT_MASK="/usr/X11R6/bin/startx"
+</pre>
+
+<p>
+If you use a graphical login manager you need a different approach.
+</p>
+
+<p>
+For <c>gdm</c> (Gnome Display Manager)
+</p>
+
+<pre caption="/etc/X11/gdm/gdm.conf">
+[server-Standard]
+command=/usr/X11R6/bin/X -nolisten tcp
+</pre>
+
+<p>
+For <c>xdm</c> (X Display Manager) and <c>kdm</c> (Kde Display Manager)
+</p>
+
+<pre caption="/etc/X11/xdm/Xservers">
+:0 local /usr/bin/X11/X -nolisten tcp
+</pre>
+
+</body>
+</section>
+
+</sections>

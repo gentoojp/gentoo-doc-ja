@@ -1,0 +1,1260 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/migration-to-2.6.xml,v 1.30 2011/12/26 15:22:40 swift Exp $ -->
+
+<guide>
+<title>The complete Gentoo Linux 2.6 migration guide</title>
+
+<author title="Author">
+  <mail link="dsd@gentoo.org">Daniel Drake</mail>
+</author>
+<author title="Contributor">
+  <mail link="sergey_zlodey@mail.ru">Sergey Galkin</mail>
+</author>
+<author title="Contributor">
+  <mail link="svyatogor@gentoo.org">Sergey Kuleshov</mail>
+</author>
+<author title="Editor">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+<author title="Editor">
+  <mail link="bennyc@gentoo.org">Benny Chuang</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This document will aid you in the process of migrating from Linux 2.4 to Linux
+2.6, devfs to udev, OSS to ALSA, and LVM to LVM2.
+</abstract>
+
+<version>3</version>
+<date>2011-12-26</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>What is new in Linux 2.6?</title>
+<body>
+
+<p>
+That is not an easy question to answer. Linux 2.6 is the result of over 2 years
+of rapid development and stabilisation of new features, and is architecturally
+quite different from its 2.4 counterpart. Some of the major changes are listed
+below:
+</p>
+
+<ul>
+  <li>
+    Scheduler/Interactivity improvements: Linux feels very smooth on desktop
+    systems and copes much better than 2.4 while under load
+  </li>
+  <li>
+    Scalability: Linux now scales much better at both ends - on small embedded
+    devices and also systems with many processors
+  </li>
+  <li>Performance: Throughput from common applications is much improved</li>
+  <li>
+    Hardware support: Linux now supports many more architectures and hardware
+    devices out-of-the-box than any other operating system.
+  </li>
+</ul>
+
+<p>
+Joseph Pranevich has written a very detailed document, <uri
+link="http://www.kniggit.net/wwol26.html">The Wonderful World Of Linux
+2.6</uri> which you may be interested to glance over. If you are interested in
+the more technical details, you can refer to <uri
+link="http://www.codemonkey.org.uk/docs/post-halloween-2.6.txt">The
+post-halloween document</uri> - but do bear in mind that this is somewhat
+outdated now.
+</p>
+
+</body>
+</section>
+<section>
+<title>Gentoo and 2.6</title>
+<body>
+
+<p>
+From the 2005.0 release of Gentoo Linux, the default kernel is the latest 2.6
+series kernel. The default profile of the system is picked up from
+<path>/etc/make.profile</path> which on 2005.0 or above would be a symlink to
+<path>/usr/portage/profiles/default-linux/x86/2005.0</path> under which various
+important settings are taken care of. 
+</p>
+
+<p>
+If you are using a 2.4 profile, please change it to one that supports a 2.6
+kernel by doing the following.
+</p>
+
+<pre caption="Changing your profile">
+# <i>rm -f /etc/make.profile</i>
+# <i>ln -snf /usr/portage/profiles/default-linux/x86/2005.1 /etc/make.profile</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>What is udev?</title>
+<body>
+
+<p>
+In the past, Gentoo has instructed users to use <e>devfs</e> for managing the
+<path>/dev</path> directory, which contains a series of device interfaces to
+allow system applications to communicate with hardware (through the kernel).
+</p>
+
+<p>
+<e>devfs</e>, whilst a good concept, has some internal problems, and has been
+completely removed from the main stable tree as of 2.6.13.
+</p>
+
+<p>
+<e>udev</e> is the new way of managing device nodes. It addresses issues with
+previous device managers, and also attempts to solve some other problems.
+</p>
+
+<p>
+The above may not mean much to you, but fear not, the hard working Gentoo
+developers have put effort into making the migration from devfs very easy.
+Please read the <uri link="/doc/en/udev-guide.xml">Gentoo udev Guide</uri> for
+more information regarding the same.
+</p>
+
+</body>
+</section>
+<section>
+<title>What is ALSA?</title>
+<body>
+
+<p>
+With Linux 2.4, chances are that you used OSS (open sound system) drivers to
+power your sound card. OSS has been replaced by a newer and better set of sound
+drivers: ALSA.
+</p>
+
+<p>
+ALSA, the Advanced Linux Sound Architecture, is a new set of sound drivers with
+a new and improved API, present in the Linux 2.6 kernel. It is backwards
+compatible with OSS applications, provided that you select the right kernel
+configuration options!
+</p>
+
+<note>
+If you do not have any sound/audio hardware, you can safely skip over any
+ALSA-related instructions in this document.
+</note>
+
+</body>
+</section>
+<section>
+<title>What is LVM?</title>
+<body>
+
+<p>
+<e>Logical Volume Management</e> (LVM) exists as set of tools allowing you to
+manage your disk storage in a very flexible manner. Amongst other things, it
+allows powerful control over partitions (e.g. resizing without reboot), and
+makes operations like device changes relatively simple. LVM acts as an
+alternative to standard partition-based disk management.
+</p>
+
+<p>
+LVM support has historically been implemented in Linux 2.4. Linux 2.6 features
+a new version of LVM, named <e>LVM2</e>. The migration process requires you to
+install new versions of the user-level tools (covered later in this document)
+but will leave your data intact!
+</p>
+
+<p>
+<e>If you do not currently use LVM for data-storage management, then LVM2
+migration does not apply to you.</e> If this is the case, you can safely ignore
+any parts of this document referencing LVM/LVM2. Upgrading to Linux 2.6 does
+<e>not</e> require you to store your data on LVM partitions - you can keep your
+data in the standard partition-format as it always has been.
+</p>
+
+<p>
+If you are not a LVM user, but you think LVM2 sounds useful for you, you can
+convert your disks to this format at a later date, by following the <uri
+link="/doc/en/lvm2.xml">Gentoo LVM2 Installation Guide</uri>. For now, let us
+just concentrate on getting a smooth 2.6 migration underway.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Preparation</title>
+<section>
+<title>Get your system up-to-date</title>
+<body>
+
+<p>
+Some of the changes brought in with Linux 2.6 also required some changes in the
+base system applications. Before continuing, you should ensure that your system
+is relatively up-to-date, and to be perfectly sure, you should update all world
+and system packages where updates are available.
+</p>
+
+<p>
+In particular, make sure you have the latest stable versions of the following
+packages:
+</p>
+
+<ul>
+  <li><c>sys-apps/baselayout</c></li>
+  <li><c>sys-apps/util-linux</c></li>
+  <li>
+    <c>sys-kernel/genkernel</c> (only if you wish to use genkernel as opposed
+    to manual configuration)
+  </li>
+</ul>
+
+<pre caption="Updating all world packages">
+# <i>emerge --sync</i>
+# <i>emerge -ua world</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>modutils vs module-init-tools</title>
+<body>
+
+<p>
+<c>sys-apps/modutils</c> is the package that provides tools such as
+<c>modprobe</c>, <c>rmmod</c> and <c>insmod</c> for Linux 2.4.
+</p>
+
+<p>
+Linux 2.6 introduces a new module format, and therefore requires new tools for
+handling modules. These are bundled up into the
+<c>sys-apps/module-init-tools</c> package.
+</p>
+
+<p>
+You should now remove modutils and install module-init-tools:
+</p>
+
+<pre caption="Switching from modutils to module-init-tools">
+# <i>emerge --unmerge sys-apps/modutils</i>
+# <i>emerge module-init-tools</i>
+</pre>
+
+<note>
+Don't worry - even though you have just unmerged modutils, module-init-tools
+provides backwards compatibility for Linux 2.4, so you will still be able to
+boot into Linux 2.4 and handle modules for that kernel.
+</note>
+
+<note>
+For the above reason, module-init-tools might already be installed and working
+with your existing Linux 2.4 kernel. In this case, you don't need to worry
+about this stage - your system is already ready to deal with Linux 2.6 modules.
+</note>
+
+</body>
+</section>
+<section>
+<title>Installing udev</title>
+<body>
+
+<p>
+There is no configuration involved here. Simply use <c>emerge</c> to install
+udev:
+</p>
+
+<pre caption="Installing udev">
+# <i>emerge -a udev</i>
+</pre>
+
+<p>
+You should now read the <uri link="/doc/en/udev-guide.xml">Gentoo udev
+Guide</uri> to get a more complete idea about the differences between udev and
+devfs.
+</p>
+
+</body>
+</section>
+<section>
+<title>Checking for essential device nodes</title>
+<body>
+
+<p>
+When the system boots up, the system requires some essential device nodes. As
+udev is not included in the kernel, it is not activated immediately. To work
+around this, you must ensure that you have some essential device nodes on your
+disk.
+</p>
+
+<p>
+Our installation stage files will have created the required devices during the
+initial installation. However, some users have reported that this is not the
+case. We will use this opportunity to check that the device files exist, and
+create them if they do not.
+</p>
+
+<p>
+As your existing device manager will be mounted at <path>/dev</path>, we cannot
+access it directly. So we will bind-mount your root partition to another
+location and access the <path>/dev</path> directory from there.
+</p>
+
+<pre caption="Bind-mounting your root partition and listing static devices">
+# <i>mkdir -p /mnt/temp</i>
+# <i>mount --rbind / /mnt/temp</i>
+# <i>cd /mnt/temp/dev</i>
+# <i>ls -l console null</i>
+</pre>
+
+<p>
+If the above <e>ls</e> command reported that either <c>console</c> or
+<c>null</c> do not exist, then you must create them yourself, as shown below.
+</p>
+
+<pre caption="Creating the missing console and null nodes">
+# <i>mknod -m 660 console c 5 1</i>
+# <i>mknod -m 660 null c 1 3</i>
+</pre>
+
+<p>
+You should now unmount your bind-mounted root partition, even if you did not
+have to create those devices:
+</p>
+
+<pre caption="Unmounting the bind-mounted root">
+# <i>cd</i>
+# <i>umount /mnt/temp</i>
+# <i>rmdir /mnt/temp</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Installing ALSA utilities</title>
+<body>
+
+<p>
+ALSA requires you to have some packages installed, so that applications can use
+the ALSA API. These packages will also allow you to control the mixer and
+volume levels. Install the required utilities as follows:
+</p>
+
+<pre caption="Installing ALSA utilities and libraries">
+# <i>emerge -a alsa-lib alsa-utils alsa-tools alsa-headers alsa-oss</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Installing the Linux 2.6 sources</title>
+
+<section>
+<title>Choosing and installing a kernel</title>
+<body>
+
+<p>
+The first thing you need to do is install sources of a 2.6 kernel of your
+choice. The two Gentoo-supported 2.6 kernels are currently
+<e>gentoo-sources</e> (for desktops) and <e>hardened-sources</e> (for
+servers). There are others available, see the <uri
+link="/doc/en/gentoo-kernel.xml">Gentoo Linux Kernel Guide</uri> for more
+choices.
+</p>
+
+<p>
+In this guide, we'll use <c>gentoo-sources</c> as an example. Install your
+chosen set of kernel sources using the <c>emerge</c> utility:
+</p>
+
+<pre caption="Installing gentoo-sources">
+# <i>emerge -a gentoo-sources</i>
+These are the packages that I would merge, in order:
+Calculating dependencies ...done!
+[ebuild  NS   ] sys-kernel/gentoo-sources-2.6.10-r4
+
+Do you want me to merge these packages? [Yes/No] <i>y</i>
+</pre>
+
+<p>
+When performing the above <c>emerge</c> command, if you find that it wants to
+install a 2.4 version of gentoo-sources (e.g. <c>gentoo-sources-2.4.26</c>),
+then it means that the profile you are using is not designed for Linux 2.6
+users. Please follow the <uri link="/doc/en/gentoo-upgrading.xml">Gentoo
+Upgrading Document</uri> to switch to a 2.6-based profile, and retry installing
+2.6 kernel sources.
+</p>
+
+</body>
+</section>
+<section>
+<title>Updating the /usr/src/linux symbolic link</title>
+<body>
+
+<p>
+Various components of the Gentoo utilities rely on <path>/usr/src/linux</path>
+being a symbolic link to the kernel sources that you are running (or wish to
+compile against).
+</p>
+
+<p>
+We will now update our <path>/usr/src/linux</path> link to point at the kernel
+sources we just installed. Continuing our example:
+</p>
+
+<pre caption="Updating the /usr/src/linux softlink">
+# <i>cd /usr/src</i>
+# <i>ln -sfn linux-2.6.10-gentoo-r4 linux</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="pitfalls">
+<title>Known pitfalls with Linux 2.6 migration</title>
+<section>
+<body>
+
+<p>
+Before we get stuck into configuring the kernel, I'll attempt to detail the
+most common errors that people make when migrating to Linux 2.6, as some of
+these points will influence the way you configure the new kernel.
+</p>
+
+<note>
+Not all of these points are relevant at this stage, but I will detail them all
+here in one place, and you can refer back at your leisure.
+</note>
+
+</body>
+</section>
+<section>
+<title>Don't use "make oldconfig" with a 2.4 .config</title>
+<body>
+
+<note>
+If you don't understand what this means, don't worry, you won't make this
+mistake if you follow the rest of this guide correctly.
+</note>
+
+<p>
+You'll be asked many many questions, since there have been a large amount of
+changes. Many people who do try a <c>make oldconfig</c> from a 2.4 config end
+up creating an unworkable kernel (e.g. no output on-screen, no input from
+keyboard, etc). Please save yourself the trouble, and use the traditional
+<c>menuconfig</c> configuration method just this once.
+</p>
+
+</body>
+</section>
+<section>
+<title>Don't use ide-scsi for CD/DVD writing</title>
+<body>
+
+<p>
+In Linux 2.4, the only way to achieve good CD/DVD writing results was to enable
+the (rather ugly) <c>ide-scsi</c> emulation. Thankfully, the IDE layer in Linux
+2.6 has been extended to support CD/DVD writers much better.
+</p>
+
+<p>
+You don't need to enable any extra options to support CD writing. Just be sure
+<e>not</e> to enable <c>ide-scsi</c> as you used to.
+</p>
+
+</body>
+</section>
+<section>
+<title>PC Speaker is now a configurable option</title>
+<body>
+
+<p>
+You won't get your normal console beeps (or any response from the PC speaker at
+all) unless you specifically enable the new PC speaker option
+(<c>CONFIG_INPUT_PCSPKR</c>):
+</p>
+
+<pre caption="Location of PC speaker option">
+Device Drivers  ---&gt;
+ Input device support  ---&gt;
+  [*] Misc
+   &lt;*&gt;   PC Speaker support
+</pre>
+
+<note>
+By "PC speaker", I am referring to the analogue speaker that beeps once when
+your system is powering up, I am not referring to normal sound hardware used
+for playing music, etc.
+</note>
+
+</body>
+</section>
+<section>
+<title>New USB Storage block device driver sometimes problematic</title>
+<body>
+
+<p>
+Very recently, a new USB storage device driver has been added to the kernel.
+At the time of writing, this driver ("ub") is still in its early stages and
+some users find it to be unreliable. If you have problems accessing your USB
+hard disk, USB flash disk, USB card reader, or USB digital camera, then you
+could try reverting to the older SCSI-style driver:
+</p>
+
+<pre caption="Disabling ub">
+Device Drivers  ---&gt;
+ Block devices  ---&gt;
+  &lt; &gt; Low Performance USB Block driver
+</pre>
+
+<note>
+The older SCSI-style driver (USB Mass Storage support) is enabled by default.
+It can be found under "Device Drivers --&gt; USB support", but will generally
+not come into effect while ub is also present.
+</note>
+
+</body>
+</section>
+<section>
+<title>usbdevfs renamed to usbfs</title>
+<body>
+
+<p>
+If you have edited your <path>/etc/fstab</path> file to customise the way that
+the USB device filesystem gets mounted, you may have to modify the filesystem
+type from <e>usbdevfs</e> to <e>usbfs</e>.
+</p>
+
+<note>
+Recent 2.4 kernels will also allow you to use "usbfs" as well as "usbdevfs", so
+you are not breaking any backwards compatibility by doing this.
+</note>
+
+</body>
+</section>
+<section>
+<title>Don't renice X</title>
+<body>
+
+<p>
+If you are a desktop 2.4 user, you may have hacked your system into running X
+at a higher priority, as in some cases it seems to provide better desktop
+performance.
+</p>
+
+<p>
+There have been many scheduler changes in 2.6 which change this behaviour. If
+you continue to run X at a higher priority, it will do exactly what it is
+supposed to (run the <e>display server</e> at a very high priority) and you
+will notice consequences such as sound stuttering and slow application load
+times because your CPU is spending too long serving X and only X.
+</p>
+
+<p>
+In Linux 2.6, you no longer need to renice desktop applications to get good
+interactivity. Please remove your "niceness" hacks!
+</p>
+
+</body>
+</section>
+<section>
+<title>X11 config file should now use /dev/input/mice for PS/2 and USB mice</title>
+<body>
+
+<p>
+One of the changes that a default udev configuration introduces is different
+organisation of the mouse device nodes. Previously, you would have had nodes
+such as <path>/dev/psaux</path> and <path>/dev/mouse</path>. You will now have
+nodes such as <path>/dev/input/mouse0</path>, <path>/dev/input/mouse1</path>,
+and a collective <path>/dev/input/mice</path> node which combines movements
+from all mice.
+</p>
+
+<p>
+Since the old X configurations typically reference <path>/dev/mouse</path> or
+<path>/dev/psaux</path> then you may get an error similar to the one shown
+below when you attempt to start X11:
+</p>
+
+<pre caption="Common error when starting X on a udev system for the first time">
+(EE) xf86OpenSerial: Cannot open device /dev/mouse
+  No such file or directory.
+(EE) Mouse0: cannot open input device
+(EE) PreInit failed for input device "Mouse0"
+No core pointer
+</pre>
+
+<p>
+To correct this, open your X11 config in a text editor, and update the mouse
+<e>InputDevice</e> section to use the <path>/dev/input/mice</path> device. An
+example is shown below:
+</p>
+
+<pre caption="Opening your X11 config file">
+# <i>nano -w /etc/X11/xorg.conf</i>
+</pre>
+
+<note>
+If you are still using XFree86, your config file will be
+<path>/etc/X11/XF86Config</path>
+</note>
+
+<pre caption="Sample mouse InputDevice section">
+Section "InputDevice"
+  Identifier  "Mouse0"
+  Driver      "mouse"
+  Option      "Protocol" "auto"
+  Option      "Device" "/dev/input/mice"
+EndSection
+</pre>
+
+<note>
+If you are using a serial mouse, the new device path will be
+<path>/dev/tts/0</path> instead of <path>/dev/ttyS0</path>.
+</note>
+
+</body>
+</section>
+<section>
+<title>New Serial-ATA (SATA) drivers name the devices differently</title>
+<body>
+
+<p>
+If you used the original Serial ATA drivers under Linux 2.4, you probably
+observed your SATA devices having names such as <path>/dev/hde</path>.
+</p>
+
+<p>
+Linux 2.6 introduces some new SATA drivers (libata) which are based on the SCSI
+subsystem. As these drivers are based on SCSI, your SATA disks will now show up
+as SCSI devices. Your first SATA disk will be named <path>/dev/sda</path>. You will
+need to update your <path>/etc/fstab</path> file to reflect this, and you will need
+to bear this in mind when choosing the root/real_root kernel boot parameter
+later on.
+</p>
+
+<note>
+libata has been backported into recent versions of Linux 2.4, so you may
+already be familiar with the new device naming.
+</note>
+
+</body>
+</section>
+<section>
+<title>bootsplash no longer maintained</title>
+<body>
+
+<p>
+If you used the <c>gentoo-sources-2.4</c> kernel, you may have used the
+<e>bootsplash</e> functionality in order to provide yourself with a colourful
+framebuffer console.
+</p>
+
+<p>
+The developer of bootsplash appears to have lost interest in his project, given
+some design problems. However, Gentoo developer <e>Michał Januszewski</e> is
+developing a successor, <c>gensplash</c>, which in included in the
+gentoo-sources-2.6 kernel. You can follow Michał's <uri
+link="http://dev.gentoo.org/~spock/projects/gensplash/archive/gensplash-in-5-easy-steps.txt">
+Gensplash in 5 easy steps</uri> document in order to familiarize yourself with
+how gensplash is operated.
+</p>
+
+</body>
+</section>
+<section>
+<title>I2C drivers now included in the kernel</title>
+<body>
+
+<p>
+If you use <c>lm-sensors</c> to monitor system temperatures and power levels,
+you previously needed to install the <c>i2c</c> package in order to provide
+hardware support.
+</p>
+
+<p>
+The I2C hardware drivers are now included in the Linux 2.6 kernel, no external
+i2c package is required. Remember to compile support for your specific I2C
+devices into the kernel configuration. You will then be able to use
+<c>lm-sensors</c> as usual.
+</p>
+
+</body>
+</section>
+
+
+</chapter>
+
+<chapter id="conf">
+<title>Configuring, building, and installing the kernel</title>
+<section>
+<body>
+
+<p>
+As with Linux 2.4, you have two options for managing your new kernel build.
+</p>
+
+<ol>
+  <li>
+    The default method is to configure your kernel manually. This may seem
+    daunting but is the preferred way as long as you know your system. If you
+    wish to configure your new kernel manually, please continue on to the <uri
+    link="#manual">next chapter</uri>.
+  </li>
+  <li>
+    The alternative option is to use our <c>genkernel</c> utility to
+    automatically configure, compile, and install a kernel for you. If you wish
+    to use <c>genkernel</c> then skip over the next chapter and proceed with
+    <uri link="#genkernel">using genkernel</uri>.
+  </li>
+</ol>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="manual">
+<title>Default: Manual configuration</title>
+<section>
+<title>Configuring the kernel</title>
+<body>
+
+<p>
+We'll now get on with configuring the kernel. Open menuconfig in the usual way:
+</p>
+
+<pre caption="Invoking menuconfig">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+You will probably be familiar with using menuconfig from configuring 2.4
+kernels. Fortunately, the front end has barely changed at all, but you will
+observe much better organisation of kernel options, plus <e>many</e> new
+options that weren't present in 2.4.
+</p>
+
+<p>
+Be sure to enable the following important kernel options:
+</p>
+
+<pre caption="Required kernel options">
+File systems ---&gt;
+  Pseudo Filesystems ---&gt;
+    [*] /proc file system support
+    [*] Virtual memory file system support (former shm fs)
+
+<comment>(the following are required for udev):</comment>
+General setup  ---&gt;
+ [*] Support for hot-pluggable devices
+
+<comment>(the following are required for ALSA):</comment>
+Device Drivers  ---&gt;
+ Sound  ---&gt;
+  &lt;*&gt; Sound card support
+  Advanced Linux Sound Architecture  ---&gt;
+   &lt;M&gt; Advanced Linux Sound Architecture
+   &lt;M&gt; Sequencer support
+   &lt;M&gt; OSS Mixer API
+   [*] OSS Sequencer API
+<comment>   (and do not forget to select your soundcard from the submenus!)</comment>
+
+<comment>(the following are required if you use LVM for disk management):</comment>
+Device Drivers  ---&gt;
+ Multi-device support (RAID and LVM)  ---&gt;
+  [*] Multiple devices driver support (RAID and LVM)
+   &lt;*&gt;   Device mapper support
+</pre>
+
+<warn>
+Previously you may have included support for the <path>/dev</path> file system
+(now marked OBSOLETE). Do not enable devfs support. We have installed udev,
+which we will be using instead of devfs from now on.
+</warn>
+
+<p>
+Also, remember to enable support for the filesystems that you use, and the
+hardware present in your system. Be sure to enable support for the IDE
+controller on your motherboard if you wish to benefit from fast DMA disk
+access. Refer to the <uri
+link="/doc/en/handbook/handbook-x86.xml?part=1&amp;chap=7">Configuring the
+Kernel</uri> section of the <uri link="/doc/en/handbook/index.xml">Gentoo
+Handbook</uri> for additional guidance here.
+</p>
+
+</body>
+</section>
+<section>
+<title>Building the kernel</title>
+<body>
+
+<p>
+Now that we have configured the kernel, we can start the compilation process:
+</p>
+
+<pre caption="Compiling the kernel source">
+# <i>make &amp;&amp; make modules_install</i>
+</pre>
+
+<note>
+You may recall having to run <c>make dep</c> with Linux 2.4 sources. This is no
+longer required.
+</note>
+
+<p>
+Wait for the kernel compilation to complete (and observe the much more readable
+compilation output).
+</p>
+
+</body>
+</section>
+<section>
+<title>Installing the kernel</title>
+<body>
+
+<p>
+The next step is mounting your <path>/boot</path> partition and copying the
+kernel image over. You must then update your bootloader config manually.
+</p>
+
+<pre caption="Installing the kernel">
+# <i>mount /boot</i>
+# <i>cp arch/i386/boot/bzImage /boot/bzImage-2.6.10-gentoo-r4</i>
+</pre>
+
+<p>
+Note that the above instructions are examples only, you should follow your
+usual procedure of updating kernels by following the instructions in the <uri
+link="/doc/en/handbook/index.xml">Gentoo Handbook</uri> (see the <uri
+link="/doc/en/handbook/handbook-x86.xml?part=1&amp;chap=7">Configuring the
+Kernel</uri> chapter).
+</p>
+
+<p>
+When updating your bootloader config, do not remove the old entry pointing at
+your 2.4 kernel. This way, you will easily be able to switch between the two if
+something is not working.
+</p>
+
+<p>
+Now continue onto the <uri link="#modules">Module Configuration</uri> section.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="genkernel">
+<title>Alternative: Using genkernel</title>
+<section>
+<body>
+
+<p>
+If you prefer to use genkernel instead of manually configuring your kernel, you
+will be happy to hear that using genkernel to produce 2.6 kernels is very
+similar to the process you performed when producing your previous 2.4 kernel.
+</p>
+
+<p>
+You should invoke genkernel as shown below:
+</p>
+
+<pre caption="Invoking genkernel with some common arguments">
+# <i>genkernel --udev --menuconfig --bootloader=grub all</i>
+</pre>
+
+<p>
+In the above example, we also take advantage of genkernel features to open
+menuconfig to allow you to customise the kernel configuration (if you wish),
+and to update the grub bootloader configuration after compilation.
+</p>
+
+<p>
+You should choose genkernel arguments that suit you, but do not forget to
+include the <c>--udev</c> argument! Refer to the <uri
+link="/doc/en/genkernel.xml">Gentoo Linux Genkernel Guide</uri> and the <uri
+link="/doc/en/handbook/handbook-x86.xml?part=1&amp;chap=7">Configuring the
+Kernel</uri> chapter of the <uri link="/doc/en/handbook/index.xml">Gentoo
+Handbook</uri> for additional information.
+</p>
+
+<p>
+If you choose to update your bootloader config yourself, then you must remember
+to include the <c>udev</c> kernel parameter. A sample <e>grub</e> config
+section is shown below, but remember to adjust the <e>real_root</e> parameter
+for your system.
+</p>
+
+<pre caption="Sample GRUB config for genkernel + udev">
+title Gentoo Linux (2.6 kernel)
+root (hd0,0)
+kernel /kernel-2.6.10-gentoo-r4 <i>udev</i> root=/dev/ram0 init=/linuxrc ramdisk=8192 real_root=/dev/sda3
+initrd /initrd-2.6.10-gentoo-r4
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="modules">
+<title>Module Configuration</title>
+
+<section>
+<title>Installing external modules</title>
+<body>
+
+<p>
+Many users will additionally rely on kernel modules that are built outside of
+the kernel tree. Common examples are the binary ATI and Nvidia graphics
+drivers. You now need to install those modules, which will compile against the
+2.6 sources found at <path>/usr/src/linux</path>. This is the usual case of
+<c>emerge packagename</c> for all the external modules you are used to using
+with 2.4.
+</p>
+
+<p>
+Refer again to the <uri
+link="/doc/en/handbook/handbook-x86.xml?part=1&amp;chap=7">Configuring the
+Kernel</uri> chapter of the <uri link="/doc/en/handbook/index.xml">Gentoo
+Handbook</uri> for more info.
+</p>
+
+</body>
+</section>
+<section>
+<title>Autoloading modules</title>
+<body>
+
+<p>
+You may have decided to compile some kernel components as modules (as opposed
+to compiled directly into the kernel) and would like to have them autoloaded on
+bootup like you did with 2.4. Also, if you installed any external modules from
+the portage tree (as described above) you will probably want to autoload them
+too.
+</p>
+
+<p>
+To achieve this, edit <path>/etc/conf.d/modules</path> in your favorite text
+editor and list the names of the modules you would like autoloaded.
+</p>
+
+<pre caption="Opening the module autoload list in nano">
+# <i>nano -w /etc/conf.d/modules</i>
+</pre>
+
+<pre caption="Sample configuration entry to load the 3c59x and nvidia modules">
+modules="<i>3c59x nvidia</i>"
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>LVM to LVM2 migration</title>
+<section>
+<title>Upgrading to LVM2 tools</title>
+<body>
+
+<note>
+If you do not use LVM to manage your disk storage, you can safely skip this
+chapter and skip onto the next.
+</note>
+
+<p>
+Fortunately, upgrading from the LVM1 user tools to the LVM2 versions is very
+simple:
+</p>
+
+<pre caption="Upgrading user-tools from LVM1 to LVM2">
+# <i>emerge --unmerge lvm-user</i>
+# <i>emerge lvm2</i>
+</pre>
+
+<note>
+You will need to re-emerge <c>lvm-user</c> if you plan to go back to booting a
+2.4 kernel, as <c>lvm2</c> by itself isn't enough for 2.4 kernels.
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Booting into Linux 2.6</title>
+<section>
+<body>
+
+<p>
+It's now time to boot into Linux 2.6. Close all applications and reboot:
+</p>
+
+<pre caption="Rebooting">
+# <i>umount /boot</i>
+# <i>reboot</i>
+</pre>
+
+<p>
+When you reboot, if you followed this document correctly so far, you will have
+the option of either loading Linux 2.4 or Linux 2.6 from your bootloader.
+Choose Linux 2.6.
+</p>
+
+<p>
+Once the system has booted, check that things are working. If you made a
+mistake in the kernel configuration, don't worry, you can skip back to the <uri
+link="#conf">Configuring, building, and installing the kernel</uri> section,
+make your change, recompile and install new kernel image, reboot, and try
+again!
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring and unmuting ALSA</title>
+<body>
+
+<p>
+We will now complete the ALSA configuration and unmute the audio channels. The
+ALSA packages provide a useful utility to make this process relatively simple:
+</p>
+
+<pre caption="Invoking the automatic ALSA configuration utility">
+# <i>alsaconf</i>
+</pre>
+
+<p>
+The process is straightforward: allow the <e>/etc/modules.d/alsa</e> file to be
+automatically updated, and then allow ALSA to be reloaded. alsaconf will then
+terminate, however you will need to run it multiple times if you have multiple
+sound devices installed in your system.
+</p>
+
+<p>
+You should now add <c>alsasound</c> to your boot runlevel, so that volumes will
+be saved on shutdown and restored on bootup:
+</p>
+
+<pre caption="Adding alsasound to the boot runlevel">
+# <i>rc-update add alsasound boot</i>
+</pre>
+
+<note>
+The <c>alsaconf</c> utility chooses initial volume levels for your sound
+devices. If these are inappropriate, you can modify them at any time with the
+<c>alsamixer</c> utility.
+</note>
+
+</body>
+</section>
+<section>
+<title>Any immediate problems?</title>
+<body>
+
+<p>
+At this stage you should refer back to the <uri link="#pitfalls">Known pitfalls
+with Linux 2.6 migration</uri> section which may be helpful with any issues you
+encounter immediately.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Header files and NPTL</title>
+<section>
+<body>
+
+<p>
+By now you are running Linux 2.6 and hopefully have all issues ironed out. You
+should now update your Linux kernel header files and re-merge glibc so that
+userspace applications can take advantage of new Linux 2.6 features.
+</p>
+
+<pre caption="Updating to linux-headers">
+# <i>emerge -u linux-headers</i>
+</pre>
+
+<p>
+After updating your headers package, you should generally re-merge glibc.
+There is a new feature here that you may be interested in - NPTL. NPTL is a new
+threading model present in Linux 2.6, which features much quicker thread create
+and destroy times. This won't make much of a difference to most systems, but
+you may wish to enable it during this migration process! To enable NPTL, edit
+<path>/etc/make.conf</path>, adding <e>nptl</e> to your USE variable.
+</p>
+
+<warn>
+If you choose to also enable the "nptlonly" flag, be aware that you will no
+longer be able to boot a 2.4 kernel.
+</warn>
+
+<p>
+Now re-merge glibc (you should do this even if you did not choose to enable
+NPTL).
+</p>
+
+<pre caption="Reinstalling glibc against the new kernel headers">
+# <i>emerge -a glibc</i>
+</pre>
+
+<p>
+If you enabled NPTL, existing binaries will not use it until they are
+recompiled. However, any binaries compiled from this point onwards <e>will</e>
+use NPTL. You may wish to recompile all binaries now, e.g.:
+</p>
+
+<pre caption="Recompiling all packages on the system">
+# <i>emerge -e world</i>
+</pre>
+
+<p>
+Alternatively, you can just let your system "naturally" convert itself to NPTL
+as you update to newer versions of packages when they are released.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Closing remarks</title>
+<section>
+<title>Problems?</title>
+<body>
+
+<p>
+With the incredible amount of work that went into Linux 2.6, it is sometimes
+inevitable that things which used to work fine, no longer function as expected.
+</p>
+
+<p>
+If you have any problems with your 2.6 kernel, and you can confirm that this
+problem does not exist with Linux 2.4, then please open a bug with us on our
+<uri link="http://bugs.gentoo.org">Bugzilla</uri>. We will investigate the
+issue, and if we find that it is a problem in the mainline kernel, we may then
+ask you to file a report at the central kernel bugzilla.
+</p>
+
+</body>
+</section>
+<section>
+<title>Conclusion</title>
+<body>
+
+<p>
+Hopefully you have just completed a smooth migration and you are enjoying the
+benefits which Linux 2.6 brings over 2.4.
+</p>
+
+<p>
+I would like to say a word of thanks to the many users who effectively 'tested'
+this document while it was in its early stages, and provided feedback about how
+the migration process went. Sorry that I did not reply to all the emails (there
+were a lot!), but I did read every one, and refined this document where
+appropriate. Enjoy your 2.6-enhanced systems :)
+</p>
+
+</body>
+</section>
+<section>
+<title>Removing Linux 2.4 from your system</title>
+<body>
+
+<p>
+After you have been running 2.6 for a while, you may decide that you no longer
+have any requirement to be able to use Linux 2.4. The steps you can take to
+clean up your system are detailed below. <e>Only follow the procedure in this
+section if you are sure that you don't want/need to use 2.4 again!</e>
+</p>
+
+<p>
+The 2.4 kernel source code can be removed, using the emerge utility as usual.
+For example, assuming you have 2.4 versions of vanilla-sources and
+gentoo-sources installed, you could use the following command to remove them
+while keeping the 2.6 versions intact:
+</p>
+
+<pre caption="Example: Removing Linux 2.4 sources">
+# <i>emerge --unmerge =vanilla-sources-2.4.* =gentoo-sources-2.4.*</i>
+</pre>
+
+<p>
+Portage will not completely clean out your 2.4 kernel source installations,
+because some temporary files are created during compilation. It is safe to
+remove these remnants with the following command:
+</p>
+
+<pre caption="Removing remaining temporary files">
+# <i>rm -rf /usr/src/linux-2.4.*</i>
+</pre>
+
+<p>
+You can additionally remove modules and information files relating to your old
+2.4 kernel installations, as these are no longer needed.
+</p>
+
+<pre caption="Removing previously-installed 2.4 modules">
+# <i>rm -rf /lib/modules/2.4.*</i>
+</pre>
+
+<p>
+The 2.4 kernel binaries you used to boot from can also be safely removed. You
+should mount your <c>/boot</c> partition, and remove those images. You should
+also update your bootloader configuration so that it no longer references these
+deleted kernel images.
+</p>
+
+<p>
+Some Linux 2.4 users will have previously installed the <c>alsa-driver</c>
+package to benefit from the new audio capabilities included in Linux 2.6. If
+you were one of these users, and you followed the advice given earlier in this
+document about building ALSA with the 2.6 kernel sources (as opposed to using
+the <c>alsa-driver</c> package), then you can safely remove this to prevent
+future conflicts.
+</p>
+
+<p>
+Additionally, <c>lm-sensors</c> users will have previously used the <c>i2c</c>
+package to provide the hardware drivers. As already mentioned, I2C drivers are
+now included in the kernel, so this package can also be removed in order to
+prevent future conflicts.
+</p>
+
+<p>
+The devfs management daemon, <c>devfsd</c>, can also safely be removed, now
+that we are using <c>udev</c> for device management.
+</p>
+
+<pre caption="Removing alsa-driver, i2c, and devfsd">
+# <i>emerge --unmerge alsa-driver i2c devfsd</i>
+</pre>
+
+<p>
+If you are LVM2 user, you may wish to convert your data into the LVM2 data
+format in order to benefit from the advantages which LVM2 provides. However,
+this operation will prevent you from ever accessing your LVM data from a 2.4
+kernel. If you want to continue with the conversion (this is totally
+optional!), then you should examine the <c>vgconvert</c> man page for
+instructions on how to carry this out. An example is shown below, where
+<c>main</c> is the volume group name.
+</p>
+
+<pre caption="Converting a LVM1 volume to LVM2 format">
+# <i>vgconvert -M2 main</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+</guide>

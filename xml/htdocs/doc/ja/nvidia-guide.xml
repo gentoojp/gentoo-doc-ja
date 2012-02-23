@@ -1,0 +1,540 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/nvidia-guide.xml,v 1.17 2011/12/11 06:04:53 naota Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/nvidia-guide.xml" lang="ja">
+<title>Gentoo Linux nVidiaガイド</title>
+
+<author title="Author">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Author">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+<author title="Editor">
+  <mail link="curtis119@gentoo.org">M Curtis Napier</mail>
+</author>
+<author title="Editor">
+  <mail link="wolf31o2@gentoo.org">Chris Gianelloni</mail>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+<author title="翻訳">
+  <mail link="murakami.taku@gmail.com">Taku Murakami</mail>
+</author>
+<author title="翻訳">
+  <mail link="gentoojp-docs@ml.gentoo.gr.jp">Masuda</mail>
+</author>
+
+<abstract>
+多くのGentooユーザは、nVidiaのチップセットが組み込まれたシステムを使用しています。
+nVidiaはカードのパフォーマンスを向上させる特定のLinuxドライバを提供しています。
+このガイドではどのようにしてこれらのドライバをインストールし、設定するかを説明します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.37</version>
+<date>2008-09-13</date>
+
+<!-- Original revision: 1.46 -->
+
+<chapter>
+<title>はじめに</title>
+<section>
+<body>
+
+<p>
+Portageツリー内のnVidiaドライバはnVidiaによってリリースされたもので、Linuxカーネル用にビルドされています。
+それらにはカードと通信するためのやっかいな処理をこなすバイナリの塊が入っています。
+ドライバはふたつの部品から構成されています。
+カーネルモジュールとX11ドライバです。
+両方ともひとつのパッケージの中に入っています。
+nVidiaがドライバをこのようなパッケージにしているため、ドライバをインストールする前にいくつか選択をしなければなりません。
+</p>
+
+<p>
+<c>nvidia-drivers</c>パッケージは<e>すべての</e>カードのサポートを備えたnVidiaによる最新ドライバです。
+カードの古さに応じて様々なバージョンが利用可能です。
+適切なバージョンをインストールできるよう、何というカードが動いているか検出するためにeclassを使用します。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ドライバの互換性</title>
+<section>
+<title>どのバージョンか？</title>
+<body>
+
+<p>
+<c>nvidia-drivers</c>は利用可能なnVidiaのカードを最大限サポートします。
+お持ちのカード（ひとつ、または複数）に応じて、複数のバージョンをインストールすることができます。
+</p>
+
+<p>
+比較的新しいGeForce 8、7、6、FX 5シリーズのようなカードには、100.xシリーズより新しいドライバを使うべきです。
+</p>
+
+<p>
+GeForce 3やGeForce 4のような古いカードには、96.xのドライバが必要です。
+これらのカードを使用するために、<path>/etc/portage/package.mask</path>ファイルで<c>>=x11-drivers/nvidia-drivers-97.00</c>をマスクしてください。
+カードと互換性のない新しいバージョンがインストールされるのを防ぎます。
+</p>
+
+<p>
+古いNV2xベースのカード（TNT、TNT2、GeForce、GeForce 2など）には、71.xよりも古いドライバが必要です。
+これらのカードを使用するために、<path>/etc/portage/package.mask</path>で<c>>=x11-drivers/nvidia-drivers-87.00</c>をマスクしてください。
+</p>
+
+<p>
+どのドライバがどのカードをサポートしているか確認するため、適切なx86、またはx86-64の<uri link="http://www.nvidia.com/object/unix.html">リリースページ</uri>のREADMEを読むことにより、カードとドライバの互換性を確かめることができます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>カードの設定</title>
+<section>
+<title>カーネルの設定</title>
+<body>
+
+<p>
+上記の通り、nVidiaカーネルは現在のカーネルと別にインストールし、実行されます。
+このドライバはモジュールとしてビルドされるので、カーネルがモジュールの読み込みをサポートしていなければなりません。
+もしカーネルの設定に<c>genkernel all</c>を使用したなら、準備は整っています。
+そうでなければ、このサポートが有効になっているかカーネルの設定をもう一度確認してください。
+</p>
+
+<pre caption="カーネルモジュールの読み込みを有効化">
+Loadable module support ---&gt;
+  [*] Enable loadable module support
+</pre>
+
+<p>
+<e>Memory Type Range Register</e>も有効にする必要があります。
+</p>
+
+<pre caption="MTRRを有効化">
+Processor and Features ---&gt;
+  [*] MTRR (Memory Type Range Register) support
+</pre>
+
+<p>
+また、もしAGPのグラフィックカードを持っているなら、オプションとして<c>agpgart</c>サポートをカーネルに組み込むかモジュールとして有効にすることができます。
+なお、agpgartをカーネルに組み込んで使用しなければ、
+ドライバが<c>NvAGP</c>と呼ばれる独自実装の<c>agpgart</c>を使用することになります。
+特定のシステムでは、これはagpgartをカーネルに組み込んだ場合よりもうまく動作しますが、
+動作しないこともあります。
+最高のパフォーマンスを得るには、ご自身のシステムでこれを評価する必要があるでしょう。
+どうしたらいいのか分からなければ、agpgartをカーネルに組み込んでください。
+</p>
+
+<pre caption="Enabling agpgart">
+Device Drivers --->
+Graphics Support --->
+-*- /dev/agpgart (AGP Support) --->
+</pre> 
+
+<note>
+amd64ではIOMMUがagpgartの設定を管理します。
+</note>
+
+</body>
+</section>
+<section>
+<title>アーキテクチャ特有の注意</title>
+<body>
+
+<impo>
+x86とAMD64プロセッサでは、カーネル内部のドライバはnVidiaが提供するバイナリドライバと競合します。
+これらのCPUでカーネルをコンパイルするのなら、以下のようにカーネル内部のドライバのサポートを完全に削除しなければなりません。
+</impo>
+
+<pre caption="カーネル内部のドライバを削除">
+Device Drivers --->
+Graphics Support --->
+&lt;*&gt; Support for frame buffer devices --->
+&lt; &gt;   nVidia Framebuffer Support
+&lt; &gt;   nVidia Riva support
+</pre>
+
+<p>
+フレームバッファの選択では<uri link="http://dev.gentoo.org/~spock/projects/uvesafb/">先進的なフレームバッファ</uri>である<c>uvesafb</c>を選びます。
+それをカーネルの中、あるいはモジュールとしてコンパイルするかは選ぶことができます。
+次の例ではuvesafbをカーネルの中にコンパイルしています。
+</p>
+
+<pre caption="uvesafbサポートを有効化">
+Device Drivers --->
+Graphics Support --->
+&lt;*&gt; Support for frame buffer devices --->
+&lt;*&gt;   Userspace VESA VGA graphics support
+</pre>
+
+<p>
+もしくは、<c>VESA</c>を試してみてください。
+</p>
+
+<pre caption="VESAサポートを有効化">
+Device Drivers --->
+Graphics Support --->
+&lt;*&gt; Support for frame buffer devices --->
+[*]   VESA VGA graphics support
+</pre>
+
+<p>
+詳しい情報は<path>/usr/src/linux/Documentation/fb/</path>下の選択したフレームバッファ向けのドキュメントを読んでください。
+</p>
+
+</body>
+</section>
+<section>
+<title>カーネル設定の継続</title>
+<body>
+
+<p>
+<c>nvidia-drivers</c>のebuildは<path>/usr/src/linux</path>のシンボリックリンクに基づき、カーネルのバージョンを自動判別します。
+従って、シンボリックリンクが正しいソースを指し、かつカーネルが正しく設定されているかを確認してください。
+詳細は<uri link="/doc/en/handbook/">Installation Handbook</uri>(<uri 
+link="/doc/ja/handbook/">日本語訳</uri>)のカーネル設定の章を参照してください。
+</p>
+
+<p>
+まず、<c>eselect</c>をemergeする必要があります（もしまだ持っていない場合）。
+<c>gentoo-sources-2.6.18-r4</c>を使用しているのなら、カーネルの一覧はこのようになっているかもしれません。
+</p>
+
+<pre caption="/usr/src/linuxシンボリックリンクの確認">
+# <i>eselect kernel list</i>
+Available kernel symlink targets:
+  [1]   linux-2.6.18-gentoo-r4 *
+  [2]   linux-2.6.20-gentoo-r7
+  [3]   linux-2.6.20-gentoo-r8
+<comment>(正しいカーネルがアスタリスクでマークされているか確認)</comment>
+</pre>
+
+<p>
+上記出力では、<c>linux-2.6.18-gentoo-r4</c>にアスタリスク（<b>*</b>）が付けられており、それがカーネルにシンボリックリンクされていることを示しているのがわかるでしょう。
+</p>
+
+<p>
+シンボリックリンクが正しいソースを指していなければ、上の例の希望するカーネルソースの番号を選択することで、リンクを更新しなければなりません。
+</p>
+
+<pre caption="/usr/src/linuxシンボリックリンクの作成または更新">
+<comment>(正しいカーネルを選択してください)</comment>
+# <i>ln -snf linux-2.6.11-gentoo-r6 linux</i><i>eselect kernel set 1</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>適切なドライバのインストール</title>
+<body>
+
+<p>
+では、ドライバをインストールしましょう。
+</p>
+
+<pre caption="nVidiaドライバのインストール">
+# <i>emerge nvidia-drivers</i>
+</pre>
+
+<note>
+ドライバは<c>gtk</c>のUSEフラグが設定された状態でインストールすることもできます。
+この場合、<c>media-video/nvidia-settings</c>がインストールされることになります。
+これはnVidiaカードの様々な機能を確認し設定するための、手頃で便利なグラフィカル設定ツールです。
+</note>
+
+<impo>
+<uri link="/doc/en/kernel-upgrade.xml">新しいカーネルをコンパイル</uri>（<uri link="/doc/ja/kernel-upgrade.xml">日本語訳</uri>）したり、または現在のカーネルを再コンパイルする度に、<c>emerge nvidia-drivers</c>を実行し、nVidiaモジュールを再インストールする必要があります。
+ebuildでインストールされたモジュール（<c>nvidia-drivers</c>のような）の更新作業を簡単にする方法のひとつとして、<c>sys-kernel/module-rebuild</c>のインストールがあります。
+いったんそれをインストールすれば、単に<c>module-rebuild populate</c>を実行するだけで、再ビルドされるパッケージ一覧を持つデータベースにデータを登録してくれます。
+カーネルのコンパイル、または再コンパイルが完了したら、新しいカーネル用のドライバを再ビルドするため、<c>module-rebuild rebuild</c>を実行してください。
+</impo>
+
+<p>
+インストールが完了したら、<c>modprobe nvidia</c>を実行してカーネルモジュールをメモリに読み込みます。
+これがアップグレードの場合には、以前のモジュールを初めに削除してください。
+</p>
+
+<pre caption="カーネルモジュールの読み込み">
+# <i>lsmod | grep nvidia &amp;&amp; rmmod nvidia</i>
+# <i>modprobe nvidia</i>
+</pre>
+
+<p>
+起動する度にモジュールを手動で読み込む手間を省くために、自動で行って欲しいと思うでしょう。
+それならば、<path>/etc/modules.autoload.d/kernel-2.6</path>を編集して<c>nvidia</c>を追加してください。
+その後に<c>update-modules</c>を実行することを忘れないでください。
+</p>
+
+<impo>
+もし、<c>agpgart</c>をモジュールとしてコンパイルしたのなら、<path>/etc/modules.autoload.d/kernel-2.6</path>に、それを追加をする必要があります。
+</impo>
+
+<pre caption="update-modulesの実行">
+# <i>update-modules</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Xサーバの設定</title>
+<body>
+
+<p>
+適切なドライバがインストールされたなら、デフォルトの<c>nv</c>ドライバの代わりに<c>nvidia</c>ドライバを使用するように、Xサーバの設定をする必要があります。
+</p>
+
+<p>
+<path>/etc/X11/xorg.conf</path>を（<c>nano</c> や<c>vim</c>の様な）お気に入りのエディタで開いて、<c>Device</c>セクションに進んでください。
+このセクションの<c>Driver</c>行を以下のように変更します。
+</p>
+
+<pre caption="Xサーバ設定のnvをnvidiaに変更">
+Section "Device"
+  Identifier "nVidia Inc. GeForce2"
+  <i>Driver     "nvidia"</i>
+  VideoRam   65536
+EndSection
+</pre>
+
+<p>
+そして<c>Module</c>セクションに行き、<c>glx</c>モジュールが読み込まれ、<c>dri</c>モジュールが読み込まれないようにしてください。
+</p>
+
+<pre caption="Moduleセクションを更新">
+Section "Module"
+  <comment>(...)</comment>
+  <i># Load  "dri"
+  Load  "glx"</i>
+  <comment>(...)</comment>
+EndSection
+</pre>
+
+<p>
+次の<c>Screen</c>セクションでは、<c>DefaultDepth</c>を16か24のどちらかに設定するか、<c>Display</c>サブセクションの<c>Depth</c>を16か24に設定します。
+そうしなければ、nVidia GLX拡張は起動しないでしょう。
+</p>
+
+<pre caption="Screenセクションを更新">
+Section "Screen"
+  <comment>(...)</comment>
+  <i>DefaultDepth 16</i>
+  Subsection "Display"
+  <comment>(...)</comment>
+EndSection
+</pre>
+
+<p>
+<c>eselect</c>を実行してXサーバがnVidia GLXを使うようにします。
+</p>
+
+<pre caption="eselectを実行">
+# <i>eselect opengl set nvidia</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>ユーザをvideoグループに追加</title>
+<body>
+
+<p>
+ユーザがnVidiaデバイスファイルにアクセスできるように<c>video</c>グループに追加する必要があります。
+</p>
+
+<pre caption="ユーザをvideoグループに追加">
+# <i>gpasswd -a youruser video</i>
+</pre>
+
+<p>
+これは<c>udev</c>を使用していなければ、全体としては必要ありません。
+しかし、追加しても害を与えることはありませんし、システムに将来の保証を与えます。
+</p>
+
+</body>
+</section>
+<section>
+<title>カードのテスト</title>
+<body>
+
+<p>
+nVidiaカードをテストするには、Xを起動して<c>glxinfo</c>を実行します。
+これは<c>mesa-progs</c>パッケージの一部です。
+ダイレクトレンダリングが有効であることを伝えてくるはずです。
+</p>
+
+<pre caption="ダイレクトレンダリングの状態を確認">
+$ <i>glxinfo | grep direct</i>
+direct rendering: Yes
+</pre>
+
+<p>
+FPSを評価するために、<c>glxgears</c>を実行します。
+</p>
+
+</body>
+</section>
+<section> 
+<title>nvidiaサポートを有効にする</title>
+<body>
+
+<p>
+<c>mplayer</c>や<c>xine-lib</c>といったいくつかのツールは、高解像度の動画を鑑賞するときに役立つXvMCNVIDIAのサポートを有効にする、<c>xvmc</c>というローカルUSEフラグを使用します。
+<path>/etc/make.conf</path>ファイルのUSE変数に<c>xvmc</c>を追加するか、<path>/etc/portage/package.use</path>ファイルで<c>media-video/mplayer</c>や<c>media-libs/xine-lib</c>に<c>xvmc</c>をUSEフラグとして追加します。
+</p>
+
+<p>
+アプリケーションの中には<c>nvidia</c>というUSEフラグを使っているものもあります。
+<path>/etc/make.conf</path>に<c>nvidia</c>を追加するとよいでしょう。
+</p>
+
+<p>
+そして、USEフラグの変更を反映するために、<c>emerge -uD --newuse world</c>を実行してアプリケーションを再度ビルドします。
+</p>
+
+</body>
+</section>
+<section>
+<title>NVidia設定ツールを使う</title>
+<body>
+
+<p>
+nVidiaは設定ツールも提供しています。
+このツールを使えば、Xサーバを再起動することなくグラフィック設定を確認したり変更したりすることができます。
+これはPortageの<c>media-video/nvidia-settings</c>で利用することができます。
+先ほど述べたように、<path>/etc/make.conf</path>や<path>/etc/portage/package.use</path>の中に<c>gtk</c>USEフラグを設定した状態でドライバをインストールすれば、自動で入っているでしょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>トラブルシューティング</title>
+<section>
+<title>4Gb以上のメモリを搭載したマシンで2Dを動作させる</title>
+<body>
+
+<p>
+もしnVidia 2Dアクセラレーションに関して問題があるなら、たぶんMTRRにwrite-combining幅を設定できないと言うことでしょう。
+確認するには、<path>/proc/mtrr</path>の内容を確認します。
+</p>
+
+<pre caption="write-combiningが有効か確認">
+# <i>cat /proc/mtrr</i>
+</pre>
+
+<p>
+各行に"write-back"か"write-combining"が含まれているでしょう。
+もし"uncachable"と書かれた行があるなら、BIOSの設定を変更する必要があるでしょう。
+</p>
+
+<p>
+再起動してBIOSに入り、MTRR設定（もしかすると"CPU Settings"設定項目の中かもしれません）を探してください。
+設定を"continuous"から"discrete"へと変更し、再びLinuxを起動させます。
+これで"uncachable"が無くなり、2Dアクセラレーションが動作することでしょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>
+カーネルモジュールをロードしようとしたら"no such device"というメッセージが表示されました
+</title>
+<body>
+
+<p>
+これはたいてい適応するビデオカードを使用していないときに起こります。
+nVidiaのグラフィックカードを使用しているか確認してください。（<c>lspci</c>を使って再確認することができます）
+</p>
+
+<p>
+nVidiaのカードを使用していると確信があるのなら、BIOSを確認して<e>Assign IRQ to VGA</e>の命令が設定されているか確認してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>上級者向け設定</title>
+<section>
+<title>ドキュメント</title>
+<body>
+
+<p>
+nVidiaドライバパッケージには包括的なドキュメントも含まれます。
+これは<c>/usr/share/doc</c>にインストールされ、以下のコマンドで閲覧することが出来ます。
+</p>
+
+<pre caption="NVIDIAドキュメントの閲覧">
+$ <i>less /usr/share/doc/nvidia-drivers-*/README.gz</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>カーネルモジュールのパラメータ</title>
+<body>
+
+<p>
+<c>nvidia</c>カーネルモジュールは、ドライバの振る舞いを調整するためのいくつかのパラメータを受け付けます。
+これらのほとんどはドキュメントに記載されています。
+これらパラメータを追加したり、値を変更するには、<c>/etc/modules.d/nvidia</c>ファイルを編集します。
+このファイルを編集した後は<c>update-modules</c>を忘れずに実行してください。
+また、新しい設定を有効にするには<c>nvidia</c>モジュールを再読込する必要があると言うことを心に留めておいてください
+</p>
+
+<pre caption="nvidiaオプションの調整">
+<comment>(/etc/modules.d/nvidiaをお気に入りにのエディタで開きます)</comment>
+# <i>nano -w /etc/modules.d/nvidia</i>
+<comment>(モジュール情報の更新)</comment>
+# <i>update-modules</i>
+<comment>(nvidiaモジュールの解放)</comment>
+# <i>modprobe -r nvidia</i>
+<comment>(そして再読込)</comment>
+# <i>modprobe nvidia</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>高度なXの設定</title>
+<body>
+
+<p>
+GLXレイヤには設定可能な多くのオプションがあります。
+これらはTV出力、デュアルディスプレイ、モニタ周波数の検知などの設定を制御します。
+繰り返しますが、利用可能なオプションの全てはドキュメントで詳細に記されています。
+</p>
+
+<p>
+これらのオプションを使いたいのなら、X設定ファイル(たいていは<c>/etc/X11/xorg.conf</c>)の適切なDeviceの章へ記述する必要があります。
+例えば、スプラッシュロゴを無効にしたいのならば、この様にします。
+</p>
+
+<pre caption="X設定での高度なnvidia設定">
+Section "Device"
+  Identifier "nVidia Inc. GeForce2"
+  Driver     "nvidia"
+  <i>Option     "NoLogo" "true"</i>
+  VideoRam   65536
+EndSection
+</pre>
+
+</body>
+</section>
+</chapter>
+
+</guide>

@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/lvm-p2.xml,v 1.6 2011/09/04 17:53:41 swift Exp $ -->
+
+<guide disclaimer="articles">
+<title>Learning Linux LVM, Part 2</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<!-- xmlified by: Joshua Saddler (nightmorph@gentoo.org) -->
+
+<abstract>
+In this article, Daniel shares his experiences converting cvs.gentoo.org's
+/home filesystem to an LVM logical volume. After the transition, we get to see
+the benefits of LVM when cvs.gentoo.org's /home partition is dynamically
+resized in real-time, without rebooting, unmounting /home, or even dropping to
+runlevel 1. All processes continue to work without any interruption. Daniel's
+step-by-step details of the conversion will help anyone interested in peforming
+a similar transition on their own machine.
+</abstract>
+
+<!-- The original version of this article was first published on IBM
+developerWorks, and is property of Westtech Information Services. This
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>1.2</version>
+<date>2006-01-22</date>
+
+<chapter>
+<title>The cvs.gentoo.org upgrade</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+In <uri link="/doc/en/articles/lvm-p1.xml">my first LVM article</uri>, I
+explained the concepts behind LVM. Now it's time to put LVM into action. In
+this article, I'm going to set up LVM on the official Gentoo Linux cvs server,
+cvs.gentoo.org. Although cvs.gentoo.org has only one hard drive, LVM's
+flexibility still provides an incredible improvement over the standard static
+partitioning approach. I'll show you all the steps of the LVM conversion
+process, so that if you're interested you can perform a similar conversion on
+one of your machines.
+</p>
+
+<warn>
+Because implementing LVM is a major change to the system (involving the
+creation of new partitions and other potentially hazardous actions) it's a
+really good idea to perform a full system backup before beginning this process.
+If you're not going to perform a backup, I hope you're using a test box with no
+important data on it. I should mention that I didn't experience any problems
+while converting to LVM, but it's best to be prepared in case something goes
+wrong.
+</warn>
+
+<p>
+That said, let's continue. Before starting the conversion process, I upgraded
+cvs.gentoo.org so that it was using the following packages. At the time I
+performed the LVM transition, these were the latest versions available (see
+<uri link="#resources">Resources</uri> later in this article):
+</p>
+
+<ul>
+  <li>Linux kernel 2.4.1-ac19</li>
+  <li>LVM 0.9.1_beta5</li>
+  <li>reiserfs-utils 3.6.25</li>
+</ul>
+
+<p>
+Now, for the hard drive. cvs.gentoo.org had a nice new IBM 45 GB hard drive
+sitting in it; however, when I installed Gentoo Linux on cvs, I only
+partitioned about 10 gigabytes of the drive, keeping the remaining 35 GB for
+future partitions. Such are the little tricks you need to employ when not using
+LVM -- leaving part of the drive unpartitioned is a primitive but effective way
+to allow for future expansion. However, with LVM there is a better approach.
+</p>
+
+</body>
+</section>
+<section>
+<title>The space problem</title>
+<body>
+
+<p>
+In the past few weeks, I had been noticing that my root ReiserFS partition had
+been slowly filling up, as you can see from this <c>df</c> output:
+</p>
+
+<pre caption="Shrinking free space">
+Filesystem           1k-blocks      Used Available Use% Mounted on
+/dev/hda3              9765200   6989312   2775888  72% /
+tmpfs                   269052         0    269052   0% /dev/shm
+</pre>
+
+<p>
+Now, a 72% full root partition isn't exactly a crisis, but it isn't a wonderful
+situation either. ReiserFS, like many other filesystems, starts slowing down as
+it gets more and more full, and it was just a matter of time before my root
+filesystem would fill up completely and filesystem performance would take a
+hit.
+</p>
+
+<p>
+I decided to fix this problem by using LVM to create a new logical volume out
+of the 35 GB of currently unpartitioned space at the end of my hard drive.
+Then, I'd create a filesystem on this volume and move a good chunk of the
+contents of <path>/dev/hda3</path> to it.
+</p>
+
+<p>
+If you're thinking of making a similar transition on one of your machines, the
+first thing you need to do is find a suitable piece of your root filesystem to
+move to a logical volume. For me, the choice was easy -- my <path>/home</path>
+tree was taking up around 5.7 GB. By moving <path>/home</path> to its own LVM
+logical volume, my root filesystem would then be at about 20% capacity. Since
+most new data is being added to <path>/home</path>, my root filesystem would
+likely stay at around 20% capacity as well -- a very healthy situation.
+</p>
+
+</body>
+</section>
+<section>
+<title>The beginnings of a solution</title>
+<body>
+
+<p>
+To begin the conversion, I first had to partition the unused space at the end
+of my hard drive. Using <c>cfdisk</c>, I created a 35 GB partition
+(<path>/dev/hda5</path>) and set the partition type of the partition to
+<c>8E</c> (the official LVM partition type). After this change, I rebooted to
+force a reread of my partition table. After the reboot, my partition table
+looked like this:
+</p>
+
+<pre caption="The new partition table">
+# <i>sfdisk -l</i>
+Disk /dev/hda: 89355 cylinders, 16 heads, 63 sectors/track
+Units = cylinders of 516096 bytes, blocks of 1024 bytes, counting from 0
+   Device Boot Start     End   #cyls   #blocks   Id  System
+/dev/hda1   *      0+    247     248-   124960+  83  Linux
+/dev/hda2        248     743     496    249984   82  Linux swap
+/dev/hda3        744   20119   19376   9765504   83  Linux
+/dev/hda4      20120   89354   69235  34894440    5  Extended
+/dev/hda5      20120+  89354   69235- 34894408+  8e  Linux LVM
+</pre>
+
+<p>
+Now that I had an empty 35 GB partition, I was ready to initialize it for LVM.
+Here's the procedure -- first, I would initialize the 35 gigabytes as a
+<e>physical</e> volume; then, I would create a <e>volume</e> group using this
+physical volume, and finally, I would allocate some of the extents on the
+volume group, creating a <e>logical volume</e> that would contain my new
+filesystem and house all the files currently in <path>/home</path>.
+</p>
+
+<p>
+To begin the process, I used the <c>pvcreate</c> command to initialize
+<path>/dev/hda5</path> as a physical volume:
+</p>
+
+<pre caption="Creating the physical volume">
+# <i>pvcreate /dev/hda5</i>
+pvcreate -- physical volume "/dev/hda5" successfully created
+</pre>
+
+<p>
+<c>pvcreate</c> set up a special "accounting" area on <path>/dev/hda5</path>,
+called the VGDA (volume group descriptor area). LVM uses this area to keep
+track of how the physical extents are allocated, among other things.
+</p>
+
+<p>
+My next step was to create a volume group and add <path>/dev/hda5</path> to
+this group. The volume group would act as a pool of extents (chunks of storage
+blocks). Once the volume group was created, I could create as many logical
+volumes as I wanted. I decided that my volume group would be called "main":
+</p>
+
+<pre caption="Creating the volume group">
+# <i>vgcreate main /dev/hda5</i>
+vgcreate -- INFO: using default physical extent size 4 MB
+vgcreate -- INFO: maximum logical volume size is 255.99 Gigabyte
+vgcreate -- doing automatic backup of volume group "main"
+vgcreate -- volume group "main" successfully created and activated
+</pre>
+
+<p>
+The <c>vgcreate</c> command did a couple of things. In addition to creating the
+"main" volume group, it also set up <path>/dev/hda5</path> to use 4 MB extents,
+the default extent size. This means that any logical volumes I create from this
+volume group can be expanded and shrunk in 4 MB increments.
+</p>
+
+<p>
+Due to kernel limitations, the extent size determines the maximum size that a
+logical volume can be. As you can see from the above output, a 4 MB extent size
+imposes a logical volume size limitation of 256 gigabytes, which is an easily
+attainable logical volume size if you're adding several high-capacity drives to
+your volume group. If your volumes could end up being greater than 256 GB
+apiece, I recommend specifying a larger extent size at <c>vgcreate</c> time.
+Extents can range anywhere from 8 KB to 512 MB, and must always be a multiple
+of two. By increasing the extent size above 4 MB, the maximum physical volume
+size will be scaled accordingly, up to a maximum of 1 petabyte (although the
+current real-world size limit is 2 terabytes on x86 systems). For example, if I
+wanted to create a volume group with 32 megabyte extents, I'd type:
+</p>
+
+<pre caption="A larger extent size">
+# <i>vgcreate -s 32M main /dev/hda5</i>
+</pre>
+
+<p>
+32 MB is a good extent size, since a 32 MB granularity is still manageable and
+pushes the maximum logical volume size to 2 terabytes to boot. Once your volume
+group is created, you can view its information by typing <c>vgdisplay</c>:
+</p>
+
+<pre caption="Examining volume information">
+# <i>vgdisplay</i>
+--- Volume group ---
+VG Name               main
+VG Access             read/write
+VG Status             available/resizable
+VG #                  0
+MAX LV                256
+Cur LV                0
+Open LV               0
+MAX LV Size           255.99 GB
+Max PV                256
+Cur PV                1
+Act PV                1
+VG Size               33.28 GB
+PE Size               4 MB
+Total PE              8519
+Alloc PE / Size       0 / 0
+Free  PE / Size       8519 / 33.28 GB
+VG UUID               2qC2H2-iA8s-qW6F-cwXx-JVIh-I6VC-VVCGmn
+</pre>
+
+<p>
+Now that I had my volume group, I was ready to create a logical volume. I
+decided to initially make it 8 gigabytes in size and call it "lv_home":
+</p>
+
+<pre caption="Creating the logical volume">
+# <i>lvcreate -L8G -nlv_home main</i>
+lvcreate -- doing automatic backup of "main"
+lvcreate -- logical volume "/dev/main/lv_home" successfully created
+</pre>
+
+<p>
+Then, I created a filesystem on the volume:
+</p>
+
+<pre caption="Filesystem creation">
+# <i>mkreiserfs /dev/main/lv_home</i>
+
+
+  &lt;----------- MKREISERFSv2 -----------&gt;
+
+   Block size 4096 bytes
+   Block count 2097152
+   Used blocks 8275
+           Journal - 8192 blocks (18-8209), journal header is in block 8210
+           Bitmaps: 17, 32768, 65536, 98304, 131072, 163840,
+           196608, 229376, 262144, 294912, 327680, 360448,
+           393216, 425984, 458752, 491520, 524288, 557056,
+           589824, 622592, 655360, 688128, 720896, 753664,
+           786432, 819200, 851968, 884736, 917504, 950272,
+           983040, 1015808, 1048576, 1081344, 1114112,
+           1146880, 1179648, 1212416, 1245184, 1277952,
+           1310720, 1343488, 1376256, 1409024, 1441792,
+           1474560, 1507328, 1540096, 1572864, 1605632,
+           1638400, 1671168, 1703936, 1736704, 1769472,
+           1802240, 1835008, 1867776, 1900544, 1933312,
+           1966080, 1998848, 2031616, 2064384
+   Root block 8211
+Hash function "r5"
+ATTENTION: ALL DATA WILL BE LOST ON '/dev/main/lv_home'! (y/n)y
+journal size 8192 (from 18)
+Initializing journal - 0%....20%....40%....60%....80%....100%
+Syncing..done.
+</pre>
+
+<p>
+Now that the filesystem was created, I could mount it at
+<path>/mnt/newhome</path>:
+</p>
+
+<pre caption="Mounting the new volume">
+# <i>mkdir /mnt/newhome</i>
+# <i>mount /dev/main/lv_home /mnt/newhome</i>
+# <i>df</i>
+Filesystem           1k-blocks      Used Available Use% Mounted on
+/dev/hda3              9765200   6989840   2775360  72% /
+tmpfs                   291388         0    291388   0% /dev/shm
+/dev/main/lv_home      8388348     32840   8355508   1% /mnt/newhome
+</pre>
+
+<p>
+As you can see above, I was almost ready to copy over all my data in
+<path>/home</path>. Before I began, I dropped to runlevel 1 to ensure that no
+users or processes would be accessing or modifying files in <path>/home</path>
+as they were being copied over:
+</p>
+
+<pre caption="Runlevel 1">
+# <i>init 1</i>
+</pre>
+
+<p>
+Then, I began copying the files:
+</p>
+
+<pre caption="Copying files to the new directory">
+# <i>cp -avx /home/* /mnt/newhome</i>
+</pre>
+
+<p>
+The copy completed in about ten minutes. Then, I backed up my original
+<path>/home</path> to <path>/home.old</path>, just in case something was wrong
+with my copy. I created a new mount point, and remounted the new home at
+<path>/home</path>:
+</p>
+
+<pre caption="The new mount point">
+# <i>cd /</i>
+# <i>mv home home.old</i>
+# <i>mkdir home</i>
+# <i>umount /mnt/newhome</i>
+# <i>mount /dev/main/lv_home /home</i>
+</pre>
+
+<p>
+Then, it was time to set up the server so that my new <path>/home</path>
+partition would be available every time the machine started up. First, I
+modified my <path>/etc/fstab</path> so that it included a new
+<path>/home</path> entry:
+</p>
+
+<pre caption="Editing fstab">
+<comment>
+#fs                 mountpoint       type         opts          dump/pass</comment>
+/dev/hda3           /                reiserfs     defaults      1 1
+/dev/main/lv_home   /home            reiserfs     defaults      2 2
+/dev/hda2           none             swap         sw            0 0
+/dev/hda1           /boot            reiserfs     noauto        0 0
+/dev/cdrom          /mnt/cdrom       iso9660      noauto,ro     0 0
+proc                /proc            proc         defaults      0 0
+none                /dev/pts         devpts       mode=620      0 0
+tmpfs               /dev/shm         tmpfs        defaults      0 0
+</pre>
+
+<p>
+Then, I made minor modifications to my initialization scripts. I modified my
+"checkroot" startup script so that the following commands would run immediately
+after my root partition was remounted read/write:
+</p>
+
+<pre caption="Modifying the startup script">
+/sbin/vgscan
+/sbin/vgchange -a y
+</pre>
+
+<p>
+Then, I modified my filesystem unmounting script that gets run on shutdown, so
+that the following command would run immediately after all filesystems were
+unmounted:
+</p>
+
+<pre caption="Modifying the shutdown script">
+/sbin/vgchange -a n
+</pre>
+
+<p>
+Once I had completed these steps, I rebooted the machine, and to my delight
+everything worked perfectly. After a day or so of absolutely no problems, I
+deleted <path>/home.old</path> to free up some space on my root filesystem.
+Yay! The transition to LVM was a success.
+</p>
+
+</body>
+</section>
+<section>
+<title>The beauty of LVM</title>
+<body>
+
+<p>
+While the transition to LVM is a bit of an ordeal, once the transition is
+complete, managing filesystems becomes tremendously easier. As an example, I
+decided to resize my new <path>/home</path> logical volume, adding about 2
+gigabytes worth of space to the end of the filesystem. First, I added
+additional capacity to my "lv_home" logical volume, and then I used the
+<c>resize_reiserfs</c> utility to expand the filesystem so that it would use
+this additional capacity. Here are the two commands that did all this:
+</p>
+
+<pre caption="Using additional space">
+# <i>lvextend -L+2G /dev/main/lv_home</i>
+# <i>resize_reiserfs -f /dev/main/lv_home</i>
+</pre>
+
+<p>
+In about a second, I had enlarged my <path>/home</path> filesystem by 2 GB;
+amazingly, I didn't need to reboot, drop to runlevel 1, or even unmount
+<path>/home</path> to perform the resize. Everything continued to work as it
+had before. Isn't that great? Here's the current state of my filesystems:
+</p>
+
+<pre caption="Filesystem space">
+# <i>df</i>
+Filesystem           1k-blocks      Used Available Use% Mounted on
+/dev/hda3              9765200   1413340   8351860  15% /
+/dev/main/lv_home     10485436   5609836   4875600  54% /home
+</pre>
+
+<p>
+You can see how LVM really can make an administrator's work a whole lot easier.
+In the future, I hope to move additional parts of my root filesystem over to
+LVM, and eventually even convert my root filesystem over to an LVM logical
+volume. The resources below will help you learn even more about LVM.
+</p>
+
+</body>
+</section>
+<section id="resources">
+<title>Resources</title>
+<body>
+
+<ul>
+  <li>
+    For LVM concepts and advice on get the latest kernel patches and tools
+    installed on your system, see my previous article, <uri
+    link="/doc/en/articles/lvm-p1.xml">Learning Linux LVM, Part 1</uri>.
+  </li>
+  <li>
+    Download the <uri link="ftp://sources.redhat.com/pub/lvm2">LVM
+    tarball</uri> from RedHat.
+  </li>
+<!-- Comment out Sistina links, Bug #119882
+  <li>
+    Sistina now has an excellent <uri
+    link="http://www.sistina.com/lvm/doc/lvm_howto/index.html">LVM HOWTO</uri>
+    available (it's closer to a full-blown manual than a simple HOWTO).
+  </li>
+  <li>
+    Be sure to check out the <uri
+    link="http://www.sistina.com/cgi-bin/lvm-faqprocessor.cgi">Linux LVM
+    FAQ</uri>.
+  </li>
+-->
+  <li>
+    The impatient will want to check out <uri
+    link="http://www.linux.org/docs/ldp/howto/LVM-HOWTO.html">Heinz
+    Mauelshagen's LVM HOWTO</uri>, which contains more examples on how to set
+    up volume groups and logical volumes.
+  </li>
+  <li>
+    There's also an interesting HOWTO that shows you <uri
+    link="http://www.the-infinite.org/archive/docs/lvm/howto-boot-off-root-lv.txt">
+    how to set up your root filesystem on a logical volume</uri>. Once
+    LVM-0.9.1_final is out, I may try doing this.
+  </li>
+  <li>
+    Andreas Dilger is involved with the Linux LVM project and has a
+    nice-looking <e>online</e> <uri
+    link="http://www-mddsp.enel.ucalgary.ca/People/adilger/online-ext2/">ext2
+    filesystem resizer</uri>.
+  </li>
+  <li>
+    <uri link="http://www.namesys.com">ReiserFS</uri> is an excellent
+    filesystem (especially in combination with LVM). If you're using ReiserFS,
+    you'll want to grab the reiserfs-utils tarball, which contains a program
+    called <c>reiserfs_resize</c> -- allowing online resizing of ReiserFS
+    filesystems.
+  </li>
+  <li>
+    For more information on setting up Linux software RAID volumes, see <uri
+    link="/doc/en/articles/software-raid-p1.xml">Part 1</uri> and <uri
+    link="/doc/en/articles/software-raid-p2.xml">Part 2</uri> of Daniel's
+    series on software RAID.
+  </li>
+  <li>
+    For a refresher, see Daniel's <uri
+    link="/doc/en/articles/linux-kernel-compiling.xml">tutorial on compiling
+    the Linux kernel</uri>.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gpm.xml,v 1.5 2011/09/04 17:53:40 swift Exp $ -->
+
+<guide>
+<title>Using a Mouse within the Console</title>
+
+<author title="Author">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+
+<abstract>
+This guide shows you how to set up and use GPM (the General Purpose Mouse
+server) from within a command line interface. This is especially useful for new
+Gentoo installations or for systems that cannot or do not use an X server.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.2</version>
+<date>2006-02-17</date>
+
+<chapter>
+<title>Getting GPM</title>
+<section>
+<body>
+
+<p>
+If you've just installed Gentoo, you almost certainly don't have your mouse set
+up to work within a command line interface (CLI) yet. Or perhaps you can't use
+or don't need an X server, yet you still need to use a mouse. The solution is
+simple: <c>gpm</c>, the General Purpose Mouse server.
+</p>
+
+<p>
+First, you will need to get GPM:
+</p>
+
+<pre caption="Obtaining GPM">
+# <i>emerge gpm</i>
+</pre>
+
+<p>
+You might have noticed a few messages during the compilation that warned about
+configuring the server. You must do this before starting GPM.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring GPM</title>
+<section>
+<body>
+
+<p>
+Before you can use GPM, you will need to uncomment the lines corresponding to
+the location and protocol of your mouse. You do this by editing the GPM
+configuration file:
+</p>
+
+<pre caption="Setting up GPM">
+# <i>nano /etc/conf.d/gpm</i>
+</pre>
+
+<p>
+In my case, I have a USB mouse on <path>/dev/input/mouse0</path>. So, I have
+uncommented <path>/dev/input/mice</path>, as this is the cumulative device for
+all mice on the system, and the appropriate protocol. Try using
+<path>/dev/input/mice</path> before <path>/dev/psaux</path>, as the latter is
+deprecated and can be disabled in the latest 2.6 kernels. If
+<path>/dev/input/mice</path> fails, then fall back to other devices. Here is my
+example <path>/etc/conf.d/gpm</path>:
+</p>
+
+<pre caption="Example GPM config">
+<comment>(Please uncomment the type of mouse you have and the appropriate MOUSEDEV entry)</comment>
+
+#MOUSE=ps2
+MOUSE=imps2
+#MOUSEDEV=/dev/psaux
+MOUSEDEV=/dev/input/mice
+</pre>
+
+<p>
+If you have a wheelmouse, you will want to use the imps2 protocol, so uncomment
+that line. If imps2 and ps2 both fail to work for you, please refer to the GPM
+info page (<c>info gpm</c>) for other protocols to try. Also, if you want to be
+able to click on hyperlinks in terminals to navigate to a website, it is a good
+idea to follow the suggestion in the <c>/etc/conf.d/gpm</c> file:
+</p>
+
+<pre caption="Other options">
+<comment>(Please uncomment this line if you want GPM to understand charsets
+used in URLs and names with ~ or : in them, etc.
+This is a good idea to turn on!)</comment>
+
+APPEND="-l \"a-zA-Z0-9_.:~/\300-\326\330-\366\370-\377\""
+</pre>
+
+<p>
+The rest of the conf.d file contains other suggestions for your mouse server;
+uncomment the various options according to your needs. See <c>man gpm</c> for
+more information.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Running GPM</title>
+<section>
+<body>
+
+<p>
+Now that your mouse server is installed and configured, it's time to start
+using it:
+</p>
+
+<pre caption="The GPM init script">
+# <i>/etc/init.d/gpm start</i>
+</pre>
+
+<p>
+You should see a block cursor appear. Remember that only root can run the GPM
+init script. However, to avoid having to <c>su</c> and run the script every
+single time you begin a new session, why not set GPM to begin every time you
+turn on your computer?
+</p>
+
+<pre caption="Adding GPM to the default runlevel">
+# <i>rc-update add gpm default</i>
+</pre>
+
+<p>
+Now, whenever you start your computer, you'll be greeted by the console cursor
+by the time you get to the login prompt. The mouse server will continue to run
+even if you're not logged in as root.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Working with GPM</title>
+<section>
+<title>Copying and pasting</title>
+<body>
+
+<p>
+Copying and pasting large blocks of text with a working mouse server is very
+easy. Simply highlight the text with the left mouse button (it will stay
+highlighted when you release the button), switch to a different terminal if you
+wish, position the cursor, and press the middle mouse button to paste the text
+where you placed the cursor. Note that you can copy and paste without ever
+leaving the terminal you started. This makes posting the output of error
+messages to the <uri link="http://forums.gentoo.org">Gentoo Forums</uri>
+extremely simple.
+</p>
+
+</body>
+</section>
+<section>
+<title>Text-mode browsing and GPM</title>
+<body>
+
+<p>
+If you have a message on one screen and a text-mode web browser on the other,
+you can copy the error message by highlighting it, then change to the other
+terminal, left-click the appropriate text entry box to select it, and then
+press the middle mouse button. Voilà! Your error message can now be posted to
+the forums.
+</p>
+
+<p>
+Though discussion of text-only browsers is somewhat beyond the scope of this
+guide, inevitably users will need to find a compatible console browser. Though
+<c>lynx</c> is most likely the oldest and well established browser, its
+interface has poor mouse support and recognition. Instead, try using
+<c>links</c> which has excellent mouse integration.
+</p>
+
+<pre caption="Obtaining links">
+# <i>emerge links</i>
+</pre>
+
+<p>
+This concludes the guide to using a mouse within the console. Happy mousing!
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

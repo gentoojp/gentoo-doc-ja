@@ -1,0 +1,305 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-working-variables.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.8</version>
+<date>August 30, 2004</date>
+
+<section>
+<title>Environment Variables?</title>
+<subsection>
+<title>What they are</title>
+<body>
+
+<p>
+An environment variable is a named object that contains information used by one
+or more applications. Many users (and especially those new to Linux) find this
+a bit weird or unmanageable. However, this is a mistake: by using environment
+variables one can easily change a configuration setting for one or more
+applications.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Important Examples</title>
+<body>
+
+<p>
+The following table lists a number of variables used by a Linux system and
+describes their use. Example values are presented after the table.
+</p>
+
+<table>
+<tr>
+  <th>Variable</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti>PATH</ti>
+  <ti>
+    This variable contains a colon-separated list of directories in which your 
+    system looks for executable files. If you enter a name of an executable 
+    (such as <c>ls</c>, <c>rc-update</c> or <c>emerge</c>) but this executable 
+    is not located in a listed directory, your system will not execute it 
+    (unless you enter the full path as command, such as <c>/bin/ls</c>).
+  </ti>
+</tr>
+<tr>
+  <ti>ROOTPATH</ti>
+  <ti>
+    This variable has the same function as <c>PATH</c>, but this one only lists
+    the directories that should be checked when the root-user enters a command.
+  </ti>
+</tr>
+<tr>
+  <ti>LDPATH</ti>
+  <ti>
+    This variable contains a colon-separated list of directories in which the
+    dynamical linker searches through to find a library.
+  </ti>
+</tr>
+<tr>
+  <ti>MANPATH</ti>
+  <ti>
+    This variable contains a colon-separated list of directories in which the
+    <c>man</c> command searches for the man pages.
+  </ti>
+</tr>
+<tr>
+  <ti>INFODIR</ti>
+  <ti>
+    This variable contains a colon-separated list of directories in which the
+    <c>info</c> command searches for the info pages.
+  </ti>
+</tr>
+<tr>
+  <ti>PAGER</ti>
+  <ti>
+    This variable contains the path to the program used to list the contents of
+    files through (such as <c>less</c> or <c>more</c>).
+  </ti>
+</tr>
+<tr>
+  <ti>EDITOR</ti>
+  <ti>
+    This variable contains the path to the program used to change the contents
+    of files with (such as <c>nano</c> or <c>vi</c>).
+  </ti>
+</tr>
+<tr>
+  <ti>KDEDIRS</ti>
+  <ti>
+    This variable contains a colon-separated list of directories which contain
+    KDE-specific material.
+  </ti>
+</tr>
+<tr>
+  <ti>CLASSPATH</ti>
+  <ti>
+    This variable contains a colon-separated list of directories which contain
+    Java classes.
+  </ti>
+</tr>
+<tr>
+  <ti>CONFIG_PROTECT</ti>
+  <ti>
+    This variable contains a <e>space</e>-delimited list of directories which
+    should be protected by Portage during updates.
+  </ti>
+</tr>
+<tr>
+  <ti>CONFIG_PROTECT_MASK</ti>
+  <ti>
+    This variable contains a <e>space</e>-delimited list of directories which
+    should not be protected by Portage during updates. 
+  </ti>
+</tr>
+</table>
+
+<p>
+Below you will find an example definition of all these variables:
+</p>
+
+<pre caption="Example definitions">
+PATH="/bin:/usr/bin:/usr/local/bin:/opt/bin:/usr/games/bin"
+ROOTPATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
+LDPATH="/lib:/usr/lib:/usr/local/lib:/usr/lib/gcc-lib/i686-pc-linux-gnu/3.2.3"
+MANPATH="/usr/share/man:/usr/local/share/man"
+INFODIR="/usr/share/info:/usr/local/share/info"
+PAGER="/usr/bin/less"
+EDITOR="/usr/bin/vim"
+KDEDIRS="/usr"
+CLASSPATH="/opt/blackdown-jre-1.4.1/lib/rt.jar:."
+CONFIG_PROTECT="/usr/X11R6/lib/X11/xkb /opt/tomcat/conf \
+                /usr/kde/3.1/share/config /usr/share/texmf/tex/generic/config/ \
+                /usr/share/texmf/tex/platex/config/ /usr/share/config"
+CONFIG_PROTECT_MASK="/etc/gconf
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Defining Variables Globally</title>
+<subsection>
+<title>The /etc/env.d Directory</title>
+<body>
+
+<p>
+To centralise the definitions of these variables, Gentoo introduced the
+<path>/etc/env.d</path> directory. Inside this directory you will find a number
+of files, such as <path>00basic</path>, <path>05gcc</path>, etc. which contain
+the variables needed by the application mentioned in their name.
+</p>
+
+<p>
+For instance, when you installed <c>gcc</c>, a file called <path>05gcc</path>
+was created by the ebuild which contains the definitions of the following
+variables:
+</p>
+
+<pre caption="/etc/env.d/05gcc">
+PATH="/usr/i686-pc-linux-gnu/gcc-bin/3.2"
+ROOTPATH="/usr/i686-pc-linux-gnu/gcc-bin/3.2"
+MANPATH="/usr/share/gcc-data/i686-pc-linux-gnu/3.2/man"
+INFOPATH="/usr/share/gcc-data/i686-pc-linux-gnu/3.2/info"
+CC="gcc"
+CXX="g++"
+LDPATH="/usr/lib/gcc-lib/i686-pc-linux-gnu/3.2.3"
+</pre>
+
+<p>
+Other distributions tell you to change or add such environment variable
+definitions in <path>/etc/profile</path> or other locations. Gentoo on the other
+hand makes it easy for you (and for Portage) to maintain and manage the
+environment variables without having to pay attention to the numerous files that
+can contain environment variables.
+</p>
+
+<p>
+For instance, when <c>gcc</c> is updated, the <path>/etc/env.d/05gcc</path> file
+is updated too without requesting any user-interaction. 
+</p>
+
+<p>
+This not only benefits Portage, but also you, as user. Occasionally you might
+be asked to set a certain environment variable system-wide. As an example we
+take the <c>http_proxy</c> variable. Instead of messing about with
+<path>/etc/profile</path>, you can now just create a file
+(<path>/etc/env.d/99local</path>) and enter your definition(s) in it:
+</p>
+
+<pre caption="/etc/env.d/99local">
+http_proxy="proxy.server.com:8080"
+</pre>
+
+<p>
+By using the same file for all your variables, you have a quick overview on the
+variables you have defined yourself. 
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>The env-update Script</title>
+<body>
+
+<p>
+Several files in <path>/etc/env.d</path> define the <c>PATH</c> variable. This
+is not a mistake: when you run <c>env-update</c>, it will append the several
+definitions before it updates the environment variables, thereby making it easy
+for packages (or users) to add their own environment variable settings without
+interfering with the already existing values.
+</p>
+
+<p>
+The <c>env-update</c> script will append the values in the alphabetical order of
+the <path>/etc/env.d</path> files. This is why many of the files in
+<path>/etc/env.d</path> begin with a number.
+</p>
+
+<pre caption="Update order used by env-update">
+         00basic        99kde-env       99local
+     +-------------+----------------+-------------+
+PATH="/bin:/usr/bin:/usr/kde/3.2/bin:/usr/local/bin"
+</pre>
+
+<p>
+When you run <c>env-update</c>, the script will create all environment variables
+and place them in <path>/etc/profile.env</path> (which is used by
+<path>/etc/profile</path>). It will also extract the information from the
+<c>LDPATH</c> variable and use that to create <path>/etc/ld.so.conf</path>.
+After this, it will run <c>ldconfig</c> to recreate the
+<path>/etc/ld.so.cache</path> file used by the dynamical linker.
+</p>
+
+<p>
+If you want to notice the effect of <c>env-update</c> immediately after you run
+it, execute the following command to update your environment. Users who have
+installed Gentoo themselves will probably remember this from the installation
+instructions:
+</p>
+
+<pre caption="Updating the environment">
+# <i>env-update &amp;&amp; source /etc/profile</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Defining Variables Locally</title>
+<subsection>
+<title>User Specific</title>
+<body>
+
+<p>
+You do not always want to define an environment variable globally. For instance,
+you might want to add <path>/home/my_user/bin</path> to the <c>PATH</c> variable
+but don't want all other users on your system to have that in their <c>PATH</c>
+too. If you want to define an environment variable locally, you should use
+<path>~/.bashrc</path> or <path>~/.bash_profile</path>:
+</p>
+
+<pre caption="Extending PATH for local usage in ~/.bashrc">
+PATH="${PATH}:/home/my_user/bin"
+</pre>
+
+<p>
+When you relogin, your <c>PATH</c> variable will be updated.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Session Specific</title>
+<body>
+
+<p>
+Sometimes even stricter definitions are requested. You might want to be able to
+use binaries from a temporary directory you created without using the path to
+the binaries themselves or editing <path>~/.bashrc</path> for the short time
+you need it.
+</p>
+
+<p>
+In this case, you can just define the <c>PATH</c> variable in your current
+session by using the <c>export</c> command. As long as you don't log out, the
+<c>PATH</c> variable will be using the temporary settings.
+</p>
+
+<pre caption="Defining a session-specific environment variable">
+# <i>export PATH="${PATH}:/home/my_user/tmp/usr/bin"</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+</sections>

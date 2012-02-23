@@ -1,0 +1,324 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/keychain-guide.xml,v 1.3 2008/06/23 23:21:02 shindo Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/keychain-guide.xml">
+<title>Gentoo Linux keychainガイド</title>
+
+<author title="Author">
+  <mail link="eric.brown@dnbrown.net">Eric Brown</mail>
+</author>
+<author title="Editor">	
+  <mail link="vanquirius@gentoo.org">Marcelo Góes</mail>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+
+<abstract>
+このドキュメントはkeychainプログラムに伴うSSH共有キーを使用する方法を説明します。
+これは公開鍵の暗号法に関する基礎知識を前提とします。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.3</version>
+<date>2007-04-29</date>
+
+<!-- Original revision: 1.4 -->
+
+<chapter>
+<title>背景</title>
+<section>
+<title>当面の問題</title>
+<body>
+
+<p>
+あなたはsshdを実行している立派なGentooマシンを多く持っていますが、それらのログインパスワードのすべてをタイプし続けるのは、少し不便ですよね？
+もしくは、SSH接続を便利に使用する方法を必要とするスクリプトかcronジョブがあるでしょう。
+いずれにせよ、この問題の解決策があります。そして、それは公開鍵認証によって始まります。
+</p>
+
+</body>
+</section>
+<section>
+<title>公開鍵認証の仕組み</title>
+<body>
+
+<p>
+サーバのsshdに接続したがっているクライアントがいると仮定します。
+クライアントは、まず公開鍵と秘密鍵を生成し、公開鍵をサーバに置きます。
+その後、クライアントが接続を試みるときはいつでも、サーバはその公開鍵で暗号化されたチャレンジを送信します。
+対応する秘密鍵の所有者(クライアント)だけがそれを解読することができるので、あなたが推測するように、正しい応答を行うと認証が成功します。
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>公開鍵認証の使用法</title>
+<section>
+<title>公開鍵と秘密鍵を生成</title>
+<body>
+
+<p>
+第一歩は公開鍵と秘密鍵を生成することです。
+これを行うために、以下のように<c>ssh-keygen</c>コマンドを使用します。
+</p>
+
+<pre caption="公開鍵と秘密鍵を生成">
+$ <i>ssh-keygen -t dsa</i>
+<comment>(デフォルト値で問題ありません。強力なパスフレーズを入力するようにしてください)</comment>
+</pre>
+
+<warn>
+特にこの鍵がrootのログインに使用される時は、強力なパスフレーズを選択してください。
+</warn>
+
+<p>
+秘密鍵が<path>~/.ssh/id_dsa</path>に、公開鍵が<path>~/.ssh/id_dsa.pub</path>に作成されるでしょう。
+これでリモートホストに公開鍵をコピーする準備ができました。
+</p>
+
+</body>
+</section>
+<section>
+<title>サーバの準備</title>
+<body>
+
+<p>
+sshdが実行されているサーバに<path>~/.ssh/id_dsa.pub</path>ファイルをコピーします。
+また、それをそのサーバへの接続に使用するユーザが所有する<path>~/.ssh/authorized_keys</path>ファイルにも追加します。
+以下は、既にサーバへのSSHアクセスができるならばそれを行う方法の例です。
+</p>
+
+<pre caption="サーバに公開鍵をコピー">
+$ <i>scp ~/.ssh/id_dsa.pub server_user@server:~/myhost.pub</i>
+$ <i>ssh server_user@server "cat ~/myhost.pub >> ~/.ssh/authorized_keys"</i>
+$ <i>ssh server_user@server "cat ~/.ssh/authorized_keys"</i>
+</pre>
+
+<p>
+最後の行の出力は<path>~/.ssh/authorized_keys</path>ファイルの内容を表示するでしょう。
+それが正しいか確認してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>設定のテスト</title>
+<body>
+
+<p>
+理論的にすべてがうまく行って、サーバのSSHデーモンがそれを許可するなら、たった今から、サーバへパスワードなしでのSSHアクセスができるはずです。
+それでも、クライアント上で以前使用したパスフレーズで秘密鍵を解読する必要がありますが、これはサーバ上のユーザアカウントのパスフレーズと混同するべきではありません。
+</p>
+
+<pre caption="鍵のテスト">
+$ <i>ssh server_user@server</i>
+</pre>
+
+<p>
+うまくいけば、id_dsaのためにパスフレーズを要求され、server_userとしてサーバにSSHアクセスができるでしょう。
+もしそうでなければ、server_userでログインし、<path>~/.ssh/authorized_keys</path>のエントリがそれぞれ一行で書かれているかを確認します。
+また、公開鍵認証が利用可能であればそちらを使用するようにsshdの設定が行われているか確認した方がよいでしょう。
+</p>
+
+<p>
+この時点で、もしかすると「要はどういうことなんだ？私はあるパスワードを別の物に置き換えただけなのか？！」と考えているかもしれません。
+落ち着いてください。
+次の章は、あなたの貴重な時間を節約するために、これをどのようにして使用するかを正確に説明します。
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>公開鍵認証を便利にする</title>
+<section>
+<title>ssh-agentを用いた典型的な鍵の管理</title>
+<body>
+
+<p>
+ここまで従ってきたのなら、どうにかして一度秘密鍵を解読し、SSHをパスワード無しで自由に使用することができるなら、すばらしいことだと思っているかもしれません。
+あなたは幸運です。すなわち、<c>ssh-agent</c>というプログラムがまさにこれを行ってくれるからです。
+</p>
+
+<p>
+<c>ssh-agent</c>プログラムは通常、Xセッションの開始時か、<path>~/.bash_profile</path>の様なシェルスタートアップスクリプトから起動されます。
+それは、unixソケットを生成し、すべてのその後のアプリケーションが、そのソケットに接続することによって、それのサービスを利用できるように、適当な環境変数を登録することによって動作します。
+その通り、すべてのその後のXアプリケーションで解読された秘密鍵のセットを使用したいと思う場合にだけ、それはXセッションの親プロセスで起動するという意味になります。
+</p>
+
+<pre caption="ssh-agentの準備">
+$ <i>ssh-agent</i>
+</pre>
+
+<note>
+このssh-agentは処理を中断するまで鍵を解読し続けます。
+あなたが有効時間を鍵に決めたいなら、<c>man ssh-agent</c>に書かれている-t引数を使用してください。
+</note>
+
+<p>
+ssh-agentを起動すると、実行中のssh-agentのPIDが表示され、<c>SSH_AUTH_SOCK</c>と<c>SSH_AGENT_PID</c>という環境変数を設定するでしょう。
+それはまた自動的に収集品を<path>~/.ssh/id_dsa</path>に追加し、対応するパスフレーズを聞いてくるでしょう。
+もし実行中のssh-agentに追加したい別の秘密鍵があるなら、<c>ssh-add</c>コマンドを以下のように使用します。
+</p>
+
+<pre caption="ssh-agentに他の鍵を追加">
+$ <i>ssh-add somekeyfile</i>
+</pre>
+
+<p>
+ここからがすばらしいところです。
+現在あなたの解読された秘密鍵の準備ができているはずなので、パスワードを入力すること無しにサーバへSSH接続ができるでしょう。
+</p>
+
+<pre caption="パスワードなしでのSSH接続">
+$ <i>ssh server</i>
+</pre>
+
+<p>
+必要な時にssh-agentを終了させる方法を知っておくことは良いことですよね？
+</p>
+
+<pre caption="ssh-agentの終了">
+$ <i>ssh-agent -k</i>
+</pre>
+
+<note>
+ssh-agentの動作に問題があるなら、それはまだ実行中かもしれません。
+他のプロセスと同じように、<c>killall ssh-agent</c>を実行することでkillすることができます。
+</note>
+
+<p>
+ssh-agentからさらに多くの便利な機能が欲しいなら、keychainを使用する次の章に進んでください。
+もしそうすると決めるなら、上記の例のように実行中の走行ssh-agentをkillするようにしてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>ssh-agentの便利な機能を余すことなく使い切る</title>
+<body>
+
+<p>
+keychainはログイン間でssh-agentを再利用したり、任意でユーザがログインする時はいつでもパスフレーズの入力を促したりすることができます。
+先に進む前に、まずそれをemergeしましょう。
+</p>
+
+<pre caption="keychainのインストール">
+# <i>emerge keychain</i>
+</pre>
+
+<p>
+成功したと仮定すると、これでkeychainを自由に使用することができます。
+これを有効にするために、<path>~/.bash_profile</path>に以下を追加します。
+</p>
+
+<pre caption=".bash_profileでkeychainを有効化">
+keychain ~/.ssh/id_dsa
+. ~/.keychain/$HOSTNAME-sh
+</pre>
+
+<note>
+お望み通り、より多くの秘密鍵をコマンドラインに追加することができます。
+また、シェルを生成するたびにパスフレーズを聞いて欲しいなら、--clearオプションを追加します。
+</note>
+
+<note>
+もしbashを使用していないなら、その他のシェル用の例が載っている<c>man keychain</c>の<b>EXAMPLES</b>の部分を確認してください。
+考えはあなたがシェルを使用するたびにそれらのコマンドが実行されるようにすることです。
+</note>
+
+<p>
+ではテストしてみましょう。
+最初に、前項でssh-agentが終了していることを確認し、そしていつものようにただログインするか、または新しいターミナルを起動することによって、新しいシェルを立ち上げます。
+コマンドラインで指定した各キーのためのパスワードの入力を促されるでしょう。
+その効果の後に開かれる全てのシェルはssh-agentを再利用するので、何度でもパスワードなしでSSH接続できます
+</p>
+
+</body>
+</section>
+<section>
+<title>KDEでkeychainを使う</title>
+<body>
+
+<p>
+あなたがKDEユーザなら、<path>~/.bash_profile</path>を使用する代わりに、KDEにssh-agentの管理をさせることが出来ます。
+これを行うために、KDEの起動時に読み込まれる<path>/usr/kde/${KDE_VERSION}/env/agent-startup.sh</path>と、KDEの終了時に実行される<path>/usr/kde/${KDE_VERSION}/shutdown/agent-shutdown.sh</path>を編集する必要があります。
+${KDE_VERSION}には、インストールされているKDEのバージョンの最初の2文字が入ります。
+例えば、KDE 3.5.1を使用しているのなら、これらのファイルを以下のように編集します。
+</p>
+
+<pre caption="/usr/kde/3.5/env/agent-startup.shの編集">
+if [ -x /usr/bin/ssh-agent ]; then
+  eval "$(/usr/bin/ssh-agent -s)"
+fi
+</pre>
+
+<pre caption="/usr/kde/3.5/shutdown/agent-shutdown.shの編集">
+if [ -n "${SSH_AGENT_PID}" ]; then
+  eval "$(ssh-agent -k)"
+fi
+</pre>
+
+<p>
+これで、あなたがすべきことは、Konsoleといったターミナルを起動し、使用したい鍵を読み込むだけです。
+例えば、以下のように行います。
+</p>
+
+<pre caption="ssh鍵の読み込み">
+keychain ~/.ssh/id_dsa
+<comment>(鍵のパスワードを入力)</comment>
+</pre>
+
+<p>
+これで、あなたの鍵は、KDEセッションを終了するか、ssh-agentを手動で強制終了するまで記憶されます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>結びの言葉</title>
+<section>
+<title>安全面での配慮</title>
+<body>
+
+<p>
+もちろん、ssh-agentの使用はシステムを少し不用心にするかもしれません。
+あなたがお風呂に入っている間に別のユーザがあなたのシェルを使用するなら、彼はパスワードなしであなたのサーバ全部にログインできます。
+その結果、それは接続しているサーバへのリスクとなり、ローカルセキュリティポリシーを見直すようにするべきです。
+それを使用するなら、あなたのセッションのセキュリティを確実にする穏当な処置を必ず取ってください。
+</p>
+
+</body>
+</section>
+<section>
+<title>トラブルシューティング</title>
+<body>
+
+<p>
+この大部分はかなりよく動作するはずですが、問題に出会ったなら、きっといくつかの役に立つことを知りたくなるでしょう。
+</p>
+
+<ul>
+  <li>
+    もしssh-agentなしでも接続できない場合は、sshを-vvv引数で使用して何が起きているかよく考えてください。
+    サーバが公開鍵認証を使用するように設定されていない時もあれば、とにかくローカルパスワードを尋ねるように設定されている時もあります。
+    その場合、sshを-oオプション付きで使用するか、サーバのsshd_configを変更したいでしょう。
+  </li>
+  <li>
+    ssh-agentやkeychainに関する問題があるなら、もしかするとそれらが使用するコマンドを使用しているシェルが認識していないかもしれません。
+    他のシェルで動作させる詳細をssh-agentやkeychainのmanページを調べてください。
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

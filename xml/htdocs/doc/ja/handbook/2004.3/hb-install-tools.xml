@@ -1,0 +1,178 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-install-tools.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+
+<!-- Original revision: 1.29 -->
+<sections>
+
+<version>1.26</version>
+<date>2004-10-09</date>
+
+<section>
+<title>システムログツール</title>
+<body>
+
+<p>
+<e>stage3</e>とは何かを説明した際に、ユーザーには選択肢は与えられない代りに必要な全てのシステムツールが含まれていると言いました。またその一方で、後で他のツールをインストールするとも言いました。では、見てみましょう。:)
+</p>
+
+<p>
+最初に決める必要のあるツールは、システムにロギング機能を提供するものです。UnixとLinuxにはログ性能の素晴らしい歴史があります。-- もし望むならログファイルにシステムで起こった全てを記録できます。これは<e>システムログツール</e>を通して行われます。
+</p>
+
+<p>
+Gentooでは選択可能ないくつかのシステムログツールを提供しています。伝統的なシステムロギングデーモンの<c>sysklogd</c>があります。<c>syslog-ng</c>は高機能なシステムログツールです。そして<c>metalog</c>は詳細な設定ができるシステムログツールです。他の選択もPortageを通じて可能でしょう。有効パッケージの数は日毎に増えていますから。
+</p>
+
+<p>
+もし<c>sysklogd</c>か<c>syslog-ng</c>を使おうと思っているなら、これらのシステムログツールにはログファイルをローテーションする機構が無いので、後で<c>logrotate</c>をインストールしましょう。
+</p>
+
+<p>
+もし決められないなら、デフォルトの設定がとても優れて、強力なので<c>metalog</c>を使ってください。
+</p>
+
+<p>
+選択したシステムログツールをインストールするには、それを<c>emerge</c>して、<c>rc-update</c>を使って通常にランレベルにスクリプトを追加してください。次の例では<c>metalog</c>をインストールします。もちろん自分で選択したシステムログツールに置き換えても構いません。
+</p>
+
+<pre caption="システムログツールをインストールする">
+# <i>emerge metalog</i>
+# <i>rc-update add metalog default</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>自由選択:Cronデーモン</title>
+<body>
+
+<p>
+次はcronデーモンです。これは任意で、システムに必須ではありませんが、インストールするのは賢明なことです。しかしcronデーモンとは何でしょうか。cronデーモンは予定されたコマンドを実行します。定期的にあるコマンドを実行する必要があるならとても重宝します。(例えば日毎、週毎、月毎)。
+</p>
+
+<p>
+Gentooでは3つのcronデーモンを提供しています。: <c>dcron</c>、<c>fcron</c>そして<c>vixie-cron</c>です。その内の1つをインストールするのはシステムログツールをインストールするのに似ています。しかし、<c>dcron</c>と<c>fcron</c>では特別な設定コマンドが必要とされます。すなわち<c>crontab /etc/crontab</c>です。もし何を選んだら良いかわからなかったら、<c>vixie-cron</c>を使ってください。
+</p>
+
+<p>
+ネットワーク無しのインストールでは<c>vixie-cron</c>しか選択できません。もし他のcronデーモンが良ければ、後でインストールできるのでお待ちください。
+</p>
+
+<pre caption="cronデーモンをインストールする">
+# <i>emerge vixie-cron</i>
+# <i>rc-update add vixie-cron default</i>
+<comment>(dcronかfcronを選んだときのみ)</comment> # <i>crontab /etc/crontab</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>自由選択: ファイルのインデックス</title>
+<body>
+
+<p>
+<c>locate</c>を使用して素早くファイルの検索をするために、システム中のファイルのインデックスを作成する場合には、<c>sys-apps/slocate</c>をインストールする必要があります。 
+</p>
+
+<pre caption="slocateをインストールする">
+# <i>emerge slocate</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>ファイルシステムツール</title>
+<body>
+
+<p>
+使っているファイルシステムが何かに依りますが、必須のファイルシステムツールをインストールする必要があります。(ファイルシステムの整合性をチェックしたり、追加のファイルシステムを作成する等のために)。
+</p>
+
+<p>
+次の表はどのファイルシステムを使っているかでどのツールをインストールする必要があるかを表しています。
+</p>
+
+<table>
+<tr>
+  <th>ファイルシステム</th>
+  <th>ツール</th>
+  <th>インストールコマンド</th>
+</tr>
+<tr>
+  <ti>XFS</ti>
+  <ti>xfsprogs</ti>
+  <ti><c>emerge xfsprogs</c></ti>
+</tr>
+<tr>
+  <ti>ReiserFS</ti>
+  <ti>reiserfsprogs</ti>
+  <ti><c>emerge reiserfsprogs</c></ti>
+</tr>
+<tr>
+  <ti>JFS</ti>
+  <ti>jfsutils</ti>
+  <ti><c>emerge jfsutils</c></ti>
+</tr>
+</table>
+
+<!-- TODO LVM2の説明が出れば再有効にする
+<p>
+もしLVMユーザーなら、<c>lvm-user</c>もインストールする必要があります。
+</p>
+
+<pre caption="LVMユーティリティーをインストールする">
+# <i>emerge - -usepkg lvm-user</i>
+</pre>
+-->
+
+<p>
+もし他の追加のネットワーク関連ツール(rp-ppoeやdhcpクライアント等)を必要としなければ、<uri link="?part=1&amp;chap=10">ブートローダを設定する</uri>に進んでください。
+</p>
+
+</body>
+</section>
+<section>
+<title>ネットワークツール</title>
+<subsection>
+<title>自由選択:DHCPクライアントをインストールする</title>
+<body>
+
+<p>
+もしGentooが自動的にネットワークインターフェイスにIPアドレスを取得するようにしたいのなら、<c>dhcpcd</c>(もしくは他のDHCPクライアント)をシステムにインストールする必要があります。 今しなければ、インストール後にインターネットに接続できないでしょう。
+</p>
+
+<pre caption="dhcpcdをインストールする">
+# <i>emerge dhcpcd</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>自由選択:PPPoEクライアントをインストールする</title>
+<body>
+
+<p>
+もしインターネットに接続するのに<c>rp-pppoe</c>が必要なら、インストールしなければなりません。
+</p>
+
+<pre caption="rp-pppoeをインストールする">
+# <i>USE="-X" emerge rp-pppoe</i>
+</pre>
+
+<p>
+<c>USE="-X"</c>は依存関係によるxorg-x11のインストールを防ぎます。(<c>rp-pppoe</c>にはグラフィカルツールがあります。もしそれを有効にしたいなら、後で<c>rp-pppoe</c>を再コンパイル できますし、コンパイルにかなりの時間が掛かりますがxorg-x11をここでインストールもできます。)。
+</p>
+
+<p>
+さあ<uri link="?part=1&amp;chap=10">ブートローダを設定する</uri>に進みましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

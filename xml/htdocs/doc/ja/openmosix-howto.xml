@@ -1,0 +1,403 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/openmosix-howto.xml,v 1.3 2005/08/13 16:37:55 idani Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/openmosix-howto.xml">
+  
+<title>Gentooを用いたopenMosixクラスター環境構築</title>
+<author title="Author">
+  <mail link="tantive@gentoo.org">Michael Imhof</mail>
+</author>
+<author title="Author">
+    <mail link="ma53@drexel.edu">Michael Andrews</mail>
+</author>
+<author title="Reviewer">
+    <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Reviewer">
+    <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+<author title="翻訳"><mail link="hiro@extreme.jpseed.jp">武田洋之</mail>
+</author>
+
+
+<abstract>
+このHOWTOは、gentooを使用してopenMosixクラスター環境を構築する手助けをします。
+</abstract>
+
+<license/>
+
+<version>1.3</version>
+<date>2003-11-20</date>
+<!-- Original revision: 1.7 -->
+
+<chapter>
+<title>導入</title>
+<section>
+<title>このHOWTOについて</title>
+<body>
+
+<p>
+このHOWTOは、openMosixクラスター環境を構築するのに手助けをします。
+Gentoo Linuxディストリビューションを元に構築していきます。
+できるだけユーザーフレンドリーに、そしてLinux初心者にも理解できるように説明していきます。
+経験豊富なユーザーは、openMosix、ディスクレスノード、ネットワークに関する入手可能な複数のHOWTOを容易に結びつけることができるかもしれません。
+しかし、わたしたちは、このHOWTOによって、経験が少ないユーザーの手順が簡略化されることを望みます。
+</p>
+
+<note>
+もしディスクレスノードを用いてopenMosixクラスターを構築しようとしているなら、
+openMosixサポートのカーネルをコンパイルする方法を学ぶために、後述のカーネルに関する記述を読んだほうがよいでしょう。
+そして、<uri link="diskless-howto.xml">ディスクレスHOWTO</uri>を読んだ後に実際のクラスターの導入作業を続けたほうがよいでしょう。
+</note>
+
+</body>
+</section>
+<section>
+<title>openMosixについて</title>
+<body>
+
+<p>
+openMosixは、Linuxカーネルに対するパッチで、複数のホストが一つのシステムイメージ(SSI, single, system image)であるかのように動作させることができます。
+この結果、複数のホストは、一つの巨大なマルチプロセッサのホストであるかのように<e>見えます</e>。
+これを書いている時点で、最新のopenMosixカーネルパッチのバージョンは2.4.22で、openMosixユーザーツールはバージョン0.3.4です。
+openMosixに関する広範な情報は<uri>http://openmosix.sourceforge.net</uri>にあります。
+様々なバージョンのカーネルソースでクラスターを構築するのは容易ではありませんし、
+ほとんどのパッチは後方互換性が無いことがわかっています。
+openMosixは、a.outやELFバイナリを起動する時、あるいは、重量プロセスをforkするときに、
+明らかに重量プロセスに移行します。
+p-threadのような軽量プロセスや、共有メモリを使用した重量プロセスには移行しません。
+</p>
+
+<p>
+openMosixについてのより詳しい情報は、<uri link="http://openmosix.sourceforge.net">ホームページ</uri>を訪れてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>クラスターについて</title>
+<body>
+
+<p>
+クラスターは、すべてのノードで計算パワーを増加させる為に、計算資源を共有した個々のコンピュータ(ノード)から構成されます。
+すべてのノードは同じアーキテクチャである必要はありませんが、その方がクラスター構築は、はるかに簡単になります。
+</p>
+
+</body>
+</section>
+<section>
+<title>はじめる前に</title>
+<body>
+
+<p>
+クラスターに接続したいコンピュータにGentooがインストールされていなければなりません。
+さらに、openMosixカーネルソースが必要です。都合のいいことに、Gentooによってパッチが適用済みのソースがあります。
+</p>
+
+<p>
+このソースを取得するには、単に<c>emerge</c>を使って:
+</p>
+
+<pre caption="パッチ済みのカーネルソースの取得">
+# <i>emerge openmosix-sources</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>カーネルの構築</title>
+<section>
+<title>カーネルについて</title>
+<body>
+
+<p>
+カーネルとは、ハードウェアとマシン上で起動される他のあらゆるソフトウェアとの間に存在するものであり、
+本質的に、カーネルベースのOSの中心となるものです。
+コンピュータが起動するとき、BIOSはハードディスクの予約されたブート領域に"指示"を見つけだし、これを実行します。
+この"指示"とは、典型的には、カーネルを起動するブートローダーです。
+カーネルが起動した後、カーネルによってすべてのプロセスが処理されます。
+</p>
+
+<p>
+カーネルやカーネルの設定についてもっと情報が欲しい場合、<uri link="http://www.tldp.org/HOWTO/Kernel-HOWTO.html">カーネルHOWTO</uri>を調べてみてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>カーネルの設定</title>
+<body>
+
+<p>
+カーネルは好きなようにカスタマイズできますが、いくつか選択しておく必要があるオプションがあります。
+</p>
+
+<impo>
+次のようにしてopenmosix-sourcesへのシンボリックリンク<path>/usr/src/linux</path>を作る事は極めて重要です。
+</impo>
+
+<pre caption="openmosixへのリンク/usr/src/linuxの作成">
+# <i>cd /usr/src</i>
+# <i>rm linux</i>
+# <i>ln -s linux-2.4.22-openmosix linux</i>
+</pre>
+
+<p>
+それでは、カーネルの設定をしましょう:
+</p>
+
+<pre caption="カーネル設定の編集">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+グレーとブルーのGUIが出てきたでしょう。これは、手作業で<path>/usr/src/linux/.config</path>ファイルを編集するより安全なカーネル設定の方法です。
+もし、現在あなたのカーネルが機能していて、現在の設定ファイルをバックアップしておきたいなら:
+</p>
+
+<pre caption="カーネル設定のバックアップ">
+# <i>cp .config .config_working</i>
+</pre>
+
+<p>
+最上位のメニュー項目に<c>openMosix ---&gt;</c>があります。
+もしこれが無い場合、openMosixパッチが当てられたカーネルソースをemergeする必要があります(<uri
+link="#doc_chap1_sect4">はじめる前に</uri>を見て下さい)。
+サブメニューに進んで、次に挙げる項目が(モジュールとして<e>ではなく</e>)ビルトイン(訳注:カーネル組み込み)として選択されているか確認してください:
+</p>
+
+<pre caption="設定メニュー">
+openMosix ---&gt;
+    [*] openMosix process migration support
+    [ ] Support clusters with a complex network topology
+    [*] Stricter security on openMosix ports
+    (1) Level of process-identity disclosure (0-3)
+    [*] openMosix File-System
+    [ ] Poll/Select exceptions on pipes
+    [ ] Disable OOM Killer
+    [ ] Load Limit
+
+Code maturity level options  ---&gt;
+    [*] Prompt for development and/or incomplete code/drivers
+
+Networking options ---&gt;
+    &lt;*&gt; Packet socket
+    [ ]   Packet socket: mmapped IO
+    &lt; &gt; Netlink device emulation
+    [ ] Network packet filtering (replaces ipchains)
+    [ ] Socket Filtering
+    &lt;*&gt; Unix domain sockets
+    [*] TCP/IP networking
+    [*]   IP: multicasting
+
+File systems ---&gt;
+    [*] /proc file system support
+    [*] /dev file system support (EXPERIMENTAL)
+    [*]   Automatically mount at boot 
+</pre>
+
+<note>
+これらのカーネル設定オプションに完全に置き換えてしまうのではなく，
+既にあるあなたのシステム特有の設定オプションに追加するようにしてください．
+</note>
+
+<p>
+カーネルを再設定した後、カーネルを再構築します:
+</p>
+
+<pre caption="カーネルとモジュールの再コンパイル">
+# <i>make dep</i>
+# <i>make clean bzImage modules modules_install</i>
+<comment>(コピーする前に/bootがマウントされていることを確認してください)</comment>
+# <i>cp arch/i386/boot/bzImage /boot/bzImage-openmosix</i>
+</pre>
+
+<p>
+<path>lilo.conf</path>あるいは<path>grub.conf</path>(使用しているブートローダーによります)に新しいカーネルに対するエントリを追加し、新しいカーネルをデフォルトにします。
+新しい<path>bzImage</path>を<path>/boot</path>にコピーしてしまったので、後はシステムを再起動するだけです。
+</p>
+
+</body>
+</section>
+<section>
+<title>足りないオプション</title>
+<body>
+
+<p>
+もし、カーネル設定のときに項目として現れないオプションがあるなら、次のオプションを確認してみてください:
+</p>
+
+<ul>
+  <li>Code maturity level options ---&gt;
+  <ul>
+    <li>Prompt for development and/or incomplete code/drivers</li>
+  </ul>
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>openMosixノードの設定</title>
+<section>
+<title>openMosixユーザーツールのインストール</title>
+<body>
+
+<p>
+プロセスをクラスターに移すことができるように、いくつかユーザーランドのバイナリをインストールする必要があります。
+加えて、クラスターに参加したり，openMosixの全ての機能を使うためには、openMosixサーバーを起動する必要があります。
+これらのバイナリを入手するには、<c>emerge</c>を使用して次のようにしてください:
+</p>
+
+<pre caption="openMosixユーザーランドユーティリティのインストール">
+# <i>emerge openmosix-user</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>openMosixノードの設定</title>
+<body>
+
+<p>
+<path>/etc/openmosix.map</path>ファイルの編集は，現在は不要となっています。
+新しいバージョンのユーザーランドユーティリティは、ネットワークのすべてのノードを自動的に検出するデーモンを備えています。
+</p>
+
+<p>
+すべてのノードにアクセスを可能にする為のopenMosixファイルシステムを使用するなら(強く推奨)、<path>/mfs</path>ディレクトリを各ノードで作成し、マウントしてください。
+</p>
+
+<pre caption="/mfsの作成">
+# <i>mkdir /mfs</i>
+</pre>
+
+<pre caption="/etc/fstab内のエントリの例">
+none                    /mfs            mfs             noauto,dfsa=1          0 0
+</pre>
+
+
+<note>
+openMosixが正しく動作するのにすべてのノードが起動している必要はありません。
+</note>
+
+</body>
+</section>
+<section>
+<title>openMosixの開始</title>
+<body>
+
+<p>
+openMosixの開始は、極めて簡単です。次のコマンドを実行することで、あなたのカーネルでopenMosixを有効にし、自動検出デーモン(入手可能なすべてのノードを追跡します)を起動します。
+</p>
+
+<pre caption="openMosixの起動">
+# <i>/etc/init.d/openmosix start</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>openMosixユーザーランドユーティリティ</title>
+<section>
+<title>コマンドラインユーティリティ</title>
+<body>
+
+<p>
+openMosix-userは、いくつか役に立つツールをシステムにインストールします。
+それらの名前は:
+</p>
+
+<ul>
+  <li>
+    <c>mosmon</c> - openMosixモニター。すべてのノードの状態を見ることができます。
+                    ノードの状態には、CPU使用率、実装メモリ、使用メモリ等が含まれます。
+  </li>
+  <li>
+    <c>mtop</c> - topコマンドの拡張版です。実際にどのノードでプロセスが動作しているのかを表示します。
+  </li>
+  <li><c>mps</c> - psコマンドの拡張版です。ノード番号も表示します。</li>
+  <li>
+    <c>mosctl whois</c> - mosmonや他のツールがノード番号しか表示しないので、これはとても役に立ちます。
+                         <c>mosctl whois nodenumber</c>とすると、そのノードのIPアドレスまたはホスト名を表示することができます。
+  </li>
+</ul>
+
+<p>
+もしあなたのクラスターが意図したように機能するか、どの程度の負荷まで動作するか試験したければ、
+openmosix負荷テストが使用できるでしょう。
+このパッケージは、<c>openmosixtest</c>と呼ばれています:
+</p>
+
+<pre caption="openmosixtestをemergeする">
+# <i>emerge openmosixtest</i>
+</pre>
+
+<p>
+どのようにテストを動作させればよいかは、ebuildが教えてくれるでしょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>グラフィカル・ユーティリティ</title>
+<body>
+
+<p>
+<c>openmosixview</c>を使えば、クラスターの状況や、稼動しているプロセスの概要をグラフィカルに見ることが可能です。
+</p>
+
+<pre caption="openmosixviewをemergeする">
+# <i>emerge openmosixview</i>
+</pre>
+
+<p>
+このすばらしいアプリケーションを起動するには、<c>openmosixview</c>と打ち込むだけです:
+</p>
+
+<pre caption="openmosixviewの起動">
+# <i>openmosixview</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>リソース</title>
+<section>
+<title>openMosix</title>
+<body>
+
+<ul>
+  <li><uri>http://openmosix.sf.net</uri></li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>openMosixアドオン(ebuildも入手可能です)</title>
+<body>
+
+<ul>
+  <li><uri link="http://www.openmosixview.com">openMosixview</uri></li>
+  <li>
+    <uri link="http://www.openmosixview.com/omtest">openMosix負荷テスト</uri>
+  </li>
+  <li>
+    <uri link="http://www.nongnu.org/gomd/">一般的なopenMosixデーモン</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

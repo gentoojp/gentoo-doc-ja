@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/kernel-upgrade.xml,v 1.21 2011/09/04 17:53:40 swift Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<guide>
+<title>Gentoo Linux Kernel Upgrade Guide</title>
+<author title="Author">
+  <mail link="dsd@gentoo.org">Daniel Drake</mail>
+</author>
+
+<abstract>
+This document describes the process of upgrading your kernel from one release
+to another.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2</version>
+<date>2011-09-04</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<body>
+
+<p>
+The kernel is one of the few package classes in portage that requires some
+manual intervention to complete the upgrade. Portage will download and
+install the kernel source for you, but then it is up to you to step in and
+compile the new kernel before any changes will take effect.
+</p>
+
+<p>
+Although this guide is targeted at users upgrading from one kernel release
+to another, it will also be useful for users migrating from one kernel
+package to another.
+</p>
+
+<p>
+<c>gentoo-sources</c> is used as an example in this document, however, the
+instructions here also apply to the other packages present in our tree.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Why upgrade the kernel?</title>
+<section>
+<body>
+
+<p>
+Generally, upgrading from one minor kernel release to the next won't bring any
+major differences. There are several reasons to upgrade the kernel. One is to
+take advantage of a specific new feature or driver; another is to be protected
+against a security vulnerability, or just to maintain an up-to-date and healthy
+system.
+</p>
+
+<p>
+Even if you choose not to update to every new kernel revision, it is
+recommended that you at least upgrade from time to time. It is strongly
+recommended that you immediately upgrade to a new kernel if that new release
+solves a security problem.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Obtaining the newer sources through Portage</title>
+<section>
+<body>
+
+<p>
+You upgrade the kernel sources like you would upgrade any other package -
+using the <c>emerge</c> utility. It will probably be the case that you want to
+upgrade your kernel when you see the upgrade appearing on your world updates
+list. For example:
+</p>
+
+<pre caption="New kernel sources appearing on update list">
+# <i>emerge -Dup world</i>
+Calculating dependencies ...done!
+[ebuild    NS ] sys-kernel/gentoo-sources-2.6.39-r3 [2.6.38-r6]
+</pre>
+
+<note>
+The "NS" label in the above output means that the new kernel will be installed
+in a New Slot, i.e. the sources of your old kernel will be kept around, until
+you manually remove them.
+</note>
+
+<p>
+You can then go ahead and install the update, e.g.:
+</p>
+
+<pre caption="Upgrading your kernel sources">
+# <i>emerge -u gentoo-sources</i>
+</pre>
+
+<p>
+The kernel sources will then be installed into a subdirectory of
+<path>/usr/src</path>. In the above example, the new kernel sources will be
+installed at <path>/usr/src/linux-2.6.39-gentoo-r3</path>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Updating the /usr/src/linux symbolic link</title>
+<section>
+<body>
+
+<p>
+Gentoo requires that the <path>/usr/src/linux</path> symbolic link points to
+the sources of the kernel you are running.
+</p>
+
+<p>
+Portage can update the symlink automatically when you emerge new kernel
+sources. All you have to do is add the <c>symlink</c> flag to the USE variable
+in <path>/etc/make.conf</path>.
+</p>
+
+<pre caption="Example of USE variable in /etc/make.conf">
+<comment>(Add the symlink keyword)</comment>
+USE="<i>symlink</i> x86 3dnow 3dnowex X aac aalib adns alsa apache2"
+</pre>
+
+<p>
+Alternatively, you could use <c>app-admin/eselect</c> to modify the symlink.
+</p>
+
+<pre caption="Using eselect to symlink">
+<comment>(Install eselect if you don't have it)</comment>
+# <i>emerge eselect</i>
+<comment>(See the list of available kernels)</comment>
+# <i>eselect kernel list</i>
+Available kernel symlink targets:
+  [1]   linux-2.6.39-gentoo-r3
+  [2]   linux-2.6.38-gentoo-r6 *
+<comment>(Select the correct kernel)</comment>
+# <i>eselect kernel set 1</i>
+<comment>(Verify the kernel was symlinked)</comment>
+# <i>eselect kernel list</i>
+  [1]   linux-2.6.39-gentoo-r3 *
+  [2]   linux-2.6.38-gentoo-r6
+</pre>
+
+<p>
+If you really want to do it yourself, the following example shows you how to
+make the link point to <path>linux-2.6.39-gentoo-r3</path>:
+</p>
+
+<pre caption="Updating the /usr/src/linux softlink manually">
+# <i>cd /usr/src</i>
+# <i>ln -sfn linux-2.6.39-gentoo-r3 linux</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="install">
+<title>Configuring, compiling and installing the new kernel</title>
+<section>
+<body>
+
+<p>
+For either of these options, you should refer to the instructions given in the
+<uri link="/doc/en/handbook/">Gentoo Handbook</uri> relating to <e>Configuring
+the Kernel</e> and <e>Configuring the Bootloader</e>. Below is an outline of
+the required actions:
+</p>
+
+</body>
+</section>
+<section>
+<title>Option 1: Automatic kernel setup with Genkernel</title>
+<body>
+
+<p>
+If you are a genkernel user, you just need to repeat the stages you went
+through when installing your kernel for the first time.
+</p>
+
+<p>
+Simply run genkernel in the normal way:
+</p>
+
+<pre caption="Invoking genkernel">
+# <i>genkernel all</i>
+</pre>
+
+<p>
+You can also use extra parameters for other genkernel functionality. For
+example, if you wish to configure some extra kernel options using
+<c>menuconfig</c> and you wish genkernel to automatically update your grub boot
+loader configuration, then invoke genkernel as follows:
+</p>
+
+<pre caption="Invoking genkernel with some common arguments">
+# <i>genkernel --menuconfig --bootloader=grub all</i>
+</pre>
+
+<p>
+For more info, follow the <uri link="/doc/en/genkernel.xml">Gentoo Linux
+Genkernel Guide</uri>, or refer to the <uri link="/doc/en/handbook/">Gentoo
+Handbook</uri>. Many of the options can be set in the configuration file for
+<c>genkernel</c>, <path>/etc/genkernel.conf</path>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Option 2: Manual configuration</title>
+<body>
+
+<p>
+To begin, open the <c>menuconfig</c> utility in the kernel source tree:
+</p>
+
+<pre caption="Invoking menuconfig">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+Select the options required for your hardware and operating environment. For
+additional information on kernel configuration, refer to the chapter entitled
+<e>Configuring the Kernel</e> of the <uri
+link="/doc/en/handbook/index.xml">Gentoo Handbook</uri>.
+</p>
+
+<p>
+Next, compile your kernel and copy it over to your boot partition. Again,
+follow the <uri link="/doc/en/handbook/index.xml">Gentoo Handbook</uri>
+instructions outlined in the chapter on <e>Configuring the Bootloader</e>. If
+<path>/boot</path> is a separate partition, ensure it is mounted before copying
+the compiled kernel to this directory! Failing to do so would keep you from
+booting the system with your new kernel.
+</p>
+
+<pre caption="Compiling and installing the new kernel">
+# <i>make &amp;&amp; make modules_install</i>
+# <i>mount /boot</i>
+# <i>cp arch/i386/boot/bzImage /boot/bzImage-2.6.39-gentoo-r3</i>
+</pre>
+
+<p>
+Finally, you should update your boot loader configuration, adding an entry for
+the new kernel (don't delete the old one just yet!) and unmount the
+<path>/boot</path> partition. Again, refer to the
+<uri link="/doc/en/handbook/index.xml">Gentoo Handbook</uri>
+for detailed instructions on this procedure.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Reinstalling external modules</title>
+<section>
+<body>
+
+<p>
+If you use any kernel modules that are not included in the kernel source tree
+but are provided elsewhere in Portage (e.g. ALSA drivers and NVIDIA or ATI
+graphics drivers), then you must reinstall these after upgrading the kernel.
+This is as simple as re-merging the packages involved. For more information,
+refer to the chapter on <e>Configuring the Kernel</e> in the <uri
+link="/doc/en/handbook/">Gentoo Handbook</uri>.
+</p>
+
+<p>
+We provide you with an easy tool (<c>sys-kernel/module-rebuild</c>) which
+rebuilds all the kernel modules you have installed using separate ebuilds for
+the kernel at <path>/usr/src/linux</path>. Its use is straightforward. After
+emerging it, simply run <c>module-rebuild populate</c> to populate the
+database with a list of packages that will need to be rebuilt after upgrading
+the kernel. Once you have finished upgrading or recompiling your kernel, run
+<c>module-rebuild rebuild</c> to rebuild the drivers for your new kernel.
+</p>
+
+<p>
+For more information, run <c>module-rebuild</c> without any options to see a
+list of commands that can be passed to the utility.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Updating your module configuration</title>
+<section>
+<body>
+
+<p>
+If you have put specific module configuration entries in
+<path>/etc/conf.d/modules</path>, then you might need to update the entries
+accordingly.
+</p>
+
+<pre caption="Sample /etc/conf.d/modules file">
+<comment># The following will only auto-load the ieee1394 module in 2.6.38-gentoo-r6 kernels</comment>
+modules_2_6_38_gentoo_r6="ieee1394"
+
+<comment># To support auto-loading on all possible versions, drop any reference to versions:</comment>
+modules="ohci1394"
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Rebooting into the new kernel</title>
+<section>
+<body>
+
+<p>
+Next, close all applications and reboot your system. If you followed the above
+instructions correctly, the boot loader menu should include an entry for the
+new kernel. Select the new kernel and let the system boot.
+</p>
+
+<p>
+Hopefully, your system successfully boots with the new kernel, and you can log
+in to resume whatever you were doing. If this is the case, then the upgrade is
+complete.
+</p>
+
+<p>
+If you made a mistake and the system fails to boot with the new kernel, reboot
+the system and select the entry from the boot loader that corresponds to the
+last known working kernel. You can then restart from the <uri link="#install">
+Configuring, compiling, and installing the new kernel</uri> stage -- making
+the appropriate changes to correct your mistake. In some cases, you might not
+even need to reboot to do this (e.g. you missed a driver for an audio device,
+Ethernet adapter, etc.)
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Running multiple kernels</title>
+<section>
+<body>
+
+<p>
+You may have noticed, that when installing the sources for your newer kernel,
+the sources for your existing kernel were not removed. This is by design -- it
+allows you to easily switch between running different kernels.
+</p>
+
+<p>
+Switching between multiple kernels is as simple as leaving the kernel sources
+under <path>/usr/src/</path> and leaving the <path>bzImage</path> binaries on
+your <path>/boot</path> partition (referenced by entries in your boot loader
+configuration). Every time you boot up, you will be presented with a choice of
+which kernel to boot into.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Removing older kernels</title>
+<section>
+<body>
+
+<p>
+Continuing on from the last section, you may be happy with your new kernel and
+not have any need to keep older kernel versions around. To easily remove all
+sources for a particular kernel except for the newest one, you can take
+advantage of the <e>prune</e> option available through <c>emerge</c>. Continuing
+the example using <c>gentoo-sources</c>:
+</p>
+
+<pre caption="Pruning old versions">
+# <i>emerge -P gentoo-sources</i>
+</pre>
+
+<p>
+In most cases, temporary files used during compilation will still remain under
+the appropriate source directory under <path>/usr/src</path>. It is safe to
+remove these using <c>rm</c>.
+</p>
+
+<p>
+You can also safely delete any modules that were used by this kernel. This can
+be done by removing the appropriate directories under <path>/lib/modules/</path>
+that relate to the kernel versions you are removing. Be careful not to delete
+modules belonging to kernels that you still use!
+</p>
+
+<p>
+Finally, you can mount your <path>/boot</path> partition and remove the
+<path>bzImage</path> file(s) for the kernel(s) you are pruning. You should also
+edit your boot loader configuration so that it no longer references such
+kernel(s).
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Advanced: Using your old kernel .config to configure a new one</title>
+<section>
+<body>
+
+<p>
+It is sometimes possible to save time by re-using the configuration file from
+your old kernel when configuring the new one. Note that this is generally
+unsafe -- too many changes between every kernel release for this to be a
+reliable upgrade path.
+</p>
+
+<p>
+The only situation where this is appropriate is when upgrading from one Gentoo
+kernel revision to another. For example, the changes made between
+<c>gentoo-sources-2.6.9-r1</c> and <c>gentoo-sources-2.6.9-r2</c> will be very
+small, so it is usually OK to use the following method. However, it is not
+appropriate to use it in the example used throughout this document: upgrading
+from 2.6.8 to 2.6.9. Too many changes between the official releases, and the
+method described below does not display enough context to the user, often
+resulting in the user running into problems because they disabled options that
+they really didn't want to.
+</p>
+
+<p>
+To reuse your old <path>.config</path>, you simply need to copy it over and
+then run <c>make oldconfig</c>. In the following example, we take the
+configuration from <c>gentoo-sources-2.6.9-r1</c> and import it into
+<c>gentoo-sources-2.6.9-r2</c>.
+</p>
+
+<pre caption="Reusing your old config">
+# <i>cd /usr/src/linux-2.6.9-gentoo-r2</i>
+# <i>cp ../linux-2.6.9-gentoo-r1/.config .</i>
+# <i>make oldconfig</i>
+</pre>
+
+<pre caption="Reusing your old config with genkernel">
+# <i>cd /etc/kernels</i>
+# <i>cp kernel-config-x86-2.6.9-gentoo-r1 kernel-config-x86-2.6.9-gentoo-r2</i>
+# <i>genkernel all</i>
+</pre>
+
+<p>
+At this point, you may be asked to produce answers for configuration options
+which have changed between the two versions. Once you have done that, you can
+compile and install your kernel as normal, without having to go through the
+<c>menuconfig</c> configuration process.
+</p>
+
+<p>
+A much safer upgrading method is to copy your config as previously shown, and
+then simply run <c>make menuconfig</c>. This avoids the problems of <c>make
+oldconfig</c> mentioned previously, as <c>make menuconfig</c> will load up your
+previous configuration as much as possible into the menu. Now all you have to
+do is go through each option and look for new sections, removals, and so on. By
+using <c>menuconfig</c>, you gain context for all the new changes, and can
+easily view the new choices and review help screens much easier. You can even
+use this for upgrades such as 2.6.8 to 2.6.9; just make sure you read through
+the options carefully. Once you've finished, compile and install your kernel as
+normal.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Problems after a kernel upgrade?</title>
+<section>
+<body>
+
+<p>
+With the rapid development of the Linux kernel, it is inevitable that some
+changes made from one kernel release to another may cause some problems. If you
+have any issues with the latest versions of <uri
+link="/doc/en/gentoo-kernel.xml#doc_chap2"> Gentoo-supported kernels</uri> then
+please do report the issues to us.
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

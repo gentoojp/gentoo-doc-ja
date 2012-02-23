@@ -1,0 +1,465 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/autotools-practices.xml:6
+#: en/articles/autotools-practices.xml:25
+#, no-wrap
+msgid "Best practices with autotools"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/articles/autotools-practices.xml:13
+#, no-wrap
+msgid ""
+"This article covers some of the most common errors people make when using\n"
+"autotools and ways to achieve better results.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:30
+#, no-wrap
+msgid ""
+"The core of GNU's compile chain -- the set of tools used to build GNU software\n"
+"packages -- is the so-called \"autotools,\" a term that refers to the autoconf\n"
+"and automake programs, as well as libtool, autoheader, pkg-config, and\n"
+"sometimes gettext. These tools let you compile GNU software on a wide variety\n"
+"of platforms and Unix and Unix-like operating systems, providing developers a\n"
+"framework to check for the presence of the libraries, functions, and tools that\n"
+"they want to use. While autotools are great in the hands of an experienced\n"
+"developer, they can be quite a handful for the first-time user, and it's not so\n"
+"rare that packages are shipped with working-but-broken autotools support. This\n"
+"article will cover some of the most common errors people make when using\n"
+"autotools and ways to achieve better results.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:44
+#, no-wrap
+msgid ""
+"Regardless of anyone's opinion about them, we currently have no valid\n"
+"alternative for autotools. Projects such as Scons are not as portable as\n"
+"autotools, and they don't embody enough knowledge to be useful yet. We have\n"
+"tons of automatic checks with autotools, and a lot of libraries come with an m4\n"
+"library with macros to check for their presence.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:52
+#, no-wrap
+msgid ""
+"The basic structure of an autotooled project is simple. Autoconf takes help of\n"
+"an <path>aclocal.m4</path> file (created by aclocal using the m4 libraries on\n"
+"its search path and <path>acinclude.m4</path> file) to parse the\n"
+"<path>configure.ac</path> file (formerly <path>configure.in</path>) and\n"
+"transform it into a \"configure\" script.  For every directory there should exist\n"
+"an <path>Makefile.am</path>, which automake uses to create Makefile.in\n"
+"templates.  The Makefile.in templates are then processed and transformed by the\n"
+"<path>configure</path> script into real Makefiles.  You can avoid avoid using\n"
+"automake and just write your own Makefile.in files, but this is quite complex,\n"
+"and you lose a few features of autotools.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:65
+#, no-wrap
+msgid ""
+"In a <path>configure.ac</path> file you can use macros you define yourself, the\n"
+"default ones provided by autoconf and aclocal, or external macros provided, for\n"
+"instance, by other packages. In such a case aclocal will create the\n"
+"<path>aclocal.m4</path> file adding the library files it finds on the system's\n"
+"library with the defined macros; this is a critical step to have a working\n"
+"autotooled project, as we'll see in a moment.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:74
+#, no-wrap
+msgid ""
+"A <path>Makefile.am</path> is mainly a declaration of intents: you can fill\n"
+"some targets variables with the name of the targets you want to build. These\n"
+"variables are structured in a format like placetoinstall_TYPEOFTARGET. The\n"
+"place is the location in a hierarchical Unix filesystem (bin, lib, include,\n"
+"...), a non-used keyword that can be defined with an arbitrary path (using the\n"
+"keyworddir variable), or the special keyword noinst that marks the targets that\n"
+"need not to be installed (for example private headers, or static libraries used\n"
+"during build). After naming the target, you can use the name (replacing dots\n"
+"with underscores) as the prefix for the variables that affects its build. In\n"
+"this way you can provide special CFLAGS, LDFLAGS, and LDADD variables used\n"
+"during the build of a single target, instead of changing them for all the\n"
+"targets. You can also use variables collected during configure phase, if you\n"
+"passed them to the AC_SUBST macro in <path>configure.ac</path>, so that they\n"
+"are replaced inside makefiles.  Also, though defining CFLAGS and LDFLAGS on a\n"
+"per-target basis seems useful, adding static flags in Makefile.am is a bad\n"
+"thing for portability, as you can't tell if the compiler you're using supports\n"
+"them, or if you really need them (-ldl put in LDFLAGS is a good example of a\n"
+"flag needed on Linux but not on FreeBSD); in such cases you should use\n"
+"<path>configure.ac</path> to add these flags.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:96
+#, no-wrap
+msgid ""
+"The most commonly used macros in configure.ac are AC_CHECK_HEADERS,\n"
+"AC_CHECK_FUNCS, and AC_CHECK_LIB, which test for the presence of, respectively,\n"
+"some header files, some library functions, and a given library (with a specific\n"
+"function in it). They are important for portability as they provides a way to\n"
+"check which headers are present and which are not (for example system headers\n"
+"that have different locations in different operating systems), and to check\n"
+"whether a function is present in the system library (asprintf() is missing in\n"
+"OpenBSD for example, while it's present on GNU C library and FreeBSD), and\n"
+"finally to check for the presence of some third-party library or to see if a\n"
+"specific link to a library is needed to get some functions (for example\n"
+"dlopen() function is in libdl library on GNU systems, while it's provided by\n"
+"the system's C library on FreeBSD).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:111
+#, no-wrap
+msgid ""
+"Along with testing for the presence or absence of functions or headers (and\n"
+"sometimes libraries) you usually need to change the code's path (for example to\n"
+"avoid the use of missing functions, or to define a drop-in replacement for\n"
+"them). Autoconf is commonly coupled with another tool, autoheader, which\n"
+"creates a <path>config.h.in</path> template, used by configure script to create\n"
+"a <path>config.h</path> header in which are defined a few preprocessor macros\n"
+"in form of HAVE_givenfunction or HAVE_givenheader_H which can be tested with\n"
+"#ifdef/#ifndef directives inside a C or C++ source file to change the code\n"
+"according to the features present.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:123
+#, no-wrap
+msgid ""
+"Here are some practices to keep in mind to help you use autotools to create the\n"
+"most portable code possible.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:128
+#, no-wrap
+msgid ""
+"<b>The config.h header file should be considered to be an internal header\n"
+"file</b>, so it should be used just by the single package in which it's\n"
+"created. You should avoid editing the <path>config.h.in</path> template to add\n"
+"your own code there, as this requires you to manually update it according to\n"
+"the <path>configure.ac</path> you're writing.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:136
+#, no-wrap
+msgid ""
+"Unfortunately a few projects, such as Net-SNMP, export this header file with\n"
+"other libraries' headers, which requires any projects that use their libraries\n"
+"to include them (or provide their own copy of the internal Net-SNMP\n"
+"structures). This is a bad thing, as the autotools structure of a library\n"
+"project should be invisible to software using it (which might not use autotools\n"
+"at all). Also, changes in autotools behavior are anything but rare, so you can\n"
+"have two identical checks with different results due to changes in the way they\n"
+"are executed. If you need to define your own wrappers or replacements in case\n"
+"something is not in the environment you're compiling for, you should do that in\n"
+"private headers that do not get installed (declared as noinst_HEADERS in\n"
+"<path>Makefile.am</path> files).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:150
+#, no-wrap
+msgid ""
+"<b>Always provide the m4 files you used</b>. As autotools have been in use for\n"
+"years, many packages (for example libraries) that can be reused by other\n"
+"programs provide an m4 library file in <path>/usr/share/aclocal</path> that\n"
+"makes it possible to check for their presence (for example using the -config\n"
+"scripts) with a simple macro call. These files are used by aclocal to create\n"
+"the <path>aclocal.m4</path> file, and they usually are present on the\n"
+"developers' systems where aclocal is executed to create the release, but when\n"
+"they are for optional dependencies, they can be missing on users' systems.\n"
+"While this is usually not a problem, because users rarely executes aclocal,\n"
+"it's a problem for source distributions, such as Gentoo, where sometimes you\n"
+"need to patch a Makefile.am or the <path>configure.ac</path> and then re-run\n"
+"autoconf without having all the optional dependencies installed (or having\n"
+"different versions, which can be incompatible or bugged, of the same m4 file).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:166
+#, no-wrap
+msgid ""
+"To avoid this problem, you should create an m4 subdirectory in your package's\n"
+"directory and then put there the m4 library files you are using. You must then\n"
+"call aclocal with aclocal -I m4 options to search in that directory before the\n"
+"system library. You can then choose whether to put that directory under\n"
+"revision control (CVS, SVN, or whatever else you are using) or just create it\n"
+"for the releases. The latter case is the bare minimum requirement for a\n"
+"package. It minimizes the amount of revision-controlled code and ensures that\n"
+"you're always using the latest m4 version, but has the drawback that anyone who\n"
+"checks out your repository won't be able to execute autoconf without having to\n"
+"look on a release tarball to take the m4 from (and that might not work, as you\n"
+"can have updated the configure.ac to suit a newer macro or added more\n"
+"dependencies). On the other hand, putting the m4 directory under revision\n"
+"control sometimes tempts the developers to change the macros to suit their\n"
+"needs. Although this seems logical, as the m4 files are under your revision\n"
+"control, it will upset many package maintainers, as sometimes new versions of\n"
+"m4 files fix bugs or support newer options and installation paths (for example\n"
+"multilib setups), and having the m4 files modified makes it impossible to just\n"
+"replace them with updated versions. It also mean that when you're going to\n"
+"update an m4 file you must redo the modification against the original.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:188
+#, no-wrap
+msgid ""
+"m4 files are always a problem to work with. They must replicate almost the same\n"
+"code from library to library (depending on the way you need to provide\n"
+"CFLAGS/LDFLAGS: with tests or with a -config script). To avoid this problem,\n"
+"the GNOME and FreeDesktop projects developed a tool called pkg-config, which\n"
+"provides both an executable binary and an m4 file to include in configure.ac\n"
+"files, and lets developers check for the presence of a given library (and/or\n"
+"package), provided that the package itself installed a pkg-config .pc data\n"
+"file. This approach simplifies the work of maintaining configure.ac scripts,\n"
+"and requires a lot less time to be processed during execution of configure\n"
+"script, as it uses the information provided by the installed package itself\n"
+"instead of just trying if it's present. On the other hand, this approach means\n"
+"that an error the developers make concerning a dependency can break the user\n"
+"program, as they just hardcode the compiler and linker flags in the data file\n"
+"and the configure script doesn't actually check whether the library works.\n"
+"Fortunately, this doesn't happen too often.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:206
+#, no-wrap
+msgid ""
+"To create the configure file, you need PKG_CHECK_MODULES, contained in the\n"
+"<path>pkg.m4</path> library. You should add that file to your m4 directory. If\n"
+"pkg-config dependency is mandatory (as the tool is run by the configure script)\n"
+"you can't be sure that the m4 file you are using is the same as one on users'\n"
+"systems, nor you can be sure that it does not include extra bugs, as it can be\n"
+"older than yours.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:215
+#, no-wrap
+msgid ""
+"<b>Always check for the libraries you're going to link to</b>, if you have them\n"
+"as mandatory dependencies. Usually autoconf macros or pkg-config data files\n"
+"define prerequisite libraries that you need to successfully link to your\n"
+"library.  Also, some functions that are in extra libraries in some systems\n"
+"(like dlopen() in libdl on Linux and Mac OS X) can be in the libc of another\n"
+"system (the same function is in libc on FreeBSD). In these cases you need to\n"
+"check whether the function can be found without linking to anything, or if you\n"
+"need to use a specific library (for example to avoid linking to a non-existent\n"
+"libdl that would fail where it's not needed).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:227
+#, no-wrap
+msgid ""
+"<b>Be careful with GNU extensions</b>. One of the things that makes portability\n"
+"a big pain is the use of extension functions, which are provided by GNU libc\n"
+"but aren't present on other C libraries like BSD's or uClibc. When you use such\n"
+"functions, you should always provide a \"drop-in replacement,\" a function that\n"
+"can provide the same functionality as the library function, maybe with less\n"
+"performance or security, which can be used when the extension function is not\n"
+"present on system's C library. Those functions must be protected by a #ifdef\n"
+"HAVE_function ... #endif block, so that they don't get duplicated when they are\n"
+"already present. Make sure that these functions are not exported by the library\n"
+"to the external users; they should be declared inside an internal header, to\n"
+"avoid breaking other libraries that may be doing similar tricks.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:241
+#, no-wrap
+msgid ""
+"<b>Avoid compiling OS-specific code when not needed</b>. When a program\n"
+"optionally supports specific libraries or specific operating systems, it's not\n"
+"rare to have entire source files that are specific to that code path. To avoid\n"
+"compiling them when they're not needed, use the AM_CONDITIONAL macro inside a\n"
+"configure.ac file. This automake macro (usable only if you're using automake to\n"
+"build the project) allows you to define if .. endif blocks inside a Makefile.am\n"
+"file, inside which you can set special variables. You can, for example, add a\n"
+"\"platformsrcs\" variable that you set to the right source file for the platform\n"
+"to build for, then use in a _SOURCES variable.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:253
+#, no-wrap
+msgid ""
+"However, there are two common errors developers make when using AM_CONDITIONAL.\n"
+"The first is the use of AM_CONDITIONAL in an already conditional branch (for\n"
+"example under an info or in a case switch), which leads to automake complaining\n"
+"about a conditional defined only conditionally (AM_CONDITIONAL must be called\n"
+"on global scope, out of every if block, so you must define a variable to\n"
+"contain the status of the conditions and then test against when calling the\n"
+"AM_CONDITIONAL). The other one is that you can't change the targets' variables\n"
+"directly, and you must define \"commodity\" variables, whose results empty out of\n"
+"the conditional, to add or remove source files and targets.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:265
+#, no-wrap
+msgid ""
+"Many projects, to avoid compiling code for specific code paths, add the entire\n"
+"files in #ifdef ... #endif preprocessor conditionals. While this usually works,\n"
+"it makes the code ugly and error-prone, as a single statement out of the\n"
+"conditional block can be compiled where the source file is not needed. It also\n"
+"misleads users sometimes, as the source files seem to be compiled in situations\n"
+"where they don't make sense.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:274
+#, no-wrap
+msgid ""
+"<b>Be smart in looking for operating system or hardware platform</b>. Sometimes\n"
+"you need to search for a specific operating system or hardware platform. The\n"
+"right way to do this depends on where you need to know this. If you must know\n"
+"it to enable extra tests on configure, or you must add extra targets on\n"
+"makefiles, you must do the check in configure.ac. On the other hand, if the\n"
+"difference must be known in a source file, for example to enable an optional\n"
+"asm-coded function, you should rely directly on the compiler/preprocessor, so\n"
+"you should use #ifdef directives with the default macros enabled on the target\n"
+"platform (for example __linux__, __i386__, _ARC_PPC, __sparc__, _FreeBSD_ and\n"
+"__APPLE__).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:287
+#, no-wrap
+msgid ""
+"<b>Don't run commands in configure.ac</b>. If you need to check for hardware or\n"
+"operating system in a configure.ac, you should avoid using the uname command,\n"
+"despite this being one of the most common way to do such a test. This is\n"
+"actually an error, as this breaks crosscompilation. Autotools supports\n"
+"crosscompile projects from one machine to another using hosts definitions:\n"
+"strings in the form \"hardware-vendor-os\" (actually, \"hardware-vendor-os-libc\"\n"
+"when GNU libc is used), such as i686-pc-linux-gnu and\n"
+"x86_64-unknown-freebsd5.4. CHOST is the host definition for the system you're\n"
+"compiling the software for, CBUILD is the host definition for the system you're\n"
+"compiling on; when CHOST and CBUILD differ, you're crosscompiling.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:300
+#, no-wrap
+msgid ""
+"In the examples above, the first host definition shows an x86-like system, with\n"
+"a pentium2-equivalent (or later) processor, running a Linux kernel with a GNU\n"
+"libc (usually this refers to a GNU/Linux system). The second refers to an AMD64\n"
+"system with a FreeBSD 5.4 operating system. (For a GNU/kFreeBSD system, which\n"
+"uses FreeBSD kernel and GNU libc, the host definition is\n"
+"hw-unknown-freebsd-gnu, while for a Gentoo/FreeBSD, using FreeBSD's kernel and\n"
+"libc, but with Gentoo framework, the host definition is hw-gentoo-freebsd5.4.)\n"
+"By using $host and $build variables inside a configure.ac script you can enable\n"
+"or disable specific features based on the operating system or on the hardware\n"
+"platform you're compiling to or on.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:313
+#, no-wrap
+msgid ""
+"<b>Don't abuse \"automagic\" dependencies</b>. One of the most useful features of\n"
+"autotools are the automatic checks for the presence of a library, which are\n"
+"often used to automatically enable support for extra dependencies and such.\n"
+"However, abusing this feature makes the build of a package a bit of a problem.\n"
+"While this is quite useful for first-time users, and although most of the\n"
+"projects having complex dependencies (such as multimedia programs like xine and\n"
+"VLC) use a plugin-based framework that allows them to avoid most of the\n"
+"breakages, \"automagic\" dependencies are a great pain for packagers, especially\n"
+"ones working on source-based distributions such as Gentoo and ports-like\n"
+"frameworks. When you build something with automagical dependencies you enable\n"
+"the functions supported by the libraries found on the system on which the\n"
+"configure script is run. This means that the output binaries might not work on\n"
+"a system that shares the same base packages but misses one extra library, for\n"
+"example. Also, you can't tell the exact dependencies of a package, as some\n"
+"might be optional and not be built when the libraries are not present.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:331
+#, no-wrap
+msgid ""
+"To avoid this, autoconf allows you to add --enable/--disable and\n"
+"--with/--without options to configure scripts. With such options you can\n"
+"forcefully enable or disable a specific option (such as the support for an\n"
+"extra library or for a specific feature), and leave the default to automatic\n"
+"tests.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:339
+#, no-wrap
+msgid ""
+"Unfortunately, many developers misunderstand the meaning of the two parameters\n"
+"of the functions used to add those options (AC_ARG_ENABLE and AC_ARG_WITH).\n"
+"They represent the code to execute when a parameter is passed and when one is\n"
+"not. Many developers mistakenly think that the two parameters define the code\n"
+"to execute when the feature is enabled and when is disabled. While this usually\n"
+"works when you pass a parameter just to change the default behavior, many\n"
+"source-based distributions pass parameters also to confirm the default\n"
+"behavior, which leads to errors (features explicitly requested missing). Being\n"
+"able to disable optional features if they don't add dependencies (think of OSS\n"
+"audio support on Linux) is always a good thing for users, who can avoid\n"
+"building extra code if they don't plan to use it, and prevents maintainers from\n"
+"doing dirty caching tricks to enable or disable features as their users\n"
+"request.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:355
+#, no-wrap
+msgid ""
+"While autotools were a big problem for both developers and maintainers because\n"
+"there are different incompatible versions that do not get along well together\n"
+"(since they install in the same places, with the same names) and which are used\n"
+"in different combinations, the use of autotools saves maintainers from doing\n"
+"all sorts of dirty tricks to compile software. If you look at ebuild from\n"
+"Gentoo's portage, the few that do not use autotools are the more complex ones,\n"
+"as they need to check variables on very different setups (we can or not have\n"
+"NPTL support; we can be on Linux, FreeBSD, or Mac OS X; we can be using GLIBC\n"
+"or another libc; and so on), while autotools usually take care of that on their\n"
+"own. It's also true that many patches applied by maintainers are to fix broken\n"
+"autotools script in upstream sources, but this is just a little problem\n"
+"compared to the chaos of using special build systems that don't work at all\n"
+"with little environmental changes.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/autotools-practices.xml:371
+#, no-wrap
+msgid ""
+"Autotools can be quite tricky for newcomers, but when you start using them on a\n"
+"daily basis you find it's a lot easier than having to deal with manual\n"
+"makefiles or other strange build tools such as imake or qmake, or even worse,\n"
+"special autotools-like build scripts that try to recognize the system they are\n"
+"building on. Autotools makes it simple to support new OSes and new hardware\n"
+"platforms, and saves maintainers and porters from having to learn how to\n"
+"custom-build a system to fix compilation. By carefully writing a script,\n"
+"developers can support new platforms without any changes at all.\n"
+msgstr ""

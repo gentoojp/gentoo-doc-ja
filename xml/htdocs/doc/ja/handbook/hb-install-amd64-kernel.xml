@@ -1,0 +1,361 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-amd64-kernel.xml,v 1.4 2006/02/17 18:41:59 idani Exp $ -->
+
+<sections>
+
+<version>2.13</version>
+<date>2006-02-15</date>
+<!-- Original revision: 1.37 -->
+
+<section>
+<title>タイムゾーン</title>
+<body>
+
+<p>
+最初にタイムゾーンを選択する必要があります。そうするとシステムがどの地域に置かれているかがわかります。
+自分のタイムゾーンを<path>/usr/share/zoneinfo</path>から探して、<path>/etc/localtime</path>にコピーしてください。
+<path>/usr/share/zoneinfo/Etc/GMT*</path>タイムゾーンは、名前から予測されるゾーンを指し示してはいません。
+<path>GMT-8</path>は、事実GMT+8です。
+</p>
+
+<pre caption="タイムゾーン情報を設定する">
+# <i>ls /usr/share/zoneinfo</i>
+<comment>(GMTを使うとして)</comment>
+# <i>cp /usr/share/zoneinfo/GMT /etc/localtime</i>
+<comment>(訳注：JST(日本時間)を使う例)</comment>
+# <i>cp /usr/share/zoneinfo/Japan /etc/localtime</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>ソースをインストールする</title>
+<subsection>
+<title>カーネルを選択する</title>
+<body>
+
+<p>
+全ディストリビューションの構成の核をなすのは、Linuxカーネルです。
+カーネルはユーザープログラムとシステムハードウェアの間の階層です。
+Gentooではユーザーに選択できる色々なカーネルソースを提供しています。
+説明付の全リストは<uri link="/doc/en/gentoo-kernel.xml">Gentoo Kernel Guide</uri><uri link="/doc/ja/gentoo-kernel.xml">(日本語訳)</uri>で見られます。
+</p>
+
+<p>
+AMD64ベースのシステムでは、<c>gentoo-sources</c>(amd64特有の安定化、パフォーマンス、ハードウェアサポートパッチがあるカーネル 2.6ソース)があります。
+</p>
+
+<p>
+カーネルソースを選んで、<c>emerge</c>を使ってインストールしてください。
+この時点での、x11-orgや他の依存パッケージのインストールをさけるため、<c>USE="-doc"</c>は必要です。
+<c>USE="symlink"</c>は、新規のインストールには必要ありません。
+しかし、<path>/usr/src/linux</path>のきちんとした生成を確実にします。
+</p>
+
+<pre caption="カーネルソースをインストールする">
+# <i>USE="-doc symlink" emerge gentoo-sources</i>
+</pre>
+
+<p>
+<path>/usr/src</path>の中を見ると、選択したカーネルソースを指す<path>linux</path>と呼ばれるシンボリックリンクが見られるでしょう。
+この場合は、カーネルソースは<c>gentoo-sources-2.6.12-r10</c>を指し示しています。
+あなたのバージョンは異なることを覚えておいてください。
+</p>
+
+<pre caption="カーネルソースへのシンボリックリンクを見る">
+# <i>ls -l /usr/src/linux</i>
+ lrwxrwxrwx    1 root    root        12 Oct 13 11:04 /usr/src/linux -&gt; linux-2.6.12-gentoo-r10
+</pre>
+
+<p>
+さあカーネルソースを設定して、コンパイルするときが来ました。この作業には<c>genkernel</c>が使えます。
+このツールはインストールCDで使われている一般的なカーネルを構築します。最初に"手動設定"を説明します。
+これがあなたの環境を最適化する一番良い方法ですから。
+</p>
+
+<p>
+もし自分のカーネルを手動で設定したいなら、すぐに<uri link="#manual">一般的な選択: 手動設定</uri>へ進んでください。
+もし<c>genkernel</c>を使いたいなら、代わりに<uri link="#genkernel">もう一つの選択: genkernelを使う</uri>を読んでください。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="manual">
+<title>一般的な選択: 手動設定</title>
+<subsection>
+<title>はじめに</title>
+<body>
+
+<p>
+カーネルの手動設定はLinuxユーザがこれまでに実行しなければならない手続きの中で最も難しい手続きとしばしば見なされています。
+何もそれほど真実ではありません。2、3のカーネル設定の後では、難しかったことすら思い出せないでしょう。;)
+</p>
+
+<p>
+しかし、一つだけは<e>本当</e>です。手動でカーネルの設定を始めるときに自分のシステムを判ってなければなりません。
+ほとんどの情報は<c>lspci</c>を含むpciutilsをemergeすること(<c>emerge pciutils</c>)によって集めることが出来ます。
+これでchrootされた環境で、<c>lspci</c>を使用することが出来ます。
+<c>lspci</c>がはき出す<c>pcilib</c>の警告(たとえば pcilib: cannot open /sys/bus/pci/devices)は、安全に無視することが出来ます。
+別に<e>non-chrooted</e>で<c>lspci</c>を走らせることもできます。 結果は同じです。
+インストールCDではどんなカーネルモジュールを使っているかを見るために<c>lsmod</c>を実行することもできます(これはどんな機能が利用可能かの良いヒントを与えてくれるかも知れません)。
+</p>
+
+<p>
+それではカーネルソースのディレクトリに行って、<c>make menuconfig</c>を実行しましょう。これでncursesベースの設定メニューが立ち上がります。
+</p>
+
+<pre caption="menuconfigを実行する">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+いくつかの設定項目が出てきます。
+最初に有効にしなければならないいくつかのオプションをリストアップしましょう
+(そうしなければGentooは機能しないか、特別な調整無しではうまく機能しないでしょう)。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>必要なオプションを有効にする</title>
+<body>
+
+<p>
+まず最初に開発中や試験的なコード/ドライバーの使用を有効にします。必ず有効にしてください。
+そうしないといくつかのとても重要なコード/ドライバーが表示されません。
+</p>
+
+<pre caption="試験的なコード/ドライバを選択する">
+Code maturity level options ---&gt;
+  [*] Prompt for development and/or incomplete code/drivers
+</pre>
+
+<p>
+さて、<c>General Setup</c>を選択し、udev使用のための<c>ホットプラグ可能デバイスのサポート</c>を有効にします。
+これはAMD64はカーネル2.6のみがサポートしているからです。
+</p>
+
+<pre caption="一般的なサポート">
+General setup ---&gt;
+ [*] Support for hot-pluggable devices
+</pre>
+
+<p>
+次に正確なプロセッサの種類を選択しましょう。
+</p>
+
+<pre caption="プロセッサの種類と機能の選択">
+ Processor type and features  --->
+  Processor family (AMD-Opteron/Athlon64)  --->
+  ( ) AMD-Opteron/Athlon64
+  ( ) Intel EM64T
+  ( ) Generic-x86-64"
+</pre>
+
+<p>
+次に<c>File Systems</c>に行き、使用するファイルシステムの項目を選択してください。
+それらをモジュールとしてコンパイル<e>しないで</e>ください。
+さもないとGentooシステムはパーティションをマウントすることができないでしょう。
+<c>Virtual memory</c>、 <c>/proc file system</c>も選択してください。
+</p>
+
+<pre caption="必要なファイルシステムを選択する">
+File systems ---&gt;
+  Pseudo Filesystems ---&gt;
+    [*] /proc file system support
+    [*] Virtual memory file system support (former shm fs)
+
+<comment>(下記のオプションで、システムに必要なものを1つ以上選択 訳注:ルートパーティションで選択したファイルシステムは必ず有効にする必要があります)</comment>
+  &lt;*&gt; Reiserfs support
+  &lt;*&gt; Ext3 journalling file system support
+  &lt;*&gt; JFS filesystem support
+  &lt;*&gt; Second extended fs support
+  &lt;*&gt; XFS filesystem support
+</pre>
+
+<p>
+もしインターネット接続にPPPoEを使っていたり、モデムでダイアルアップしているなら、カーネル内の以下のオプションが必要になります。
+</p>
+
+<pre caption="PPPoEに必要なドライバーを選択する">
+Device Drivers ---&gt;
+  Networking Support ---&gt;
+    &lt;*&gt; PPP (point-to-point protocol) support
+    &lt;*&gt;   PPP support for async serial ports
+    &lt;*&gt;   PPP support for sync tty ports
+</pre>
+
+<p>
+2つの圧縮オプションは差し支えは無いけれども、絶対に必要でもありません。
+<c>PPP over Ethernet</c>オプションもそうです。
+これはカーネルモードのPPPoEをするために設定されたときだけに<c>rp-pppoe</c>に使用されるものです。
+</p>
+
+<p>
+もしPPPoEを使用する必要があるなら、カーネルにイーサネットカード用のサポートを含めることを忘れないでください。
+</p>
+
+<p>
+もしマルチCPUのOpteronやマルチコア(たとえばAMD64 X2)システムがあるなら、"Symmetric multi-processing support"を有効にしなければなりません。
+</p>
+
+<pre caption="SMPサポートを有効にする">
+Processor type and features ---&gt;
+  [*] Symmetric multi-processing support
+</pre>
+
+<p>
+もしUSBの入力デバイス(キーボードやマウスなど)を使用するなら、以下も有効にするのを忘れないでください。
+</p>
+
+<pre caption="入力デバイスのUSB Supportを有効にする">
+Device Drivers ---&gt;
+  USB Support ---&gt;
+    &lt;*&gt;   USB Human Interface Device (full HID) support
+  [*] HID input layer support
+</pre>
+
+<p>
+カーネルの設定が終れば、<uri link="#compiling">コンパイルとインストール</uri>に進んでください。
+</p>
+
+</body>
+</subsection>
+<subsection id="compiling">
+<title>コンパイルとインストール</title>
+<body>
+
+<p>
+これでカーネルの設定がされたので、コンパイルとインストールするときが来ました。
+設定を終了して、コンパイルの過程を始めてください。
+</p>
+
+<pre caption="カーネルをコンパイルする">
+# <i>make &amp;&amp; make modules_install</i>
+</pre>
+
+<p>
+カーネルのコンパイルが終れば、カーネルイメージを<path>/boot</path>にコピーしてください。
+あなたが適切だと思うお好みの名前を、あなたのカーネルに使用してください。
+そして、ブートローダを設定するときに、その名前が後で必要になりますから覚えておいてください。
+<path>&lt;kernel-version&gt;</path>を、あなたのカーネルの名前とバージョンに置き換えるの覚えておいてください。
+</p>
+
+<pre caption="カーネルをインストールする">
+# <i>cp arch/x86_64/boot/bzImage /boot/kernel-2.6.12-gentoo-r10</i>
+</pre>
+
+<p>
+それでは<uri link="#kernel_modules">カーネルモジュールの設定</uri>に進みましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="genkernel">
+<title>もう一つの選択: genkernelを使う</title>
+<body>
+
+<p>
+もしこのセクションを読んでいるなら、自分のカーネル設定に<c>genkernel</c>スクリプトを使うのを選んだということです。
+</p>
+
+<p>
+さてカーネルのソースツリーはインストールされました。
+自動的にカーネルを構築するのに<c>genkernel</c>スクリプトを使ってカーネルをコンパイルするときがやって来ました。
+<c>genkernel</c>はインストールCDのカーネルが設定されるのとほとんど同じ方法でカーネル設定するように動作します。
+カーネルを構築するのに<c>genkernel</c>を使うときは、通常はシステムはインストールCDがするように起動時にすべてのハードウェアを検出します。
+genkernelではどんな手動のカーネル設定も要求されないので、カーネルをコンパイルするのが苦手だなあという人には理想的な解決策です。
+</p>
+
+<p>
+それではgenkernelの使い方を見てみましょう。始めにgenkernelのebuildをemergeします。
+</p>
+
+<pre caption="genkernelをemergeする">
+# <i>emerge genkernel</i>
+</pre>
+
+<p>
+さあ<c>genkernel all</c>を実行して、カーネルソースをコンパイルしましょう。
+しかし<c>genkernel</c>はほとんどすべてのハードウェアサポートを含むカーネルをコンパイルするので、コンパイルが終了するまでにはかなりの時間を要することを覚えておいてください。
+</p>
+
+<p>
+もし、ブートパーティションのファイルシステムにext2かext3以外(訳注:ReiserFS、JFS、XFSなど)を使用する場合は、<c>genkernel --menuconfig all</c>を使って手動でカーネルを設定し、カーネルの<e>中</e>にそのファイルシステムを組み込む必要があることに気を付けてください(つまり、モジュールとしてでは<e>無く</e>)。</p>
+
+<pre caption="genkernelを実行する">
+# <i>genkernel all</i>
+</pre>
+
+<p>
+一旦<c>genkernel</c>が完了すると、カーネル、すべてのモジュールそして<e>イニシャルルートディスク</e>(initrd)が作成されます。
+このハンドブックで後程ブートローダを設定するときにカーネルとinitrdを使います。
+ブートローダの設定ファイルを書くときに必要になるので、カーネルとinitrdの名前を書き留めておきましょう。
+"実際"のシステムが稼働し始める前に、(インストールCDでのように)initrdは起動後すぐにハードウェアの自動検出を始めます。
+</p>
+
+<pre caption="作成されたカーネルイメージとinitrdの名前を確認する">
+# <i>ls /boot/kernel* /boot/initramfs*</i>
+</pre>
+
+<p>
+さあ、システムがよりインストールCDのようにするために、もう1つのステップを実行しましょう。
+<c>coldplug</c>をemergeしましょう。initrdはシステムを起動するのに必要なハードウェアを検出しますが、<c>coldplug</c>は他のすべてのハードウェアを検出します。
+<c>coldplug</c>をemergeして有効にするには、以下のように入力してください。
+</p>
+
+<pre caption="coldplugをemergeして有効にする">
+# <i>emerge coldplug</i>
+# <i>rc-update add coldplug boot</i>
+</pre>
+
+</body>
+</section>
+<section id="kernel_modules">
+<title>カーネルモジュールの設定</title>
+<subsection>
+<title>モジュールの設定</title>
+<body>
+
+<p>
+自動的にロードさせたいモジュールを<path>/etc/modules.autoload.d/kernel-2.6</path>に記入してください。
+もし望むなら、モジュールに追加オプションを加えることもできます。
+</p>
+
+<p>
+すべての利用可能なモジュールを見るには、次の<c>find</c>コマンドを実行してください。
+"&lt;kernel version&gt;"に今コンパイルしたカーネルのバージョンを入れてください。
+</p>
+
+<pre caption="すべての利用可能なモジュールを見る">
+# <i>find /lib/modules/&lt;kernel version&gt;/ -type f -iname '*.o' -or -iname '*.ko'</i>
+</pre>
+
+<p>
+例えば、<c>3c59x.o</c>モジュールを自動でロードするなら、<path>kernel-2.6</path>ファイルを開いて、モジュール名をそこに記入してください。
+</p>
+
+<pre caption="/etc/modules.autoload.d/kernel-2.6を編集する">
+# <i>nano -w /etc/modules.autoload.d/kernel-2.6</i>
+</pre>
+
+<pre caption="/etc/modules.autoload.d/kernel-2.6">
+3c59x
+</pre>
+
+<p>
+<uri link="?part=1&amp;chap=8">システムの設定</uri>に進んで、インストールを続けてください。
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

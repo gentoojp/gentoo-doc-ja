@@ -1,0 +1,211 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/conky-howto.xml,v 1.4 2011/09/19 11:11:19 shindo Exp $ -->
+<guide link="/doc/ja/conky-howto.xml" lang="ja">
+<title>Gentoo Linux Conky Howto</title>
+
+<author title="Author">
+  <mail link="admin@sdesign.us">Bill Woodford</mail>
+</author>
+<author title="Editor">
+  <mail link="brenden@rty.ca">Brenden Matthews</mail>
+</author>
+<author title="翻訳">
+  <mail link="murakami.taku@gmail.com">Taku Murakami</mail>
+</author>
+
+
+<abstract>
+このドキュメントでは、
+Conkyというシステムモニタツールのインストール方法と設定方法を説明しています。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.1</version>
+<date>2006-07-07</date>
+
+<!-- Original revision: 1.2 -->
+
+<chapter>
+<title>バックグラウンド</title>
+<section>
+<title>Conky入門</title>
+<body>
+
+<p>
+かたわらにはGentooマシンがあり、
+コンピュータの現状を様々な角度からモニタするコマンドも30種類覚えました。
+ここから何をしますか?全てのタスクを実行する際に使用されるリソース同様、
+システムパフォーマンスをモニタしたり、コンピュータの現状を把握するのに、
+より簡単な方法はないものでしょうか?
+これには、Conkyのようなシステムモニタツールが最適です。
+</p>
+
+</body>
+</section>
+<section>
+<title>何をするか</title>
+<body>
+
+<p>
+topのような他のシステムモニタと違い、ConkyはXセッション上のウィンドウとして、
+つまりルートウィンドウに終端して動作します(Conkyには、標準出力として情報を表示するオプションもありますが、
+ここでは取り上げません)。Conkyは、テキスト、プログレスバー、
+そしてグラフの両方を使用して収集された情報を表示します。
+また、topと異なりフォーマット方法はユーザで全て設定可能です。
+システム自体のモニタに加え、いくつかの音楽プレイヤー(XMMS、BMPx、
+Music Player Daemon、そしてAudacious Media Player等)、
+メールスプールにある新しいメッセージ数、まだまだたくさんの情報をConkyから入手できます。
+欲しい機能がConkyにまだなければ、集めたい情報を入手するスクリプトを書くのは簡単なことです。
+既に対応済みですが、例えばRSSフィードやPOP3 e-mailメッセージカウント、地域の天気、
+BOINCのステータス、Portageのステータスがこれにあたります。
+</p>
+
+<note>
+訳注:Xウィンドウシステムでは、全てのウィンドウが親ウィンドウ内部に含まれます。
+これにより、ウィンドウは階層構造を形成することになります。
+ルートウィンドウとは、この階層構造における一番底にあたります。
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Conkyをインストールする</title>
+<section>
+<title>ベースインストール</title>
+<body>
+
+<p>
+Gentooではebuildが提供されており、Conkyを手早く簡単にインストールできます。
+但し、USEフラグには要注意です。きっとX11サポート(<c>X</c>)は必要なUSEフラグになるでしょう。
+また、必要な音楽プレーヤ(MDP以外のもの)用のUSEフラグを選択して下さい。
+XMMS(<c>xmms</c>)、Audacious(<c>audacious</c>)、
+xmms-infopipeプラグイン(<c>infopipe</c>)経由のXMMSサポートがこれにあたります。もし、
+TCPのポートモニタを行いたいのであれば、<c>ipv6</c>USEフラグを必ず無効にするようにして下さい。
+これにより、IPv4システムのみポートモニタの対象になります。
+</p>
+
+<p>
+上記に加え、
+<c>truetype</c>USEフラグのおかげで、Xftを使用した状態でTrueTypeフォントをサポートしてコンパイルできます。
+この機能も、多くのユーザにとって必要となるでしょう。
+</p>
+
+<pre caption="/etc/portage/package.use">
+<comment>(以下は、例として使用して下さい。)</comment>
+# <i>echo app-admin/conky truetype audacious -xmms -infopipe -ipv6 >> /etc/portage/package.use</i>
+</pre>
+
+<p>
+USEフラグを適切にセットアップすれば、Conkyをインストールする時がきました。
+</p>
+
+<pre caption="Conkyのインストール">
+# <i>emerge -av conky</i>
+</pre>
+
+<p>
+ターミナルから<c>conky</c>コマンドを実行することで、Conkyの外観がどのようなものかテストできます。
+これにより、Conkyの外観がどのようなものか、またそれをどのように変更、追加、削除したいか、
+その参考になるでしょう。
+</p>
+
+<pre caption="初めてのConky実行">
+$ <i>conky</i>
+</pre>
+
+<note>
+Conkyでは、
+Xサーバで画面のちらつきが無いようにDouble Buffer Extension(DBE)をサポートする必要があります。
+なぜなら、DBEが未サポートの場合だとウィンドウを十分な速度で書き換えできないためです。
+これは、<path>/etc/X11/xorg.conf</path>の<b>Section "Module"</b>で、
+<c>Load "dbe"</c>の行を追加することで有効になります。
+</note>
+
+<p>
+Conkyの外観がわかれば、設定に進めます!
+</p>
+
+</body>
+</section>
+<section>
+<title>Conkyを設定する</title>
+<body>
+
+<p>
+Conkyは、
+デフォルトでユーザのホームディレクトリにある<path>~/.conkyrc</path>を探します。
+このファイルは、全ての設定オプション、スタティックテキスト、
+ユーザに表示されるデータを制御するカラーや他の変数を含みます。また、
+Conkyには素晴らしいサンプル設定が付属しており、
+それは<path>/usr/share/doc/&lt;conky-version&gt;/Conkyrc.sample.gz</path>に置かれています。
+&lt;conky-version&gt;をインストールした特定のバージョンに必ず置き換えて下さい。
+</p>
+
+<pre caption="サンプルの設定ファイルをホームディレクトリにコピー">
+<comment>(<b>1.4.0-r1</b>をConkyのバージョン番号と置き換えて下さい。)</comment>
+$ <i>zcat /usr/share/doc/conky-1.4.0-r1/conkyrc.sample.gz >> ~/.conkyrc</i>
+</pre>
+
+<p>
+それでは、サンプルの設定をお好みのテキストエディタで開きます。
+設定ファイルが、2つのセクションから成ることにお気づきかもしれません。
+ファイルにおける最初のセクションはプログラム設定オプションを含み、動作を制御します。
+これは、
+<c>update_interval</c> -- どのくらいの頻度でConkyがスクリーンに情報をアップデートするか -- のようなものを含みます。
+2番目のセクションは、スクリーンにレンダリングされる実際のテキスト、グラフ、変数を含みます。
+これは、例えばシステム使用時間(<c>$uptime</c>)、CPU使用率(<c>$cpu</c>)、
+そして表示してほしい他のあらゆるものを含みます。最初のセクションはファイルの先頭から始まり、
+2番目のセクションは<c>TEXT</c>で終わるライン下の全ての行で構成されます。
+ファイルにおけるコメントは<c>#</c>で始まりますが、
+2番目のセクションでは含まれる行が例えコメントアウトされても、
+テキストはレンダリングされるということは覚えておいて下さい。
+</p>
+
+<p>
+全ての利用可能な設定オプションと変数のリストに関しては、
+<uri>http://conky.sourceforge.net/config_settings.html</uri>と<uri>http://conky.sourceforge.net/variables.html</uri>にあります。
+上記に加え、サンプル設定とスクリプトの付属した素晴らしいスクリーンショットが、
+<uri>http://conky.sourceforge.net/screenshots.html</uri>にいくつかあります。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Conkyを拡張する</title>
+<section>
+<title>ビルドイン変数を超えて</title>
+<body>
+
+<p>
+ここまでたどりついてしまったということは、Conkyには含まれていなさそうな追加変数に関して、
+Conkyのドキュメントにザッと目を通して...。ついてます!
+Conkyでは、正にこの理由によりいくつかの変数が提供されています。
+<c>$exec</c>は、Conkyがアップデートされる毎にコマンドを実行します。また、
+<c>$execi</c>は指定された間隔でコマンドを実行し、
+<c>$texeci</c>は自身のスレッドにおいて指定された間隔でコマンドを実行します。
+</p>
+
+<pre caption="スクリプト例">
+<i>${exec grep 'sudo' /var/log/messages | tail -n 4}</i>
+<i>${execi 30 ~/scripts/emerge-status.sh</i>
+<i>${texeci 600 ~/scripts/gmail.pl}</i>
+</pre>
+
+<note>
+コマンドシェル上から実行されるコマンドならどんなものでも上記変数で動作しますが、
+コマンドは終了しなければいけないということは覚えておいてください。これは、
+<c>tail -f</c>のような実行され続けるコマンドでは正常に動作<e>しない</e>ことを意味します。
+</note>
+
+</body>
+</section>
+</chapter>
+</guide>

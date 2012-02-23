@@ -1,0 +1,301 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-portage-configuration.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.3</version>
+<date>October 24, 2004</date>
+
+<section>
+<title>Portage Configuration</title>
+<subsection>
+<body>
+
+<p>
+As noted previously, Portage is configurable through many variables which 
+you should define in <path>/etc/make.conf</path>. Please refer to the
+<path>make.conf</path> man page for more and complete information:
+</p>
+
+<pre caption="Reading the make.conf man page">
+$ <i>man make.conf</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Build-specific Options</title>
+<subsection>
+<title>Configure and Compiler Options</title>
+<body>
+
+<p>
+When Portage builds applications, it passes the contents of the following
+variables to the compiler and configure script:
+</p>
+
+<ul>
+  <li>
+    CFLAGS &amp; CXXFLAGS define the desired compiler flags for C and C++
+    compiling.
+  </li>
+  <li>
+    CHOST defines the build host information for the application's configure 
+    script
+  </li>
+  <li>
+    MAKEOPTS is passed to the <c>make</c> command and is usually set to define
+    the amount of parallelism used during the compilation. More information
+    about the make options can be found in the make man page.
+  </li>
+</ul>
+
+<p>
+The USE variable is also used during configure and compilations but has been
+explained in great detail in previous chapters.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Merge Options</title>
+<body>
+
+<p>
+When Portage has merged a newer version of a certain software title, it will
+remove the obsoleted files of the older version from your system. Portage gives
+the user a 5 second delay before unmerging the older version. These 5 seconds
+are defined by the CLEAN_DELAY variable.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Configuration File Protection</title>
+<subsection>
+<title>Portage's Protected Locations</title>
+<body>
+
+<p>
+Portage overwrites files provided by newer versions of a software title if the
+files aren't stored in a <e>protected</e> location. These protected locations
+are defined by the CONFIG_PROTECT variable and are generally configuration file
+locations. The directory listing is space-delimited.
+</p>
+
+<p>
+A file that would be written in such a protected location is renamed and the
+user is warned about the presence of a newer version of the (presumable) 
+configuration file.
+</p>
+
+<p>
+You can find out about the current CONFIG_PROTECT setting from the <c>emerge
+info</c> output:
+</p>
+
+<pre caption="Getting the CONFIG_PROTECT setting">
+$ <i>emerge info | grep 'CONFIG_PROTECT='</i>
+</pre>
+
+<p>
+More information about Portage's Configuration File Protection is available
+through <c>emerge</c>:
+</p>
+
+<pre caption="More information about Configuration File Protection">
+$ <i>emerge --help config</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Excluding Directories</title>
+<body>
+
+<p>
+To 'unprotect' certain subdirectories of protected locations you can use the
+CONFIG_PROTECT_MASK variable.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Download Options</title>
+<subsection>
+<title>Server Locations</title>
+<body>
+
+<p>
+When the requested information or data is not available on your system, Portage
+will retrieve it from the Internet. The server locations for the various
+information and data channels are defined by the following variables:
+</p>
+
+<ul>
+  <li>
+    GENTOO_MIRRORS defines a list of server locations which
+    contain source code (distfiles)
+  </li>
+  <li>
+    PORTAGE_BINHOST defines a particular server location containing prebuilt
+    packages for your system
+  </li>
+</ul>
+
+<p>
+A third setting involves the location of the rsync server which you use when you
+update your Portage tree:
+</p>
+
+<ul>
+  <li>
+    SYNC defines a particular server which Portage uses to fetch the
+    Portage tree from
+  </li>
+</ul>
+
+<p>
+The GENTOO_MIRRORS and SYNC variables can be set automatically through the
+<c>mirrorselect</c> application. You need to <c>emerge mirrorselect</c> first
+before you can use it. For more information, see mirrorselect's online
+help:
+</p>
+
+<pre caption="More information about mirrorselect">
+# <i>mirrorselect --help</i>
+</pre>
+
+<p>
+If your environment requires you to use a proxy server, you can use the
+HTTP_PROXY, FTP_PROXY and RSYNC_PROXY variables to declare a proxy server. 
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Fetch Commands</title>
+<body>
+
+<p>
+When Portage needs to fetch source code, it uses <c>wget</c> by default. You
+can change this through the FETCHCOMMAND variable. 
+</p>
+
+<p>
+Portage is able to resume partially downloaded source code. It uses <c>wget</c>
+by default, but this can be altered through the RESUMECOMMAND variable. 
+</p>
+
+<p>
+Make sure that your FETCHCOMMAND and RESUMECOMMAND stores the source code in the
+correct location. Inside the variables you should use \${URI} and \${DISTDIR} to
+point to the source code location and distfiles location respectively.
+</p>
+
+<p>
+You can also define protocol-specific handlers with FETCHCOMMAND_HTTP,
+FETCHCOMMAND_FTP, RESUMECOMMAND_HTTP, RESUMECOMMAND_FTP, and so on.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Rsync Settings</title>
+<body>
+
+<p>
+You cannot alter the rsync command used by Portage to update the Portage tree,
+but you can set some variables related to the rsync command:
+</p>
+
+<ul>
+  <li>
+    RSYNC_EXCLUDEFROM points to a file listing the packages and/or categories
+    rsync should ignore during the update process
+  </li>
+  <li>
+    RSYNC_RETRIES defines how many times rsync should try connecting to the
+    mirror pointed to by the SYNC variable before bailing out. This variable
+    defaults to 3.
+  </li>
+  <li>
+    RSYNC_TIMEOUT defines the amount of seconds an rsync connection can idle
+    before rsync sees the connection as timed-out. This variable defaults to 180
+    but dialup users probably want to set this to 300 or higher.
+  </li>
+</ul>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Gentoo Configuration</title>
+<subsection>
+<title>Branch Selection</title>
+<body>
+
+<p>
+You can change your default branch with the ACCEPT_KEYWORDS variable. It
+defaults to your architecture's stable branch. More information on Gentoo's
+branches can be found in the next chapter.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Portage Features</title>
+<body>
+
+<p>
+You can activate certain Portage features through the FEATURES variable. The
+Portage Features have been discussed in previous chapters, such as <uri 
+link="?part=2&amp;chap=3">Portage Features</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Portage Behaviour</title>
+<subsection>
+<title>Resource Management</title>
+<body>
+
+<p>
+With the PORTAGE_NICENESS variable you can augment or reduce the nice value
+Portage runs with. The PORTAGE_NICENESS value is <e>added</e> to the current
+nice value.
+</p>
+
+<p>
+For more information about nice values, see the nice man page:
+</p>
+
+<pre caption="More information about nice">
+$ <i>man nice</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Output Behaviour</title>
+<body>
+
+<p>
+The NOCOLOR, which defaults to "false", defines if Portage should disable the
+use of coloured output.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

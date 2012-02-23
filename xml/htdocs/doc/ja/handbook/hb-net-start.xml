@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-net-start.xml,v 1.7 2011/09/06 02:48:56 naota Exp $ -->
+
+<!-- Original revision: 1.10 -->
+<!-- Translator: igarashi -->
+
+<sections>
+
+<abstract>
+手早くネットワークインターフェースを起動し、多くの一般的な環境で稼働させるためのガイドです。
+</abstract>
+
+<version>9</version>
+<date>2011-08-13</date>
+
+<section>
+<title>はじめに</title>
+<body>
+
+<note>
+この文書は、読者がカーネルと使用しているハードウェアに対するモジュールを正確に設定してあることと、ハードウェアのインターフェース名を把握していることを想定しています。
+さらに、<c>eth0</c>、または<c>eth1</c>や<c>wlan0</c>やその他を設定している最中であることも想定しています。
+</note>
+
+<p>
+ネットワークカードの設定を始めるために、GentooのRCシステムにその旨を示す必要があります。
+これは、<path>/etc/init.d</path>の下に<path>net.lo</path>から<path>net.eth0</path>へのシンボリックリンクを作成することで行います。
+</p>
+
+<pre caption="net.loからnet.eth0にシンボリックリンクする">
+# <i>cd /etc/init.d</i>
+# <i>ln -s net.lo net.eth0</i>
+</pre>
+
+<p>
+こうすることでGentooのRCシステムは、そのインターフェースについて情報を得ることができます。
+さらに新しいインターフェースの設定方法もわからなければなりません。
+すべてのネットワークインターフェースが、<path>/etc/conf.d/net</path>で設定されます。
+以下はDHCPの場合と固定アドレスの場合の例です。
+</p>
+
+<pre caption="/etc/conf.d/netの例">
+<comment># DHCPの例</comment>
+config_eth0="dhcp"
+
+<comment># CIDR表記を使用した固定IPの例</comment>
+config_eth0="192.168.0.7/24"
+routes_eth0="default via 192.168.0.1"
+
+<comment># ネットマスク表記を使用した固定IPの例</comment>
+config_eth0="192.168.0.7 netmask 255.255.255.0"
+routes_eth0="default via 192.168.0.1"
+</pre>
+
+<note>
+インターフェースの設定を指定しない場合、DHCPであると想定されます。
+</note>
+
+<note>
+CIDRは、Classless InterDomain Routingの略です。
+もともと、IPv4アドレスはA、B、Cにクラス分けされていました。
+初期のクラス分けの仕組みには、インターネットの今のような大規模な大衆化が想定されておらず、新規のユニークアドレスを使い果たす恐れがあります。
+CIDRは、一つのアドレスが複数のIPアドレスを指すことが可能なアドレス割当て体系です。
+CIDRのIPアドレスは、例えば、192.168.0.0/16のように、スラッシュの後に続く数字があることを除いて普通のIPアドレスのように見えます。
+CIDRは、<uri link="http://tools.ietf.org/html/rfc1519">RFC 1519</uri>に記述されています。
+</note>
+
+<p>
+インターフェースを設定したら、次のコマンドを使用して開始および停止することができます。
+</p>
+
+<pre caption="ネットワークスクリプトの開始と停止">
+# <i>/etc/init.d/net.eth0 start</i>
+# <i>/etc/init.d/net.eth0 stop</i>
+</pre>
+
+<impo>
+ネットワーク接続に関する問題を解決するときは、<path>/var/log/rc.log</path>を見てみましょう。
+<path>/etc/rc.conf</path>内で<c>rc_logger="NO"</c>と設定していないのであれば、
+上記のログファイルにブート時の情報が記録されています。
+</impo>
+
+<p>
+ネットワークインターフェースの開始と停止に成功したら、Gentooの起動時に開始したいと思うでしょう。
+ここにそれをする方法があります。
+最後の行の"rc"コマンドは、現在のrunlevelでまだ開始されていないスクリプトを開始するためにGentooに指示します。
+</p>
+
+<pre caption="起動時にネットワークインターフェースを設定する">
+# <i>rc-update add net.eth0 default</i>
+# <i>rc</i>
+</pre>
+
+</body>
+</section>
+
+</sections>

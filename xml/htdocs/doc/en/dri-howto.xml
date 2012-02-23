@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/dri-howto.xml,v 1.49 2011/09/11 08:43:18 swift Exp $ -->
+
+<guide>
+<title>Hardware 3D Acceleration Guide</title>
+
+<author title="Author">
+  <mail link="dberkholz"/>
+</author>
+<author title="Editor">
+  <mail link="peesh"/>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This document is a guide to getting 3D acceleration working using the DRM with
+Xorg in Gentoo Linux.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>5</version>
+<date>2011-09-11</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>What is hardware 3D acceleration and why do I want it?</title>
+<body>
+
+<p>
+With hardware 3D acceleration, three-dimensional rendering uses the graphics
+processor on your video card instead of taking up valuable CPU resources
+drawing 3D images. It's also referred to as "hardware acceleration" instead of
+"software acceleration" because without this 3D acceleration your CPU is forced
+to draw everything itself using the Mesa software rendering libraries, which
+takes up quite a bit of processing power. While Xorg typically supports 2D
+hardware acceleration, it often lacks hardware 3D acceleration.
+Three-dimensional hardware acceleration is valuable in situations requiring
+rendering of 3D objects such as games, 3D CAD and modeling.
+</p>
+
+</body>
+</section>
+<section>
+<title>How do I get hardware 3D acceleration?</title>
+<body>
+
+<p>
+In many cases, both binary and open-source drivers exist. Open source drivers
+are preferable since we're using Linux and open source is one of its underlying
+principles. Sometimes, binary drivers are the only option, especially if your
+graphics card is so new that open source drivers have not yet been written to
+support its features. Binary drivers include <c>x11-drivers/nvidia-drivers</c>
+for nVidia cards and <c>x11-drivers/ati-drivers</c> for AMD/ATI cards.
+</p>
+
+</body>
+</section>
+<section>
+<title>What is DRI?</title>
+<body>
+
+<p>
+The <uri link="http://dri.freedesktop.org/wiki/">Direct Rendering
+Infrastructure</uri>, also known as the DRI, is a framework for allowing direct
+access to graphics hardware in a safe and efficient manner. It includes changes
+to the X server, to several client libraries and to the kernel. The first major
+use for the DRI is to create fast OpenGL implementations.
+</p>
+
+</body>
+</section>
+<section>
+<title>What is the DRM and how does it relate to regular Xorg?</title>
+<body>
+
+<p>
+The DRM (Direct Rendering Manager) is an <e>enhancement</e> to Xorg that adds 3D
+acceleration for cards by adding the kernel module necessary for direct
+rendering.
+</p>
+
+</body>
+</section>
+<section>
+<title>Purpose</title>
+<body>
+
+<p>
+This guide is for people who can't get direct rendering working with just Xorg.
+The DRM works for the following drivers:
+</p>
+
+<ul>
+  <li>3dfx</li>
+  <li>intel</li>
+  <li>matrox</li>
+  <li>nouveau</li>
+  <li>rage128</li>
+  <li>radeon</li>
+  <li>mach64</li>
+  <li>sis300</li>
+  <li>via</li>
+</ul>
+
+<p>
+See the <uri link="http://dri.freedesktop.org/">DRI homepage</uri> for more info
+and documentation.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Install Xorg and configure your kernel</title>
+<section>
+<title>Install Xorg</title>
+<body>
+
+<p>
+Please read our <uri link="/doc/en/xorg-config.xml">Xorg Configuration
+Guide</uri> to get Xorg up and running.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configure your kernel</title>
+<body>
+
+<p>
+Probe for your chipset and enable just that one.
+</p>
+
+<pre caption="Checking your AGP chipset">
+# <i>emerge pciutils; lspci | grep AGP</i>
+# <i>00:01.0 PCI bridge: Intel Corp. 440BX/ZX/DX - 82443BX/ZX/DX AGP bridge (rev 03)</i>
+<comment>(Your output may not match the above due to different hardware.)</comment>
+</pre>
+
+<p>
+If your chipset is not supported by the kernel you might have some succes by
+passing <c>agp=try_unsupported</c> as a kernel parameter. This will use Intel's
+generic routines for AGP support. To add this parameter, edit your bootloader
+configuration file!
+</p>
+
+<p>
+Most, if not all, kernels should have these options. This was configured using a
+standard <c>gentoo-sources</c> kernel.
+</p>
+
+<pre caption="Configuring the kernel">
+# <i>ls -l /usr/src/linux </i>
+lrwxrwxrwx 1 root root 22 2007-02-14 20:12 /usr/src/linux -> linux-2.6.18-gentoo-r4
+<comment>(Make sure /usr/src/linux links to your current kernel.)</comment>
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<pre caption="make menuconfig options">
+Processor type and features --->
+&lt;*&gt; MTRR (Memory Type Range Register) support
+Device drivers --->
+   Graphics support --->
+   &lt;M&gt; /dev/agpgart (AGP Support) --->
+      <comment>(The agpgart option is not present on 64-bit kernels; just choose your chipset support.)</comment>
+      &lt;M&gt; Intel 440LX/BX/GX, I8xx and E7x05 support
+      <comment>(Enable your chipset instead of the above.)</comment>
+   &lt;M&gt; Direct Rendering Manager (XFree86 4.1.0 and higher DRI support) --->
+      &lt;M&gt; <comment>(Select your graphics card from the list)</comment>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Compile and install your kernel</title>
+<body>
+
+<pre caption="Compiling and installing kernel">
+# <i>make &amp;&amp; make modules_install</i>
+</pre>
+
+<p>
+Don't forget to set up <path>grub.conf</path> or <path>lilo.conf</path> and run
+<c>/sbin/lilo</c> if you use LILO.
+</p>
+
+</body>
+</section>
+<section>
+<title>Add your user to the video group</title>
+<body>
+
+<p>
+Next, add your user(s) to the video group, as explained in the <uri
+link="/doc/en/handbook">handbook</uri>:
+</p>
+
+<pre caption="Adding a user to the video group">
+# <i>gpasswd -a username video</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configure direct rendering</title>
+<section id="configure_xorg">
+<title>Configure Xorg</title>
+<body>
+
+<p>
+Hopefully just adding your user to the <c>video</c> group is sufficient to
+enable direct rendering. However, you may also need to create a file in
+<path>/etc/X11/xorg.conf.d/</path>. You can name it anything you like; just make
+sure it ends in <path>.conf</path>. Open up your favorite text editor and create
+a file with this inside it:
+</p>
+
+<pre caption="/etc/X11/xorg.conf.d/10-dri.conf">
+Section "Device"
+  Driver "radeon"
+  <comment>(Replace radeon with the name of your driver.)</comment>
+EndSection
+Section "dri"
+  Mode 0666
+EndSection
+</pre>
+
+</body>
+</section>
+<section>
+<title>Changes to /etc/conf.d/modules</title>
+<body>
+
+<p>
+You will need to add the module name that your card uses to
+<path>/etc/conf.d/modules</path> to ensure that the module is
+loaded automatically when the system starts up.
+</p>
+
+<pre caption="Editing /etc/conf.d/modules">
+<comment>(Change module name as required.)</comment>
+modules="<i>intel-agp</i>"
+</pre>
+
+<note>
+If you compiled <c>agpgart</c> as a module, you will also need to add it to
+<path>/etc/conf.d/modules</path>.
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Test 3D acceleration</title>
+<section>
+<title>Reboot to the new kernel</title>
+<body>
+
+<p>
+Reboot your computer to your new kernel and login as a normal user. It's time to
+see if you have direct rendering and how good it is. <c>glxinfo</c> and
+<c>glxgears</c> are part of the <c>mesa-progs</c> package, so make sure it is
+installed before you attempt to run these commands.
+</p>
+
+<pre caption="Testing rendering">
+$ <i>startx</i>
+<comment>(No need to load modules for your driver or agpgart, even if you compiled them as a module.)</comment>
+<comment>(They will be loaded automatically.)</comment>
+$ <i>glxinfo | grep rendering</i>
+direct rendering: Yes
+<comment>(If it says "No", you don't have 3D acceleration.)</comment>
+$ <i>glxgears</i>
+<comment>(Test your frames per second (FPS) at the default size. The number should be
+significantly higher than before configuring DRM. Do this while the CPU is as idle as
+possible.)</comment>
+</pre>
+
+<note>
+FPS may be limited by your screen's refresh rate, so keep this in mind if
+<c>glxgears</c> reports only about 70-100 FPS. <c>games-fps/ut2004-demo</c> or
+other 3D games are better benchmarking tools, as they give you real-world
+performance results.
+</note>
+
+</body>
+</section>
+<section>
+<title>Get the most out of direct rendering</title>
+<body>
+
+<p>
+If you want to set more features, for performance or other reasons, check out
+the <uri link="http://dri.freedesktop.org/wiki/FeatureMatrix">feature
+matrix</uri> on the DRI web site or the <uri
+link="http://dri.sourceforge.net/doc/dri_driver_features.phtml">features
+listing</uri> on Sourceforge.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Troubleshooting</title>
+<section>
+<title>It doesn't work. I don't have rendering, and I can't tell why.</title>
+<body>
+
+<p>
+Try <c>modprobe radeon</c> before you start the X server (replace <c>radeon</c>
+with the name of your driver). Also, try building agpgart into the kernel
+instead of as a module.
+</p>
+
+</body>
+</section>
+<section>
+<title>When I startx, I get this error: "[drm] failed to load kernel module agpgart"</title>
+<body>
+
+<p>
+That's because you compiled agpgart into the kernel instead of as a module.
+Ignore it unless you're having problems.
+</p>
+
+</body>
+</section>
+<section>
+<title>I have a Radeon, and I want TV-Out.</title>
+<body>
+
+<p>
+The drivers originally developed by the <uri
+link="http://gatos.sf.net">GATOS</uri> project have been merged into Xorg's
+codebase. You don't need anything special for TV-Out;
+<c>x11-drivers/xf86-video-ati</c> will work just fine.
+</p>
+
+</body>
+</section>
+<section>
+<title>
+It doesn't work. My card is so incredibly new and cool that it isn't supported
+at all.
+</title>
+<body>
+
+<p>
+Try out the binary drivers. For AMD cards, use <c>ati-drivers</c>; a listing is
+at <uri>http://support.amd.com/us/gpudownload/Pages/index.aspx</uri>. If those
+don't support it, use fbdev. It's slow, but it works.
+</p>
+
+</body>
+</section>
+<section>
+<title>I have a PCI card and it doesn't work.  Help!</title>
+<body>
+
+<p>
+Create a config file in <path>/etc/X11/xorg.conf.d/</path>; name it anything you
+want as long as it ends in <path>.conf</path>. Add the following to it:
+</p>
+
+<pre caption="/etc/X11/xorg.conf.x/10-pcimode.conf">
+Section "Device"
+  Option "ForcePCIMode" "True"
+EndSection
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>References</title>
+<section>
+<body>
+
+<ol>
+  <li><uri>http://forums.gentoo.org/viewtopic.php?t=46681</uri></li>
+  <li><uri>http://forums.gentoo.org/viewtopic.php?t=29264</uri></li>
+  <li><uri>http://dri.freedesktop.org/</uri></li>
+  <li><uri>http://www.retinalburn.net/linux/dri_status.html</uri></li>
+</ol>
+
+</body>
+</section>
+<section>
+<title>Feedback</title>
+<body>
+
+<p>
+With suggestions, questions, etc., e-mail <mail link="dberkholz"/>.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

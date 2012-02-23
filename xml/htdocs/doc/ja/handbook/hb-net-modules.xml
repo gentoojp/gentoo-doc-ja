@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-net-modules.xml,v 1.8 2009/03/09 14:46:29 shindo Exp $ -->
+
+<!-- Original revision: 1.25 -->
+<!-- Translator: igarashi -->
+
+<sections>
+
+<abstract>
+Gentooは柔軟なネットワークの仕組みを提供します。
+ここでは、異なるDHCPクライアントの選択方法や、ボンディング、ブリッジング、VLANなどの設定方法について説明します。
+</abstract>
+
+
+<version>8.4</version>
+<date>2009-02-12</date>
+
+<section>
+<title>ネットワークモジュール</title>
+<body>
+
+<p>
+現在、モジュール構造のネットワーク接続スクリプトをサポートしています。
+これにより、既存のものと互換性を保ちながら、新しいインタフェースの種類や設定モジュールのサポートを簡単に追加できます。
+</p>
+
+<p>
+モジュールが必要とするパッケージがインストールされていれば、モジュールはデフォルトでロードされます。
+ここでまだインストールされていないパッケージのモジュールを指定すると、インストールする必要があるパッケージがあることを示すエラーとなります。
+理想は、同一サービスを提供する二つ以上のパッケージをインストール済みで、その中の一つを選ぶ必要があるときにだけモジュール設定を使用することです。
+</p>
+
+<note> 
+ここで紹介したすべての設定は、他に規定がなければ、<path>/etc/conf.d/net</path>に書かれています。
+</note> 
+
+
+<pre caption="モジュール選択">
+<comment># ifconfigではなくiproute2を選択</comment>
+modules=( "iproute2" )
+
+<comment># 特定のインタフェースに対し別のモジュールも指定できます
+# ここではdhcpcdではなくpumpを選択しています</comment>
+modules_eth0=( "pump" )
+
+<comment># 使用しないモジュールの指定もできます - 例えば無線LANの設定を制御するために、
+# supplicantもしくはlinux-wlan-ngを使用しているかもしれません。
+# にもかかわらず、接続するESSIDごとにネットワーク設定を指定したい場合
+</comment>
+modules=( "!iwconfig" )
+</pre>
+
+</body>
+</section>
+<section>
+<title>インタフェースハンドラ</title>
+<body>
+
+<p>
+現在、<c>ifconfig</c>と<c>iproute2</c>の二つのインタフェースハンドラを提供しています。
+ネットワークの設定のどんなことをするのにも、これらのうちの一つが必要です。
+</p>
+
+<p>
+<c>ifconfig</c>は、今のGentooのデフォルトであり、システムプロファイルに含まれています。<c>iproute2</c>は、より強力で柔軟なパッケージですが、デフォルトでは含まれていません。
+</p>
+
+<pre caption="iproute2をインストールする">
+# <i>emerge sys-apps/iproute2</i>
+
+<comment># 両方がインストールされている場合、ifconfigではなくiproute2を選択する</comment>
+modules=( "iproute2" )
+</pre>
+
+<p>
+<c>ifconfig</c>も<c>iproute2</c>もどちらもよく似たことをするので、基本設定を相互に動作するようにできます。
+例えば、以下の抜粋コードのどちらも、どちらを使用しているかに関係なく動作します。</p>
+
+<pre caption="ifconfigとiproute2の例">
+config_eth0=( "192.168.0.2/24" )
+config_eth0=( "192.168.0.2 netmask 255.255.255.0" )
+
+<comment># broadcastの指定も可能</comment>
+config_eth0=( "192.168.0.2/24 brd 192.168.0.255" )
+config_eth0=( "192.168.0.2 netmask 255.255.255.0 broadcast 192.168.0.255" )
+</pre>
+
+</body>
+</section>
+<section id="dhcp">
+<title>DHCP</title>
+<body>
+
+<p>
+DHCPは、DHCPサーバからネットワーク情報(IPアドレス、DNSサーバ、ゲートウェイ、その他)を取得する手段です。
+これは、ネットワーク上で稼動中のDHCPサーバが存在する場合、DHCPを使うことを各クライアントに指示する必要があり、それが自動的にネットワークを設定するということを意味します。
+もちろん、DHCPを使えるようになる前に、必要なら無線やPPPなど、他の設定をする必要はあります。
+</p>
+
+<p>
+DHCPの機能は、<c>dhclient</c>、<c>dhcpcd</c> または <c>pump</c>によって提供されます。
+各DHCPモジュールには、長所と短所があります。以下にざっと紹介します。
+</p>
+
+<table>
+<tr>
+  <th>DHCPモジュール</th>
+  <th>パッケージ</th>
+  <th>長所</th>
+  <th>短所</th>
+</tr>
+<tr>
+  <ti><c>dhclient</c></ti>
+  <ti><c>net-misc/dhcp</c></ti>
+  <ti>
+    BIND DNSソフトウェアを作成しているISCによって作成されています。
+    設定項目が豊富
+  </ti>
+  <ti>
+    設定が極めて複雑で、ソフトウェアは非常に大きくなり過ぎており、DHCPからNTPサーバの情報を得ることはできず、デフォルト設定ではホスト名を送信しません
+  </ti>
+</tr>
+<tr>
+  <ti><c>dhcpcd</c></ti>
+  <ti><c>net-misc/dhcpcd</c></ti>
+  <ti>
+    長い間Gentooではデフォルトであり、外部のツールに依存せず、Gentooで積極的に開発されています
+  </ti>
+  <ti>
+    たまに遅くなることがあり、与えられたIPアドレスなどの貸与期間に制限がない場合は、今のところデーモン化されません
+  </ti>
+</tr>
+<tr>
+  <ti><c>pump</c></ti>
+  <ti><c>net-misc/pump</c></ti>
+  <ti>
+    軽量、外部ツールへの依存なし
+  </ti>
+  <ti>
+    性能向上のためには維持されておらず、信頼性が低く、特にモデム経由の場合に信頼性が低く、DHCPからNISサーバの情報を取得できません
+  </ti>
+</tr>
+</table>
+     
+<p>
+二つ以上のDHCPクライアントがインストールされている場合、どれを使用するかを指定する必要があります - そうしないと可能なら<c>dhcpcd</c>をデフォルトにします。
+</p>
+
+<p>
+DHCPモジュールに特定のオプションを与えるために、<c>module_eth0="..."</c>を使用してください。
+<e>(使用中のDHCPモジュールにmoduleを付け替えてください - たとえば<c>dhcpcd_eth0</c>)</e>
+</p>
+
+<p>
+DHCPの相互運用性の向上に勤めています - その一環として<c>dhcp_eth0</c>変数を使用して以下のコマンドをサポートします。デフォルト設定ではこれらのどれも設定されていません。
+</p>
+
+<ul>
+  <li><c>release</c> - 再利用できるようにIPアドレスを解放します</li>
+  <li><c>nodns</c> - <path>/etc/resolv.conf</path>を書き換えません</li>
+  <li><c>nontp</c> - <path>/etc/ntp.conf</path>を書き換えません</li>
+  <li><c>nonis</c> - <path>/etc/yp.conf</path>を書き換えません</li>
+</ul>
+
+<pre caption="/etc/conf.d/netでのDHCP設定の例">
+<comment># 二つ以上のDHCPモジュールがインストールされている場合にだけ必要です</comment>
+modules=( "dhcpcd" ) 
+
+config_eth0=( "dhcp" )
+dhcpcd_eth0="-t 10" <comment># 10秒後にタイムアウトします</comment>
+dhcp_eth0="release nodns nontp nonis" <comment># アドレスのみ取得します</comment>
+</pre>
+
+<note>
+<c>dhcpcd</c>と<c>pump</c>は、デフォルトで現在のホスト名をDHCPサーバに送信します。
+よって、これに関して何も指定する必要はありません。
+</note>
+
+</body>
+</section>
+<section>
+<title>PPPoE/PPPoAによるADSL</title>
+<body>
+
+<p>
+最初に、ADSLソフトウェアをインストールする必要があります。
+</p>
+
+<pre caption="pppパッケージのインストール">
+# <i>emerge net-dialup/ppp</i>
+</pre>
+
+<note>
+もしPPPoAが必要なら、必ず>=<c>baselayout-1.12.x</c>を使用してください。
+</note>
+
+<p>
+次に、PPPで使われるPPPネットスクリプトとイーサネットインタフェースのためのネットスクリプトを生成します。
+</p>
+
+<pre caption="PPPとイーサネットのスクリプトの生成">
+# <i>ln -s /etc/init.d/net.lo /etc/init.d/net.ppp0</i>
+# <i>ln -s /etc/init.d/net.lo /etc/init.d/net.eth0</i>
+</pre>
+
+<p>
+必ず<path>/etc/conf.d/rc</path>でRC_NET_STRICT_CHECKING="yes"を設定してください。
+</p>
+
+<p>
+ここで、<path>/etc/conf.d/net</path>の設定をする必要があります。
+</p>
+
+<pre caption="基本的なPPPoEの設定">
+config_eth0=( null ) <comment>(あなたのイーサネットインタフェースを記述してください)</comment>
+config_ppp0=( "ppp" )
+link_ppp0="eth0" <comment>(あなたのイーサネットインタフェースを記述してください)</comment>
+plugins_ppp0=( "pppoe" )
+username_ppp0='user'
+password_ppp0='password'
+pppd_ppp0=(
+       "noauth"
+       "defaultroute"
+       "usepeerdns"
+       "holdoff 3"
+       "child-timeout 60"
+       "lcp-echo-interval 15"
+       "lcp-echo-failure 3"
+       noaccomp noccp nobsdcomp nodeflate nopcomp novj novjccomp
+)
+
+depend_ppp0() {
+    need net.eth0
+}
+</pre>
+
+<pre caption="/etc/ppp/pap-secretsの例">
+<comment># *(アスタリスク)は重要です</comment>
+"username"  *  "password"
+</pre>
+
+<p>
+もしUSBモデムによるPPPoEを使用しているなら、<c>br2684ctl</c>をemergeする必要があるでしょう。
+これについての適切な設定方法は、<path>/usr/portage/net-dialup/speedtouch-usb/files/README</path>を読んでください。
+</p>
+
+<impo>
+<path>/etc/conf.d/net.example</path>のADSLとPPPの章を注意深く読んでください。
+個々のPPPの設定で必要になりそうなすべての設定方法について、より詳細な説明が多く含まれています。
+</impo>
+
+</body>
+</section>
+<section id="apipa">
+<title>APIPA (Automatic Private IP Addressing)～自動プライベートIPアドレス割当て機能</title>
+<body>
+
+<p>
+APIPAは、インタフェースに169.254.0.0-169.254.255.255の範囲のアドレスに無作為にARPメッセージを送信することによって、空きアドレスを探します。
+応答のないものがあった場合、そのアドレスをインタフェースに割り当てます。
+</p>
+
+<p>
+DHCPサーバが存在せず、かつ直接インターネットに接続せず、かつ他の全てのコンピュータがAPIPAを使用しているプライベートネットワークにだけ役に立ちます。
+</p>
+
+<p>
+APIPAをサポートするために、emerge <c>net-misc/iputils</c>または、<c>net-analyzer/arping</c>をしてください。
+</p>
+
+<pre caption="/etc/conf.d/netでのAPIPA設定">
+<comment># 最初にDHCPを試します - 失敗したら代替手段としてAPIPAを使用</comment>
+config_eth0=( "dhcp" )
+fallback_eth0=( "apipa" )
+
+<comment># APIPAだけを使用</comment>
+config_eth0=( "apipa" )
+</pre>
+
+</body>
+</section>
+<section>
+<title>Bonding(インタフェースを束ねる)</title>
+<body>
+
+<p>
+bonding/trunkingをする(インタフェースを束ねる)には、<c>emerge net-misc/ifenslave</c>をします。
+</p>
+
+<p>
+bondingは、ネットワーク帯域を増やすために使われます。
+もし一つのネットワークにしたい二つのネットワークカードがあるなら、それらを束ねることができます。
+そうすると、アプリケーションには一つのインタフェースとして見えますが、実際は両方のネットワークカードが使用されます。
+</p>
+
+<pre caption="/etc/conf.d/netでのbonding設定">
+<comment># 二つのインタフェースを束ねる</comment>
+slaves_bond0="eth0 eth1 eth2"
+
+<comment># 束ねられたインタフェースにIPアドレスを割り当てたくない場合もあります</comment>
+config_bond0=( "null" )
+
+<comment># 別の設定が必要かもしれないのでeth0、eth1、eth2に依存します</comment>
+depend_bond0() {
+  need net.eth0 net.eth1 net.eth2
+}
+</pre>
+
+</body>
+</section>
+<section>
+<title>ブリッジ (802.1dのサポート)</title>
+<body>
+
+<p>
+ブリッジをサポートするには、emerge <c>net-misc/bridge-utils</c>をします。
+</p>
+
+<p>
+ブリッジは、異なるネットワーク同士を繋げるために使用されます。
+例えば、ADSLモデム経由でインターネットに接続していて、他のコンピュータをADSLモデム経由でインターネットに接続できるようにするための無線接続カードを持っているサーバがあるとします。
+この場合、二つのインタフェースを相互に繋げるために、ブリッジを作成できます。
+</p>
+
+<pre caption="/etc/conf.d/netでのブリッジ設定">
+<comment># ブリッジ設定 - 詳細は"man brctl"を参照してください</comment>
+brctl_br0=( "setfd 0" "sethello 0" "stp off" )
+
+<comment># ブリッジbr0にポートを追加します</comment>
+bridge_br0="eth0 eth1"
+
+<comment># dhcpが開始しないようにするために、そのポートにはnullを設定する必要があります</comment>
+config_eth0=( "null" )
+config_eth1=( "null" )
+
+<comment># 最後にブリッジにアドレスを設定します - DHCPも使用できます</comment>
+config_br0=( "192.168.0.1/24" )
+
+<comment># 別の設定が必要かもしれないのでeth0、eth1に依存します</comment>
+depend_br0() {
+  need net.eth0 net.eth1
+}
+</pre>
+
+<impo>
+複数のブリッジ設定を行う場合、<uri
+link="?part=4&amp;chap=2#variable_name">変数名</uri>を参照してください。
+</impo>
+
+</body>
+</section>
+<section>
+<title>MACアドレス</title>
+<body>
+
+<p>
+<c>sys-apps/baselayout-1.11.14</c>かそれ以上を使用していて、特定のアドレスに変更したいなら、インタフェースのMACアドレスを変更するために何もemergeする必要はありません。
+しかし、ランダムなMACアドレスに変更する必要があるか、上記のバージョンよりも古いbaselayoutを使用しているなら、この機能が有効になるにはemerge <c>net-analyzer/macchanger</c>をする必要があります。
+</p>
+
+<pre caption="MACアドレスを変更する例">
+<comment># インタフェースのMACアドレスを設定します</comment>
+mac_eth0="00:11:22:33:44:55"
+
+<comment># 最後の3バイトだけランダムに設定します</comment>
+mac_eth0="random-ending"
+
+<comment># ベンダ毎に、物理的に同じ種類別にランダムに設定します
+# (例 ファイバ、銅線、無線)</comment>
+mac_eth0="random-samekind"
+
+<comment># ベンダ毎に、物理的な種類を問わずランダムに設定します
+# (例 ファイバ、銅線、無線)</comment>
+mac_eth0="random-anykind"
+
+<comment># 完全にランダムに設定します - 警告: これによって生成される一部のMACアドレスには
+# 期待したように動作しないものがあります</comment>
+mac_eth0="random-full"
+</pre>
+
+</body>
+</section>
+<section>
+<title>トンネリング</title>
+<body>
+
+<p>
+トンネリングをするには、インタフェースハンドラで実現できるので、何もemergeする必要はありません。
+</p>
+
+<pre caption="/etc/conf.d/netでのトンネリング設定">
+<comment># GREトンネリング向け</comment>
+iptunnel_vpn0="mode gre remote 207.170.82.1 key 0xffffffff ttl 255"
+
+<comment># IPIPトンネリング向け</comment>
+iptunnel_vpn0="mode ipip remote 207.170.82.2 ttl 255"
+
+<comment># 該当するインタフェースの設定</comment>
+config_vpn0=( "192.168.0.2 peer 192.168.1.1" ) 
+</pre>
+
+</body>
+</section>
+<section>
+<title>VLAN (802.1qのサポート)</title>
+<body>
+
+<p>
+VLANをサポートするには、emerge <c>net-misc/vconfig</c>をします。
+</p>
+
+<p>
+仮想LANは、たとえ別のセグメントであっても、あたかも単一のネットワークセグメントに接続されているように振舞うネットワークデバイスの集合です。
+VLANに接続している機器には、たとえ物理的に同じネットワークを共有していても、同一のVLAN上の機器しか見えません。
+</p>
+
+<pre caption="/etc/conf.d/netでのVLAN設定">
+<comment># 次のようにインタフェースのVLAN番号を指定します</comment>
+<comment># VLANのIDは、前に0を付加しない形式です</comment>
+vlans_eth0="1 2"
+
+<comment># もちろんVLANを設定することもできます</comment>
+<comment># 詳細はvconfigのmanページを参照してください</comment>
+vconfig_eth0=( "set_name_type VLAN_PLUS_VID_NO_PAD" )
+vconfig_vlan1=( "set_flag 1" "set_egress_map 2 6" )
+
+<comment># 通常のようにVLANインタフェースを設定します</comment>
+config_vlan1=( "172.16.3.1 netmask 255.255.254.0" )
+config_vlan2=( "172.16.2.1 netmask 255.255.254.0" )
+</pre>
+
+<impo>
+複数のVLAN設定を行う場合、<uri
+link="?part=4&amp;chap=2#variable_name">変数名</uri>を参照してください。
+</impo>
+
+</body>
+</section>
+
+</sections>

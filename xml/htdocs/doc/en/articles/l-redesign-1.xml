@@ -1,0 +1,572 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/l-redesign-1.xml,v 1.6 2011/09/04 17:53:41 swift Exp $ -->
+
+<guide disclaimer="articles">
+<title>The gentoo.org redesign, Part 1: A site reborn</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+
+<abstract>
+Have you ever woken up one morning and suddenly realized that your cute little
+personal development Web site isn't really that great? If so, you're in good
+company. In this series, Daniel Robbins shares his experiences as he redesigns
+the www.gentoo.org Web site using technologies like XML, XSLT, and Python.
+Along the way, you may find some excellent approaches to use for your next Web
+site redesign. In this article, Daniel creates a user-centric action plan and
+introduces pytext, an embedded Python interpreter.
+</abstract>
+
+<!-- The original version of this article was first published on IBM
+developerWorks, and is property of Westtech Information Services. This
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>1.1</version>
+<date>2005-10-10</date>
+
+<chapter>
+<title>An unruly horde</title>
+<section>
+<body>
+
+<p>
+Fellow software developer, may I ask you a question? Why is it that although
+many of us are intimately familiar with Web technologies such as HTML, CGI,
+Perl, Python, Java technology, and XML, our very own Web sites -- the ones
+devoted to our precious development projects -- look like they were thrown
+together by an unruly horde of hyperactive 12-year-olds? Why, oh why, is this
+so?
+</p>
+
+<p>
+Could it be because most of the time, we've left our Web site out to rot while
+we squander our precious time hacking away on our free software projects? The
+answer, at least in my case, is a most definite "Yes."
+</p>
+
+<p>
+When I'm not writing articles for IBM developerWorks or being a new dad, I'm
+feverishly working on the next release of Gentoo Linux, along with my skilled
+team of volunteers. And, yes, Gentoo Linux has its own Web site (see
+Resources). As of right now (March 2001), our Web site isn't that special;
+that's because we don't spend much time working on it because we're generally
+engrossed in improving Gentoo Linux itself. Sure, our site does have several
+admittedly cute logos that I whipped up using Xara X (see Resources), but when
+you look past the eye candy, our site leaves a lot to be desired. Maybe yours
+does too. If so, I have one thing to say to you -- welcome to the club.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>www.gentoo.org</title>
+<section>
+<body>
+
+<p>
+In our case, our Web site dilemma exists because our project has been growing,
+and our Web site hasn't. Now that Gentoo Linux is approaching the 1.0 release
+(when it'll be officially ready for non-developers) and is growing in
+popularity, we need to start seriously looking at how our Web site can better
+serve its users. Here's a snapshot of www.gentoo.org:
+</p>
+
+<figure link="/images/docs/l-redesign-01.gif" 
+caption="The current (March 2001) state of affairs at www.gentoo.org"/>
+
+<p>
+As you can see, we have all the bare essentials -- a description of Gentoo
+Linux, a features list, a daily Changelog (automatically updated thanks to
+Python), and a bunch of important links (to the download sites, to our mailing
+list sign-up pages, and to cvsWeb). We also have links to three documentation
+resources -- the Gentoo Linux Install Guide and Development Guides, and
+Christian Zander's NVIDIA Troubleshooting Guide.
+</p>
+
+<p>
+However, while the site seems O.K., we're missing a lot of things. The most
+obvious is documentation -- our installation and development guides need a lot
+of work. And then we need to add an FAQ, new links, new user information...the
+list is endless.
+</p>
+
+</body>
+</section>
+<section>
+<title>Content vs. display</title>
+<body>
+
+<p>
+And now we come to our second problem. Right now, all of our work is done in
+raw HTML; I hack away at the index.html file until it looks O.K. Even worse,
+our Web documentation is written in raw HTML. This isn't a good thing from a
+development perspective because our raw content (consisting of paragraphs,
+sections, chapters) is garbled together with a bunch of display-related HTML
+tags. This, of course, makes it difficult to change both the content and the
+look of our site. While this approach has worked so far, it is bound to cause
+problems as our site continues to grow.
+</p>
+
+<p>
+Clearly, we need to be using better technologies behind the scenes. Instead of
+using HTML directly, we need to start using things like XML, XSLT, and Python.
+The goal is to automate as much as possible so that we can add and expand our
+site with ease. If we do our job well, even major future changes to our site
+should be relatively painless.
+</p>
+
+</body>
+</section>
+<section>
+<title>A strategy!</title>
+<body>
+
+<p>
+It was clear that we had a lot of work ahead of us. In fact, there was so much
+to be done that I didn't know where to begin. Just as I was trying to sort out
+everything in my head, I came across Laura Wonnacott's "Site Savvy" InfoWorld
+column (see <uri link="#resources">Resources</uri>). In it, she explained the
+concept of "user-centric" design -- how to improve a Web site while keeping the
+needs of your target audience (in this case, Gentoo Linux users and developers)
+in focus. Reading the article and taking a look at the "Handbook of
+User-Centered Design" link from the article helped me to formulate a strategy
+-- an action plan -- for the redesign:
+</p>
+
+<ol>
+  <li>
+    First, clearly define the official goal of the Web site -- in writing.
+    What's it there for, and what's it supposed to do?
+  </li>
+  <li>
+    Identify the different categories of users who will be using your site --
+    your target audience. Rank them in order of priority: Which ones are most
+    important to you?
+  </li>
+  <li>
+    Set up a system for getting feedback from your target audience, so they can
+    let you know what you're doing right and wrong.
+  </li>
+  <li>
+    Evaluate the feedback, and use it to determine what parts of the site need
+    to be improved or redesigned. Tackle high-priority sections first.
+  </li>
+  <li>
+    Once you've selected the part of the site to improve, get to work! During
+    your implementation, make sure that the content and design of the new
+    section caters specifically to the needs of your target audience and fixes
+    all known deficiencies.
+  </li>
+  <li>
+    When the section redesign is complete, add it to your live site, even if it
+    has a look that's markedly different from your current site. This way, your
+    users can begin benefitting from the newly redesigned section immediately.
+    If there's a problem with the redesign, you'll get user feedback more
+    quickly. Finally, making incremental improvements to your site (rather than
+    revamping the whole site and then rolling it out all at once -- surprise!)
+    will help prevent your users from feeling alienated by your (possibly
+    dramatic) site changes.
+  </li>
+  <li>After completing step 6, jump to step 4 and repeat.</li>
+</ol>
+
+</body>
+</section>
+<section>
+<title>The mission statement</title>
+<body>
+
+<p>
+I was happy to discover that we already had step 3 in place. We had received
+several e-mail suggestions from visitors to the site, and our developer mailing
+list also served as a way of exchanging suggestions and comments. However, I
+had never really completed steps 1 or 2. While the answers may seem obvious, I
+did find it helpful to actually sit down and write out our mission statement:
+</p>
+
+<p>
+www.gentoo.org exists to assist those who use and develop for Gentoo Linux by
+providing relevant, up-to-date information about Gentoo Linux and Linux in
+general, focusing on topics related to Gentoo Linux installation, use,
+administration, and development. As the central hub for all things Gentoo, the
+site should also feature important news relevant to Gentoo Linux users and
+developers. In addition to catering to Gentoo Linux users and developers,
+www.gentoo.org has the secondary purpose of meeting the needs of potential
+Gentoo Linux users, providing the information they need to decide whether
+Gentoo Linux is right for them.
+</p>
+
+</body>
+</section>
+<section>
+<title>The target audience</title>
+<body>
+
+<p>
+So far, so good. Now for step 2 -- defining our target audience:
+</p>
+
+<p>
+www.gentoo.org has three target audiences -- Gentoo Linux developers, users,
+and potential users. While no one group is absolutely a higher priority than
+another, right now the needs of Gentoo Linux developers are our highest
+priority, followed by Gentoo Linux users, and then potential users. This is
+because Gentoo Linux is currently in a prerelease state. When Gentoo Linux
+reaches version 1.0, Gentoo Linux users and potential users will also become a
+priority.
+</p>
+
+</body>
+</section>
+<section>
+<title>Comments and suggestions</title>
+<body>
+
+<p>
+O.K., now it's time to evaluate the suggestions and comments we've collected:
+</p>
+
+<p>
+Over the past few months, we've received a number of suggestions from Web site
+visitors. Overwhelmingly, people are requesting better documentation -- for
+both developers and users. Several developers have asked if we could create a
+mailing list that would be devoted exclusively to describing CVS commits.
+</p>
+
+<p>
+Interestingly, we've also received a couple of e-mails asking whether Gentoo
+Linux is a commercial or free product. I'm guessing that because our main logo
+is inscribed with the name "Gentoo Technologies, Inc." (our legal corporation
+name), people assume that we have a commercial focus. Modifying our logo so
+that it reads "Gentoo Linux" and adding small opening paragraph to the main
+page explaining that we are a free software project should help.
+</p>
+
+</body>
+</section>
+<section>
+<title>The improvement list</title>
+<body>
+
+<p>
+O.K., now let's turn these suggestions into a list of possible improvements:
+</p>
+
+<ul>
+  <li>Revamp main page
+    <ul>
+      <li>Implementation: update logo and add free software blurb</li>
+      <li>Goal: to clearly state that we are a free software project</li>
+      <li>Target group: potential users</li>
+      <li>Difficulty: medium</li>
+    </ul>
+  </li>
+  <li>Improve basic user documentation
+    <ul>
+      <li>Implementation: new XML/XSLT system, verbose documentation</li>
+      <li>Goal: to make it easier for users to install Gentoo Linux</li>
+      <li>Target group: new users</li>
+      <li>Difficulty: medium</li>
+    </ul>
+  </li>
+  <li>Improve/create developer documentation
+    <ul>
+      <li>Implementation: new XML/XSLT system, CVS guide, dev guide, Portage guide</li>
+      <li>Goal: to help our developers to do a great job</li>
+      <li>Target group: developers</li>
+      <li>Difficulty: hard</li>
+    </ul>
+  </li>
+  <li>Add a CVS mailing list
+    <ul>
+      <li>Implementation: use our existing mailman mailing list manager</li>
+      <li>Goal: to better inform our developers</li>
+      <li>Target group: developers</li>
+      <li>Difficulty: easy</li>
+    </ul>
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>A selection!</title>
+<body>
+
+<p>
+Two things leap out from the list, for different reasons. The first is the CVS
+mailing list -- this one is a no-brainer because it's so easy to implement.
+Often, it makes sense to implement the easiest changes first so that users can
+benefit from them right away.
+</p>
+
+<p>
+The second big thing that leaps out from the list is the need for developer
+documentation. This is a longer-term project that will require much more work.
+From my conversations with the other developers, we all appear to be in
+agreement that some kind of XML/XSL approach is the right solution.
+</p>
+
+</body>
+</section>
+<section>
+<title>The XML/XSL prototype</title>
+<body>
+
+<p>
+To help start the process, I developed a prototype XML syntax to be used for
+all our online documentation. By using this XML syntax (called "guide"), our
+documentation will be clearly organized into paragraphs, sections, and chapters
+(using XML tags like &lt;section&gt;, &lt;chapter&gt;, etc.) while remaining
+free of any display-related tags. To create the HTML for display on our site, I
+created a prototype set of XSL transforms. By using an XSLT processor such as
+Sablotron, our guide XML files can be converted into HTML as follows:
+</p>
+
+<pre caption="Converting guide XML files to HTML">
+devguide.xml + guide.xsl ---XSLT processor---> devguide.html
+</pre>
+
+<p>
+The great thing about this XML/XSLT approach is that it separates our raw
+content (XML) from the display-related information contained in the guide.xsl
+(XSLT) file. If we ever need to update the look of our Web pages, we simply
+modify the guide.xsl file and run all our XML through the XSLT processor
+(Sablotron), creating updated HTML pages. Or, if we need to add a few chapters
+to the development guide, we can modify devguide.xml. Once we're done, we then
+run the XML through Sablotron, which then spits out a fully-formatted
+devguide.html file with several added chapters. Think of XML as the content and
+XSLT as the display-related formatting macros.
+</p>
+
+<p>
+While our entire team is convinced that XML/XSLT is the way to go, we haven't
+yet agreed upon an official XML syntax. Achim, our development lead, suggested
+that we use docbook instead of rolling our own XML syntax. However, the
+prototype guide XML format has helped to start the decision-making process.
+Because we developers are going to be the ones using the XML/XSL on a daily
+basis, it's important to choose a solution that we're comfortable with and
+meets all of our needs. By my next article, I should have a working XML/XSL doc
+system to show off to you.
+</p>
+
+</body>
+</section>
+<section>
+<title>Technology demo: pytext</title>
+<body>
+
+<p>
+For the most part, our current Web site isn't using any new or super-cool
+technologies that are worth mentioning. However, there's one notable exception
+-- our tiny pytext embedded Python interpreter.
+</p>
+
+<p>
+Like many of you, I'm a huge Python fan and much prefer it over other scripting
+languages, so when it came time to add some dynamic content to our Web site, I
+naturally wanted to use Python. And, as you probably know, when coding dynamic
+HTML content, it's usually much more convenient to embed the language commands
+inside the HTML, rather than the other way around. Thus, the need for an
+embedded Python interpreter that can take a document like this:
+</p>
+
+<pre caption="Source document">
+&lt;p&gt;
+Yeah, sure; I got some questions:&lt;br&gt;
+&lt;!--code
+names=["bob","jimmy","ralph"]
+items=["socks","lunch","accordion"]
+for x in items:
+for y in names:
+print "Anyone seen",y+"'s",x+"?&lt;br&gt;"
+--&gt;
+See, told you so.
+</pre>
+
+<p>
+....and transform it into this:
+</p>
+
+<pre caption="Target document">
+&lt;p&gt;
+Yeah, sure; I got some questions:&lt;br&gt;
+Anyone seen bob's socks?&lt;br&gt;
+Anyone seen jimmy's socks?&lt;br&gt;
+Anyone seen ralph's socks?&lt;br&gt;
+Anyone seen bob's lunch?&lt;br&gt;
+Anyone seen jimmy's lunch?&lt;br&gt;
+Anyone seen ralph's lunch?&lt;br&gt;
+Anyone seen bob's accordion?&lt;br&gt;
+Anyone seen jimmy's accordion?&lt;br&gt;
+Anyone seen ralph's accordion?&lt;br&gt;
+See, told you so.
+</pre>
+
+<p>
+Here's the source code for pytext:
+</p>
+
+<pre caption="The pytext embedded Python interpreter">
+#!/usr/bin/env python
+
+# pytext 2.1
+# Copyright 1999-2001 Daniel Robbins
+# Distributed under the GPL
+
+import sys
+
+def runfile(myarg):
+   "interprets a text file with embedded elements"
+   mylocals={}
+   try:
+      a=open(myarg,'r')
+   except IOError:
+      sys.stderr.write("!!! Error opening "+myarg+"!\n")
+      return
+   mylines=a.readlines()
+   a.close()
+   pos=0
+   while pos&lt;len(mylines):
+      if mylines[pos][0:8]=="&lt;!--code":
+  mycode=""
+  pos=pos+1
+  while (pos&lt;len(mylines)) and (mylines[pos][0:3]!="--&gt;"):
+       mycode=mycode+mylines[pos]
+       pos=pos+1
+  exec(mycode,globals(),mylocals)
+       else:
+  sys.stdout.write(mylines[pos])
+       pos=pos+1
+
+if len(sys.argv)&gt;1:
+   for x in sys.argv[1:]:
+       runfile(x)
+   sys.exit(0)
+else:
+   sys.stderr.write
+     ("pytext 2.1 -- Copyright 1999-2001 Daniel Robbins. ")
+   sys.stderr.write
+     ("Distributed under the\nGNU Public License\n\n")
+   sys.stderr.write
+     ("Usage: "+sys.argv[0]+" file0 [file1]...\n")
+   sys.exit(1)
+</pre>
+
+</body>
+</section>
+<section>
+<title>How pytext works</title>
+<body>
+
+<p>
+Here's how it works. It scans each input line, and most of the time, each input
+line is simply echoed to stdout. However, if pytext encounters a line beginning
+with &lt;!--code, then the contents of every line up to the first line
+beginning with --&gt; are appended to a string called mycode. Pytext then
+executes the mycode string using the built-in exec() function, effectively
+creating an embedded Python interpreter.
+</p>
+
+<p>
+There's something really beautiful about this particular implementation -- we
+call exec() in such a way that all modifications to the global and local
+namespaces are saved. This makes it possible to import a module or define a
+variable in one embedded block, and then access this previously-created object
+in a later block, as this example clearly demonstrates:
+</p>
+
+<pre caption="Sample code">
+&lt;!--code
+import os
+foo=23
+--&gt;
+
+Hello
+
+&lt;!--code
+print foo
+if os.path.exists("/tmp/mytmpfile"):
+print "it exists"
+else:
+print "I don't see it"
+--&gt;
+</pre>
+
+<p>
+Handy, eh? pytext serves is an excellent demonstration of the power of Python,
+and is an extremely useful tool for Python fans. For our current site, we call
+pytext from a cron job, using it to periodically generate the HTML code for our
+main page Changelog:
+</p>
+
+<pre caption="Generating the HTML code for main page">
+pytext index.ehtml > index.html
+</pre>
+
+<p>
+That's it for now; I'll see you next time when we'll take a look at the first
+stage of the www.gentoo.org redesign!
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="resources">
+<title>Resources</title>
+<section>
+<body>
+
+<ul>
+  <li>
+    Read the other articles in this developerWorks series about the redesign of
+    the www.gentoo.org Web site using technologies like XML, XSLT, and Python:
+    <ul>
+      <li>
+        In <uri link="/doc/en/articles/l-redesign-2.xml">Part 2</uri>, Daniel
+        shows off the new documentation system and sets up a daily CVS-log
+        mailing list (May 2001).
+      </li>
+      <li>
+        In <uri link="/doc/en/articles/l-redesign-3.xml">Part 3</uri>, he
+        creates a new look for the site (July 2001).
+      </li>
+      <li>
+        In <uri link="/doc/en/articles/l-redesign-4.xml">Part 4</uri>, Daniel
+        completes the conversion to XML/XSLT, fixes a host of Netscape 4.x
+        browser compatibility bugs, and adds an auto-generated XML Changelog to
+        the site (Aug 2001).
+      </li>
+    </ul>
+  </li>
+  <li>
+    If you haven't started using Python yet, you're only hurting yourself. Find
+    it at <uri>http://www.python.org</uri>.
+  </li>
+  <li>
+    Laura Wonnacott's <uri
+    link="http://www.infoworld.com/articles/op/xml/01/03/05/010305opsavvy.xml">Site
+    Savvy</uri> column appears regularly on InfoWorld.com.
+  </li>
+  <li>
+    Check out <uri link="http://www.xara.com/">Xara.com</uri>, the home of Xara
+    X -- an excellent vector drawing package for Windows. With virtually no
+    bloat and blazing speed, it has my personal recommendation.
+  </li>
+  <li>Learn more about XSLT at <uri>http://www.xslt.com</uri></li>
+  <li>
+    When you wake up, check out Sablotron, a fast XSLT processor available from
+    <uri link="http://www.gingerall.com">Gingerall</uri>
+ </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

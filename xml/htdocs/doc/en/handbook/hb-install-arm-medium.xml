@@ -1,0 +1,297 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-arm-medium.xml,v 1.11 2011/05/17 22:33:01 nightmorph Exp $ -->
+
+<sections>
+
+<version>10</version>
+<date>2011-05-17</date>
+
+<section>
+<title>Hardware Requirements</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Before we start, we first list what hardware requirements you need to
+successfully install Gentoo on your box. 
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Hardware Requirements</title>
+<body>
+
+<p>
+Generally if you have an ARMv4 or later, it can run Gentoo.  This is pretty
+much a given, so below we'll cover the CPUs that have actually been tested.
+</p>
+
+<table>
+<tr>
+  <th>CPU <e>(Big Endian)</e></th>
+  <ti>IXP425</ti>
+</tr>
+<tr>
+  <th>CPU <e>(Little Endian)</e></th>
+  <ti>IXP425, StrongARM-110</ti>
+</tr>
+<tr>
+  <th>Memory</th>
+  <ti>32 MB</ti>
+</tr>
+<tr>
+  <th>Diskspace</th>
+  <ti>1.5 GB (excluding swap space)</ti>
+</tr>
+<tr>
+  <th>Swap space</th>
+  <ti>At least 256 MB</ti>
+</tr>
+</table>
+
+</body>
+</subsection>
+</section>
+
+<section>
+<title>Installation Notes</title>
+<subsection>
+<title>A note about ABIs</title>
+<body>
+
+<p>
+We support the new ARM EABI as well as the classic ARM ABI, sometimes referred
+to as the Legacy or Old ABI (which is required for some old ARM chips like
+armv4l). Thumb may not be as well tested, but in theory it should work. Feel
+free to help out.
+</p>
+
+<p>
+Also, another important concept to grasp is the concept of <b>endianness</b>.
+Endianness refers to the way that a CPU reads words from main memory. A word can
+be read as either <e>big</e> endian (most significant byte first), or
+<e>little</e> endian (least significant byte first). Intel x86 machines are
+generally Little Endian, whilst Apple and Sparc machines are Big Endian. On ARM,
+they can be either. To separate them, we append <c>eb</c> to the architecture
+name to denote big endian as little endian tends to be more common in practice.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>The Stage3 Tarball</title>
+<body>
+
+<p>
+A stage3 tarball is an archive containing a minimal Gentoo environment,
+suitable to continue the Gentoo installation using the instructions in this
+manual. Previously, the Gentoo Handbook described the installation using one of
+three stage tarballs. While Gentoo still offers stage1 and stage2 tarballs,
+the official installation method uses the stage3 tarball. If you are interested
+in performing a Gentoo installation using a stage1 or stage2 tarball, please
+read the Gentoo FAQ on <uri link="/doc/en/faq.xml#stage12">How do I Install
+Gentoo Using a Stage1 or Stage2 Tarball?</uri>
+</p>
+
+<p>
+Stage3 tarballs can be downloaded from <path><keyval
+id="release-dir"/>current-stage3/</path> on any of the <uri
+link="/main/en/mirrors.xml">Official Gentoo Mirrors</uri> and are not provided
+on the LiveCD.
+</p>
+
+</body>
+</subsection>
+</section>
+
+<section>
+<title>Netbooting Overview</title>
+<subsection>
+<body>
+
+<p>
+In this section, we'll cover what you need in order to successfully network
+boot a NetWinder. This is just a brief guide, it is not intended to be
+thorough, for more information it is recommended that you read the <uri
+link="/doc/en/diskless-howto.xml">Diskless HOWTO</uri>.
+</p>
+
+<p>
+What You Need: Depending on the machine, there is a certain amount of hardware
+that you'll need in order to successfully netboot and install Linux.
+</p>
+
+<ul>
+  <li>
+    In General:
+    <ul>
+      <li>TFTP server</li>
+      <li>Patience -- and lots of it</li>
+    </ul>
+  </li>
+  <li>
+    NetWinders: you can either do a serial console with a null-modem
+    cable, or you can hook up a regular VGA monitor and a PS/2 keyboard.
+  </li>
+</ul>
+
+<note>
+A <uri link="http://en.wikipedia.org/wiki/Null_modem">null modem cable</uri>
+can be found in most electronics stores.
+</note>
+
+<note>
+For the terminal, this could be a real VT100/ANSI terminal, or it could be a PC
+running terminal emulation software (such as HyperTerminal, Minicom, seyon,
+Telex, xc, screen -- whatever your preference). It doesn't matter what platform
+this machine runs -- just so long as it has one RS-232 serial port you can use,
+and appropriate software.
+</note>
+
+</body>
+</subsection>
+<subsection>
+<title>Setting up TFTP -- a brief guide</title>
+<body>
+
+<p>
+Okay, so you've got your bits and pieces together, now to set everything up. As
+mentioned earlier -- this is not a complete guide, this is a bare-bones config
+that will just get things rolling. You can either use this when starting a
+setup from scratch, or use the suggestions to amend your existing setup to
+support netbooting.
+</p>
+
+<p>
+It is worth noting that the servers used need not be running Gentoo Linux, you
+could quite reasonably use FreeBSD or any Unix-like platform. However, this
+guide will assume you are running Gentoo Linux. You also may run TFTP/NFS on a
+separate machine to the DHCP server if desired.
+</p>
+
+<warn>
+The Gentoo/ARM Team cannot help you with setting up other operating systems as
+netboot servers. If you choose a different OS, it is assumed you know what
+you're doing.
+</warn>
+
+<p>
+First step -- setting up the TFTP server. It is recommended that you use
+<c>tftp-hpa</c> as it is the only TFTP daemon known to work correctly. Proceed
+by installing it as shown below.
+</p>
+
+<pre caption="Installing tftp-hpa">
+# <i>emerge net-ftp/tftp-hpa</i>
+</pre>
+
+<p>
+This will create <path>/tftproot</path> for you to store the netboot images.
+You may move this elsewhere if you wish. For the purposes of this guide, it is
+assumed that you have left it in the default location.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Netbooting your ARM Machine</title>
+<subsection>
+<title>Downloading a Netboot image</title>
+<body>
+
+<p>
+Depending on the system you're installing for, there are several possible
+images available for download. These are all labelled according to the system
+type and CPU they are compiled for. The machine types are as follows:
+</p>
+
+<table>
+  <tr>
+    <th>Machine</th>
+    <th>Files</th>
+  </tr>
+  <tr>
+    <ti>NetWinder</ti>
+    <ti><uri link="http://dev.gentoo.org/~vapier/arm/netboot-netwinder">Netboot</uri></ti>
+  </tr>
+</table>
+
+<p>
+Make sure to place the image into your <path>/tftproot</path> directory.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Start Your Daemons...</title>
+<body>
+<p>
+At this point, you should be ready to start the daemons. Enter the following:
+</p>
+
+<pre caption="Starting the TFTP daemons">
+# <i>/etc/init.d/in.tftpd start</i>
+</pre>
+
+<p>
+If nothing went wrong in that last step you should be all set to power on the
+ARM machine and proceed with the guide. Note that below we assume the TFTP
+server has the IP <c>192.168.0.2</c> so you may have to change this for your
+setup.
+</p>
+
+<p>
+An easy way to verify if the tftp daemon is running is to type the following
+command -- if you see something like the output mentioned below -- everything
+is fine.
+</p>
+
+<pre caption="Checking TFTPd is running">
+# <i>netstat -al | grep ^udp</i>
+udp        0      0 *:bootpc                *:*
+udp        0      0 *:631                   *:*
+udp        0      0 *:xdmcp                 *:*
+udp        0      0 *:tftp                  *:* <comment>&lt;-- (look for this line)</comment>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Netbooting the NetWinder</title>
+<body>
+
+<p>
+Okay, everything is set, the TFTP server is up and running. Now it is time to
+fire up the NetWinder. Once you get into the NeTTrom console, enter the
+commands below.
+</p>
+
+<pre caption="Netbooting from NeTTrom">
+NeTTrom> <i>setenv kernconfig tftp</i>
+NeTTrom> <i>setenv kerntftpserver 192.168.0.2</i>
+NeTTrom> <i>setenv kerntftpfile netboot-netwinder</i>
+NeTTrom> <i>setenv netconfig_eth0 flash</i>
+NeTTrom> <i>setenv eth0_ip 192.168.0.15/24</i>
+NeTTrom> <i>boot</i>
+</pre>
+
+<p>
+From this point, the machine should start downloading the image, then, roughly
+20 seconds later, start booting Linux. If all is well, you should be dropped at
+the Busybox <c>ash</c> shell, where you can move on to <uri
+link="?part=1&amp;chap=3">Configuring Your Network</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+
+</sections>

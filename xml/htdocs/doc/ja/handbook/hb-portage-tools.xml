@@ -1,0 +1,190 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-portage-tools.xml,v 1.8 2011/09/05 13:11:31 naota Exp $ -->
+
+<sections>
+
+<abstract>
+Portageには、あなたのGentoo体験をより良いものにする追加のツールがあります。
+dispatch-confやその他のツールの使い方を知るために読み進めてください。
+</abstract>
+
+<version>2</version>
+<date>2010-10-04</date>
+
+<!-- Original revision: 1.12 -->
+<!-- Translator: kobayashi -->
+<!-- Translator: masuda -->
+
+<section>
+
+<title>dispatch-conf</title>
+<body>
+
+<p>
+<c>dispatch-conf</c>は<path>._cfg0000_&lt;name&gt;</path>ファイルをマージするための補助ツールです。
+<path>._cfg0000_&lt;name&gt;</path>ファイルは、PortageがCONFIG_PROTECT変数によって保護されているディレクトリ内のファイルを上書きしたいとき、Portageによって生成されます。
+</p>
+
+<p>
+<c>dispatch-conf</c>を使うと、変更履歴をすべて残しながら、設定ファイルに対する更新をマージすることができます。
+<c>dispatch-conf</c>はその設定ファイルの間の差分を、パッチとして、あるいはRCSリビジョンを使うことで、保存します。
+これは、もし設定ファイルの更新で失敗したら、いつでも前のバージョンの設定ファイルを復元できることを意味します。
+</p>
+
+<p>
+<c>dispatch-conf</c>を使用する際、設定ファイルをそのまま保持するか、新しい設定ファイルを使うか、既存のものを編集するか、もしくは変更を対話的にマージするかを指示できます。
+また<c>dispatch-conf</c>はいくつかの役立つ追加機能を持っています。
+</p>
+
+<ul>
+  <li>
+    コメントへの更新のみの場合、設定ファイルへの自動的なマージ
+  </li>
+  <li>
+    余白の量が異なる場合、設定ファイルへの自動的なマージ
+  </li>
+</ul>
+
+<p>
+必ず<path>/etc/dispatch-conf.conf</path>を最初に編集し、archive-dir変数によって参照されるディレクトリを作成してください。
+</p>
+
+<pre caption="dispatch-conf を実行する">
+# <i>dispatch-conf</i>
+</pre>
+
+<p>
+<c>dispatch-conf</c>を走らせると、変更された各設定ファイルが一つずつ提示されます。
+既存の設定ファイルを新しいもので更新して（置き換えて）次のファイルへ進むときは、<c>u</c>を押してください。
+新しい設定ファイルを消去（削除）して次のファイルへ進むときは、<c>z</c>を押してください。
+すべての設定ファイルが処理されたら、<c>dispatch-conf</c>は終了します。
+また<c>q</c>を押せば、いつでも終了することができます。
+</p>
+
+<p>
+さらに詳細な情報は<c>dispatch-conf</c>のmanを確認してください。
+そこには、既存の設定ファイルと新しい設定ファイルの対話的なマージや、新しい設定ファイルの編集方法や、ファイル間の差異を調べる方法などが書かれています。
+</p>
+
+<pre caption="dispatch-conf man ページを読む">
+$ <i>man dispatch-conf</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>etc-update</title>
+<body>
+
+<p>
+設定ファイルのマージを行うために、<c>etc-update</c>を使うこともできます。
+<c>etc-update</c>は<c>dispatch-conf</c>のように簡単ではありませんし、先進的でもありません。
+しかし、対話的なマージ機能一揃いを提供し、些細な変更を自動でマージすることができます。
+</p>
+
+<p>
+しかしながら、<c>dispatch-conf</c>とは違い、<c>etc-update</c>は旧バージョンの設定ファイルを保存<e>しません</e>。
+一度設定ファイルを更新したら、旧バージョンの設定ファイルは永遠に失われてしまいます！
+<c>etc-update</c>の使用は、<c>dispatch-conf</c>の使用と比べて<e>著しく</e>安全性が低いので、十分に注意してください。
+</p>
+
+<pre caption="etc-updateを実行">
+# <i>etc-update</i>
+</pre>
+
+<p>
+分かり易い変更点をマージした後、更新を待っている保護されたファイルのリストが表示されるでしょう。
+その下には利用可能なオプションが表示されています。
+</p>
+
+<pre caption="etc-updateオプション">
+Please select a file to edit by entering the corresponding number.
+              (-1 to exit) (-3 to auto merge all remaining files)
+                           (-5 to auto-merge AND not use 'mv -i'):
+</pre>
+
+<p>
+<c>-1</c>を入力すると、<c>etc-update</c>は終了し、以降の全ての変更を中止します。
+<c>-3</c>か<c>-5</c>を入力すると、表示された<e>全ての</e>設定ファイルが新しいものに置き換えられます。
+ゆえに、まず自動的に更新されるべきでない設定ファイルを選択することがとても重要です。
+これは設定ファイルの左に常時されている数字を入力することによって簡単に行えます。
+</p>
+
+<p>
+例えば、<path>/etc/pear.conf</path>という設定ファイルを選択します。
+</p>
+
+<pre caption="特定の設定ファイルを更新">
+Beginning of differences between /etc/pear.conf and /etc/._cfg0000_pear.conf
+<comment>[...]</comment>
+End of differences between /etc/pear.conf and /etc/._cfg0000_pear.conf
+1) Replace original with update
+2) Delete update, keeping original as is
+3) Interactively merge original with update
+4) Show differences again
+</pre>
+
+<p>
+今あなたは２つのファイルの違いを見ています。
+もし設定ファイルの更新が問題なく行えると信じるならば、<c>1</c>を入力します。
+更新された設定ファイルが必要でない、もしくは新しい有用なものを何も提供してくれないと思うなら、<c>2</c>を入力します。
+現在の設定ファイルを相互的に更新したいのなら、<c>3</c>を入力します。
+</p>
+
+<p>
+相互マージについてのより詳しい情報をここで記述することには意味がありません。
+完全にするためには、２つのファイルを相互マージしているときに利用できるコマンドのリストを提示します。
+２行(オリジナルと、推奨される新しいもの)と以下のコマンドのうち１つを入力することができるプロンプトが表示されています。
+</p>
+
+<pre caption="相互マージで利用可能なコマンド">
+ed:     両方のバージョンをヘッダーで装飾して利用して編集
+eb:     両方のバージョンを利用して編集
+el:     左のバーションを利用して編集
+er:     右のバーションを利用して編集
+e:      新しいバージョンを編集
+l:      左のバージョンを利用
+r:      右のバージョンを利用
+s:      結果を表示せず共通の行を含む
+v:      結果を表示して共通の行を含む
+q:      終了
+</pre>
+
+<p>
+重量な設定ファイルの更新が終了したら、その他の設定ファイルを自動更新します。
+更新できる設定ファイルが見つからないときには<c>etc-update</c>は終了します。
+</p>
+
+</body>
+</section>
+<section>
+<title>quickpkg</title>
+<body>
+
+<p>
+<c>quickpkg</c>を使えばシステムに既にマージされたパッケージのアーカイブを作成することができます。
+これらのアーカイブは既にビルドされたパッケージとして利用できます。
+<c>quickpkg</c>の実行は簡単です: アーカイブにしたいパッケージ名を追加するだけです。
+</p>
+
+<p>
+例えば、<c>curl</c>、<c>orage</c>そして<c>procps</c>をアーカイブするならこうします。
+</p>
+
+<pre caption="quickpkg利用例">
+# <i>quickpkg curl orage procps</i>
+</pre>
+
+<p>
+ビルドされたパッケージは<path>$PKGDIR</path>（デフォルトでは<path>/usr/portage/packages/</path> ）に保管されます。
+これらのパッケージは<path>$PKGDIR/&lt;category&gt;</path>にあります。
+</p>
+
+</body>
+</section>
+</sections>

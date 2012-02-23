@@ -1,0 +1,511 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/guide-localization.xml,v 1.15 2006/08/28 17:05:59 idani Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/guide-localization.xml" lang="ja">
+<title>Gentoo Linux ローカライズガイド</title>
+<author title="Author">
+  Alexander Holler
+</author>
+<author title="Translator/Editor">
+  <mail link="slucy@uchicago.edu">Steven Lucy</mail>
+</author>
+<author title="Editor">
+  <mail link="bennyc@gentoo.org">Benny Chuang</mail>
+</author>
+<author title="Editor">
+  <mail link="pylon@gentoo.org">Lars Weiler</mail>
+</author>
+<author title="Editor">
+  <mail link="dertobi123@gentoo.org">Tobias Scherbaum</mail>
+</author>
+<author title="Editor">
+  <mail link="flammie@gentoo.org">Flammie Pirinen</mail>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+<author title="翻訳">
+  <mail link="murakami.taku@gmail.com">Taku Murakami</mail>
+</author>
+
+<abstract>
+このガイドではGentoo Linuxディストリビューションを各々のヨーロッパ地方へローカライズするお手伝いをします。
+これはドイツのドキュメントから翻訳されたため、ケーススタディとしてドイツ語が使われています。
+ユーロ通貨記号を利用するための設定も含まれています。
+</abstract>
+
+<version>1.31</version>
+<date>2006-07-18</date>
+
+<!-- Original revision: 1.43 -->
+
+<chapter>
+<title>タイムゾーン</title>
+<section>
+<body>
+
+<p>
+正確な時間を保つためには、<path>/etc/localtime</path>が正しいタイムゾーンデータを含んでいなければなりません。
+<path>/usr/share/zoneinfo/</path>を見渡してあなたのタイムゾーンか近くにある大きな都市を選んでください。
+<path>/usr/share/zoneinfo/Etc/GMT*</path>のタイムゾーンは、必要なタイムゾーンの名前を示していないので避けてください。
+例えば、<path>GMT-8</path>は実際にはGMT+8を指します。
+</p>
+
+<pre caption="タイムゾーンの設定">
+# <i>cp /usr/share/zoneinfo/Europe/Berlin /etc/localtime</i>
+# <i>date</i>
+Sun Feb 16 08:26:44 CET 2003
+</pre>
+
+<note>
+タイムゾーン表示(この場合ではCET)があなたの地域にとって正しい物かを確かめてください。
+</note>
+
+<note>
+ユーザーレベルの設定のために、<path>/usr/share/zoneinfo</path>に基づく<c>TZ</c>を、シェルのrcファイル(bashでは<path>.bash_profile</path>)に設定することができます。
+このケースでは<c>TZ="Europe/Berlin"</c>となります。
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ハードウェアクロック</title>
+<section>
+<body>
+
+<p>
+ほとんどのGentoo Linuxのインストールでは、システムクロックがUTC(もしくはグリニッジ標準時のGMT)に設定されていて、正しいローカルタイムに設定しようとしています。
+もし、何らかの理由で、UTC以外のシステムクロックに設定する必要があるときには、<path>/etc/conf.d/clock</path>にある<c>CLOCK</c>の値を<c>UTC</c>から<c>local</c>へ変更してください。
+</p>
+
+<pre caption="ローカル vs. GMTクロック">
+<comment>推奨</comment>
+CLOCK="UTC"
+<comment>もしくは</comment>
+CLOCK="local"
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ロケールシステム</title>
+<section>
+<title>ロケールとは？</title>
+<body>
+
+<p>
+ロケールとは1組の情報セットであり、大部分のプログラムが国と言語特定の設定を決定するのに使用します。
+ロケールとそのデータはシステムライブラリの一部であり、たいていのシステムの<path>/usr/share/locale</path>にあります。
+ロケール名は一般的に<c>ab_CD</c>となり、<c>ab</c>は2文字(もしくは3文字)の(ISO-639で指定された)言語コード、<c>CD</c>は2文字の(ISO-3166で指定された)国コードをそれぞれ表しています。
+</p>
+
+</body>
+</section>
+<section id="variables">
+<title>ロケール用の環境変数</title>
+<body>
+
+<p>
+ロケール設定は環境変数に保存されます。
+それらは典型的に、<path>/etc/env.d/02locale</path>(システム全体の設定)と<path>~/.bashrc</path>(ユーザ特有の設定)ファイルで設定されます。
+ロケール設定の異なった局面を制御する変数を、優先順位の高い順(例えば、それよりも下の設定を上書きします)に、以下のテーブルに示します。
+全ての変数は、上で与えられた、<c>ab_CD</c>フォーマットのロケール名を持ちます。
+</p>
+
+<table>
+<tr>
+  <th>変数名</th>
+  <th>説明</th>
+</tr>
+<tr>
+  <ti>LC_ALL</ti>
+  <ti>
+    全てのロケール設定を一度に定義します。これは他のどの設定をも上書きする、最も順位の高いロケールの設定です。
+  </ti>
+</tr>
+<tr>
+  <ti>LC_COLLATE</ti>
+  <ti>
+    文字列のアルファベットの順序を定義します。これは例えば、ソート済みのディレクトリ一覧を出力するときに影響します。
+  </ti>
+</tr>
+<tr>
+  <ti>LC_CTYPE</ti>
+  <ti>
+    システム用の文字の取り扱いの特性を定義します。これは、どの文字がアルファベット、数値などの一部と考えられるかを決定します。また、これは適用できれば、使用する文字集合を決定します。
+  </ti>
+</tr>
+<tr>
+  <ti>LC_MESSAGES</ti>
+  <ti>
+    大部分のGnuプログラムで利用されているローカライズ機能について、どのように地域言語を特定するのか？どのようにプログラム自身が保持していない地域言語を取得するのか？どのように動作するのか？というより詳しい情報は次章を参照してください。
+  </ti>
+</tr>
+<tr>
+  <ti>LC_MONETARY</ti>
+  <ti>通貨単位と通貨のフォーマットを定義します。</ti>
+</tr>
+<tr>
+  <ti>LC_NUMERIC</ti>
+  <ti>
+    通貨ではない数値のフォーマットを定義します。千や小数点の区切りなどに影響します。
+  </ti>
+</tr>
+<tr>
+  <ti>LC_TIME</ti>
+  <ti>日付と時間のフォーマットを定義します。</ti>
+</tr>
+<tr>
+  <ti>LC_PAPER</ti>
+  <ti>初期の用紙サイズを定義します。</ti>
+</tr>
+<tr>
+  <ti>LANG</ti>
+  <ti>
+    全てのロケール設定を一度に定義します。
+    この設定は上で説明した個々のLC_*設定やLC_ALLで上書き可能です。
+  </ti>
+</tr>
+</table>
+
+<note>
+ほとんどのプログラムがLC_ALLでのみ動作するにもかかわらず、LC_ALLが設定されているがLANGが設定されていない場合には不具合を起こす物もあります。
+安全のため、<e>両方</e>を設定してください。
+</note>
+
+<p>
+大半の典型的なユーザは、シェル起動ファイルにコマンドラインから手動で環境変数を設定することによって、LANG変数や、もしかするとLC_CTYPEをユーザレベルに設定するだけです。
+</p>
+
+<pre caption="~/.bashrcにユーザロケールを設定する">
+export LANG="de_DE@euro"
+</pre>
+
+<note>
+ユーロ通貨記号(€)を使用したいのなら、ロケールに<c>@euro</c>を追加します。
+</note>
+
+<p>
+全てのユーザとプログラム向けにシステムワイドなロケール設定も可能にします。
+</p>
+
+<pre caption="/etc/env.d/02localeにデフォルトのシステムロケールを設定する">
+LC_ALL="de_DE@euro"
+LANG="de_DE@euro"
+</pre>
+
+<p>
+一般的な方法は、デフォルトのシステムロケールを設定せずに、ユーザごとのロケールのみを設定する使い方です。
+この場合、システムロケールは、特別な値である<c>"C"</c>を規定値にします。
+これは歴史的な理由で、英語ロケールにマッピングされます。
+</p>
+
+<p>
+ローカライズを元にしたメッセージをサポートしているプログラムでそれを動作させるには、もしかするとUSEフラグで<c>nls</c> (母国語サポート)を設定してコンパイルする必要があるかもしれません。
+nlsを使用する大半のプログラムは、ローカライズメッセージを取り出して使用するためにgettextライブラリも必要です。
+もちろん、Portageは、必要なときには自動的にgettextライブラリをインストールします。
+</p>
+
+<p>
+正しいロケールを設定したら、システムが変更を認識するために環境変数を更新するようにしてください。
+</p>
+
+<pre caption="環境変数の更新">
+<comment>(システムワイドの標準ロケールを設定する場合)</comment>
+# <i>env-update &amp;&amp; source /etc/profile</i>
+
+<comment>(ユーザごとにロケールを設定する場合)</comment>
+$ <i>source ~/.bashrc</i>
+</pre>
+
+<p>
+これが完了したら、<c>Ctrl-Alt-Backspace</c>を押してXサーバを強制終了し、ログアウトして、ユーザとしてログインします。
+</p>
+
+<p>
+では、変更が正しく行われているかを確認します。
+</p>
+
+<pre caption="変更の確認">
+$ <i>env | grep -i LC_</i>
+</pre>
+
+<p>
+LINGUASという追加のローカライズ変数もあります。
+これはgettextベースのプログラムがインストールされる際のローカライズファイルに影響し、<c>kde-base/kde-i18n</c>や<c>app-office/openoffice</c>といった特定のソフトウェアパッケージでローカライズの使用を決定します。
+変数は<e>スペース</e>で区切られた言語コードを受け入れ、<path>/etc/make.conf</path>で設定することが提案されています。
+</p>
+
+<pre caption="LINGUASをmake.confで設定する">
+# <i>nano -w /etc/make.conf</i>
+<comment>(LINGUAS変数を追加します。例えば、ドイツ語、フランス語、英語なら以下のようにします)</comment>
+LINGUAS="de fi en"
+</pre>
+
+</body>
+</section>
+<section>
+<title>特定のロケールを作成</title>
+<body>
+
+<p>
+デフォルトで利用できないロケールを利用したいなら、<c>localedef</c>を利用してあなたの位置を作成します。
+以下に例を示します。
+</p>
+
+<pre caption="localedefを利用してロケールを作成">
+# <i>localedef -c -i en_US -f ISO-8859-15 en_US.ISO-8859-15</i>
+</pre>
+
+<p>
+ロケールを作成した後は、LANG変数が合うようにexportします。
+</p>
+
+<pre caption="LANG変数をexport">
+# <i>export LANG="en_US.ISO-8859-15"</i>
+</pre>
+
+<p>
+変更後に環境を更新してください。
+</p>
+
+<pre caption="環境の更新">
+# <i>env-update &amp;&amp; source /etc/profile</i>
+</pre>
+
+<p>
+これが完了したら、<c>Ctrl-Alt-Backspace</c>を押してXサーバを強制終了し、ログアウトして、ユーザとしてログインします。
+</p>
+
+</body>
+</section>
+<section>
+<title>glibc用にロケールの生成</title>
+<body>
+
+<p>
+あなたは恐らくシステムで１つか２つのロケールしか利用しないでしょう。
+<path>/etc/locale.gen</path>で必要なロケールを指定できます。
+</p>
+
+<pre caption="/etc/locale.genにロケールの追加">
+en_GB ISO-8859-1
+en_GB.UTF-8 UTF-8
+de_DE ISO-8859-1
+de_DE@euro ISO-8859-15
+</pre>
+
+<p>
+次のステップでは<c>locale-gen</c>を実行します。これにより、
+<path>/etc/locale.gen</path>ファイルで指定された全てのロケールが生成されます。
+</p>
+
+<note>
+<c>locale-gen</c>は、<c>glibc-2.3.6-r4</c>以降で利用可能です。
+glibcがそれよりも古いバージョンの場合には、すぐにアップデートして下さい。
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>コンソールでのキーボードレイアウト</title>
+<section>
+<body>
+
+<p>
+コンソールで使われるキーボードのレイアウトは、<path>/etc/conf.d/keymaps</path>の<c>KEYMAP</c>変数によって設定されています。
+有効な値は<path>/usr/share/keymaps/<c>{arch}</c>/</path>で見つかります。
+<path>i386</path>はより細分化されたレイアウトです(<path>qwerty/</path>、<path>azerty/</path>など)。
+いくらかの言語には複数のオプションがありますので、どれが要求に一致しているのかいろいろ試してみてください。
+</p>
+
+<pre caption="コンソールキーマップを設定">
+KEYMAP="de"
+KEYMAP="de-latin1"
+KEYMAP="de-latin1-nodeadkeys"
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Xサーバでのキーボードレイアウト</title>
+<section>
+<body>
+
+<p>
+Xサーバで使われるキーボードレイアウトは、<path>/etc/X11/xorg.conf</path>の<c>XkbLayout</c>オプションで設定されています。
+</p>
+
+<pre caption="Xキーマップを設定">
+ Section "InputDevice"
+     Identifier  "Keyboard1"
+     ...
+     Option "XkbLayout"    "de"
+     # Option "XkbModel"     "pc105"    <comment>## これは国際キーボード向けです</comment>
+     # Option "XkbVariant"  "nodeadkeys" <comment>## これはxtermの入力に使用されます</comment>
+     ...
+</pre>
+
+<p>
+国際キーボードを使用しているのなら、<c>XkbModel</c>オプションを<c>pc102</c>か<c>pc105</c>に設定するべきです。
+これは、キーボード特有の追加キーのマッピングを行えるようになります。
+</p>
+
+<p>
+Deadkeysは、押したキーがすぐには表示されず、他の文字と組み合わせることによりﾃｩ、ﾃｨ、ﾃ｡、ﾃなどの単一の文字となるようにするようものです。
+<c>XkbVariant</c>を<c>nodeadkeys</c>に設定することにより、これらの特別な文字をXターミナルで入力できるようになります。
+</p>
+
+<p>
+2つ以上のキーボードレイアウト(英語とロシア語など)を切替えて使用したいのなら、するべき事は<path>xorg.conf</path>にレイアウトとショートカットコマンドの数行を追加するだけです。
+</p>
+
+<pre caption="2つのキーボードレイアウトを切替える">
+ Section "InputDevice"
+     Identifier  "Keyboard1"
+     ...
+     Option "XkbLayout"    "us,ru"
+     Option "XkbOptions"   "grp:alt_shift_toggle,grp_led:scroll"
+</pre>
+
+<p>
+ここで、<c>XkbOptions</c>を設定することで<c>Alt-Shift</c>を押すことでキーボードレイアウトを切替えられるようになります。
+また、<c>grp_led:scroll</c>オプションによって、Scroll Lockライトのオンオフの切替えも行えるようになります。
+これにより、現在どのキーボードレイアウトを使用しているかを視覚的に認識できます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>KDE</title>
+<section>
+<body>
+
+<p>
+KDEでは<c>kde-base/kde-i18n</c>パッケージをインストールします。
+kde-i18nは前に述べた<uri link="#variables">LINGUAS変数</uri>を重視します。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>コンソールでのユーロ記号</title>
+<section>
+<body>
+
+<p>
+コンソールでユーロ記号を使えるようにするには、<path>/etc/conf.d/consolefont</path>の<c>CONSOLEFONT</c>を<path>/usr/share/consolefonts/</path>にあるファイル(<c>.psfu.gz</c>を除く)に設定する必要があります。
+<c>lat9w-16</c>がユーロ記号です。
+</p>
+
+<pre caption="コンソールフォントを設定">
+CONSOLEFONT="lat9w-16"
+</pre>
+
+<p>
+<c>CONSOLEFONT</c>がbootランレベルにあることを確認するべきです。
+</p>
+
+<pre caption="適切なランレベルにあることを確認">
+# <i>rc-update show | grep -i consolefont</i>
+</pre>
+
+<p>
+<c>CONSOLEFONT</c>に何のランレベルも表示されていなければ、適切なレベルに追加してください。
+</p>
+
+<pre caption="consolefontをbootに追加">
+# <i>rc-update add consolefont boot</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Xでのユーロ記号</title>
+<section>
+<title>ほとんどのアプリケーション</title>
+<body>
+
+<p>
+Xで正しくユーロ記号を動作させるにはちょっと大変です。
+まずは、<path>/usr/X11R6/lib/X11/fonts/misc/fonts.alias</path>にある<c>fixed</c>と<c>variable</c>変数の最後を、<c>iso8859-1</c>から<c>iso8859-15</c>へと置き換えます。
+</p>
+
+<pre caption="デフォルトXフォントを設定">
+fixed        -misc-fixed-medium-r-semicondensed--13-120-75-75-c-60-iso8859-15
+variable     -*-helvetica-bold-r-normal-*-*-120-*-*-*-*-iso8859-15
+</pre>
+
+<p>
+いくらかのアプリケーションはそれ自身のフォントを使用しているので、それらにユーロ記号のフォントを別に使うよう指示しなければなりません。
+これは、ユーザー特有のレベルでは<path>.Xdefaults</path>(<path>/etc/skel/</path>からコピーすることもできます)で、
+もしくは(xtermのように)いくつかのアプリケーションの全体レベルでは<path>/usr/X11R6/lib/X11/app-defaults/</path>にあるリソースファイルを変更することで行えます。
+これらのファイルでは、一般的に新しく追加するよりも既にある行を変更した方がよいでしょう。
+例えば、xtermのフォントを変更するには以下のようにします。
+</p>
+
+<pre caption="xtermのフォントを設定">
+<comment>(ホームディレクトリで)</comment>
+$ <i>echo 'XTerm*font: fixed' >> .Xresources </i>
+$ <i>xrdb -merge .Xresources</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>(X)Emacsでのユーロ記号</title>
+<body>
+
+<p>
+(X)Emacsでユーロ記号を使うには、<path>.Xdefaults</path>に以下のように追加します。
+</p>
+
+<pre caption="emacsのフォントを設定">
+Emacs.default.attributeFont: -*-courier-medium-r-*-*-*-120-*-*-*-*-iso8859-15
+</pre>
+
+<p>
+(単なるEmacsではなく)XEmacsでは、もう少しすることがあります。
+<path>/home/user/.xemacs/init.el</path>に以下のように追加します。
+</p>
+
+<pre caption="xemacsのフォントを設定">
+(define-key global-map '(EuroSign) '[€])
+</pre>
+
+<note>
+[]の中の記号はユーロ記号です。
+</note>
+
+</body>
+</section>
+<section>
+<title>OpenOffice.Org</title>
+<body>
+
+<p>
+現在のstableな<c>app-office/openoffice</c>と<c>app-office/openoffice-bin</c>のebuildはGUI言語パックを選択するために<uri link="#variables">LINGUAS変数</uri>をサポートしています。
+そのため、ローカライズされたOpenOffice.Orgを使うためには、ソースバージョンか、自己責任でunstableなバイナリバージョンのどちらかをインストールしなければなりません。
+あなたの言語でのGUI翻訳、ハイフン接続、スペルチェック、そして他のローカライズの状態を確認するには、<uri link="http://l10n.openoffice.org/languages.html">OpenOffice.Org localisation</uri>を参照してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

@@ -1,0 +1,188 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2005.1/hb-install-system.xml,v 1.6 2006/02/22 10:17:45 neysx Exp $ -->
+
+<sections>
+
+<version>5.4</version>
+<date>2006-02-22</date>
+
+<section>
+<title>Chrooting</title>
+<subsection>
+<title>Mounting the /proc and /dev Filesystems</title>
+<body>
+
+<p>
+Mount the <path>/proc</path> filesystem on <path>/mnt/gentoo/proc</path> to
+allow the installation to use the kernel-provided information within the
+chrooted environment, and then mount-bind the <path>/dev</path> filesystem.
+</p>
+
+<pre caption="Mounting /proc and /dev">
+# <i>mount -t proc none /mnt/gentoo/proc</i>
+# <i>mount -o bind /dev /mnt/gentoo/dev</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Optional: Copy over DNS Information</title>
+<body>
+
+<p>
+If you configured your network to fetch the appropriate stage file later on from
+the Internet, you need to copy over the DNS information stored in
+<path>/etc/resolv.conf</path> to <path>/mnt/gentoo/etc/resolv.conf</path>. This
+file contains the nameservers your system will use to resolve names to IP
+addresses.
+</p>
+
+<pre caption="Copy over DNS Information">
+# <i>cp -L /etc/resolv.conf /mnt/gentoo/etc/resolv.conf</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Entering the new Environment</title>
+<body>
+
+<p>
+Now that all partitions are initialized and the base environment
+installed, it is time to enter our new installation environment by
+<e>chrooting</e> into it. This means that we change from the current
+installation environment to your installation system (namely the 
+initialized partitions).
+</p>
+
+<p>
+This chrooting is done in three steps. First we will change the root
+from <path>/</path> (on the installation medium) to <path>/mnt/gentoo</path> 
+(on your partitions) using <c>chroot</c>. Then we will create a new environment
+using <c>env-update</c>, which essentially creates environment variables.
+Finally, we load those variables into memory using <c>source</c>.
+</p>
+
+<pre caption="Chrooting into the new environment">
+# <i>chroot /mnt/gentoo /bin/bash</i>
+# <i>env-update</i>
+>>> Regenerating /etc/ld.so.cache...
+# <i>source /etc/profile</i>
+# <i>export PS1="(chroot) $PS1"</i>
+</pre>
+
+<p>
+Congratulations! You are now inside your own Gentoo Linux environment.
+Of course it is far from finished, which is why the installation still
+has some sections left :-)
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Creating the Portage cache</title>
+<body>
+
+<p>
+You have already installed the Portage tree, but you should now build the
+Portage cache to speed up future emerges. <c>emerge --metadata</c> does this
+for you.
+</p>
+
+<pre caption="Creating the Portage cache">
+# <i>emerge --metadata</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+
+<section id="configure_USE">
+<title>Configuring the USE Variable</title>
+<subsection>
+<title>What is the USE Variable?</title>
+<body>
+
+<p>
+<c>USE</c> is one of the most powerful variables Gentoo provides to its users.
+Several programs can be compiled with or without optional support for certain
+items. For instance, some programs can be compiled with gtk-support, or with
+qt-support. Others can be compiled with or without SSL support. Some programs
+can even be compiled with framebuffer support (svgalib) instead of X11 support
+(X-server).
+</p>
+
+<p>
+Most distributions compile their packages with support for as much as possible,
+increasing the size of the programs and startup time, not to mention an enormous
+amount of dependencies. With Gentoo you can define what options a package 
+should be compiled with. This is where <c>USE</c> comes into play.
+</p>
+
+<p>
+In the <c>USE</c> variable you define keywords which are mapped onto
+compile-options. For instance, <e>ssl</e> will compile ssl-support in the
+programs that support it. <e>-X</e> will remove X-server support (note the minus
+sign in front). <e>gnome gtk -kde -qt</e> will compile your programs with gnome
+(and gtk) support, and not with kde (and qt) support, making your system fully
+tweaked for GNOME.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Modifying the USE Variable</title>
+<body>
+
+<warn>
+Do not make any modifications to the USE variable yet if you plan to use our
+prebuilt packages (GRP set). You can alter the USE variable after having
+installed the packages you want. Gremlins are known to attack your system 
+if you ignore this warning!
+</warn>
+
+<p>
+The default <c>USE</c> settings are placed in
+<path>/etc/make.profile/make.defaults</path>. What you place in
+<path>/etc/make.conf</path> is calculated against these defaults settings. If
+you add something to the <c>USE</c> setting, it is added to the default list. If
+you remove something from the <c>USE</c> setting (by placing a minus sign in
+front of it) it is removed from the default list (if it was in the default list
+at all). <e>Never</e> alter anything inside the <path>/etc/make.profile</path>
+directory; it gets overwritten when you update Portage!
+</p>
+
+<p>
+A full description on <c>USE</c> can be found in the second part of the Gentoo
+Handbook, <uri link="?part=2&amp;chap=2">USE flags</uri>. A full description on
+the available USE flags can be found on your system in
+<path>/usr/portage/profiles/use.desc</path>. 
+</p>
+
+<pre caption="Viewing available USE flags">
+# <i>less /usr/portage/profiles/use.desc</i>
+<comment>(You can scroll using your arrow keys, exit by pressing 'q')</comment>
+</pre>
+
+<p>
+As an example we show a <c>USE</c> setting for a KDE-based system with DVD, ALSA
+and CD Recording support:
+</p>
+
+<pre caption="Opening /etc/make.conf">
+# <i>nano -w /etc/make.conf</i>
+</pre>
+
+<pre caption="USE setting">
+USE="-gtk -gnome qt kde dvd alsa cdr"
+</pre>
+
+</body>
+</subsection>
+</section>
+</sections>

@@ -1,0 +1,817 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/alsa-guide.xml,v 1.23 2008/06/30 22:22:33 shindo Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/alsa-guide.xml" lang="ja">
+<title>Gentoo Linux ALSA ガイド</title>
+
+<author title="Author">
+  <mail link="fox2mike@gentoo.org">Shyam Mani</mail>
+</author>
+<author title="Author">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+<author title="Contributor">
+  <mail link="flameeyes@gentoo.org">Diego Pettenò</mail>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+<author title="翻訳">
+  <mail link="katanotsupqr@gmail.com">増田 昌也</mail>
+</author>
+
+<abstract>
+このドキュメントはGentoo LinuxでALSAを設定する際の手助けとなります。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2.23</version>
+<date>2008-03-05</date>
+
+<!-- Original revision: 1.81 -->
+
+<chapter>
+<title>初めに</title>
+<section>
+<title>ALSAって何？</title>
+<body>
+
+<p>
+ALSAとは<e>Advanced Linux Sound Architecture</e>のことで、LinuxシステムにオーディオやMIDI（<e>Musical Instrument Digital Interface</e>）機能を提供します。
+ALSAは2.6カーネルのデフォルトサウンドシステムであり、2.4カーネルで使用されていたOSS（<e>Open Sound System</e>）と置き換わっています。
+</p>
+
+<p>
+ALSAの主要な機能は、一般的なサウンドカードからプロ仕様のサウンド装置まで多岐にわたる全てのオーディオインターフェースを能率的にサポートしていること、完全にモジュール化されたドライバ、SMPとスレッドへの対応、OSSとの下位互換性、そしてアプリケーション開発を簡単にするユーザスペースライブラリの<c>alsa-lib</c>があります。
+</p>
+
+</body>
+</section>
+<section>
+<title>GentooでのALSA</title>
+<body>
+
+<p>
+歴史的に、GentooはALSAを立ち上げ動作させる方法を2通り提供していました。
+それは、<e>カーネル内部の</e>ドライバと外部の<c>alsa-driver</c>パッケージです。
+2つの方法は本質的に同じことをしています。
+このことが他のパッケージのサポートを難しくし、また時間を浪費させる原因となっていました。
+そこで、Gentooのメンテナは<c>alsa-driver</c>パッケージを廃止し、Linuxカーネル内で入手できるALSAドライバに資源を集中させる決定を下しました。
+このガイドはカーネル付属のドライバによるALSAの設定だけに焦点を絞っています。
+</p>
+
+<p>
+もしまだ<c>alsa-driver</c>パッケージを必要としているなら、なぜカーネル付属のドライバが動かないのか<mail
+link="alsa-bugs@gentoo.org">GentooのALSAメンテナ</mail>にメールを送ってください。
+必ず詳細なエラーログも添付してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ALSAのインストール</title>
+<section id="lspci">
+<title>取りかかる前に</title>
+<body>
+
+<p>
+最初に、サウンドカードがどのドライバを使うのか知る必要があります。
+ほとんどの場合、サウンドカード（オンボードやそれ以外）はPCIで接続されており、<c>lspci</c>を使うことにより必要な情報を得ることが出来ます。
+もし<c>lspci</c>がまだインストールされていなければ、<c>emerge sys-apps/pciutils</c>を行ってインストールしてください。
+USBサウンドカードを使っている場合は、<c>sys-apps/usbutils</c>の<c>lsusb</c>が手助けになる<e>かもしれません</e>。
+ISAカードでは、<c>sys-apps/isapnptools</c>を使ってみてください。
+また、以下のページはISAのサウンドカードユーザの助けとなる<e>かもしれません</e>。
+</p>
+
+<ul>
+  <li>
+  <uri link="http://www.roestock.demon.co.uk/isapnptools/">The ISAPNPTOOLS
+  Page</uri>
+  </li>
+  <li>
+  <uri link="http://www2.linuxjournal.com/article/3269">LinuxJournal PnP
+  Article</uri>
+  </li>
+  <li>
+  <uri link="http://www.tldp.org/HOWTO/Sound-HOWTO/x320.html">TLDP Sound
+  HowTo</uri>
+  </li>
+</ul>
+
+<note>
+使用や説明を簡単にするために、これ以降はユーザはPCIのサウンドカードを使用していると仮定します。
+</note>
+
+<p>
+ではサウンドカードの詳細を見てみましょう。
+</p>
+
+<pre caption="サウンドカードの詳細">
+# <i>lspci -v | grep -i audio</i>
+0000:00:0a.0 Multimedia audio controller: Creative Labs SB Live! EMU10k1 (rev 06)
+</pre>
+
+<p>
+以上の結果より、マシンのサウンドカードがSound Blaster Live!で、製造元がCreative Labsであることが分かります。
+<uri link="http://bugtrack.alsa-project.org/main/index.php/Matrix:Main">ALSA Soundcard Matrix</uri>へ行き、ドロップダウンメニューからCreative Labsを選びましょう。
+Creative Labsの一覧表が表示され、SB Live!は<c>emu10k1</c>モジュールを使っていることが分かります。
+これが現在必要な情報です。
+もし詳細な情報に興味があるなら、"Details"のリンクをクリックし、<c>emu10k1</c>のページを見てください。
+</p>
+
+<p>
+もしMIDIを利用するつもりなら、どんなALSAパッケージもemergeする前に<path>/etc/make.conf</path>のUSEフラグに<c>midi</c>を加えるべきです。
+このガイドの後の方で<uri link="#midi">MIDIサポート</uri>の設定方法を示します。
+</p>
+
+</body>
+</section>
+<section id="kernel">
+<title>カーネルの設定</title>
+<body>
+
+<note>
+2005.0リリースから、Gentoo Linuxは2.6カーネルをデフォルトカーネルとして使用します。
+あなたのカーネルが2.6シリーズのカーネルかを確認してください。
+この方法は2.4カーネルでは<e>動作しません</e>。
+</note>
+
+<p>
+ではALSAを有効にするためにカーネルを設定しましょう。
+</p>
+
+<impo>
+<c>genkernel</c>ユーザは<c>genkernel --menuconfig all</c>を実行し、<uri link="#doc_chap2_pre3">ALSAのためのカーネルオプション</uri>の指示に従うべきです。
+</impo>
+
+<pre caption="ソースへと向かう">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<note>
+上記の例では<path>/usr/src/linux</path>のシンボリックリンクが使用したいカーネルをさしていると仮定しています。
+先へ進む前に、そのようになっていることを確認してください。
+</note>
+
+<p>
+では、ALSAがサウンドカードをサポートするようにする為に2.6カーネルで有効にするオプションを見ていきましょう。
+</p>
+
+<p>
+簡単にするために全ての例ではALSAをモジュールとしてビルドするということに注意してください。
+以下の説明と同じように行い、カードを設定するときに便利である<c>alsaconf</c>を使用することが推奨されています。
+このドキュメントの<uri link="#alsa-config">設定</uri>の章を<e>飛ばさないでください</e>。
+それでもなおカーネル内部にビルドするオプションを選択したいのなら、設定をその通りに確実に変更してください。
+</p>
+
+<pre caption="ALSAのためのカーネルオプション">
+Device Drivers  ---&gt;
+   Sound  ---&gt;
+   
+<comment>(これを有効にする必要があります)</comment>
+&lt;M&gt; Sound card support
+
+<comment>(確実にOSSを無効にしてください)</comment>
+Open Sound System   ---&gt;
+   &lt; &gt; Open Sound System (DEPRECATED)
+
+<comment>(前に戻ってALSAに入ります)</comment>
+Advanced Linux Sound Architecture  ---&gt;
+   &lt;M&gt; Advanced Linux Sound Architecture
+   <comment>(MIDIシーケンスが必要ならこれを選択します)</comment>
+   &lt;M&gt; Sequencer support
+   <comment>(旧式の/dev/mixer*と/dev/dsp*をサポートします。推奨されています)</comment>
+   &lt;M&gt; OSS Mixer API
+   &lt;M&gt; OSS PCM (digital audio) API 
+
+<comment>(サポートするデバイスを選ばなければなりません。
+一般的には、1種類だけを選べば良く、それ以上は必要ありません。
+2つ以上のサウンドカードを持っているのなら、全てを有効にしてください。)</comment>
+
+<comment>(主にテストと開発目的のためであり、何をしているのか知らないのであれば一般ユーザには必要ありません)</comment>
+Generic devices  ---&gt;
+   
+<comment>(ISAサウンドカード用)</comment>
+ISA devices   ---&gt;
+<comment>(Gravisを持っているのなら、このオプションを選ぶべきです)</comment>
+   &lt;M&gt; Gravis UltraSound Extreme
+
+<comment>(1段階戻ってPCIデバイスに入ります。現在のほとんどのサウンドカードはPCIデバイスです)</comment>
+PCI devices   ---&gt;
+   <comment>(ここではemu10k1ドライバを選びます)</comment>
+   &lt;M&gt; Emu10k1 (SB Live!, Audigy, E-mu APS)
+   <comment>(Intelカードならこれを選びます)</comment>
+   &lt;M&gt; Intel/SiS/nVidia/AMD/ALi AC97 Controller
+   <comment>(VIAカードならこれを選びます)</comment>
+   &lt;M&gt; VIA 82C686A/B, 8233/8235 AC97 Controller
+
+<comment>(USBサウンドカードを持っているのなら、1段階戻ってこれを選びます)</comment>
+USB Devices   ---&gt;
+</pre>
+
+<p>
+これで必要なオプションを設定したので、カーネルを再コンパイルし新しいカーネルで再起動することにより、ALSAサポートが機能します。
+GRUBの設定が新しいカーネルを使用するよう更新することを忘れないでください。
+<uri link="#alsa-utilities">ALSAユーティリティ</uri>へ進み、全てがあるべき様に動作しているか確認してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ALSAの設定とテスト</title>
+<section id="alsa-utilities">
+<title>ALSAユーティリティ</title>
+<body>
+
+<p>
+ALSAの必要不可欠な部分である<c>alsa-utils</c>には、ALSA Initスクリプトを含む非常に役に立つプログラムがたくさん入っています。
+そのため、<c>alsa-utils</c>をインストールすることを強く推奨します。
+</p>
+
+<pre caption="alsa-utilsのインストール">
+# <i>emerge alsa-utils</i>
+</pre>
+
+<note>
+もしALSAをモジュールとしてコンパイルしていなければ、<uri link="#initscript">ALSA Initスクリプト</uri>の章へ進んでください。
+必要なことはALSAの設定だけです。
+<c>alsa-utils</c>によって提供される<c>alsaconf</c>ツールを使用することによって簡単に行うことが出来ます。
+</note>
+
+</body>
+</section>
+<section id="alsa-config">
+<title>設定</title>
+<body>
+
+<p>
+最近のバージョンの<c>udev</c>（<c>>=udev-103</c>）はある程度カーネルレベルでサウンドカードの自動設定機能を提供します。
+可能ならサウンドーカードをカーネルの自動設定のみに任せてみてください。
+そうでなければ、以下で述べるように、<c>alsaconf</c>を使って設定してください。
+</p>
+
+<note>
+<c>alsaconf</c>実行中は、サウンドカードにアクセスする<e>可能性のある</e>全てのプログラムを終了してください。
+</note>
+
+<p>
+サウンドカードを設定するために、rootとなってシェル上で<c>alsaconf</c>と入力してください。
+</p>
+
+<pre caption="alsaconfの起動">
+# <i>alsaconf</i>
+</pre>
+
+<p>
+自動的にデバイスを検索し、サウンドカードを発見しようとする、すっきりとしたインターフェースが表示されるでしょう。
+一覧からサウンドカードを選択するよう言われるでしょう。
+完了したら、<path>/etc/modules.d/alsa</path>の必要な修正を自動的に行う許可を尋ねられるでしょう。
+その後ボリューム設定を最適なレベルに合わせ、<c>update-modules</c>を起動して<path>/etc/init.d/alsasound</path>サービスを開始します。
+<c>alsaconf</c>が終了したら、ALSA initスクリプトの設定に進むことが出来ます。
+</p>
+
+</body>
+</section>
+<section id="initscript">
+<title>ALSA Initスクリプト</title>
+<body>
+
+<p>
+ほとんどの設定を終えました。どちらのALSAをインストールする方法を選んだにせよ、システム起動時にモジュールを読み込むかALSAを初期化し、ボリュームの設定を復元するようにしなければならないでしょう。
+<c>alsasound</c>と呼ばれるALSA Initスクリプトはこれを全て行います。
+これをboot runlevelに追加します。
+</p>
+
+<pre caption="ALSAをboot runlevelに追加">
+# <i>rc-update add alsasound boot</i>
+ * alsasound added to runlevel boot
+ * rc-update complete.
+</pre>
+
+<p>
+次に、<path>/etc/conf.d/alsasound</path>ファイルでSAVE_ON_STOP変数がyesになっていることを確認します。
+これはシステム終了時にサウンド設定を保存するための物です。
+</p>
+
+</body>
+</section>
+<section>
+<title>Audioグループ</title>
+<body>
+
+<p>
+テストに移る前に、最後の<e>重要な</e>設定があります。
+*nix OSでの経験に基づいて、必要でないときにはrootであるべきではありません。
+これはここでも同じように当てはまります。
+どうするかって？
+たいていの場合、ユーザとしてログインし、音楽を聴くかサウンドカードにアクセスしたいでしょう。
+その場合、"audio"グループに入っていなければなりません。
+そのため、ユーザがサウンドデバイスにアクセスしたいときに問題が起こらないように、audioグループに追加します。
+ここでは<c>gpasswd</c>を使いますが、この作業のためにrootとしてログインしなければなりません。
+</p>
+
+<pre caption="ユーザをaudioグループに追加">
+<comment>(&lt;username&gt; をユーザに置き換えてください)</comment>
+# <i>gpasswd -a &lt;username&gt; audio </i>
+Adding user &lt;username&gt; to group audio
+</pre>
+
+</body>
+</section>
+<section>
+<title>ボリュームの確認</title>
+<body>
+
+<p>
+全ての設定と下準備を終えましたので、ALSAを起動しましょう。
+<c>alsaconf</c>を実行したのなら、<c>alsaconf</c>が既に行っているためこの段階を飛ばすことが出来ます。
+</p>
+
+<pre caption="サービスの開始">
+# <i>/etc/init.d/alsasound start</i>
+</pre>
+
+<p>
+これで必要な物が準備されました。
+場合によっては、ミュートになっていることがあるので、ボリュームを確認する必要があります。
+これを行うために<c>alsamixer</c>を使います。
+</p>
+
+<pre caption="alsamixerの起動">
+<comment>(コンソールプログラムを起動します。必要な設定のみが表示されています。)</comment>
+# <i>alsamixer</i>
+</pre>
+
+<impo>
+もし<c>alsamixer</c>の起動に問題があり、alsamixerが"function snd_ctl_open failed for default"や"No such file or directory"というエラーを表示したのなら、たいていudevのデバイス設定の問題です。
+<c>killall udevd; udevstart</c>を実行して<path>/dev</path>エントリを再読込し、<c>alsamixer</c>を起動してください。
+これで問題が解決するでしょう。
+</impo>
+
+<p>
+これがALSA Mixerの初回起動<e>でしょう</e>。
+MasterとPCMチャンネルの両方の下にMMとあることに注意してください。
+これはミュートになっていると言うことです。
+この状態で<c>alsamixer</c>で何かを再生しようとしても、スピーカーからは何も聞こえてこないでしょう。
+</p>
+
+<figure link="/images/docs/alsa-mixermuted.png" short="AlsaMixerがミュート状態" caption="ミュート状態のAlsa Mixerのメイン画面"/>
+
+<p>
+では、チャンネルのミュートを解除し、ボリュームレベルを適正な値に設定しましょう。
+</p>
+
+<warn>
+スピーカーから何かを再生したいのなら、MasterとPCMの<e>両方</e>がミュート解除され、ボリュームレベルが聞こえる値に設定されていなければなりません。
+</warn>
+
+<ul>
+  <li>
+  チャンネル間を移動するには、左右の矢印キーを使用します。(&lt;- &amp; -&gt;)
+  </li>
+  <li>
+  ミュートを変更するには、Master等のチャンネルに移動し、キーボードの<e>m</e>を押します。
+  </li>
+  <li>
+  ボリュームレベルを上下させるには、上下の矢印キーを使用します。
+  </li>
+</ul>
+
+<note>
+BassとTrebleの値を設定するときには注意してください。
+どちらも普通は50が最適な値です。
+Bassの値を極端に大きくすると、スピーカーから意図しない<e>不快音</e>が発生します。
+</note>
+
+<p>
+全ての作業が終わったら、ALSA Mixerは以下のようになっているはずです。
+MMの代わりに00となっており、ボリュームレベルが適正値になっていることに注意してください。
+</p>
+
+<figure link="/images/docs/alsa-mixerunmuted.png" short="ミュート解除後のAlsaMixer" caption="Alsa Mixerは準備完了"/>
+
+</body>
+</section>
+<section>
+<title>サウンドテストをしよう！</title>
+<body>
+
+<p>
+最後に、音楽を流してみましょう。
+ここまで完璧であれば、素晴らしい音楽を聴くことが出来るはずです。
+テストを行う簡単な方法は、<c>media-sound/madplay</c>の様なコマンドラインツールを使うことです。
+<c>mpg123</c>の様なよく知られている物も使用することが出来ます。
+oggのファンなら、<c>media-sound/vorbis-tools</c>から<c>ogg123</c>を使用することも出来ます。
+最適なプレーヤーを使用します。
+いつものように、必要な物を<c>emerge</c>します。
+</p>
+
+<pre caption="ソフトウェアを入手する">
+<comment>(必要なアプリケーションをインストール)</comment>
+# <i>emerge madplay mpg123</i>
+<comment>(.oggファイルを再生する)</comment>
+# <i>emerge vorbis-tools</i>
+</pre>
+
+<p>
+では、お気に入りのサウンドトラックを再生しましょう。
+</p>
+
+<pre caption="音楽の再生">
+# <i>madplay -v /mnt/shyam/Music/Paul\ Oakenfold\ -\ Dread\ Rock.mp3</i>
+MPEG Audio Decoder 0.15.2 (beta) - Copyright (C) 2000-2004 Robert Leslie et al.
+          Title: Dread Rock
+         Artist: Paul Oakenfold
+          Album: Matrix Reloaded
+           Year: 2003
+          Genre: Soundtrack
+                 Soundtrack
+ 00:04:19 Layer III, 160 kbps, 44100 Hz, joint stereo (MS), no CRC
+
+# <i>ogg123 Paul\ Oakenfold\ -\ Dread\ Rock.ogg</i>
+Audio Device:   Advanced Linux Sound Architecture (ALSA) output
+
+Playing: Paul Oakenfold - Dread Rock.ogg
+Ogg Vorbis stream: 2 channel, 44100 Hz
+Genre: Soundtrack
+Transcoded: mp3;160
+Title: Dread Rock
+Artist: Paul Oakenfold
+Date: 2003
+Album: Matrix Reloaded
+Time: 00:11.31 [04:28.75] of 04:40.06  (200.6 kbps)  Output Buffer  96.9%
+</pre>
+
+</body>
+</section>
+<section>
+<title>ALSAとUSE</title>
+<body>
+
+<p>
+アプリケーションがALSAをサポートするように、<path>/etc/make.conf</path>に<c>alsa</c>のUSEフラグを追加することが出来ます。
+x86やamd64の様ないくつかのアーキテクチャではデフォルトで有効になっています。
+</p>
+
+</body>
+</section>
+<section>
+<title>問題ですか？</title>
+<body>
+
+<p>
+もし何らかの原因で音が鳴らなければ、まず行うべき事は<uri link="#doc_chap3_pre6">alsamixer</uri>の設定の確認です。
+問題の80%は、チャンネルがミュートされているかボリューム設定が低すぎることが原因です。
+Window Managerのサウンドアプレットも確認し、ボリュームが聞こえるレベルにになっているかを確認してください。
+</p>
+
+<p>
+<path>/proc</path>はあなたの友です。
+そしてこの場合、<path>/proc/asound</path>があなたの親友です。
+ここでどれくらいの情報が利用できるかを見てみましょう。
+</p>
+
+<pre caption="/proc/asoundと遊ぶ">
+<comment>(何よりもまず、/proc/asound/cardsが正しいカードを表示しているのなら、ALSAは正しくカードを拾い上げます)</comment>
+# <i>cat /proc/asound/cards</i>
+0 [Live           ]: EMU10K1 - Sound Blaster Live!
+                     Sound Blaster Live! (rev.6, serial:0x80271102) at 0xb800, irq 11
+
+<comment>(これは現在動作しているALSAのバージョンを表示します)</comment>
+# <i>cat /proc/asound/version</i>
+Advanced Linux Sound Architecture Driver Version 1.0.8 (Thu Jan 13 09:39:32 2005 UTC).
+
+<comment>(ALSA OSSエミュレーションの詳細)</comment>
+# <i>cat /proc/asound/oss/sndstat</i>
+Sound Driver:3.8.1a-980706 (ALSA v1.0.8 emulation code)
+Kernel: Linux airwolf.zion 2.6.11ac1 #2 Wed May 4 00:35:08 IST 2005 i686
+Config options: 0
+
+Installed drivers:
+Type 10: ALSA emulation
+
+Card config:
+Sound Blaster Live! (rev.6, serial:0x80271102) at 0xb800, irq 11
+
+Audio devices:
+0: EMU10K1 (DUPLEX)
+
+Synth devices: NOT ENABLED IN CONFIG
+
+Midi devices:
+0: EMU10K1 MPU-401 (UART)
+
+Timers:
+7: system timer
+
+Mixers:
+0: SigmaTel STAC9721/23
+</pre>
+
+<!-- TODO: remove this a few months after alsa-driver leaves the tree -->
+
+<p>
+他の最も一般的な問題は、恐るべき"Unknown symbol in module"エラーです。
+以下に例を示します。
+</p>
+
+<pre caption="Unknown Symbol in moduleエラー">
+# <i>/etc/init.d/alsasound start</i>
+ * Loading ALSA modules ...
+ *   Loading: snd-card-0 ...                                              [ ok ]
+ *   Loading: snd-pcm-oss ...
+WARNING: Error inserting snd_mixer_oss
+(/lib/modules/2.6.12-gentoo-r6/kernel/sound/core/oss/snd-mixer-oss.ko): Unknown
+symbol in module, or unknown parameter (see dmesg) FATAL: Error inserting
+snd_pcm_oss
+(/lib/modules/2.6.12-gentoo-r6/kernel/sound/core/oss/snd-pcm-oss.ko): Unknown
+symbol in module, or unknown parameter (see dmesg)
+                                                                          [ !! ]
+ *   Loading: snd-mixer-oss ...
+FATAL: Error inserting snd_mixer_oss
+(/lib/modules/2.6.12-gentoo-r6/kernel/sound/core/oss/snd-mixer-oss.ko): Unknown
+symbol in module, or unknown parameter (see dmesg)
+                                                                          [ !! ]
+ *   Loading: snd-seq ...                                                 [ ok ]
+ *   Loading: snd-emu10k1-synth ...                                       [ ok ]
+ *   Loading: snd-seq-midi ...                                            [ ok ]
+ * Restoring Mixer Levels ...                                             [ ok ]
+</pre>
+
+<p>
+そして提示されたとおり<c>dmesg</c>を見てみると、この様に表示されているでしょう。
+</p>
+
+<pre caption="dmesgの出力">
+<comment>(関係のある部分のみ表示します)</comment>
+# <i>dmesg | less</i>
+ACPI: PCI Interrupt 0000:02:06.0[A] -> Link [APC3] -> GSI 18 (level, low) -> IRQ 209
+snd_mixer_oss: Unknown symbol snd_unregister_oss_device
+snd_mixer_oss: Unknown symbol snd_register_oss_device
+snd_mixer_oss: Unknown symbol snd_mixer_oss_notify_callback
+snd_mixer_oss: Unknown symbol snd_oss_info_register
+snd_pcm_oss: Unknown symbol snd_unregister_oss_device
+snd_pcm_oss: Unknown symbol snd_register_oss_device
+snd_pcm_oss: Unknown symbol snd_mixer_oss_ioctl_card
+snd_pcm_oss: Unknown symbol snd_oss_info_register
+snd_mixer_oss: Unknown symbol snd_unregister_oss_device
+snd_mixer_oss: Unknown symbol snd_register_oss_device
+snd_mixer_oss: Unknown symbol snd_mixer_oss_notify_callback
+snd_mixer_oss: Unknown symbol snd_oss_info_register
+</pre>
+
+<p>
+この問題は、<c>alsa-driver</c>からカーネル組み込みのALSAに変更したときに起こります。
+原因は、<c>alsa-driver</c>をunmergeする際にモジュールファイルが設定を保護し、そのため削除し忘れてしまったためです。
+そのため、カーネル組み込みのドライバに変更する際に<c>modprobe</c>を実行すると、<c>alsa-driver</c>とカーネル組み込みのモジュールを混ぜてしまい、上記のエラーが引き起こされてしまうのです。
+</p>
+
+<p>
+解決方法はとても簡単です。
+<c>alsa-driver</c>のunmerge後に問題を起こすディレクトリを手動削除すればいいだけです。
+正しいカーネルバージョンの物を削除するようにしてください。現在の物を削除しないように！
+</p>
+
+<pre caption="alsa-driverモジュールの削除">
+# <i>rm -rf /lib/modules/$(uname -r)/alsa-driver</i>
+</pre>
+
+<p>
+上記と似たエラーメッセージで、その他の原因としては、/etc/modules.dの中のファイルの中で、
+不必要な場合に<c>device_mode</c>パラメータが宣言されている場合が考えられます。
+これが本当に問題か確認し、どのファイルが原因かを調査しましょう。
+</p>
+
+<pre caption="device_modeの確認と検索">
+<comment>(dmesgを確認する)</comment>
+# <i>dmesg | grep device_mode</i>
+snd: Unknown parameter `device_mode'
+<comment>(さて、問題の原因を特定する)</comment>
+# <i>grep device_mode /etc/modules.d/*</i>
+</pre>
+
+<!-- End of removal notice -->
+
+<p>
+たいてい、<c>options snd device_mode=0666</c>と書かれた行がある<path>alsa</path>と呼ばれるファイルがあります。
+この行を削除し、<c>alsasound</c>サービスを再起動します。
+そして、この問題がないか再度確認してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ALSAのその他</title>
+<section id="midi">
+<title>MIDIサポートの設定</title>
+<body>
+
+<p>
+最初に、<path>/etc/make.conf</path>で<c>midi</c>のUSEフラグを有効にしているか必ず確認してください。
+もし有効なっていなければ、すぐに追加してください。
+そして、<c>alsa-lib</c>や<c>alsa-utils</c>のような<c>midi</c>フラグを使用するALSAパッケージをすべて再emergeする必要があります。
+</p>
+
+<p>
+サウンドカードがオンボードMIDIシンセサイザーを搭載しており、.midファイルを再生したいのなら、AWE32ドライバを制御するための基本的なユーティリティのセットである<c>awesfx</c>をインストールする必要があります。
+まずこれをインストールします。ハードウェアシンセサイザーが搭載されていなければ、仮想的な物を使用することが出来ます。
+詳しい情報は<uri link="#vsynth">仮想シンセサイザー</uri>の章を参照してください。
+</p>
+
+<pre caption="awesfxのインストール">
+# <i>emerge awesfx</i>
+</pre>
+
+<note>
+サウンドカードのドライバCDやWindowsインストーラからサウンドフォント(SF2)ファイルを<path>/usr/share/sounds/sf2/</path>へとコピーする必要があります。
+例えば、Creative SBLive!用のサウンドフォントファイルは8MBGMSFX.SF2です。
+</note>
+
+<p>
+サウンドフォントファイルをコピーしたら、midiを再生することが出来ます。
+<c>asfxload</c>コマンドを<path>/etc/conf.d/local.start</path>に追加することで、システムの起動時にサウンドフォントファイルが自動的に読み込まれます。
+</p>
+
+<note>
+以下のコードに記されている<path>/mnt</path>パスはあなたのマシンで同じだとは<e>限りません</e>。
+これは単なる例です。
+マシンに合うようにパスを変更してください。
+</note>
+
+<pre caption="サウンドフォントの読み込み">
+<comment>(まず、サウンドフォントをコピー)</comment>
+# <i>cp /mnt/win2k/Program\ Files/CreativeSBLive2k/SFBank/8MBGMSFX.SF2 /usr/share/sounds/sf2/</i>
+<comment>(もしくはSoundBlaster CDから入手)</comment>
+# <i>cp /mnt/cdrom/AUDIO/ENGLISH/SFBANK/8MBGMSFX.SF2 /usr/share/sounds/sf2/</i>
+<comment>(サウンドフォントを読み込み)</comment>
+# <i>asfxload /usr/share/sounds/sf2/8MBGMSFX.SF2</i>
+</pre>
+
+<p>
+これで<c>aplaymidi</c>の様なプログラムを使用してmidiファイルを再生することが出来るようになりました。
+<c>aplaymidi -l</c>を実行して利用可能なポートの一覧を表示し、ポートを選んでファイルを再生しましょう。
+</p>
+
+<pre caption="MIDIの再生">
+<comment>(ポートの確認)</comment>
+# <i>aplaymidi -l</i>
+ Port    Client name                      Port name
+ 64:0    EMU10K1 MPU-401 (UART)           EMU10K1 MPU-401 (UART)
+ 65:0    Emu10k1 WaveTable                Emu10k1 Port 0
+ 65:1    Emu10k1 WaveTable                Emu10k1 Port 1
+ 65:2    Emu10k1 WaveTable                Emu10k1 Port 2
+ 65:3    Emu10k1 WaveTable                Emu10k1 Port 3
+<comment>(ポートを選び、midiファイルを再生)</comment>
+# <i> aplaymidi --port=65:0 /mnt/shyam/music/midi/mi2.mid</i>
+</pre>
+
+</body>
+</section>
+<section id="vsynth">
+<title>仮想シンセサイザー</title>
+<body>
+
+<p>
+サウンドカードにハードウェアシンセサイザーが無ければ、<c>timidity++</c>の様な仮想的な物を使用します。
+インストールは非常に簡単です。
+</p>
+
+<pre caption="timidity++のインストール">
+# <i>emerge timidity++</i>
+</pre>
+
+<p>
+timidityで音楽を再生するには、サウンドフォントが必要です。
+幸い、ebuildでいくつかのサウンドフォントパッケージをインストールすることが可能です。
+<c>timidity-freepats</c>や<c>timidity-eawpatches</c>の様にPortageで利用可能な異なるフォントパッケージがいくつか存在します。
+複数のサウンドフォント設定をインストールすることが出来、<path>/usr/share/timidity/</path>に置くことが出来ます。
+複数のtimidity設定を切り替えるには、<c>eselect</c>ツールを使用します。
+</p>
+
+<pre caption="設定の変更">
+# <i>eselect timidity list</i>
+# <i>eselect timidity set eawpatches</i>
+</pre>
+
+<p>
+<c>timidity</c>をデフォルトランレベルに追加することを忘れないでください。
+</p>
+
+<pre caption="timidityをデフォルトランレベルに追加">
+# <i>rc-update add timidity default</i>
+# <i>/etc/init.d/timidity start</i>
+</pre>
+
+<p>
+<uri link="#doc_chap4_pre3">MIDIの再生</uri>を試すことが出来ます。
+</p>
+
+</body>
+</section>
+<section>
+<title>ツールとファームウェア</title>
+<body>
+
+<p>
+いくつかのサウンドカードでは<c>alsa-tools</c>と<c>alsa-firmware</c>が提供するいくつかのツールが役立ちます。
+単純に<c>emerge</c>を使用することで、どちらもインストール出来るでしょう。
+</p>
+
+<pre caption="ALSA Toolsのインストール">
+# <i>emerge alsa-tools</i>
+</pre>
+
+<p>
+ALSA_TOOLS変数が設定されていなければ、全ての利用可能なツールがビルドされます。
+では、<c>alsa-tools</c>（または<c>alsa-firmware</c>）パッケージをインストールします。
+</p>
+
+<pre caption="ALSA Toolsのインストール">
+# <i>emerge alsa-tools</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>複数のサウンドカード</title>
+<body>
+
+<p>
+カーネルでALSAをモジュールとして組み込んでいれば、システムで同時にひとつ以上のサウンドカードを持つことができます。
+必要なのは<path>/etc/modules.d/alsa</path>にどれが最初に起動するか記述することだけです。
+サウンドカードはこのファイルの中で、それらが使用するドライバの名前によって識別されます。
+0は最初のカード、1はその次のカードです。
+これは2つのサウンドカードを持つシステムの例です。
+</p>
+
+<pre caption="2つのサウンドカードがあるときの/etc/modules.d/alsa">
+options snd-emu10k1 index=0
+options snd-via82xx index=1
+</pre>
+
+<p>
+あるいは、同じドライバを使用する2つのサウンドカードを持っているなら、それらをカンマで区切って同じ行に書いてください。
+これは3つのサウンドカードのうち2つが同じIntel High Definition Audioカードのときの例です。
+</p>
+
+<pre caption="複合的なサウンドカードがあるときの/etc/modules.d/alsa">
+options snd-ymfpci index=0
+options snd-hda-intel index=1,2
+</pre>
+</body>
+</section>
+<section>
+<title>プラグイン</title>
+<body>
+
+<p>
+特別な機能を求めて、プラグインをいくつかインストールすることもあるでしょう。
+<c>alsa-plugins</c>は有用なプラグインのコレクションで、PulseAudio出力、サンプリングレートの変換、jack（低遅延サウンドサーバ）、そして、デジタルS/PDIF接続を通した6チャンネルオーディオ出力を可能にするエンコーダが含まれています。
+あなたは<path>/etc/portage/package.use</path>にそれらのUSEフラグ追加することで、欲しいプラグインを選ぶことが出来ます。
+</p>
+
+<pre caption="alsa-pluginsのインストール">
+# <i>emerge -avt alsa-plugins</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>謝辞</title>
+<body>
+
+<p>
+以前のバージョンのGentoo ALSAガイドに協力してくださった皆さん。Vincent Verleye、Grant Goodyear、Arcady Genkin、Jeremy Huddleston、John P. Davis、ven Vermeulen、Benny Chuang、Tiemo Kieft、Erwin。
+</p>
+
+<p>
+以前のバージョンのGentoo ALSAガイドを翻訳してくださったMasanori IwasakiさんとYasumichi Akahoshiさん。
+</p>
+
+</body>
+</section>
+<section>
+<title>参考文献</title>
+<body>
+
+<ul>
+  <li><uri link="http://www.alsa-project.org/">The ALSA Project</uri></li>
+  <li><uri link="http://linux-sound.org">Linux Sound/MIDI Software</uri></li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

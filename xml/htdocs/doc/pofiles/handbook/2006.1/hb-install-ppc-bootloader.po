@@ -1,0 +1,823 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:52+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <sections><section><title>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:15
+#, no-wrap
+msgid "Choosing a Bootloader"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><title>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:17
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:40
+#, no-wrap
+msgid "Introduction"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:21
+#, no-wrap
+msgid ""
+"Now that the kernel is configured and compiled, you'll need a <e>bootloader</e>\n"
+"to start your new linux installation.  The <e>bootloader</e> that you use will \n"
+"depend upon the type of PPC machine you have.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:27
+#, no-wrap
+msgid ""
+"If you are using a NewWorld Apple or IBM machine, you need to use \n"
+"<uri link=\"#yaboot\">yaboot</uri>.  OldWorld Apple machines have two options,\n"
+"<uri link=\"#bootx\">BootX</uri> (recommended) and <uri link=\"#quik\">quik</uri>.\n"
+"The Pegasos does not require a bootloader, but you will need to emerge \n"
+"<uri link=\"#bootcreator\">BootCreator</uri> to create SmartFirmware bootmenus.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><title>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:38
+#, no-wrap
+msgid "Default: Using yaboot"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><impo>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:44
+#, no-wrap
+msgid "yaboot can only be used on NewWorld Apple and IBM systems!\n"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:48
+#, no-wrap
+msgid ""
+"In order to find the boot devices, yaboot needs access to the device nodes\n"
+"created by udev on startup and the sysfs filesystem.  These two filesystems\n"
+"are found at <path>/dev</path> and <path>sys</path> respectively.  To do this,\n"
+"you will need to \"bind mount\" these filesystems from the Installation CD's root\n"
+"to the <path>/dev</path> and <path>/sys</path> mount points inside the chroot.\n"
+"If you have already bind mounted these filesystems, there is no need to do it\n"
+"again.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><subsection><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:57
+#, no-wrap
+msgid "Bind-mounting the device and sysfs filesystems"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:58
+#, no-wrap
+msgid ""
+"# <i>exit </i> # this will exit the chroot\n"
+"# <i>mount -o bind /dev /mnt/gentoo/dev</i>\n"
+"# <i>mount -o bind /sys /mnt/gentoo/sys</i>\n"
+"# <i>chroot /mnt/gentoo /bin/bash</i>\n"
+"# <i>/usr/sbin/env-update &amp;&amp; source /etc/profile </i>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:66
+#, no-wrap
+msgid ""
+"To set up yaboot, you can use <c>yabootconfig</c> to automatically create a\n"
+"configuration file for you. If you are installing Gentoo on a G5 (where \n"
+"<c>yabootconfig</c> does not always work), or you plan to boot from firewire \n"
+"or USB, you will need to manually configure yaboot.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><note>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:73
+#, no-wrap
+msgid ""
+"You will need to manually edit the yaboot.conf when using genkernel, even if\n"
+"yabootconfig is used.  The kernel image section of yaboot.conf should be\n"
+"modified as follows:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><subsection><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:78
+#, no-wrap
+msgid "Adding genkernel boot arguments to yaboot.conf"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:79
+#, no-wrap
+msgid ""
+"<comment>###########################################################\n"
+"## This section can be duplicated if you have more than one\n"
+"## kernel or set of boot options - replace kernel-name\n"
+"## and initrd-name with the exact filename of your kernel\n"
+"## and initrd image.\n"
+"###########################################################</comment>\n"
+"image=/boot/kernel-name\n"
+"  label=Linux\n"
+"  root=/dev/ram0\n"
+"  partition=3\n"
+"  initrd=/boot/initrd-name\n"
+"  append=\"real_root=/dev/hda3 init=/linuxrc\"  \n"
+"  <comment># You can add additional kernel arguments to append such as \n"
+"  # rootdelay=10 for a USB/Firewire Boot</comment>\n"
+"  read-only\n"
+"<comment>##########################################################</comment>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><ul><li>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:98
+#, no-wrap
+msgid "<uri link=\"#yabootconfig\">Default: Using yabootconfig</uri>"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><ul><li>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:100
+#, no-wrap
+msgid ""
+"    <uri link=\"#manual_yaboot\">Alternative: Manual yaboot Configuration</uri>\n"
+"  "
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><title>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:107
+#, no-wrap
+msgid "Default: Using yabootconfig"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:111
+#, no-wrap
+msgid ""
+"<c>yabootconfig</c> will auto-detect the partitions on your machine and will\n"
+"set up dual and triple boot combinations with Linux, Mac OS, and Mac OS X.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:116
+#, no-wrap
+msgid ""
+"To use <c>yabootconfig</c>, your drive must have an Apple_Bootstrap partition,\n"
+"and <path>/etc/fstab</path> must be configured to reflect your Linux \n"
+"partitions. These steps should have already been completed before, but check\n"
+"<path>/etc/fstab</path> before proceeding.  Now, ensure that you have \n"
+"<c>yaboot</c> installed.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><subsection><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:123
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:164
+#, no-wrap
+msgid "Installing yaboot with GRP"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:124
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:165
+#, no-wrap
+msgid "# <i>emerge --usepkg yaboot</i>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:128
+#, no-wrap
+msgid ""
+"Now exit the chroot and run <c>yabootconfig --chroot /mnt/gentoo</c>. First,\n"
+"the program will confirm the location of the bootstrap partition.  If you are\n"
+"using the suggested disk partitioning scheme, your bootstrap partition should\n"
+"be /dev/hda2. Type <c>Y</c> if the output is correct. If not, double check your\n"
+"<path>/etc/fstab</path>. <c>yabootconfig</c> will then scan your system setup, \n"
+"create <path>/etc/yaboot.conf</path> and run <c>mkofboot</c> for you. \n"
+"<c>mkofboot</c> is used to format the Apple_Bootstrap partition, and install \n"
+"the yaboot configuration file into it.  After this enter the chroot again.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><subsection><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:138
+#, no-wrap
+msgid "Re-enter the chroot"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:139
+#, no-wrap
+msgid ""
+"# <i>chroot /mnt/gentoo /bin/bash</i>\n"
+"# <i>/usr/sbin/env-update &amp;&amp; source /etc/profile</i>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:144
+#, no-wrap
+msgid ""
+"You might want to verify the contents of <path>/etc/yaboot.conf</path>. If you\n"
+"make changes to <path>/etc/yaboot.conf</path> (like setting the default/boot\n"
+"OS), make sure to rerun <c>ybin -v</c> to apply changes to the Apple_Bootstrap\n"
+"partition.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:151
+#, no-wrap
+msgid "Now continue with <uri link=\"#reboot\">Rebooting the System</uri>.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><title>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:157
+#, no-wrap
+msgid "Alternative: Manual yaboot Configuration"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:161
+#, no-wrap
+msgid "First make sure you have <c>yaboot</c> installed on your system:\n"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:169
+#, no-wrap
+msgid ""
+"An example <path>yaboot.conf</path> file is given below, but you will need to \n"
+"alter it to fit your needs.  G5 users and users booting from firewire and USB\n"
+"should be aware that their disks are seen as SCSI disks by the Linux kernel, so \n"
+"you will need to substitute <path>/dev/hda</path> with <path>/dev/sda</path>).\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><subsection><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:175
+#, no-wrap
+msgid "/etc/yaboot.conf"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:176
+#, no-wrap
+msgid ""
+"<comment>## /etc/yaboot.conf\n"
+"##\n"
+"## run: \"man yaboot.conf\" for details. Do not make changes until you have!!\n"
+"## see also: /usr/share/doc/yaboot/examples for example configurations.\n"
+"##\n"
+"## For a dual-boot menu, add one or more of:\n"
+"## bsd=/dev/hdaX, macos=/dev/hdaY, macosx=/dev/hdaZ\n"
+"\n"
+"## The bootstrap partition:</comment>\n"
+"\n"
+"boot=/dev/hda2\n"
+"\n"
+"<comment>## ofboot is the openfirmware way to specify the bootstrap partition.\n"
+"## If this isn't defined, yaboot fails on the G5 and some G4s (unless \n"
+"## you pass the necessary arguments to the mkofboot/ybin program).\n"
+"## hd:X means /dev/sdaX (or /dev/hdaX).\n"
+"## \n"
+"## G5 users should uncomment this line!!\n"
+"\n"
+"#ofboot=hd:2\n"
+"\n"
+"## Users booting from firewire should use something like this line:\n"
+"# ofboot=fw/node/sbp-2/disk@0:\n"
+"\n"
+"## Users booting from USB should use something like this line:\n"
+"# ofboot=usb/disk@0:\n"
+"\n"
+"## hd: is shorthand for the first hard drive OpenFirmware sees</comment>\n"
+"device=hd:\n"
+"\n"
+"<comment>## Firewire and USB users will need to specify the whole OF device name\n"
+"## This can be found using ofpath, which is included with yaboot.\n"
+"\n"
+"# device=fw/node@0001d200e00d0207/sbp-2@c000/disk@0:\n"
+"</comment>\n"
+"\n"
+"delay=5\n"
+"defaultos=macosx\n"
+"timeout=30\n"
+"install=/usr/lib/yaboot/yaboot\n"
+"magicboot=/usr/lib/yaboot/ofboot\n"
+"\n"
+"<comment>#################\n"
+"## This section can be duplicated if you have more than one kernel or set of\n"
+"## boot options - replace kernel-name with your kernel-version\n"
+"#################</comment>\n"
+"image=/boot/kernel-name\n"
+"  label=Linux\n"
+"  root=/dev/hda3\n"
+"  partition=3\n"
+"<comment>#  append=\"rootdelay=10\"  # Required for booting USB/Firewire</comment>\n"
+"  read-only\n"
+"<comment>##################\n"
+"\n"
+"## G5 users and some G4 users should set \n"
+"##   macos=hd:13\n"
+"##   macosx=hd:12\n"
+"## instead of the example values.</comment>\n"
+"macos=/dev/hda13\n"
+"macosx=/dev/hda12\n"
+"enablecdboot\n"
+"enableofboot\n"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:241
+#, no-wrap
+msgid ""
+"Once <path>yaboot.conf</path> is configured, run <c>mkofboot -v</c> to format\n"
+"the Apple_bootstrap partition and install the settings. If you change \n"
+"yaboot.conf after the Apple_bootstrap partition has been created, you can\n"
+"update the settings by running <c>ybin -v</c>\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><subsection><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:247
+#, no-wrap
+msgid "Setting up the bootstrap partition"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:248
+#, no-wrap
+msgid "# <i>mkofboot -v</i>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:252
+#, no-wrap
+msgid ""
+"For more information on yaboot, take a look at the <uri\n"
+"link=\"http://penguinppc.org/bootloaders/yaboot\">yaboot project</uri>. For\n"
+"now, continue the installation with <uri link=\"#reboot\">Rebooting the\n"
+"System</uri>.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><title>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:262
+#, no-wrap
+msgid "Alternative: BootX"
+msgstr ""
+
+#. type: Content of: <sections><section><body><impo>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:266
+#, no-wrap
+msgid "BootX can only be used on OldWorld Apple systems with MacOS 9 or earlier!\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:270
+#, no-wrap
+msgid ""
+"Since BootX boots Linux from within MacOS, the kernel will need to be copied\n"
+"from the Linux Partition to the MacOS partition.  First, mount the MacOS \n"
+"partition from outside of the chroot.  Use <c>mac-fdisk -l</c> to find the \n"
+"MacOS partition number, sda6 is used as an example here.  Once the partition is\n"
+"mounted, we'll copy the kernel to the system folder so BootX can find it.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:277
+#, no-wrap
+msgid "Copying the kernel to the MacOS partition"
+msgstr ""
+
+#. type: Content of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:278
+#, no-wrap
+msgid ""
+"# <i>exit</i>\n"
+"cdimage ~# <i>mkdir /mnt/mac</i>\n"
+"cdimage ~# <i>mount /dev/sda6 /mnt/mac -t hfs</i>\n"
+"cdimage ~# <i>cp /mnt/gentoo/usr/src/linux/vmlinux \"/mnt/mac/System Folder/Linux Kernels\"</i>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:285
+#, no-wrap
+msgid ""
+"If genkernel is used, both the kernel and initrd will need to be copied to the\n"
+"MacOS partition.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:289
+#, no-wrap
+msgid "Copying the Genkernel kernel and initrd to the MacOS partition"
+msgstr ""
+
+#. type: Content of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:290
+#, no-wrap
+msgid ""
+"# <i>exit</i>\n"
+"cdimage ~# <i>mkdir /mnt/mac</i>\n"
+"cdimage ~# <i>mount /dev/sda6 /mnt/mac -t hfs</i>\n"
+"cdimage ~# <i>cp /mnt/gentoo/boot/kernel-* \"/mnt/mac/System Folder/Linux Kernels\"</i>\n"
+"cdimage ~# <i>cp /mnt/gentoo/boot/initramfs-* \"/mnt/mac/System Folder\"</i>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:298
+#, no-wrap
+msgid "Now that the kernel is copied over, we'll need to reboot to set up BootX.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:301
+#, no-wrap
+msgid "Unmounting all partitions and rebooting"
+msgstr ""
+
+#. type: Content of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:302
+#, no-wrap
+msgid ""
+"cdimage ~# <i>cd /</i>\n"
+"cdimage ~# <i>umount /mnt/gentoo/proc /mnt/gentoo/dev /mnt/gentoo/sys /mnt/gentoo /mnt/mac</i>\n"
+"cdimage ~# <i>reboot</i>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:308
+#, no-wrap
+msgid ""
+"Of course, don't forget to remove the bootable CD, otherwise the CD will be\n"
+"booted again instead of MacOS.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:313
+#, no-wrap
+msgid ""
+"Once the machine has booted into MacOS, open the BootX control panel.  If you're\n"
+"not using genkernel, select <c>Options</c> and uncheck <c>Use specified RAM\n"
+"disk</c>.  If you are using genkernel, ensure that the genkernel initrd is \n"
+"selected instead of the Installation CD initrd.  If not using genkernel, \n"
+"there is now an option to specify the machine's Linux root disk and partition. \n"
+"Fill these in with the appropriate values.  Depending upon the kernel \n"
+"configuration, additional boot arguments may need to be applied.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:323
+#, no-wrap
+msgid ""
+"BootX can be configured to start Linux upon boot. If you do this, you will first\n"
+"see your machine boot into MacOS then, during startup, BootX will load and start\n"
+"Linux. See the <uri link=\"http://penguinppc.org/bootloaders/bootx/\">BootX home\n"
+"page</uri> for more information.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><impo>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:330
+#, no-wrap
+msgid ""
+"Make sure that you have support for HFS and HFS+ filesystems in your kernel,\n"
+"otherwise you will not be able to upgrade or change the kernel on your MacOS \n"
+"partition.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:336
+#, no-wrap
+msgid ""
+"Now reboot again and boot into Linux, then continue with <uri\n"
+"link=\"?part=1&amp;chap=11\">Finalizing your Gentoo Installation</uri>.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><title>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:343
+#, no-wrap
+msgid "Alternative: quik"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:347
+#, no-wrap
+msgid ""
+"quik allows OldWorld Macs to boot without MacOS.  However, it isn't well\n"
+"supported and has a number of quirks.  If you have the option, it is recommended\n"
+"that you use BootX instead since it is much more reliable and easier to set up\n"
+"than quik.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:354
+#, no-wrap
+msgid "First, we'll need to install quik:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:357
+#, no-wrap
+msgid "Emerge quik"
+msgstr ""
+
+#. type: Content of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:358
+#, no-wrap
+msgid "# <i>emerge quik</i>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:362
+#, no-wrap
+msgid ""
+"Next, we'll need to set it up.  Edit /etc/quik.conf and set your image to the\n"
+"kernel that we copied to your boot partition.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:366
+#, no-wrap
+msgid "Configuring quik.conf"
+msgstr ""
+
+#. type: Content of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:367
+#, no-wrap
+msgid ""
+"# Example of quik.conf\n"
+"init-message = \"Gentoo 2006.1\\n\"\n"
+"partition = 2\t\t<comment># This is the boot partition</comment>\n"
+"root = /dev/hda4\n"
+"timeout = 30\n"
+"default = gentoo\n"
+"image = /vmlinux\t<comment># This is your kernel</comment>\n"
+"\tlabel = gentoo\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:378
+#, no-wrap
+msgid ""
+"Your quik.conf file <e>must</e> be on the same disk as the quik boot images,\n"
+"however it can be on a different partition on the same disk, although it is\n"
+"recommended to move it to your boot partition.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:383
+#, no-wrap
+msgid "Moving quik.conf to /boot"
+msgstr ""
+
+#. type: Content of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:384
+#, no-wrap
+msgid "# <i>mv /etc/quik.conf /boot/quik.conf</i>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:388
+#, no-wrap
+msgid ""
+"We will now set your boot variables so that quik loads on boot.  To do this,\n"
+"we'll use a program called <c>nvsetenv</c>.  The variables that you want to\n"
+"set vary from machine to machine, it's best to find your machine's \n"
+"<uri link=\"http://penguinppc.org/bootloaders/quik/quirks.php\">quirks</uri>\n"
+"before attempting this.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:395
+#, no-wrap
+msgid "Setting the boot variables"
+msgstr ""
+
+#. type: Content of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:396
+#, no-wrap
+msgid ""
+"# <i>nvsetenv auto-boot true</i> <comment># Set to false if you want to boot into OF, not all models can display the OF output</comment>\n"
+"# <i>nvsetenv output-device video</i> <comment># Check the quirks page, there are many variations here</comment>\n"
+"# <i>nvsetenv input-device kbd</i>\n"
+"# <i>nvsetenv boot-device scsi/sd@1:0</i> <comment># For SCSI</comment>\n"
+"# <i>nvsetenv boot-device ata/ata-disk@0:0</i> <comment># For ATA</comment>\n"
+"# <i>nvsetenv boot-file /boot/vmlinux-2.6.17 root=/dev/hda4</i> <comment>First item is the path to the kernel, the second is the root partition.  You may append any kernel options to the end of this line.</comment>\n"
+"# <i>nvsetenv boot-command boot</i> <comment># Set this to bye for MacOS and boot for Linux</comment>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><note>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:406
+#, no-wrap
+msgid ""
+"It is also possible to change your boot variables from MacOS.  Depending\n"
+"upon the model, either \n"
+"<uri link=\"http://penguinppc.org/bootloaders/quik/BootVars.sit.hqx\">bootvars</uri> or \n"
+"<uri link=\"ftp://ftp.apple.com/developer/macosxserver/utilities/SystemDisk2.3.1.smi.bin\">\n"
+"Apple System Disk</uri> should be used.  Please see the quik quirks page\n"
+"above for more information.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:415
+#, no-wrap
+msgid ""
+"Now that we've set up our machine to boot, we'll need to make sure the boot\n"
+"images are installed correctly.  Run <c>quik -v -C /boot/quik.conf</c>.  It \n"
+"should tell you that it has installed the first stage QUIK boot block.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><note>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:421
+#, no-wrap
+msgid ""
+"If something has gone wrong, you can always reset your PRAM back to the default\n"
+"values by holding down <c>command + option + p + r</c> before powering on your\n"
+"machine.  This will clear the values you set with nvsetenv and should allow you\n"
+"to boot either a MacOS bootdisk or a Linux bootdisk.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:428
+#, no-wrap
+msgid ""
+"Now, continue the installation with \n"
+"<uri link=\"#reboot\">Rebooting the System</uri>.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><title>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:435
+#, no-wrap
+msgid "Alternative: BootCreator"
+msgstr ""
+
+#. type: Content of: <sections><section><body><impo>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:439
+#, no-wrap
+msgid ""
+"BootCreator will build a nice SmartFirmware bootmenu written in Forth for the\n"
+"Pegasos.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:444
+#, no-wrap
+msgid "First make sure you have <c>bootcreator</c> installed on your system:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:447
+#, no-wrap
+msgid "Installing bootcreator"
+msgstr ""
+
+#. type: Content of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:448
+#, no-wrap
+msgid "# <i>emerge --usepkg bootcreator</i>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:452
+#, no-wrap
+msgid ""
+"Now copy the file <path>/etc/bootmenu.example</path> into\n"
+"<path>/etc/bootmenu</path> and edit it to your needs:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:456
+#, no-wrap
+msgid "Edit the bootcreator config file"
+msgstr ""
+
+#. type: Content of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:457
+#, no-wrap
+msgid ""
+"# <i>cp /etc/bootmenu.example /etc/bootmenu</i>\n"
+"# <i>nano -w /etc/bootmenu</i>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:462
+#, no-wrap
+msgid ""
+"Below is a complete <path>/etc/bootmenu</path> config file.  The kernel-name\n"
+"and initrd-name should be replaced by your kernel and initrd image names.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:466
+#, no-wrap
+msgid "bootcreator config file"
+msgstr ""
+
+#. type: Content of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:467
+#, no-wrap
+msgid ""
+"<comment>#\n"
+"# Example description file for bootcreator 1.1\n"
+"#</comment>\n"
+"\n"
+"[VERSION]\n"
+"1\n"
+"\n"
+"[TITLE]\n"
+"Boot Menu\n"
+"\n"
+"[SETTINGS]\n"
+"AbortOnKey = false\n"
+"Timeout    = 9\n"
+"Default    = 1\n"
+"\n"
+"[SECTION]\n"
+"Local HD -> Morphos      (Normal)\n"
+"ide:0 boot2.img ramdebug edebugflags=\"logkprintf\"\n"
+"\n"
+"[SECTION]\n"
+"Local HD -> Linux (Normal)\n"
+"ide:0 kernel-name video=radeonfb:1024x768@70 root=/dev/hda3\n"
+"\n"
+"[SECTION]\n"
+"Local HD -> Genkernel (Normal)\n"
+"ide:0 kernel-name root=/dev/ram0 real_root=/dev/hda3 init=/linuxrc initrd=initrd-name\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:496
+#, no-wrap
+msgid ""
+"Finally the <path>bootmenu</path> must be transfered into Forth and copied to\n"
+"your boot partition, so that the SmartFirmware can read it.  Therefore you have\n"
+"to call <c>bootcreator</c>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:501
+#, no-wrap
+msgid "Install the bootmenu"
+msgstr ""
+
+#. type: Content of: <sections><section><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:502
+#, no-wrap
+msgid "# <i>bootcreator /etc/bootmenu /boot/menu</i>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><note>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:506
+#, no-wrap
+msgid ""
+"Be sure to have a look into the SmartFirmware's settings when you reboot, that\n"
+"<path>menu</path> is the file that will be loaded by default.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:511
+#, no-wrap
+msgid ""
+"For now, continue the installation with <uri link=\"#reboot\">Rebooting the\n"
+"System</uri>.\n"
+msgstr ""
+
+#. type: Content of: <sections><section><title>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:518
+#, no-wrap
+msgid "Rebooting the System"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:523
+#, no-wrap
+msgid ""
+"Exit the chrooted environment and unmount all mounted partitions. Then type in\n"
+"that one magical command you have been waiting for: <c>reboot</c>.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <sections><section><subsection><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:527
+#, no-wrap
+msgid "Exiting the chroot, unmounting all partitions and rebooting"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><pre>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:528
+#, no-wrap
+msgid ""
+"# <i>exit</i>\n"
+"livecd ~# <i>umount /mnt/gentoo/proc /mnt/gentoo/dev /mnt/gentoo/sys /mnt/gentoo</i>\n"
+"livecd ~# <i>reboot</i>\n"
+msgstr ""
+
+#. type: Content of: <sections><section><subsection><body><p>
+#: en/handbook/2006.1/hb-install-ppc-bootloader.xml:534
+#, no-wrap
+msgid ""
+"Once rebooted in your Gentoo installation, finish up with <uri\n"
+"link=\"?part=1&amp;chap=11\">Finalizing your Gentoo Installation</uri>.\n"
+msgstr ""

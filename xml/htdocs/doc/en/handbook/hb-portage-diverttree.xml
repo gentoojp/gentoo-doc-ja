@@ -1,0 +1,141 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-portage-diverttree.xml,v 1.15 2010/07/13 22:00:23 nightmorph Exp $ -->
+
+<sections>
+
+<abstract>
+"Diverting from the Official Tree" gives you some tips and tricks on how to use
+your own Portage tree, how to synchronise only the categories you want, inject
+packages and more.
+</abstract>
+
+<version>1.7</version>
+<date>2010-07-13</date>
+
+<section>
+<title>Using a Portage Tree Subset</title>
+<subsection>
+<title>Excluding Packages/Categories</title>
+<body>
+
+<p>
+You can selectively update certain categories/packages and ignore the other
+categories/packages. We achieve this by having <c>rsync</c> exclude
+categories/packages during the <c>emerge --sync</c> step.
+</p>
+
+<p>
+You need to define the name of the file that contains the exclude patterns in
+the <c>--exclude-from</c> variable in your <path>/etc/make.conf</path>.
+</p>
+
+<pre caption="Defining the exclude file in /etc/make.conf">
+PORTAGE_RSYNC_EXTRA_OPTS="--exclude-from=/etc/portage/rsync_excludes"
+</pre>
+
+<pre caption="Excluding all games in /etc/portage/rsync_excludes">
+games-*/*
+</pre>
+
+<p>
+Note however that this may lead to dependency issues since new, allowed packages
+might depend on new but excluded packages.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Adding Unofficial Ebuilds</title>
+<subsection>
+<title>Defining a Portage Overlay Directory</title>
+<body>
+
+<p>
+You can ask Portage to use ebuilds that are not officially available through the
+Portage tree. Create a new directory (for instance
+<path>/usr/local/portage</path>) in which you store the 3rd-party ebuilds. Use
+the same directory structure as the official Portage tree!
+</p>
+
+<p>
+Then define PORTDIR_OVERLAY in <path>/etc/make.conf</path> and have it point to
+the previously defined directory. When you use Portage now, it will take those
+ebuilds into account as well without removing/overwriting those ebuilds the next
+time you run <c>emerge --sync</c>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Working with Several Overlays</title>
+<body>
+
+<p>
+For the powerusers who develop on several overlays, test packages before they
+hit the Portage tree or just want to use unofficial ebuilds from various
+sources, the <c>app-portage/layman</c> package brings you
+<c>layman</c>, a tool to help you keep the overlay repositories up to date.
+</p>
+
+<p>
+First install and configure <c>layman</c> as shown in the <uri
+link="/proj/en/overlays/userguide.xml">Overlays Users' Guide</uri>, and add your
+desired repositories with <c>layman -a &lt;overlay-name&gt;</c>.
+</p>
+
+<p>
+Suppose you have two repositories called <c>java</c> (for the in-development
+java ebuilds) and <c>entapps</c> (for the applications developed in-house for
+your enterprise). You can update those repositories with the following
+command:
+</p>
+
+<pre caption="Using layman to update all repositories">
+# <i>layman -S</i>
+</pre>
+
+<p>
+For more information on working with overlays, please read <c>man layman</c> and
+the <uri link="/proj/en/overlays/userguide.xml">layman/overlay users'
+guide</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Non-Portage Maintained Software</title>
+<subsection>
+<title>Using Portage with Self-Maintained Software</title>
+<body>
+
+<p>
+In some cases you want to configure, install and maintain software yourself
+without having Portage automate the process for you, even though Portage
+can provide the software titles. Known cases are kernel sources and nvidia 
+drivers. You can configure Portage so it knows that a certain package is 
+manually installed on your system. This process is called <e>injecting</e> and 
+supported by Portage through the 
+<path>/etc/portage/profile/package.provided</path> file.
+</p>
+
+<p>
+For instance, if you want to inform Portage about 
+<c>gentoo-sources-2.6.11.6</c> which you've installed manually, add the 
+following line to <path>/etc/portage/profile/package.provided</path>:
+</p>
+
+<pre caption="Example line for package.provided">
+sys-kernel/gentoo-sources-2.6.11.6
+</pre>
+
+</body>
+</subsection>
+</section>
+</sections>

@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/portage-user.xml,v 1.9 2004/01/03 05:24:18 nakano Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/portage-users.xml">
+<title>Portage ユーザガイド</title>
+<author title="Chief Architect"><mail link="drobbins@gentoo.org">Daniel Robbins</mail></author>
+<author title="Editor"><mail link="thomasfl@gentoo.org">Thomas Flavel</mail></author>
+<author title="Editor"><!-- zhen@gentoo.org -->John P. Davis</author>
+<author title="Editor"><mail link="carl@gentoo.org">Carl Anderson</mail></author> 
+<author title="Editor"><mail link="peesh@gentoo.org">Jorge Paulo</mail></author> 
+<author title="Editor"><mail link="swift@gentoo.org">Sven Vermeulen</mail></author>
+<author title="翻訳"><mail link="masanao@polaris-inc.co.jp">五十嵐 正尚</mail></author>
+<author title="翻訳"><mail link="nakano@gentoo.org">中野 正智</mail></author>
+
+<abstract>このガイドは、パッケージを最新に保つ方法とシステムを整備する方法を、簡単に取り上げます。</abstract>
+
+<version>1.4</version>
+<date>October 9, 2003</date>
+<!-- Original revision: 1.15 -->
+
+<license/>
+
+<chapter>
+<title>はじめに</title>
+
+<section>
+<title>最新Portage の取得</title>
+<body>
+
+<p>Gentoo Linux をインストールし、少しの間使用していると、いくつかのパッケージにいくつかのバグあるいは、
+おかしな動作を見つけるかもしれません。また最新の Gentoo Linux ソフトウェアパッケージをインストールしたり、
+現在インストールされているパッケージを更新したりしたいでしょう。
+最新の Portage ツリーを得るために使用することが可能なanonymous rsync サーバを提供しています。ここでは、その使用方法を述べます。</p>
+
+<p>Portageツリーを同期させるために次のコメンドを使用してください。</p>
+<pre caption = "Getting portage up to date">
+# <c>emerge sync</c>
+</pre>
+
+<p><c>emerge sync</c>は自動的に<i>--clean</i>オプションを設定します。
+これは、<path>/usr/portage ツリー</path> のあなたの個人的な変更や追加を削除してしまいます。
+もしあなたが作成したebuildをメインPortage ツリーと別に管理したいのなら、<i>PORTDIR_OVERLAY</i>機能を使用してください。
+</p>
+
+<pre caption = "Using PORTDIR_OVERLAY">
+<comment>この行を<path>/etc/make.conf</path>に加えてください。</comment> 
+   PORTDIR_OVERLAY="/dir/where/your/ebuilds/are" 
+</pre>
+
+<p>もしあなたがたくさんのebuildの修正や、bugの修正をし、Gentoo Linux Development Teamの一員になりたいと考えているなら、
+<mail link = "drobbins@gentoo.org">Daniel Robbins</mail>か
+<mail link = "seemant@gentoo.org">Seemant Kulleen</mail> に連絡して、情報を得てください。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>Portage の更新</title>
+<body>
+<p>Portage ツリーを使う前に、Portage を更新することは重要です。更新をするためには、
+下記を実行してください。</p>
+
+<pre caption = "Updating Portage">
+<comment>これは、アップデートされるであろうパッケージの一覧を表示します。</comment>
+# <c>emerge -up system </c>
+<comment>これは、必要なパッケージのアップデートを行います。</comment>
+# <c>emerge -u system </c>
+</pre>
+
+<p>これで portage の最新のバージョンを使うでしょう。
+そして、インストールされたソフトウェアを更新するために、ebuild システムを使用しはじめることができます。</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title><c>emerge</c> の導入</title>
+<section>
+<title><c>emerge --pretend</c></title>
+<body>
+<p>パッケージをインストールする前に、何が依存によってインストールされるか、
+どのパッケージがアップーデートされるかを知っておくのは良い考えです。<c>emerge --pretend</c> または<c>emerge -p</c> でこのことができます。
+</p> 
+
+<pre caption = "Using emerge -p">
+# <c>emerge -p xchat</c>
+
+These are the packages that I would emerge, in order.
+
+Calculating dependencies......... done!
+[ebuild   U] sys-libs/zlib-1.1.3-r2 to /
+[ebuild   U] dev-libs/glib-1.2.10 to /
+[ebuild N  ] media-libs/jpeg-6b-r2 to /
+[ebuild N  ] x11-base/xfree-4.0.3-r3 to /
+[ebuild N  ] x11-libs/gtk+-1.2.10-r1 to /
+[ebuild N  ] media-libs/giflib-4.1.0-r3 to /
+[ebuild N  ] media-libs/tiff-3.5.6_beta to /
+[ebuild N  ] media-libs/imlib-1.9.10 to /
+[ebuild N  ] net-irc/xchat-1.4.3 to /
+</pre>
+
+<p>特にこの場合、X がインストールされていないマシン上で <i>xchat</i>をemergeすることを想定しています。
+このように、<c>emerge --pretend</c> は最初に指定されたパッケージを満足するために、
+いくつかの依存するパッケージが必要であることを正確に確認します。
+特に、<path>sys-libs/zlib</path> と <path>dev-libs/glib</path> は更新される必要があります。
+そしてその後の一連の ebuild (もちろん、<path>x11-base/xfree</path> を含む) は、
+emerge される必要があります。</p>
+</body>
+</section>
+<section>
+<title>USE 環境変数と <c>emerge</c></title>
+<body>
+<p>上記では、<path>/etc/make.conf</path> 内の <c>USE</c> 変数に <c>gnome</c>
+は定義されていないシステム上で <c>emerge --pretend</c> を実行しました。
+これは、オプションの GNOME サポートが、その場合、有効にならないことを意味します。
+しかしながら、<path>xchat</path> はオプションの GNOME サポートを持っています。
+したがって、<path>/etc/make.conf</path> 内の USE 環境変数に <c>gnome</c> を追加した後の
+<c>emerge --pretend</c> の出力を見てみましょう。
+</p>
+
+
+<pre caption = "Using emerge with USE variables">
+# <c>emerge -p xchat</c>
+
+These are the packages that I would emerge, in order.
+
+Calculating dependencies............................ done!
+[ebuild N  ] media-libs/jpeg-6b-r2 to /
+[ebuild N  ] gnome-base/libghttp-1.0.9 to /
+[ebuild N  ] media-libs/audiofile-0.2.1 to /
+[ebuild N  ] media-sound/esound-0.2.22-r2 to /
+[ebuild N  ] gnome-base/gnome-env-1.0 to /
+[ebuild N  ] gnome-base/libxml-1.8.11 to /
+[ebuild N  ] gnome-base/ORBit-0.5.8 to /
+[ebuild N  ] gnome-base/oaf-0.6.5 to /
+[ebuild   U] dev-libs/glib-1.2.10 to /
+[ebuild N  ] net-libs/libwww-5.3.2-r1 to /
+[ebuild N  ] media-libs/giflib-4.1.0-r3 to /
+[ebuild N  ] dev-util/guile-1.4-r3 to /
+[ebuild   U] sys-libs/zlib-1.1.3-r2 to /
+[ebuild N  ] x11-base/xfree-4.0.3-r3 to /
+[ebuild N  ] x11-libs/gtk+-1.2.10-r1 to /
+[ebuild N  ] media-libs/tiff-3.5.6_beta to /
+[ebuild N  ] media-libs/imlib-1.9.10 to /
+[ebuild N  ] gnome-base/gnome-libs-1.2.13 to /
+[ebuild N  ] gnome-base/glibwww-0.2-r1 to /
+[ebuild N  ] gnome-base/gdk-pixbuf-0.11.0 to /
+[ebuild N  ] gnome-base/gconf-1.0.0 to /
+[ebuild N  ] gnome-base/gnome-vfs-1.0.1 to /
+[ebuild N  ] gnome-base/control-center-1.4.0.1 to /
+[ebuild N  ] gnome-base/scrollkeeper-0.2 to /
+[ebuild N  ] dev-util/xml-i18n-tools-0.8.1 to /
+[ebuild N  ] gnome-base/libglade-0.16-r1 to /
+[ebuild N  ] gnome-base/gnome-core-1.4.0.4 to /
+[ebuild N  ] net-irc/xchat-1.4.3 to /
+</pre>
+
+<p>見ての通り、<c>USE</c> 変数に <c>gnome</c> を追加することで、
+emerge はxchat がオプションの GNOME サポートを含めるべきであることを認識します。
+もちろん、このオプションの GNOME サポートが、正確にコンパイルかつ実行されるために、
+GNOME が最初にインストールされます。<c>emerge</c> はこの全ての出力を表示し、
+emerge されるべき ebuild のリストへ GNOME によって必要とされる様々なパッケージを追加します。
+<c>USE</c> 変数は、正確に設定されない場合があり、
+これは様々なオプションの拡張のためのサポートを不意に含めたり除いたりということの原因になります。
+そのため、実際の <c>emerge</c> を実行する前に<c>emerge --pretend</c> を常に実行するように勧めます。
+特に、新しい見慣れないebuild のために。
+これであなたが何を期待しているかがわかるでしょう。:)
+一旦すべてが OK であると確認できれば、<c>--pretend</c> を取ることにより、
+実際の <c>emerge</c> を実行することができます。</p>
+
+<pre caption = "Emerging xchat">
+# <c>emerge xchat</c>
+</pre>
+
+<p>全ての依存物が emerge された後、(もしそれらがすでに存在する場合、
+すべてのパッケージがemergeされるとはかぎりませんが) 
+xchatソースは
+(<path>/usr/portage/distfiles</path> に)ダウンロードされ、検査、展開され、
+コンパイル、そして一時的なディレクトリ(sandboxと呼びます)にインストールされます。その後、
+ローカルファイルシステムへと emerge されます。
+インストールされたファイルと全てのファイルの md5sum を含むパッケージデータベースは、
+<path>/var/db/pkg/net-irc/xchat-1.4.3/CONTENTS</path> に作成されます。</p>
+
+<p>
+あるパッケージでどのUSEフラグが使用できるか、そしてあなたのシステムでどれがオンになっているか知りたい場合には、<c>-c</c>または<c>--verbose</c>引数を<c>emerge -p</c>へ加ええます。
+</p> 
+    
+<pre caption = "--verboseを使用してのemerge"> 
+# <i>emerge -pv gentoo-sources</i> 
+ 
+These are the packages that I would merge, in order: 
+ 
+Calculating dependencies ...done! 
+[ebuild    U ] sys-kernel/gentoo-sources-2.4.20-r5 -build +crypt -evms2 
+-aavm -usagi 
+</pre> 
+ 
+</body> 
+</section> 
+<section> 
+<title>変更点を知る</title> 
+<body> 
+ 
+<p> 
+すでにインストールしてあるパッケージのバージョンとPortageに存在するパッケージのバージョンの間の変更点を知りたい場合には、<c>--changelog</c>または<c>-l</c>引数を加えます。
+</p> 
+    
+<pre caption = "Viewing the ChangeLog"> 
+# <i>emerge -pl mozilla</i> 
+ 
+These are the packages that I would merge, in order: 
+ 
+Calculating dependencies ...done! 
+[ebuild    U ] net-www/mozilla-1.3-r1 [1.2.1-r5] 
+ 
+*mozilla-1.3-r1 
+ 
+  22 Mar 2003; Martin Schlemmer &lt;azarah@gentoo.org&gt; mozilla-1.3-r1.ebuild : 
+  Add Gtk2 patch.  Add default/prefs/xft.js when Xft is enabled.  Some other 
+  long overdue cleanups. 
+ 
+*mozilla-1.3 
+ 
+  21 Mar 2003; Jay Kwak &lt;jayskwak@gentoo.org&gt; mozilla-1.3.ebuild : 
+  Add XIM input patch for GTK 
+ 
+  18 Mar 2003; Martin Schlemmer &lt;azarah@gentoo.org&gt; mozilla-1.3.ebuild : 
+  New version. 
+ 
+  13 Mar 2003; Olivier Reisch &lt;doctomoe@gentoo.org&gt; mozilla-1.2.1-r5.ebuild : 
+  Marked ppc stable 
+ 
+*mozilla-1.3_beta 
+ 
+  23 Feb 2003; Martin Schlemmer &lt;azarah@gentoo.org&gt; mozilla-1.3_beta.ebuild : 
+  New version. 
+ 
+</pre> 
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>パッケージの更新</title>
+<section>
+<body>
+
+<p>標準的なPortageのアップデート方法は、<c>emerge --update</c>または<c>emerge -u</c>です。</p>
+
+<pre caption = "Using emerge -u">
+# <c>emerge -u xchat</c>
+</pre>
+
+<p>Portage は "safe" unmerge と呼ばれる仕組みを使用します。それは、
+単にオリジナルファイルを削除するということです。もしファイルが、
+なんらかの方法で上書き、あるいは変更されていたら、ファイルシステム上に残しておきます。
+(おそらくは、パッケージのより新しいバージョンをインストールしたのでしょう。)
+よって、もし xchat の新しいバージョンを merge した後、
+古いバージョンをunmerge したなら、xchat の実行ファイルはファイルシステムから削除されません。
+よって、それはより新しいタイムスタンプかつ異なる md5sum を持ちます。
+いつでも、アプリケーションのいくつかのバージョンが利用可能であることを保証するので、
+safe unmerge は実にすばらしいです。もし、最初に unmerge をしなければならなかったとしたら、
+新しいバージョンがダウンロード、コンパイル、インストール、
+そして emerge されているしばらくの間、xchat は利用できないでしょう。</p>
+
+<impo>
+Portage は現在 "config file protection" と呼ばれる特別な機能を持っています。
+この機能の目的は、新しいパッケージのインストールによって既に存在する設定ファイル
+を壊してしまうことを防ぐことです。デフォルトでは、config file protection は、
+/etc と KDE 設定ディレクトリで作動します。今後、もっと追加するかもしれません。
+より詳しくは、<c>emerge --help config</c>を入力してください。
+</impo>
+</body>
+</section>
+</chapter>
+
+<chapter> 
+<title>ブロックされたパッケージの解決方法</title> 
+<section> 
+<body> 
+
+<p> 
+現在のところ、インストールされたパッケージが他のパッケージのインストールをブロックすることが時々起こります。
+これはあるパッケージの機能が別のパッケージに移動したとき、又は二つのパッケージに互換性が無いときに起こることがあります。
+ブロックしているパッケージは、ブロックされているパッケージがemergeされる前に、取り除かれる必要があります。
+</p> 
+
+<pre caption = "ブロックされたパッケージのemerge"> 
+# <i>emerge -pv libbonobo</i> 
+ 
+These are the packages that I would merge, in order: 
+ 
+Calculating dependencies ...done! 
+[blocks B     ] gnome-base/bonobo-activation (from pkg gnome-base/libbonobo-2.4.0) 
+[ebuild     U ] gnome-base/ORBit2-2.8.1 [2.6.3] -doc +ssl 
+[ebuild     U ] gnome-base/libbonobo-2.4.0 [2.2.3] -doc 
+</pre> 
+ 
+<p> 
+上記は、bonobo-activationパッケージがlibbonobo-2.4.0をブロックしている例です。
+</p> 
+
+<pre caption = "ブロックしているパッケージをシステムから取り除く"> 
+# <i>emerge -C bonobo-activation</i> 
+# <i>emerge libbonobo</i> 
+</pre> 
+ 
+<p> 
+Removing bonobo-activation from the system will allow 
+libbonobo-2.4.0 to emerge succesfully. 
+システムからbonobo-activationを取り除くと、libbonobo-2.4.0をemergeすることができるようになります。
+</p> 
+ 
+<impo> 
+unmerge(<c>emerge -C</c>)の実行は、たとえ他のパッケージの依存関係が存在していてもパッケージを取り除きますので、システムを壊してしまう可能性があります。
+</impo> 
+</body> 
+</section> 
+</chapter> 
+
+
+<chapter> 
+<title>Portageの動作をコントロールする</title> 
+<section> 
+<body> 
+ 
+<p> 
+Portageの動作を変えたい場合には、<path>/etc/make.conf</path>を編集します。
+このファイルはPortageの動作を変更するために定義する変数(と、変数と値のサンプル)が含まれています。
+たとえば、ソースコードのダウンロード方法を変更したい場合には、<c>FETCHCOMMAND</c>を必要に応じて変更します。
+</p> 
+ 
+<p> 
+<path>/etc/make.conf</path>には、定義の仕方を学ぶことができるたくさんのサンプルの変数が含まれています。
+また、<path>make.conf</path>manページ(<c>man make.conf</c>)を見たり、もっと奥深くまでPortageを知りたければ、
+<uri link="/doc/en/portage-manual.xml">Portage Manual</uri>
+<uri link="/doc/ja/portage-manual.xml">（日本語訳）</uri>を読みましょう。
+</p> 
+ 
+<p> 
+もし一回限りの変更が必要な場合には、<path>/etc/make.conf</path>を２回編集する代わりに環境変数としてセットすることができます。
+たとえば、<c>AUTOCLEAN="no" emerge kde</c>は<c>emerge kde</c>の間だけ、autocleaningを行ないません。
+</p> 
+ 
+</body> 
+</section> 
+</chapter> 
+
+<chapter>
+<title>マスクされたパッケージとはなんですか？</title>
+<section>
+<body>
+<p>
+多くの人達が、なぜ<c>emerge -u world</c>したときに新しいパッケージが含まれないのだろうと不思議に思います。
+良い例はxfree-4.3.0(執筆時点でのバージョンで)です。
+<c>emerge sync</c>した後で、続いて<c>emerge -u world</c>をしても、最新版としてそれを見ることはないでしょう。
+これはなぜでしょうか？
+</p>
+<p>
+その理由は、そのパッケージが"masked"としてマークされているからです。
+そのパッケージは特定の手段を取らない限り、自動的にはインストールされません。
+マスクされたパッケージのインストールを可能にする方法の説明として、
+<uri link="http://forums.gentoo.org/">Gentoo Forums</uri>にある<uri link="http://forums.gentoo.org/viewtopic.php?t=33534">Masked Packages FAQ</uri>
+を見てみることをお勧めします。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

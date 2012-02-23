@@ -1,0 +1,1723 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/articles/linux-24-stateful-fw-design.xml:6
+#, no-wrap
+msgid "Linux 2.4 stateful firewall design"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/articles/linux-24-stateful-fw-design.xml:13
+#, no-wrap
+msgid ""
+"This tutorial shows you how to use netfilter to set up a powerful Linux stateful\n"
+"firewall.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/linux-24-stateful-fw-design.xml:26
+#, no-wrap
+msgid "About this tutorial"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:28
+#, no-wrap
+msgid "Should I take this tutorial?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:32
+#, no-wrap
+msgid ""
+"This tutorial shows you how to use netfilter to set up a powerful Linux stateful\n"
+"firewall. All you need is an existing Linux system that's currently using a\n"
+"Linux 2.4 kernel. A laptop, workstation, router or server with a Linux 2.4\n"
+"kernel will do.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:39
+#, no-wrap
+msgid ""
+"You should be reasonably familiar with standard network terminology like IP\n"
+"addresses, source and destination port numbers, TCP, UDP and ICMP, etc. By the\n"
+"end of the tutorial, you'll understand how Linux stateful firewalls are put\n"
+"together and you'll have several example configurations to use in your own\n"
+"projects.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:49
+#, no-wrap
+msgid "About the author"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:53
+#, no-wrap
+msgid ""
+"For technical questions about the content of this tutorial, contact the author,\n"
+"Daniel Robbins, at <mail link=\"drobbins@gentoo.org\">drobbins@gentoo.org</mail>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:58
+#, no-wrap
+msgid ""
+"Residing in Albuquerque, New Mexico, Daniel Robbins was the President/CEO of\n"
+"Gentoo Technologies, Inc., the creator of Gentoo Linux, an advanced Linux for\n"
+"the PC, and the Portage system, a next-generation ports system for Linux. He has\n"
+"also served as a contributing author for the Macmillan books Caldera OpenLinux\n"
+"Unleashed, SuSE Linux Unleashed, and Samba Unleashed. Daniel has been involved\n"
+"with computers in some fashion since the second grade, when he was first exposed\n"
+"to the Logo programming language as well as a potentially dangerous dose of Pac\n"
+"Man. This probably explains why he has since served as a Lead Graphic Artist at\n"
+"SONY Electronic Publishing/Psygnosis. Daniel enjoys spending time with his wife,\n"
+"Mary, and his new baby daughter, Hadassah.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/linux-24-stateful-fw-design.xml:75
+#, no-wrap
+msgid "First steps"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:77
+#, no-wrap
+msgid "Defining our goal"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:81
+#, no-wrap
+msgid ""
+"In this tutorial, we're going to put together a Linux stateful firewall. Our\n"
+"firewall is going to run on a Linux laptop, workstation, server, or router; its\n"
+"primary goal is to allow only certain types of network traffic to pass through.\n"
+"To increase security, we're going to configure the firewall to drop or reject\n"
+"traffic that we're not interested in, as well as traffic that could pose a\n"
+"security threat.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:92
+#, no-wrap
+msgid "Getting the tools"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:96
+#, no-wrap
+msgid ""
+"Before we start designing a firewall, we need to do two things. First, we need\n"
+"to make sure that the <c>iptables</c> command is available. As root, type\n"
+"<c>iptables</c> and see if it exists. If it doesn't, then we'll need to get it\n"
+"installed first. Here's how we do that:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:102
+#, no-wrap
+msgid "Installing necessary tools"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:103
+#, no-wrap
+msgid "# <i>emerge iptables</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:109
+#, no-wrap
+msgid "Kernel configuration"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:113
+#, no-wrap
+msgid ""
+"Once installed, you should have an <c>iptables</c> command available for use, as\n"
+"well as the handy iptables man page (<c>man iptables</c>). Great; now all we\n"
+"need is to make sure that we have the necessary functionality built into the\n"
+"kernel. This tutorial assumes that you compile your own kernels. Head over to\n"
+"<path>/usr/src/linux</path>, and type <c>make menuconfig</c> or <c>make\n"
+"xconfig</c>; we're going to enable some kernel network functionality.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:122
+#, no-wrap
+msgid ""
+"Under the \"Networking options\" section, make sure that you enable at least the\n"
+"following options:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:126
+#, no-wrap
+msgid "Necessary kernel options"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:127
+#, no-wrap
+msgid ""
+"&lt;*&gt; Packet socket\n"
+"[*] Network packet filtering (replaces ipchains)\n"
+"&lt;*&gt; Unix domain sockets\n"
+"[*] TCP/IP networking\n"
+"[*]   IP: advanced router\n"
+"[*]   IP: policy routing\n"
+"[*]    IP: use netfilter MARK value as routing key\n"
+"[*]    IP: fast network address translation\n"
+"[*]   IP: use TOS value as routing key\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:139
+#, no-wrap
+msgid ""
+"Then, under the \"IP: Netfilter Configuration -&gt;\" menu, enable every option so\n"
+"that we'll have full netfilter functionality. We won't use all the netfilter\n"
+"features, but it's good to enable them so that you can do some experimentation\n"
+"later on.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:146
+#, no-wrap
+msgid ""
+"There's one networking option under the \"Networking options\" category that you\n"
+"<e>shouldn't</e> enable: explicit congestion notification. Leave this option\n"
+"disabled:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:151
+#, no-wrap
+msgid "Option we have to disable"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:152
+#, no-wrap
+msgid "[ ]   IP: TCP Explicit Congestion Notification support\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:156
+#, no-wrap
+msgid ""
+"If this option is enabled, your Linux machine won't be able to carry on network\n"
+"communications with 8% of the Internet. When ECN is enabled, some packets that\n"
+"your Linux box sends out will have the ECN bit set; however, this bit freaks out\n"
+"a number of Internet routers, so it's very important that ECN is disabled.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:163
+#, no-wrap
+msgid ""
+"OK, now that the kernel's configured correctly for our needs, compile a new one,\n"
+"install it, and reboot. Time to start playing with netfilter :)\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:170
+#, no-wrap
+msgid "Firewall design basics"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:174
+#, no-wrap
+msgid ""
+"In putting together our firewall, the <c>iptables</c> command is our friend.\n"
+"It's what we use to interact with the network packet filtering rules in the\n"
+"kernel.  We'll use the <c>iptables</c> command to create new rules, list\n"
+"existing rules, flush rules, and set default packet handling policies. This\n"
+"means that to create our firewall, we're going to enter a series of iptables\n"
+"commands, and here's the first one we're going to take a look at (please don't\n"
+"type this in just yet!)...\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:183
+#, no-wrap
+msgid "Changing chain policy to DROP"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:184
+#, no-wrap
+msgid "# <i>iptables -P INPUT DROP</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:188
+#, no-wrap
+msgid ""
+"You're looking at an almost \"perfect\" firewall. If you type in this command,\n"
+"you'll be incredibly well protected against any form of incoming malicious\n"
+"attack. That's because this command tells the kernel to drop all incoming\n"
+"network packets. While this firewall is extremely secure, it's a bit silly. But\n"
+"before moving on, let's take a look at exactly how this command does what it\n"
+"does.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:199
+#, no-wrap
+msgid "Setting chain policy"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:203
+#, no-wrap
+msgid ""
+"An <c>iptables -P</c> command is used to set the default policy for a chain of\n"
+"packet filtering rules. In this example, <c>iptables -P</c> is used to set the\n"
+"default policy for the INPUT chain, a built-in chain of rules that's applied to\n"
+"every incoming packet. By setting the default policy to DROP, we tell the kernel\n"
+"that any packets that reach the end of the INPUT rule chain should be dropped\n"
+"(that is, discarded). And, since we haven't added any rules to the INPUT chain,\n"
+"all packets reach the end of the chain, and all packets are dropped.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:213
+#, no-wrap
+msgid ""
+"Again, by itself this command is totally useless. However, it demonstrates a\n"
+"good strategy for firewall design. We'll start by dropping all packets by\n"
+"default, and then gradually start opening up our firewall so that it meets our\n"
+"needs. This will ensure that our firewall is as secure as possible.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/linux-24-stateful-fw-design.xml:224
+#, no-wrap
+msgid "Defining rules"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:226
+#, no-wrap
+msgid "A (small) improvement"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:230
+#, no-wrap
+msgid ""
+"In this example, let's assume that we're designing a firewall for a machine with\n"
+"two network interfaces, eth0 and eth1. The eth0 network card is connected to our\n"
+"LAN, while the eth1 network card is attached to our DSL router, our connection\n"
+"to the Internet. For such a situation, we could improve our \"ultimate firewall\"\n"
+"by adding one more line:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:237
+#, no-wrap
+msgid "Improving our ultimate firewall"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:238
+#, no-wrap
+msgid ""
+"# <i>iptables -P INPUT DROP</i>\n"
+"# <i>iptables -A INPUT -i ! eth1 -j ACCEPT</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:243
+#, no-wrap
+msgid ""
+"This additional <c>iptables -A</c> line adds a new packet filtering rule to the\n"
+"end of our INPUT chain. After this rule is added, our INPUT chain consists of a\n"
+"single rule and a drop-by-default policy. Now, let's take a look at what our\n"
+"semi-complete firewall does.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:252
+#, no-wrap
+msgid "Following the INPUT chain"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:256
+#, no-wrap
+msgid ""
+"When a packet comes in on any interface (lo, eth0, or eth1), the netfilter code\n"
+"directs it to the INPUT chain and checks to see if the packet matches the first\n"
+"rule. If it does, the packet is accepted, and no further processing is\n"
+"performed. If not, the INPUT chain's default policy is enforced, and the packet\n"
+"is discarded (dropped).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:264
+#, no-wrap
+msgid ""
+"That's the conceptual overview. Specifically, our first rule matches all packets\n"
+"coming in from eth0 and lo, immediately allowing them in. Any packets coming in\n"
+"from eth1 are dropped. So, if we enable this firewall on our machine, it'll be\n"
+"able to interact with our LAN but be effectively disconnected from the Internet.\n"
+"Let's look at a couple of ways to enable Internet traffic.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:274
+#, no-wrap
+msgid "Traditional firewalls"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:278
+#, no-wrap
+msgid ""
+"Obviously, for our firewall to be useful, we need to selectively allow some\n"
+"incoming packets to reach our machine via the Internet. There are two approaches\n"
+"to opening up our firewall to the point where it is useful: one uses static\n"
+"rules, and the other uses dynamic, stateful rules.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:285
+#, no-wrap
+msgid ""
+"Let's take downloading Web pages as an example. If we want our machine to be\n"
+"able to download Web pages from the Internet, we can add a static rule that will\n"
+"always be true for every incoming http packet, regardless of origin:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:290
+#, no-wrap
+msgid "Accepting all the incoming http packets"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:291
+#, no-wrap
+msgid "# <i>iptables -A INPUT --sport 80 -j ACCEPT</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:295
+#, no-wrap
+msgid ""
+"Since all standard Web traffic originates from a source port of 80, this rule\n"
+"effectively allows our machine to download Web pages. However, this traditional\n"
+"approach, while marginally acceptable, suffers from a bunch of problems.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:303
+#, no-wrap
+msgid "Traditional firewall bummers"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:307
+#, no-wrap
+msgid ""
+"Here's a problem: while most Web traffic originates from port 80, some doesn't.\n"
+"So, while this rule would work most of the time, there would be rare instances\n"
+"where this rule wouldn't work. For example, maybe you've seen a URL that looks\n"
+"like this: \"http://www.foo.com:81\". This example URL points to a Web\n"
+"site on port 81 rather than the default port 80, and would be unviewable from\n"
+"behind our current firewall. Taking into account all these special cases can\n"
+"quickly turn a fairly secure firewall into swiss cheese and quickly fill our\n"
+"INPUT chain with a bunch of rules to handle the occasional oddball Web site.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:318
+#, no-wrap
+msgid ""
+"However, the major problem with this rule is security related. Sure, it's true\n"
+"that only traffic with a source port of 80 will be allowed through our firewall.\n"
+"But the source port of a packet is not something that we have any control over,\n"
+"and it can be easily altered by an intruder. For example, if an intruder knew\n"
+"how our firewall were designed, he could bypass our firewall by simply making\n"
+"sure that all his incoming connections originated from port 80 on one of his\n"
+"machines! Because this static firewall rule is so easy to exploit, a more secure\n"
+"dynamic approach is needed. Thankfully, iptables and kernel 2.4 provide\n"
+"everything we need to enable dynamic, stateful filtering.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/linux-24-stateful-fw-design.xml:334
+#, no-wrap
+msgid "Stateful firewalls"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:336
+#, no-wrap
+msgid "State basics"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:340
+#, no-wrap
+msgid ""
+"Rather than opening up holes in our firewall based on static protocol\n"
+"characteristics, we can use Linux's new connection tracking functionality to\n"
+"make firewall decisions based on the dynamic connection state of packets.\n"
+"Conntrack works by associating every packet with an individual bidirectional\n"
+"communications channel, or connection.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:348
+#, no-wrap
+msgid ""
+"For example, consider what happens when you use telnet or ssh to connect to a\n"
+"remote machine. If you view your network traffic at the packet level, all you\n"
+"see is a bunch of packets zipping from one machine to another. However, at a\n"
+"higher level, this exchange of packets is actually a bidirectional\n"
+"communications channel between your local machine and a remote machine.\n"
+"Traditional (old-fashioned) firewalls only look at the individual packets, not\n"
+"recognizing that they're actually part of a larger whole, a connection.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:360
+#, no-wrap
+msgid "Inside conntrack"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:364
+#, no-wrap
+msgid ""
+"That's where connection tracking technology comes in. Linux's conntrack\n"
+"functionality can \"see\" the higher-level connections that are taking place,\n"
+"recognizing your ssh session as a single logical entity. Conntrack can even\n"
+"recognize UDP and ICMP packet exchanges as logical \"connections\", even though\n"
+"UDP and ICMP are connectionless in nature; this is very helpful because it\n"
+"allows us to use conntrack to handle ICMP and UDP packet exchanges.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:373
+#, no-wrap
+msgid ""
+"If you've already rebooted and are using your new netfilter-enabled kernel, you\n"
+"can view a list of active network connections that your machine is participating\n"
+"in by typing <c>cat /proc/net/ip_conntrack</c>. Even with no firewall\n"
+"configured, Linux's conntrack functionality is working behind the scenes,\n"
+"keeping track of the connections that your machine is participating in.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:383
+#, no-wrap
+msgid "The NEW connection state"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:387
+#, no-wrap
+msgid ""
+"Conntrack doesn't just recognize connections, it also classifies every packet\n"
+"that it sees into one of four connection states. The first state that we're\n"
+"going to talk about is called NEW. When you type <c>ssh remote.host.com</c>, the\n"
+"initial packet or burst of packets that originate from your machine and are\n"
+"destined for remote.host.com are in the NEW state. However, as soon as you\n"
+"receive even just a single reply packet from remote.host.com, any further\n"
+"packets you send to remote.host.com as part of this connection aren't considered\n"
+"NEW packets anymore. So, a packet is only considered NEW when it's involved in\n"
+"establishing a new connection, and no traffic has yet been received from the\n"
+"remote host (as part of this particular connection, of course).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:400
+#, no-wrap
+msgid ""
+"I've described outgoing NEW packets, but it's also very possible (and common) to\n"
+"have incoming NEW packets. Incoming NEW packets generally originate from a\n"
+"remote machine, and are involved in initiating a connection with you. The\n"
+"initial packet(s) your Web server receives as part of a HTTP request would be\n"
+"considered incoming NEW packets; however, once you reply to just a single\n"
+"incoming NEW packet, any additional packets you receive that are related to this\n"
+"particular connection are no longer in the NEW state.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:412
+#, no-wrap
+msgid "The ESTABLISHED state"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:416
+#, no-wrap
+msgid ""
+"Once a connection has seen traffic in both directions, additional packets\n"
+"relating to this connection are considered to be in an ESTABLISHED state. The\n"
+"distinction between NEW and ESTABLISHED is an important one, as we'll see in a\n"
+"minute.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:425
+#, no-wrap
+msgid "The RELATED state"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:429
+#, no-wrap
+msgid ""
+"The third connection state category is called RELATED. RELATED packets are those\n"
+"that are starting a new connection, but are related to another currently\n"
+"existing connection. The RELATED state can be used to regulate connections that\n"
+"are part of a multi-connection protocol, such as ftp, as well as error packets\n"
+"related to existing connections (such as ICMP error packets related to an\n"
+"existing connection).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:440
+#, no-wrap
+msgid "The INVALID state"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:444
+#, no-wrap
+msgid ""
+"Finally, there are INVALID packets: those that can't be classified into one of\n"
+"the above three categories. It's important to note that if a packet is\n"
+"considered INVALID, it isn't automatically discarded; it's still up to you to\n"
+"insert the appropriate rules and set chain policy so that they're handled\n"
+"correctly.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:454
+#: en/articles/linux-24-stateful-fw-design.xml:463
+#, no-wrap
+msgid "Adding a stateful rule"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:458
+#, no-wrap
+msgid ""
+"OK, now that we have a good understanding of connection tracking, it's time to\n"
+"take a look at a single additional rule that transforms our non-functional\n"
+"firewall into something quite useful:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:464
+#, no-wrap
+msgid ""
+"# <i>iptables -P INPUT DROP</i>\n"
+"# <i>iptables -A INPUT -i ! eth1 -j ACCEPT</i>\n"
+"# <i>iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:472
+#, no-wrap
+msgid "How the rule works"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:476
+#, no-wrap
+msgid ""
+"This single rule, when inserted at the end of our existing INPUT chain, will\n"
+"allow us to establish connections with remote machines. It works as follows.\n"
+"Let's say we want to ssh over to remote.host.com. After typing <c>ssh\n"
+"remote.host.com</c>, our machine sends out a packet to initiate the connection.\n"
+"This particular packet is in the NEW state, and our firewall allows it out,\n"
+"because we're only blocking packets coming in to our firewall, not going out.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:485
+#, no-wrap
+msgid ""
+"When we get a reply packet from remote.host.com, this packet trickles through\n"
+"our INPUT chain. It doesn't match our first rule (since it comes in on eth1), so\n"
+"it moves on to our next, and final rule. If it matches this rule, it will be\n"
+"accepted, and if it doesn't, it will fall off the end of the INPUT chain and the\n"
+"default policy will be applied to the packet (DROP). So, is this incoming reply\n"
+"packet accepted or dropped on the floor?\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:494
+#, no-wrap
+msgid ""
+"Answer: accepted. When the kernel inspects this incoming packet, it first\n"
+"recognizes that it's part of an already existing connection. Then, the kernel\n"
+"needs to decide whether this is a NEW or ESTABLISHED packet. Since this is an\n"
+"incoming packet, it checks to see if this connection has had any outgoing\n"
+"traffic, and finds that it has (our initial NEW packet that we sent out).\n"
+"Therefore, this incoming packet is categorized as ESTABLISHED, as are any\n"
+"further packets we receive or send that are associated with this connection.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:506
+#, no-wrap
+msgid "Incoming NEW packets"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:510
+#, no-wrap
+msgid ""
+"Now, let's consider what happens if someone on a remote machine tries to ssh in\n"
+"to us. The initial packet we receive is classified as NEW, and doesn't match\n"
+"rule 1, so it advances to rule 2. Because this packet isn't in an ESTABLISHED or\n"
+"RELATED state, it falls off the end of the INPUT chain and the default policy,\n"
+"DROP, is applied. Our incoming ssh connection request is dropped to the floor\n"
+"without so much as a reply (or TCP reset) from us.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:521
+#, no-wrap
+msgid "A near-perfect firewall"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:525
+#, no-wrap
+msgid ""
+"So, what kind of firewall do we have so far? An excellent one for a laptop or a\n"
+"workstation where you don't want anyone from the Internet connecting to you, but\n"
+"where you need to connect to sites on the Internet. You'll be able to use\n"
+"Netscape, konqueror, ftp, ping, perform DNS lookups, and more. Any connection\n"
+"that you initiate will get back in through the firewall. However, any\n"
+"unsolicited connection that comes in from the Internet will be dropped, unless\n"
+"it's related to an existing connection that you initiated. As long as you don't\n"
+"need to provide any network services to the outside, this is a near-perfect\n"
+"firewall.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:539
+#: en/articles/linux-24-stateful-fw-design.xml:547
+#, no-wrap
+msgid "A basic firewall script"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:543
+#, no-wrap
+msgid ""
+"Here's a simple script that can be used to set up/tear down our first basic\n"
+"workstation firewall:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:548
+#, no-wrap
+msgid ""
+"#!/bin/bash\n"
+"<comment># A basic stateful firewall for a workstation or laptop that isn't running any</comment>\n"
+"<comment># network services like a web server, SMTP server, ftp server, etc.</comment>\n"
+"\n"
+"if [ \"$1\" = \"start\" ]\n"
+"then\n"
+"        echo \"Starting firewall...\"\n"
+"        iptables -P INPUT DROP\n"
+"        iptables -A INPUT -i ! eth1 -j ACCEPT\n"
+"        iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n"
+"elif [ \"$1\" = \"stop\" ]\n"
+"then\n"
+"        echo \"Stopping firewall...\"\n"
+"        iptables -F INPUT\n"
+"        iptables -P INPUT ACCEPT\n"
+"fi\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:569
+#, no-wrap
+msgid "Using the script"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:573
+#, no-wrap
+msgid ""
+"Using this script, you can bring down the firewall by typing <c>./firewall\n"
+"stop</c>, and bring it back up again by typing <c>./firewall start</c>. To bring\n"
+"down the firewall, we flush our rules out of the INPUT chain with a <c>iptables\n"
+"-F INPUT</c>, and then switch the default INPUT policy back to ACCEPT with a\n"
+"<c>iptables -P INPUT ACCEPT</c> command. Now, let's look at a bunch of\n"
+"improvements that we can make to our existing workstation firewall. Once I've\n"
+"explained every improvement, I'll present a final workstation firewall script.\n"
+"Then, we'll start customizing our firewall for servers.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/linux-24-stateful-fw-design.xml:588
+#, no-wrap
+msgid "Stateful improvements"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:590
+#: en/articles/linux-24-stateful-fw-design.xml:602
+#, no-wrap
+msgid "Explicitly turn off ECN"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:594
+#, no-wrap
+msgid ""
+"I mentioned earlier that it's important to turn off ECN (explicit congestion\n"
+"notification) so that Internet communications will work properly. While you may\n"
+"have disabled ECN in the kernel per my suggestion, it's possible that in the\n"
+"future, you'll forget to do so. Or, possibly, you'll pass your firewall script\n"
+"along to someone who has ECN enabled. For these reasons, it's a good idea to use\n"
+"the <path>/proc</path> interface to explicitly disable ECN, as follows:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:603
+#, no-wrap
+msgid ""
+"if [ -e /proc/sys/net/ipv4/tcp_ecn ]\n"
+"then\n"
+"        echo 0 > /proc/sys/net/ipv4/tcp_ecn\n"
+"fi\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:612
+#: en/articles/linux-24-stateful-fw-design.xml:624
+#, no-wrap
+msgid "Forwarding"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:616
+#, no-wrap
+msgid ""
+"If you're using your Linux machine as a router, then you'll want to enable IP\n"
+"forwarding, which will give the kernel permission to allow packets to travel\n"
+"between eth0 and eth1, and vice versa. In our example configuration, where eth0\n"
+"is connected to our LAN, and eth1 is connected to the Internet, enabling IP\n"
+"forwarding is a necessary step in allowing our LAN to connect to the Internet\n"
+"via our Linux box. To enable IP forwarding, use this line:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:625
+#, no-wrap
+msgid "# <i>echo 1 > /proc/sys/net/ipv4/ip_forward</i>\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:631
+#: en/articles/linux-24-stateful-fw-design.xml:652
+#, no-wrap
+msgid "Handling rejection"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:635
+#, no-wrap
+msgid ""
+"So far, we've been dropping all unsolicited traffic coming in from the Internet.\n"
+"While this is an effective way to deter unwanted network activity, it does have\n"
+"some drawbacks. The biggest problem with this approach is that it's easy for an\n"
+"intruder to detect that we're running a firewall, since our machine isn't\n"
+"replying with the standard TCP reset and ICMP port-unreachable responses: the\n"
+"responses that a normal machine would send back to indicate a failed connection\n"
+"attempt to a non-existent service.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:645
+#, no-wrap
+msgid ""
+"Rather than let potential intruders know that we're running a firewall (and thus\n"
+"tip them off to the fact that we may be running some valuable services that they\n"
+"can't get to), it would be to our advantage to make it appear as if we aren't\n"
+"running any services at all. By adding these two rules to the end of our INPUT\n"
+"chain, we can successfully accomplish this task:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:653
+#, no-wrap
+msgid ""
+"# <i>iptables -A INPUT -p tcp -i eth1 -j REJECT --reject-with tcp-reset</i>\n"
+"# <i>iptables -A INPUT -p udp -i eth1 -j REJECT --reject-with icmp-port-unreachable</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:658
+#, no-wrap
+msgid ""
+"Our first rule takes care of correctly zapping TCP connections, while the second\n"
+"handles UDP. With these two rules in place, it becomes very difficult for an\n"
+"intruder to detect that we're actually running a firewall; hopefully, this will\n"
+"cause the intruder to leave our machine and search for other targets with more\n"
+"potential for abuse.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:666
+#, no-wrap
+msgid ""
+"In addition to making our firewall more \"stealthy\", these rules also eliminate\n"
+"the delay involved in connecting to certain ftp and irc servers. This delay is\n"
+"caused by the server performing an ident lookup to your machine (connecting to\n"
+"port 113) and eventually (after about 15 seconds) timing out. Now, our firewall\n"
+"will return a TCP reset and the ident lookup will fail immediately instead of\n"
+"retrying for 15 seconds (while you're patiently waiting for a response from the\n"
+"server).\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:678
+#: en/articles/linux-24-stateful-fw-design.xml:693
+#, no-wrap
+msgid "Spoof protection"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:682
+#, no-wrap
+msgid ""
+"In many distributions, when the network interface(s) are brought up, several old\n"
+"ipchains rules are also added to the system. These special rules were added by\n"
+"the creators of the distribution to deal with a problem called spoofing, in\n"
+"which the source address of packets have been tweaked so that they contains an\n"
+"invalid value (something that script kiddies do). While we can create similar\n"
+"iptables rules that will also block spoofed packets, there's an easier way.\n"
+"These days, the kernel has the built-in ability to dropped spoofed packets; all\n"
+"we need to do is enable it via a simple <path>/proc</path> interface. Here's\n"
+"how.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:694
+#, no-wrap
+msgid ""
+"for x in lo eth0 eth1\n"
+"do\n"
+"        echo 1 > /proc/sys/net/ipv4/conf/${x}/rp_filter\n"
+"done\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:701
+#, no-wrap
+msgid ""
+"This shell script will tell the kernel to drop any spoofed packets on interfaces\n"
+"lo, eth0, and eth1. You can either add these lines to your firewall script, or\n"
+"add them to the script that brings up your lo, eth0, and eth1 interfaces.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:709
+#: en/articles/linux-24-stateful-fw-design.xml:720
+#, no-wrap
+msgid "Masquerading"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:713
+#, no-wrap
+msgid ""
+"NAT (network address translation) and IP masquerading, while not directly\n"
+"related to firewalls, are often used in conjunction with them. We're going to\n"
+"look at two common NAT/masquerading configurations that you may need to use.\n"
+"This first rule would take care of situations where you have a dialup link to\n"
+"the Internet (ppp0) that uses a dynamic IP:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:721
+#, no-wrap
+msgid "# <i>iptables -t nat -A POSTROUTING -o ppp0 -j MASQUERADE</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:725
+#, no-wrap
+msgid ""
+"If you're in this situation, you'll also want to convert my firewall scripts so\n"
+"that all references to \"eth1\" (our example DSL router) are changed to \"ppp0\".\n"
+"And it's perfectly fine to add firewalling rules that refer to \"ppp0\" when the\n"
+"ppp0 interface doesn't yet exist. As soon as ppp0 is up, everything will work\n"
+"perfectly. Make sure you enable IP forwarding as well.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:735
+#: en/articles/linux-24-stateful-fw-design.xml:762
+#, no-wrap
+msgid "SNAT"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:739
+#, no-wrap
+msgid ""
+"If you're using DSL to connect to the Internet, you probably have one of two\n"
+"possible configurations. One possibility is that your DSL router or modem has\n"
+"its own IP number and performs network address translation for you. If you're in\n"
+"this situation, you don't need Linux to perform NAT for you since your DSL\n"
+"router is taking care of it already.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:747
+#, no-wrap
+msgid ""
+"However, if you want to have more control over your NAT functionality, you may\n"
+"want to talk to your ISP about configuring your DSL connection so that your DSL\n"
+"router is in \"bridged mode\". In bridged mode, your firewall becomes an official\n"
+"part of your ISP's network, and your DSL router transparently forwards IP\n"
+"traffic back and forth between your ISP and your Linux box without letting\n"
+"anyone know that it's there. It no longer has an IP number; instead, eth1 (in\n"
+"our example) sports the IP. If someone pings your IP from the Internet, they get\n"
+"a reply back from your Linux box, rather than your router.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:758
+#, no-wrap
+msgid ""
+"With this kind of setup, you'll want to use SNAT (source NAT) rather than\n"
+"masquerading. Here's the line you should add to your firewall:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:763
+#, no-wrap
+msgid "# <i>iptables -t nat -A POSTROUTING -o eth1 -j SNAT --to 1.2.3.4</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:767
+#, no-wrap
+msgid ""
+"In this example, eth1 should be changed to the ethernet interface connected\n"
+"directly to your DSL router, and 1.2.3.4 should be changed to your static IP\n"
+"(the IP of your ethernet interface). Again, remember to enable IP forwarding.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:775
+#, no-wrap
+msgid "NAT issues"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:779
+#, no-wrap
+msgid ""
+"Fortunately for us, NAT and masquerading get along just fine with a firewall.\n"
+"When writing your firewall filtering rules, just ignore the fact that you're\n"
+"using NAT. Your rules should accept, drop, or reject packets based on their\n"
+"\"real\" source and destination addresses. The firewall filtering code sees the\n"
+"original source address for a packet, and the final destination address. This is\n"
+"great for us, because it allows our firewall to continue working properly even\n"
+"if we temporarily disable NAT or masquerading.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:791
+#, no-wrap
+msgid "Understanding tables"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:795
+#, no-wrap
+msgid ""
+"In the above NAT/masquerading examples, we're appending rules to a chain, but\n"
+"we're also doing something a bit different. Notice the \"-t\" option. The \"-t\"\n"
+"option allows us to specify the table that our chain belongs to. When omitted,\n"
+"the default table defaults to \"filter\". So, all our previous non-NAT related\n"
+"commands were modifying the INPUT chain that's part of the \"filter\" table. The\n"
+"\"filter\" table contains all the rules associated with accepting or rejecting\n"
+"packets, while the \"nat\" table (as you would assume) contains rules relating to\n"
+"network address translation. There are also other built-in iptables chains and\n"
+"they are described in detail in the iptables man page, as well as in Rusty's\n"
+"HOWTOs (see the <uri link=\"#resources\">Resources</uri> section at the end of\n"
+"this tutorial for links).\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:811
+#: en/articles/linux-24-stateful-fw-design.xml:819
+#, no-wrap
+msgid "Our enhanced script"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:815
+#, no-wrap
+msgid ""
+"Now that we've taken a look at a bunch of possible enhancements, it's time to\n"
+"take a look at a second more flexible firewall up/down script:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:821
+#, no-wrap
+msgid ""
+"#!/bin/bash\n"
+"\n"
+"<comment># An enhanced stateful firewall for a workstation, laptop or router that isn't</comment>\n"
+"<comment># running any network services like a web server, SMTP server, ftp server, etc.</comment>\n"
+"\n"
+"<comment># Change this to the name of the interface that provides your \"uplink\"</comment>\n"
+"<comment># (connection to the Internet)</comment>\n"
+"\n"
+"UPLINK=\"eth1\"\n"
+"\n"
+"<comment># If you're a router (and thus should forward IP packets between interfaces),</comment>\n"
+"<comment># you want ROUTER=\"yes\"; otherwise, ROUTER=\"no\"</comment>\n"
+"\n"
+"ROUTER=\"yes\"\n"
+"\n"
+"<comment># Change this next line to the static IP of your uplink interface for static SNAT, or</comment>\n"
+"<comment># \"dynamic\" if you have a dynamic IP.  If you don't need any NAT, set NAT to \"\" to</comment>\n"
+"<comment># disable it.</comment>\n"
+"\n"
+"NAT=\"1.2.3.4\"\n"
+"\n"
+"<comment># Change this next line so it lists all your network interfaces, including lo</comment>\n"
+"\n"
+"INTERFACES=\"lo eth0 eth1\"\n"
+"\n"
+"if [ \"$1\" = \"start\" ]\n"
+"then\n"
+"        echo \"Starting firewall...\"\n"
+"        iptables -P INPUT DROP\n"
+"        iptables -A INPUT -i ! ${UPLINK} -j ACCEPT\n"
+"        iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n"
+"        iptables -A INPUT -p tcp -i ${UPLINK} -j REJECT --reject-with tcp-reset\n"
+"        iptables -A INPUT -p udp -i ${UPLINK} -j REJECT --reject-with icmp-port-unreachable\n"
+"\n"
+"        <comment># Explicitly disable ECN</comment>\n"
+"        if [ -e /proc/sys/net/ipv4/tcp_ecn ]\n"
+"        then\n"
+"                echo 0 > /proc/sys/net/ipv4/tcp_ecn\n"
+"        fi\n"
+"\n"
+"        <comment># Disable spoofing on all interfaces</comment>\n"
+"        for x in ${INTERFACES}\n"
+"        do\n"
+"                echo 1 > /proc/sys/net/ipv4/conf/${x}/rp_filter\n"
+"        done\n"
+"\n"
+"        if [ \"$ROUTER\" = \"yes\" ]\n"
+"        then\n"
+"                <comment># We're a router of some kind, enable IP forwarding</comment>\n"
+"                echo 1 > /proc/sys/net/ipv4/ip_forward\n"
+"                if [ \"$NAT\" = \"dynamic\" ]\n"
+"                then\n"
+"                        <comment># Dynamic IP address, use masquerading</comment>\n"
+"                        echo \"Enabling masquerading (dynamic ip)...\"\n"
+"                        iptables -t nat -A POSTROUTING -o ${UPLINK} -j MASQUERADE\n"
+"                elif [ \"$NAT\" != \"\" ]\n"
+"                then\n"
+"                        <comment># Static IP, use SNAT</comment>\n"
+"                        echo \"Enabling SNAT (static ip)...\"\n"
+"                        iptables -t nat -A POSTROUTING -o ${UPLINK} -j SNAT --to ${UPIP}\n"
+"                fi\n"
+"        fi\n"
+"\n"
+"elif [ \"$1\" = \"stop\" ]\n"
+"then\n"
+"        echo \"Stopping firewall...\"\n"
+"        iptables -F INPUT\n"
+"        iptables -P INPUT ACCEPT\n"
+"        <comment># Turn off NAT/masquerading, if any</comment>\n"
+"        iptables -t nat -F POSTROUTING\n"
+"fi\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/linux-24-stateful-fw-design.xml:899
+#, no-wrap
+msgid "Stateful servers"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:901
+#: en/articles/linux-24-stateful-fw-design.xml:910
+#, no-wrap
+msgid "Viewing rules"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:905
+#, no-wrap
+msgid ""
+"Before we start making customizations to our firewall so that it can be used on\n"
+"a server, I need to show you how to list your currently active firewall rules.\n"
+"To view the rules in the filter table's INPUT chain, type:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:911
+#, no-wrap
+msgid "# <i>iptables -v -L INPUT</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:915
+#, no-wrap
+msgid ""
+"The -v option gives us a verbose output, so that we can see the total packets\n"
+"and bytes transferred per rule. We can also look at our nat POSTROUTING table\n"
+"with the following command:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:920
+#, no-wrap
+msgid "Viewing POSTROUTING table rules"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:921
+#, no-wrap
+msgid ""
+"# <i>iptables -t nat -v -L POSTROUTING</i>\n"
+"Chain POSTROUTING (policy ACCEPT 399 packets, 48418 bytes)\n"
+"pkts bytes target     prot opt in     out     source               destination\n"
+"2728  170K SNAT       all  --  any    eth1    anywhere             anywhere\n"
+"to:215.218.215.2\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:931
+#, no-wrap
+msgid "Getting ready for service"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:935
+#, no-wrap
+msgid ""
+"Right now, our firewall doesn't allow the general public to connect to services\n"
+"on our machine because it only accepts incoming ESTABLISHED or RELATED packets.\n"
+"Because it drops any incoming NEW packets, any connection attempt is rejected\n"
+"unconditionally. However, by selectively allowing some incoming traffic to cross\n"
+"our firewall, we can allow the general public to connect to the services that we\n"
+"specify.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:946
+#, no-wrap
+msgid "Stateful HTTP"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:950
+#, no-wrap
+msgid ""
+"While we want to accept some incoming connections, we probably don't want to\n"
+"accept every kind of incoming connection. It makes sense to start with a \"deny\n"
+"by default\" policy (as we have now) and begin opening up access to those\n"
+"services that we'd like people to be able to connect to. For example, if we're\n"
+"running a Web server, we'll allow NEW packets into our machine, as long as they\n"
+"are headed for port 80 (HTTP). That's all we need to do. Once we allow the NEW\n"
+"packets in, we've allowed a connection to be established. Once the connection is\n"
+"established, our existing rule allowing incoming ESTABLISHED and RELATED packets\n"
+"kicks in, allowing the HTTP connection to proceed unhindered.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:964
+#: en/articles/linux-24-stateful-fw-design.xml:972
+#, no-wrap
+msgid "Stateful HTTP example"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:968
+#, no-wrap
+msgid ""
+"Let's take a look at the \"heart\" of our firewall and the new rule that allows\n"
+"incoming HTTP connections:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:973
+#, no-wrap
+msgid ""
+"iptables -P INPUT DROP\n"
+"iptables -A INPUT -i ! ${UPLINK} -j ACCEPT\n"
+"iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n"
+"<comment># Our new rule follows</comment>\n"
+"iptables -A INPUT -p tcp --dport http -m state --state NEW -j ACCEPT\n"
+"iptables -A INPUT -p tcp -i ${UPLINK} -j REJECT --reject-with tcp-reset\n"
+"iptables -A INPUT -p udp -i ${UPLINK} -j REJECT --reject-with\n"
+"icmp-port-unreachable\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:984
+#, no-wrap
+msgid ""
+"This new rule allows incoming NEW TCP packets destined for our machine's port 80\n"
+"(http) to come in. Notice the placement of this rule. It's important that it\n"
+"appears before our REJECT rules. Since iptables will apply the first matching\n"
+"rule, putting it after our REJECT lines would cause this rule to have no effect.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:993
+#: en/articles/linux-24-stateful-fw-design.xml:1001
+#, no-wrap
+msgid "Our final firewall script"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:997
+#, no-wrap
+msgid ""
+"Now, let's take a look at our final firewall script, one that can be used on a\n"
+"laptop, workstation, router, or server (or some combination thereof!).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:1003
+#, no-wrap
+msgid ""
+"#!/bin/bash\n"
+"\n"
+"<comment># Our complete stateful firewall script.  This firewall can be customized for</comment>\n"
+"<comment># a laptop, workstation, router or even a server. :)</comment>\n"
+"\n"
+"<comment># Change this to the name of the interface that provides your \"uplink\"</comment>\n"
+"<comment># (connection to the Internet)</comment>\n"
+"\n"
+"UPLINK=\"eth1\"\n"
+"\n"
+"<comment># If you're a router (and thus should forward IP packets between interfaces),</comment>\n"
+"<comment># you want ROUTER=\"yes\"; otherwise, ROUTER=\"no\"</comment>\n"
+"\n"
+"ROUTER=\"yes\"\n"
+"\n"
+"<comment># Change this next line to the static IP of your uplink interface for static SNAT, or</comment>\n"
+"<comment># \"dynamic\" if you have a dynamic IP.  If you don't need any NAT, set NAT to \"\" to</comment>\n"
+"<comment># disable it.</comment>\n"
+"\n"
+"NAT=\"1.2.3.4\"\n"
+"\n"
+"<comment># Change this next line so it lists all your network interfaces, including lo</comment>\n"
+"\n"
+"INTERFACES=\"lo eth0 eth1\"\n"
+"\n"
+"<comment># Change this line so that it lists the assigned numbers or symbolic names (from</comment>\n"
+"<comment># /etc/services) of all the services that you'd like to provide to the general</comment>\n"
+"<comment># public. If you don't want any services enabled, set it to \"\"</comment>\n"
+"\n"
+"SERVICES=\"http ftp smtp ssh rsync\"\n"
+"\n"
+"if [ \"$1\" = \"start\" ]\n"
+"then\n"
+"        echo \"Starting firewall...\"\n"
+"        iptables -P INPUT DROP\n"
+"        iptables -A INPUT -i ! ${UPLINK} -j ACCEPT\n"
+"        iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n"
+"\n"
+"        <comment># Enable public access to certain services</comment>\n"
+"        for x in ${SERVICES}\n"
+"        do\n"
+"                iptables -A INPUT -p tcp --dport ${x} -m state --state NEW -j ACCEPT\n"
+"        done\n"
+"\n"
+"        iptables -A INPUT -p tcp -i ${UPLINK} -j REJECT --reject-with tcp-reset\n"
+"        iptables -A INPUT -p udp -i ${UPLINK} -j REJECT --reject-with icmp-port-unreachable\n"
+"\n"
+"        <comment># Explicitly disable ECN</comment>\n"
+"        if [ -e /proc/sys/net/ipv4/tcp_ecn ]\n"
+"        then\n"
+"                echo 0 > /proc/sys/net/ipv4/tcp_ecn\n"
+"        fi\n"
+"\n"
+"        <comment># Disable spoofing on all interfaces</comment>\n"
+"        for x in ${INTERFACES}\n"
+"        do\n"
+"        echo 1 > /proc/sys/net/ipv4/conf/${x}/rp_filter\n"
+"        done\n"
+"\n"
+"        if [ \"$ROUTER\" = \"yes\" ]\n"
+"        then\n"
+"                <comment># We're a router of some kind, enable IP forwarding</comment>\n"
+"                echo 1 > /proc/sys/net/ipv4/ip_forward\n"
+"                if [ \"$NAT\" = \"dynamic\" ]\n"
+"                then\n"
+"                <comment># Dynamic IP address, use masquerading</comment>\n"
+"                echo \"Enabling masquerading (dynamic ip)...\"\n"
+"                        iptables -t nat -A POSTROUTING -o ${UPLINK} -j MASQUERADE\n"
+"                elif [ \"$NAT\" != \"\" ]\n"
+"                then\n"
+"                        <comment># Static IP, use SNAT</comment>\n"
+"                        echo \"Enabling SNAT (static ip)...\"\n"
+"                        iptables -t nat -A POSTROUTING -o ${UPLINK} -j SNAT --to ${UPIP}\n"
+"                fi\n"
+"        fi\n"
+"\n"
+"elif [ \"$1\" = \"stop\" ]\n"
+"then\n"
+"        echo \"Stopping firewall...\"\n"
+"        iptables -F INPUT\n"
+"        iptables -P INPUT ACCEPT\n"
+"        <comment># Turn off NAT/masquerading, if any</comment>\n"
+"        iptables -t nat -F POSTROUTING\n"
+"fi\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/linux-24-stateful-fw-design.xml:1094
+#, no-wrap
+msgid "Building a better server firewall"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:1096
+#, no-wrap
+msgid "Server improvements"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1100
+#, no-wrap
+msgid ""
+"It's often possible to make a firewall just an eensy bit \"better\". Of course,\n"
+"what \"better\" means depends on your specific needs. Our existing script could\n"
+"meet yours exactly, or maybe some additional tweaking is in order. This section\n"
+"is intended to serve as a cookbook of ideas, demonstrating ways to enhance your\n"
+"existing stateful firewall.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:1110
+#, no-wrap
+msgid "Logging techniques"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1114
+#, no-wrap
+msgid ""
+"So far, we haven't discussed how to go about logging anything. There's a special\n"
+"target called LOG that you can use to log things. Along with LOG, there's a\n"
+"special option called <c>--log-prefix</c> that allows you to specify some text\n"
+"that will appear alongside the packet dump in the system logs. Here's an example\n"
+"log rule:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:1121
+#, no-wrap
+msgid "Example log rule"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:1122
+#, no-wrap
+msgid "# <i> iptables -A INPUT -j LOG --log-prefix \"bad input:\"</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1126
+#, no-wrap
+msgid ""
+"You wouldn't want to add this as the first rule in your INPUT chain, as it would\n"
+"cause a log entry to be recorded for every packet that you receive! Instead,\n"
+"place log rules further down in your INPUT chain with the intention of logging\n"
+"strange packets and other anomalies.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1133
+#, no-wrap
+msgid ""
+"Here's an important note about the LOG target. Normally, when a rule matches, a\n"
+"packet is either accepted, rejected, or dropped, and no further rules are\n"
+"processed. However, when a log rule matches, the packet is logged. However, it\n"
+"is not accepted, rejected, or dropped. Instead, the packet continues on to the\n"
+"next rule, or the default chain policy is applied if the log rule is the last on\n"
+"the chain.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1142
+#, no-wrap
+msgid ""
+"The LOG target can also be combined with the \"limit\" module (described in the\n"
+"iptables man page) to minimize duplicate log entries. Here's an example:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:1146
+#, no-wrap
+msgid "Limiting log entries"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/linux-24-stateful-fw-design.xml:1147
+#, no-wrap
+msgid "# <i>iptables -A INPUT -m state --state INVALID -m limit --limit 5/minute -j LOG --log-prefix \"INVALID STATE:\"</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:1153
+#, no-wrap
+msgid "Creating your own chains"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1157
+#, no-wrap
+msgid ""
+"<c>iptables</c> allows you to create your own user-defined chains that can be specified\n"
+"as targets in your rules. If you want to learn how to do this, spend some time\n"
+"going through the Packet filtering HOWTO at the netfilter/iptables project home\n"
+"page (<uri>http://www.netfilter.org/</uri>).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:1166
+#, no-wrap
+msgid "Enforcing network usage policy"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1170
+#, no-wrap
+msgid ""
+"Firewalls offer a lot of power for those who want to enforce a network usage\n"
+"policy for a corporate or academic LAN. You can control what packets your\n"
+"machine forwards by adding rules to and setting policy for the FORWARD chain. By\n"
+"adding rules to the OUTPUT chain, you can also control what happens to packets\n"
+"that are generated locally, by users on the Linux box itself. iptables also has\n"
+"the incredible ability to filter locally-created packets based on owner (uid or\n"
+"gid). For more information on this, search for \"owner\" in the iptables man page.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:1182
+#, no-wrap
+msgid "Other security angles"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1186
+#, no-wrap
+msgid ""
+"In our example firewall, we've assumed that all internal LAN traffic is\n"
+"trustworthy, and that only incoming Internet traffic must be carefully\n"
+"monitored. Depending on your particular network, that may or may not be the\n"
+"case. There's certainly nothing stopping you from configuring your firewall to\n"
+"provide protection from incoming LAN traffic. Consider other \"angles\" of your\n"
+"network that you may want to protect. It may also be appropriate to configure\n"
+"two separate LAN security \"zones\", each with its own security policy.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/linux-24-stateful-fw-design.xml:1200
+#, no-wrap
+msgid "Resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:1202
+#, no-wrap
+msgid "tcpdump"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1206
+#, no-wrap
+msgid ""
+"In this section, I'll point out a number of resources that you'll find helpful\n"
+"as you put together your own stateful firewall. Let's start with an important\n"
+"tool...\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1212
+#, no-wrap
+msgid ""
+"<uri link=\"http://www.tcpdump.org/\">tcpdump</uri> is an essential tool for\n"
+"exploring low-level packet exchanges and verifying that your firewall is working\n"
+"correctly. If you don't have it, get it. If you've got it, start using it.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:1220
+#, no-wrap
+msgid "netfilter.kernelnotes.org"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1224
+#, no-wrap
+msgid ""
+"Visit the netfilter/iptables project home page\n"
+"(<uri>http://www.netfilter.org</uri>).  You'll find many resources at this site,\n"
+"including the iptables sources and a <uri\n"
+"link=\"http://www.netfilter.org/documentation/index.html#documentation-faq\">netfilter\n"
+"FAQ</uri>. Also <uri\n"
+"link=\"http://people.netfilter.org/~rusty/unreliable-guides/index.html\">Rusty's\n"
+"Remarkably Guides</uri> are excellent, and include a basic networking concepts\n"
+"HOWTO, a netfilter (iptables) HOWTO, a NAT HOWTO, and a netfilter hacking HOWTO\n"
+"for developers.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:1238
+#, no-wrap
+msgid "iptables man page"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1242
+#, no-wrap
+msgid ""
+"Thankfully, there are a lot of good online netfilter resources; however, don't\n"
+"forget the basics. The iptables man page is very detailed and is a shining\n"
+"example of what a man page should be. It's actually an enjoyable read.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:1250
+#, no-wrap
+msgid "Advanced Linux routing and traffic control HOWTO"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1254
+#, no-wrap
+msgid ""
+"There's now an <uri link=\"http://www.ds9a.nl/2.4Routing/\">Advanced Linux Routing\n"
+"and Traffic Control HOWTO</uri> available.  There's a good section that shows\n"
+"how to use iptables to mark packets, and then use Linux routing functionality to\n"
+"route the packets based on these marks.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/articles/linux-24-stateful-fw-design.xml:1261
+#, no-wrap
+msgid ""
+"This HOWTO contains references to Linux's traffic control (quality of service)\n"
+"functionality (accessed through the new <c>tc</c> command). This new functionality,\n"
+"although very cool, is very poorly documented, and attempting to figure out all\n"
+"aspects of Linux traffic control can be a very frustrating task at this point.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:1270
+#, no-wrap
+msgid "Mailing lists"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1274
+#, no-wrap
+msgid ""
+"Users who have questions on netfilter/iptables usage, setup, or configuration,\n"
+"or who want to help other users by sharing their experience and knowledge, can\n"
+"contact the <uri\n"
+"link=\"http://www.netfilter.org/mailinglists.html#ml-user\">netfilter user mailing\n"
+"list</uri>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1282
+#, no-wrap
+msgid ""
+"Netfilter/iptables developers who have questions, suggestions, or contributions\n"
+"to netfilter/iptables development can contact the <uri\n"
+"link=\"http://www.netfilter.org/mailinglists.html#ml-devel\">netfilter developer\n"
+"mailing list</uri>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1289
+#, no-wrap
+msgid "You can also browse the list archives at these URLs.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:1295
+#, no-wrap
+msgid "Building Internet Firewalls, Second Edition"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1299
+#, no-wrap
+msgid ""
+"In June 2000, O'Reilly released an excellent book -- <uri\n"
+"link=\"http://www.oreilly.com/catalog/fire2/\">Building Internet Firewalls, Second\n"
+"Edition</uri>. It's great reference book, especially for those times when you\n"
+"want to configure your firewall to accept (or flat-out reject) a little-known\n"
+"protocol that you're unfamiliar with.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1307
+#, no-wrap
+msgid ""
+"Well, that's it for our resources list, and our tutorial is complete. I hope\n"
+"that this tutorial has been helpful to you, and I look forward to your feedback.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/linux-24-stateful-fw-design.xml:1314
+#, no-wrap
+msgid "Your feedback"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/linux-24-stateful-fw-design.xml:1318
+#, no-wrap
+msgid ""
+"We look forward to getting your feedback on this tutorial. Additionally, you are\n"
+"welcome to contact the author, Daniel Robbins, at <mail\n"
+"link=\"drobbins@gentoo.org\">drobbins@gentoo.org</mail>.\n"
+msgstr ""

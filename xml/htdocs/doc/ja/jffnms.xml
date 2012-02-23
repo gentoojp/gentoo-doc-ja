@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/jffnms.xml,v 1.1 2006/06/08 15:41:55 idani Exp $ -->
+
+<guide link="/doc/ja/jffnms.xml" lang="ja">
+<title>Jffnmsインストール・セットアップガイド</title>
+
+<author title="Author">
+  <mail link="angusyoung@gentoo.org">Otavio R. Piske</mail>
+</author>
+<author title="翻訳">
+ <mail link="murakami.taku@gmail.com">Taku Murakami</mail>
+</author>
+
+<abstract>
+このガイドでは、ネットワーク管理・監視システムであるJffnmsのインストール後のセットアップ作業の進め方と、
+システム監視方法について紹介しています。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.1</version>
+<date>2006-04-25</date>
+
+<!-- Original revision: 1.3 -->
+
+<chapter>
+<title>Jffnmsの基本</title>
+<section>
+<title>はじめに</title>
+<body>
+
+<p>
+<uri link="http://www.jffnms.org">Jffnms</uri>はネットワーク管理・監視システムです。
+これにより、様々なホストやプロトコルから情報を取得できます。このガイドは、
+Jffnmsの適切なインストール方法と、この驚くべきツールを使ったシステム監視方法の説明を目的としています。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>初期セットアップ</title>
+<section>
+
+<title>USEフラグを選択する</title>
+<body>
+
+<p>
+より適切なニーズに合わせ、Jffnmsのebuildでは以下のUSEフラグが利用可能です。
+</p>
+
+<table>
+<tr>
+  <th>Jffnms用のUSEフラグ</th>
+  <th>説明</th>
+</tr>
+<tr>
+  <ti><c>mysql</c></ti>
+  <ti>MySQLを使用して、Jffnmsのデータを格納する</ti>
+</tr>
+<tr>
+  <ti><c>postgres</c></ti>
+  <ti>PostgreSQLを使用して、Jffnmsのデータを格納する</ti>
+</tr>
+<tr>
+  <ti><c>snmp</c></ti>
+  <ti>
+    Jffnmsが他ホストからもデータを収集するSNMPサポートを追加する
+  </ti>
+</tr>
+</table>
+
+</body>
+</section>
+<section>
+<title>PHP用のUSEフラグ</title>
+<body>
+
+<p>
+JffnmsはPHPで書かれているため、php USEフラグに大きく依存しています。
+Jffnmsを首尾よくインストールするには、
+(少なくとも)PHPパッケージが以下のUSEフラグを用いてインストールされている必要があります。
+</p>
+
+<table>
+<tr>
+  <th>PHP用のUSEフラグ</th>
+  <th>説明</th>
+</tr>
+<tr>
+  <ti><c>gd</c></ti>
+  <ti>media-libs/gdのサポートを追加する(グラフィックスをオンザフライで生成する)</ti>
+</tr>
+<tr>
+  <ti><c>wddx</c></ti>
+  <ti>Web Distributed Data eXchangeのサポートを追加する</ti>
+</tr>
+<tr>
+  <ti><c>sockets</c></ti>
+  <ti>TCP/IPソケットのサポートを追加する</ti>
+</tr>
+<tr>
+  <ti><c>session</c></ti>
+  <ti>永続セッションのサポートを追加する</ti>
+</tr>
+<tr>
+  <ti><c>spl</c></ti>
+  <ti>標準PHPライブラリのサポートを追加する</ti>
+</tr>
+<tr>
+  <ti><c>cli</c></ti>
+  <ti>CLI SAPIを有効にする</ti>
+</tr>
+</table>
+
+</body>
+</section>
+<section>
+
+<title>インストール</title>
+<body>
+
+<p>
+Portageにおける他のパッケージ同様、Jffnmsは<c>emerge</c>によりインストールできます。
+</p>
+
+<pre caption="Jffnmsをインストールする">
+# <i>emerge jffnms</i>
+</pre>
+
+<p>
+Jffnmsは、<path>/opt/jffnms/</path>以下にインストールされるはずです。
+</p>
+
+</body>
+</section>
+<section>
+<title>Apache2を設定する</title>
+<body>
+
+<warn>
+本項におけるApache用の基本設定手順では、
+Webサーバのセットアップ全てを網羅しているわけではありません。
+</warn>
+
+<p>
+時として、Jffnmsをリモートサーバではなく、
+ローカルマシン上で実行したい場合もあるでしょう。
+これがまさにあなたのケースにあてはまるなら、
+Apacheのセットアップはまだ行っていないようですね。
+Apacheのインストールなら心配しなくて問題ありません。Portageが、
+あなたに代わってこの作業を完了させてくれました。そうは言っても、
+これからApacheを設定しテストする必要があります。但し、
+(幸運にも)この作業は本当に簡単です。まずは、
+Apacheをデフォルトのランレベルに加えるところから始めます。
+</p>
+
+<pre caption="デフォルトのランレベルにApache2を追加する">
+# <i>rc-update add apache2 default</i>
+ * apache2 added to runlevel default
+ * rc-update complete.
+</pre>
+
+<p>
+まだApache2を起動していなければ、その時が来ました。
+</p>
+
+<pre caption="Apache2を起動する">
+# <i>/etc/init.d/apache2 start</i>
+</pre>
+
+<p>
+最後にブラウザで<uri>http://localhost/</uri>を表示すれば、
+新規にインストールされたApache2のホームページが表示されるはずです。
+これでApacheが動作しているのを確認できましたので、mod_phpの設定に移りましょう。
+お好みのテキストエディタを起動して<path>/etc/conf.d/apache2</path>を開いたら、
+<c>-D PHP4</c>をAPACHE2_OPTS変数に加えます。
+</p>
+
+<pre caption="Apache2の設定">
+# <i>nano -w /etc/conf.d/apache2</i>
+APACHE2_OPTS="-D DEFAULT_VHOST -D PHP4"
+</pre>
+
+<p>
+その後、
+JffnmsインストールディレクトリのシンボリックリンクをApacheのドキュメントルートディレクトリに作成して下さい。
+Gentooのデフォルトでは、Apacheは<path>/var/www/localhost/htdocs</path>をドキュメントルートとして使用します。
+つまり、以下のようにして下さい。
+</p>
+
+<pre caption="Jffnmsのシンボリックリンクを作成する">
+# <i>cd /var/www/localhost/htdocs &amp;&amp; ln -s /opt/jffnms/htdocs</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>PHPを設定する</title>
+<body>
+
+<p>
+さあ、Apacheは動作していますので、次はPHPの設定を行いましょう。Jffnmsでは、
+実行に必要な変数をphp.iniで設定する必要があります。php.iniファイルは、
+通常<path>/etc/php/apache2-php4/php.ini</path>にあります。ここでは、
+変数を以下の値に設定する必要があります。
+</p>
+
+<pre caption="PHPを設定する">
+# <i>nano -w /etc/php/apache2-php4/php.ini</i>
+register_globals = On
+register_argc_argv = On 
+error_reporting  =  E_ALL &amp; ~E_NOTICE
+allow_url_fopen = On
+include_path = ".:/usr/share/php4:/usr/share/php:/usr/share/php/PEAR"
+short_open_tag = On
+</pre>
+
+</body>
+</section>
+<section>
+<title>データベースのセットアップ</title>
+<body>
+
+<warn>
+再度ご注意下さい。このガイドでは、どのデータベースに関しても本当に基本的な設定手順だけで、
+優れたシステムをセットアップするのに必要な全てを網羅しているわけではありません。
+</warn>
+
+<p>
+Jffnmsでは、PostgreSQLまたはMySQLをデータベースとして使用できます。
+ここでは、データベースとデータを格納する際に必要なテーブルの作成方法を説明します。
+但し、注意してほしいのは、Jffnmsを実行する際にデータベースをローカルで稼動している必要はないということです。
+つまり、このコマンドをリモートホストで実行する必要があるという事実を除けば、
+手順は同じなのです。
+</p>
+
+</body>
+</section>
+<section>
+<title>PostgreSQLをセットアップする</title>
+<body>
+
+<note>
+もし、PostgreSQLのデータベースを既に動作させているのであれば、
+<uri link="#use-pg">次セクション</uri>に進んで頂いて結構です。
+</note>
+
+<p>
+PostgreSQLをデフォルトのランレベルに追加し、マシンのブート都度、
+起動させる方が良いでしょう。
+</p>
+ 
+<pre caption="PostgreSQLをデフォルトのランレベルに追加する">
+# <i>rc-update add postgresql default</i>
+ * postgresql added to runlevel default
+ * rc-update complete.
+</pre>
+
+<p>
+それでは、PostgreSQLのディレクトリを設定しましょう。これは、
+<c>initdb</c>コマンドを通して行われます。デフォルトでは、
+PostgreSQLのデータディレクトリは通常<path>/var/lib/postgresql/data</path>に格納されます。
+</p>
+
+<impo>
+以下のコマンドは、PostgreSQLのユーザとして実行する必要があります。
+デフォルトでは、このユーザは通常"postgres"です。
+</impo>
+ 
+<pre caption="PostgreSQLのディレクトリを設定する">
+# <i>su - postgres</i>
+$ <i>initdb -D /var/lib/postgresql/data</i>
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with locale C.
+
+creating directory /var/lib/postgresql/data ... ok
+creating directory /var/lib/postgresql/data/global ... ok
+creating directory /var/lib/postgresql/data/pg_xlog ... ok
+creating directory /var/lib/postgresql/data/pg_xlog/archive_status ... ok
+creating directory /var/lib/postgresql/data/pg_clog ... ok
+creating directory /var/lib/postgresql/data/pg_subtrans ... ok
+creating directory /var/lib/postgresql/data/base ... ok
+creating directory /var/lib/postgresql/data/base/1 ... ok
+creating directory /var/lib/postgresql/data/pg_tblspc ... ok
+selecting default max_connections ... 100
+selecting default shared_buffers ... 1000
+creating configuration files ... ok
+creating template1 database in /var/lib/postgresql/data/base/1 ... ok
+initializing pg_shadow ... ok
+enabling unlimited row size for system tables ... ok
+initializing pg_depend ... ok
+creating system views ... ok
+loading pg_description ... ok
+creating conversions ... ok
+setting privileges on built-in objects ... ok
+creating information schema ... ok
+vacuuming database template1 ... ok
+copying template1 to template0 ... ok
+
+WARNING: enabling "trust" authentication for local connections
+You can change this by editing pg_hba.conf or using the -A option the
+next time you run initdb.
+
+Success. You can now start the database server using:
+
+    postmaster -D /var/lib/postgresql/data
+or
+    pg_ctl -D /var/lib/postgresql/data -l logfile start
+</pre>
+
+<p>
+initdbの実行に成功したら、rootユーザに戻りPostgreSQLを起動できます。
+</p>
+
+<pre caption="PostgreSQLを起動する">
+# <i>/etc/init.d/postgresql start</i>
+</pre>
+
+</body>
+</section>
+<section id="use-pg">
+<title>PostgreSQLをデータベースとして使用する</title>
+<body>
+
+<p>
+PostgreSQLをセットアップし、
+動作していればすぐにJffnmsのユーザとホスト情報を格納するデータベースを作成します。
+なお、Gentooでは手順に必要なファイルが含まれています。
+</p>
+
+<note>
+もし、<path>/usr/portage</path>をportageディレクトリ($PORTDIR)として使用していないのであれば、
+コマンドの末尾をあなたのportageディレクトリに置き換えて下さい。
+</note>
+
+<pre caption="Jffnmsのユーザを作成する">
+# <i>psql template1 postgres &lt; /usr/portage/net-analyzer/jffnms/files/postgresql_db</i>
+</pre>
+
+<pre caption="Jffnmsのデータベースを作成する">
+# <i>psql template1 postgres &lt; /usr/portage/net-analyzer/jffnms/files/postgresql_db_table</i>
+</pre>
+
+<p>
+最後に、データが格納される全てのテーブルを作成します。
+</p>
+
+<pre caption="Jffnmsのデータベースを作成する">
+# <i>psql jffnms jffnms &lt; /opt/jffnms/docs/jffnms-0.8.2.pgsql</i>
+</pre>
+
+<p>
+上記の過程を一旦踏めば、Jffnms向けに用意されたPostgreSQLのデータベース設定はOKのはずです。
+</p>
+
+</body>
+</section>
+<section>
+<title>MySQLをデータベースとして使用する</title>
+<body>
+
+<warn>
+MySQLデータベースのインストールと設定は、このガイドでは網羅されていません。
+<uri link="/doc/en/mysql-howto.xml">MySQLスタートアップガイド</uri>を参照して下さい。
+</warn>
+
+<p>
+JffnmsをMySQLで使用したい場合は、手順はもう少しシンプルになります。
+MySQLのデータベース、ユーザ、そしてテーブルを作成するため、
+Gentooでは2つのファイルを提供しています。
+</p>
+
+<note>
+もし、<path>/usr/portage</path>をportageディレクトリ($PORTDIR)として使用していないのであれば、
+コマンドの末尾をあなたのportageディレクトリに置き換えて下さい。
+</note>
+
+<pre caption="データベースとMySQLのユーザを作成する">
+# <i>mysql -u <comment>username</comment> -p <comment>password</comment> &lt; /usr/portage/net-analyzer/jffnms/files/mysql_db</i>
+</pre>
+
+<pre caption="MySQLのテーブルを作成する">
+# <i>mysql -u jffnms -pjffnms jffnms &lt; /opt/jffnms/docs/docs/jffnms-0.8.2.mysql</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>UDPポートの監視と検出</title>
+<body>
+
+<warn>
+このセクションでは、suidプログラムのセットアップ、そして動作を取り上げています。
+従って、セキュリティが非常に問題になるシステムでは適切ではないかもしれません。
+</warn>
+
+<p>
+UDPポートの監視・検出を行いたければ、<c>nmap</c>と<c>fping</c>をsuidプログラムとして、
+設定する必要があります。これは、どちらか一方にでもバグがあった場合に、
+セキュリティホールになりかねません。SUIDをセットするには、以下のコマンドを実行します。
+</p>
+
+<pre caption="UDPポートの監視と検出をセットアップする">
+# <i>chmod +s /usr/bin/nmap ; chmod a+x /usr/bin/nmap</i>
+# <i>chmod +s /usr/sbin/fping ; chmod a+x /usr/sbin/fping</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Jffnmsを構成する</title>
+<section>
+<title>pollerプロセスを構成する</title>
+<body>
+
+<p>
+pollerプロセスは、ホストからのデータ収集を担当します。
+このデータを定期的に収集するには、crontabに追加する必要があります。
+</p>
+
+<pre caption="データを定期的に収集する">
+# <i>crontab -u jffnms /opt/jffnms/docs/unix/crontab</i>
+# <i>crontab -e -u jffnms</i>
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>最終セットアップ</title>
+<body>
+
+<p>
+これで、システム上にJffnmsが適切にインストールされているはずです。しかしながら、
+Jffnmsの設定作業がまだ残っています。但し、
+幸運にもJffnmsでは使いやすいWebページが提供されており、
+そこからデータベース、ユーザアクセスの設定、
+そして現在のホスト設定で十分かをチェックできます。
+このWebインターフェースへは、
+URL<uri>http://localhost/jffnms/admin/setup.php</uri>からアクセスできます。
+設定に関するより詳細な情報に関しては、
+<uri link="http://www.jffnms.org/">Jffnmsのホームページ</uri>を訪れて下さい。
+</p>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>サポート</title>
+<section>
+<title>サポート</title>
+<body>
+
+<p>
+Jffnmsは素敵なソフトウェアですが、設定･運用するには少し骨がおれます。
+そこで、Jffnmsで問題に出くわした際に助けを求めるべき場所を以下に挙げておきます。
+</p>
+
+<ul>
+  <li>
+    <uri link="http://www.jffnms.org/docs/installing.html">Jffnms Installation
+    Manual</uri>
+  </li>
+  <li>
+    <uri link="http://www.jffnms.org/docs/jffnms.html">Jffnms Manual</uri>
+  </li>
+  <li><uri link="http://forums.gentoo.org">Gentoo Forums</uri></li>
+  <li>
+    <uri link="http://www.postgresql.org/docs/8.0/static/index.html">PostgreSQL
+    8 Documentation</uri>
+  </li>
+  <li><uri link="http://dev.mysql.com/doc/">MySQL Documentation</uri></li>
+</ul>
+
+<p>
+PHPを有効にしたApacheを(特に、PHP4とPHP5両方を同じシステムで動かしている場合)を構成していると、
+問題に出くわすかもしれません。その場合は、
+<uri link="/proj/en/php/php4-php5-configuration.xml">Configuring Apache to Work with PHP4 and PHP5</uri>Guideが役に立つでしょう。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

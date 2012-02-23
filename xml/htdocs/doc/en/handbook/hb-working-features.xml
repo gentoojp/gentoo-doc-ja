@@ -1,0 +1,387 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-working-features.xml,v 1.40 2011/11/27 18:25:28 swift Exp $ -->
+
+<sections>
+
+<abstract>
+Discover the features Portage has, such as support for distributed compiling,
+ccache and more.
+</abstract>
+
+<version>4</version>
+<date>2011-11-27</date>
+
+<section>
+<title>Portage Features</title>
+<body>
+
+<p>
+Portage has several additional features that makes your Gentoo experience even
+better. Many of these features rely on certain software tools that improve
+performance, reliability, security, ...
+</p>
+
+<p>
+To enable or disable certain Portage features you need to edit
+<path>/etc/make.conf</path>'s <c>FEATURES</c> variable which contains the
+various feature keywords, separated by white space. In several cases you
+will also need to install the additional tool on which the feature relies.
+</p>
+
+<p>
+Not all features that Portage supports are listed here. For a full overview,
+please consult the <path>make.conf</path> man page:
+</p>
+
+<pre caption="Consulting the make.conf man page">
+$ <i>man make.conf</i>
+</pre>
+
+<p>
+To find out what FEATURES are default set, run <c>emerge --info</c> and search
+for the FEATURES variable or grep it out:
+</p>
+
+<pre caption="Finding out the FEATURES that are already set">
+$ <i>emerge --info | grep FEATURES</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Distributed Compiling</title>
+<subsection>
+<title>Using distcc</title>
+<body>
+
+<p>
+<c>distcc</c> is a program to distribute compilations across several, not
+necessarily identical, machines on a network. The <c>distcc</c> client sends all
+necessary information to the available distcc servers (running <c>distccd</c>) 
+so they can compile pieces of source code for the client. The net result is a 
+faster compilation time.
+</p>
+
+<p>
+You can find more information about <c>distcc</c> (and how to have it work 
+with Gentoo) in our <uri link="/doc/en/distcc.xml">Gentoo Distcc
+Documentation</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Installing distcc</title>
+<body>
+
+<p>
+Distcc ships with a graphical monitor to monitor tasks that your computer is
+sending away for compilation. If you use Gnome then put 'gnome' in your USE
+variable. However, if you don't use Gnome and would still like to have the
+monitor then you should put 'gtk' in your USE variable.
+</p>
+
+<pre caption="Installing distcc">
+# <i>emerge distcc</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating Portage Support</title>
+<body>
+
+<p>
+Add <c>distcc</c> to the FEATURES variable inside <path>/etc/make.conf</path>.
+Next, edit the MAKEOPTS variable to your liking. A known guideline is to fill in
+"-jX" with X the number of CPUs that run <c>distccd</c> (including the current
+host) plus one, but you might have better results with other numbers.
+</p>
+
+<p>
+Now run <c>distcc-config</c> and enter the list of available distcc servers. For
+a simple example we assume that the available DistCC servers are 192.168.1.102
+(the current host), 192.168.1.103 and 192.168.1.104 (two "remote" hosts):
+</p>
+
+<pre caption="Configuring distcc to use three available distcc servers">
+# <i>distcc-config --set-hosts "192.168.1.102 192.168.1.103 192.168.1.104"</i>
+</pre>
+
+<p>
+Don't forget to run the <c>distccd</c> daemon as well:
+</p>
+
+<pre caption="Starting the distccd daemons">
+# <i>rc-update add distccd default</i>
+# <i>/etc/init.d/distccd start</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Caching Compilation</title>
+<subsection>
+<title>About ccache</title>
+<body>
+
+<p>
+<c>ccache</c> is a fast compiler cache. When you compile a program, it will
+cache intermediate results so that, whenever you recompile the same program, the
+compilation time is greatly reduced. The first time you run ccache, it will be
+much slower than a normal compilation. Subsequent recompiles should be faster.
+ccache is only helpful if you will be recompiling the same application many
+times; thus it's mostly only useful for software developers.
+</p>
+
+<p>
+If you are interested in the ins and outs of ccache, please visit the 
+<uri link="http://ccache.samba.org">ccache homepage</uri>.
+</p>
+
+<warn>
+<c>ccache</c> is known to cause numerous compilation failures. Sometimes ccache
+will retain stale code objects or corrupted files, which can lead to packages
+that cannot be emerged. If this happens (if you receive errors like "File not
+recognized: File truncated"), try recompiling the application with ccache
+disabled (<c>FEATURES="-ccache"</c> in <path>/etc/make.conf</path>)
+<e>before</e> reporting a bug. Unless you are doing development work, <e>do not
+enable ccache</e>.
+</warn>
+
+</body>
+</subsection>
+<subsection>
+<title>Installing ccache</title>
+<body>
+
+<p>
+To install <c>ccache</c>, run <c>emerge ccache</c>:
+</p>
+
+<pre caption="Installing ccache">
+# <i>emerge ccache</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating Portage Support</title>
+<body>
+
+<p>
+Open <path>/etc/make.conf</path> and add <c>ccache</c> to the FEATURES variable.
+Next, add a new variable called CCACHE_SIZE and set it to "2G":
+</p>
+
+<pre caption="Editing CCACHE_SIZE in /etc/make.conf">
+CCACHE_SIZE="2G"
+</pre>
+
+<p>
+To check if ccache functions, ask ccache to provide you with its statistics.
+Because Portage uses a different ccache home directory, you need to set the
+<c>CCACHE_DIR</c> variable as well:
+</p>
+
+<pre caption="Viewing ccache statistics">
+# <i>CCACHE_DIR="/var/tmp/ccache" ccache -s</i>
+</pre>
+
+<p>
+The <path>/var/tmp/ccache</path> location is Portage' default ccache home
+directory; if you want to alter this setting you can set the <c>CCACHE_DIR</c>
+variable in <path>/etc/make.conf</path>.
+</p>
+
+<p>
+However, if you would run <c>ccache</c>, it would use the default location of
+<path>${HOME}/.ccache</path>, which is why you needed to set the
+<c>CCACHE_DIR</c> variable when asking for the (Portage) ccache statistics.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Using ccache for non-Portage C Compiling</title>
+<body>
+
+<p>
+If you would like to use ccache for non-Portage compilations, add
+<path>/usr/lib/ccache/bin</path> to the beginning of your PATH variable (before
+<path>/usr/bin</path>). This can be accomplished by editing
+<path>.bash_profile</path> in your user's home directory. Using
+<path>.bash_profile</path> is one way to define PATH variables.
+</p>
+
+<pre caption="Editing .bash_profile">
+PATH="<i>/usr/lib/ccache/bin</i>:/opt/bin:${PATH}"
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Binary Package Support</title>
+<subsection>
+<title>Creating Prebuilt Packages</title>
+<body>
+
+<p>
+Portage supports the installation of prebuilt packages. Even though Gentoo does
+not provide prebuilt packages by itself (except for the GRP snapshots) Portage
+can be made fully aware of prebuilt packages.
+</p>
+
+<p>
+To create a prebuilt package you can use <c>quickpkg</c> if the package is
+already installed on your system, or <c>emerge</c> with the <c>--buildpkg</c> or
+<c>--buildpkgonly</c> options.
+</p>
+
+<p>
+If you want Portage to create prebuilt packages of every single package you
+install, add <c>buildpkg</c> to the FEATURES variable.
+</p>
+
+<p>
+More extended support for creating prebuilt package sets can be obtained with
+<c>catalyst</c>. For more information on catalyst please read the <uri
+link="/proj/en/releng/catalyst/faq.xml">Catalyst Frequently Asked
+Questions</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Installing Prebuilt Packages</title>
+<body>
+
+<p>
+Although Gentoo doesn't provide one, you can create a central repository where 
+you store prebuilt packages. If you want to use this repository, you need to 
+make Portage aware of it by having the PORTAGE_BINHOST variable point to
+it. For instance, if the prebuilt packages are on ftp://buildhost/gentoo:
+</p>
+
+<pre caption="Setting PORTAGE_BINHOST in /etc/make.conf">
+PORTAGE_BINHOST="ftp://buildhost/gentoo"
+</pre>
+
+<p>
+When you want to install a prebuilt package, add the <c>--getbinpkg</c> option
+to the emerge command alongside of the <c>--usepkg</c> option. The former tells
+emerge to download the prebuilt package from the previously defined server
+while the latter asks emerge to try to install the prebuilt package first before
+fetching the sources and compiling it.
+</p>
+
+<p>
+For instance, to install <c>gnumeric</c> with prebuilt packages:
+</p>
+
+<pre caption="Installing the gnumeric prebuilt package">
+# <i>emerge --usepkg --getbinpkg gnumeric</i>
+</pre>
+
+<p>
+More information about emerge's prebuilt package options can be found in the
+emerge man page:
+</p>
+
+<pre caption="Reading the emerge man page">
+$ <i>man emerge</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Fetching Files</title>
+<subsection>
+<title>Parallel fetch</title>
+<body>
+
+<p>
+When you are emerging a series of packages, Portage can fetch the source files
+for the next package in the list even while it is compiling another package,
+thus shortening compile times. To make use of this capability, add
+"parallel-fetch" to your FEATURES.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Userfetch</title>
+<body>
+
+<p>
+When Portage is run as root, FEATURES="userfetch" will allow Portage to drop
+root privileges while fetching package sources. This is a small security
+improvement.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="webrsync-gpg">
+<title>Pulling Validated Portage Tree Snapshots</title>
+<body>
+
+<p>
+As an administrator, you can opt to only update your local Portage tree with a
+cryptographically validated Portage tree snapshot as released by the Gentoo
+infrastructure. This ensures that no rogue rsync mirror is adding unwanted code
+or packages in the tree you are downloading.
+</p>
+
+<p>
+To configure Portage, first create a truststore in which you download and accept
+the keys of the Gentoo Infrastructure responsible for signing the Portage tree
+snapshots. Of course, if you want to, you can validate this GPG key as per the
+<uri link="/doc/en/gnupg-user.xml#doc_chap2_sect4">proper guidelines</uri>
+(like checking the key fingerprint <c>AE54 54F9 67B5 6AB0 9AE1 6064 0838
+C26E 239C 75C4</c> for key <c>0x239C75C4</c> or <c>DCD0 5B71 EAB9 4199 527F 44AC
+DB6B 8C1F 96D8 BF6D</c> for key <c>0x96D8BF6D</c>).
+</p>
+
+<!-- Key 0x239C75C4 is superceded by 0x96D8BF6D, but keep it in the documents
+     for a while to ensure continuity -->
+
+<pre caption="Creating a truststore for Portage">
+# <i>mkdir -p /etc/portage/gpg</i>
+# <i>chmod 0700 /etc/portage/gpg</i>
+# <i>gpg --homedir /etc/portage/gpg --keyserver subkeys.pgp.net --recv-keys 0x239C75C4 0x96D8BF6D</i>
+# <i>gpg --homedir /etc/portage/gpg --edit-key 0x239C75C4 trust</i>
+# <i>gpg --homedir /etc/portage/gpg --edit-key 0x96D8BF6D trust</i>
+</pre>
+
+<p>
+Next, edit <path>/etc/make.conf</path> and enable support for validating the
+signed Portage tree snapshots (using <c>FEATURES="webrsync-gpg"</c>) and
+disabling updating the Portage tree using the regular <c>emerge --sync</c>
+method.
+</p>
+
+<pre caption="Updating Portage for signed tree validation">
+FEATURES="webrsync-gpg"
+PORTAGE_GPG_DIR="/etc/portage/gpg"
+SYNC=""
+</pre>
+
+<p>
+That's it. Next time you run <c>emerge-webrsync</c>, only the snapshots with
+a valid signature will be expanded on your file system.
+</p>
+
+
+</body>
+</section>
+
+</sections>

@@ -1,0 +1,302 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-portage-advanced.xml,v 1.1 2012/02/21 17:46:12 naota Exp $ -->
+
+<!-- Original revision: 1.2 -->
+<!-- Translator: naota -->
+
+<sections>
+
+<abstract>
+時が経つにつれて、Portageは発展し成熟してきました。
+新しい機能はどんどん追加されていますが…そんな機能のほとんどは上級者にしか使われていません。
+この章ではそういった機能について詳しく解説します。
+</abstract>
+
+<version>2</version>
+<date>2012-02-07</date>
+
+<section>
+<title>はじめに</title>
+<body>
+
+<p>
+ほとんどのユーザには、ここまでの章で解説したことで十分にLinux上での仕事を全てこなせるでしょう。
+しかし、Portageにはまだまだたくさんの機能があります。
+そういった機能の多くは上級者向けか、特定の状況でしか使用できないものです。
+だからといって、これらの機能についてのドキュメントを書かなくてもいいわけでは全くありません。
+</p>
+
+<p>
+もちろん、柔軟にしようと思えば膨大な量の状況を想定しなければいけませんが、
+ここで全ての状況を書き連ねることはできません。
+その代わり、状況にあわせて問題を解決できるように一般的な問題に集中して解説しようと思います。
+より細かい設定やtipsをお望みであれば、<uri
+link="https://wiki.gentoo.org">Gentoo WiKi</uri>を参照してください。
+</p>
+
+<p>
+ここで解説する追加機能の全てではなくとも、
+ほとんどのものはPortageのマニュアルを読み漁ればすぐに見つけられます。
+</p>
+
+<pre caption="Reading up on portage man pages">
+$ <i>man portage</i>
+$ <i>man make.conf</i>
+</pre>
+
+<p>
+最後に、ここで紹介する機能は正しく動かなかったとしてもデバッグやトラブルシューティングを行うことは非常に難しいものであることを覚悟しておいてください。
+バグをふんだと思ってバグレポートを書く時は、この機能を使っていると書くようにしてください。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>パッケージごとの環境変数</title>
+<subsection>
+<title>/etc/portage/envを使う</title>
+<body>
+
+<p>
+デフォルトではパッケージをビルドするさいに、
+<path>/etc/make.conf</path>で定義されている<c>CFLAGS</c>や<c>MAKEOPTS</c>などの環境変数が使われています。
+しかしパッケージによっては違う環境変数を設定したいと思うことがあるでしょう。
+そのために、Portageでは<path>/etc/portage/env</path>と<path>/etc/portage/package.env</path>とを使うことができます。
+</p>
+
+<p>
+<path>/etc/portage/package.env</path>には、
+どのパッケージで別の環境変数を設定したいかと、
+どのように環境変数を設定するのかの設定IDとを列記します。
+IDは自分で選んでください。
+Portageは<path>/etc/portage/env/&lt;ID&gt;</path>のファイルを見にいきます。
+file.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>例: 指定したパッケージでデバッグ機能を有効にする</title>
+<body>
+
+<p>
+例として<path>media-video/mplayer</path>でデバッグ機能を有効にしてみましょう。
+</p>
+
+<p>
+まず、デバッグ用の変数を<path>/etc/portage/env/debug-cflags</path>というファイルで設定します。
+ファイル名は好きに選んでかまいませんが、
+当然、後でなぜ別の変数を設定していたのかが明確にわかるように、設定したい理由を反映した名前にはしておきましょう。
+</p>
+
+<pre caption="/etc/portage/env/debug-cflags content">
+CFLAGS="-O2 -ggdb -pipe"
+FEATURES="${FEATURES} nostrip"
+</pre>
+
+<p>
+つぎに、<path>media-video/mplayer</path>パッケージがこの設定を使うようにします。
+</p>
+
+<pre caption="/etc/portage/package.env content">
+media-video/mplayer debug-cflags
+</pre>
+
+</body>
+</subsection>
+</section>
+
+<section>
+<title>emergeプロセスのフック</title>
+<subsection>
+<title>/etc/portage/bashrcとその関連ファイルを使う</title>
+<body>
+
+<p>
+Portageがebuildに従って処理を行うときは、bash環境内でsrc_prepareやsrc_configureやpkg_postinstなどのさまざまな関数を呼びます。
+また、Portageは、そのbash環境を設定する機能も提供します。
+</p>
+
+<p>
+自分で独自のbash環境を設定する利点は、emergeの各段階にフックを入れることができるようになることです。
+この設定は全てのemerge(<path>/etc/portage/bashrc</path>を使います)と個別のパッケージ(後述しますが<path>/etc/portage/env</path>を使います)に対して行えます。
+</p>
+
+<p>
+emergeの各段階をフックするために、<c>EBUILD_PHASE</c>や<c>CATEGORY</c>
+またebuildの開発プロセスで使うことができる全ての変数(<c>P</c>, <c>PF</c>など)にアクセスすることができます。
+これらの変数に従って追加の処理を行なうことができるわけです。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>例: ファイルデータベースを更新する</title>
+<body>
+
+<p>
+この例では、<path>/etc/portage/bashrc</path>を使い、
+あるデータベースアプリケーションのデータベースがシステムの最新状態に沿うようにしています。
+ここでは<c>aide</c>(侵入検知ツール)と<c>locate</c>に使うための<c>updatedb</c>とを使っていますが、
+これはあくまでの例として選ばれたものです。
+ここの例をAIDEのHOWTOだとは思わないでください。 ;-)
+</p>
+
+<p>
+<path>/etc/portage/bashrc</path>を使うには、この場合は
+<c>postrm</c>(ファイルの削除の後)と<c>postinst</c>(ファイルのインストールの後)とをフックします。
+この二つがファイルシステム上のファイルが変更される時だからです。
+</p>
+
+<pre caption="Example /etc/portage/bashrc">
+if [ "${EBUILD_PHASE}" == "postinst"] || [ "${EBUILD_PHASE}" == "postrm" ];
+then
+  echo ":: Calling aide --update to update its database";
+  aide --update;
+  echo ":: Calling updatedb to update its database";
+  updatedb;
+fi
+</pre>
+
+</body>
+</subsection>
+</section>
+
+<section>
+<title>--syncの後にタスクを実行する</title>
+<subsection>
+<title>/etc/portage/postsync.d</title>
+<body>
+
+<p>
+ここまではebuildの各段階をフックする方法について話してきました。
+しかし、Portageにはもう一つ大事な機能、Portageツリーの更新があります。
+Portageツリーの更新後にタスクを実行するには、
+<path>/etc/portage/postsync.d</path>にスクリプトを置き実行可能にします。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>例: eix-updateの実行</title>
+<body>
+
+<p>
+Portageツリーの更新に<c>eix-sync</c>を使っていなくても、
+<c>emerge --sync</c>(や<c>emerge-webrsync</c>)の後でeixのデータベースを更新することができます。
+<path>/usr/bin/eix</path>から<path>/etc/portage/postsync.d</path>に<path>eix-update</path>という名でシンボリックリンクを作ってください。
+</p>
+
+<pre caption="Running eix-update after a sync operation">
+# <i>ln -s /usr/bin/eix /etc/portage/postsync.d/eix-update</i>
+</pre>
+
+<note>
+<c>eix-update</c>以外の名前を使いたければ<c>/usr/bin/eix-update</c>を呼び出すスクリプトを作らなければなりません。
+<c>eix</c>のバイナリはどういう名前で呼ばれたかによって、どの機能を実行するかを判定しています。
+<c>eix-update</c>以外の名前で<c>eix</c>へのシンボリックリンクを作成しても、うまく動作しません。
+</note>
+
+</body>
+</subsection>
+</section>
+
+<section>
+<title>プロファイルの設定を上書きする</title>
+<subsection>
+<title>/etc/portage/profile</title>
+<body>
+
+<p>
+デフォルトではGentooは<path>/etc/make.profile</path>
+(ふさわしいプロファイルディレクトリへのシンボリックリンク)が指しているディレクトリ中の設定を使っています。
+プロファイルの設定には、そのプロファイル特有の設定もあれば他のプロファイルから継承(<path>parent</path>ファイルで指定されています)したものもあります。
+</p>
+
+<p>
+<path>/etc/portage/profile</path>を使うことで、
+<path>packages</path>(どのパッケージがsystem(基本システム)に含まれるか)や、
+<path>virtuals</path>(virtualパッケージをインストールする時に実際にどのパッケージをデフォルトとしてインストールするか)などの設定を上書きすることができます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>例: nfs-utilsをsystem(基本システムパッケージ)に追加</title>
+<body>
+
+<p>
+NFSベースのファイルシステムが必須であれば、
+<path>net-fs/nfs-utils</path>を基本システムパッケージとして"保護"し、
+削除される時にPortageにより強い警告を出してもらうようにしたくなるかもしれません。
+</p>
+
+<p>
+これを実現するために、<c>*</c>を先頭につけてパッケージを<path>/etc/portage/profile/packages</path>に追記します。
+</p>
+
+<pre caption="/etc/portage/profile/packages content">
+*net-fs/nfs-utils
+</pre>
+
+</body>
+</subsection>
+</section>
+
+<section>
+<title>非標準のpatchをあてる</title>
+<subsection>
+<title>epatch_userを使う</title>
+<body>
+
+<p>
+ebuild開発者は<e>eclasses</e>(シェルのライブラリのようなもの)という共通して使われる関数を定義したものを使い、
+様々なebuildを同じように扱っています。
+そのeclaseの1つに<c>epathc_user</c>というおもしろい機能をもった<path>eutils.eclass</path>があります。
+</p>
+
+<p>
+関数<c>epatch_user</c>は、
+<path>/etc/portage/patches/&lt;category&gt;/&lt;package&gt;[-&lt;version&gt;[-&lt;revision&gt;]]</path>にあるパッチを適用します。
+複数のディレクトリがある場合は最初に見つかったものが適用されます。
+残念ながら全てのebuildがこの関数を呼んでいるわけではないので、
+パッチをこのディレクトリに置くだけでいつもうまく動くとは限りません。
+</p>
+
+<p>
+幸いここまでで解説した情報を使えば、
+この関数をたとえば<c>prepare</c>の段階でフックして呼ぶことができます。
+この関数は何度呼んでもかまわないのです。何度呼んでもパッチは一度しか適用しません。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>例: Firefoxにパッチを適用する</title>
+<body>
+
+<p>
+<path>www-client/firefox</path>はebuildの中で<c>epatch_user</c>を呼んでいる数少ないebuildの一つです。
+なので、特になにも上書きするものはありません。
+</p>
+
+<p>
+Firefoxにパッチをあてる必要があるなら(たとえば開発者が、
+あなたの報告したバグに対処するためにパッチをあてるように言ってきた時など)、
+<path>/etc/portage/patches/www-client/firefox</path>
+(おそらくバージョンもいれたフルネームを使い、
+後のバージョンにパッチが影響しないようにするのが一番良いでしょう)
+にそのパッチを置いて、Firefoxをリビルドします。
+</p>
+
+</body>
+</subsection>
+</section>
+
+</sections>

@@ -1,0 +1,580 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/xfce-config.xml,v 1.41 2011/12/26 00:40:50 nightmorph Exp $ -->
+
+<guide>
+<title>The Xfce Configuration Guide</title>
+
+<author title="Author">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This guide provides an extensive introduction to Xfce, a fast, lightweight,
+full-featured desktop environment.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>9</version>
+<date>2011-12-25</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>The Xfce desktop environment</title>
+<body>
+
+<p>
+<uri link="http://www.xfce.org">Xfce</uri> is a fast, lightweight desktop
+environment for Unix-like operating systems. It is designed for productivity,
+and is quite configurable while still adhering to the <uri
+link="http://www.freedesktop.org">Freedesktop</uri> specifications.
+</p>
+
+<p>
+Unlike heavier desktop environments, such as <uri
+link="http://www.gnome.org">Gnome</uri> and <uri
+link="http://www.kde.org">KDE</uri>, Xfce uses far fewer system resources.
+Additionally, it offers greater modularity and fewer dependencies; it takes up
+less space on your hard disk and takes less time to install.
+</p>
+
+<p>
+This guide will not only show you how to install and configure a minimal Xfce
+environment, but will also explore options to create a full-featured desktop in
+keeping with the Xfce philosophy: light, fast, and modular.
+</p>
+
+<p>
+The last part of this guide lists a few commands to run after upgrading to Xfce
+4.8, so be sure to follow them if you are upgrading from an older version.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Installing Xfce</title>
+<section>
+<title>The basics</title>
+<body>
+
+<p>
+First, make sure you've configured Xorg as shown in the <uri
+link="/doc/en/xorg-config.xml">X Server Configuration Howto</uri>.
+</p>
+
+<p>
+Next, double-check your USE flags in <path>/etc/make.conf</path>; you'll
+probably at least want <c>USE="-gnome -kde -minimal -qt4 dbus jpeg lock session
+startup-notification thunar udev X"</c>.
+</p>
+
+<p>
+Now that you've set your <c>USE</c> variables in
+<path>/etc/make.conf</path>, it's time to install Xfce.
+</p>
+
+<pre caption="Installing Xfce">
+# <i>emerge -avt xfce4-meta</i>
+</pre>
+
+<p>
+Next, add your regular user(s) to the <c>cdrom</c>, <c>cdrw</c>,
+and <c>usb</c> groups, so that they can mount and use devices such as cameras,
+optical drives, and USB sticks.
+</p>
+
+<pre caption="Adding users to the hardware groups">
+<comment>(Replace username with your actual user)</comment>
+# <i>for x in cdrom cdrw usb ; do gpasswd -a username $x ; done</i>
+</pre>
+
+<p>
+Next, update your environment variables:
+</p>
+
+<pre caption="Updating environment variables">
+# <i>env-update &amp;&amp; source /etc/profile</i>
+</pre>
+
+<p>
+You'll also need a graphical terminal so that you can continue working with your
+new desktop environment. <c>x11-terms/terminal</c> is a good choice, as it's
+made specifically for Xfce. Install Terminal as shown:
+</p>
+
+<pre caption="Installing Terminal">
+# <i>emerge x11-terms/terminal</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring Xfce</title>
+<section>
+<title>Starting Xfce</title>
+<body>
+
+<p>
+Now that Xfce is now installed, we'll configure it to be the default desktop
+environment when we issue the <c>startx</c> command. Exit your root shell and
+log on as a regular user.
+</p>
+
+<pre caption="Setting Xfce as the default desktop environment">
+$ <i>echo "exec startxfce4" > ~/.xinitrc</i>
+</pre>
+
+<note>
+If you have ConsoleKit installed, your <path>~/.xinitrc</path> should instead
+contain <c>exec ck-launch-session startxfce4</c>. Otherwise, some of your
+applications may stop working. You'll also need to add consolekit to the
+default runlevel by running the following command as root: <c>rc-update add
+consolekit default</c>.
+</note>
+
+<p>
+Now start your graphical environment by typing <c>startx</c>:
+</p>
+
+<pre caption="Starting Xfce">
+$ <i>startx</i>
+</pre>
+
+<p>
+Congratulations, and welcome to your new Xfce desktop environment. Go ahead,
+explore it a bit. Then continue reading to learn how you can configure Xfce to
+suit your needs.
+</p>
+
+</body>
+</section>
+<section>
+<title>Program access</title>
+<body>
+
+<p>
+You might notice right-clicking on the desktop shows you the menu of all your
+applications. It's useful, but your desktop can easily be completely obscured by
+open windows, making it hard to to launch a new program. So, one of the first
+things you may wish to do is give yourself a handy application menu on your
+panel. Right click on this panel, and choose "Add New Item". Scroll through the
+list of choices and select "Xfce Menu". You can choose where you want it to be
+displayed on your panel. When clicked, it displays the application/preferences
+menu, providing a nicely categorized list of your installed programs.
+</p>
+
+</body>
+</section>
+<section>
+<title>Sessions &amp; startup</title>
+<body>
+
+<p>
+If you've installed (or plan to install) popular Gnome or KDE applications such
+as <c>k3b</c>, <c>nautilus</c>, <c>kmail</c>, <c>evolution</c>, etc. then you
+should make sure that Xfce launches the appropriate services for these at
+startup. Navigate to Menu --> Settings --> Sessions &amp; Startup. On the
+"Advanced" tab, select the appropriate checkbox. This might slightly increase
+Xfce startup times, but it decreases load times for KDE and Gnome applications.
+</p>
+
+<p>
+Xfce has the ability to save your session settings and running programs from the
+"General" tab in the Sessions &amp; Startup menu. They can be automatically
+saved when you logout, or Xfce can ask you each time. This feature is
+particularly useful for undoing configuration mistakes. Accidentally killed a
+panel? Just select "No" when prompted to save your current session, and the next
+time you start Xfce, your old desktop is restored. Want to automatically launch
+your open webbrowser, terminal, and email client the next time you login? Just
+save your session before logging out.
+</p>
+
+<p>
+You've now got a basic working environment installed and configured. But if
+you're interested in doing more, then continue reading!
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Additional Applications</title>
+<section>
+<title>Panel plugins</title>
+<body>
+
+<p>
+In this chapter, we'll discuss some useful plugins and applications for everyday
+use within Xfce.
+</p>
+
+<p>
+There are many plugins for the panel available in Portage; see for yourself with
+<c>emerge --search xfce</c>. Though for the most part their names are
+self-explanatory, a few deserve extra attention, as they are quite helpful. To
+use them, simply <c>emerge</c> them. They'll be added to the list of available
+items in the "Add New Items" menu shown when you right-click on the panel.
+</p>
+
+<ul>
+  <li>
+    <c>xfce4-battery-plugin</c> is perfect for laptop users. It displays battery
+    percentage, time remaining, power source (AC or battery), fan status,
+    warnings, and can even be configured to execute commands at certain power
+    levels. This feature can be used to put the laptop into hibernate mode when
+    the battery is almost exhausted.
+  </li>
+  <li>
+    <c>xfce4-verve-plugin</c> is a small command line embedded into the panel.
+    It's quicker than opening up another terminal when you want to run a
+    command.
+  </li>
+  <li>
+    <c>xfce4-mount-plugin</c> gives you a handy method of mounting devices
+    listed in <path>/etc/fstab</path> just by clicking your mouse
+  </li>
+  <li>
+    <c>xfce4-sensors-plugin</c> lets you monitor your hardware sensors, such as
+    CPU temperature, fan RPM, hard drive temp, motherboard voltage, and more
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Useful programs</title>
+<body>
+
+<p>
+We should now <c>emerge</c> some useful applications and utilities:
+<c>xfce4-mixer</c>, <c>xfce4-taskmanager</c>, <c>xfwm4-themes</c>, <c>orage</c>,
+<c>leafpad</c>, <c>xfce4-power-manager</c>, <c>x11-terms/terminal</c>, and
+<c>thunar</c>.
+</p>
+
+<p>
+<c>xfce4-mixer</c> is a volume control for your sound card. It can also be run
+as a panel applet, giving you fast access to playback volume.
+<c>xfce4-taskmanager</c> displays a list of all running programs, and the CPU
+and memory consumption each one takes up. By right-clicking an item, you can
+kill a misbehaving application, pause and restart it, or even alter its runtime
+priority, which lets you fine-tune how much of a demand it puts on your system's
+resources. 
+</p>
+
+<p>
+<c>xfwm4-themes</c> adds several window manager themes. You may want to add a
+more full-coverage icon theme such as <c>tango-icon-theme</c> just to round out
+your desktop.
+</p>
+
+<p>
+<c>orage</c> is a simple, handy calendar. <c>leafpad</c> is a barebones text
+editor that starts up extremely quickly.
+</p>
+
+<p>
+<c>xfce4-power-manager</c> is an application to monitor and manage power usage.
+This is especially important for laptops! The power manager allows you to adjust
+screen brightness, choose maximum performance or battery-saving modes, and setup
+hibernate, suspend, and shutdown actions when the lid is shut or buttons are
+pressed. You can set <uri
+link="http://goodies.xfce.org/projects/applications/xfce4-power-manager">xfce4-power-manager</uri>
+to warn you when your battery reaches certain levels, or even turn off your
+machine. The application comes with a couple of helpful panel plugins to display
+battery/charging status, and a brightness control.
+</p>
+
+<p>
+<c>x11-terms/terminal</c> is an X11 terminal emulator, far more configurable and
+useful than the barebones <c>xterm</c>. <c>terminal</c> supports Unicode text,
+color schemes, pseudo-transparency and hardware-accelerated transparency via
+Xfce's built-in compositor, all out-of-the-box. Just make sure that the default
+action on the terminal launcher of your panel runs
+<path>/usr/bin/Terminal</path> instead of <path>xterm</path>. Right-click the
+launcher and choose "Properties" to change the command.
+</p>
+
+<p>
+<c>thunar</c> is Xfce's default graphical file manager. It's fast yet quite
+powerful, can support several plugins for even more functionality; just install
+them with <c>emerge</c>. Let's take a look:
+</p>
+
+<ul>
+  <li>
+    <c>thunar-archive-plugin</c> lets you create and extract archive files using
+    the right-click menu. It provides a handy <uri
+    link="http://goodies.xfce.org/projects/thunar-plugins/thunar-archive-plugin">front-end</uri>
+    for graphical archiving applications such as <c>xarchiver</c> and
+    <c>file-roller</c>.
+  </li>
+  <li>
+    <c>tumbler</c> lets you preview certain types of files from within Thunar,
+    such as images and fonts.
+  </li>
+  <li>
+    <c>thunar-volman</c> automatically <uri
+    link="http://goodies.xfce.org/projects/thunar-plugins/thunar-volman">manages</uri>
+    removable media and drives.
+  </li>
+</ul>
+
+<p>
+Next, let's see about adding some useful but lightweight desktop applications,
+in keeping with Xfce's philosophy.
+</p>
+
+<p>
+Though <c>leafpad</c> is nice enough as a basic text editor, if you need a
+full-featured word processor but don't want the bloat of OpenOffice, try
+emerging <c>abiword</c>. <uri link="http://www.abisource.com">AbiWord</uri> is
+lighter, faster, and is completely interoperable with industry-standard document
+types.
+</p>
+
+<p>
+Need a nice email client/newsreader that isn't as demanding as
+<c>thunderbird</c> or <c>evolution</c>? Try emerging <c>claws-mail</c>.
+</p>
+
+<p>
+For your internet chat needs, <c>irssi</c> is an excellent, tiny, incredibly
+configurable IRC client that runs in your terminal. If you prefer a compact
+all-in-one client that handles nearly all chat protocols, you may want to
+<c>emerge pidgin</c>.
+</p>
+
+<p>
+If you need movie and music players, look no further than <c>mplayer</c> and
+<uri link="/proj/en/desktop/sound/decibel.xml">decibel-audio-player</uri>. They
+can play most every media format available quite nicely.
+</p>
+
+<p>
+Finally, you'll need a webbrowser. Nearly all graphical webbrowsers require more
+resources than most of your other desktop applications. Still, <c>firefox</c>
+and <c>midori</c> are always good choices. Alternatively, you may find
+<c>opera</c> to be quite fast. However, <c>opera</c> is not available on as many
+processor architectures as <c>firefox</c>, and it has more dependencies unless
+you override them with a few USE flags.
+</p>
+
+<pre caption="Adding a webbrowser">
+<comment>(Installing Mozilla Firefox)</comment>
+# <i>emerge firefox</i>
+<comment>(Installing Midori)</comment>
+# <i>emerge midori</i>
+<comment>(Installing Opera)</comment>
+# <i>echo "www-client/opera gtk -kde" >> /etc/portage/package.use</i>
+# <i>emerge opera</i>
+</pre>
+
+<p>
+Now that we've explored some good suggestions for rounding out your desktop
+applications, let's see what else we can do to enhance your Xfce experience.
+</p>
+
+</body>
+</section>
+<section>
+<title>Graphical login</title>
+<body>
+
+<p>
+Remember when we added <c>startxfce4</c> to our <path>~/.xinitrc</path>? All you
+have to do to get into your desktop is type <c>startx</c> after logging in. This
+is fine if you prefer a completely text-based boot and login, but let's use a
+display manager that will automatically start Xfce after booting (so that you
+can login graphically).
+</p>
+
+<p>
+First, let's make sure Xfce loads at boot:
+</p>
+
+<pre caption="Adding xdm to the default runlevel">
+# <i>rc-update add xdm default</i>
+</pre>
+
+<p>
+We aren't quite finished yet. We have to pick a display manager and set the
+appropriate variable. Though there are a few choices available in Portage, for
+this guide, we'll stick with <uri link="http://slim.berlios.de">SLiM</uri>, the
+Simple Login Manager.
+</p>
+
+<p>
+<c>slim</c> is speedy and lightweight, with minimal dependencies. Perfect for
+Xfce!
+</p>
+
+<pre caption="Installing SLiM">
+# <i>emerge -avt slim</i>
+</pre>
+
+<note>
+The <c>branding</c> USE flag will pull in the <c>slim-themes</c> package, which
+will give you an assortment of login themes, including a Gentoo Linux theme.
+</note>
+
+<p>
+Then edit the DISPLAYMANAGER variable in <path>/etc/conf.d/xdm</path>:
+</p>
+
+<pre caption="Editing /etc/conf.d/xdm">
+DISPLAYMANAGER="slim"
+</pre>
+
+<p>
+SLiM can automatically start your Xfce session if you add
+<c>XSESSION="Xfce4"</c> to <path>/etc/env.d/90xsession</path>:
+</p>
+
+<pre caption="Setting XSESSION">
+# <i>echo XSESSION=\"Xfce4\" > /etc/env.d/90xsession</i>
+# <i>env-update &amp;&amp; source /etc/profile</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Beautifying your desktop</title>
+<body>
+
+<p>
+A little customization of your desktop's appearance can go a long way. Xfce has
+all the options you'd expect from a modern desktop environment, font
+antialiasing settings, color schemes, dozens of window decorations, themes, and
+more. If these aren't enough, it's easy to install third-party themes, icon
+sets, mouse cursor themes, and wallpapers.
+</p>
+
+<p>
+A selection of nice Gentoo wallpapers in a variety of resolutions are hosted on
+the <uri link="/main/en/graphics.xml">Gentoo website</uri>.  If you're looking
+for icon sets and complete Xfce themes, <uri
+link="http://www.xfce-look.org/">Xfce-Look</uri> has a huge collection. The
+important thing to remember about any third-party eyecandy you download is that
+it will usually first need to be unpacked and then installed to the proper
+directory. Icon sets go in <path>/usr/share/icons/</path>, and themes go to
+<path>/usr/share/themes/</path>; use these directories when you want all users
+to be able to access themes and icon sets. Individual users can install themes
+and icon sets to <path>~/.themes/</path> and <path>~/.icons/</path>.
+</p>
+
+<p>
+If you installed SLiM as your display manager, there are lots of themes in the
+<c>slim-themes</c> package available in Portage. Also, be sure to check the SLiM
+<uri link="http://slim.berlios.de/themes01.php">themes page</uri> for more
+themes. Creating your own SLiM theme is fairly easy; just read the <uri
+link="http://slim.berlios.de/themes_howto.php">Themes HowTo</uri>. Gentoo also
+ships a <c>slim-themes</c> package that you can <c>emerge</c>.
+</p>
+
+<p>
+Finally, Xfce has its own built-in compositor to manage window transparency.
+This option can be found in Menu --> Settings --> Window Manager. For best
+performance, you will need to be running a graphics card with drivers that
+support hardware-accelerated rendering. Make sure you emerged <c>xfwm4</c> with
+the <c>xcomposite</c> USE flag. Next, you will need to enable compositing in
+<path>/etc/X11/xorg.conf</path> by adding the following section:
+</p>
+
+<pre caption="Enabling composite in xorg.conf">
+Section "Extensions"
+    Option  "Composite"  "Enable"
+EndSection
+</pre>
+
+<p>
+This is the bare minimum configuration required for Xfce and Xorg-X11. However,
+setting up hardware-accelerated rendering depends on your individual graphics
+card, and is beyond the scope of this guide. Please see the other guides in the
+<uri link="/doc/en/index.xml?catid=desktop">Desktop Documentation
+Resources</uri> list to learn about configuring hardware-accelerated rendering
+for your graphics card.
+</p>
+
+<p>
+Once you've finished setting up a beautiful Xfce desktop, the next thing to do
+is take a picture of it to share with other folks! Just install
+<c>xfce4-screenshooter</c> and post your pictures somewhere for all to admire.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Summary</title>
+<section>
+<body>
+
+<p>
+Congratulations on making it this far! You've installed and configured a speedy
+desktop environment with a solid suite of applications for your computing
+needs.
+</p>
+
+</body>
+</section>
+<section>
+<title>Upgrading Xfce</title>
+<body>
+
+<p>
+If you're upgrading Xfce from a pre-4.8 version to 4.8 or newer, then you will
+need to remove your old cached sessions and profiles as they are incompatible
+with the 4.8 release (and later releases). For each of your users, run the
+following commands to remove your old incompatible cached sessions and profile:
+</p>
+
+<pre caption="Deleting old sessions from the cache">
+$ <i>rm -r ~/.cache/sessions</i>
+$ <i>rm -r ~/.config/xfce*</i>
+$ <i>rm -r ~/.config/Thunar</i>
+</pre>
+
+<p>
+Users will be greeted with a new and shiny interface, but will lose many of
+their individual settings. Sadly, no migration of configuration(s) exist that we
+know of.
+</p>
+
+</body>
+</section>
+<section>
+<title>Resources</title>
+<body>
+
+<p>
+Need additional help on configuring and using Xfce? Need more lightweight
+application suggestions? Try checking out:
+</p>
+
+<ul>
+  <li><uri link="http://forums.gentoo.org">The Gentoo forums</uri></li>
+  <li>#xfce on irc.freenode.net</li>
+  <li>
+    The installed help files and other documentation provided by Xfce:
+    <path>/usr/share/xfce4/doc/C/index.html</path>. Just point your browser at
+    it and start reading. There are even a lot of "hidden" configuration options
+    detailed in the help files.
+  </li>
+  <li><uri link="http://www.xfce.org">Xfce's home page</uri></li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

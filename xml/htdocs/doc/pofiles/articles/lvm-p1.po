@@ -1,0 +1,674 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/articles/lvm-p1.xml:6
+#, no-wrap
+msgid "Learning Linux LVM, Part 1"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/articles/lvm-p1.xml:14
+#, no-wrap
+msgid ""
+"In this article, Daniel introduces you to the concepts behind Linux LVM\n"
+"(Logical Volume Management) and shows you how to get the latest kernel patches\n"
+"and tools installed on your system. LVM allows you to create logical volumes\n"
+"out of the physical storage resources on your machine. However, unlike physical\n"
+"volumes, the logical volumes can be expanded and shrunk while the system is\n"
+"still running, providing Linux system administrators with the storage\n"
+"flexibility that they've until now only dreamed of.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/lvm-p1.xml:32
+#, no-wrap
+msgid "Storage management magic with Logical Volume Management"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/lvm-p1.xml:34
+#, no-wrap
+msgid "LVM intro"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:38
+#, no-wrap
+msgid ""
+"In this series, I'm going to show you how to install and use the new Logical\n"
+"Volume Management support built-in to the Linux 2.4 kernel. If you've never\n"
+"used a form of LVM before, you're in for a treat; it's a wonderful technology.\n"
+"Before we actually get LVM up and running, I'm going to explain exactly what it\n"
+"is and how it works. Then, we'll be ready to test out LVM and get the most out\n"
+"of it.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:47
+#, no-wrap
+msgid ""
+"If you're like me, then your experience with UNIX and Linux began on a PC\n"
+"platform, rather than on large, commercial UNIX servers and workstations. On\n"
+"the basic PC, we've always had to deal with partitioning our hard drives. PC\n"
+"people are generally well-acquainted with tools such as <c>fdisk</c>, which are\n"
+"used to create and delete primary and extended partitions on hard disks. Hard\n"
+"disk partitioning is an annoying but accepted part of the process of getting an\n"
+"operating system up and running.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:57
+#, no-wrap
+msgid ""
+"Hard drive partitioning can be annoying because to do a good job you really\n"
+"need to accurately estimate how much space you'll need for each partition. If\n"
+"you make a poor estimation, your Linux system could possibly be crippled -- to\n"
+"fix the problem, it's possible that you might even need to perform a full\n"
+"system backup, wipe your hard drives clean, and then restore all your data to a\n"
+"new (and presumably better) partition layout. Ick! These are exactly the kinds\n"
+"of situations that sysadmins try their best to avoid in the first place.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:67
+#, no-wrap
+msgid ""
+"While partitions were once static storage regions, thankfully, we now have a\n"
+"proliferation of PC repartitioning tools (PowerQuest's Partition Magic product\n"
+"is one of the most popular). These tools allow you to boot your system with a\n"
+"special disk and dynamically resize your partitions and filesystems. Once you\n"
+"reboot, you have newly resized partitions, hopefully getting you out of your\n"
+"storage crunch. These partition resizing tools are great and solve the problem\n"
+"storage management for some. But are they perfect? Not exactly.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:77
+#, no-wrap
+msgid ""
+"Tools like Partition Magic are great for workstations, but aren't really\n"
+"adequate for servers. First of all, they require you to reboot your system.\n"
+"This is something most sysadmins desperately try to avoid doing. What if you\n"
+"simply can't reboot your machine every time your storage needs change, such as\n"
+"if your storage needs change dramatically on a weekly basis? What happens if\n"
+"you need to expand a filesystem so that it spans more than one hard drive, or\n"
+"what do you do if you need to dynamically expand or shrink a volume's storage\n"
+"capacity while allowing Apache to continue to serve Web pages? In a highly\n"
+"available, dynamic environment, a basic partition resizer just won't work. For\n"
+"these and other situations, Logical Volume Management is an excellent (if not\n"
+"perfect) solution.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/lvm-p1.xml:93
+#, no-wrap
+msgid "Enter LVM"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:97
+#, no-wrap
+msgid ""
+"Now, let's take a look at how LVM solves these problems. To create an LVM\n"
+"logical volume, we follow a three-step process. First, we need to select the\n"
+"physical storage resources that are going to be used for LVM. Typically, these\n"
+"are standard partitions but can also be Linux software RAID volumes that we've\n"
+"created. In LVM terminology, these storage resources are called \"physical\n"
+"volumes\". Our first step in setting up LVM involves properly initializing these\n"
+"partitions so that they can be recognized by the LVM system. This involves\n"
+"setting the correct partition type if we're adding a physical partition, and\n"
+"running the pvcreate command.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:109
+#, no-wrap
+msgid ""
+"Once we have one or more physical volumes initialized for use by LVM, we can\n"
+"move on to step two -- creating a volume group. You can think of a volume group\n"
+"as a pool of storage that consists of one or more physical volumes. While LVM\n"
+"is running, we can add physical volumes to the volume group or even remove\n"
+"them. However, we can't mount or create filesystems on a volume group directly.\n"
+"Instead, we can tell LVM to create one or more \"logical volumes\" using our\n"
+"volume group storage pool:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><figure>
+#: en/articles/lvm-p1.xml:118
+#, no-wrap
+msgid ""
+"A volume group is\n"
+"created out of physical volumes"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:122
+#, no-wrap
+msgid ""
+"Creating an LVM logical volume is really easy, and once it's created we can go\n"
+"ahead and put a filesystem on it, mount it, and start using the volume to store\n"
+"our files. To create a logical volume, we use the <c>lvcreate</c> command,\n"
+"specifying the name of our new volume, the size we'd like the volume to be, and\n"
+"the volume group that we'd like this particluar logical volume to be part of.\n"
+"The LVM system will then allocate storage from the volume group we specify and\n"
+"create our new volume, which is now ready for use. Once created, we can put an\n"
+"ext2 or ReiserFS filesystem on it, mount it, and use it as we like.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><figure>
+#: en/articles/lvm-p1.xml:132
+#, no-wrap
+msgid ""
+"Creating two\n"
+"logical volumes from our existing volume group"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/lvm-p1.xml:138
+#, no-wrap
+msgid "Extents"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:142
+#, no-wrap
+msgid ""
+"Behind the scenes, the LVM system allocates storage in equal-sized \"chunks\",\n"
+"called extents. We can specify the particular extent size to use at volume\n"
+"group creation time. The size of an extent defaults to 4Mb, which is perfect\n"
+"for most uses. One of the beauties of LVM is that the physical storage\n"
+"locations of the extents used for one of our logical volumes (in other words,\n"
+"what disk they're stored on) can be dynamically changed while our logical\n"
+"volume is mounted and in use!  The LVM system ensures that our logical volumes\n"
+"continue to operate perfectly while allowing the administrator to physically\n"
+"change where everything is stored.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:154
+#, no-wrap
+msgid ""
+"Of course, since everything is created out of equally-sized extents, it's\n"
+"really easy to allocate some additional extents for an already-existing logical\n"
+"volume -- in other words, dynamically \"grow\" the volume:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><figure>
+#: en/articles/lvm-p1.xml:159
+#, no-wrap
+msgid ""
+"Adding additional\n"
+"extents from our volume group, expanding the size of our logical\n"
+"volume"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:164
+#, no-wrap
+msgid ""
+"Once the logical volume has been expanded, you can then expand your ext2 or\n"
+"ReiserFS filesystem to take advantage of this new space. If you use a program\n"
+"such as <c>resize_reiserfs</c>, this filesystem expansion can also happen while\n"
+"the volume is mounted and being used!  Truly amazing -- with LVM and online\n"
+"filesystem expansion utilties, it's no longer necessary to reboot your system\n"
+"or even drop to runlevel 1 to change your storage configuration.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:173
+#, no-wrap
+msgid ""
+"The only time you need to shut down your system is when you need to add new\n"
+"physical disks. Once new disks have been added, you then can add these new\n"
+"physical volumes to your volume group(s) to create a fresh supply of extents.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/lvm-p1.xml:181
+#, no-wrap
+msgid "Setting up LVM"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:185
+#, no-wrap
+msgid ""
+"OK, let's get LVM installed. LVM consists of two parts: a kernel part and a\n"
+"suite of user-space tools. To start, head over to the main LVM page (see <uri\n"
+"link=\"#resources\">Resources</uri> later in this article) and download the most\n"
+"recent version of the LVM tarball (currently lvm_0.9.1_beta3.tar.gz) you can\n"
+"find. The LVM tarball contains all the user-space tools, as well as a bunch of\n"
+"kernel patches. Here is where things get interesting.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:194
+#, no-wrap
+msgid ""
+"If you already have a 2.4-series kernel installed, you may already have LVM\n"
+"support available on your system, and if not, it's a simple matter to recompile\n"
+"your kernel to enable LVM support. However, you may not want to use the LVM\n"
+"support included with your stock (or distribution-supplied) 2.4 kernel. If you\n"
+"want to use the latest LVM version, you'll want to apply patches from the LVM\n"
+"tarball to your current 2.4 kernel source tree. Here's how to do it.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:203
+#, no-wrap
+msgid ""
+"To start, enter your kernel source directory (<path>/usr/src/linux</path>) and\n"
+"create a directory called <path>extras</path>. Then, enter this directory and\n"
+"extract your LVM tarball:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:208
+#, no-wrap
+msgid "Extracting the patches"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:209
+#, no-wrap
+msgid ""
+"# <i>cd /usr/src/linux</i>\n"
+"# <i>mkdir extras</i>\n"
+"# <i>cd extras</i>\n"
+"# <i>tar xzvf /path/to/location/of/lvm_0.9.1_beta3.tar.gz</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:216
+#, no-wrap
+msgid ""
+"Once you've done that, you'll notice a new directory in extras called\n"
+"<path>LVM</path> that contains another directory named after the version of LVM\n"
+"that you just unpacked. Enter these two directories to get to the LVM sources:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:221
+#, no-wrap
+msgid "Getting to the LVM sources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:222
+#, no-wrap
+msgid ""
+"# <i>cd LVM/0.9.1_beta3</i>\n"
+"# <i>ls</i>\n"
+"ABSTRACT      COPYING      INSTALL     Makefile     README    autoconf      config.status  kernel         make.tmpl.in\n"
+"CHANGELOG     COPYING.LIB  KNOWN_BUGS  Makefile.in  TODO      config.cache  configure      lvm_input_msg  scripts\n"
+"CONTRIBUTORS  FAQ          LVM-HOWTO   PATCHES      WHATSNEW  config.log    configure.in   make.tmpl      tools\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:230
+#, no-wrap
+msgid ""
+"You'll see several text files, scripts, and source directories. You'll find the\n"
+"installation instructions in the <path>INSTALL</path> file; I'll guide you\n"
+"through this process. First, we'll want to run the configure script, as\n"
+"follows:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:236
+#, no-wrap
+msgid "Configuring the LVM sources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:237
+#, no-wrap
+msgid "# <i>./configure --prefix=/ --mandir=/usr/man</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/lvm-p1.xml:243
+#, no-wrap
+msgid "Patching"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:247
+#, no-wrap
+msgid ""
+"After executing this command, the Makefiles will be created and configured to\n"
+"install all the LVM tools in <path>/sbin</path> and the man pages in\n"
+"<path>/usr/man</path>. If your man pages are in <path>/usr/share/man</path> (as\n"
+"per FHS 2.1), then adjust the above path accordingly. And, if your kernel\n"
+"sources aren't in <path>/usr/src/linux</path>, then add a\n"
+"<c>--with-kernel_dir=/path/to/usr/src/linux</c> option to the line as well.\n"
+"Once the configure script completes, we're ready to install the tools and\n"
+"generate a patch for your current kernel. Let's patch the kernel first. Enter\n"
+"the <path>PATCHES</path> directory:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:258
+#, no-wrap
+msgid "Changing directories"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:259
+#, no-wrap
+msgid "# <i>cd PATCHES</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:263
+#, no-wrap
+msgid ""
+"Now, we're going to type <c>make</c>. The Makefile will generate a patch\n"
+"specifically for our particular 2.4-series kernel sources:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:267
+#, no-wrap
+msgid "Creating the patch"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:268
+#, no-wrap
+msgid "# <i>make</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:272
+#, no-wrap
+msgid ""
+"The patch will be named <c>lvm-[lvmversion]-[kernelversion].patch</c>. For\n"
+"example, since I'm using version 0.9.1_beta3 of LVM and kernel 2.4.0-ac11, my\n"
+"patch is called <c>lvm-0.9.1_beta3-2.4.0-ac11.patch</c>. You'll find it in your\n"
+"current directory. Now, it's time to apply the patch. To do this, you'll want\n"
+"to change directories to the location of your kernel sources and use the patch\n"
+"command as shown:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:280
+#, no-wrap
+msgid "The patch command"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:281
+#, no-wrap
+msgid ""
+"# <i>cd /usr/src/linux</i>\n"
+"# <i>patch -l -p1 &lt; /usr/src/linux/extras/LVM/0.9.1_beta3/PATCHES/lvm-0.9.1_beta3-2.4.0-ac11.patch</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:286
+#, no-wrap
+msgid ""
+"While the LVM INSTALL documentation doesn't mention it, I typically pass the\n"
+"<c>-l</c> option to patch. This option allows the patch program to compensate\n"
+"for any changes in whitespace (such as minor indentation changes) that would\n"
+"ordinarily cause some hunks of the patch to fail. If the above command\n"
+"completes without any \"FAILED\" lines, then you're ready to install the\n"
+"user-space tools. If not, you'll need to scan your <path>/usr/src/linux</path>\n"
+"directory for <c>.rej</c> files and insert the rejected hunks into the sources\n"
+"by hand using a text editor -- ick! However, in most all situations the patch\n"
+"will apply cleanly and you'll be ready to go.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/lvm-p1.xml:300
+#, no-wrap
+msgid "Configuring, compiling, and installing"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:304
+#, no-wrap
+msgid ""
+"OK, you now have a kernel that's been patched so that it has the most current\n"
+"LVM code available. Now, you'll want to configure your kernel so that LVM\n"
+"support is enabled. I recommend that you compile LVM support directly into the\n"
+"kernel rather than configuring it to compile as a module. Fire up your favorite\n"
+"Linux kernel configuration method:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:311
+#, no-wrap
+msgid "Configuring the kernel"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:312
+#, no-wrap
+msgid ""
+"# <i>cd /usr/src/linux</i>\n"
+"# <i>make menuconfig</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:317
+#, no-wrap
+msgid ""
+"You'll find the LVM options under the \"Multi-device support (RAID and LVM)\"\n"
+"section. Once you enable the first option:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:321
+#, no-wrap
+msgid "RAID and LVM support"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:322
+#, no-wrap
+msgid "[*] Multiple devices driver support (RAID and LVM)\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:326
+#, no-wrap
+msgid ". . . you'll see the following option, which you should also enable:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:329
+#, no-wrap
+msgid "Enable LVM support"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:330
+#, no-wrap
+msgid "&lt;*&gt;   Logical volume manager (LVM) support\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:334
+#, no-wrap
+msgid ""
+"Depending on your LVM version, there may be other LVM-related options that\n"
+"you'll want to enable as well. Once you're done, save your kernel configuration\n"
+"and perform your standard kernel compilation routine and reboot.\n"
+"Congratulations -- you now have kernel LVM support enabled. Now, we need to get\n"
+"the user-space tools compiled and installed. This step is easy:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:341
+#, no-wrap
+msgid "Creating the user-space tools"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:342
+#, no-wrap
+msgid ""
+"# <i>cd /usr/src/linux/extras/LVM/0.9.1_beta3</i>\n"
+"# <i>make</i>\n"
+"# <i>make install</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:348
+#, no-wrap
+msgid ""
+"There's just one more step, and it's optional. If you're going to be doing more\n"
+"than just testing out LVM, you'll want to add the following lines to your\n"
+"startup rc scripts:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:353
+#, no-wrap
+msgid "Editing the startup rc script"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:354
+#, no-wrap
+msgid ""
+"/sbin/vgscan\n"
+"/sbin/vgchange -a y\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:359
+#, no-wrap
+msgid ""
+"These lines will scan for all available volume groups and activate them. Then,\n"
+"add the following line to your shutdown rc script, and make sure that it\n"
+"executes after all filesystems have been unmounted:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:364
+#, no-wrap
+msgid "Editing the shutdown rc script"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p1.xml:365
+#, no-wrap
+msgid "/sbin/vgchange -a n\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:369
+#, no-wrap
+msgid ""
+"If you're just testing out LVM, then you can skip these steps. Just remember\n"
+"that after every reboot, you'll need to type <c>vgscan</c> and <c>vgchange -a\n"
+"y</c> as root before your logical volumes are available for use.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p1.xml:375
+#, no-wrap
+msgid ""
+"That's it for this article. Next article, I'll show you how to create your own\n"
+"logical volumes and unleash the power of LVM. I'll see you then!\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/lvm-p1.xml:382
+#, no-wrap
+msgid "Resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p1.xml:387
+#, no-wrap
+msgid ""
+"    Download the <uri link=\"ftp://sources.redhat.com/pub/lvm2\">LVM\n"
+"    tarball</uri> from RedHat.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p1.xml:391
+#, no-wrap
+msgid ""
+"    The impatient will want to check out <uri\n"
+"    link=\"http://www.linux.org/docs/ldp/howto/LVM-HOWTO.html\">Heinz\n"
+"    Mauelshagen's LVM HOWTO</uri>, which shows you how to set up physical\n"
+"    volumes, volume groups, and logical volumes. This is something we'll cover\n"
+"    in my next article.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p1.xml:398
+#, no-wrap
+msgid ""
+"    There's also an interesting HOWTO that shows you <uri\n"
+"    link=\"http://www.the-infinite.org/archive/docs/lvm/howto-boot-off-root-lv.txt\">\n"
+"    how to set up your root filesystem on a logical volume</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p1.xml:403
+#, no-wrap
+msgid ""
+"    Andreas Dilger is involved with the Linux LVM project and has a\n"
+"    nice-looking <e>online</e> <uri\n"
+"    link=\"http://www-mddsp.enel.ucalgary.ca/People/adilger/online-ext2/\">ext2\n"
+"    filesystem resizer</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p1.xml:409
+#, no-wrap
+msgid ""
+"    <uri link=\"http://www.namesys.com\">ReiserFS</uri> is an excellent\n"
+"    filesystem (especially in combination with LVM). If you're using ReiserFS,\n"
+"    you'll want to grab the reiserfs-utils tarball, which contains a program\n"
+"    called <c>reiserfs_resize</c> -- allowing online resizing of ReiserFS\n"
+"    filesystems.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p1.xml:416
+#, no-wrap
+msgid ""
+"    For more information on setting up Linux software RAID volumes, see <uri\n"
+"    link=\"/doc/en/articles/software-raid-p1.xml\">Part 1</uri> and <uri\n"
+"    link=\"/doc/en/articles/software-raid-p2.xml\">Part 2</uri> of Daniel's\n"
+"    series on software RAID.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p1.xml:422
+#, no-wrap
+msgid ""
+"    For a refresher, see Daniel's <uri\n"
+"    link=\"/doc/en/articles/linux-kernel-compiling.xml\">tutorial on compiling\n"
+"    the Linux kernel</uri>.\n"
+"  "
+msgstr ""

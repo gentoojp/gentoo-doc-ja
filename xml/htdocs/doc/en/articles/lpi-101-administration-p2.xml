@@ -1,0 +1,2175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/lpi-101-administration-p2.xml,v 1.7 2011/09/04 17:53:41 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide disclaimer="articles">
+<title>LPI certification 101 (release 2) exam prep, Part 2</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<author title="Author">
+  <mail link="chouser@gentoo.org">Chris Houser</mail>
+</author>
+<author title="Author">
+  Aron Griffis
+</author>
+<!--<author title="Editor">
+  <mail link="smithj@gentoo.org">Jonathan Smith</mail>
+</author>-->
+
+<abstract>
+In this tutorial, you will learn how to use regular expressions to search files
+for text patterns, how to locate files on your system, and how to take full
+control of Linux processes. You'll even get a whirlwind introduction to shell
+pipelines, redirection, and text processing commands. By the end of this
+tutorial, you'll have a solid grounding in basic Linux administration and will
+be ready to begin learning more advanced Linux system administration skills in
+the follow-on tutorial.
+</abstract>
+
+<!-- The original version of this article was published on IBM developerWorks,
+and is property of Westtech Information Services. This document is an updated
+version of the original article, and contains various improvements made by the
+Gentoo Linux Documentation team -->
+
+<version>2</version>
+<date>2010-11-14</date>
+
+<chapter>
+<title>Before You Start</title>
+<section>
+<title>About this tutorial</title>
+<body>
+
+<p>
+Welcome to "Basic administration," the second of four tutorials designed to
+prepare you for the Linux Professional Institute's 101 exam. In this tutorial,
+we'll show you how to use regular expressions to search files for text
+patterns. Next, we'll introduce you to the Filesystem Hierarchy Standard (FSH),
+and then show you how to locate files on your system. Then, we'll show you how
+to take full control of Linux processes by running them in the background,
+listing processes, detaching processes from the terminal, and more. Next, we'll
+give you a whirlwind introduction to shell pipelines, redirection, and text
+processing commands. Finally, we'll introduce you to Linux kernel modules.
+</p>
+
+<p>
+This particular tutorial (Part 2) is ideal for those who have a good basic
+knowledge of bash and want to receive a solid introduction to basic Linux
+administration tasks. If you are new to Linux, we recommend that you complete
+Part 1 of this tutorial series first before continuing. For some, much of this
+material will be new, but more experienced Linux users may find this tutorial
+to be a great way of "rounding out" their basic Linux administration skills.
+</p>
+
+<p>
+For those who have taken the release 1 version of this tutorial for reasons
+other than LPI exam preparation, you probably don't need to take this one.
+However, if you do plan to take the exams, you should strongly consider reading
+this revised tutorial.
+</p>
+
+</body>
+</section>
+<section>
+<title>About the author</title>
+<body>
+
+<p>
+Residing in Albuquerque, New Mexico, Daniel Robbins is the Chief Architect of
+Gentoo Linux an advanced ports-based Linux meta distribution. He also writes
+articles, tutorials, and tips for the IBM developerWorks Linux zone and Intel
+Developer Services and has also served as a contributing author for several
+books, including Samba Unleashed and SuSE Linux Unleashed. Daniel enjoys
+spending time with his wife, Mary, and his daughter, Hadassah. You can contact
+Daniel at <mail>drobbins@gentoo.org</mail>.
+</p>
+
+<p>
+Chris Houser, known to his friends as "Chouser," has been a UNIX proponent
+since 1994 when he joined the administration team for the computer science
+network at Taylor University in Indiana, where he earned his Bachelor's degree
+in Computer Science and Mathematics. Since then, he has gone on to work in Web
+application programming, user interface design, professional video software
+support, and now Tru64 UNIX device driver programming at Compaq. He has also
+contributed to various free software projects, most recently to Gentoo Linux).
+He lives with his wife and two cats in New Hampshire. You can contact Chris at
+chouser@gentoo.org.
+</p>
+
+<p>
+Aron Griffis graduated from Taylor University with a degree in Computer Science
+and an award that proclaimed, "Future Founder of a Utopian UNIX Commune."
+Working towards that goal, Aron is employed by Compaq writing network drivers
+for Tru64 UNIX, and spending his spare time plunking out tunes on the piano or
+developing Gentoo Linux. He lives with his wife Amy (also a UNIX engineer) in
+Nashua, New Hampshire.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Regular Expressions</title>
+<section>
+<title>What is a regular expression?</title>
+<body>
+
+<p>
+A regular expression (also called a "regex" or "regexp") is a special syntax
+used to describe text patterns. On Linux systems, regular expressions are
+commonly used to find patterns of text, as well as to perform
+search-and-replace operations on text streams.
+</p>
+
+</body>
+</section>
+<section>
+<title>Glob comparison</title>
+<body>
+
+<p>
+As we take a look at regular expressions, you may find that regular expression
+syntax looks similar to the filename "globbing" syntax that we looked at in
+Part 1. However, don't let this fool you; their similarity is only skin deep.
+Both regular expressions and filename globbing patterns, while they may look
+similar, are fundamentally different beasts.
+</p>
+
+</body>
+</section>
+<section>
+<title>The simple substring</title>
+<body>
+
+<p>
+With that caution, let's take a look at the most basic of regular expressions,
+the simple substring. To do this, we're going to use <c>grep</c>, a command
+that scans the contents of a file for a particular regular expression. grep
+prints every line that matches the regular expression, and ignores every line
+that doesn't:
+</p>
+
+<pre caption="grep in action">
+$ <i>grep bash /etc/passwd</i>
+operator:x:11:0:operator:/root:/bin/bash
+root:x:0:0::/root:/bin/bash
+ftp:x:40:1::/home/ftp:/bin/bash
+</pre>
+
+<p>
+Above, the first parameter to <c>grep</c> is a regex; the second is a filename.
+<c>grep</c> read each line in /etc/passwd and applied the simple substring
+regex bash to it, looking for a match. If a match was found, <c>grep</c>
+printed out the entire line; otherwise, the line was ignored.
+</p>
+
+</body>
+</section>
+<section>
+<title>Understanding the simple substring</title>
+<body>
+
+<p>
+In general, if you are searching for a substring, you can just specify the text
+verbatim without supplying any "special" characters. The only time you'd need
+to do anything special would be if your substring contained a +, ., *, [, ], or
+\, in which case these characters would need to be enclosed in quotes and
+preceded by a backslash. Here are a few more examples of simple substring
+regular expressions:
+</p>
+
+<ul>
+  <li>/tmp (scans for the literal string /tmp)</li>
+  <li>"\[box\]" (scans for the literal string [box])</li>
+  <li>"\*funny\*" (scans for the literal string *funny*)</li>
+  <li>"ld\.so" (scans for the literal string ld.so)</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Metacharacters</title>
+<body>
+
+<p>
+With regular expressions, you can perform much more complex searches than the
+examples we've looked at so far by taking advantage of metacharacters. One of
+these metacharacters is the . (a period), which matches any single character:
+</p>
+
+<pre caption="The period metacharacter">
+$ <i>grep dev.hda /etc/fstab</i>
+/dev/hda3       /               reiserfs        noatime,ro 1 1
+/dev/hda1       /boot           reiserfs        noauto,noatime,notail 1 2
+/dev/hda2       swap            swap            sw 0 0
+#/dev/hda4      /mnt/extra      reiserfs        noatime,rw 1 1
+</pre>
+
+<p>
+In this example, the literal text dev.hda didn't appear on any of the lines in
+/etc/fstab. However, grep wasn't scanning them for the literal dev.hda string,
+but for the dev.hda pattern. Remember that the . will match any single
+character. As you can see, the . metacharacter is functionally equivalent to
+how the ? metacharacter works in "glob" expansions.
+</p>
+
+</body>
+</section>
+<section>
+<title>Using []</title>
+<body>
+
+<p>
+If we wanted to match a character a bit more specifically than ., we could use
+[ and ] (square brackets) to specify a subset of characters that should be
+matched:
+</p>
+
+<pre caption="Brackets in action">
+$ <i>grep dev.hda[12] /etc/fstab</i>
+/dev/hda1       /boot           reiserfs        noauto,noatime,notail 1 2
+/dev/hda2       swap            swap            sw 0 0
+</pre>
+
+<p>
+As you can see, this particular syntactical feature works identically to the []
+in "glob" filename expansions. Again, this is one of the tricky things about
+learning regular expressions -- the syntax is similar but not identical to
+"glob" filename expansion syntax, which often makes regexes a bit confusing to
+learn.
+</p>
+
+</body>
+</section>
+<section>
+<title>Using [^]</title>
+<body>
+
+<p>
+You can reverse the meaning of the square brackets by putting a ^ immediately
+after the [. In this case, the brackets will match any character that is
+<e>not</e> listed inside the brackets. Again, note that we use [^] with regular
+expressions, but [!] with globs:
+</p>
+
+<pre caption="Brackets with negation">
+$ <i>grep dev.hda[^12] /etc/fstab</i>
+/dev/hda3       /               reiserfs        noatime,ro 1 1
+#/dev/hda4      /mnt/extra      reiserfs        noatime,rw 1 1
+</pre>
+
+</body>
+</section>
+<section>
+<title>Differing syntax</title>
+<body>
+
+<p>
+It's important to note that the syntax inside square brackets is fundamentally
+different from that in other parts of the regular expression. For example, if
+you put a . inside square brackets, it allows the square brackets to match a
+literal ., just like the 1 and 2 in the examples above. In comparison, a
+literal . outside the square brackets is interpreted as a metacharacter unless
+prefixed by a \. We can take advantage of this fact to print a list of all
+lines in <path>/etc/fstab</path> that contain the literal string dev.hda by
+typing:
+</p>
+
+<pre caption="Printing literals using brackets">
+$ <i>grep dev[.]hda /etc/fstab</i>
+</pre>
+
+<p>
+Alternately, we could also type:
+</p>
+
+<pre caption="Printing literals using escaping">
+$ <i>grep "dev\.hda" /etc/fstab</i>
+</pre>
+
+<p>
+Neither regular expression is likely to match any lines in your
+<path>/etc/fstab</path> file.
+</p>
+
+</body>
+</section>
+<section>
+<title>The "*" metacharacter</title>
+<body>
+
+<p>
+Some metacharacters don't match anything in themselves, but instead modify the
+meaning of a previous character. One such metacharacter is * (asterisk), which
+is used to match zero or more repeated occurrences of the previous character.
+Note that this means that the * has a different meaning in a regex than it does
+with globs. Here are some examples, and play close attention to instances where
+these regex matches differ from globs:
+</p>
+
+<ul>
+  <li>
+    ab*c matches abbbbc but not abqc  (if a glob, it would match both strings
+    -- can you figure out why?)
+  </li>
+  <li>
+    ab*c matches abc but not abbqbbc (again, if a glob, it would match both
+    strings)
+  </li>
+  <li>
+    ab*c matches ac but not cba (if a glob, ac would not be matched, nor would
+    cba)
+  </li>
+  <li>
+    b[cq]*e matches bqe and be (if a glob, it would match bqe but not be)
+  </li>
+  <li>
+    b[cq]*e matches bccqqe but not bccc (if a glob, it would match the first
+    but not the second as well)
+  </li>
+  <li>
+    b[cq]*e matches bqqcce but not cqe (if a glob, it would match the first but
+    not the second as well)
+  </li>
+  <li>
+    b[cq]*e matches bbbeee (this would not be the case with a glob)
+  </li>
+  <li>
+    .* will match any string. (if a glob, it would match any string starting
+    with .)
+  </li>
+  <li>
+    foo.* will match any string that begins with foo (if a glob, it would match
+    any string starting with the four literal characters foo..)
+  </li>
+</ul>
+
+<p>
+Now, for a quick brain-twisting review: the line ac matches the regex ab*c
+because the asterisk also allows the preceding expression (b) to appear
+<e>zero</e> times. Again, it's critical to note that the * regex metacharacter
+is interpreted in a fundamentally different way than the * glob character.
+</p>
+
+</body>
+</section>
+<section>
+<title>Beginning and end of line</title>
+<body>
+
+<p>
+The last metacharacters we will cover in detail here are the ^ and $
+metacharacters, used to match the beginning and end of line, respectively. By
+using a ^ at the beginning of your regex, you can cause your pattern to be
+"anchored" to the start of the line. In the following example, we use the ^#
+regex to match any line beginning with the # character:
+</p>
+
+<pre caption="Lines">
+$ <i>grep ^# /etc/fstab</i>
+# /etc/fstab: static file system information.
+#
+</pre>
+
+</body>
+</section>
+<section>
+<title>Full-line regexes</title>
+<body>
+
+<p>
+^ and $ can be combined to match an entire line. For example, the following
+regex will match a line that starts with the # character and ends with the .
+character, with any number of other characters in between:
+</p>
+
+<pre caption="Matching an entire line">
+$ <i>grep '^#.*\.$' /etc/fstab</i>
+# /etc/fstab: static file system information.
+</pre>
+
+<p>
+In the above example, we surrounded our regular expression with single quotes
+to prevent $ from being interpreted by the shell. Without the single quotes,
+the $ will disappear from our regex before grep even has a chance to take a
+look at it.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>FHS and finding files</title>
+<section>
+<title>Filesystem Hierarchy Standard</title>
+<body>
+
+<p>
+The Filesystem Hierarchy Standard is a document that specifies the layout of
+directories on a Linux system. The FHS was devised to provide a common layout
+to simplify distribution-independent software development -- so that stuff is
+in generally the same place across Linux distributions. The FHS specifies the
+following directory tree (taken directly from the FHS specification):
+</p>
+
+<ul>
+  <li>/ (the root directory)</li>
+  <li>/boot (static files of the boot loader)</li>
+  <li>/dev (device files)</li>
+  <li>/etc (host-specific system configuration)</li>
+  <li>/lib (essential shared libraries and kernel modules)</li>
+  <li>/mnt (mount point for mounting a filesystem temporarily)</li>
+  <li>/opt (add-on application software packages)</li>
+  <li>/sbin (essential system binaries)</li>
+  <li>/tmp (temporary files)</li>
+  <li>/usr (secondary hierarchy)</li>
+  <li>/var (variable data)</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>The two independent FHS categories</title>
+<body>
+
+<p>
+The FHS bases its layout specification on the idea that there are two
+independent categories of files: shareable vs. unshareable, and variable vs.
+static. Shareable data can be shared between hosts; unshareable data is
+specific to a given host (such as configuration files). Variable data can be
+modified; static data is not modified (except at system installation and
+maintenance).
+</p>
+
+<p>
+The following grid summarizes the four possible combinations, with examples of
+directories that would fall into those categories. Again, this table is
+straight from the FHS specification:
+</p>
+
+<pre caption="FHS">
++---------+-----------------+-------------+
+|         | shareable       | unshareable |
++---------+-----------------+-------------+
+|static   | /usr            | /etc        |
+|         | /opt            | /boot       |
++---------+-----------------+-------------+
+|variable | /var/mail       | /var/run    |
+|         | /var/spool/news | /var/lock   |
++---------+-----------------+-------------+
+</pre>
+
+</body>
+</section>
+<section>
+<title>Secondary hierarchy at /usr</title>
+<body>
+
+<p>
+Under <path>/usr</path> you'll find a secondary hierarchy that looks a lot like
+the root filesystem. It isn't critical for <path>/usr</path> to exist when the
+machine powers up, so it can be shared on a network (shareable), or mounted
+from a CD-ROM (static). Most Linux setups don't make use of sharing
+<path>/usr</path>, but it's valuable to understand the usefulness of
+distinguishing between the primary hierarchy at the root directory and the
+secondary hierarchy at <path>/usr</path>.
+</p>
+
+<p>
+This is all we'll say about the Filesystem Hierarchy Standard. The document
+itself is quite readable, so you should go take a look at it. You'll understand
+a lot more about the Linux filesystem if you read it. Find it at
+<uri>http://www.pathname.com/fhs/</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Finding files</title>
+<body>
+
+<p>
+Linux systems often contain hundreds of thousands of files. Perhaps you are
+savvy enough to never lose track of any of them, but it's more likely that you
+will occasionally need help finding one. There are a few different tools on
+Linux for finding files. This introduction will help you choose the right tool
+for the job.
+</p>
+
+</body>
+</section>
+<section>
+<title>The PATH</title>
+<body>
+
+<p>
+When you run a program at the command line, bash actually searches through a
+list of directories to find the program you requested. For example, when you
+type <c>ls</c>, <c>bash</c> doesn't intrinsically know that the ls program
+lives in <path>/usr/bin</path>. Instead, bash refers to an environment variable
+called PATH, which is a colon-separated list of directories. We can examine the
+value of PATH:
+</p>
+
+<pre caption="Viewing your path">
+$ <i>echo $PATH</i>
+/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/X11R6/bin
+</pre>
+
+<p>
+Given this value of PATH (yours may differ,) bash would first check
+<path>/usr/local/bin</path>, then <path>/usr/bin</path> for the <c>ls</c>
+program. Most likely, <c>ls</c> is kept in <path>/usr/bin</path>, so bash would
+stop at that point.
+</p>
+
+</body>
+</section>
+<section>
+<title>Modifying PATH</title>
+<body>
+
+<p>
+You can augment your PATH by assigning to it on the command line:
+</p>
+
+<pre caption="Editing PATH">
+$ <i>PATH=$PATH:~/bin</i>
+$ <i>echo $PATH</i>
+/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/X11R6/bin:/home/agriffis/bin
+</pre>
+
+<p>
+You can also remove elements from PATH, although it isn't as easy since you
+can't refer to the existing $PATH. Your best bet is to simply type out the new
+PATH you want:
+ </p>
+
+<pre caption="Removing entries from PATH">
+$ <i>PATH=/usr/local/bin:/usr/bin:/bin:/usr/X11R6/bin:~/bin</i>
+$ <i>echo $PATH</i>
+/usr/local/bin:/usr/bin:/bin:/usr/X11R6/bin:/home/agriffis/bin
+</pre>
+
+<p>
+To make your PATH changes available to any future processes you start from this
+shell, export your changes using the export command:
+</p>
+
+<pre caption="Exporting PATH (or any variable, for that matter)">
+$ <i>export PATH</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>All about "which"</title>
+<body>
+
+<p>
+You can check to see if there's a given program in your PATH by using
+<c>which</c>. For example, here we find out that our Linux system has no
+(common) sense:
+</p>
+
+<pre caption="Looking for sense">
+$ which <i>sense</i>
+which: no sense in (/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/X11R6/bin)
+</pre>
+
+<p>
+In this example, we successfully locate <c>ls</c>:
+</p>
+
+<pre caption="Looking for ls">
+$ <i>which ls</i>
+/usr/bin/ls
+</pre>
+
+</body>
+</section>
+<section>
+<title>"which -a"</title>
+<body>
+
+<p>
+Finally, you should be aware of the <c>-a</c> flag, which causes <c>which</c>
+to show you all of the instances of a given program in your PATH:
+</p>
+
+<pre caption="Finding all instances of a program in your PATH">
+$ <i>which -a ls</i>
+/usr/bin/ls
+/bin/ls
+</pre>
+
+</body>
+</section>
+<section>
+<title>whereis</title>
+<body>
+
+<p>
+If you're interested in finding more information than purely the location of a
+program, you might try the <c>whereis</c> program:
+</p>
+
+<pre caption="Using whereis">
+$ <i>whereis ls</i>
+ls: /bin/ls /usr/bin/ls /usr/share/man/man1/ls.1.gz
+</pre>
+
+<p>
+Here we see that <c>ls</c> occurs in two common binary locations,
+<path>/bin</path> and <path>/usr/bin</path>. Additionally, we are informed that
+there is a manual page located in <path>/usr/share/man</path>. This is the
+man-page you would see if you were to type <c>man ls</c>.
+</p>
+
+<p>
+The <c>whereis</c> program also has the ability to search for sources, to
+specify alternate search paths, and to search for unusual entries. Refer to the
+whereis man-page for further information.
+</p>
+
+</body>
+</section>
+<section>
+<title>find</title>
+<body>
+
+<p>
+The <c>find</c> command is another handy tool for your toolbox. With find you
+aren't restricted to programs; you can search for any file you want, using a
+variety of search criteria. For example, to search for a file by the name of
+README, starting in <path>/usr/share/doc</path>:
+</p>
+
+<pre caption="Using find">
+$ <i>find /usr/share/doc -name README</i>
+/usr/share/doc/ion-20010523/README
+/usr/share/doc/bind-9.1.3-r6/dhcp-dynamic-dns-examples/README
+/usr/share/doc/sane-1.0.5/README
+</pre>
+
+</body>
+</section>
+<section>
+<title>find and wildcards</title>
+<body>
+
+<p>
+You can use "glob" wildcards in the argument to -name, provided that you quote
+them or backslash-escape them (so they get passed to find intact rather than
+being expanded by bash). For example, we might want to search for README files
+with extensions:
+</p>
+
+<pre caption="Using find with wildcards">
+$ <i>find /usr/share/doc -name README\*</i>
+/usr/share/doc/iproute2-2.4.7/README.gz
+/usr/share/doc/iproute2-2.4.7/README.iproute2+tc.gz
+/usr/share/doc/iproute2-2.4.7/README.decnet.gz
+/usr/share/doc/iproute2-2.4.7/examples/diffserv/README.gz
+/usr/share/doc/pilot-link-0.9.6-r2/README.gz
+/usr/share/doc/gnome-pilot-conduits-0.8/README.gz
+/usr/share/doc/gimp-1.2.2/README.i18n.gz
+/usr/share/doc/gimp-1.2.2/README.win32.gz
+/usr/share/doc/gimp-1.2.2/README.gz
+/usr/share/doc/gimp-1.2.2/README.perl.gz
+[578 additional lines snipped]
+</pre>
+
+</body>
+</section>
+<section>
+<title>Ignoring case with find</title>
+<body>
+
+<p>
+Of course, you might want to ignore case in your search:
+</p>
+
+<pre caption="Ignoring case with find">
+$ <i>find /usr/share/doc -name '[Rr][Ee][Aa][Dd][Mm][Ee]*'</i>
+</pre>
+
+<p>
+Or, more simply:
+</p>
+
+<pre caption="Another method">
+$ <i>find /usr/share/doc -iname readme\*</i>
+</pre>
+
+<p>
+As you can see, you can use <c>-iname</c> to do case-insensitive searching.
+</p>
+
+</body>
+</section>
+<section>
+<title>find and regular expressions</title>
+<body>
+
+<p>
+If you're familiar with regular expressions, you can use the <c>-regex</c>
+option to limit the output to filenames that match a pattern. And similar to
+the <c>-iname</c> option, there is a corresponding <c>-iregex</c> option that
+ignores case in the pattern. For example:
+</p>
+
+<pre caption="Regex and find">
+$ <i>find /etc -iregex '.*xt.*'</i>
+/etc/X11/xkb/types/extra
+/etc/X11/xkb/semantics/xtest
+/etc/X11/xkb/compat/xtest
+/etc/X11/app-defaults/XTerm
+/etc/X11/app-defaults/XTerm-color
+</pre>
+
+<p>
+Note that unlike many programs, <c>find</c> requires that the regex specified
+matches the entire path, not just a part of it. For that reason, specifying the
+leading and trailing .* is necessary; purely using xt as the regex would not be
+sufficient.
+</p>
+
+</body>
+</section>
+<section>
+<title>find and types</title>
+<body>
+
+<p>
+The <c>-type</c> option allows you to find filesystem objects of a certain
+type. The possible arguments to -type are <c>b</c> (block device), <c>c</c>
+(character device), <c>d</c> (directory), <c>p</c> (named pipe), <c>f</c>
+(regular file), <c>l</c> (symbolic link), and <c>s</c> (socket). For example,
+to search for symbolic links in <path>/usr/bin</path> that contain the string
+vim:
+</p>
+
+<pre caption="Restricting find by type">
+$ <i>find /usr/bin -name '*vim*' -type l</i>
+/usr/bin/rvim
+/usr/bin/vimdiff
+/usr/bin/gvimdiff
+</pre>
+
+</body>
+</section>
+<section>
+<title>find and mtimes</title>
+<body>
+
+<p>
+The <c>-mtime</c> option allows you to select files based on their last
+modification time. The argument to mtime is in terms of 24-hour periods, and is
+most useful when entered with either a plus sign (meaning "after") or a minus
+sign (meaning "before"). For example, consider the following scenario:
+</p>
+
+<pre caption="Scenario">
+$ <i>ls -l ?</i>
+-rw-------    1 root     root            0 Jan  7 18:00 a
+-rw-------    1 root     root            0 Jan  6 18:00 b
+-rw-------    1 root     root            0 Jan  5 18:00 c
+-rw-------    1 root     root            0 Jan  4 18:00 d
+$ <i>date</i>
+Mon May  7 18:14:52 EST 2003
+</pre>
+
+<p>
+You could search for files that were created in the past 24 hours:
+</p>
+
+<pre caption="Files created in the last 24 hours">
+$ <i>find . -name \? -mtime -1</i>
+./a
+</pre>
+
+<p>
+Or you could search for files that were created prior to the current 24-hour
+period:
+</p>
+
+<pre caption="Files created before the last 24 hours">
+$ <i>find . -name \? -mtime +0</i>
+./b
+./c
+./d
+</pre>
+
+</body>
+</section>
+<section>
+<title>The -daystart option</title>
+<body>
+
+<p>
+If you additionally specify the <c>-daystart</c> option, then the periods of
+time start at the beginning of today rather than 24 hours ago. For example,
+here is a set of files created yesterday and the day before:
+</p>
+
+<pre caption="Using -daystart">
+$ <i>find . -name \? -daystart -mtime +0 -mtime -3</i>
+./b
+./c
+$ ls -l b c
+-rw-------    1 root     root            0 May  6 18:00 b
+-rw-------    1 root     root            0 May  5 18:00 c
+</pre>
+
+</body>
+</section>
+<section>
+<title>The -size option</title>
+<body>
+
+<p>
+The <c>-size</c> option allows you to find files based on their size. By
+default, the argument to <c>-size</c> is 512-byte blocks, but adding a suffix
+can make things easier. The available suffixes are <c>b</c> (512-byte blocks),
+<c>c</c> (bytes), <c>k</c> (kilobytes), and <c>w</c> (2-byte words).
+Additionally, you can prepend a plus sign ("larger than") or minus sign
+("smaller than").
+</p>
+
+<p>
+For example, to find regular files in <path>/usr/bin</path> that are smaller
+than 50 bytes:
+</p>
+
+<pre caption="-size in action">
+$ <i>find /usr/bin -type f -size -50c</i>
+/usr/bin/krdb
+/usr/bin/run-nautilus
+/usr/bin/sgmlwhich
+/usr/bin/muttbug
+</pre>
+
+</body>
+</section>
+<section>
+<title>Processing found files</title>
+<body>
+
+<p>
+You may be wondering what you can do with all these files that you find! Well,
+<c>find</c> has the ability to act on the files that it finds by using the
+<c>-exec</c> option. This option accepts a command line to execute as its
+argument, terminated with ;, and it replaces any occurrences of {} with the
+filename. This is best understood with an example:
+</p>
+
+<pre caption="Using -exec">
+$ <i>find /usr/bin -type f -size -50c -exec ls -l '{}' ';'</i>
+-rwxr-xr-x    1 root     root           27 Oct 28 07:13 /usr/bin/krdb
+-rwxr-xr-x    1 root     root           35 Nov 28 18:26 /usr/bin/run-nautilus
+-rwxr-xr-x    1 root     root           25 Oct 21 17:51 /usr/bin/sgmlwhich
+-rwxr-xr-x    1 root     root           26 Sep 26 08:00 /usr/bin/muttbug
+</pre>
+
+<p>
+As you can see, <c>find</c> is a very powerful command. It has grown through
+the years of UNIX and Linux development. There are many other useful options to
+find. You can learn about them in the find manual page.
+</p>
+
+</body>
+</section>
+<section>
+<title>locate</title>
+<body>
+
+<p>
+We have covered <c>which</c>, <c>whereis</c>, and <c>find</c>. You might have
+noticed that <c>find</c> can take a while to execute, since it needs to read
+each directory that it's searching. It turns out that the <c>locate</c> command
+can speed things up by relying on an external database generated by
+<c>updatedb</c> (which we'll cover in the next panel.)
+</p>
+
+<p>
+The <c>locate</c> command matches against any part of a pathname, not just the
+file itself. For example:
+</p>
+
+<pre caption="locate in action">
+$ <i>locate bin/ls</i>
+/var/ftp/bin/ls
+/bin/ls
+/sbin/lsmod
+/sbin/lspci
+/usr/bin/lsattr
+/usr/bin/lspgpot
+/usr/sbin/lsof
+</pre>
+
+</body>
+</section>
+<section>
+<title>Using updatedb</title>
+<body>
+
+<p>
+Most Linux systems have a "cron job" to update the database periodically. If
+your <c>locate</c> returned an error such as the following, then you will need
+to run <c>updatedb</c> as root to generate the search database:
+</p>
+
+<pre caption="updating your locate database">
+$ <i>locate bin/ls</i>
+locate: /var/spool/locate/locatedb: No such file or directory
+$ <i>su -</i>
+Password:
+# <i>updatedb</i>
+</pre>
+
+<p>
+The <c>updatedb</c> command may take a long time to run. If you have a noisy
+hard disk, you will hear a lot of racket as the entire filesystem is indexed.
+:)
+</p>
+
+
+</body>
+</section>
+<section>
+<title>mlocate</title>
+<body>
+
+<p>
+On many Linux distributions, the <c>locate</c> command has been replaced by
+<c>mlocate</c>. There is typically a symbolic link to <c>locate</c>, so that
+you don't need to remember which you have. <c>mlocate</c> stands for "secure
+locate." It stores permissions information in the database so that normal users
+can't pry into directories they would otherwise be unable to read. The usage
+information for <c>mlocate</c> is essentially the same as for <c>locate</c>,
+although the output might be different depending on the user running the
+command.
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>Process Control</title>
+<section>
+<title>Staring xeyes</title>
+<body>
+
+<p>
+To learn about process control, we first need to start a process. Make sure
+that you have X running and execute the following command:
+</p>
+
+<pre caption="Starting a Process">
+$ <i>xeyes -center red</i>
+</pre>
+
+<p>
+You will notice that an xeyes window pops up, and the red eyeballs follow your
+mouse around the screen. You may also notice that you don't have a new prompt
+in your terminal.
+</p>
+
+</body>
+</section>
+<section>
+<title>Stopping a process</title>
+<body>
+
+<p>
+To get a prompt back, you could type Control-C (often written as Ctrl-C or ^C):
+</p>
+
+<p>
+You get a new bash prompt, but the xeyes window disappeared. In fact, the
+entire process has been killed. Instead of killing it with Control-C, we could
+have just stopped it with Control-Z:
+</p>
+
+<pre caption="Stopping a Process">
+$ <i>xeyes -center red</i>
+<i>Control-Z</i>
+[1]+  Stopped                 xeyes -center red
+$
+</pre>
+
+<p>
+This time you get a new bash prompt, and the xeyes windows stays up. If you
+play with it a bit, however, you will notice that the eyeballs are frozen in
+place. If the xeyes window gets covered by another window and then uncovered
+again, you will see that it doesn't even redraw the eyes at all. The process
+isn't doing anything. It is, in fact, "Stopped."
+</p>
+
+</body>
+</section>
+<section>
+<title>fg and bg</title>
+<body>
+
+<p>
+To get the process "un-stopped" and running again, we can bring it to the
+foreground with the bash built-in <c>fg</c>:
+</p>
+
+<pre caption="using fg">
+$ <i>fg</i>
+<comment>(test it out, then stop the process again)</comment>
+<i>Control-Z</i>
+[1]+  Stopped                 xeyes -center red
+$
+</pre>
+
+<p>
+Now continue it in the background with the bash built-in <c>bg</c>:
+</p>
+
+<pre caption="using bg">
+$ <i>bg</i>
+[1]+ xeyes -center red &amp;
+$
+</pre>
+
+<p>
+Great! The xeyes process is now running in the background, and we have a new,
+working bash prompt.
+</p>
+
+</body>
+</section>
+<section>
+<title>Using "&amp;"</title>
+<body>
+
+<p>
+If we wanted to start xeyes in the background from the beginning (instead of
+using Control-Z and bg), we could have just added an "&amp;" (ampersand) to the
+end of xeyes command line:
+</p>
+
+<pre caption="Using ampersands to background processes">
+$ <i>xeyes -center blue &amp;</i>
+[2] 16224
+</pre>
+
+</body>
+</section>
+<section>
+<title>Multiple background processes</title>
+<body>
+
+<p>
+Now we have both a red and a blue xeyes running in the background. We can list
+these jobs with the bash built-in <c>jobs</c>:
+</p>
+
+<pre caption="Using jobs">
+$ <i>jobs -l</i>
+[1]- 16217 Running                 xeyes -center red &amp;
+[2]+ 16224 Running                 xeyes -center blue &amp;
+</pre>
+
+<p>
+The numbers in the left column are the job numbers bash assigned when they were
+started. Job 2 has a + (plus) to indicate that it's the "current job," which
+means that typing <c>fg</c> will bring it to the foreground. You could also
+foreground a specific job by specifying its number; for example, <c>fg 1</c>
+would make the red xeyes the foreground task. The next column is the process id
+or pid, included in the listing courtesy of the -l option to jobs. Finally,
+both jobs are currently "Running," and their command lines are listed to the
+right.
+</p>
+
+</body>
+</section>
+<section>
+<title>Introducing signals</title>
+<body>
+
+<p>
+To kill, stop, or continue processes, Linux uses a special form of
+communication called "signals." By sending a certain signal to a process, you
+can get it to terminate, stop, or do other things. This is what you're actually
+doing when you type Control-C, Control-Z, or use the <c>bg</c> or <c>fg</c>
+built-ins -- you're using bash to send a particular signal to the process.
+These signals can also be sent using the <c>kill</c> command and specifying the
+pid (process id) on the command line:
+</p>
+
+<pre caption="Using kill">
+$ <i>kill -s SIGSTOP 16224</i>
+$ <i>jobs -l</i>
+[1]- 16217 Running                 xeyes -center red &amp;
+[2]+ 16224 Stopped (signal)        xeyes -center blue
+</pre>
+
+<p>
+As you can see, kill doesn't necessarily "kill" a process, although it can.
+Using the "-s" option, <c>kill</c> can send any signal to a process. Linux
+kills, stops or continues processes when they are sent the SIGINT, SIGSTOP, or
+SIGCONT signals respectively. There are also other signals that you can send to
+a process; some of these signals may be interpreted in an application-dependent
+way. You can learn what signals a particular process recognizes by looking at
+its man-page and searching for a SIGNALS section.
+</p>
+
+</body>
+</section>
+<section>
+<title>SIGTERM and SIGINT</title>
+<body>
+
+<p>
+If you want to kill a process, you have several options. By default, kill sends
+SIGTERM, which is not identical to SIGINT of Control-C fame, but usually has
+the same results:
+</p>
+
+<pre caption="Using kill to terminate a process">
+$ <i>kill 16217</i>
+$ <i>jobs -l</i>
+[1]- 16217 Terminated              xeyes -center red
+[2]+ 16224 Stopped (signal)        xeyes -center blue
+</pre>
+
+</body>
+</section>
+<section>
+<title>The big kill</title>
+<body>
+
+<p>
+Processes can ignore both SIGTERM and SIGINT, either by choice or because they
+are stopped or somehow "stuck." In these cases it may be necessary to use the
+big hammer, the SIGKILL signal. A process cannot ignore SIGKILL:
+</p>
+
+<pre caption="Using kill to obliterate a process">
+$ <i>kill 16224</i>
+$ <i>jobs -l</i>
+[2]+ 16224 Stopped (signal)        xeyes -center blue
+$ <i>kill -s SIGKILL</i>
+$ <i>jobs -l</i>
+[2]+ 16224 Interrupt               xeyes -center blue
+</pre>
+
+</body>
+</section>
+<section>
+<title>nohup</title>
+<body>
+
+<p>
+The terminal where you start a job is called the job's controlling terminal.
+Some shells (not bash by default), will deliver a SIGHUP signal to backgrounded
+jobs when you logout, causing them to quit. To protect processes from this
+behavior, use the nohup when you start the process:
+</p>
+
+<pre caption="nohup in action">
+$ <i>nohup make &amp;</i>
+[1] 15632
+$ <i>exit</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Using ps to list processes</title>
+<body>
+
+<p>
+The <c>jobs</c> command we were using earlier only lists processes that were
+started from your bash session. To see all the processes on your system, use
+<c>ps</c> with the <c>a</c> and <c>x</c> options together:
+</p>
+
+<pre caption="ps with ax">
+$ <i>ps ax</i>
+  PID TTY      STAT   TIME COMMAND
+    1 ?        S      0:04 init [3]
+    2 ?        SW     0:11 [keventd]
+    3 ?        SWN    0:13 [ksoftirqd_CPU0]
+    4 ?        SW     2:33 [kswapd]
+    5 ?        SW     0:00 [bdflush]
+</pre>
+
+<p>
+I've only listed the first few because it is usually a very long list. This
+gives you a snapshot of what the whole machine is doing, but is a lot of
+information to sift through. If you were to leave off the <c>ax</c>, you would
+see only processes that are owned by you, and that have a controlling terminal.
+The command <c>ps x</c> would show you all your processes, even those without a
+controlling terminal. If you were to use <c>ps a</c>, you would get the list of
+everybody's processes that are attached to a terminal.
+</p>
+
+</body>
+</section>
+<section>
+<title>Seeing the forest and the trees</title>
+<body>
+
+<p>
+You can also list different information about each process. The <c>--forest</c>
+option makes it easy to see the process hierarchy, which will give you an
+indication of how the various processes on your system interrelate. When a
+process starts a new process, that new process is called a "child" process. In
+a <c>--forest</c> listing, parents appear on the left, and children appear as
+branches to the right:
+</p>
+
+<pre caption="Using forest">
+$ <i>ps x --forest</i>
+  PID TTY      STAT   TIME COMMAND
+  927 pts/1    S      0:00 bash
+ 6690 pts/1    S      0:00  \_ bash
+26909 pts/1    R      0:00      \_ ps x --forest
+19930 pts/4    S      0:01 bash
+25740 pts/4    S      0:04  \_ vi processes.txt
+</pre>
+
+</body>
+</section>
+<section>
+<title>The "u" and "l" ps options</title>
+<body>
+
+<p>
+The <c>u</c> or <c>l</c> options can also be added to any combination of
+<c>a</c> and <c>x</c> in order to include more information about each process:
+</p>
+
+<pre caption="Option au">
+$ <i>ps au</i>
+USER       PID %CPU %MEM   VSZ  RSS TTY      STAT START   TIME COMMAND
+agriffis   403  0.0  0.0  2484   72 tty1     S     2001   0:00 -bash
+chouser    404  0.0  0.0  2508   92 tty2     S     2001   0:00 -bash
+root       408  0.0  0.0  1308  248 tty6     S     2001   0:00 /sbin/agetty 3
+agriffis   434  0.0  0.0  1008    4 tty1     S     2001   0:00 /bin/sh /usr/X
+chouser    927  0.0  0.0  2540   96 pts/1    S     2001   0:00 bash
+</pre>
+
+<pre caption="Option al">
+$ <i>ps al</i>
+  F   UID   PID  PPID PRI  NI   VSZ  RSS WCHAN  STAT TTY        TIME COMMAND
+100  1001   403     1   9   0  2484   72 wait4  S    tty1       0:00 -bash
+100  1000   404     1   9   0  2508   92 wait4  S    tty2       0:00 -bash
+000     0   408     1   9   0  1308  248 read_c S    tty6       0:00 /sbin/ag
+000  1001   434   403   9   0  1008    4 wait4  S    tty1       0:00 /bin/sh
+000  1000   927   652   9   0  2540   96 wait4  S    pts/1      0:00 bash
+</pre>
+
+</body>
+</section>
+<section>
+<title>Using top</title>
+<body>
+
+<p>
+If you find yourself running ps several times in a row, trying to watch things
+change, what you probably want is <c>top</c>. <c>top</c> displays a
+continuously updated process listing, along with some useful summary
+information:
+</p>
+
+<pre caption="top">
+$ <i>top</i>
+ 10:02pm  up 19 days,  6:24,  8 users,  load average: 0.04, 0.05, 0.00
+75 processes: 74 sleeping, 1 running, 0 zombie, 0 stopped
+CPU states:  1.3% user,  2.5% system,  0.0% nice, 96.0% idle
+Mem:   256020K av,  226580K used,   29440K free,       0K shrd,    3804K buff
+Swap:  136544K av,   80256K used,   56288K free                  101760K cached
+
+  PID USER     PRI  NI  SIZE  RSS SHARE STAT  LIB %CPU %MEM   TIME COMMAND
+  628 root      16   0  213M  31M  2304 S       0  1.9 12.5  91:43 X
+26934 chouser   17   0  1272 1272  1076 R       0  1.1  0.4   0:00 top
+  652 chouser   11   0 12016 8840  1604 S       0  0.5  3.4   3:52 gnome-termin
+  641 chouser    9   0  2936 2808  1416 S       0  0.1  1.0   2:13 sawfish
+</pre>
+
+</body>
+</section>
+<section>
+<title>nice</title>
+<body>
+
+<p>
+Each processes has a priority setting that Linux uses to determine how CPU
+timeslices are shared. You can set the priority of a process by starting it
+with the <c>nice</c> command:
+</p>
+
+<pre caption="nicing a process">
+$ <i>nice -n 10 oggenc /tmp/song.wav</i>
+</pre>
+
+<p>
+Since the priority setting is called <c>nice</c>, it should be easy to remember
+that a higher value will be nice to other processes, allowing them to get
+priority access to the CPU. By default, processes are started with a setting of
+0, so the setting of 10 above means oggenc will readily give up the CPU to
+other processes. Generally, this means that oggenc will allow other processes
+to run at their normal speed, regardless of how CPU-hungry oggenc happens to
+be. You can see these niceness levels under the NI column in the ps and top
+listings above.
+</p>
+
+</body>
+</section>
+<section>
+<title>renice</title>
+<body>
+
+<p>
+The <c>nice</c> command can only change the priority of a process when you
+start it. If you want to change the niceness setting of a running process, use
+<c>renice</c>:
+</p>
+
+<pre caption="using renice">
+$ <i>ps l 641</i>
+  F   UID   PID  PPID PRI  NI   VSZ  RSS WCHAN  STAT TTY        TIME COMMAND
+000  1000   641     1   9   0  5876 2808 do_sel S    ?          2:14 sawfish
+$ <i>renice 10 641</i>
+641: old priority 0, new priority 10
+$ <i>ps l 641</i>
+  F   UID   PID  PPID PRI  NI   VSZ  RSS WCHAN  STAT TTY        TIME COMMAND
+000  1000   641     1   9  10  5876 2808 do_sel S    ?          2:14 sawfish
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Text processing</title>
+<section>
+<title>Redirection revisited</title>
+<body>
+
+<p>
+Earlier in this tutorial series, we saw an example of how to use the <c>></c>
+operator to redirect the output of a command to a file, as follows:
+</p>
+
+<pre caption="Use of the > operator">
+$ <i>echo "firstfile" > copyme</i>
+</pre>
+
+<p>
+In addition to redirecting output to a file, we can also take advantage of a
+powerful shell feature called pipes. Using pipes, we can pass the output of one
+command to the input of another command. Consider the following example:
+</p>
+
+<pre caption="Introducing pipes">
+$ <i>echo "hi there" | wc</i>
+      1       2       9
+</pre>
+
+<p>
+The <c>|</c> character is used to connect the output of the command on the left
+to the input of the command on the right. In the example above, the <c>echo</c>
+command prints out the string "hi there" followed by a linefeed. That output
+would normally appear on the terminal, but the pipe redirects it into the
+<c>wc</c> command, which displays the number of lines, words, and characters in
+its input.
+</p>
+
+</body>
+</section>
+<section>
+<title>A pipe example</title>
+<body>
+
+<p>
+Here is another simple example:
+</p>
+
+<pre caption="pipes in action">
+$ <i>ls -s | sort -n</i>
+</pre>
+
+<p>
+In this case, <c>ls -s</c> would normally print a listing of the current
+directory on the terminal, preceding each file with its size. But instead we've
+piped the output into <c>sort -n</c>, which sorts the output numerically. This
+is a really useful way to find large files in your home directory!
+</p>
+
+<p>
+The following examples are more complex, but they demonstrate the power that
+can be harnessed using pipes. We're going to throw out some commands we haven't
+covered yet, but don't let that slow you down. Concentrate instead on
+understanding how pipes work so you can employ them in your daily Linux tasks.
+</p>
+
+</body>
+</section>
+<section>
+<title>The decompression pipeline</title>
+<body>
+
+<p>
+Normally to decompress and untar a file, you might do the following:
+</p>
+
+<pre caption="Untarring a file">
+$ <i>bzip2 -d linux-2.4.16.tar.bz2</i>
+$ <i>tar xvf linux-2.4.16.tar</i>
+</pre>
+
+<p>
+The downside of this method is that it requires the creation of an
+intermediate, uncompressed file on your disk. Since <c>tar</c> has the ability
+to read directly from its input (instead of specifying a file), we could
+produce the same end-result using a pipeline:
+</p>
+
+<pre caption="untarring using a pipeline">
+$ <i>bzip2 -dc linux-2.4.16.tar.bz2 | tar xvf -</i>
+</pre>
+
+<p>
+Woo hoo! Our compressed tarball has been extracted and we didn't need an
+intermediate file.
+</p>
+
+</body>
+</section>
+<section>
+<title>A longer pipeline</title>
+<body>
+
+<p>
+Here's another pipeline example:
+</p>
+
+<pre caption="Longer pipelines">
+$ <i>cat myfile.txt | sort | uniq | wc -l</i>
+</pre>
+
+<p>
+We use <c>cat</c> to feed the contents of <path>myfile.txt</path> to the
+<c>sort</c> command. When the <c>sort</c> command receives the input, it sorts
+all input lines so that they are in alphabetical order, and then sends the
+output to <c>uniq</c>. <c>uniq</c> removes any duplicate lines (and requires
+its input to be sorted, by the way,) sending the scrubbed output to <c>wc
+-l</c>. We've seen the <c>wc</c> command earlier, but without command-line
+options. When given the <c>-l</c> option, it only prints the number of lines in
+its input, instead of also including words and characters. You'll see that this
+pipeline will print out the number of unique (non-identical) lines in a text
+file.
+</p>
+
+<p>
+Try creating a couple of test files with your favorite text editor and use this
+pipeline to see what results you get.
+</p>
+
+</body>
+</section>
+<section>
+<title>The text processing whirlwind begins</title>
+<body>
+
+<p>
+Now we embark on a whirlwind tour of the standard Linux text processing
+commands. Because we're covering a lot of material in this tutorial, we don't
+have the space to provide examples for every command. Instead, we encourage you
+to read each command's man page (by typing <c>man echo</c>, for example) and
+learn how each command and it's options work by spending some time playing with
+each one. As a rule, these commands print the results of any text processing to
+the terminal rather than modifying any specified files. After we take our
+whirlwind tour of the standard Linux text processing commands, we'll take a
+closer look at output and input redirection. So yes, there is light at the end
+of the tunnel :)
+</p>
+
+<p>
+<c>echo</c> prints its arguments to the terminal. Use the <c>-e</c> option if
+you want to embed backslash escape sequences; for example <c>echo -e
+"foo\nfoo"</c> will print foo, then a newline, and then foo again. Use the
+<c>-n</c> option to tell echo to omit the trailing newline that is appended to
+the output by default.
+</p>
+
+<p>
+<c>cat</c> will print the contents of the files specified as arguments to the
+terminal. Handy as the first command of a pipeline, for example, <c>cat foo.txt
+| blah</c>.
+</p>
+
+<p>
+<c>sort</c> will print the contents of the file specified on the command line
+in alphabetical order. Of course, <c>sort</c> also accepts piped input. Type
+<c>man sort</c> to familiarize yourself with its various options that control
+sorting behavior.
+</p>
+
+<p>
+<c>uniq</c> takes an <e>already-sorted</e> file or stream of data (via a
+pipeline) and removes duplicate lines.
+</p>
+
+<p>
+<c>wc</c> prints out the number of lines, words, and bytes in the specified
+file or in the input stream (from a pipeline). Type <c>man wc</c> to learn how
+to fine-tune what counts are displayed.
+</p>
+
+<p>
+<c>head</c> prints out the first ten lines of a file or stream. Use the
+<c>-n</c> option to specify how many lines should be displayed.
+</p>
+
+<p>
+<c>tail</c> prints out the last ten lines of a file or stream. Use the
+<c>-n</c> option to specify how many lines should be displayed.
+</p>
+
+<p>
+<c>tac</c> is like <c>cat</c>, but prints all lines in reverse order; in other
+words, the last line is printed first.
+</p>
+
+<p>
+<c>expand</c> converts input tabs to spaces. Use the <c>-t</c> option to
+specify the tabstop.
+</p>
+
+<p>
+<c>unexpand</c> converts input spaces to tabs. Use the <c>-t</c> option to
+specify the tabstop.
+</p>
+
+<p>
+<c>cut</c> is used to extract character-delimited fields from each line of an
+input file or stream.
+</p>
+
+<p>
+The <c>nl</c> command adds a line number to every line of input. Useful for
+printouts.
+</p>
+
+<p>
+<c>pr</c> is used to break files into multiple pages of output; typically used
+for printing.
+</p>
+
+<p>
+<c>tr</c> is a character translation tool; it's used to map certain characters
+in the input stream to certain other characters in the output stream.
+</p>
+
+<p>
+<c>sed</c> is a powerful stream-oriented text editor. You can learn more about
+sed in the following IBM developerWorks articles:
+</p>
+
+<ul>
+  <li><uri link="/doc/en/articles/l-sed1.xml">Sed by example, Part 1</uri></li>
+  <li><uri link="/doc/en/articles/l-sed2.xml">Sed by example, Part 2</uri></li>
+  <li><uri link="/doc/en/articles/l-sed3.xml">Sed by example, Part 3</uri></li>
+</ul>
+
+<p>
+If you're planning to take the LPI exam, be sure to read the first two articles
+of this series.
+</p>
+
+<p>
+<c>awk</c> is a handy line-oriented text-processing language. To learn more
+about awk, read the following IBM developerWorks articles:
+</p>
+
+<ul>
+  <li><uri link="/doc/en/articles/l-awk1.xml">Awk by example, Part 1</uri></li>
+  <li><uri link="/doc/en/articles/l-awk2.xml">Awk by example, Part 2</uri></li>
+  <li><uri link="/doc/en/articles/l-awk3.xml">Awk by example, Part 3</uri>
+  </li>
+</ul>
+
+<p>
+<c>od</c> is designed to transform the input stream into a octal or hex "dump"
+format.
+</p>
+
+<p>
+<c>split</c> is a command used to split a larger file into many smaller-sized,
+more manageable chunks.
+</p>
+
+<p>
+<c>fmt</c> will reformat paragraphs so that wrapping is done at the margin.
+These days it's less useful since this ability is built into most text editors,
+but it's still a good one to know.
+</p>
+
+<p>
+<c>paste</c> takes two or more files as input, concatenates each sequential
+line from the input files, and outputs the resulting lines. It can be useful to
+create tables or columns of text.
+</p>
+
+<p>
+<c>join</c> is similar to paste, but it uses a field (by default the first) in
+each input line to match up what should be combined on a single line.
+</p>
+
+<p>
+<c>tee</c> prints its input both to a file and to the screen. This is useful
+when you want to create a log of something, but you also want to see it on the
+screen.
+</p>
+
+</body>
+</section>
+<section>
+<title>Whirlwind over! Redirection</title>
+<body>
+
+<p>
+Similar to using <c>&gt;</c> on the bash command line, you can also use
+<c>&lt;</c> to redirect a file into a command. For many commands, you can
+simply specify the filename on the command line, however some commands only
+work from standard input.
+</p>
+
+<p>
+Bash and other shells support the concept of a "herefile." This allows you to
+specify the input to a command in the lines following the command invocation,
+terminating it with a sentinal value. This is easiest shown through an example:
+</p>
+
+<pre caption="Redirection in action">
+$ <i>sort &lt;&lt;END</i>
+apple
+cranberry
+banana
+END
+apple
+banana
+cranberry
+</pre>
+
+<p>
+In the example above, we typed the words apple, cranberry and banana, followed
+by "END" to signify the end of the input. The <c>sort</c> program then returned
+our words in alphabetical order.
+</p>
+
+</body>
+</section>
+<section>
+<title>Using &gt;&gt;</title>
+<body>
+
+<p>
+You would expect <c>&gt;&gt;</c> to be somehow analogous to <c>&lt;&lt;</c>,
+but it isn't really. It simply means to append the output to a file, rather
+than overwrite as <c>&gt;</c> would. For example:
+</p>
+
+<pre caption="Redirecting to a file">
+$ <i>echo Hi &gt; myfile</i>
+$ <i>echo there. &gt; myfile</i>
+$ <i>cat myfile</i>
+there.
+</pre>
+
+<p>
+Oops! We lost the "Hi" portion! What we meant was this:
+</p>
+
+<pre caption="Appending to a file">
+$ <i>echo Hi &gt; myfile</i>
+$ <i>echo there. &gt;&gt; myfile</i>
+$ <i>cat myfile</i>
+Hi
+there.
+</pre>
+
+<p>
+Much better!
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Kernel Modules</title>
+<section>
+<title>Meet "uname"</title>
+<body>
+
+<p>
+The <c>uname</c> command provides a variety of interesting information about
+your system. Here's what is displayed on my development workstation when I type
+<c>uname -a</c> which tells the <c>uname</c> command to print out all of its
+information in one swoop:
+</p>
+
+<pre caption="uname -a">
+$ <i>uname -a</i>
+Linux inventor 2.4.20-gaming-r1 #1 Fri Apr 11 18:33:35 MDT 2003 i686 AMD Athlon(tm) XP 2100+ AuthenticAMD GNU/Linux
+</pre>
+
+</body>
+</section>
+<section>
+<title>More uname madness</title>
+<body>
+
+<p>
+Now, let's look at the information that <c>uname</c> provides
+</p>
+
+<pre caption="uname info">
+info. option                    arg     example
+kernel name                     -s      "Linux"
+hostname                        -n      "inventor"
+kernel release                  -r      "2.4.20-gaming-r1"
+kernel version                  -v      "#1 Fri Apr 11 18:33:35 MDT 2003"
+machine                         -m      "i686"
+processor                       -p      "AMD Athlon(tm) XP 2100+"
+hardware platform               -i      "AuthenticAMD"
+operating system                -o      "GNU/Linux"
+</pre>
+
+<p>
+Intriguing! What does your <c>uname -a</c> command print out?
+</p>
+
+</body>
+</section>
+<section>
+<title>The kernel release</title>
+<body>
+
+<p>
+Here's a magic trick. First, type <c>uname -r</c> to have the uname command
+print out the release of the Linux kernel that's currently running.
+</p>
+
+<p>
+Now, look in the <path>/lib/modules</path> directory and --presto!-- I bet
+you'll find a directory with that exact name! OK, not quite magic, but now may
+be a good time to talk about the significance of the directories in
+<path>/lib/modules</path> and explain what kernel modules are.
+</p>
+
+</body>
+</section>
+<section>
+<title>The kernel</title>
+<body>
+
+<p>
+The Linux kernel is the heart of what is commonly referred to as "Linux" --
+it's the piece of code that accesses your hardware directly and provides
+abstractions so that regular old programs can run. Thanks to the kernel, your
+text editor doesn't need to worry about whether it is writing to a SCSI or IDE
+disk -- or even a RAM disk. It just writes to a filesystem, and the kernel
+takes care of the rest.
+</p>
+
+</body>
+</section>
+<section>
+<title>Introducing kernel modules</title>
+<body>
+
+<p>
+So, what are kernel modules? Well, they're parts of the kernel that have been
+stored in a special format on disk. At your command, they can be loaded into
+the running kernel and provide additional functionality.
+</p>
+
+<p>
+Because the kernel modules are loaded on demand, you can have your kernel
+support a lot of additional functionality that you may not ordinarily want to
+be enabled. But once in a blue moon, those kernel modules are likely to come in
+quite handy and can be loaded -- often automatically -- to support that odd
+filesystem or hardware device that you rarely use.
+</p>
+
+</body>
+</section>
+<section>
+<title>Kernel modules in a nutshell</title>
+<body>
+
+<p>
+In sum, kernel modules allow for the running kernel to enable capabilities on
+an on-demand basis. Without kernel modules, you'd have to compile a completely
+new kernel and reboot in order for it to support something new.
+</p>
+
+</body>
+</section>
+<section>
+<title>lsmod</title>
+<body>
+
+<p>
+To see what modules are currently loaded on your system, use the <c>lsmod</c>
+command:
+</p>
+
+<pre caption="using lsmod">
+# <i>lsmod</i>
+Module                  Size  Used by    Tainted: PF
+vmnet                  20520   5
+vmmon                  22484  11
+nvidia               1547648  10
+mousedev                3860   2
+hid                    16772   0  (unused)
+usbmouse                1848   0  (unused)
+input                   3136   0  [mousedev hid usbmouse]
+usb-ohci               15976   0  (unused)
+ehci-hcd               13288   0  (unused)
+emu10k1                64264   2
+ac97_codec              9000   0  [emu10k1]
+sound                  51508   0  [emu10k1]
+usbcore                55168   1  [hid usbmouse usb-ohci ehci-hcd]
+</pre>
+
+</body>
+</section>
+<section>
+<title>Modules listing</title>
+<body>
+
+<p>
+As you can see, my system has quite a few modules loaded. the vmnet and vmmon
+modules provide necessary functionality for my <uri
+link="http://www.vmware.com/">VMWare</uri> program, which allows me to run a
+virtual PC in a window on my desktop. The "nvidia" module comes from <uri
+link="http://www.nvidia.com/">NVIDIA</uri> corporation and allows me to use my
+high-performance 3D-accelerated graphics card under Linux whilst taking
+advantage of its many neat features.
+</p>
+
+<p>
+Then I have a bunch of modules that are used to provide support for my
+USB-based input devices -- namely "mousedev," "hid," "usbmouse," "input,"
+"usb-ohci," "ehci-hcd" and "usbcore." It often makes sense to configure your
+kernel to provide USB support as modules. Why? Because USB devices are "plug
+and play," and when you have your USB support in modules, then you can go out
+and buy a new USB device, plug it in to your system, and have the system
+automatically load the appropriate modules to enable that device. It's a handy
+way to do things.
+</p>
+
+</body>
+</section>
+<section>
+<title>Third-party modules</title>
+<body>
+
+<p>
+Rounding out my list of modules are "emu10k1," "ac97_codec," and "sound," which
+together provide support for my SoundBlaster Audigy sound card.
+</p>
+
+<p>
+It should be noted that some of my kernel modules come from the kernel sources
+themselves. For example, all the USB-related modules are compiled from the
+standard Linux kernel sources. However, the nvidia, emu10k1 and VMWare-related
+modules come from other sources. This highlights another major benefit of
+kernel modules -- allowing third parties to provide much-needed kernel
+functionality and allowing this functionality to "plug in" to a running Linux
+kernel. No reboot necessary.
+</p>
+
+</body>
+</section>
+<section>
+<title>depmod and friends</title>
+<body>
+
+<p>
+In my <path>/lib/modules/2.4.20-gaming-r1/</path> directory, I have a number of
+files that start with the string "modules.":
+</p>
+
+<pre caption="other modules">
+$ <i>ls /lib/modules/2.4.20-gaming-r1/modules.*</i>
+/lib/modules/2.4.20-gaming-r1/modules.dep
+/lib/modules/2.4.20-gaming-r1/modules.generic_string
+/lib/modules/2.4.20-gaming-r1/modules.ieee1394map
+/lib/modules/2.4.20-gaming-r1/modules.isapnpmap
+/lib/modules/2.4.20-gaming-r1/modules.parportmap
+/lib/modules/2.4.20-gaming-r1/modules.pcimap
+/lib/modules/2.4.20-gaming-r1/modules.pnpbiosmap
+/lib/modules/2.4.20-gaming-r1/modules.usbmap
+</pre>
+
+<p>
+These files contain some lots of dependency information. For one, they record
+*dependency* information for modules -- some modules require other modules to
+be loaded first before they will run. This information is recorded in these
+files.
+</p>
+
+</body>
+</section>
+<section>
+<title>How you get modules</title>
+<body>
+
+<p>
+Some kernel modules are designed to work with specific hardware devices, like
+my "emu10k1" module which is for my SoundBlaster Audigy card. For these types
+of modules, these files also record the PCI IDs and similar identifying marks
+of the hardware devices that they support. This information can be used by
+things like the "hotplug" scripts (which we'll take a look at in later
+tutorials) to auto-detect hardware and load the appropriate module to support
+said hardware automatically.
+</p>
+
+</body>
+</section>
+<section>
+<title>Using depmod</title>
+<body>
+
+<p>
+If you ever install a new module, this dependency information may become out of
+date. To make it fresh again, simply type <c>depmod -a</c>. The <c>depmod</c>
+program will then scan all the modules in your directories in
+<path>/lib/modules</path> and freshening the dependency information. It does
+this by scanning the module files in <path>/lib/modules</path> and looking at
+what are called "symbols" inside the modules.
+</p>
+
+</body>
+</section>
+<section>
+<title>Locating kernel modules</title>
+<body>
+
+<p>
+So, what do kernel modules look like? For 2.4 kernels, they're typically any
+file in the <path>/lib/modules</path> tree that ends in ".o". To see all the
+modules in <path>/lib/modules</path>, type the following:
+</p>
+
+<pre caption="kernel modules in /lib/modules">
+# <i>find /lib/modules -name '*.o'</i>
+/lib/modules/2.4.20-gaming-r1/misc/vmmon.o
+/lib/modules/2.4.20-gaming-r1/misc/vmnet.o
+/lib/modules/2.4.20-gaming-r1/video/nvidia.o
+/lib/modules/2.4.20-gaming-r1/kernel/fs/fat/fat.o
+/lib/modules/2.4.20-gaming-r1/kernel/fs/vfat/vfat.o
+/lib/modules/2.4.20-gaming-r1/kernel/fs/minix/minix.o
+[listing "snipped" for brevity]
+</pre>
+
+</body>
+</section>
+<section>
+<title>insmod vs. modprobe</title>
+<body>
+
+<p>
+So, how does one load a module into a running kernel? One way is to use the
+<c>insmod</c> command and specifying the full path to the module that you wish
+to load:
+</p>
+
+<pre caption="using insmod">
+# <i>insmod /lib/modules/2.4.20-gaming-r1/kernel/fs/fat/fat.o</i>
+# <i>lsmod | grep fat</i>
+fat                    29272   0  (unused)
+</pre>
+
+<p>
+However, one normally loads modules by using the <c>modprobe</c> command. One
+of the nice things about the <c>modprobe</c> command is that it automatically
+takes care of loading any dependent modules. Also, one doesn't need to specify
+the path to the module you wish to load, nor does one specify the trailing
+".o".
+</p>
+
+</body>
+</section>
+<section>
+<title>rmmod and modprobe in action</title>
+<body>
+
+<p>
+Let's unload our "fat.o" module and load it using <c>modprobe</c>:
+</p>
+
+<pre caption="rmmod and modprobe in action">
+# <i>rmmod fat</i>
+# <i>lsmod | grep fat</i>
+# <i>modprobe fat</i>
+# <i>lsmod | grep fat</i>
+fat                    29272   0  (unused)
+</pre>
+
+<p>
+As you can see, the <c>rmmod</c> command works similarly to modprobe, but has
+the opposite effect -- it unloads the module you specify.
+</p>
+
+</body>
+</section>
+<section>
+<title>Your friend modinfo and modules.conf</title>
+<body>
+
+<p>
+You can use the <c>modinfo</c> command to learn interesting things about your
+favorite modules:
+</p>
+
+<pre caption="Using modinfo">
+# <i>modinfo fat</i>
+filename:    /lib/modules/2.4.20-gaming-r1/kernel/fs/fat/fat.o
+description: &lt;none&gt;
+author:      &lt;none&gt;
+license:     "GPL"
+</pre>
+
+<p>
+And make special note of the <path>/etc/modules.conf</path> file. This file
+contains configuration information for <c>modprobe</c>. It allows you to tweak
+the functionality of <c>modprobe</c> by telling it to load modules before/after
+loading others, run scripts before/after modules load, and more.
+</p>
+
+</body>
+</section>
+<section>
+<title>modules.conf gotchas</title>
+<body>
+
+<p>
+The syntax and functionality of <path>modules.conf</path> is quite complicated,
+and we won't go into its syntax now (type <c>man modules.conf</c> for all the
+gory details), but here are some things that you *should* know about this file.
+</p>
+
+<p>
+For one, many distributions generate this file automatically from a bunch of
+files in another directory, like <path>/etc/modules.d/</path>. For example,
+Gentoo Linux has an <path>/etc/modules.d/</path> directory, and running the
+<c>update-modules</c> command will take every file in
+<path>/etc/modules.d/</path> and concatenate them to produce a new
+<path>/etc/modules.conf</path>. Therefore, make your changes to the files in
+<path>/etc/modules.d/</path> and run update-modules if you are using Gentoo. If
+you are using Debian, the procedure is similar except that the directory is
+called <path>/etc/modutils/</path>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Summary and Resources</title>
+<section>
+<title>Summary</title>
+<body>
+
+<p>
+Congratulations; you've reached the end of this tutorial on basic Linux
+administration! We hope that it has helped you to firm up your foundational
+Linux knowledge. Please join us in our next tutorial covering intermediate
+administration, where we will build on the foundation laid here, covering
+topics like the Linux permissions and ownership model, user account management,
+filesystem creation and mounting, and more. And remember, by continuing in this
+tutorial series, you'll soon be ready to attain your LPIC Level 1 Certification
+from the Linux Professional Institute.
+</p>
+
+</body>
+</section>
+<section>
+<title>Resources</title>
+<body>
+
+<p>
+Speaking of LPIC certification, if this is something you're interested in, then
+we recommend that you study the following resources, which have been carefully
+selected to augment the material covered in this tutorial:
+</p>
+
+<p>
+There are a number of good regular expression resources on the 'net. Here are a
+couple that we've found:
+</p>
+
+<ul>
+  <li>
+    <uri link="http://www.zvon.org/other/reReference/Output/">Regular Expressions Reference</uri>
+  </li>
+  <li>
+    <uri link="http://zez.org/article/articleview/11/">Regular Expressions Explained</uri>
+  </li>
+</ul>
+
+<p>
+Be sure to read up on the Filesystem Hierarchy Standard at
+<uri>http://www.pathname.com/fhs/</uri>.
+</p>
+
+<p>
+In the <uri link="/doc/en/articles/bash-by-example-p1.xml">Bash by example
+article series</uri>, I show you how to use bash programming constructs to
+write your own bash scripts. This series (particularly parts one and two) will
+be good preparation for the LPIC Level 1 exam:
+</p>
+
+<p>
+You can learn more about <c>sed</c> in the <uri
+link="http://www-106.ibm.com/developerworks/linux/library/l-sed1.html?dwzone=linux">relevent
+IBM developerWorks articles</uri>. If you're planning to take the LPI exam, be
+sure to read the first two articles of this series.
+</p>
+
+<p>
+To learn more about <c>awk</c>, read the <uri
+link="http://www-106.ibm.com/developerworks/linux/library/l-awk1.html?dwzone=linux">relevent
+IBM developerWorks articles</uri>.
+</p>
+
+<p>
+We highly recommend the <uri
+link="http://www-106.ibm.com/developerworks/linux/library/l-faq/index.html">Technical
+FAQ for Linux users</uri>, a 50-page in-depth list of frequently-asked Linux
+questions, along with detailed answers. The FAQ itself is in PDF (Acrobat)
+format. If you're a beginning or intermediate Linux user, you really owe it to
+yourself to check this FAQ out.
+</p>
+
+<p>
+If you're not too familiar with the <c>vi</c> editor, I strongly recommend that
+you check out my <uri
+link="http://www-106.ibm.com/developerworks/edu/l-dw-linuxvi-i.html">Vi -- the
+cheat sheet method</uri> tutorial. This tutorial will give you a gentle yet
+fast-paced introduction to this powerful text editor. Consider this must-read
+material if you don't know how to use <c>vi</c>.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

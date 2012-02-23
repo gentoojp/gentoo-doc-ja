@@ -1,0 +1,513 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/openafs.xml,v 1.4 2004/01/03 05:24:18 nakano Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link = "/doc/ja/openafs.xml">
+<title>Gentoo Linux OpenAFS Guide</title>
+<author title="Editor">
+  <mail link="darks@gentoo.org">Holger Brueckner</mail>
+</author>
+<author title="Editor"> 
+<mail link="bennyc@gentoo.org">Benny Chuang</mail> 
+</author> 
+<author title="Editor"> 
+<mail link="blubber@gentoo.org">Tiemo Kieft</mail> 
+</author> 
+<author title="翻訳">
+  <mail link="yasunori@mail.portland.co.uk">福留康訓</mail>
+</author>
+
+<abstract>
+This guide shows you how to install a openafs server and client on gentoo linux 
+</abstract>
+
+<license/>
+
+<version>0.4</version> 
+<date>November 7, 2003</date> 
+<!-- Original revision: 1.12 -->
+
+<chapter>
+  <title>概略</title>
+  <section>
+    <title>このドキュメントについて</title>
+    <body>
+      <p>このドキュメントはGentoo LinuxにOpenAFSサーバのすべてのインストールを成功させるために提供します。このドキュメントの一部はAFS FAQとIBM's Quick Begining Guide(AFS)から引用しています。ちなみに、車輪の再発明のように原文を丸写ししたものではありません:)</p>
+    </body>
+  </section>
+  <section>
+    <title>AFSとは？</title>
+    <body>
+    
+    <p>
+    AFSはローカルエリアネットワークとワイドエリアネットワークを通じてファイルシステムの資源を効率よく利用するためホスト(サーバ、クライアントなど)同士の協力を可能にした分散ファイルシステムです。クライアントはすばやくアクセスし、さらによく使うオブジェクト(ファイルなど)ために自らの領域を持ちます。
+   </p>
+   <p>
+   AFSは"Andrewファイルシステム"と呼ばれていたCarnegie-Mellon大学やInformation Technology Center(情報技術センター)で独自に開発された分散ファイルシステムがもとになっています。"Andrew"はCMUでのリサーチプロジェクトの名前です。また、大学の創立者として尊敬されています。
+   昔にTransarcが作成したものです。"Andrew"はAFSがAndrewリサーチプロジェクト以上の成果を示すために退学しました。そして支持され、高品質のファイルシステムとなりました。これによりAFSと呼ばれるようになったのです。
+   しかしながら/afsとしてファイルシステムを作成するためのセルが多量に残っていました。その時に、ファイルシステムのルートを変更することは容易ではありませんでした。
+   なぜなら、ファイルシステムを改名しなければならないので早めにAFSの場所を確保する必要があったのです。そして名前とファイルシステムのルートが改名されました。
+   </p> 
+   </body>
+  </section>  
+    <section>
+    <title>AFSセルとは？</title>
+    <body>
+    <p>AFSセルとは共同管理や個人領域の提供、ファイスシステムの一体化を1つにしたサーバの集まりです。
+    一般的に、AFSセルは(gentoo.orgのような)同じインターネットドメインを使用するホストの集合体なのです。 
+    ユーザは情報を要求したり、ユーザのためにセルのサーバを整理するためにAFSクライアントワークステーションに登録されています。
+    ユーザはサーバに、アクセスするファイルや保存されているファイルの場所を知らないでしょう。
+    彼らはユーザがいなかったり、気づかないうちに別のサーバに各情報がコピーされたり、移動されたりするので、サーバが隣の部屋に置かれていても気づかないでしょう。
+    そのファイルには常にアクセスできるのです。ステロイド状態のNFSのようですね :)
+   </p>
+    </body>
+  </section>  
+  <section>
+    <title>AFSを使うことによりもたらされる利益とは？</title>
+    <body>
+    <p>AFSの強力な機能は次の通りです：
+ 
+       容易なファイル保護(一般的にクライアント同士で100Mから1GB)、
+       堅牢なセキュリティー(Kerberos 4ベース、アクセス制御リスト)、
+       容易なアドレス探索(1つのファイルシステムの所有)、
+       変更(随時サーバにセルの追加が可能)、
+       通信プロトコル。 
+    </p>
+    </body>
+  </section>  
+  <section>
+    <title>もっと多くの情報を得るためには</title>
+    <body>
+    <p>
+    <uri link="http://www.angelfire.com/hi/plutonic/afs-faq.html">AFS FAQ</uri>を参照してください。
+    </p>
+    <p>
+    Openafsのメインページ(<uri link="http://www.openafs.org">www.openafs.org</uri>)も参照してください。
+    </p>
+    <p>
+    AFSはTransarcが独自に開発し、IBMが所有しています。
+    <uri link="http://www.transarc.ibm.com/Product/EFS/AFS/index.html">Transarcsウェブページ</uri>でAFSの情報を得ることが出来ます。
+    </p>
+    </body>
+  </section>  
+
+</chapter>
+
+<chapter>
+<title>ドキュメント</title>
+  <section>
+    <title>AFSドキュメントの取得</title>
+    <body>
+    <p>
+    IBM作成のAFSドキュメントが取得可能です。とてもわかりやすくかかれていて、あなたがAFSサーバを運用するのであれば読みたくなるはずです。
+    </p>
+<pre>
+# <i>emerge app-doc/afsdoc</i>
+</pre>
+    </body>   
+  </section>
+</chapter>
+
+<chapter>
+<title>クライアントへのインストール</title>
+   <section>
+     <title>準備</title>
+     <body>
+       <note>
+         すべてのコマンドは一行で書くべきです!!
+         このドキュメントでは、読みやすく作られているため時々2行に要約されています。
+       </note>
+       <note>
+         あいにく、reiserfsを用いた発行が停止するので、AFSクライアントを正確に動作させ、ファイルを保護するためはext2パーティションが必須です。
+	 およそ200MBぐらいのext2パーティションを作成し、そのパーティションを<path>/usr/vice/cache</path>にマウントする必要があります。
+	   </note>
+       <p>
+       あなたは、CellServDBとafsクライアントをビルドする前のThisCellの2つのファイルを編集するべきです。 
+       (その2つのファイルは<path>/usr/portage/net-fs/openafs/files</path>にあります。)
+       </p>
+ <pre>
+ CellServDB:
+ >netlabs        #Cell name
+ 10.0.0.1        #storage
+ 
+ ThisCell:
+ netlabs       
+ </pre>
+       <p>
+       CellServDBはあなたのクライアントが特定のセルに対して接続する必要があることをサーバ(群)に伝えます。 
+       ThisCellは完全にわかるはずです。普通、構成した物には独創的な名前を使います。
+       あなたの(公式な)ドメインを名前として使うのはよい選択かもしれません。 
+       </p>
+     </body>
+   </section>
+   <section>
+     <title>クライアントのビルド</title>
+     <body>
+<pre>
+<i># emerge net-fs/openafs</i>
+</pre>
+       <p>
+       コンパイルが成功したら、次に進みましょう。
+       </p>
+     </body>
+   </section>
+   <section>
+     <title>afsの稼働</title>
+     <body>
+       <p>
+       以下のコマンドにより、システム起動時にafsクライアントを稼働させるために適切なリンクを作成します。
+       </p>
+       <warn>
+       afsクライアントを稼働されるためには、あなたのドメインを使用してafsサーバを稼働させる必要があります。
+       afsサーバがダウンしたのであれば、タイムアウトを起こすまでシステムが起動できないでしょう。(タイムアウトには非常に時間がかかります。)
+       </warn>
+<pre>
+# <i>rc-update add afs default</i>
+</pre>
+     </body>
+   </section>
+</chapter>
+
+<chapter>
+<title>サーバへのインストール</title>
+   <section>
+     <title>サーバのビルド</title>
+     <body>
+       <p>
+       以下のコマンドはAFSサーバとクライアントをセットアップするための必要なバイナリーをインストールします。
+       </p>
+<pre>
+# <i>emerge net-fs/openafs</i>
+</pre>
+     </body>
+   </section>
+  <section>
+    <title>AFSサーバの稼働</title>    
+    <body>
+      <p>
+      サンプルのCellServDBとThisCellのファイルをはじめに削除する必要があります。
+      </p>
+<pre>
+# <i>rm /usr/vice/etc/ThisCell</i>
+# <i>rm /usr/vice/etc/CellServDB</i>
+</pre>
+      <p>
+      次に、Basic OverSeer(BOS)サーバを初期化するために<b>bosserver</b>コマンドを実行します。 
+      それにより、他のサーバマシンで動作しているAFSサーバを監視し、制御します。 
+      システムに対してそれのことを初期値とみなします。
+      あなたがもうadminユーザを追加したくないときは、検査する権限を認めないようにするために<b>-noauth</b>フラグを含めます。
+      </p>
+      <p>
+      <warn>
+      検査する権限を認めないことはセルのセキュリティーを脆弱にしてしまいます。 
+      全行程での残りのステップをすべて完了しなければなりません。 
+      そしてあなたが検査できるようにしたBOSサーバを再び稼働させるまでマシンから離れてはいけません。
+      これはAFSドキュメントで言われていることです:)
+      </warn>
+      </p>
+<pre>
+# <i>/usr/afs/bin/bosserver -noauth &amp;</i>
+</pre>
+      <p>
+      BOSサーバが<path>/usr/vice/etc/CellServDB</path>と<path>/usr/vice/etc/ThisCell</path>を作成したことを確かめます。
+      </p>
+<pre>
+# <i>ls -al /usr/vice/etc/</i>
+-rw-r--r--    1 root     root           41 Jun  4 22:21 CellServDB
+-rw-r--r--    1 root     root            7 Jun  4 22:21 ThisCell
+</pre>
+      
+    </body>    
+  </section>
+  <section>
+    <title>Defining Cell Name and Membership for Server Process</title>
+    <body>
+      <p>
+      今セルの名前を決めて下さい。 
+      </p>
+      <p>      
+      <impo>名前を決める上でいくつかの制限があります。 
+      重要な制限は２つあり、１つは大文字を含めてはいけません。もう一つは６４文字を超えてはいけません。
+      セルの名前は<path>/afs</path>以下に表示されることを思い出して下さい。そうすれば、短い名前にした方がいいかも知れませんね。</impo>
+      </p>
+      <p>
+      <note>このガイドでの以下の各Code Listing内では、
+      インストールしたマシンの適切なホスト名(<b>afs.gentoo.org</b>のように)の代わりに<i>&lt;サーバ名&gt;</i>を用います。 
+      完全なセルの名前(<b>gentoo</b>のように)の代わりに</note><i>&lt;セル名&gt;</i>を用います。
+      </p>
+      <p>
+      セルの名前をセットするために<b>bos setcellname</b>コマンドを実行します：
+      </p>
+<pre>
+  # <i>/usr/afs/bin/bos setcellname &lt;サーバ名&gt; &lt;セル名&gt; -noauth</i>
+</pre>      
+    </body>
+  </section>
+  <section>
+    <title>データベースサーバプロセスの開始</title>
+    <body><p>
+       次に、<path>/usr/afs/local/BosConfig</path>ファイルの4つのデータベースサーバプロセスのアカウントを作成するために、<b>bos create</b>コマンドを使用します。
+       その4つのプロセスはデータベースサーバマシンのみ動作します。        
+       </p>
+       <p>
+       <table>
+       <tr>
+         <ti>kaserver</ti>
+	 <ti>AuthentificationサーバはAuthentificationデータベースを管理します。
+	     これは、Kerberos 5デーモンによって交代されることもあります。
+	     皆さんがこのドキュメントの更新ために自由に触っていただくことも出来ます:)</ti>
+       </tr>
+       <tr>
+         <ti>buserver</ti>
+	 <ti>バックアップサーバはバックアップデータベースを管理します。</ti>
+       </tr>
+       <tr>
+         <ti>ptserver</ti>
+	 <ti>ProtectionサーバはProtectionデータベースを管理します。</ti>
+       </tr>
+       <tr>
+         <ti>vlserver</ti>
+	 <ti>Volume LocationサーバはVolume Locationデータベース(VLDB)を管理します。
+	     これはとても重要です:)</ti>
+       </tr>
+       </table>    
+       </p>
+<pre>
+# <i>/usr/afs/bin/bos create &lt;サーバ名&gt; kaserver simple 
+    /usr/afs/bin/kaserver -cell &lt;セル名&gt; -noauth</i>
+# <i>/usr/afs/bin/bos create &lt;サーバ名&gt; buserver simple 
+    /usr/afs/bin/buserver -cell &lt;セル名&gt; -noauth</i>
+# <i>/usr/afs/bin/bos create &lt;サーバ名&gt; ptserver simple 
+    /usr/afs/bin/ptserver -cell &lt;セル名&gt; -noauth</i>
+# <i>/usr/afs/bin/bos create &lt;サーバ名&gt; vlserver simple 
+    /usr/afs/bin/vlserver -cell &lt;セル名&gt; -noauth</i>
+</pre>
+       <p>
+       すべてのサーバが<b>bos status</b>コマンドを用いて動作していることを確かめることが出来ます：
+       </p>
+<pre>
+# <i>/usr/afs/bin/bos status &lt;サーバ名&gt; -noauth</i>
+Instance kaserver, currently running normally.
+Instance buserver, currently running normally.
+Instance ptserver, currently running normally.
+Instance vlserver, currently running normally.
+</pre>
+       
+    </body>
+  </section>
+  <section>
+    <title>セルセキュリティーの初期化</title>
+    <body>
+      <p>
+      今からセルのセキュリティー機構を初期化します。
+      以下のようにAuthentificationデータベース上で最初に2アカウントを作成することによってはじめます：
+      核となる管理者権限を持ったアカウントを規定により<b>admin</b>と言います。 
+      AFSサーバで使用するアカウントを<b>afs</b>と言います。
+      認証された<b>afs</b>ユーザのログは作成されません。 
+      しかし、AuthenticationサーバのTicket Grantingサービス(TGS)はAFSクライアントに対して認証をするサーバチケットを暗号化するためにそのアカウントを利用します。
+      このサウンドはほとんど Kerberosに似ています（訳注：原文では、This sounds pretty much like Kerberos.ですが私にはどうもsoundの意味がわかりません。）:)
+      </p>
+      <p>
+      <b>kas</b>インタラクティブモードに入ります
+      </p>
+<pre>
+# <i>/usr/afs/bin/kas -cell &lt;セル名&gt; -noauth</i>
+ka&gt; <i>create afs</i>
+initial_password:
+Verifying, please re-enter initial_password:
+ka&gt; <i>create admin</i>
+initial_password:
+Verifying, please re-enter initial_password:
+ka&gt; <i>examine afs</i>
+
+User data for afs
+  key (0) cksum is 2651715259, last cpw: Mon Jun  4 20:49:30 2001
+  password will never expire.
+  An unlimited number of unsuccessful authentications is permitted.
+  entry never expires.  Max ticket lifetime 100.00 hours.
+  last mod on Mon Jun  4 20:49:30 2001 by $lt;none&gt;
+  permit password reuse
+ka&gt; <i>setfields admin -flags admin</i>
+ka&gt; <i>examine admin</i>
+ 
+User data for admin (ADMIN)
+  key (0) cksum is 2651715259, last cpw: Mon Jun  4 20:49:59 2001
+  password will never expire.
+  An unlimited number of unsuccessful authentications is permitted.
+  entry never expires.  Max ticket lifetime 25.00 hours.
+  last mod on Mon Jun  4 20:51:10 2001 by $lt;none&gt;
+  permit password reuse
+ka&gt;
+</pre>
+      <p>
+        <path>/usr/afs/etc/UserList</path>へ<b>admin</b>ユーザを追加するために<b>bos adduser</b>コマンドの実行します。
+      </p>
+<pre>
+# <i>/usr/afs/bin/bos adduser &lt;サーバ名&gt; admin -cell &lt;セル名&gt; -noauth</i>
+</pre>
+      <p>
+        <path>/usr/afs/etc/KeyFile</path>のAFSサーバの暗号鍵を定義するために<b>bos addkey</b>コマンドを発行します。
+      </p>
+      <note>
+       あなたがを入力した鍵を使用する場合、<b>kas</b>を用いてafsユーザを作成するときに設定したパスワードを入力します。
+      </note>
+<pre>
+# <i>/usr/afs/bin/bos addkey  &lt;サーバ名&gt; -kvno 0 -cell &lt;セル名&gt; -noauth</i>
+    input key:
+    Retype input key:
+</pre>
+      <p>
+        adminユーザに対してProtectionデータベースのアカウントを作成するために<b>pts createuser</b>コマンドを発行します。
+      </p>
+      <note>
+        デフォルトでのProtectionサーバは、<b>admin</b>ユーザのためにAFS UIDを1つ割り当てます。そのAFS UIDははじめにあなたが作成したユーザアカウントにあたります。
+		ローカルパスワードファイル(/etc/passwdまたは/etc/passwdに相当するファイル)には、すでに適当なUIDを作成するために<b>-id</b>を使用し異なったUIDを割り当てる<b>admin</b>のためのアカウントがあります。	
+	　</note>
+<pre>
+# <i>/usr/afs/bin/pts createuser -name admin -cell &lt;セル名&gt; [-id &lt;AFS UID&gt;] -noauth</i>
+</pre>
+      <p>
+        多くのシステムで<b>admin</b>ユーザを作成するために<b>pts adduser</b>コマンドを発行します：管理者グループ。そして 
+		新しいユーザを確認するために<b>pts membership</b>コマンドを発行します。
+      </p>
+<pre>
+# <i>/usr/afs/bin/pts adduser admin system:administrators -cell &lt;セル名&gt; -noauth</i>
+# <i>/usr/afs/bin/pts membership admin -cell &lt;セル名&gt; -noauth</i>
+      Groups admin (id: 1) is a member of:
+        system:administrators
+</pre>
+      <p>
+        AFSサーバのすべてのプロセスを再起動します。
+      </p>
+<pre>
+# <i>/usr/afs/bin/bos restart &lt;サーバ名&gt; -all -cell &lt;セル名&gt; -noauth</i>
+</pre>
+    </body>
+  </section>
+  <section>
+    <title>ファイルサーバ、VolumeサーバとSalvagerを起動</title>
+    <body>
+    <p>
+      <b>fs</b>プロセスを起動します。fsはFileサーバ、VolumeサーバとSalavager (fileserver、
+      volserverとsalvagerプロセス)から構成しています。
+    </p>
+<pre>
+# <i>/usr/afs/bin/bos create &lt;server name&gt; fs fs /usr/afs/bin/fileserver 
+		                              /usr/afs/bin/volserver 
+        		                      /usr/afs/bin/salvager 
+                		              -cell &lt;cell name&gt; -noauth</i>
+</pre>
+    <p>
+    動作しているすべてのプロセスの確認
+    </p>
+<pre>
+ # <i>/usr/afs/bin/bos status &lt;サーバ名&gt; -long -noauth</i>
+ Instance kaserver, (type is simple) currently running normally.
+     Process last started at Mon Jun  4 21:07:17 2001 (2 proc starts)
+     Last exit at Mon Jun  4 21:07:17 2001
+     Command 1 is '/usr/afs/bin/kaserver'
+
+ Instance buserver, (type is simple) currently running normally.
+     Process last started at Mon Jun  4 21:07:17 2001 (2 proc starts)
+     Last exit at Mon Jun  4 21:07:17 2001
+     Command 1 is '/usr/afs/bin/buserver'
+
+ Instance ptserver, (type is simple) currently running normally.
+     Process last started at Mon Jun  4 21:07:17 2001 (2 proc starts)
+     Last exit at Mon Jun  4 21:07:17 2001
+     Command 1 is '/usr/afs/bin/ptserver'
+
+ Instance vlserver, (type is simple) currently running normally.
+     Process last started at Mon Jun  4 21:07:17 2001 (2 proc starts)
+     Last exit at Mon Jun  4 21:07:17 2001
+     Command 1 is '/usr/afs/bin/vlserver'
+
+ Instance fs, (type is fs) currently running normally.
+     Auxiliary status is: file server running.
+     Process last started at Mon Jun  4 21:09:30 2001 (2 proc starts)
+     Command 1 is '/usr/afs/bin/fileserver'
+     Command 2 is '/usr/afs/bin/volserver'
+     Command 3 is '/usr/afs/bin/salvager'
+</pre>
+    <p>
+      次の行動はAFSファイルサーバマシンがセル内で動作しているかどうかに依存します：
+    </p>
+    <p>
+      初めてAFS領域を作成したセルにAFSサーバをインストールしているなら、<b>root.afs</b>で実行します。
+    </p>
+    <note>
+   　論理パーティション名のために、マシンのAFSサーバパーティションの1つの名前を代用します。
+     デフォルトでそれらのパーティションは、<path>/vicex</path>と名付けられます。
+     xは、a～zの範囲にあるからです。
+    </note>
+<pre>
+  # <i>/usr/afs/bin/vos create &lt;サーバ名&gt; 
+                            &lt;パーティション名&gt; root.afs 
+				-cell &lt;セル名&gt; -noauth</i>
+</pre>
+    <p>
+      ローカルマシン上の現在の容量とともにVLDB (Volume Location Database)との互換性を保つために<b>vos sncvldb</b>と<b>vos syncserv</b>コマンドを発行し、セル内に、AFSファイルサーバマシンや容量があるのであれば、
+      これはあなたの新しいサーバにすべてのデータをコピーします。
+    </p>
+<pre>
+  # <i>/usr/afs/bin/vos syncvldb &lt;サーバ名&gt; -cell &lt;セル名&gt; -verbose -noauth</i>
+  # <i>/usr/afs/bin/vos syncserv &lt;サーバ名&gt; -cell &lt;セル名&gt; -verbose -noauth</i> 
+</pre>
+    </body>
+  </section>
+  <section>
+    <title>アップデートサーバの一部の機能を起動</title>
+    <body>
+<pre>
+# <i>/usr/afs/bin/bos create &lt;サーバ名&gt; 
+                    upserver simple "/usr/afs/bin/upserver 
+		    -crypt /usr/afs/etc -clear /usr/afs/bin" 
+		    -cell &lt;セル名&gt; -noauth</i>
+</pre>
+    </body>
+  </section>
+  <section>
+    <title>AFS filespaceのTop Levelを設定</title>
+    <body>
+      <p>
+        はじめにacl'sをセットする必要があります。その結果、ユーザは<path>/afs</path>を確認することが出来ます。	
+      </p>
+<pre>
+# <i>/usr/afs/bin/fs setacl /afs system:anyuser rl</i>
+</pre>
+      <p>
+       あなたはルート領域を作成する必要があります。そして、<path>/afs/&lt;セル名&gt;</path>は読み込み専用で、
+       <path>/afs/.&lt;セル名&gt;</path>は読み書き出来るようにマウントします。
+<pre>
+# <i>/usr/afs/bin/vos create &lt;サーバ名&gt;&lt;パーティション名&gt; root.cell</i>
+# <i>/usr/afs/bin/fs mkmount /afs/&lt;セル名&gt; root.cell </i>
+# <i>/usr/afs/bin/fs setacl /afs/&lt;セル名&gt; system:anyuser rl</i>
+# <i>/usr/afs/bin/fs mkmount /afs/.&lt;セル名&gt; root.cell -rw</i>     
+</pre>
+      </p>
+      <p>
+        ついに完成しました!!! 只今からローカルネット上で、AFSファイルサーバを稼働させることが出来ます。
+	　　大きなカップにコーヒーを入れている時間を利用して、AFSドキュメントをプリントアウトしましょう!!!
+      </p>
+      <note>
+        AFSサーバのために正常に機能させることはとても重要です。そしてすべてのシステム時計を同期させます。 
+	そのマシン(e.g. the AFS server)上にntpサーバをインストールすることにより、より上手に完成します。
+	そしてntpクライアントを利用して、すべてのクライアントの時計を同期させます。  
+	これも、afsクライアントによって行われることになります。 
+      </note>
+    </body>
+  </section>
+  
+</chapter>
+
+<chapter>
+  <title>基本的な管理</title>
+  <section>
+  <title></title>
+  <body>
+    <p>現在執筆中です ... さしあたりAFSドキュメントを読んでください。 :)</p>
+  </body>
+  </section>
+</chapter>
+</guide>

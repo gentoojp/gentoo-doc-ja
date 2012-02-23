@@ -1,0 +1,566 @@
+<?xml version='1.0' encoding="UTF-8"?>
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/gentoo-ppc-faq.xml">
+	<title>Gentoo Linux/PowerPC FAQ</title>
+	<author title="Editor"><mail link="rajiv@gentoo.org">Rajiv Manglani</mail></author>
+	<author title="Editor"><mail link="pylon@gentoo.org">Lars Weiler</mail></author>
+	<author title="翻訳"><mail link="088@t.email.ne.jp">Takashi Ota</mail></author>
+	<abstract>このFAQはgentoo-ppc-devメーリングリストとIRCの質疑応答から集められたものです。 
+	-- もし質問(あるいは答え!)があれば付け加え、著者またはドキュメンテーションチームのどちらかに連絡をとって下さい。
+	</abstract>
+
+	<version>1.5</version>
+	<date>29th July 2003</date>
+	<!-- Original revision: 1.8 -->
+
+	<chapter>
+		<title>インストール</title>
+
+			<section>
+				<title>Mac OS Xで、どのようにしたらダウロードしたISOイメージが不正なものでないか検証できますか？
+				それから、Mac OS XでCDを作成するにはどのようにしますか？</title>
+				<body>
+
+				<p>最初に断っておきますが、<e>Finder</e>内でFTPサーバーをマウントしたり、
+				ドラッグアンドドロップでファイルをコピーしないでください。これはISOイメージが不正になる原因です。
+				代わりに<c>curl</c>(<c>curl -O http://path/to/iso</c>のようにして)を使ってください。</p>
+
+				<p>いまのところMac OS Xが<c>md5sum</c>を提供していないので、<c>OpenSSL</c>を使ってMD5チェックサムを生成してください。
+				ターミナルアプリケーションで次のように入力します。</p>
+
+				<pre caption="OpenSSLによるMD5チェックサム">
+$ <i>openssl md5 /path/to/iso</i>
+<comment>ISOイメージのサイズやCPUによってはしばらく時間がかかります</comment>
+				</pre>
+
+				<p>ここでサーバー上の<path>.md5</path>で終わる確認ファイルの内容と出力結果を比較します。
+				これが同じなら、ダウンロードは正しく行わています。
+				でもまだそれをマウント(例えばDisk Copy)<e>してはいけません</e>！</p>
+
+				<p>確認が終わったらISOイメージを<e>Finder</e>で選択し、<e>ファイル -> 
+				ディスクを作成</e> を実行します。空のCD-Rを挿入して書き込んでください。書き込みには<e>Disk
+				Copy</e>、<e>Toast</e>あるいは<e>XCDRoast</e>を使うこともできます。</p>
+
+				<p>書き込みが終わったら新しいGentoo Linux LiveCDから起動できます！</p>
+
+			</body>
+		</section>
+
+		<section>
+			<title>Gentoo LinuxとMac OS Xのデュアルブートはできますか?</title>
+			<body>
+
+				<p>はいできます！事実、<e>yabootconfig</e>は自動的にLinux、Mac OS X、
+				そして更にclassic Mac OSを見つけだし<path>/etc/yaboot.conf</path>
+				に設定します。(yabootconfigの詳細については<uri
+				link="/doc/en/gentoo-ppc-install.xml">Gentoo PPC Install Guide</uri><uri link="/doc/ja/gentoo-ppc-install.xml">（日本語訳）</uri>
+				を参照)。秘訣はハードドライブを分割する方法にあります。
+				Gentooをインストールする前に、Mac OS X インストールCDから起動します。
+				<c>ディスクユーティリティ</c>を使ってマシンのドライブに二つか三つのバーティションを作ります。
+				代わりに、最近のLiveCDからHFSとHFS+パーティションを操作できる<c>parted</c>を使うこともできます。
+				これを使えばすべてのディスクを初期化することなく、パーティションの縮小をすることができます。
+				一つめは、Linuxパーティション(root+swap+/home他)の全容量分で、たった一つのパーティションにすべきです。
+				このパーティションのフォーマットは重要ではありません。二つめはOS Xのために。三つめ(それとオプションの)
+				パーティションはクラッシックMac OSのために。
+				これはMac OS 9を別のパーティションに置きたい場合にだけ必要です。</p>
+				
+				<note>yabootを使ってトリプルブートを可能にするには、Mac OS 9は
+				Mac OS Xがインストールされたパーティションとは別にする必要があります。</note>
+
+				<p>パーティション作業が終わったら、Mac OS XとMac OS 9をそれぞれのパーティションにインストールします。
+				一旦インストールが完了してしまえば、<uri link="/doc/en/gentoo-ppc-install.xml">Gentoo Linux PPC Install
+				Guide</uri><uri link="/doc/ja/gentoo-ppc-install.xml">（日本語訳）</uri>に従って始めることができます。パーティション作業の節では、
+				<c>mac-fdisk</c>を使ってGentooのために作った大きなパーティションを<e>削除</e>
+				してください。その領域にbootstrapパーティション、root、swapとGentooで使いたいと思うその他のパーティションを作成します。</p>
+
+				<p>もしOld World Macintosh (iMac以前)であっても、先に述べたのと同様の手順です。でも、Mac OS 9 インストールCDと
+				<c>ドライブセットアップ</c>ユーティリティを使ってください。Old Worldマシンではbootstrapパーティションは必要ありません。</p>
+
+			</body>
+		</section>
+
+		<section>
+			<title>Old World Macintoshを持ってますがBootXが必要とのこと。
+			でも PPCインストールCD上ではBootXインスーラーを開けないというトラブルをかかえています。どうしたらよいですか？</title>
+			<body>
+
+				<p>ファイルを開くには新しいバージョンの<i>StuffIt Expander</i>が必要です。
+				無料で<uri
+				link="http://www.stuffit.com/expander/download.html">ダウンロード</uri>
+				できます。</p>
+
+			</body>
+		</section>
+
+		<section>
+			<title>Old Worldマシンで、MacOSを使わずGentoo Linuxを起動させることは
+			できますか？ MacOS無しのマシンにしたいので。</title>
+			<body>
+
+				<p>実験に費やす多くの時間をもっているなら、<uri
+				link="http://penguinppc.org/projects/quik/">Quik</uri>に挑戦してください。<e>Quik</e>はOld World PPCマシン用のブートローダーです。
+				マシンが<e>BootX</e>を使っているなら、
+				<e>Quik</e>を使うことができます。<e>Yaboot</e>を使っている場合は使えません。
+				<e>Quik</e>はインストールが信じられないほど難しく、
+				現在のところgcc 3.x環境(読みかえれば: Gentoo 1.4 以上)では<e>動きません</e>。
+				でもその結果はMacOSを読み込む必要がないので「素晴らしい」と「驚いた」の間のどこかにあるはずです。
+				Yabootの速度を考えてみてください。</p>
+
+				<p>必ず<uri
+				link="http://penguinppc.org/projects/quik/quirks.shtml">Quik quirks
+				page</uri>を読んでください。また「<uri
+				link="http://lppcfom.sourceforge.net/fom-serve/cache/574.html">Is Quik
+				Bootloader for Mac OS Dead?</uri>」と「<uri
+				link="http://www.imaclinux.net/php/imaclinux_g_h.php3?single=17+index=0">Guide:
+				Quik - Direct Booting for Older PowerMacs</uri>」を参照してください。「<uri
+				link="http://www.netbsd.org/Ports/macppc/models.html">NetBSD/macppc
+				Model Support</uri><uri link="http://www.jp.netbsd.org/ja/Ports/macppc/models.html">（日本語訳）</uri>」ドキュメントは
+				いろいろなAppleとクローンPowerPCのOpenFirmwareバージョンについて書かれています。</p>
+
+				<p>情報を提供してくれたvladimirに感謝します。</p>
+
+			</body>
+		</section>
+
+		<section>
+			<title>Beige G3マシンを持っています。Gentoo Linux/PPCをセカンドIDEハードドライブにインストールすることはできますか？</title>
+			<body>
+
+				<p>初期のBeige G3マシン(「Rev 1」マザーボードとATI
+				RageII+ chipのもの)はスレーブIDEドライブをサポートしていません。
+				このマシンでセカンドハードドライブを使うには、内部もしくは外部のSCSIコネクタに取り付けるか、
+				PCI IDEカードを導入する必要があります。これ以降のG3マシンではこの制限はありません。
+				より多くの情報は<uri>http://www.xlr8yourmac.com/G3-ZONE/IDE/index.html</uri>を見てください。</p>
+
+			</body>
+		</section>
+
+		<section>
+			<title>GentooをPowerBookやiBookにインストールしようとしているんですが、
+			内蔵ハードドライブが見つかりません。どうしたらよいですか？</title>
+			<body>
+
+				<p>PowerBookでは、カーネルに<c>hda=1,1,1</c>を起動時に渡します。
+				それで問題は解決されます。<e>Yaboot</e>プロンプトで
+				<c>boot hda=1,1,1</c>と入力してください。一部のiBookでは
+				<c>hda=16383,16,64</c>が必要です。</p>
+
+			</body>
+		</section>
+
+		<section>
+			<title>私の<path>/etc/fstab</path>ファイルには<path>/dev/BOOT</path>の項目があります。
+			この項目をbootstrapパーティションに設定する必要はありますか？</title>
+			<body>
+
+				<p>いえ、ありません。別領域のbootパーティション(<path>/boot</path>)を設定していなければ、
+				この項目は必要なく、安全のためには<path>/etc/fstab</path>から削除したほうが良いでしょう。
+				bootstrapパーティションは<path>/boot</path>では<e>ありません</e>からどこにも関連づけられません。
+				通常、PowerPCマシンでは別領域の<path>/boot</path>パーティションは必要ありませんし、
+				bootstrapパーティションはマウントされるべきではありません。</p>
+
+			</body>
+		</section>
+
+		<section>
+			<title>インストールが今終わりました。でも再起動の後、押したマシンのキーボードとは違う文字が表示されます。
+			どうしたらよいですか？</title> 
+			<body>
+
+				<p>Englishキーマップをお使いなら、それはカーネル設定の問題のように思えます。
+				次のオプションを設定してカーネルを再構築する必要があるでしょう:</p>
+
+				<pre caption="Input core support">
+<comment>(ここに書かれているものはデフォルト値です。でもチェックしてください)</comment>
+ &lt;*&gt; Input core support
+ &lt;*&gt;   Keyboard support 
+ &lt;*&gt;   Mouse support
+ (1024)   Horizontal screen resolution
+ (768)    Vertical screen resolution
+ &lt; &gt;   Joystick support
+ &lt;*&gt;   Event interface support
+				</pre>
+
+				<pre caption="Macintosh Device Drivers">
+ [*] Apple Desktop Bus (ADB) support
+ [ ]    Include MacIO (CHRP) ADB driver   <comment>重要ではありません</comment>
+ [*]    Use input layer for ADB devices
+ [ ]      Support for ADB raw keycodes    <comment>これをOFFにしてください</comment>
+ [*]      Support for mouse button 2+3 emulation
+				</pre>
+
+				<p>これをすると、今後
+				<path>/proc/sys/dev/mac_hid</path>で2と3のボタンをエミュレーションできるようになります
+				(Gentoo PPC Install Guideの18章を参照してください)。</p>
+
+				<p>何らかの理由でカーネルの再構築をしたくなければ、
+				<c>keyboard_sends_linux_keycodes=1</c>を<path>yaboot.conf</path>の中でカーネル引数として
+				追加してください。これでも問題は解決できますが、もしかしたら別の問題を引き起こすかもしれません。</p>
+
+				<p>この情報を提供してくれたJoe McMahonに感謝します。</p>
+
+			</body>
+		</section>
+
+		<section>
+			<title>インストールが今終わりました。でも、マシンでGentooを再起動しemergeを試したのですが、
+			、it cannot 'stat'
+			a fileというエラーが起きます。何が悪いのでしょう？</title>
+			<body>
+
+				<p>時間が正しく設定されているかチェックしてください。時間を設定し
+				<path>/etc/localtime</path>を適切なタイムゾーン(
+				<path>/usr/share/zoneinfo</path>にあります)にリンクすれば問題は解決できます。また、
+				カーネル設定(インストールガイドで指定されているように)の
+				<e>Character devices</e>セクションで
+				<e>Enhanced RTC</e>オプションを<e>無効</e>にしてください。</p>
+
+			</body>
+		</section>
+	</chapter>
+
+
+	<chapter>
+		<title>ラップトップサポート</title>
+		<section>
+			<title>Linuxが動作しているPowerBookで、
+			どのようにしたらプロセッサを最高速度に設定できますか？</title>
+			<body>
+
+				<p>PowerBookの一部のプロセッサは設計速度よりも遅い速度で起動します。
+				遅い速度で起動することはパフォーマンスと引き替えにバッテリー寿命を伸ばすということです。
+				マシンのオペレーティングシステムは最高速度で動作するようハードウェアに指示しなければなりません。
+				これをMac OS Xでは「Reduced processor performance」、Linuxでは「CPU Scaling」と言います。
+				Linuxでプロセッサの現在の速度をチェックするには、
+				<c>cat /proc/cpuinfo</c>と入力します。Mac OS Xでは、
+				<e>省エネルギーパネル</e>のシステムパフォーマンスパネルから辿り、
+				「オプション」にある「プロセッサーのパフォーマンス低減」を無効にします。
+				<e>Apple System Profiler</e> (アプリケーションから辿りユーティリティの中にあります)を起動します。</p>
+
+				<warn>この方法をマシンのオーバークロックの手段として使ってはいけません。
+				不適切な値を使えば予測不能な事態を招きます。マシンがフライになっても私たちは責任を負えません！</warn>
+
+				<p>もし<e>Apple System Profiler</e>がLinuxが動作中の時よりも速い速度を報告していたら、
+				簡単なコマンドでプロセッサを最高速度に設定できます。
+				最初に、マシンが<c>2.4.20-pre9-ben0</c>かそれ以降のカーネルで動く必要があります。
+				それより前のカーネルではプロセッサ速度の変更に必要なコードは含まれていません。
+				次に、<c>CPU Frequency scaling</c>を<e>無効</e>にしてカーネルをコンパイルします。
+				最後に、次の例のようして適切なコマンドを実行します。</p>
+
+				<pre caption="CPU Frequency scaling">
+<codenote>これはただの例です。マシンに合った適切な値を使ってください。</codenote>
+
+echo "0:667000:1000000:performance" > /proc/cpufreq    <codenote>1GHz PowerBook G4用</codenote>
+echo "0:667000:800000:performance" > /proc/cpufreq     <codenote>800MHz PowerBook G4用</codenote>
+				</pre>
+
+				<p>多くのユーザーはこのコマンドを
+				<path>/etc/conf.d/local.start</path>の最後に追加すればよいでしょう。
+				このファイルはマシンの起動時にいつでも実行されます。</p>
+
+			</body>
+		</section>
+
+		<section>
+			<title>PowerPCラップトップでGentooを動かしています。
+			ラップトップ特有の機能を有効にするにはどんなパッケージをインストールしたら良いですか？</title>
+			<body>
+
+				<p>４つの主要なパッケージをインストールすると良いでしょう。</p>
+
+				<ul>
+					<li><e>pmud</e>はハードウェアのパワーマネジメントデーモン(x86のapmdと似ています)です。
+					pmudが動作するためにはサウンドデバイス(<path>/dev/mixer</path>)が必要なので注意してください。</li>
+					<li><e>pbbuttonsd</e>は多くのPPCラップトップに備えられている輝度と音量調整を使うためのツールです。
+					最新のバージョンでは、pmudを置き換えるような役目も果たします。</li>
+					<li><e>gtkpbbuttons</e>はpbbuttonsdのGTKフロントエンドです
+					(Xでボタンを押したときにビジュアルなフィードバックがあります)。<e>gtkpbbuttons</e>
+					にはGTKが必要で、最も適切なのは(Xでいつでも動作させるなら)、
+					X sessionファイル(<path>~/.Xsession</path>)に追加することです。
+					</li>
+					<li><e>powerprefs</e>はpbbuttonsdと一緒に働き、
+					トラックパッドオプションやその他いろいろな種類の設定機能を与えてくれます。</li>
+				</ul>
+
+				<p>これらのパッケージは次のリストにある適切なコマンドを使うことでインストールできます:</p>
+
+				<pre>
+# <c>emerge pmud; rc-update add pmud default</c> <comment>pbbuttonsdで完全に置き換えるなら必要ありません</comment>
+# <c>emerge pbbuttonsd; rc-update add pbbuttonsd default</c>
+# <c>emerge gtkpbbuttons</c>
+# <c>emerge powerprefs</c>
+				</pre>
+
+				<note>あなたの好みに応じて<path>/etc/pbbuttonsd.conf</path>を編集してください。
+				pbbuttonsdが用意している機能のうち、特にFxキーの動作について、Fxキーをファーストモードで使うなら、
+				輝度と音量キーはfnキーの助けを借りましょう。</note>
+
+				</body>
+		</section>
+
+		<section>
+			<title>どのようにしたらマシンのAirPortや他のWi-Fiカードを
+			設定できますか？</title>
+			<body>
+
+				<p>最初に、AirPortカードのサポートをカーネルに組み込むか、
+				モジュールとして構築したならそれを読み込みます。それから<c>emerge
+				wireless-tools; iwconfig</c>を実行します。</p>
+
+				<note>AirPort ExtremeカードはLinuxではまだサポートされていません。</note>
+
+			</body>
+		</section>
+
+		<section>
+			<title>iBook2やPowerBookの内蔵モデムは動きますか？</title>
+			<body>
+
+				<p><path>net-dialin/hcfusbmodem</path>をemergeすると
+				<path>/dev/ttySHCF0</path>にデバイスが用意できます。それからPPPに似たような設定を行います。
+				インストールについての更なる情報は
+				<uri>http://www.linuxant.com/drivers/hcf/install.html</uri>で見つけることができます。</p>
+
+			</body>
+		</section>
+	</chapter>
+
+
+	<chapter>
+		<title>アプリケーション</title>
+		<section>
+			<title>Xを簡単に設定するにはどうしたらよいですか？</title>
+			<body>
+
+				<p><c>emerge xeasyconf; Xeasyconf</c>を実行してください(Gerkさんのおかげです)。</p>
+
+			</body>
+		</section>
+
+		<section>
+			<title>RAGE128やRADEONカードでダイレクトレンダリング(DRM)を有効にするには
+			どうしたら良いですか？</title>
+			<body>
+
+				<p>xfree(4.3.x)とxfree-drm-4.3.0をemergeします。</p>
+
+				<p>カーネル設定を確認して次のようなオプションを有効にしてください。</p>
+
+				<pre caption="DRMのカーネル設定">
+Character devices ---&gt;
+&lt;*&gt; /dev/agpgart (AGP Support)
+[*] Apple UniNorth support
+[*] Direct Rendering Manager (XFree86 DRI support)
+				</pre>
+
+				<p>それから、RAGE128とRADEONのDRMドライバがどちらもカーネル
+				(xfree-drmはこの作業に必要なドライバなど、多くの更新されたバージョンのものを提供します)
+				で無効になっているか確認してください。</p>
+
+				<pre caption="RAGE128とRADEONドライバを無効にする">
+&lt; &gt; ATI Rage 128
+&lt; &gt; ATI Radeon
+				</pre>
+
+				<p>必要ならカーネルを再構築してインストールします。それから、固有のフレームバッファ
+				(つまり、radeonfbやatyfbであってoffb(訳注:OpenFirmwareフレームバッファ)やofの単なるビデオモードでは<e>ありません</e>)
+				から起動されているか確認し、<c>Xeasyconf</c>を実行します。</p>
+
+				<impo>カードの種類に応じて<path>XF86Config-4</path>ファイルを編集する必要があります。
+				<c>Xeasyconf</c>を実行した場合、ビデオカードの設定では「ati」ではなく「auto」オプションを選択してください。</impo>
+
+				<p><c>dmesg</c>コマンドを実行すれば、どのバージョンのRADEON DRMモジュールが読み込まれたかわかります。
+				すべてうまく行っていれば、1.7.0かより新しいものが読み込まれていますが、
+				1.2.xだったらカーネル付属のRADEONドライバが動作しているカーネルにまだ組み込まれているか、
+				モジュールとして読み込まれています。
+				トラブル解決のため、詳細な情報を得るには<path>/var/log/Xfree.0.log</path>を見るのがよいでしょう。</p>
+
+				<note>もし現在のカーネルで<c>make modules_install</c>を実行したり、
+				新しいカーネルにアップグレードした時には、もう一度xfree-drmをemergeしてください。</note>
+
+			</body>
+		</section>
+
+		<section>
+			<title>最近XFreeをemergeしましたが、それを使ったら、国際化キーボードレイアウトが正しく動きません。
+			主要なキーは正しく働きますが。
+			「@(アトマーク)」のような特別な文字を書くことができません。startxで
+			「could not load keymap, falling back to defaultkeymap」のようなメッセージが出力されます。
+			何が悪いのでしょうか？</title>
+			<body>
+
+				<p><path>/var/tmp</path>のパーミションが
+				<path>drwxrwxrwx</path>に設定されているかチェックしてください。もしそうでなければ<c>chmod a+rwx
+				/var/tmp</c>と入力し変更してください。これで再び適切なキーマップがXFreeに反映されます。</p>
+
+			</body>
+		</section>
+
+		<section>
+			<title>XFreeでOpenGL DRIを使って動画を再生するとき、システムが時々突然フリーズします。
+			どうしたら良いですか？</title>
+			<body>
+
+				<p>システムが適切にAGPサポート処理をすることができないのでしょう。
+				新しいカーネル(2.4.20以上)とXFree4.3またはそれ以上のもので解決できます。
+				簡単に解決するには次の行を<path>/etc/X11/XF86Config-4</path>tの「Device」セクションに追加します。
+				:</p>
+
+				<pre caption="AGPカードを強制的にPCIモードで動作させる">
+Option       "ForcePCIMode"
+				</pre>
+
+			</body>
+		</section>
+
+		<section>
+			<title>どのようにしたらサウンド出力できますか？</title>
+			<body>
+
+				<p>これには２つのことが必要です。
+				はじめに、正しいカーネルオプションが選択されているか確認します。
+				<c>make menuconfig</c>なら次のものが必要です:</p>
+
+				<pre caption="サウンドのためのカーネルオプション">
+&lt;*&gt; Sound card support
+&lt;*&gt;   PowerMac DMA sound support
+				</pre>
+
+				<p>(あるいはモジュールとして読み込むように選択します)。
+				次に、ユーザーがオーディオドライバに接続できるよう適切なグループに
+				<c>chmod -g audio [username]</c>コマンドで割り当てます。
+				もし<c>dmasound_pmac</c>モジュールを読み込むことができなければ、
+				おそらく<c>i2c-core</c>をカーネルで有効にするか、モジュールにする必要があります。</p>
+
+				</body>
+		</section>
+
+		<section>
+			<title>オーディオCDを聴くにはどうしたらよいですか？</title>
+			<body>
+
+				<p>New WorldマシンはCD-ROMドライブとサウンドハードウェア間のオーディオ接続がありません。
+				従って、オーディオの情報はデータとして読み込みサウンドハードウェアに流し込む必要があります。
+				これには<e>xmms</e>と<e>xmms-cdread</e>プラグインを使うことが必要で、
+				ATAケーブル経由のCDのオーディオを無効にし、ソフトウェアでデジタルデータとしてPCIバス経由でサウンドハードウェアに送ります。
+				CD再生を「有効」にしたいなら、次のステップを実行します:</p>
+
+				<p>はじめに、次のようなオプション設定でカーネルを再構築する必要があります:</p>
+
+				<pre caption="オーディオCD再生のためのカーネルオプション">
+<codenote>In "ATA/IDE/MFM/RLL Support"</codenote>
+<codenote>In "IDE, ATA, and ATAPI Block Devices"</codenote>
+ &lt; &gt; Include IDE/ATAPI CDROM support  <codenote>これを無効にします</codenote>
+ &lt;M&gt; SCSI emulation support           <codenote>モジュールとしてコンパイルします</codenote>
+
+<codenote>In "SCSI Support"</codenote>
+ &lt;M&gt; SCSI support                     <codenote>モジュールとしてコンパイルします</codenote>
+ &lt;M&gt; SCSI CD-ROM support              <codenote>モジュールとしてコンパイルします</codenote>
+</pre>
+
+				<p>それから、<path>/etc/yaboot.conf</path>のカーネルセクションに<c>hdX=ide-scsi</c>を追加します。
+				<c>hdX</c> はCDプレイヤーと一致するIDEデバイス名です。普通は<c>hdc</c>です。
+				<c>ybin -v</c>と入力し新しいyaboot.conf設定をインストールします。
+				<path>/etc/group</path>を編集し、任意のユーザーがCDを再生できるように<c>cdrom</c>グループに追加します。
+				カーネルの変更を反映するにはシステムの再起動が必要です。</p>
+
+				<p>再起動したら<c>su</c>コマンドでrootユーザーになりcdデバイスのパーミションを変更し、それからxmmsをインストールします:</p>
+
+				<pre caption="cdromのパーミションの変更とxmmsのインストール">
+# <i>chown root.cdrom /dev/scsi/host0/bus0/target0/lun0/cd</i>
+# <i>chmod 660 /dev/scsi/host0/bus0/target0/lun0/cd</i>
+# <i>emerge xmms xmms-cdread</i>
+				</pre>
+
+				<note>パス(訳注:/dev/scsi/host0/bus0/target0/lun0/cdなど)はマシンのCDドライブと一致するものを使うようにしてください。</note>
+
+				<p>CDを再生するには、<c>xmms</c>を起動し、再生したい<c>/dev/cdrom</c>のファイルを入力してください。</p>
+
+			</body>
+		</section>
+
+		<section>
+			<title>Gentoo LinuxからMac OSやMac OS Xを起動させることはできますか？</title>
+			<body>
+
+				<p>はいできます。Appleハードウェア(もしくはMacクローン)でGentoo Linux/PPCが動いてさえいれば。<uri
+				link="http://www.maconlinux.org/">Mac-on-Linux</uri>が必要ですが、<c>emerge
+				mol</c>とすれば簡単に導入できます。MOLはMac OS7.5.2から9.2.2のみならずOS X 10.1と10.2を
+				サポートしていますし、全画面での実行やウィンドウ内での実行ができます。</p>
+
+				<p>ネットワークとサウンドはMac OS Xデスクトップの<path>MOL-Install</path>フォルダ
+				にドライバをインストールする必要があります。
+				ネットーワークでエラーが発生したら、次のようなカーネルオプションが有効になっているか確認してください:</p>
+
+				<p>DHCPサーバー環境なら:</p>
+
+				<ul>
+					<li>Socket Filtering (CONFIG_FILTER)</li>
+					<li>Packet Socket (CONFIG_PACKET)</li>
+				</ul>
+
+				<p>NAT環境なら:</p>
+
+				<ul>
+					<li>Network packet filtering (CONFIG_NETFILTER)</li>
+					<li>Connection tracking (CONFIG_IP_NF_CONNTRACK)</li> 
+					<li>IP tables support (CONFIG_IP_NF_IPTABLES)</li> 
+					<li>Packet filtering (CONFIG_IP_NF_FILTER)</li> 
+					<li>Full NAT (CONFIG_IP_NF_NAT)</li>
+					<li>MASQUERADE target support (CONFIG_IP_NF_TARGET_MASQUERADE)</li>
+				</ul>
+
+			</body>
+		</section>
+
+		<section>
+			<title>PowerPCマシンで使用できないUSEフラグはありますか？</title>
+			<body>
+
+				<p><path>/etc/make.profile/make.defaults</path>にリストがあるので見てください。</p>
+
+			</body>
+		</section>
+	</chapter>
+
+
+	<chapter>
+	<title>その他の情報</title>
+		<section>
+			<title>Gentoo Linux/PPCのCDを購入できますか？</title>
+			<body>
+
+				<p>はいもちろん！Gentooの入ったCD-ROMを僕らの<uri
+				link="http://store.gentoo.org/">Gentoo store</uri>で販売しています。
+				一般的なPPCハードウェア向けにあらかじめコンパイルされたCD、
+				G3やG4プロセッサに最適化されたもの、Gentoo Linux CDブート環境から直接起動できる
+				KDEやGNOMEを同梱したLiveCDなど、いろいろ選べます。</p>
+
+			</body>
+		</section>
+
+		<section>
+			<title>このFAQは僕の質問に答えてくれていません。どうしたらよいですか？</title>
+			<body>
+
+				<p>まずは<uri
+				link="/main/en/docs.xml">www.gentoo.orgのドキュメント</uri>の関連するものをブラウズしてみてください。
+				それから、二つのPPC限定<uri link="/main/en/lists.xml">メーリングリスト</uri>
+				gentoo-ppc-devとgentoo-ppc-userも現在あります。<uri
+				link="http://forums.gentoo.org/viewforum.php?f=24">Gentoo on PPC</uri>
+				(on forums.gentoo.org)はPowerPCのあらゆる問題について議論をするための自由な掲示板です。
+				それから、IRCでも活発に議論されています。
+				<i>irc.freenode.net</i>にある<i>#gentoo-ppc</i>チャンネルに参加しましょう。</p>
+
+				<p>PowerPC上でのLinuxについて、一般的な情報を見つけたければ<uri
+				link="http://penguinppc.org/">penguinppc.org</uri>や<uri
+				link="http://lppcfom.sourceforge.net/">Linux on PowerPC
+				FAQ-O-Matic</uri>を参照してください。Linuxについての一般情報は<uri
+				link="http://www.linuxdoc.org/">www.linuxdoc.org</uri>にあります。</p>
+
+			</body>
+		</section>
+	</chapter>
+</guide>

@@ -1,0 +1,882 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/genkernel.xml,v 1.37 2011/09/03 07:18:26 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoo Linux Genkernel Guide</title>
+
+<author title="Author">
+  <mail link="plasmaroo@gentoo.org">Tim Yamin</mail>
+</author>
+<!-- folajimi@speakeasy.net -->
+<author title="Contributor">
+  Jimi Ayodele
+</author>
+<!-- thseiler@gmail.com -->
+<author title="NFS Support">
+  Thomas Seiler
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+<author title="Contributor">
+  <mail link="sping"/>
+</author>
+
+<abstract>
+This guide intends to provide a reference of all the functions provided by
+genkernel.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>7</version>
+<date>2011-09-03</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>Rationale</title>
+<body>
+
+<p>
+For users who don't want to manually compile their kernels, genkernel is a tool
+to automate this process. It can help you create a kernel image akin to those
+available on Gentoo Installation CDs, which are designed to auto-detect the
+hardware configuration of your system. Some users may also be interested in
+using genkernel for hardware requiring initialization and a working kernel
+before the system starts up.
+</p>
+
+</body>
+</section>
+<section>
+<title>Target Audience</title>
+<body>
+
+<p>
+If you are either uncertain about how to compile a kernel, or are just
+unfamiliar with your hardware configuration, genkernel is a very handy tool.
+It is designed to take the pain out of the kernel compiling process, and
+supports most hardware by default.
+</p>
+
+<p>
+However, if you know what drivers are required by your system, you may be able
+to further reduce the time taken to compile the kernel. This is possible since
+you can direct genkernel to only build drivers relevant to your hardware.
+Oftentimes, the number of drivers required by your system will be fewer
+(implying a shorter kernel compilation time) than the default configuration
+provides.
+</p>
+
+</body>
+</section>
+<section>
+<title>Installing genkernel</title>
+<body>
+
+<p>
+To obtain genkernel, run <c>emerge genkernel</c> from the command line. Consult
+<c>genkernel --help</c> for help on how to use the version of genkernel
+installed on your system.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Working with genkernel</title>
+<section>
+<title>How to use genkernel</title>
+<body>
+
+<p>
+Although there are several ways to run genkernel, the least-intrusive approach
+is provided by <c>genkernel all</c>. Here, a generic configuration which works
+well for most systems is used. As was mentioned earlier, this approach is not
+without drawbacks; most of the modules created are useless to the average user
+and may increase compile time. Below is an illustration of a more efficient
+approach, achieved by passing certain flags to genkernel as root:
+</p>
+
+<pre caption="Running genkernel (with flags)">
+# <i>genkernel --splash --no-install --no-clean --menuconfig all</i>
+</pre>
+
+<p>
+The above operation causes genkernel to create a framebuffer splash-enabled
+kernel (<c>--splash</c>) that will have to be manually installed
+(<c>--no-install</c>). While preparing the kernel source tree, genkernel will
+refrain from cleaning out any preexisting object files present in the source
+tree (<c>--no-clean</c>). A menu-driven kernel configuration utility will be
+displayed that allows the user to select which modules will be built for the
+system (<c>--menuconfig</c>).
+</p>
+
+<p>
+There are other flags which alter the result provided by genkernel. For
+instance, replacing <c>--no-install</c> with the <c>--install</c> flag allows
+genkernel to automatically install the new kernel in the <path>/boot</path>
+directory, and will create symlinks for you if <c>--symlink</c> is specified.
+Using the <c>--mountboot</c> flag allows genkernel to mount your
+<path>/boot</path> partition automatically, if necessary.
+</p>
+
+<p>
+Remember, genkernel is designed to make kernel compilation easy and
+stress-free. For this reason, genkernel features several flags to ease the
+kernel compilation effort. For example, there are flags to help with kernel
+configuration, while others affect the actual compilation. Some flags even help
+debug the compilation process. For those interested in further optimization,
+there are flags that affect kernel assembling, packaging and even kernel
+initialization.
+</p>
+
+<p>
+The rest of this chapter examines the functionality of various flags,
+configuration variables, and actions available for genkernel. For a more
+complete list, please refer to <c>man genkernel</c> and the comments in
+<path>/etc/genkernel.conf</path>. Some of the flags have variants which
+perform a converse operation. The converse variants carry the <b><c>no-</c></b>
+prefix, and their effects are enclosed within the square brackets, [].
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuration Flags</title>
+<body>
+
+<p>
+The configuration flags listed below exist to help you decide what features
+should be enabled or disabled in the kernel prior to compilation. You can even
+choose whether or not the configuration file created in the process should be
+saved. The following are the primary configuration flags:
+</p>
+
+<ul>
+  <li>
+    <b>--<c>no-</c>menuconfig</b>: Activates <e>[or deactivates]</e> the
+    <c>make menuconfig</c> command (which invokes an interactive, menu-based
+    kernel configuration utility), before building the kernel.
+  </li>
+  <li>
+    <b>--gconfig</b>: Provides a kernel configuration utility which depends on
+    the GTK+ libraries. The advantage of this option is that most users find it
+    easier and clearer to configure the kernel using this tool, since it relies
+    on the X-windowing system. The disadvantage of this option is that you
+    <b>need</b> the X-windowing system to use it, so it will not work on the
+    command line.
+  </li>
+  <li>
+    <b>--xconfig</b>: Provides a kernel configuration utility which depends on
+    the QT libraries. The advantage of this option is that most users find it
+    easier and clearer to configure the kernel using this tool, since it relies
+    on the X-windowing system. The disadvantage of this option is that you
+    <b>need</b> the X-windowing system to use it, so it will not work on the
+    command line.
+  </li>
+  <li>
+    <b>--<c>no-</c>save-config</b>: Saves <e>[or does not save]</e> the kernel
+    configuration to a file in the <path>/etc/kernels/</path> directory for
+    later use.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Compilation Flags</title>
+<body>
+
+<p>
+The following flags usually take effect during the actual compilation:
+</p>
+
+<ul>
+  <li>
+    <b>--kerneldir=<path>/path/to/sources/</path></b>: Specifies an alternative
+    kernel source location, rather than the default
+    <path>/usr/src/linux/</path> location.
+  </li>
+  <li>
+    <b>--kernel-config=<path>/path/to/config-file</path></b>: Specifies what
+    alternative kernel configuration will be used, rather than the default
+    <path>/path/to/sources/.config</path> file.
+  </li>
+  <li>
+    <b>--module-prefix=<path>/path/to/prefix-directory/</path></b>: Specifies a
+    prefix to the directory where kernel modules will be installed (default
+    path is the <path>/lib/modules/</path> directory.)
+  </li>
+</ul>
+
+<ul>
+  <li>
+    <b>--<c>no-</c>clean</b>: Activates <e>[or deactivates]</e> the <c>make
+    clean</c> command before compiling your kernel. The <c>make clean</c>
+    command removes all object files and dependencies from the kernel's source
+    tree.
+  </li>
+  <li>
+    <b>--<c>no-</c>mrproper</b>: Activates <e>[or deactivates]</e> the <c>make
+    mrproper</c> command before kernel compilation. Like the <c>make clean</c>
+    command, <c>make mrproper</c> removes all object files and dependencies
+    from the kernel's source tree. However, any previous configuration files
+    (in <path>/path/to/sources/.config</path> or
+    <path>/path/to/sources/.config.old</path>) will <b>also</b> be purged from
+    the kernel's source tree.
+  </li>
+  <li>
+    <b>--oldconfig</b>: Issues the <c>make oldconfig</c> command, which
+    attempts to collect configuration information for the system's architecture
+    from a generic script in <path>/usr/share/genkernel/</path>.  This is a
+    non-interactive process; no user input is entertained. Also, if
+    <c>--oldconfig</c> is used in conjunction with <c>--clean</c>, the latter
+    flag is negated, resulting in the activation of the <c>--no-clean</c> flag.
+  </li>
+</ul>
+
+<ul>
+  <li>
+    <b>--callback="<c>echo hello</c>"</b>: Calls the specified arguments
+    (<c>echo hello</c>, in this case) after the kernel and the relevant modules
+    have been built, but before building the initrd image. This may be useful
+    if you want to install external modules in the initrd image by emerging the
+    relevant item(s) with the callback feature, and then redefining a genkernel
+    module group.
+  </li>
+</ul>
+
+<ul>
+  <li>
+    <b>--<c>no-</c>install</b>: Activates <e>[or deactivates]</e> the <c>make
+    install</c> command, which installs your new kernel image, configuration
+    file, initrd image and system map onto your mounted boot partition. Any
+    compiled modules will be installed as well.
+  </li>
+  <li>
+    <b>--no-ramdisk-modules</b>: Refrains from copying any modules to the
+    genkernel-created initrd image. This flag is an exception to the rule about
+    the <c>no-</c> prefix; omission of this prefix creates an invalid genkernel
+    flag.
+  </li>
+  <li>
+    <b>--all-ramdisk-modules</b>: Copies all available modules to the
+    genkernel-created initrd image.
+  </li>
+  <li>
+    <b>--genzimage</b>: Creates the initrd image, prior to the kernel image.
+    (This hack currently applies only to PPC Pegasos systems.)
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Compiler Flags</title>
+<body>
+
+<p>
+The following flags are supported by genkernel, and are passed to the relevant
+applications while the kernel is being assembled. These flags affect the
+<e>compiler</e> used for the kernel compilation process, albeit at a much lower
+level.
+</p>
+
+<ul>
+  <li>
+    <b>--kernel-cc=<c>someCompiler</c></b>: Specifies the compiler employed
+    during the kernel compilation process.
+  </li>
+  <li>
+    <b>--kernel-ld=<c>someLinker</c></b>: Specifies the linker employed during
+    the kernel compilation process.
+  </li>
+  <li>
+    <b>--kernel-as=<c>someAssembler</c></b>: Specifies the assembler employed
+    during the kernel compilation process.
+  </li>
+  <li>
+    <b>--kernel-make=<c>someMake</c></b>: Specifies an alternative to the
+    <e>GNU make</e> utility employed during the kernel compilation process.
+  </li>
+</ul>
+
+<ul>
+  <li>
+    <b>--utils-cc=<c>someCompiler</c></b>: Specifies the compiler employed
+    during the compilation of support utilities.
+  </li>
+  <li>
+    <b>--utils-ld=<c>someLinker</c></b>: Specifies the linker employed during
+    the compilation of support utilities.
+  </li>
+  <li>
+    <b>--utils-as=<c>someAssembler</c></b>: Specifies the assembler employed
+    during the compilation of support utilities.
+  </li>
+  <li>
+    <b>--utils-make=<c>someMake</c></b>: Specifies an alternative to the <e>GNU
+    make</e> utility employed during the compilation of support utilities.
+  </li>
+</ul>
+
+<ul>
+  <li>
+    <b>--makeopts=<c>-jX</c></b>: Specifies the number of concurrent threads
+    that the make utility can implement while the kernel (and utilities) are
+    being compiled. The variable <b>'X'</b> is a number obtained by adding one
+    (1) to the number of CPUs used by the system. So, for a system with one
+    CPU, the appropriate flag is <c>-j2</c>; a system with two CPUs will use
+    the <c>-j3</c> flag, and so on. <e>(A system with one processor that
+    supports Hyper-Threading&trade; (HT) Technology can use the
+    </e><c>-j3</c><e> flag, provided Symmetric Multi-Processing (SMP) support is
+    enabled in the kernel.)</e>
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Debugging Flags</title>
+<body>
+
+<p>
+The use of debugging flags during the kernel compilation process controls the
+amount of information reported, as well as the presentation of said data.
+</p>
+
+<ul>
+  <li>
+    <b>--loglevel=<c>verblevel</c></b>: Controls the level of verbosity for
+    information provided by genkernel. The variable <c>verblevel</c> is an
+    integer between 0 and 5. The level '0' represents minimal output, while '5'
+    provides as much information as possible about genkernel's activities
+    during the kernel compilation process.
+  </li>
+  <li>
+    <b>--logfile=<path>/path/to/outputfile</path></b>: Ignores the value set
+    by the <c>--loglevel</c> argument, and sends <b>all</b> debugging data
+    produced by genkernel to the specified output file, which is located at
+    <path>/var/log/genkernel.log</path> by default.
+  </li>
+  <li>
+    <b>--no-color</b>: Activates <e>[or deactivates]</e> colored output of
+    debugging information (reported by genkernel) using escape sequences.
+  </li>
+</ul>
+
+</body>
+</section>
+
+<section>
+<title>Initialization Flags</title>
+<body>
+
+<p>
+The flags here are used to create certain effects during system startup. Some
+of these flags are primarily for aesthetics, while others may be essential for
+enabling certain features on the system.
+</p>
+
+<ul>
+  <li>
+    <b>--<c>no-</c>splash</b>: Activates <e>[or deactivates]</e> support for
+    <uri link="http://fbsplash.berlios.de/wiki/doku.php">framebuffer
+    splash</uri> support in the genkernel-built initrd image. To override the
+    default theme used by fbsplash, use <b>--splash=<c>PreferredTheme</c></b>
+    (where <c>PreferredTheme</c> is the title of one of the directories inside
+    the <path>/etc/splash/</path> directory.
+  </li>
+  <li>
+    <b>--splash-res=<c>PreferredResolution</c></b>: This flag allows you to
+    select which splash screen resolutions will be supported in the initrd
+    during the start-up of the system. This is useful for two reasons: First,
+    you are able to select only the splash screen resolution(s) relevant to your
+    system. Second, you avoid the unnecessary increase in the disk space
+    required by initrd (since the initrd does not have to support resolutions
+    that are irrelevant for your system configuration.) However, you may want to
+    omit this flag if the kernel is being compiled for an Installation CD; this
+    allows splash support for all possible resolutions.
+  </li>
+  <li>
+    <b>--do-keymap-auto</b>: Force keymap selection during the boot sequence.
+  </li>
+  <li>
+    <b>--lvm</b>: Includes support for storage using via <uri
+    link="http://sources.redhat.com/lvm2/">Logical Volume Management</uri>
+    (LVM2) from <e>static</e> binaries, if available to the system. Relevant
+    (static) LVM2 binaries are compiled if they are unavailable. Be sure to
+    install the lvm2 package on your system with <c>emerge lvm2</c> before
+    enabling this flag, and review the <uri link="/doc/en/lvm2.xml">Gentoo LVM2
+    Installation</uri> guide.
+  </li>
+  <li>
+    <b>--dmraid</b>: Includes support for <uri
+    link="http://people.redhat.com/~heinzm/sw/dmraid/readme">DMRAID</uri>; the
+    utility which creates RAID mappings using the kernel device-mapper
+    subsystem. DMRAID discovers, activates, deactivates and displays properties
+    of software RAID sets (ATARAID, for example) and contained DOS partitions.
+  </li>
+  <li>
+    <b>--luks</b>: Includes support for <uri
+    link="http://luks.endorphin.org/">Linux Unified Key Setup</uri> or LUKS.
+    This will allow you to use a device encrypted by LUKS which contains the
+    root filesystem. On the bootloader, you then set that encrypted device as
+    the value of crypt_root (and real_root shall be the unencrypted device LUKS
+    creates).
+  </li>
+   <li>
+    <b>--disklabel</b>: Adds support for disk label and UUID support to your
+    initrd.
+  </li>
+  <li>
+    <b>--iscsi</b>: Adds support for iSCSI to your initrd.
+  </li>
+  <li>
+    <b>--multipath</b>: Adds support for <uri
+    link="/doc/en/multipath.xml">Multipath</uri> to your initrd.
+  </li>
+  <li>
+    <b>--linuxrc=/path/to/your/linuxrc</b>: Specifies a user-created
+    <e>linuxrc</e> &mdash; a script that is initialized during the start-up
+    stage of the kernel, prior to the actual boot process. (A default linuxrc
+    script should be in the <path>/usr/share/genkernel/</path> directory.) This
+    script allows you to boot into a small, modularized kernel and load the
+    drivers that are needed (as modules) by the system.
+  </li>
+  <li>
+    <b>--cachedir=/path/to/alt/dir/</b>: Overrides the default cache location
+    used while compiling the kernel.
+  </li>
+  <li>
+    <b>--tempdir=/path/to/new/tempdir/</b>: Specifies the location of the
+    temporary directory used by genkernel while compiling the kernel.
+  </li>
+  <li>
+    <b>--unionfs</b>: Includes support for the <uri
+    link="http://www.fsl.cs.sunysb.edu/project-unionfs.html">Unification File
+    System</uri> in the initrd image.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Miscellaneous Flags</title>
+<body>
+
+<p>
+The assortment of flags listed below are supported by genkernel, but do not fit
+neatly into any of the other categories:
+</p>
+
+<ul>
+  <li>
+    <b>--mountboot</b>: Detects whether or not the <path>/boot/</path>
+    directory needs to be mounted on a separate partition. It will check
+    <path>/etc/fstab</path> script for instructions on how to mount the boot
+    partition on a file system (if needed).
+  </li>
+  <li>
+    <b>--kernname=<c>NickName</c></b>: Allows you to modify the name of the
+    kernel and initrd images in the <path>/boot/</path> directory, so that the
+    images produced are kernel-<c>NickName</c>-version and
+    initramfs-<c>NickName</c>-version.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Possible Actions</title>
+<body>
+
+<p>
+An action tells genkernel what to build. Currently, the following actions are
+supported:
+</p>
+
+<ul>
+  <li>
+    <c>all</c>: Builds all stages &mdash; the initrd, kernel image and modules.
+  </li>
+  <li><c>bzImage</c>: Only builds the kernel image</li>
+  <li><c>kernel</c>: Only builds the kernel image and modules</li>
+  <li><c>initramfs</c>: Only builds the initramfs/ramdisk image</li>
+  <li><c>ramdisk</c>: Only builds the initramfs/ramdisk image</li>
+</ul>
+
+<p>
+The first action, <c>all</c>, is recommended for most users since it builds the
+stages required for a functional kernel. Remember, an <e>action</e> simply
+tells genkernel what to <e>build</e>, not <e>install</e>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Bootloader Configuration</title>
+<body>
+
+<p>
+To set up genkernel to work with your bootloader, three or four changes should
+be applied to the bootloader's configuration file:
+</p>
+
+<ol>
+  <li>
+    Add <c>real_root=/dev/sda3</c>, for example, to the kernel parameters
+    passed to the kernel image, if <path>/dev/sda3</path> contains your root
+    partition.
+  </li>
+  <li>
+    If you are using splash, add a suitable mode line such as <c>vga=0x317</c>
+    to the parameters passed to the kernel and also add <c>splash=verbose</c> or
+    <c>splash=silent</c> depending on the verboseness you require from your
+    bootloader.
+  </li>
+  <li>
+    Add the initrd information as required by the bootloader. Consult the <uri
+    link="/doc/en/handbook/handbook-x86.xml?part=1&amp;chap=10">Bootloader
+    Configuration Chapter</uri> of the Gentoo Handbook for details on how to
+    make your bootloader initrd-aware.
+  </li>
+</ol>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuration Options</title>
+<section>
+<title>Editing /etc/genkernel.conf</title>
+<body>
+
+<p>
+Passing flags to genkernel from the command line can be cumbersome, especially
+if you have about a dozen flags:
+</p>
+
+<pre caption="Running genkernel (overloaded with flags)">
+# <i>genkernel --loglevel=5 --no-color --no-mrproper --clean --splash \
+--kerneldir=/path/to/alternate/kernel/sources --install --menuconfig \
+--kernel-config=/path/to/preferred/configfile --save-config --mountboot all</i>
+</pre>
+
+<p>
+Fortunately, there is a configuration file where most of the basic options can
+be set (or changed) as necessary: <path>/etc/genkernel.conf</path>. What follows
+is a rundown of the more relevant options:
+</p>
+
+<ul>
+  <li>
+    <b>MENUCONFIG=<c>[yes|no]</c></b>: This option is equivalent to the
+    <c>--menuconfig</c> flag used by genkernel, which in turn uses the <c>make
+    menuconfig</c> command to invoke a command-line based kernel configuration
+    utility. To invoke the utility automatically during kernel configuration
+    via this script, set this option to 'yes' here; otherwise, choose 'no'.
+  </li>
+  <li>
+    <b>CLEAN=<c>[yes|no]</c></b>: Setting this option to 'yes' is equivalent to
+    the <c>--clean</c> flag used by genkernel, and invokes the <c>make
+    clean</c> command to remove all object files and dependencies from the
+    kernel's source tree. Setting this option to 'no' creates a cascade effect
+    &#8212; it is equivalent to genkernel's <c>--no-clean</c> flag, which
+    disables the <c>make clean</c> command and implies genkernel's
+    <c>--no-mrproper</c> flag &mdash; essentially nullifying the <c>make
+    mrproper</c> command.
+  </li>
+  <li>
+    <b>MRPROPER=<c>[yes|no]</c></b>: Setting this option to 'yes' is equivalent
+    to <c>--mrproper</c> flag used by genkernel, and invokes the <c>make
+    mrproper</c> command, which purges the kernel source tree of any
+    configuration files. Selecting 'no' here is equivalent to genkernel's
+    <c>--no-mrproper</c> flag, which disables the <c>make mrproper</c> command.
+  </li>
+  <li>
+    <b>MOUNTBOOT=<c>[yes|no]</c></b>: Setting this option to 'yes' is
+    equivalent to the <c>--mountboot</c> flag, and automatically mounts the
+    <path>/boot/</path> directory (if needed) at compile time. If the
+    <path>/boot/</path> directory is on a separate partition, consider enabling
+    this option; it will make for one less (essential) step to remember later.
+  </li>
+  <li>
+    <b>SAVE_CONFIG=<c>[yes|no]</c></b>: After configuring the kernel, the
+    selected options are stored as <path>.config</path> in the kernel source
+    tree. This script may be overwritten during the next kernel compilation, or
+    even purged from the kernel source tree. Choosing 'yes' here is equivalent
+    to the <c>--save-config</c> flag, and stores all options selected during
+    kernel configuration as a script in the <path>/etc/kernels/</path>
+    directory. Choosing 'no' preserves the <e>status quo</e>.
+  </li>
+  <li>
+    <b>USECOLOR=<c>[yes|no]</c></b>: Setting this option to 'yes' is equivalent
+    to the <c>--color</c> flag, which colors genkernel's output to ease
+    debugging (when needed.)
+  </li>
+  <li>
+    <b>LOGLEVEL=<c>[0|1|2|3|4|5]</c></b>: This option is for adjusting the
+    verbosity of the output produced by genkernel &mdash; setting this option to
+    '0' with <c>--loglevel=0</c> will suppress all output produced by
+    genkernel; setting this option to '5' with <c>--loglevel=5</c> provides
+    the user with all output produced by genkernel.
+  </li>
+</ul>
+
+<note>
+More options are described in <path>/etc/genkernel.conf</path>.
+</note>
+
+<p>
+By choosing the appropriate options in <path>/etc/genkernel.conf</path>, you
+can halve the number of flags passed to genkernel from the command line:
+</p>
+
+<pre caption="Running genkernel (with flags), after employing genkernel.conf">
+# <i>genkernel --splash --kerneldir=/path/to/alternate/kernel/sources \
+--kernel-config=/path/to/preferred/configfile --install all</i>
+</pre>
+
+<p>
+Identical results are obtained from both approaches, but the latter has most of
+the options stored in a script that can be modified at a later date.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Network-Booting with genkernel</title>
+<section>
+<title>Network Booting from an Installation CD</title>
+<body>
+
+<p>
+The genkernel utility can build kernel and initrd images that provide support
+for network booting, or <e>netboot</e>ing. With any luck, you should be able
+to netboot any recent computer into the environment provided by the
+Installation CD.
+</p>
+
+<p>
+The magic lies in genkernel's linuxrc script: it will try to <e>netmount</e>
+the Installation CD using NFS. From there, <e>the init scripts</e> of the
+Installation CD can take over, as if the CD was present locally.
+</p>
+
+</body>
+</section>
+<section>
+<title>Building Kernel and Initrd Images with Support for Netbooting</title>
+<body>
+
+<p>
+To enable support for netbooting, include the following options while
+configuring the kernel:
+</p>
+
+<warn>
+Support for netbooting with genkernel is experimental and may contain bugs.
+</warn>
+
+<p>
+First, the kernel image must include the drivers for your Network Interface
+Cards (NIC). Normally, drivers for such devices will be compiled as modules.
+However, it is essential (for netbooting) that you have such drivers compiled
+directly into the kernel image and <b>not</b> as modules.
+</p>
+
+<pre caption="Configuring a 2.6.x series kernel to support your NIC driver">
+Device Drivers --->
+   Networking Support --->
+      Ethernet (10 or 100Mbit)  --->
+         [*] Ethernet (10 or 100Mbit)
+         &lt;*&gt;   the driver for your network card
+<comment>(Be sure to select &lt;*&gt; and not &lt;M&gt;)</comment>
+</pre>
+
+<p>
+Secondly, we suggest that you enable <c>IP: kernel level autoconfiguration</c>
+and the <c>IP: DHCP support</c> options. This avoids an unnecessary layer of
+complexity since the IP address and the NFS path to the Installation CD can be
+configured on a DHCP server. Of course, this means the kernel command line
+will remain constant for any machine &mdash; which is very important for
+<e>etherbooting</e>.
+</p>
+
+<pre caption="Configuring a 2.6.x series kernel to support DHCP">
+Device Drivers --->
+   Networking Support --->
+      Networking options
+         [*] TCP/IP networking--->
+         [*]   IP: kernel level autoconfiguration
+         [*]     IP: DHCP support
+<comment>(These options tell the kernel to send a DHCP request at bootup.)</comment>
+</pre>
+
+<p>
+Additionally, you should enable SquashFS because most modern Gentoo
+Installation CDs require it. Support for SquashFS is not included with the
+generic kernel source tree. To enable SquashFS, apply the necessary patches to
+the generic kernel source or install <c>gentoo-sources</c>.
+</p>
+
+<pre caption="Configuring the kernel to support SquashFS">
+File systems--->
+   Miscellaneous filesystems --->
+      [*] SquashFS 2.X - Squashed file system support
+</pre>
+
+<p>
+Once the compilation process is completed, create a compressed <e>tarball</e>
+(tar.gz) that contains the kernel's modules. This step is only necessary if
+your kernel version does not match the kernel image version on the Installation
+CD.
+</p>
+
+<pre caption="Creating a compressed tarball containing the kernel modules">
+<comment>(Create a tar.gz containing all the modules)</comment>
+# <i>cd /</i>
+# <i>tar -cf /tmp/modules-X.Y.Z.tar.gz /lib/modules/X.Y.Z/</i>
+</pre>
+
+<p>
+Depending on your network boot mechanism, you will need to do some of the
+following steps:
+</p>
+
+<pre caption="Creating a boot image">
+<comment>(Create an etherboot image)</comment>
+# <i>emerge mknbi</i>
+# <i>cd /boot</i>
+# <i>mkelf-linux -params="root=/dev/ram0 init=/linuxrc ip=dhcp" kernel... initrd... > etherboot.img</i>
+
+<comment>(Create a OpenBoot / SPARC64 TFTP image)</comment>
+# <i>emerge sparc-utils</i>
+# <i>cd /boot</i>
+# <i>elftoaout kernel... -o kernel.aout</i>
+# <i>piggyback64 kernel.aout System.map-... initrd-...</i>
+# <i>mv kernel.aout openboot.img</i> <comment>(This is the boot image)</comment>
+
+<comment>(PXE does not need any more steps, the kernel and initrd can be used as is)</comment>
+</pre>
+
+<p>
+Finally, copy this kernel to your TFTP server. The details are
+architecture-dependent and are beyond the scope of this guide. Please refer to
+the documentation for your platform.
+</p>
+
+</body>
+</section>
+<section>
+<title>NFS Setup</title>
+<body>
+
+<p>
+To setup a NFS share that contains the Installation CD, use the loop device to
+mount the ISO image and then copy the contents of the CD into the NFS share. As
+a nice extra, genkernel's initrd scripts will extract all tar.gz files located
+in the <path>/nfs/livecd/add/</path> directory. All you have to do here is copy
+the <c>modules-X.Y.Z.tar.gz</c> archive to the <path>/nfs/livecd/add/</path>
+directory.
+</p>
+
+<pre caption="Preparing the NFS share">
+<comment>(This assumes that /nfs/livecd is an exported NFS share)</comment>
+# <i>mount /tmp/gentoo-livecd.iso /mnt/cdrom -o loop</i>
+# <i>cp -p /mnt/cdrom /nfs/livecd</i>
+# <i>umount /mnt/cdrom</i>
+
+<comment>(Copy the modules.tar.gz into /add)</comment>
+# <i>mkdir /nfs/livecd/add</i>
+# <i>cp /tmp/modules-X.Y.Z.tar.gz /nfs/livecd/add</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>DHCP Setup</title>
+<body>
+
+<p>
+The netboot images will ask your DHCP server for an IP as well as a root-path
+parameter. Both can be specified per host using a MAC address to identify
+machines:
+</p>
+
+<pre caption="Sample client dhcpd.conf setup">
+...
+
+host netbootableMachine {
+         hardware ethernet 11:22:33:44:55:66;
+         fixed-address 192.168.1.10;
+         option root-path "192.168.1.2:/nfs/livecd";
+}
+<comment># Here, 192.168.1.2 is the NFS server
+# While 192.168.1.10 will be the IP address of the netbooted machine</comment>
+...
+</pre>
+
+</body>
+</section>
+<section>
+<title>Netbooting Instructions</title>
+<body>
+
+<p>
+Netbooting itself is again very platform-specific. The important part is to
+specify the <c>ip=dhcp</c> and <c>init=/linuxrc</c> parameters on the kernel
+command line, as this will bring up the network interface and tell the initrd
+scripts to mount the Installation CD via NFS. Here are some platform-specific
+tips:
+</p>
+
+<pre caption="Netbooting Instructions">
+<comment># Etherboot - insert the etherboot disk into the drive and reboot
+# The kernel command line was specified when the image was constructed</comment>
+
+<comment># Sparc64 - Hit Stop-A at the boot prompt</comment>
+ok boot net ip=dhcp init=/linuxrc
+
+<comment># PXE - Setup pxelinux (part of syslinux),
+then create a pxelinux.cfg/default along the lines of:</comment>
+
+DEFAULT gentoo
+TIMEOUT 40
+PROMPT 1
+
+LABEL gentoo
+    KERNEL kernel-X.Y.Z
+    APPEND initrd=initrd-X.Y.Z root=/dev/ram0 init=/linuxrc ip=dhcp
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Conclusion</title>
+<section>
+<title>To Automate or not to Automate?</title>
+<body>
+
+<p>
+The purpose of genkernel is to provide an (easier) alternative to the
+time-tested approach to kernel compilation. As always, you are free to decide
+on whether or not you want to automate the kernel compilation process.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

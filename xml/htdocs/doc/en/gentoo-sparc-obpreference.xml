@@ -1,0 +1,522 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-sparc-obpreference.xml,v 1.6 2011/09/04 17:53:40 swift Exp $ -->
+
+<guide>
+<title>OpenBoot PROM (OBP) Reference</title>
+
+<author title="Author">
+  <mail link="ciaranm@gentoo.org">Ciaran McCreesh</mail>
+</author>
+
+<abstract>
+The OpenBoot PROM (OBP) Reference provides a list of useful OBP commands that
+can help when booting, configuring and performing diagnostics upon Sun SPARC
+hardware and clones.
+</abstract>
+
+<license />
+<version>1.2</version>
+<date>2004-08-27</date>
+
+<chapter>
+<title>About this Document</title>
+<section>
+<body>
+
+<p>
+This document provides a list of useful OBP commands that can be helpful when
+booting, configuring and performing diagnostics upon Sun SPARC hardware and
+clones.
+</p>
+
+<p>
+Note that not all commands are available on all PROM versions. In particular,
+sun4c systems have a different input mode, and some JavaStation models are
+missing a lot of OBP functionality.
+</p>
+
+<p>
+OBP is somewhat inconsistent when it comes to command names. Sometimes hyphens
+are used to seperate words, sometimes they are not. Some commands which display
+information start with or contain a dot (this is a FORTH convention).
+</p>
+
+<p>
+The terms "OBP", "OpenBoot PROM" and "PROM" are used interchangably in this
+document.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Entering OBP</title>
+<section>
+<title>Systems with Sun Keyboards</title>
+<body>
+
+<p>
+On regular Sun systems (and clones which use Sun keyboards), press
+<c>Stop+A</c> when the system boots to enter OBP. The <c>Stop</c> key is the
+top left key on the extra block of keys on the left hand side of the keyboards
+(on really old systems it might be marked <c>L1</c>).
+</p>
+
+<p>
+The <c>Stop+N</c> keyboard combination at boot will reset many systems to the
+default PROM settings. <c>Stop+D</c> will enable diagnostics on some boards.
+</p>
+
+</body>
+</section>
+<section>
+<title>Over Serial Console</title>
+<body>
+
+<p>
+To enter OBP over serial console, send a break. In minicom, do this by pressing
+<c>ctrl+A F</c>. In xc, use <c>ctrl+A B</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Systems with Non-Sun (PC Style) Keyboards</title>
+<body>
+
+<p>
+On systems with PC-style keyboards (such as JavaStations and some Ultra
+clones), <c>ctrl+break</c> or <c>alt+ctrl+break</c> is generally used.
+</p>
+
+<p>
+Note that on the JavaStation JK, <c>ctrl+break</c> will restart the box rather
+than enter PROM. To get at OBP, you will need to set jumper J1300 pins 7-8 on
+the mainboard.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Basic System Commands</title>
+<section>
+<title>Halting and Restarting</title>
+<body>
+
+<p>
+The <c>power-off</c> command will halt the box and turn off power. This command
+is sometimes screwy on Ultra5/10 systems.
+</p>
+
+<p>
+The <c>reset</c> command will perform a soft reset. If diagnostics are enabled,
+they will <e>not</e> be rerun. In some documents, this command is refered to as
+<c>reset-all</c>.
+</p>
+
+<p>
+The <c>boot</c> command boots the system. A parameter may be provided to
+override the default boot device -- this can be a full device name or a device
+alias such as <c>disk</c>, <c>cdrom</c> or <c>net</c>. Any additional arguments
+are passed to the bootloader or operating system.
+</p>
+
+</body>
+</section>
+<section>
+<title>PROM and System Information</title>
+<body>
+
+<p>
+The <c>.version</c> command will show the OBP version.
+</p>
+
+<pre caption=".version output">
+{0} ok .version
+Release 3.7 Version 0 created 1997/01/09 13:06
+OBP 3.7.0 1997/01/09 13:06
+POST 3.2.1 1996/12/20 03:01
+</pre>
+
+<p>
+The <c>banner</c> command will show the system information banner.
+</p>
+
+<pre caption="banner output">
+{0} ok banner
+Sun Ultra 2 UPA/SBus (2 X UltraSPARC-II 296MHz), No Keyboard
+OpenBoot 3.7, 704 MB memory installed, Serial #9705521.
+Ethernet address 8:0:20:94:18:31, Host ID: 80941831
+</pre>
+
+<p>
+The <c>.speed</c> command will show bus speeds.
+</p>
+
+<pre caption=".speed output">
+{0} ok .speed
+CPU  Speed : 296.00 MHz
+UPA  Speed : 098.66 MHz
+SBus Speed : 025.00 MHz
+</pre>
+
+</body>
+</section>
+
+<section><title>Device Information</title>
+<body>
+
+<p>
+The <c>show-devs</c> command will give a list of devices available to the
+system.
+</p>
+
+<p>
+The <c>probe-scsi</c> command will show internal SCSI devices available to the
+system. The <c>probe-scsi-all</c> command will show both internal and external
+devices on every SCSI interface. After running either of these commands, you
+<e>must</e> issue a <c>reset-all</c> before trying to boot an operating
+system.
+</p>
+
+<pre caption="probe-scsi-all output">
+{0} ok probe-scsi-all
+This command may hang the system if a Stop-A or halt command
+has been executed.  Please type reset-all to reset the system
+before executing this command.
+Do you wish to continue? (y/n) y
+/sbus@1f,0/SUNW,fas@e,8800000
+Target 1
+  Unit 0   Disk     SEAGATE ST34371W SUN4.2G74629710B00491
+                    Copyright (c) 1997 Seagate
+                    All rights reserved
+</pre>
+
+<p>
+The <c>probe-ide</c> command is also available on IDE-based systems.
+</p>
+
+<pre caption="probe-ide output">
+ok probe-ide
+  Device 0  ( Primary Master )
+          ATA Model: ST320420A
+
+  Device 1  ( Primary Slave )
+          ATA Model: Maxtor 6E040L0
+
+  Device 2  ( Secondary Master )
+         Not Present
+
+  Device 3  ( Secondary Slave )
+         Not Present
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Environment Variables and Device Aliases</title>
+<section>
+<title>Getting and Setting Environment Variables</title>
+<body>
+
+<p>
+Use <c>printenv</c> to get a list of environment variables. To see the value of
+a specific variable, use <c>printenv fnord</c>.
+</p>
+
+<p>
+To set a variable, use <c>setenv myvar the new value</c>.
+</p>
+
+<p>
+To restore a variable's default value, use <c>set-default blah</c>. To revert
+<e>all</e> variables to default, use <c>set-defaults</c>.
+</p>
+
+<p>
+Note that boolean variables usually end in a <c>?</c>, and that they are
+seperate from variables of the same name without the question mark. The values
+<c>true</c> and <c>false</c> are used for booleans.
+</p>
+
+</body>
+</section>
+<section>
+<title>Useful Environment Variables</title>
+<body>
+
+<p>
+Some useful environment variables:
+</p>
+
+<table>
+  <tr>
+    <th>Variable</th>
+    <th>Meaning</th>
+  </tr>
+  <tr>
+    <ti><c>ttya-mode</c></ti>
+    <ti>
+      Sets the baud rate and related settings used by the serial console. By
+      default <c>9600,8,n,1,-</c> is used, meaning 9600 baud, 8 bits, no
+      parity, one stop bit, no flow control.
+    </ti>
+  </tr>
+  <tr>
+    <ti><c>auto-boot?</c></ti>
+    <ti>
+      By default OBP will automatically boot upon startup. Set this to
+      <c>false</c> if you'd rather send the boot command manually.
+    </ti>
+  </tr>
+  <tr>
+    <ti><c>boot-device</c></ti>
+    <ti>
+      When auto-booting, and when <c>boot</c> is issued with no arguments, this
+      variable is used to determine the boot device. More than one value can be
+      provided (space seperated), in which case each is tried in turn. Each
+      value can be a full device path or a device alias.
+    </ti>
+  </tr>
+  <tr>
+    <ti><c>diag-device</c></ti>
+    <ti>
+      As <c>boot-device</c>, but used when <c>diag-switch?</c> is enabled.
+    </ti>
+  </tr>
+  <tr>
+    <ti><c>local-mac-address?</c></ti>
+    <ti>
+      If set, network interfaces will use their own MAC rather than the
+      system-wide MAC. This is consistent with how PCs behave, and in violation
+      of the Ethernet specification.
+    </ti>
+  </tr>
+  <tr>
+    <ti><c>diag-switch?</c></ti>
+    <ti>
+      If set, additional diagnostic checks will be run at power on. Note that
+      this can take a <e>very</e> long time on SMP and / or HyperSparc systems.
+      In addition, the <c>diag-device</c> variable will also be used to
+      determine the boot device rather than <c>boot-device</c>. Some systems
+      have a mainboard jumper or a switch on the front of the machine which
+      forces this setting on.
+    </ti>
+  </tr>
+</table>
+
+</body>
+</section>
+<section>
+<title>Getting and Setting Device Aliases</title>
+<body>
+
+<p>
+Device aliases can be used to simplify the arguments to many commands.  Instead
+of typing <c>boot /sbus/SUNW,hme@e,8c00000</c>, for example, one could use
+<c>boot net</c>. A number of device aliases are defined by default on every
+system.
+</p>
+
+<p>
+To view all device aliases, use the <c>devalias</c> command. To view a specific
+alias, use <c>devalias whatever</c>. To set a device alias, use <c>devalias
+whatever newvalue</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Changing Monitor Resolutions</title>
+<body>
+
+<p>
+The <c>output-device</c> variable can be used to control which framebuffer is
+used, and at what resolution it is run, for PROM console.  For example, to use
+the Creator card on an Ultra 1C or 2 at a resolution of 1024x768@76Hz:
+</p>
+
+<pre caption="Changing Monitor Settings">
+{0} ok devalias screen /SUNW,ffb
+{0} ok setenv output-device screen:r1024x768x76
+</pre>
+
+<p>
+Changes will not take effect until after a reset. Not all resolutions and
+refresh are available on all cards.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Diagnostics</title>
+<section>
+<title>Entering Diagnostic Mode</title>
+<body>
+
+<p>
+Before running any diagnostics, it is best to enable <c>diag-switch?</c> and do
+a full power off / on cycle (hard power off). Additional diagnostic information
+will be provided over the serial console when the machine boots.
+</p>
+
+</body>
+</section>
+<section>
+<title>Basic Tests</title>
+<body>
+
+<p>
+If the power on self test (POST) succeeds, additional tests can be performed
+using the <c>test</c>, <c>test-all</c>, <c>watch-net</c> and <c>watch-clock</c>
+commands.
+</p>
+
+<p>
+The <c>test somedevice</c> command will perform checks upon the specified
+device (this can be a full device path or a device alias).
+</p>
+
+<pre caption="Example Tests">
+{0} ok test scsi
+        CE DMA fill from address fff8e000 for 80 bytes   succeeded.
+         Dma register test -- succeeded.
+         Esp register test -- succeeded.
+         Dma read test -- succeeded.
+         Dma write test -- succeeded.
+{0} ok test /sbus/SUNW,hme
+Internal loopback test -- succeeded.
+Transceiver check  -- Using Onboard Transceiver - Link Up.
+passed
+{0} ok test ttya
+ !"#$%&amp;'()*+,-./0123456789:;&lt;=&gt;?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmn
+</pre>
+
+<p>
+The <c>test-all</c> command will perform checks upon every device capable of
+self tests.
+</p>
+
+<p>
+The <c>watch-net</c> command can be used to watch for broadcast packets being
+sent over the network.
+</p>
+
+<p>
+The <c>watch-clock</c> command can be used to verify that the internal clock is
+working. It should count from 0 to 59 in a loop with an interval of one
+second.
+</p>
+
+</body>
+</section>
+<section>
+<title>Extended Diagnostics Using obdiag</title>
+<body>
+
+<note>
+The <c>obdiag</c> routines are only available on the Ultra 5/10 and later.
+</note>
+
+<p>
+To enable extended diagnostics mode, run the following:
+</p>
+
+<pre caption="Entering obdiag">
+ok setenv mfg-mode on
+mfg-mode =            on
+ok setenv diag-switch? true
+diag-switch? =        true
+ok setenv auto-boot? false
+auto-boot? =          false
+ok reset-all
+ok obdiag
+</pre>
+
+<p>
+This should display a menu. First, select <c>16</c> to enable verbose
+messages.
+</p>
+
+<pre caption="obdiag menu">
+          OBDiag Menu
+
+  0 ..... PCI/Cheerio
+  1 ..... EBUS DMA/TCR Registers
+  2 ..... Ethernet
+  3 ..... Keyboard
+  4 ..... Mouse
+  5 ..... Floppy
+  6 ..... Parallel Port
+  7 ..... Serial Port A
+  8 ..... Serial Port B
+  9 ..... NVRAM
+ 10 ..... Audio
+ 11 ..... EIDE
+ 12 ..... Video
+ 13 ..... All Above
+ 14 ..... Quit
+ 15 ..... Display this Menu
+ 16 ..... Toggle script-debug
+ 17 ..... Enable External Loopback Tests
+ 18 ..... Disable External Loopback Tests
+
+ Enter (0-13 tests, 14 -Quit, 15 -Menu) ===> 16
+ Enter (0-13 tests, 14 -Quit, 15 -Menu) ===>
+</pre>
+
+<p>
+Individual tests can then be run by selecting the relevant number. Note that
+some tests (for example, serial ports) assume that an external loopback
+connector is attached. The Ethernet test assumes that a cable is attached and
+connected to a switch.
+</p>
+
+<p>
+To exit, use <c>14</c>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter><title>References</title>
+<section>
+<body>
+
+<ul>
+  <li>
+    OpenBoot 3.x Quick Reference, Sun P/N 802-3240 (<uri
+    link="http://sunsolve.sun.com/data/802/802-3240/pdf/802-3240-10.pdf">PDF
+    Version)</uri>
+  </li>
+  <li>
+    OpenBoot 3.x Command Reference, Sun P/N 802-3242 (<uri
+    link="http://sunsolve.sun.com/data/802/802-3242/html/TOC.html">HTML
+    Version)</uri>
+  </li>
+  <li>
+    OpenBoot 3.x Supplement for PCI, Sun P/N 802-7679 (<uri
+    link="http://sunsolve.sun.com/data/802/802-7679/pdf/">Collection of PDF
+    files)</uri>
+  </li>
+  <li>
+    <uri link="http://firmworks.com/QuickRef.html">Open Firmware Quick
+    Reference</uri> (Not Sun OBP specific)
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+</guide>

@@ -1,0 +1,443 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/prelink-howto.xml,v 1.46 2010/01/12 18:59:49 nightmorph Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoo Linux Prelink Guide</title>
+
+<author title="Author">
+  <mail link="cretin@gentoo.org">Stefan Jones</mail>
+</author>
+<author title="Editor"><!-- zhen@gentoo.org -->
+  John P. Davis
+</author>
+<author title="Editor">
+  <mail link="peesh@gentoo.org">Jorge Paulo</mail>
+</author>
+<author title="Editor">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Editor">
+  <mail link="erwin@gentoo.org">Erwin</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This guide tells you how to make use of prelink support in Portage 2.0.46 and
+later.
+</abstract>
+
+<license/>
+
+<version>1.18</version>
+<date>2010-01-12</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>What is Prelink and how can it help me?</title>
+<body>
+
+<p>
+Most common applications make use of shared libraries.  These shared
+libraries need to be loaded into memory at runtime and the various symbol
+references need to be resolved.  For most small programs this dynamic
+linking is very quick.  But for programs written in C++ and that have many
+library dependencies, the dynamic linking can take a fair amount of time.
+</p>
+
+<p>
+On most systems, libraries are not changed very often and when a program is
+run, the operations taken to link the program are the same every time.
+Prelink takes advantage of this by carrying out the linking and storing it
+in the executable, in effect prelinking it.
+</p>
+
+<p>
+Prelinking can cut the startup times of applications.  For example,
+a typical KDE program's loading time can be cut by as much as 50%. The only
+maintenance required is re-running prelink every time a library is upgraded
+for a pre-linked executable.
+</p>
+
+<warn>
+Prelink will not work with Hardened Gentoo. This is because both projects try
+to change the address space mapping of shared libraries. But prelink with the
+-R option randomises library base addresses, providing some degree of hardened
+protection.
+</warn>
+
+</body>
+</section>
+<section>
+<title>Summary</title>
+<body>
+
+<ul>
+  <li>
+    Prelinking is done via a program called, surprisingly, <c>prelink</c>.
+    It changes the binary to make it start faster.
+  </li>
+  <li>
+    If an application's dependent libraries change after you have prelinked it,
+    you need to re-prelink the application, otherwise you lose the speed
+    advantage.  This is to say, everytime you update a package via portage that
+    updates libraries, they need to be re-prelinked.
+  </li>
+  <li>
+    The change to the binary is fully reversible.  <c>prelink</c> has an
+    undo function.
+  </li>
+  <li>
+    Current versions of Portage can handle, via <c>prelink</c>, the changing
+    MD5sums and mtimes of the binaries.
+  </li>
+  <li>
+    You do not need to set <c>FEATURES="prelink"</c> in your
+    <path>make.conf</path> file; Portage will automatically support prelink if
+    it can find the prelink binary.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Setting up Prelink</title>
+<section>
+<title>Installing the Programs</title>
+<body>
+
+<p>
+First you need to install the <c>prelink</c> tool. The emerge process
+automatically verifies that your system can prelink safely.
+</p>
+
+<pre caption = "Installing Prelink">
+# <i>emerge prelink</i>
+</pre>
+
+<p>
+A number of people get errors in emerging prelink because of the failed
+tests.  The tests were put in for safety reasons, prelink's behavior is
+undefined if you disable them.  The emerge errors are usually only dependent
+on the core packages; binutils, gcc, and glibc.  Try re-emerging those
+packages in that order.
+</p>
+
+<note>
+Tip: If you get an error try compiling and testing <c>prelink</c> yourself
+(<c>./configure</c> ; <c>make</c> ; <c>make check</c> ).  On a failure you can
+view the *.log files in the testsuite directory.  They may provide you with
+some useful clues.
+</note>
+
+<p>
+If you have a set of steps that reproduces the emerge error on another system
+please check <uri link="http://bugzilla.gentoo.org">Bugzilla</uri> and create a
+bug report if it has not already been reported.
+</p>
+
+</body>
+</section>
+<section>
+<title>Preparing your System</title>
+<body>
+
+<p>
+Also make sure that you do <e>not</e> have -fPIC set in your CFLAGS/CXXFLAGS. If
+you do, you will need to rebuild your entire system without.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuration</title>
+<body>
+
+<p>
+Running <c>env-update</c> will generate the <path>/etc/prelink.conf</path> file
+that tells <path>prelink</path> which files to prelink.
+</p>
+
+<pre caption="Running env-update">
+# <i>env-update</i>
+</pre>
+
+<p>
+Unfortunately you cannot prelink files that were compiled by old versions
+of binutils.  Most of these applications come from pre-compiled, binary
+only packages which are installed in <path>/opt</path>.  Making the
+following file will tell prelink not to attempt to prelink them.
+</p>
+
+<pre caption="/etc/env.d/60prelink">
+PRELINK_PATH_MASK="/opt"
+</pre>
+
+<note>
+You can add more or less directories to the colon separated list.
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Prelinking</title>
+<section>
+<title>Prelink Usage</title>
+<body>
+
+<p>
+I use the following command to prelink all the binaries in the directories
+given by <path>/etc/prelink.conf</path>.
+</p>
+
+<pre caption = "Prelinking listed files">
+# <i>prelink -amR</i>
+</pre>
+
+<warn>
+It has been observed that if you are low on disk space and you prelink your
+entire system then there is a possibility that your binaries may be truncated.
+The result being a b0rked system.  Use the <c>file</c> or <c>readelf</c>
+command to check the state of a binary file.  Alternatively, check the amount
+of free space on your harddrive ahead of time with <c>df -h</c>.
+</warn>
+
+<table>
+<tr>
+  <th>The options explained:</th>
+</tr>
+<tr>
+  <th>-a</th>
+  <ti>"All": prelinks all the binaries</ti>
+</tr>
+<tr>
+  <th>-m</th>
+  <ti>
+    Conserve the virtual memory space.  This is needed if you
+    have a lot of libraries that need to be prelinked.
+  </ti>
+</tr>
+<tr>
+  <th>-R</th>
+  <ti>
+    Random -- randomize the address ordering, this enhances
+    security against buffer overflows.
+  </ti>
+</tr>
+</table>
+
+<note>
+For more options and details see <c>man prelink</c>.
+</note>
+
+</body>
+</section>
+<section>
+<title>Prelink Cron Job</title>
+<body>
+
+<p>
+<c>sys-devel/prelink-20060213</c> and later install a cron job in
+<path>/etc/cron.daily/prelink</path>. To enable it, edit the configuration file
+<path>/etc/conf.d/prelink</path>. This will run prelink daily in the
+background, as needed, saving you running the command manually.
+</p>
+
+</body>
+</section>
+<section>
+<title>Speeding Up KDE After Prelinking</title>
+<body>
+
+<p>
+KDE's loading time can be greatly reduced after prelinking. If you inform KDE
+that it has been prelinked it will disable the loading of <c>kdeinit</c> (as it
+isn't required anymore) which speeds up KDE even more.
+</p>
+
+<p>
+Set <c>KDE_IS_PRELINKED=1</c> in <path>/etc/env.d/*kdepaths*</path> to
+inform KDE about the prelinking.
+</p>
+
+</body>
+</section>
+<section>
+<title>Removing prelink</title>
+<body>
+
+<p>
+If you ever change your mind about prelinking, before you unmerge prelink,
+you'll first need to remove the prelink cronjob from
+<path>/etc/cron.daily</path> and <path>/etc/conf.d/prelink</path>. Next, you'll
+have to remove prelinking from all binaries:
+</p>
+
+<pre caption="Removing prelinking from all binaries">
+# <i>prelink -au</i>
+</pre>
+
+<p>
+Finally, unmerge the <c>prelink</c> package itself:
+</p>
+
+<pre caption="Unmerging prelink">
+# <i>emerge -aC prelink</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Known Problems and Fixes</title>
+<section>
+<title>"Cannot prelink against non-PIC shared library"</title>
+<body>
+
+<p>
+The cause of this problem is from badly compiled shared libraries that were
+compiled without the -fPIC gcc option for all their object files.
+</p>
+
+<p>
+Here are the libraries that haven't been fixed or cannot be fixed:
+</p>
+
+<ul>
+  <li>
+    The libraries in the wine package, including winex.  Prelinking
+    wouldn't speed up MS Windows executables anyway.
+  </li>
+  <li>
+    The library in media-video/mjpegtools,
+    <path>/usr/lib/liblavfile-1.6.so.0</path>.
+  </li>
+  <li>
+    Nvidia OpenGl libraries,
+    <path>/usr/lib/opengl/nvidia/lib/libGL.so.*</path>.  Due to performance
+    reasons they were compiled without PIC support.
+  </li>
+</ul>
+
+<p>
+If your problem library was not listed please report it with, preferably, a
+patch to add <c>-fPIC</c> to the relevant CFLAGS.
+</p>
+
+</body>
+</section>
+<section>
+<title>When I prelink my system some static binaries don't work anymore</title>
+<body>
+
+<p>
+Where glibc is concerned, there is no such thing as a 100% static binary.
+If you statically compile a binary with glibc, it may still depend on other
+system files.  Below is an explanation by Dick Howell,
+</p>
+
+<p>
+"I suppose the idea is that everything will be in the downloaded file,
+so nothing depends on the local libraries on the target system.  Unfortunately
+with Linux, and I think anything else using GLIBC, this still isn't quite
+true. There's this "libnss" (name service switch, some people seem to call it
+network security system) which provides functions for accessing various
+databases for authentication, network information, and other things.  It's
+supposed to make application programs independent of the separately configured
+actual network environment of the machine.  A nice idea, but changes to GLIBC
+can lead to problems loading it. And you can't statically link "libnss", since
+it is configured for each machine individually.  The problem comes, I think,
+mainly from statically linking other GLIBC libraries, notably "libpthread",
+"libm", and "libc", from which come incompatible calls to "libnss"
+functions."
+</p>
+
+</body>
+</section>
+<section>
+<title>Prelink aborts with "prelink: dso.c:306: fdopen_dso: Assertion
+`j == k' failed."</title>
+<body>
+
+<p>
+This a known problem, kindly diagnosed <uri
+link="http://bugs.gentoo.org/show_bug.cgi?id=13878">here</uri>.
+Prelink cannot cope with UPX-compressed executables.  As of prelink-20021213
+there is no fix except to hide the executables while you are prelinking.
+See the <uri link="#doc_chap2_sect2">Configuration section</uri>
+above for an easy way to do this.
+</p>
+
+</body>
+</section>
+<section>
+<title>I use grsecurity and it seems that prelinking doesn't work.</title>
+<body>
+
+<p>
+In order to prelink on a system with grsecurity using a
+randomized mmap() base, it is necessary to turn "randomized mmap()
+base" OFF for <path>/lib/ld-2.3.*.so</path>. This can be done with
+the <c>chpax</c> utility, but it must be done when the file is not
+in use (f.i. boot from a rescue CD).
+</p>
+
+</body>
+</section>
+<section>
+<title>
+Prelink fails with error "prelink: Can't walk directory tree XXXX: Too many
+levels of symbolic links"
+</title>
+<body>
+
+<p>
+Your symlinks are nested too deeply. This happens when a symlink points to
+itself. For example, <path>/usr/lib/lib -&gt; lib</path> is the most common. To
+fix this, you can find the symlink manually or use the utility provided by the
+<c>symlinks</c> package:
+</p>
+
+<pre caption="Fix symlinks">
+# <i>emerge symlinks</i>
+# <i>symlinks -drv /</i>
+</pre>
+
+<p>
+More details can be found at <uri
+link="http://bugs.gentoo.org/show_bug.cgi?id=82117">Bugzilla</uri> and this
+<uri
+link="http://forums.gentoo.org/viewtopic-t-458144-highlight-prelink.html">forum
+post</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Conclusion</title>
+<section>
+<body>
+
+<p>
+Prelinking can drastically speed up the start up times for a number of
+large applications.  Support is built into Portage.  Prelinking is also safe
+as you can always undo the prelinking for any binary if you come across any
+problems.  Just remember that when you update glibc or other libraries that
+you prelinked with, you need to rerun <path>prelink</path>!
+In short good luck!
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

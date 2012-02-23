@@ -1,0 +1,305 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/liveusb.xml,v 1.3 2006/09/09 17:42:57 idani Exp $ -->
+
+<guide link="/doc/en/liveusb.xml" lang="ja">
+<title>Gentoo Linux LiveUSB HOWTO</title>
+
+<author title="Author">
+  <mail link="henrik@brixandersen.dk">Henrik Brix Andersen</mail>
+</author>
+<author title="翻訳">
+ <mail link="murakami.taku@gmail.com">村上卓</mail>
+</author>
+
+<abstract>
+この手引書では、Gentoo Linux LiveUSBの作成方法、
+すなわちUSBフラッシュドライブを使用してGentoo LinuxインストールCDをエミュレートする方法について説明しています。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.4</version>
+<date>2006-09-09</date>
+
+<!-- Original revision: 1.9 -->
+
+<chapter>
+<title>はじめに</title>
+<section>
+<title>LiveUSB</title>
+<body>
+
+<p>
+この手引書では、<e>Gentoo Linux LiveUSB</e>の作成方法、
+すなわちUSBフラッシュドライブを使用してGentoo LinuxインストールCDをエミュレートする方法について説明しています。
+これは、CD-ROMドライブが付属していない最新のラップトップにGentoo Linuxをインストールする際、
+特に有用です。
+</p>
+
+<p>
+このドキュメントでは、
+USBフラッシュドライブを使用したGentoo LinuxインストールCDのエミュレートに焦点を当てて説明していますが、
+デバイス名を合わせればどのような任意のブロックデバイスでも動作するはずです。
+</p>
+
+</body>
+</section>
+<section>
+<title>必須条件</title>
+<body>
+
+<p>
+Gentoo Linux LiveUSBを使用するには、以下のものが必要です。
+</p>
+
+<ul>
+  <li>ブート可能なUSBフラッシュドライブ(少なくとも64MB)</li>
+  <li>
+    USBブートをサポートしたx86系マシン
+  </li>
+</ul>
+
+<p>
+また、LiveUSBを作成するには以下にアクセスする必要もあります。
+</p>
+
+<ul>
+  <li>
+    Gentoo Linux(もしくは、その代替となる別のLinuxディストリビューション)を稼動させているコンピュータ
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>USBフラッシュドライブの下準備</title>
+<section>
+<title>ドライブをパーティションで区切る</title>
+<body>
+
+<warn>
+下記の手順に従うと、USBフラッシュドライブから全データを削除することになります。
+初めに、必ずデータのバックアップを取るようにして下さい。
+</warn>
+
+<impo>
+この手引書では、<path>/dev/sda</path>デバイスノードをUSBフラッシュドライブに対応するものと想定しています。
+別のSCSI系デバイスであれば、適切なデバイスノードを使用するようにして下さい。
+</impo>
+
+<p>
+まずは、<c>fdisk</c>を使用しUSBフラッシュドライブ上にFAT32パーティションを作成してから、
+ブート可能フラグを付加します。パーテションの構成例を以下に示します。
+</p>
+
+<pre caption="パーティション構成例">
+# <i>fdisk -l /dev/sda</i>
+
+Disk /dev/sda: 1048 MB, 1048313856 bytes
+33 heads, 61 sectors/track, 1017 cylinders
+Units = cylinders of 2013 * 512 = 1030656 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *           1        1017     1023580    b  W95 FAT32
+</pre>
+
+</body>
+</section>
+<section>
+<title>ファイルシステムを作成する</title>
+<body>
+
+<p>
+<c>mkdosfs</c>を使用し、USBフラッシュドライブ上にFAT32ファイルシステムを作成します。
+</p>
+
+<pre caption="mkdosfsの実行">
+<comment>(sys-fs/dosfstoolsがインストールされていることを必ず確認して下さい)</comment>
+# <i>emerge -av sys-fs/dosfstools</i>
+# <i>mkdosfs -F 32 /dev/sda1</i>
+mkdosfs 2.11 (12 Mar 2005)
+</pre>
+
+</body>
+</section>
+<section>
+<title>マスターブートレコードへインストールする</title>
+<body>
+
+<p>
+<c>syslinux</c>から提供される事前コンパイル済みマスターブートレコード(MBR)プログラムを、
+USBフラッシュドライブ上にインストールします。
+</p>
+
+<pre caption="マスターブートレコードのインストール">
+<comment>(sys-boot/syslinux-3.00以降がインストールされていることを必ず確認して下さい</comment>
+# <i>emerge -av '>=sys-boot/syslinux-3*'</i>
+# <i>dd if=/usr/lib/syslinux/mbr.bin of=/dev/sda</i>
+0+1 records in
+0+1 records out
+</pre>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>ファイルをコピーする</title>
+<section>
+<title>Gentoo LinuxインストールCDをマウントする</title>
+<body>
+
+<p>
+<path>install-x86-minimal-2006.0.iso</path>ファイルを身近なGentoo Linux<uri link="/main/en/where.xml">ミラー</uri>サイトからダウンロードし、
+以下のようにしてISOイメージを<path>/mnt/cdrom/</path>にマウントして下さい。
+</p>
+
+<pre caption="Gentoo LinuxインストールCDのISOイメージをマウントする">
+<comment>(必要であれば、/mnt/cdrom/マウントポイントを作成します)</comment>
+# <i>mkdir -p /mnt/cdrom</i>
+# <i>mount -o loop,ro -t iso9660 install-x86-minimal-2006.0.iso /mnt/cdrom/</i>
+</pre>
+
+<note>
+isoイメージをマウントした際に、
+<e>Could not find any loop device(訳注：ループデバイスが見つからない)</e>というエラーが発生した場合は、
+カーネル設定で<e>Loopback device support</e>を有効にする必要があります。
+</note>
+
+</body>
+</section>
+<section>
+<title>LiveUSBをマウントする</title>
+<body>
+
+<p>
+以下のようにして、新規フォーマットされたUSBフラッシュドライブを<path>/mnt/usb/</path>にマウントします。
+</p>
+
+<pre caption="USBフラッシュドライブのマウント">
+<comment>(必要であれば、/mnt/usb/マウントポイントを作成します)</comment>
+# <i>mkdir -p /mnt/usb</i>
+# <i>mount -t vfat /dev/sda1 /mnt/usb/</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>ファイルをコピーする</title>
+<body>
+
+<p>
+Gentoo LinuxインストールCDからLiveUSBにファイルをコピーします。
+<c>isolinux</c>ではなく<c>syslinux</c>ブートローダを使用することになるので、
+ファイルを少し整理しなおす必要があります。
+</p>
+
+<pre caption="ファイルのコピー">
+# <i>cp -r /mnt/cdrom/* /mnt/usb/</i>
+# <i>mv /mnt/usb/isolinux/* /mnt/usb/</i>
+# <i>mv /mnt/usb/isolinux.cfg /mnt/usb/syslinux.cfg</i>
+# <i>rm -rf /mnt/usb/isolinux*</i>
+
+<comment>(syslinux経由で読み込まれるため、memtest86カーネルのファイル名を変更する必要があります)</comment>
+# <i>mv /mnt/usb/memtest86 /mnt/usb/memtest</i>
+</pre>
+
+<p>
+これで、ISOイメージをアンマウントできます。
+</p>
+
+<pre caption="ISOイメージのアンマウント">
+# <i>umount /mnt/cdrom/</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>ブートローダの設定を調整する</title>
+<body>
+
+<p>
+<c>sed</c>を以下のように使用し、syslinuxの設定ファイルを調整して下さい。
+<c>dobladecenter</c>パラメータは、ファイルシステムのマウントを試みる前、
+追加で時間を延長してくれます。USBフラッシュドライブの認識時に十分な時間を与えるため、
+このパラメータが必要になります。
+</p>
+
+<pre caption="ブートパラメータの調整">
+# <i>sed -i \
+    -e "s:cdroot:cdroot dobladecenter:" \
+    -e "s:kernel memtest86:kernel memtest:" \
+    /mnt/usb/syslinux.cfg</i>
+</pre>
+
+<note>
+<c>docache</c>をブートパラメータに追加することを検討して下さい。これにより、
+ブート後に<c>umount /mnt/cdrom/</c>を実行できるようになり、
+結果としてUSBフラッシュドライブを引き抜くことができます。但し、
+対象のコンピュータが少なくとも128MBのRAMを搭載していない限り、
+このパラメータは有効にしないで下さい。
+</note>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>ブートローダをインストールする</title>
+<section>
+<title>ドライブをアンマウントする</title>
+<body>
+
+<p>
+ブートローダをインストールする前に、必ずUSBフラッシュドライブをアンマウントして下さい。
+</p>
+
+<pre caption="USBフラッシュドライブのアンマウント">
+# <i>umount /mnt/usb/</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>syslinuxをインストールする</title>
+<body>
+
+<p>
+最後に、<c>syslinux</c>ブートローダをUSBフラッシュドライブにインストールします。
+</p>
+
+<pre caption="syslinuxの実行">
+# <i>syslinux /dev/sda1</i>
+</pre>
+
+<impo>
+<path>syslinux.cfg</path>ファイルを修正都度、
+設定変更を有効にするために<c>syslinux /dev/sda1</c>を再度実行する必要があります。
+</impo>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>LiveUSBを使用する</title>
+<section>
+<title>ブートする</title>
+<body>
+
+<p>
+USBフラッシュドライブを挿入し、コンピュータをブートしてください。その際に、
+USBからブートするようBIOSが設定されていることを必ず確認して下さい。
+全てがうまくいけば、標準のsyslinuxプロンプトが表示されるはずです。
+</p>
+
+<p>
+ここまでくれば、
+<uri link="/doc/en/handbook/">Gentooハンドブック</uri>(<uri link="/doc/ja/handbook/">日本語</uri>)から一般的なインストール方法に進むことができるはずです。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

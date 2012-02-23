@@ -1,0 +1,472 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/lvm2.xml,v 1.15 2009/08/24 15:26:49 shindo Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/lvm2.xml" lang="ja">
+<title>Gentoo LVM2インストール</title>
+
+<author title="Author">
+  <mail link="avi@CFFtechnologies.com">Avi Schwartz</mail>
+</author>
+<author title="Contributor">
+  <mail link="rajiv@gentoo.org">Rajiv Manglani</mail>
+</author>
+<author title="Editor">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+<author title="翻訳">
+  <mail link="igarashi@gentoo.gr.jp">五十嵐 正尚</mail>
+</author>
+
+<abstract>
+このガイドでは、論理ボリューム管理システムバージョン2(LVM2)を使用してGentooマシンをセットアップする方法を説明します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2.7</version>
+<date>2009-02-10</date>
+
+<!-- Original revision: 1.25 -->
+
+<chapter>
+<title>はじめに</title>
+<section>
+<body>
+
+<p>
+このガイドは、2つのIDEハードディスクを使用した例を基にして説明します。
+よって、読者の設備構成とニーズに一致させるために、おそらくドライブとパーティションの名前と大きさに合わせて変更する必要があるでしょう。
+</p>
+
+<warn>
+このドキュメントは、LVM2のチュートリアルではありません。
+<uri
+link="/doc/en/handbook/handbook-x86.xml?part=1">Handbook, Part1
+</uri><uri
+link="/doc/ja/handbook/handbook-x86.xml?part=1">(日本語訳)
+</uri>で説明されているGentooインストールの手順を補足する目的があります。
+インストール作業を開始する<e>前に</e>、Gentooインストールマニュアルを確実に<e>読んで</e>ください。
+</warn>
+
+<note>
+LVM HOWTO一式は、<uri>http://tldp.org/HOWTO/LVM-HOWTO</uri>をブラウザで参照してください。
+</note>
+
+</body>
+</section>
+<section>
+<title>初期条件</title>
+<body>
+
+<p>
+Gentooを新たにインストールする場合、GentooインストールCDのようなLVM2サポートがあるブート可能CDを使用する必要があるでしょう。<uri
+link="/main/en/mirrors.xml">mirrors</uri><uri
+link="/main/ja/mirrors.xml">(日本語訳)</uri>にあるサイトの<path>/releases/x86/current/installcd</path>にx86アーキテクチャ用のインストールCDがあります。他のアーキテクチャでも同様にサポートされているかもしれません。
+</p>
+
+<p>
+現在稼動中の余分なハードディスクスペースがあるシステムに、LVM2をインストールする場合、LVM2モジュール(<path>dm-mod</path>)を有効にする必要があるでしょう。このモジュールは、<path>gentoo-sources</path>で利用可能です。
+カーネルをコンパイルしてLVM2を動作させる方法は、このガイドの後半に説明されています。
+</p>
+
+<p>
+Gentooで提供される2.4系列カーネルのすべてがLVM2をサポートするとは限りません!
+</p>
+
+</body>
+</section>
+<section>
+<title>パーティション</title>
+<body>
+
+<p>
+例として使用するシステムには、2つのIDEハードディスクがあり、以下のようなパーティションで区切られています。
+</p>
+
+<ul>
+  <li>/dev/hda1  --  /boot</li>
+  <li>/dev/hda2  --  (スワップ)</li>
+  <li>/dev/hda3  --  /</li>
+  <li>/dev/hda4  --  LVM2によって使用される予定</li>
+  <li>/dev/hdb1  --  LVM2によって使用される予定</li>
+</ul>
+
+<impo>
+aとかbのユニットを示す文字や、パーティションの番号を混同しやすいので、間違えないようにパーティションの名前に気を配ってください。たった一つの間違いが、意図しないパーティションを消去してしまう可能性があります。十分に気をつけてくださいね!
+</impo>
+
+<p>
+OK、では始めましょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>インストール</title>
+<section>
+<body>
+
+<p>
+基本的にはハンドブックに従ってほしいのですが、
+<e>4. Preparing the Disks(ディスクの準備)</e>の章に対する以下の修正があります。
+</p>
+
+<p>
+ハンドブックで説明されているように<c>fdisk</c>コマンドを使用しますが、例として挙げたパーティション区画を使用してください。もちろん<e>例</e>ですので、あなたのニーズに合わせてください。
+</p>
+
+<p>
+<path>/boot</path>用の小さな物理パーティション(hba1)を作成してください。この例では、<path>/boot</path>はLVM2によって管理されません。このパーティションには、ブートローダとカーネルが存在するでしょう。64MBのパーティションは、かなり多くの複数世代のカーネルを保持するのに十分適しています。
+</p>
+
+<p>
+スワップパーティション(hda2)を作成してください。
+</p>
+
+<p>
+/ (ルート)パーティション(hda3)を作成してください。ルートパーティションをLVM管理下に置くことに興味がある場合(私たちは推奨しません)、その方法に関するミニhowtoへのリンクが、このガイドの終わりにある資料セクションにあります。
+LVM2ボリュームグループ(vg)に<path>/opt /usr /home /var /tmp</path>を含めるなら、ルートパーティションのサイズは大きい必要はありません。この場合、1GBで十分でしょう。
+</p>
+
+<note>
+以下に続くディレクトリをLVM2パーティションに置くことは推奨しません。
+<path>/etc</path>、<path>/lib</path>、<path>/lib</path>、<path>/mnt</path>、
+<path>/proc</path>、<path>/sbin</path>、<path>/dev</path>、<path>/root</path>。
+このようにしておくと、なにかひどく悪い状況になっても、まだシステムにログイン(不自由でしょうけど、ルートユーザとしてまだ若干は利用可能)できるでしょう。
+</note>
+
+<p>
+<path>/boot</path>とスワップとルートパーティションで、物理ディスクの全部を使用しないと仮定して、このディスクに4番目のパーティションを作成し、パーティションタイプを8e(Linux LVM)に設定してください。
+さらにLVMで使用したいと思う物理ディスクがある場合、それぞれに一つのパーティションを作成して、同じパーティションタイプ(8e)を設定してください。
+</p>
+
+<note>
+最近のディスクの大容量さを考えると、一つのLVM2ボリュームグループに追加される一つの大きいパーティションを作成する代わりに、ハードディスクを小さいパーティションに分割することを検討するかもしれません。
+どっちみちLVM2はボリュームを拡張しやすくするものです。
+この特徴は、LVM2グループに含めずに別の用途で使用する必要があるかもしれない、未割当てのパーティションを残しておけます。
+つまり、必要になるまでディスクスペースを使用しないでください。
+例として、ある報告者は、160GBのハードディスクを20GBずつの8つのパーティションに分割したそうです。
+</note>
+
+<p>
+ハンドブックに書かれているように、
+<path>/dev/hda1</path>と<path>/dev/hda3</path>上にファイルシステムを作成します。
+そして、<path>/dev/hda2</path>にswapを作成し、有効にします。
+</p>
+
+<p>
+LVM2 <path>dm-mod</path>モジュールをロードしてください。
+</p>
+
+<pre caption="LVM2モジュールのロード">
+# <i>modprobe dm-mod</i>
+</pre>
+
+<p>
+物理ボリュームの走査とLVMの有効化を行う前に、いくつかのデバイスを除外するために<path>/etc/lvm/lvm.conf</path>を編集したいかもしれません。
+デフォルトでは、CDROMドライブがエラーメッセージを発生する可能性があっても、LVM2はすべてのデバイスを走査します。
+以下の例では、すべてのデバイスの走査が可能な行を2つのIDEディスク以外のすべてデバイスを除外するもので置き換えられています。
+</p>
+
+<pre caption="LVMの有効化">
+<comment>(ディスク以外の走査をしないようにする)</comment>
+# <i>nano -w /etc/lvm/lvm.conf</i>
+<comment>(以下の行を探す)</comment>
+    filter = [ "a/.*/" ]
+<comment>(/dev/hdaと/dev/hdbを走査してそれ以外は除外する以下のもので置き換える)</comment>
+    filter = [ "a|/dev/hd[ab]|", "r/.*/" ]
+<comment>(ファイルを保存してnanoを終了)</comment>
+# <i>vgscan</i>
+  Reading all physical volumes.  This may take a while...
+  No volume groups found
+<comment>(設定済みのボリュームグループを有効にする)</comment>
+# <i>vgchange -a y</i>
+</pre>
+
+<p>
+パーティションを準備してください。
+</p>
+
+<pre caption="パーティションの準備">
+# <i>pvcreate /dev/hda4 /dev/hdb1</i>
+  No physical volume label read from /dev/hda4
+  Physical volume "/dev/hda4" successfully created
+  No physical volume label read from /dev/hdb1
+  Physical volume "/dev/hdb1" successfully created
+</pre>
+
+<p>
+ボリュームグループをセットアップしてください。
+ボリュームグループとは、単一の論理デバイスにいくつかの物理ユニットを結合したものです。
+</p>
+
+<p>
+例では、<path>/dev/hda1</path>と<path>/dev/hda2</path>と<path>/dev/hda3</path>は、<path>/boot</path>とスワップとルートパーティションです。そして、<path>/dev/hda4</path>と<path>/dev/hdb1</path>を結合する必要があります。
+これはコマンド一発で実行することができますが、ここでは例として、ボリュームグループを作成して、それを拡張しています。
+</p>
+
+<pre caption="ボリュームグループの作成と拡張">
+<comment>(vgというボリュームグループを作成します)</comment>
+# <i>vgcreate vg /dev/hda4</i>
+  /etc/lvm/backup: fsync failed: Invalid argument <comment>(この警告は無視してください)</comment>
+  Volume group "vg" successfully created
+<comment>(作成したボリュームグループを拡張します)</comment>
+# <i>vgextend vg /dev/hdb1</i>
+  /etc/lvm/backup: fsync failed: Invalid argument <comment>(再度、そしてこの後も同様に、この警告は無視してください)</comment>
+  Volume group "vg" successfully extended
+</pre>
+
+<p>
+論理ボリュームを作成してください。論理ボリュームは、非LVM2環境でfdiskコマンドを使用して作成するパーティションに相当します。例では、以下に示すパーティションを作成します。
+</p>
+
+<table>
+<tr>
+  <th>ディレクトリ</th>
+  <th>サイズ</th>
+</tr>
+<tr>
+  <ti>/usr</ti>
+  <ti>10 GB</ti>
+</tr>
+<tr>
+  <ti>/home</ti>
+  <ti>5 GB</ti>
+</tr>
+<tr>
+  <ti>/opt</ti>
+  <ti>5 GB</ti>
+</tr>
+<tr>
+  <ti>/var</ti>
+  <ti>10 GB</ti>
+</tr>
+<tr>
+  <ti>/tmp</ti>
+  <ti>2 GB</ti>
+</tr>
+</table>
+
+<p>
+LVM2を使用するのですから、いつでも必要に応じて拡張できるので、パーティションサイズをどうするかは、さほど心配しなくてもいいはずです。
+</p>
+
+<note>
+Terje Kvernes氏が言うように、パーティションのサイズを縮小させるより増加させる方がより簡単です。従って、小さめのパーティションから始めて、必要に応じてサイズを増加させたいと思うかもしれません。
+</note>
+
+<pre caption="論理ボリュームの作成と拡張">
+# <i>lvcreate -L10G -nusr  vg</i>
+  Logical volume "usr" created <comment>(この先同様のメッセージは表示されません)</comment>
+# <i>lvcreate -L5G  -nhome vg</i>
+# <i>lvcreate -L5G  -nopt  vg</i>
+# <i>lvcreate -L10G -nvar  vg</i>
+# <i>lvcreate -L2G  -ntmp  vg</i>
+<comment>(例として、論理ボリュームに5GB追加拡張してみます)</comment>
+# <i>lvextend -L+5G /dev/vg/home</i>
+</pre>
+
+<p>
+通常のパーティション上で実行するのと同じ方法で、論理ボリューム上にファイルシステムを作成してください。以下では論理ボリューム上にext3を使用しますが、あなたが選択するどんなファイルシステムも機能するでしょう。
+</p>
+
+<pre caption="ファイルシステムの作成">
+# <i>mke2fs -j /dev/vg/usr</i>
+# <i>mke2fs -j /dev/vg/home</i>
+# <i>mke2fs -j /dev/vg/opt</i>
+# <i>mke2fs -j /dev/vg/var</i>
+# <i>mke2fs -j /dev/vg/tmp</i>
+</pre>
+
+<p>
+ハンドブックで記述されているとおりにパーティションをマウントしてください。
+そして、LVM2論理ボリュームを、それらがパーティションであるかのようにマウントしてください。
+通常の<path>/dev/hdxx</path>を<path>/dev/vg/logical_volumename</path>で置き換えて下さい。
+</p>
+
+<pre caption="論理ボリュームのマウント">
+<comment>(最初にハンドブックで記述されているとおりにルートパーティションを確実にマウントしてください)</comment>
+# <i>mkdir /mnt/gentoo/usr</i>
+# <i>mount /dev/vg/usr /mnt/gentoo/usr</i>
+# <i>mkdir /mnt/gentoo/home</i>
+# <i>mount /dev/vg/home /mnt/gentoo/home</i>
+# <i>mkdir /mnt/gentoo/opt</i>
+# <i>mount /dev/vg/opt /mnt/gentoo/opt</i>
+# <i>mkdir /mnt/gentoo/var</i>
+# <i>mount /dev/vg/var /mnt/gentoo/var</i>
+# <i>mkdir /mnt/gentoo/tmp</i>
+# <i>mount /dev/vg/tmp /mnt/gentoo/tmp</i>
+</pre>
+
+<note>
+インストールのハンドブックの残りについては、ここで差異を示した以外は、再度読み直さなくてよいようにしているので、ほとんど変わりありません。
+</note>
+
+<p>
+カーネルを設定するときは、必ずLVM2をサポートするように(すべての2.4系列カーネルがサポートしているとは限りません)カーネルを設定してください。
+以下のようにLVM2モジュールを選択してください。
+</p>
+
+<pre caption="カーネル2.4.xでLVM2モジュールを選択する">
+Multi-device support (RAID and LVM)  ---&gt;
+  [*] Multiple devices driver support (RAID and LVM)
+  &lt; &gt;  RAID support
+<comment>(LVMは意図的に選択されていないことに注意してください。これはLVM1用です。)</comment>
+  &lt; &gt;  Logical volume manager (LVM) support
+  &lt;M&gt;  Device-mapper support
+  &lt; &gt;   Mirror (RAID-1) support
+</pre>
+
+<pre caption="カーネル2.6.xでLVM2モジュールを選択する">
+Device Drivers  ---&gt;
+ Multi-device support (RAID and LVM)  ---&gt;
+   [*] Multiple devices driver support (RAID and LVM)
+   &lt; &gt;   RAID support
+   &lt;M&gt;   Device mapper support
+</pre>
+
+<p>
+コンパイルされたモジュールは、<path>dm-mod.ko</path>と呼ばれます。
+</p>
+
+<p>
+マシンの起動時にLVM2モジュールがロードされるようにするために、カーネルを構築してモジュールをインストールした後、<path>/etc/modules.autoload.d/kernel-{KV}</path>に以下の行を追加してください。{KV}はカーネルバージョン(2.4か2.6)を意味します。
+</p>
+
+<pre caption="/etc/modules.autoload.d/kernel-2.6にLVM2モジュールを追加する">
+# <i>nano -w /etc/modules.autoload.d/kernel-2.6</i>
+<comment>(以下の行を追加してください)</comment>
+dm-mod
+</pre>
+
+<p>
+ここで、lvm2パッケージをインストールしてください。
+</p>
+
+<impo>
+lvm2のebuildは、device-mapperのebuildに依存します。device-mapperのebuildは、<path>/usr/src/linux/include/linux</path>の下の必要なソースファイルの存在を確認します。よって、<path>/usr/src/linux</path>のリンクが、使用しているカーネルのソースツリーを指しているか確認してください。
+</impo>
+
+<pre caption="LVM2パッケージのemerge">
+# <i>emerge lvm2</i>
+</pre>
+
+<p>
+<uri
+link="#doc_chap2_pre2">earlier</uri>で説明されているように<path>/etc/lvm/lvm.conf</path>を編集してください。
+以前に編集したこのファイルはインストール環境のもので、次のリブート後にはなくなってしまいます。
+ここで、新しいGentooインストール環境内に正式なものを編集します。
+</p>
+
+<p>
+<path>/etc/fstab</path>ファイルを編集するときは、ハンドブックに従って、必要に応じてLVM2論理ボリュームを追加してください。
+以下にこの文書での例を示します。
+</p>
+
+<pre caption="/etc/fstabの抜粋">
+/dev/hda1     /boot   ext3    noauto,noatime 1 2
+/dev/hda2     none    swap    sw             0 0
+/dev/hda3     /       ext3    noatime        0 1
+# Logical volumes
+/dev/vg/usr   /usr    ext3    noatime        0 2
+/dev/vg/home  /home   ext3    noatime        0 2
+/dev/vg/opt   /opt    ext3    noatime        0 2
+/dev/vg/var   /var    ext3    noatime        0 2
+/dev/vg/tmp   /tmp    ext3    noatime        0 2
+</pre>
+
+<p>
+ハンドブックのインストールパートの最後に到達したとき、通常のパーティションと同様に、すべてのLVM2論理ボリュームをumountすることを忘れないでください。そして、再起動する前に、常套手段として以下のコマンドを実行してください。
+</p>
+
+<pre caption="LVM2のシャットダウン">
+# <i>vgchange -a n</i>
+</pre>
+
+<p>
+マシンを立ち上げなおしてください。すると、すべてのパーティションが確認でき、マウントされているはずです。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>再起動した後で作業を続行する</title>
+<section>
+<body>
+
+<p>
+ある時点でGentooのインストールを中断した後で、また再開したい場合、必要なボリュームデバイスノードを最初に作成する必要があります。
+</p>
+
+<pre caption="ボリュームの再活性化">
+# <i>vgscan --mknodes</i>
+</pre>
+
+<p>
+あまり新しくないツールを備えるインストールCDは、上記の方法ではなく以下のようにボリュームを再活性化する必要があるかもしれません。
+</p>
+
+<pre caption="ボリュームの再活性化">
+<comment>(最初に全ボリュームを非活性化)</comment>
+# <i>vgchange -a n</i>
+<comment>(全ボリュームを切り離す)</comment>
+# <i>vgexport -a</i>
+<comment>(全ボリュームを組み込む)</comment>
+# <i>vgimport -a</i>
+<comment>(全ボリュームを再活性化)</comment>
+# <i>vgchange -a y</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>資料</title>
+<section>
+<body>
+
+<ul>
+  <li>
+    公式<uri link="http://sources.redhat.com/lvm2">LVM2ホームページ</uri>
+  </li>
+  <li>
+    <uri link="http://tldp.org/HOWTO/LVM-HOWTO">LVM Howto</uri>
+  </li>
+  <li>
+    IBMのdeveloperWorksにあるLVMに関するDaniel Robbinsの記事: <uri
+    link="/doc/en/articles/lvm-p1.xml">Part 1</uri><uri
+    link="/jp/developerworks/linux/010608/j_l-lvm.html">(日本語訳)</uri>と<uri
+    link="/doc/en/articles/lvm-p2.xml">Part 2</uri><uri
+    link="/jp/developerworks/linux/010629/j_l-lvm2.html">(日本語訳)</uri>
+  </li>
+  <li>
+    LVM1からルートFSをブートする方法:
+    <uri>http://www.the-infinite.org/archive/docs/lvm/howto-boot-off-root-lv.txt</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>謝辞</title>
+<section>
+<body>
+
+<p>
+このドキュメントに対する<mail link="bangert@gentoo.org">Thilo Bangert</mail>と<mail link="terjekv@math.uio.no">Terje Kvernes</mail>の助力と意見に感謝します。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

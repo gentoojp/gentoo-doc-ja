@@ -1,0 +1,994 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoolkit.xml,v 1.36 2011/08/15 19:30:36 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoolkit</title>
+
+<author title="Author">
+  <mail link="mbutcher@aleph-null.tv">Matt Butcher</mail>
+</author>
+<author title="Editor">
+  <!-- zhen@gentoo.org -->John P. Davis
+</author>
+<author title="Editor">
+  <mail link="erwin@gentoo.org">Erwin</mail>
+</author>
+<author title="Editor">
+  <mail link="fox2mike@gentoo.org">Shyam Mani</mail>
+</author>
+<author title="Editor">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+<author title="Editor">
+  <mail link="karltk@gentoo.org">Karl Trygve</mail>
+</author>
+<author title="Editor">
+  <mail link="yoswink@gentoo.org">José Luis Rivero</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+<author title="Editor">
+  <mail link="douglasjanderson@gmail.com">Douglas Anderson</mail>
+</author>
+
+<abstract>
+Gentoolkit is a suite of tools to ease the administration of a Gentoo system.
+This document covers the basics of some of the tools present in Gentoolkit.
+</abstract>
+
+<!-- Licensed under GFDL -->
+
+<version>4</version>
+<date>2011-08-16</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>What is Gentoolkit?</title>
+<body>
+
+<p>
+Gentoo is a unique distribution and presents some complexities that simply
+don't exist for other distributions. As Gentoo developers and contributors
+discovered some of these complexities, they also wrote tools to help users and
+administrators work around them. Many of these tools have been contributed to
+the Gentoo project and are included in the package
+<c>app-portage/gentoolkit</c>.
+</p>
+
+<note>
+As of now, there are two versions of gentoolkit: <c>app-portage/gentoolkit</c>
+and <c>app-portage/gentoolkit-dev</c>. While the former contains administration
+scripts, the latter contains scripts specific to help development on Gentoo.
+If you are a developer, you can have your scripts included into
+<c>gentoolkit-dev</c> by contacting the Gentoolkit maintainer. This document
+discusses gentoolkit only.
+</note>
+
+<p>
+Gentoolkit contains a whole bunch of useful tools to help manage your packages
+and keep track of what is going on in your system. Most users
+--&nbsp;particularly those who update systems often&nbsp;-- will benefit from
+having gentoolkit installed.
+</p>
+
+</body>
+</section>
+<section>
+<title>Installation</title>
+<body>
+
+<p>
+Just as with any Gentoo package, installation is just a simple emerge.
+</p>
+
+<pre caption="Getting gentoolkit">
+# <i>emerge gentoolkit</i>
+</pre>
+
+<note>
+Many of the tools in gentoolkit reveal important information about your system
+or require root privilege. For that reason, some of the programs may only be
+executed (or only function properly) if run by a user with root privileges.
+</note>
+
+</body>
+</section>
+<section>
+<title>Finding Documentation</title>
+<body>
+
+<p>
+Any documentation that a program might have (other than man pages) is stored in
+<path>/usr/share/doc/gentoolkit-[version]/[program-name]/</path>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>equery</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+<c>equery</c> is a tool that displays useful information about the packages on
+your system. <c>equery</c> is based on a system of modules.
+Every module has a shorthand name. For example, <c>equery l gcc</c> is the same
+as <c>equery list gcc</c>.  <c>equery --help</c> explains global options
+and lists all available modules and their shorthand names.
+<c>equery --help module</c> will display the help screen for a specific
+module. Lastly, <c>man equery</c> provides a detailed explanation of all
+available modules and options, and provides useful examples.
+</p>
+
+<p>
+Below is a list of features that work over the majority of modules.
+</p>
+
+<pre caption="Examples of Acceptable Input">
+<comment>(Many modules require a package argument. equery accepts all emerge-like input):</comment>
+$ <i>equery --quiet list gcc</i>                  # <comment>package</comment>
+sys-devel/gcc-4.3.2-r3
+$ <i>equery --quiet list sys-devel/gcc</i>        # <comment>category/package</comment>
+sys-devel/gcc-4.3.2-r3
+$ <i>equery --quiet list '>=sys-devel/gcc-4'</i>  # <comment>atom syntax</comment>
+sys-devel/gcc-4.3.2-r3
+
+<comment>(Like emerge, equery doesn't understand partial package names):</comment>
+$ <i>equery check zilla</i>
+!!! No package found matching zilla
+
+<comment>(Unlike emerge, equery can accept shell-like globbing in the category and/or package name):</comment>
+$ <i>equery check '*zilla*'</i>
+ * Checking www-client/mozilla-firefox-3.0.14 ...
+    90 out of 90 files passed
+$ <i>equery check www-c*/*</i>
+ * Checking www-client/links-2.2 ...
+   30 out of 30 files passed
+ * Checking www-client/mozilla-firefox-3.0.14 ...
+   90 out of 90 files passed
+
+<comment>(Most equery modules take multiple input):</comment>
+$ <i>equery hasuse sse sse2</i>
+ * Searching for USE flag sse ...
+[IP-] [  ] media-libs/flac-1.2.1-r3 (0)
+[IP-] [  ] media-libs/speex-1.2_beta3_p2 (0)
+
+ * Searching for USE flag sse2 ...
+[IP-] [  ] dev-libs/openssl-0.9.8k (0)
+[IP-] [  ] x11-libs/pixman-0.16.0 (0)
+
+<comment>(A few modules also allow full regular expressions):</comment>
+$ <i>equery -q list --portage-tree --full-regex '[kr]?flickr.*'</i>
+dev-dotnet/flickrnet-bin-2.2
+dev-ruby/flickr-1.0.2-r1
+dev-ruby/flickr-1.0.2-r2
+dev-ruby/rflickr-20060201
+media-gfx/kflickr-0.6
+[...]
+</pre>
+
+<note>
+Globbing support replaced a number of older options in <c>equery</c>.
+For example, to act on all packages in a certain set, use <c>'*'</c>.
+To act on all packages in a category, use <c>'category-name/*'</c>.
+</note>
+
+<warn>
+Don't forget to quote input when using special shell characters
+like asterisks or greater than/less than signs.
+</warn>
+
+<p>
+The next few sections in this document give a quick introduction to the
+different <c>equery</c> modules.
+</p>
+
+</body>
+</section>
+<section>
+<title>Finding the Package That a File Came From with belongs (b)</title>
+<body>
+
+<pre caption="Finding the Package that Installed a Given File">
+$ <i>equery belongs -e /usr/bin/glxgears</i>
+ * Searching for /usr/bin/glxgears ...
+ x11-apps/mesa-progs-7.5.1 (/usr/bin/glxgears)
+</pre>
+
+<p>
+<c>belongs</c> can search for files matching a regular expression with the
+<c>-f</c> option. The <c>-e</c> option stops searching after it finds a match.
+Since no file on your system should be owned by two packages, this is a safe
+optimization.
+</p>
+
+</body>
+</section>
+<section>
+<title>Viewing ChangeLog Entries with changes (c)</title>
+<body>
+
+<p>
+<c>changes</c> lets you view ChangeLog entries for a package version or range
+of versions. Imagine after an <c>emerge --sync</c>, you
+notice Portage is going to be upgraded and want to check what has changed:
+</p>
+
+<pre caption="Viewing Gentoo ChangeLog Entries">
+<comment>(Show the latest installable version's entry):</comment>
+$ <i>equery changes portage</i>
+*portage-2.1.6.13 (03 May 2009)
+
+  03 May 2009; Zac Medico &lt;zmedico@gentoo.org&gt; +portage-2.1.6.13.ebuild:
+  2.1.6.13 bump. This fixes bug #268398 (document econf automatic die)
+  and bug #267104 (handle insufficient space interaction with userfetch).
+  Bug #268228 tracks all bugs fixed since 2.1.6.11.
+</pre>
+
+</body>
+</section>
+<section>
+<title>Verifying Package Integrity with check (k)</title>
+<body>
+
+<p>
+Sometimes it is useful to check a package's integrity. <c>equery</c> can
+verify MD5 sums as well as timestamps to indicate when a package might
+have been corrupted, replaced, or removed.
+</p>
+
+<pre caption="Checking Package Integrity">
+$ <i>equery check gentoolkit</i>
+ * Checking app-portage/gentoolkit-0.3.0_rc7 ...
+   71 out of 71 files passed
+</pre>
+
+</body>
+</section>
+<section>
+<title>Listing All Packages Depending on Package X with depends (d)</title>
+<body>
+
+<p>
+Ever wonder why a certain package has been installed on your system?
+<c>equery</c> can tell which packages list it as a dependency with
+<c>depends</c>. Include indirect dependencies with the <c>-D</c>
+option.
+</p>
+
+<pre caption="Looking for Packages Depending on pygtk">
+$ <i>equery depends pygtk</i>
+ * Searching for pygtk ...
+app-admin/pessulus-2.24.0 (>=dev-python/pygtk-2.6.0)
+app-editors/gedit-2.24.3 (python ? >=dev-python/pygtk-2.12)
+dev-libs/libgweather-2.24.3 (python ? >=dev-python/pygtk-2)
+dev-python/gnome-python-base-2.22.3 (>=dev-python/pygtk-2.10.3)
+dev-python/gnome-python-desktop-base-2.24.1 (>=dev-python/pygtk-2.10.3)
+[...]
+</pre>
+
+</body>
+</section>
+<section>
+<title>Getting Dependency Graphs with depgraph (g)</title>
+<body>
+
+<p>
+<c>depgraph</c> is the opposite of <c>depends</c>. You pass it a package, and
+it will find the packages <e>it</e> depends on (not that depend on it).
+When it finds a dependency, it will recursively search for all of
+<e>that</e> package's dependencies. Control how deep the tree gets with
+the <c>--depth</c> option.
+</p>
+
+<pre caption="Viewing Dependency Graph for mozilla-firefox">
+$ <i>equery depgraph mozilla-firefox</i>
+ * Searching for mozilla-firefox ...
+ * dependency graph for www-client/mozilla-firefox-2.0.0.19:
+`-- www-client/mozilla-firefox-2.0.0.19
+ `-- virtual/jre-1.6.0 (virtual/jre) [java]
+  `-- virtual/jdk-1.6.0 (virtual/jdk-1.6.0*)
+  `-- dev-java/icedtea6-bin (unable to resolve: package masked or removed)
+   `-- dev-java/sun-jdk-1.6.0.15
+    `-- dev-java/java-sdk-docs-1.6.0.10 [doc]
+     `-- app-arch/unzip-6.0-r1
+      `-- app-arch/bzip2-1.0.5-r1 [bzip2]
+    `-- sys-libs/glibc-2.9_p20081201-r2
+     `-- sys-devel/gettext-0.17 [nls]
+      `-- virtual/libiconv-0 (virtual/libiconv)
+[...]
+</pre>
+
+<p>
+Notice how <c>jre</c> is a direct dependency and <c>jdk</c> is an indirect
+dependency if the <c>java</c> USE flag is set.
+</p>
+
+</body>
+</section>
+<section>
+<title>Listing Files Installed by a Package with files (f)</title>
+<body>
+
+<p>
+<c>equery</c> can list all the files installed by an ebuild with the
+<c>files</c> module. Try <c>--tree</c> to get an easy to read directory
+layout. Use <c>--filter</c> to only find a certain type of file. For example,
+to find where executables were installed, use <c>--filter=cmd</c>, and to
+quickly find the configuration file location, try <c>--filter=conf</c>.
+</p>
+
+<pre caption="Listing Installed Files in Tree Format">
+$ <i>equery files --tree gentoolkit</i>
+ * Searching for gentoolkit ...
+ * Contents of app-portage/gentoolkit-0.3.0_rc7:
+ /etc
+   > /eclean
+      + distfiles.exclude
+      + packages.exclude
+   > /env.d
+      + 99gentoolkit-env
+   > /revdep-rebuild
+      + 99revdep-rebuild
+ /usr
+   > /bin
+      + eclean
+      + eclean-dist -> eclean
+      + eclean-pkg -> eclean
+      + epkginfo
+      + equery
+      + eread
+      + euse
+      + glsa-check
+      + revdep-rebuild
+   > /lib
+      > /python2.6
+         > /site-packages
+            > /gentoolkit
+            + gentoolkit-0.3.0_rc7-py2.6.egg-info
+               + __init__.py
+               > /equery
+                  + __init__.py
+                  + belongs.py
+                  + changes.py
+                  + check.py
+                  + depends.py
+                  + depgraph.py
+                  + files.py
+[...]
+</pre>
+
+</body>
+</section>
+<section>
+<title>Looking for Packages that Have a Specific USE Flag with hasuse (h)</title>
+<body>
+
+<p>
+You can use <c>hasuse</c> to find out which packages have a given USE flag.
+<c>hasuse</c> won't tell you if the flag is enabled, only if the ebuild lists
+it as an option. See the EXAMPLES section of <c>hasuse</c> in the
+<c>equery</c> man page for more tip on getting that information.
+</p>
+
+<pre caption="Searching For Installed Packages that Use the qt3 or qt4 USE Flags">
+$ <i>equery hasuse qt3 qt4</i>
+ * Searching for USE flag qt3 ...
+[IP-] [  ] app-crypt/pinentry-0.7.5 (0)
+[IP-] [  ] net-dns/avahi-0.6.24-r2 (0)
+[IP-] [  ] net-wireless/wpa_supplicant-0.6.9 (0)
+
+ * Searching for USE flag qt4 ...
+[IP-] [  ] net-dns/avahi-0.6.24-r2 (0)
+[IP-] [  ] net-wireless/wpa_supplicant-0.6.9 (0)
+</pre>
+
+</body>
+</section>
+<section>
+<title>Listing Packages with list (l)</title>
+<body>
+
+<p>
+<c>list</c> is a simple, yet powerful module to list packages that are
+installed, in the Portage tree or in an overlay.
+</p>
+
+<pre caption="Listing Installed Packages with list">
+$ <i>equery list '*'</i>
+ * Searching for * ...
+[IP-] [  ] app-admin/eselect-1.2.3 (0)
+[IP-] [  ] app-admin/eselect-ctags-1.10 (0)
+[IP-] [  ] app-admin/eselect-esd-20060719 (0)
+[IP-] [  ] app-admin/eselect-fontconfig-1.0 (0)
+[IP-] [  ] app-admin/eselect-opengl-1.0.8-r1 (0)
+[IP-] [  ] app-admin/eselect-python-20090824 (0)
+[IP-] [  ] app-admin/eselect-ruby-20081227 (0)
+[IP-] [  ] app-admin/eselect-vi-1.1.5 (0)
+[IP-] [  ] app-admin/perl-cleaner-1.05 (0)
+[IP-] [  ] app-admin/pessulus-2.24.0 (0)
+[IP-] [  ] app-admin/python-updater-0.7 (0)
+[IP-] [  ] app-admin/sudo-1.7.2_p1 (0)
+[...]
+</pre>
+
+<p>
+The standard query will search installed packages for the given package name.
+Passing in '*' displays all packages in the set. In the leftmost field, we
+see that all the above packages are <c>I</c>nstalled and from the <c>P</c>ortage
+tree. They're not masked (the second field is blank), and they're all installed
+in the default slot (0).
+</p>
+
+<p>
+This time we are going to use local options to look for packages in the
+Portage tree and overlays.
+</p>
+
+<pre caption="Using Local Options with list">
+$ <i>equery list -po vim</i>
+ * Searching for vim ...
+[-P-] [  ] app-editors/vim-7.0.235 (0)
+[-P-] [ ~] app-editors/vim-7.0.243 (0)
+[-P-] [  ] app-editors/vim-7.1.123 (0)
+[-P-] [ ~] app-editors/vim-7.1.330 (0)
+[-P-] [  ] app-editors/vim-7.2 (0)
+[-P-] [ ~] app-editors/vim-7.2.108 (0)
+[IP-] [  ] app-editors/vim-7.2.182 (0)
+[-P-] [ ~] app-editors/vim-7.2.238 (0)
+[-P-] [ ~] app-editors/vim-7.2.264 (0)
+</pre>
+
+<p>
+In this example you can see version 7.2.182 is installed and there are no
+versions available from an overlay. You can see which versions are keyword
+masked by the <c>~</c> in the second field.
+</p>
+
+</body>
+</section>
+<section>
+<title>Viewing Package Metadata with meta (m)</title>
+<body>
+
+<p>
+Each package in the Portage tree provides at least some metadata about
+its maintainer, herd, etc. Read about <uri
+link="http://www.gentoo.org/proj/en/devrel/handbook/handbook.xml?part=2&amp;chap=4">
+Gentoo Metadata</uri>. The amount of useful information depends on how much
+package maintainers decide to provide. With no options, <c>meta</c> returns
+some basic useful information.
+</p>
+
+<pre caption="Getting Package Metadata with meta">
+$ <i>equery meta gnucash</i>
+ * app-office/gnucash [gentoo]
+ Herd:        gnome-office (gnome-office@gentoo.org)
+ Maintainer:  tove@gentoo.org (Torsten Veller)
+ Upstream:    None specified
+ Location:    /usr/portage/app-office/gnucash
+ Keywords:    2.2.9-r1:0: alpha amd64 ppc sparc x86
+ Keywords:    2.2.9-r2:0:
+ Keywords:    2.3.8:0:
+ Keywords:    2.3.10:0: ~alpha ~amd64 ~ppc ~sparc ~x86
+</pre>
+
+<p>
+When the maintainer provides extra information, it can be very useful:
+</p>
+
+<pre caption="Getting Long Package Descriptions with meta">
+$ <i>equery meta --description emacs</i>
+ * app-editors/emacs
+  GNU Emacs is an extensible, customizable text editor - and more. At its core
+  is an interpreter for Emacs Lisp, a dialect of the Lisp programming language
+  with extensions to support text editing. The features of GNU Emacs include:
+   * Content-sensitive editing modes, including syntax coloring, for a wide
+     variety of file types including plain text, source code, and HTML.
+   * Complete built-in documentation, including a tutorial for new users.
+   * Support for many languages and their scripts, including all the European
+     "Latin" scripts, Russian, Greek, Japanese, Chinese, Korean, Thai,
+     Vietnamese, Lao, Ethiopian, and some Indian scripts.
+   * Highly customizable, using Emacs Lisp code or a graphical customization
+     interface.
+   * A large number of extensions that add other functionality, including a
+     project planner, mail and news reader, debugger interface, calendar, and
+     more. Many of these extensions are distributed with GNU Emacs; others are
+     available separately.
+</pre>
+
+</body>
+</section>
+<section>
+<title>Finding Package Sizes with size (s)</title>
+<body>
+
+<p>
+Have you ever been curious to find out how much space a specific package is
+occupying? Since a package could have its files over a number of directories,
+the usual <c>du -hc</c> might not give you the correct figure. Not to worry,
+here comes <c>equery</c> to the rescue!
+</p>
+
+<pre caption="Displaying Package Size">
+$ <i>equery size openoffice-bin</i>
+ * app-office/openoffice-bin-3.1.1
+         Total files : 4624
+         Total size  : 361.38 MiB
+</pre>
+
+<p>
+As you can see, <c>size</c> prints the total space used in human-readable
+units and lists the total number of files the package has. To get the
+total size in bytes, use <c>--bytes</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Listing Per-Package USE Flags with uses (u)</title>
+<body>
+
+<p>
+<c>equery</c>'s <c>uses</c> module can provide information about what USE
+flags are available for a specific package, and which of those flags is
+currently enabled.
+</p>
+
+<pre caption="Showing Set and Unset USE Flags">
+$ <i>equery uses gst-plugins-meta</i>
+ * Searching for gst-plugins-meta ...
+[ Legend : U - flag is set in make.conf       ]
+[        : I - package is installed with flag ]
+[ Colors : set, unset                         ]
+ * Found these USE flags for media-plugins/gst-plugins-meta-0.10-r2:
+ U I
+ + + X      : Adds support for X11
+ - - a52    : Enables support for decoding ATSC A/52 streams used in DVD
+ + + alsa   : Adds support for media-libs/alsa-lib (Advanced Linux Sound
+              Architecture)
+ - - dvb    : Adds support for DVB (Digital Video Broadcasting)
+ + + dvd    : Adds support for DVDs
+ + + esd    : Adds support for media-sound/esound (Enlightened Sound Daemon)
+ + + ffmpeg : Enable ffmpeg-based audio/video codec support
+ + + flac   : Adds support for FLAC: Free Lossless Audio Codec
+ - - mad    : Adds support for mad (high-quality mp3 decoder library and cli
+              frontend)
+ + + mpeg   : Adds libmpeg3 support to various packages
+ - - mythtv : Support for retrieval from media-tv/mythtv backend
+ + + ogg    : Adds support for the Ogg container format (commonly used by
+              Vorbis, Theora and flac)
+ - - oss    : Adds support for OSS (Open Sound System)
+ + + theora : Adds support for the Theora Video Compression Codec
+ + + vorbis : Adds support for the OggVorbis audio codec
+ - - xv     : Adds in optional support for the Xvideo extension (an X API for
+              video playback)
+</pre>
+
+<p>
+Here, a number of USE flags are enabled in <c>gstreamer</c>'s plugin
+meta-package, but you can see that there are other USE flags available.
+For more information on USE flags, please refer to the <uri
+link="/doc/en/handbook/handbook-x86.xml?part=2&amp;chap=2">USE Flags</uri>
+chapter of the <uri link="/doc/en/handbook/">Gentoo Handbook</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Finding the Ebuild Path with which (w)</title>
+<body>
+
+<p>
+<c>which</c> is a simple script to help you quickly find the file path to an
+ebuild. If you pass an unversioned package name, <c>which</c> will return the
+path to the newest installable ebuild version, in other words, the ebuild
+Portage would use if you typed <c>emerge package</c>. Pass in a versioned
+package to get the path to that ebuild.
+</p>
+
+<pre caption="Displaying the Latest Installable Ebuild Path">
+$ <i>equery which gnome</i>
+/usr/portage/gnome-base/gnome/gnome-2.26.3.ebuild
+</pre>
+
+<p>
+Lastly, if none of the above features of <c>equery</c> have answered your
+question, try using <c>which</c> to manually search an ebuild with programs
+like <c>cat</c>, <c>less</c> or <c>grep</c>:
+</p>
+
+<pre caption="Other Useful Ways to Use which">
+$ <i>grep HOMEPAGE $(equery which gentoolkit)</i>
+HOMEPAGE="http://www.gentoo.org/proj/en/portage/tools/index.xml"
+</pre>
+
+<warn>
+Be aware that <c>equery</c> currently changes the format of the output if it
+is sent through a pipe. The piped format is intended to be easier to parse by
+tools, but you can also turn it off by adding the <c>--no-pipe</c> option. If
+you write scripts that employ <c>equery</c>, you should be aware of this.
+</warn>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>euse</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+<c>euse</c> is a tool to see, set and unset USE flags at various places. For
+more information on USE flags, please refer to the <uri
+link="/doc/en/handbook/handbook-x86.xml?part=2&amp;chap=2">USE Flags</uri>.
+Please see <c>euse -h</c> for complete help and all options.
+</p>
+
+</body>
+</section>
+<section>
+<title>Viewing, Setting and Unsetting USE Flags</title>
+<body>
+
+<p>
+The <c>euse -a</c> command reads the current active USE flags and displays
+them.
+</p>
+
+<note>
+There are 5 &quot;columns&quot; that <c>euse</c> now uses to show whether a
+flag is set/unset and where all the flag has been set. The columns are as
+follows -- +/-, set in the Environment, set in make.Conf, set in make.Defaults,
+and set in make.Globals. The output looks like [+ECDG].
+</note>
+
+<pre caption="Viewing all active USE flags">
+# <i>euse -a</i>
+X                   [+ CD ]
+aalib               [+    ]
+acpi                [+ C  ]
+alsa                [+ C  ]
+apache2             [+ C  ]
+apm                 [+  D ]
+avi                 [+  D ]
+berkdb              [+  D ]
+bitmap-fonts        [+  D ]
+bonobo              [+    ]
+cdr                 [+ C  ]
+crypt               [+ CD ]
+cscope              [+ C  ]
+cups                [+ CD ]
+curl                [+    ]
+emboss              [+  D ]
+encode              [+  D ]
+esd                 [+    ]
+fam                 [+    ]
+fbcon               [+ C  ]
+firefox             [+ C  ]
+font-server         [+  D ]
+foomaticdb          [+  D ]
+fortran             [+  D ]
+gd                  [+ C  ]
+gdbm                [+  D ]
+gif                 [+ CD ]
+gimpprint           [+ C  ]
+gnome               [+ CD ]
+gphoto2             [+    ]
+gpm                 [+ CD ]
+gstreamer           [+ C  ]
+gtk                 [+  D ]
+gtkhtml             [+ C  ]
+guile               [+    ]
+imagemagick         [+    ]
+imlib               [+ CD ]
+innodb              [+    ]
+ipv6                [+  D ]
+javascript          [+ C  ]
+jpeg                [+ CD ]
+kde                 [+  D ]
+ldap                [+    ]
+libg++              [+ CD ]
+libwww              [+ CD ]
+mad                 [+ CD ]
+mbox                [+ C  ]
+md5sum              [+ C  ]
+mikmod              [+ CD ]
+mmx                 [+ C  ]
+motif               [+ CD ]
+mp3                 [+    ]
+mpeg                [+ CD ]
+mpeg4               [+ C  ]
+mysql               [+ C  ]
+ncurses             [+ CD ]
+nls                 [+  D ]
+nvidia              [+ C  ]
+odbc                [+    ]
+offensive           [+    ]
+ogg                 [+ CD ]
+opengl              [+ CD ]
+oss                 [+  D ]
+pam                 [+ CD ]
+pdflib              [+ CD ]
+perl                [+ CD ]
+png                 [+ CD ]
+python              [+ CD ]
+qt                  [+  D ]
+quicktime           [+ CD ]
+readline            [+ CD ]
+ruby                [+    ]
+sdl                 [+ CD ]
+slang               [+  D ]
+spell               [+ CD ]
+sse                 [+ C  ]
+ssl                 [+ CD ]
+svga                [+ CD ]
+tcltk               [+ C  ]
+tcpd                [+  D ]
+tiff                [+ C  ]
+truetype            [+ CD ]
+usb                 [+ C  ]
+vanilla             [+ C  ]
+x86                 [+ C  ]
+xml                 [+    ]
+xosd                [+ C  ]
+xv                  [+ CD ]
+xvid                [+ C  ]
+zlib                [+ CD ]
+</pre>
+
+<p>
+Similarly you can use the <c>euse -a -g</c> command to only view active global
+USE flags. The <c>euse -a -l</c> command does the same for active local USE
+flags.<c>-g</c> &amp; <c>-l</c> are suboptions to <c>euse</c> and need an
+option before them (like <c>-a</c>) to function correctly.
+</p>
+
+<pre caption="Viewing active local USE flags">
+# <i>euse -a -l</i>
+bitmap-fonts        [+  D ]
+font-server         [+  D ]
+fortran             [+  D ]
+gimpprint           [+ C  ]
+md5sum              [+ C  ]
+mpeg4               [+ C  ]
+nvidia              [+ C  ]
+offensive           [+    ]
+truetype            [+ CD ]
+</pre>
+
+<p>
+We can also use <c>euse</c> to set or unset use flags. The commands used for
+this are <c>euse -E flagname</c> (enable a flag) and <c>euse -D flagname</c>
+(disable a flag).
+</p>
+
+<warn>
+Do not use the <c>euse -E</c> or <c>euse -D</c> commands by themselves (without
+a flag). It will set/unset ALL USE flags in <c>/etc/make.conf</c>. Although a
+backup is kept at <path>/etc/make.conf.euse_backup</path>, please be careful
+while using <c>euse -E</c> or <c>euse -D</c>.
+</warn>
+
+<pre caption="Setting and Unsetting USE flags">
+<comment>(Enabling a USE Flag)</comment>
+# <i> euse -E 3dfx</i>
+/etc/make.conf was modified, a backup copy has been placed at /etc/make.conf.euse_backup
+
+<comment>(/etc/make.conf after the command)</comment>
+USE="alsa acpi apache2 -arts cups cdr crypt cscope -doc fbcon \
+     firefox gd gif gimpprint gnome gpm gstreamer gtkhtml imlib \
+     innodb -java javascript jpeg libg++ libwww mad mbox md5sum \
+     mikmod mmx motif mpeg mpeg4 mysql ncurses nvidia \
+     ogg odbc offensive opengl pam pdflib perl png python \
+     quicktime readline sdl spell sse ssl svga tcltk tiff truetype usb \
+     vanilla X xosd xv xvid x86 zlib 3dfx"
+
+<comment>(Disabling the USE Flag)</comment>
+# <i> euse -D 3dfx</i>
+/etc/make.conf was modified, a backup copy has been placed at /etc/make.conf.euse_backup
+
+<comment>(/etc/make.conf after the command)</comment>
+USE="alsa acpi apache2 -arts cups cdr crypt cscope -doc fbcon \
+     firefox gd gif gimpprint gnome gpm gstreamer gtkhtml imlib \
+     innodb -java javascript jpeg libg++ libwww mad mbox md5sum \
+     mikmod mmx motif mpeg mpeg4 mysql ncurses nvidia \
+     ogg odbc offensive opengl pam pdflib perl png python \
+     quicktime readline sdl spell sse ssl svga tcltk tiff truetype usb \
+     vanilla X xosd xv xvid x86 zlib -3dfx"
+</pre>
+
+<note>
+<c>euse</c> does not physically remove the flag from make.conf. It just adds a
+- (minus) before the flag to unset it. You may have to manually clean up your
+make.conf to avoid unwanted variables.
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Other tools</title>
+<section>
+<title>revdep-rebuild</title>
+<body>
+
+<p>
+This tool is Gentoo's Reverse Dependency rebuilder.  It will scan your installed
+ebuilds to find packages that have become broken as a result of an upgrade of a
+package they depend on. It can emerge those packages for you but it can also
+happen that a given package does not work any more with the currently installed
+dependencies, in which case you should upgrade the broken package to a more
+recent version. revdep-rebuild will pass flags to emerge which lets you use the
+<c>--pretend</c> flag to see what is going to be emerged again before you go any
+further.
+</p>
+
+<pre caption="Running revdep-rebuild in pretend mode">
+# <i>revdep-rebuild -p</i>
+
+ * Configuring search environment for revdep-rebuild
+
+ * Checking reverse dependencies
+ * Packages containing binaries and libraries broken by a package update
+ * will be emerged.
+
+ * Collecting system binaries and libraries
+ * Generated new 1_files.rr
+ * Collecting complete LD_LIBRARY_PATH
+ * Generated new 2_ldpath.rr
+ * Checking dynamic linking consistency
+[ 48% ]  *   broken /usr/lib/gstreamer-0.10/libgsttaglib.la (requires /usr/lib/libtag.la)
+[ 64% ]  *   broken /usr/lib/libgdkglext-x11-1.0.la (requires /usr/lib/libGLU.la)
+[ 67% ]  *   broken /usr/lib/libgtkglext-x11-1.0.la (requires /usr/lib/libGLU.la)
+[ 85% ]  *   broken /usr/lib/python2.6/site-packages/gtk-2.0/gtk/gdkgl/_gdkgl.la (requires /usr/lib/libGLU.la)
+ *   broken /usr/lib/python2.6/site-packages/gtk-2.0/gtk/gtkgl/_gtkgl.la (requires /usr/lib/libGLU.la)
+[ 97% ]  *   broken /usr/qt/3/lib/libqt-mt.la (requires -lpng)
+[ 100% ]
+ * Generated new 3_broken.rr
+ * Assigning files to packages
+ *   /usr/lib/gstreamer-0.10/libgsttaglib.la -> media-plugins/gst-plugins-taglib
+ *   /usr/lib/libgdkglext-x11-1.0.la -> x11-libs/gtkglext
+ *   /usr/lib/libgtkglext-x11-1.0.la -> x11-libs/gtkglext
+ *   /usr/lib/python2.6/site-packages/gtk-2.0/gtk/gdkgl/_gdkgl.la -> dev-python/pygtkglext
+ *   /usr/lib/python2.6/site-packages/gtk-2.0/gtk/gtkgl/_gtkgl.la -> dev-python/pygtkglext
+ *   /usr/qt/3/lib/libqt-mt.la -> x11-libs/qt
+ * Generated new 4_raw.rr and 4_owners.rr
+ * Cleaning list of packages to rebuild
+ * Generated new 4_pkgs.rr
+ * Assigning packages to ebuilds
+ * Generated new 4_ebuilds.rr
+ * Evaluating package order
+ * Generated new 5_order.rr
+ * All prepared. Starting rebuild
+emerge --oneshot --pretend  dev-python/pygtkglext:0
+media-plugins/gst-plugins-taglib:0.10
+x11-libs/gtkglext:0
+x11-libs/qt:3
+
+These are the packages that would be merged, in order:
+
+Calculating dependencies... done!
+[ebuild   R   ] media-plugins/gst-plugins-taglib-0.10.17
+[ebuild   R   ] x11-libs/gtkglext-1.2.0
+[ebuild   R   ] x11-libs/qt-3.3.8b-r2
+[ebuild   R   ] dev-python/pygtkglext-1.1.0
+ * Now you can remove -p (or --pretend) from arguments and re-run revdep-rebuild.
+</pre>
+
+<p>
+If you need to rebuild some packages, you may run <c>revdep-rebuild</c> without
+the <c>-p</c> flag and the listed packages will be emerged again.
+</p>
+
+</body>
+</section>
+<section>
+<title>glsa-check</title>
+<body>
+
+<p>
+<c>glsa-check</c> is mainly a test tool that keeps track of the various GLSA's
+(Gentoo Linux Security Advisory) and will eventually be integrated into
+<c>emerge</c> and <c>equery</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>eread</title>
+<body>
+
+<p>
+<c>eread</c> is a simple utility to display elog files produced by
+>=<c>portage-2.1</c>. You can set the saving of elog files by setting a couple
+of variables in <path>/etc/make.conf</path>:
+</p>
+
+<pre caption="Enabling elog in /etc/make.conf">
+PORTAGE_ELOG_CLASSES="log"
+PORTAGE_ELOG_SYSTEM="save"
+</pre>
+
+<note>
+This is just one way of saving elog messages. For more information on how
+Portage's elog system works, please refer to the appropriate page in the <uri
+link="/doc/en/handbook/handbook-x86.xml?part=3&amp;chap=1#doc_chap4">Portage
+Handbook</uri>.
+</note>
+
+<p>
+Once you've set up elog to your satisfaction, just run <c>eread</c> to view your
+log files.
+</p>
+
+<pre caption="Using eread">
+$ <i>eread</i>
+
+This is a list of portage log items. Choose a number to view that file or type
+q to quit.
+
+1) app-portage:gentoolkit-0.2.4_pre2:20070320-000256.log
+2) app-portage:gentoolkit-0.2.4_pre2:20070320-000258.log
+3) app-portage:gentoolkit-0.2.4_pre2:20070320-000319.log
+4) app-portage:gentoolkit-0.2.3:20070320-000408.log
+Choice?
+</pre>
+
+<p>
+Select a number and the file will be displayed using the paging program
+specified in the PAGER environment variable. If PAGER is not set, it will use
+<c>less</c>.
+</p>
+
+<p>
+After displaying the elog item, you will be prompted if you want to delete the
+file.
+</p>
+
+</body>
+</section>
+<section>
+<title>eclean</title>
+<body>
+
+<p>
+<c>eclean</c> is a tool to remove old source files and old binary packages from
+your system.
+</p>
+
+<p>
+When you build and install packages, the source files are downloaded and
+preserved in DISTDIR, usually <path>/usr/portage/distfiles</path>. This can
+accumulate several gigs of material over time if you don't clean it
+periodically. You can run <c>eclean-dist</c> to clean only source files from
+DISTDIR.
+</p>
+
+<p>
+You can create archives of installed packages by using <c>quickpg</c> or
+FEATURES="buildpkg". These archived packages are kept in PKGDIR, usually
+<path>/usr/portage/packages</path>. When you no longer need to keep them around,
+or if they're too old, you can run <c>eclean-pkg</c> to remove them from PKGDIR.
+It's a good way to ensure that any binary packages you have are only the latest
+versions.
+</p>
+
+<p>
+For more information on <c>eclean</c> and tips on maintaining a cruft-free
+system, please read <c>man eclean</c>.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,431 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2005.0/hb-install-amd64-bootloader.xml,v 1.1 2005/04/24 16:15:57 idani Exp $ -->
+
+<sections>
+
+<version>4.5</version>
+<date>2005-04-16</date>
+<!-- Original revision: 1.7 -->
+
+<section>
+<title>ブートローダの選択</title>
+<subsection>
+<title>はじめに</title>
+<body>
+
+<p>
+さて、カーネルを設定し、コンパイルし、そして必要なシステムの設定ファイルも適切に編集したので、
+システムを起動するときに、カーネルを立ち上げるプログラムをインストールするときが来ました。
+そのようなプログラムは、<e>ブートローダ</e>と呼ばれています。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>自由選択: フレームバッファ</title>
+<body>
+
+<!-- Verbatim copy from x86 bootloader framebuffer explanation -->
+
+<p>
+<e>もし</e>、カーネルの設定でフレームバッファサポートを有効にしている場合(あるいは、<c>genkernel</c>のデフォル
+トのカーネル設定を使用している場合)、フレームバッファを必要とするなら、
+<c>vga</c>もしくは<c>video</c>文をブートローダの設定ファイルに追加しなければなりません。
+</p>
+
+<p>
+まず最初にあなたが、どの種類のフレームバッファデバイスを使っているか知る必要があります。
+<c>gentoo-sources</c>のようなパッチが適用されたGentooカーネルツリーを使っているのであれば、
+(これらのカーネルのdefaultとして)<e>VESA driver type</e>の<c>vesafb-tng</c>を選択するでしょう。
+もしそうであるなら、<c>vesafb-tng</c>を使用して、<c>vga</c>文を設定ファイルに追加する必要はありません。
+そうでないならば、<c>vesafb</c>ドライバを使用し、<c>vga</c>文を設定ファイルに追加する必要があります。
+</p>
+
+<p>
+<c>vga</c>パラメータは<c>vesafb</c>のフレームバッファ画面の解像度と色深度を設定します。
+<path>/usr/src/linux/Documentation/fb/vesafb.txt</path>にあるとおり(カーネルソースパッケージとともにインストールされますが)設定したい解像度と色深度に対応したVESA番号を使用します。
+</p>
+
+<p>
+次の表は、<c>vga</c>に設定する必要がある使用可能な解像度と色深度に対応した値です。
+</p>
+
+<table>
+<tr>
+  <ti></ti>
+  <th>640x480</th>
+  <th>800x600</th>
+  <th>1024x768</th>
+  <th>1280x1024</th>
+</tr>
+<tr>
+  <th>256</th>
+  <ti>0x301</ti>
+  <ti>0x303</ti>
+  <ti>0x305</ti>
+  <ti>0x307</ti>
+</tr>
+<tr>
+  <th>32k</th>
+  <ti>0x310</ti>
+  <ti>0x313</ti>
+  <ti>0x316</ti>
+  <ti>0x319</ti>
+</tr>
+<tr>
+  <th>64k</th>
+  <ti>0x311</ti>
+  <ti>0x314</ti>
+  <ti>0x317</ti>
+  <ti>0x31A</ti>
+</tr>
+<tr>
+  <th>16M</th>
+  <ti>0x312</ti>
+  <ti>0x315</ti>
+  <ti>0x318</ti>
+  <ti>0x31B</ti>
+</tr>
+</table>
+
+<p>
+<c>video</c>文はフレームバッファディスプレイオプションを設定します。 
+あなたが有効にしたい設定文の後に、追加します(2.6カーネルには<c>vesafb</c>、2.4カーネルには<c>vesa</c>になります)。
+全ての変数は、<path>/usr/src/linux/Documentation/fb/vesafb.txt</path>に一覧として載っていますが、もっとも使われる3つのオプションに関して説明します。
+</p>
+
+<table>
+<tr>
+  <th>コントロール</th>
+  <th>説明</th>
+</tr>
+<tr>
+  <ti>ywrap</ti>
+  <ti>
+    グラフィックカードがメモリを折り返して使用すると仮定します(例: メモリの最後まで来たら、次は先頭から始めます)。
+  </ti>
+</tr>
+<tr>
+  <ti>mtrr</ti>
+  <ti>
+    MTRRレジスタを設定します。
+  </ti>
+</tr>
+<tr>
+  <ti>mode</ti>
+  <ti>
+    (<c>vesafb-tng</c>のみです)<br/>
+    解像度、色深度、リフレッシュレートを設定します。
+    例えば、<c>1024x768-32@85</c>は解像度1024x768、32bitの色深度、そして85Hzのリフレッシュレートを設定します。
+  </ti>
+</tr>
+</table>
+
+<p>
+これら2つの文は<c>vga=0x318 video=vesafb:mtrr,ywrap</c>か<c>video=vesafb:mtrr,ywrap,1024x768-32@85</c>のようになります。
+必要なときすぐに使えるように、値を記憶して(あるいはメモして)おいてください。
+</p>
+
+<p>
+それでは続いてGRUBをインストールしましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>GRUBを使用する</title>
+<subsection>
+<title>GRUB特有の言葉を理解する</title>
+<body>
+
+<p>
+GRUBを理解する上で最も重要なことは、GRUBがハードディスクやパーティションの参照の仕方に慣れることです。
+あなたのLinuxパーティションが<path>/dev/hda1</path>であったとすると、GRUBでは、<path>(hd0,0)</path>となります。
+<path>hd0,0</path>に付いている括弧を忘れないように。これは付ける必要があります。
+</p>
+
+<p>
+ハードディスクドライブは、"a"ではなく0から、パーティションは1ではなく0からカウントされます。
+ハードディスクだけではなく、CD-ROMやCD-R/RW等のatapi-ideデバイスもhdデバイスになることにも注意してください。
+また、SCSIドライブに対しても同様の数え方をします。
+(BIOSで、SCSIデバイスから起動する設定になっている場合を除いて、
+通常、SCSIに対してはIDEドライブより大きな数字が割り当てられます。)
+BIOSの設定にて、違うハードディスクから立ち上げるとき(primary slaveとしましょう)、<e>その</e>ハードディスクは<path>hd0</path>になります。
+</p>
+
+<p>
+ハードディスクが<path>/dev/hda</path>、CD-ROMが<path>/dev/hdb</path>、
+CD-R/RWが<path>/dev/hdc</path>、2台目のハードディスクが<path>/dev/hdd</path>にあり、
+SCSIハードディスクは無いものとします。
+<path>/dev/hdd7</path>は、GRUBでは<path>(hd1,6)</path>になります。
+これはなんだかトリッキーな感じがしますし、実際、トリッキーなのですが、わたしたちが試したところそのようになりました。
+GRUBには、タブ補完機能が備わっていて、このようにハードディスクやパーティションがたくさんある場合や、GRUBのナンバリング方法をちょっと忘れたときに便利です。
+</p>
+
+<p>
+GRUBの雰囲気がつかめたところで、GRUBをインストールしましょう。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>GRUBのインストール</title>
+<body>
+
+<p>
+GRUBをインストールするには、まずemergeしましょう。
+</p>
+
+<pre caption = "GRUBのインストール">
+# <i>emerge grub</i>
+</pre>
+
+<p>
+これでGRUBはインストールされましたが、あなたが新たに作成したカーネルをGRUBが自動的に起動するためには、
+設定ファイルを書き、GRUBをMBRに書き込む必要があります。
+<c>nano</c>(あるいは、他のエディタでも可能ですが)で<path>/boot/grub/grub.conf</path>を作成してください。
+</p>
+
+<pre caption = "/boot/grub/grub.confの作成">
+# <i>nano -w /boot/grub/grub.conf</i>
+</pre>
+
+<p>
+それでは<path>grub.conf</path>ファイルを仕上げてしまいましょう。
+後述のように、<path>kernel-2.6.11-gentoo-r1</path>のカーネルイメージで、このガイドで使用しているパーティションの場合の<path>grub.conf</path>の例を2つ示します。
+最初の<path>grub.conf</path>に対してのみたくさんコメントを付けています。
+</p>
+
+<ul>
+  <li>
+    最初の<path>grub.conf</path>は、カーネル構築に<c>genkernel</c>を使用していないユーザ向けの例です。
+  </li>
+  <li>
+    2番目の<path>grub.conf</path>は、カーネル構築に<c>genkernel</c>を使用したユーザ向けの例です。
+  </li>
+</ul>
+
+<note>
+もしルートのファイルシステムがJFSなら、<c>kernel</c>ラインに"ro"を<e>絶対</e>につける必要があります。
+これはJFSが読み書き可でマウントする前に、ログを再読込する必要があるからです。
+
+</note>
+
+<pre caption = "genkernelを使わないユーザ用grub.conf">
+<comment># どれをデフォルトでブートするかを指定する。リストの内、0は最初、1は2番目のものを表す。</comment>
+default 0
+<comment># デフォルトを起動する前に何秒間待つかを指定します。</comment>
+timeout 30
+<comment># 最高にカッコいいスプラッシュイメージ :)
+# グラフィックカードが無い場合はコメントアウトしてください</comment>
+splashimage=(hd0,0)/grub/splash.xpm.gz
+
+title=Gentoo Linux 2.6.11 Gentoo r1
+<comment># カーネルイメージ(あるいは、OS)があるパーティションの指定</comment>
+root (hd0,0)
+kernel /kernel-2.6.11-gentoo-r1 root=/dev/hda3
+
+<comment># 次の4行は、Windowsとデュアルブートしたい場合に追加します。</comment>
+<comment># この例では、Windowsは/dev/hda6にインストールされているものとします。</comment>
+title=Windows XP
+rootnoverify (hd0,5)
+makeactive
+chainloader +1
+</pre>
+
+
+<pre caption = "genkernelユーザ用grub.conf">
+default 0
+timeout 30
+splashimage=(hd0,0)/grub/splash.xpm.gz
+
+title=Gentoo Linux 2.6.11-gentoo-r1
+root (hd0,0)
+kernel /kernel-2.6.11-gentoo-r1 root=/dev/ram0 init=/linuxrc ramdisk=8192 real_root=/dev/hda3
+initrd /initrd-2.6.11-gentoo-r1
+
+<comment># dual-bootしたい場合のみ</comment>
+title=Windows XP
+root (hd0,5)
+makeactive
+chainloader +1
+</pre>
+
+
+<note>
+もし、違うパーティション構成や、違うカーネルイメージ名を使用しているなら、適宜それにあわせてください。
+<path>(hd0,0)</path>のようなGRUBに指定するデバイスは、ルートではなく、マウントポイントに関係します。
+言い換えると、<path>(hd0,0)/grub/splash.xpm.gz</path>は、実際には、<path>/boot/grub/splash.xpm.gz</path>となります。
+これは、<path>(hd0,0)</path>が<path>/boot</path>であることによります。
+</note>
+
+<note>
+訳注:後の方で説明がありますが、カーネルを構築後<c>make install</c>でカーネルをインストールする場合には、上記例での<path>kernel /kernel-2.6.11-gentoo-r1</path>の部分を<path>kernel /vmlinuz</path>と記述してください。
+</note>
+
+<p>
+もし、他にカーネルに渡したいオプションがあるなら、
+単純にそれをkernelコマンドの最後に追加してください。
+既に、<c>root=/dev/hda3</c>や<c>real_root=/dev/hda3</c>といったオプションを渡していますが、
+他のオプションも同様にカーネルに渡すことができます。
+例えば、以前話題に出したフレームバッファ用の<c>video</c>オプションを渡すことができます。
+</p>
+
+<p>
+<c>genkernel</c>を使用している場合、その起動オプションはインストールCDで使われているものと同じになります。
+例えば、SCSIデバイスを持っている場合、カーネルオプションとして<c>doscsi</c>を追加します。
+</p>
+
+<p>
+それでは、<path>grub.conf</path>ファイルを保存してエディタを終了してください。
+システム起動時にGRUBが自動的に実行されるようにするためには、MBR (Master Boot Record、マスターブートレコード)にGRUBをインストールする必要があります。
+</p>
+
+<p>
+GRUBの開発者は<c>grub-install</c>を使用することを奨めています。
+しかし、なんらかの理由で<c>grub-install</c>が正常動作しない場合、
+GRUBを手動でインストールする方法もあります。
+</p>
+
+<p>
+<uri link="#grub-install-auto">一般的な選択: grub-installを使用してGRUBをインストールする</uri>または、<uri link="#grub-install-manual">もう一つの選択: GRUBを手動でインストールする</uri>へ進みしょう。
+</p>
+
+</body>
+</subsection>
+<subsection id="grub-install-auto">
+<title>一般的な選択: grub-installを使用してGRUBをインストールする</title>
+<body>
+
+<p>
+GRUBをインストールするためには、<c>grub-install</c>コマンドを実行する必要があります。
+しかし、chroot環境にいるため<c>grub-install</c>は簡単には使えません。
+はじめに、<path>/etc/mtab</path>(すべてのマウント済みのファイルシステムについての情報を保持しているファイル)を更新する必要があります。
+幸運なことにこれを簡単にやる方法があります。
+単に、<path>/proc/mounts</path>を<path>/etc/mtab</path>へ次のように上書きコピーしてください。
+</p>
+
+<pre caption="/etc/mtabを更新する">
+# <i>cp /proc/mounts /etc/mtab</i>
+</pre>
+
+<p>
+これで<c>grub-install</c>を使用してGRUBをインストールすることができます。
+</p>
+
+<pre caption="grub-installを起動する">
+# <i>grub-install /dev/hda</i>
+</pre>
+
+<p>
+もしGRUBに関してさらに疑問があるなら、<uri
+link="http://www.gnu.org/software/grub/grub-faq.html">GRUB FAQ</uri>あるいは<uri
+link="http://www.gnu.org/software/grub/manual/">GRUB Manual</uri>を参照してください。
+</p>
+
+<p>
+それでは、<uri link="#reboot">システムの再起動</uri>へ進みましょう。
+</p>
+
+</body>
+</subsection>
+<subsection id="grub-install-manual">
+<title>もうひとつの選択肢: GRUBを手動でインストールする</title>
+<body>
+
+<p>
+GRUBの設定を始めるために、<c>grub</c>と打ち込んでください。
+<path>grub&gt;</path>というGRUBコマンドラインプロンプトが現れたでしょう。
+ここで、ハードディスクのブートレコードにGRUBをインストールするためには、正しいコマンドを打ち込む必要があります。
+</p>
+
+<pre caption ="GRUBシェルの開始">
+# <i>grub</i>
+</pre>
+
+<note>
+もしあなたのシステムにフロッピードライブがないなら、
+GRUBが存在しないフロッピードライブを捜査しないように、
+<c>--no-floppy</c>オプションを上記コマンドに追加してください。
+</note>
+
+<p>
+次の例では、GRUBが/bootパーティションの<path>/dev/hda1</path>から情報を読むように、
+そして、コンピュータの電源を入れた後、最初にGRUBプロンプトが出現するように、
+ハードディスクのMBR(master boot record、マスターブートレコード)にGRUBをインストールしています。
+もちろん、例に従って設定する必要はなく、必要に応じて変更してください。
+</p>
+
+<p>
+GRUBのタブ補完機能は、GRUBシェルの中で使用できます。
+例えば、"<c>root (</c>"と打ち込んで、続いてTABキーを押した場合、
+<path>hd0</path>のようなデバイスの一覧を見ることができるでしょう。
+"<c>root (hd0,</c>"に続いてTABキーを押した場合は、<path>hd0,0</path>のような撰択可能なパーティションの一覧を取得できます。
+</p>
+
+<p>
+TAB補完を使うことによって、GRUBの設定はそれほど大変ではなくなるでしょう。
+それでは、GRUBの設定をしましょう。
+</p>
+
+<pre caption ="GRUBをMBRにインストールする">
+grub&gt; <i>root (hd0,0)</i>          <comment>(/bootパーティションの場所を指定します)</comment>
+grub&gt; <i>setup (hd0)</i>           <comment>(MBRにGRUBをインストールします)</comment>
+grub&gt; <i>quit</i>                  <comment>(GRUBシェルを終了します)</comment>
+</pre>
+
+<note>
+GRUBをMBRではなく、特定のパーティションにインストールしたいなら、
+<c>setup</c>コマンドの部分を編集して、それが正しいパーティションを指すようにします。
+例えば、GRUBを<path>/dev/hda3</path>にインストールしたい場合、<c>setup (hd0,2)</c>というコマンドになります。
+しかしながら、こういうことをしたいユーザはあまりいません。
+</note>
+
+<p>
+もしGRUBに関してさらに疑問があるなら、<uri
+link="http://www.gnu.org/software/grub/grub-faq.html">GRUB FAQ</uri>あるいは<uri
+link="http://www.gnu.org/software/grub/manual/">GRUB Manual</uri>を参照してください。
+</p>
+
+<p>
+それでは、<uri link="#reboot">システムの再起動</uri>へ進みましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="reboot">
+<title>システムの再起動</title>
+<subsection>
+<body>
+
+<p>
+chroot環境を抜けて、マウントしたすべてのパーティションをアンマウントしてください。
+そして、待ちに待った次のコマンドを入力しましょう: <c>reboot</c>
+</p>
+
+<pre caption="すべてのパーティションをアンマウントし再起動する">
+# <i>exit</i>
+# <i>cd</i>
+# <i>umount /mnt/gentoo/boot /mnt/gentoo/proc /mnt/gentoo</i>
+# <i>reboot</i>
+</pre>
+
+<p>
+もちろん、起動CDを抜くことを忘れずに。さもなければ、新しいGentooシステムではなく、CDからまた起動してしまいます。
+</p>
+
+<p>
+再起動したら、<uri link="?part=1&amp;chap=11">Gentooインストールの終わり</uri>へ進んでインストールを完了させましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

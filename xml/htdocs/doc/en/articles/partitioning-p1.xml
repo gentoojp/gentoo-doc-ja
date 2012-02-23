@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/partitioning-p1.xml,v 1.7 2011/09/04 17:53:41 swift Exp $ -->
+
+<guide disclaimer="articles">
+<title>Partitioning in action, Part 1</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<!--<author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>-->
+
+<abstract>
+In this new series of tips, Daniel Robbins shows you how to change partition
+layout on a running system. He'll also cover several tricks of the trade to
+minimize downtime and avoid making costly mistakes. In this particular tip,
+he'll show you how to move /home to another partition.
+</abstract>
+
+<!-- The original version of this article was first published on IBM
+developerWorks, and is property of Westtech Information Services. This
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>1.2</version>
+<date>2005-10-09</date>
+
+<chapter>
+<title>Moving /home</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+The partition <path>/home</path> is one of the most-often-moved partitions.
+Sometimes, all the space in <path>/home</path> becomes exhausted, and an
+additional hard drive is required. Other times, <path>/home</path> is set up as
+part of the root partition, and it may need to be moved to improve performance
+or facilitate backup. Whatever the case, I'll show you how to move
+<path>/home</path> safely and efficiently.
+</p>
+
+<warn>
+The following technique describes how to move a partition(s). Although this
+technique is designed so that you can "back out" of a failed partition move, it
+doesn't protect against user error. In other words, any time that you format
+partitions or copy large numbers of files, there's a possibility that you will
+type the wrong thing, causing lots of data to be destroyed. For this reason,
+it's highly recommended that you <e>take appropriate steps to back up all
+critical files before proceeding</e>.
+</warn>
+
+<p>
+Now that you're prepared, we're ready to start moving <path>/home</path>. The
+exact steps you will take depend on whether <path>/home</path> currently
+resides on its own separate partition, or whether it is located on the root
+partition. Keep this in mind as we go through the steps (I'll make notes where
+necessary). Right now, if you are moving <path>/home</path> to a new hard
+drive, it should be physically installed in your system.
+</p>
+
+<p>
+If you are moving <path>/home</path> to an existing partition (it doesn't need
+to be ext2, as long as the target primary or extended partition exists), you
+can proceed to <uri link="#step2">step 2</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Create a new partition, if necessary</title>
+<body>
+
+<p>
+If the new partition doesn't exist yet, you'll need to create it using
+<c>cfdisk</c> (preferred) or <c>fdisk</c>. If the partition doesn't reside on
+your first drive, remember to specify the name of the device as the first
+argument to <c>cfdisk</c> or <c>fdisk</c>. After creating the appropriate
+primary or extended partition, you should reboot so that the partition table
+can be reread correctly. This is the only time you will need to reboot the
+system.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="step2">
+<title>Create a filesystem on the new partition</title>
+<section>
+<body>
+
+<p>
+To create a filesystem on the new partition, first make sure you know the exact
+device name for the new partition (for example, <path>/dev/sda5</path>). If
+you're not sure of the exact device name, stop now and double-check! Then type
+the following, as root:
+</p>
+
+<pre caption="Creating the filesystem">
+# <i>mkfs.ext2 /dev/???</i>
+</pre>
+
+<p>
+In the above and following code samples, <path>???</path> should be replaced
+with the target partition name. After executing this command, the target
+partition will contain an empty ext2 filesystem.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Mount the new filesystem in /mnt</title>
+<section>
+<body>
+
+<p>
+Create a directory called <path>/mnt/newpart</path>, and then mount the new
+partition there:
+</p>
+
+<pre caption="Mounting the partition">
+# <i>mount /dev/??? /mnt/newpart</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Drop to single-user mode</title>
+<section>
+<body>
+
+<p>
+I delayed this step as long as possible to maximize system availability, but we
+now must drop into single-user mode, and copy files from <path>/home</path> to
+<path>/mnt/newpart</path>. You shouldn't have any files open in
+<path>/home</path>, and entering single-user mode eliminates this possibility:
+</p>
+
+<pre caption="Entering single user mode">
+# <i>init 1</i>
+</pre>
+
+<p>
+If prompted, enter the root password to perform system maintenance. You should
+now have a root shell.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Change directories to /home and copy files</title>
+<section>
+<body>
+
+<p>
+Type the following:
+</p>
+
+<pre caption="Copying files">
+# <i>cd /home</i>
+# <i>cp -ax * /mnt/newpart</i>
+</pre>
+
+<p>
+The <c>cp -ax</c> command recursively copies the contents of <path>/home</path>
+to <path>/mnt/newpart</path>, preserving all file attributes, and not crossing
+any mount points. After this command finishes, <path>/mnt/newpart</path> will
+contain an exact copy of all the files and directories currently in
+<path>/home</path>. If the old <path>/home</path> was on its own separate
+partition (listed on a separate line in <path>/etc/fstab</path>), go to <uri
+link="#step6a">step 6a</uri>. Otherwise, proceed to <uri link="#step6b">step
+6b</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Use the new partition</title>
+<section id="step6a">
+<title>6a: /home on its own partition</title>
+<body>
+
+<note>
+These instructions are for systems where the old <path>/home</path> is already
+on its own dedicated partition. If this isn't the case, see <uri
+link="#step6b">step 6b</uri>.
+</note>
+
+<p>
+Unmount the old partition by typing:
+</p>
+
+<pre caption="Unmounting">
+# <i>cd /</i>
+# <i>umount /home</i>
+</pre>
+
+<p>
+Then, unmount and remount the new partition:
+</p>
+
+<pre caption="Remounting the partition">
+# <i>umount /mnt/newpart</i>
+# <i>mount /dev/??? /home</i>
+</pre>
+
+<p>
+Now, the new partition is available at /home and is ready to be used. We can
+perform the last few steps in multiuser mode. Exit single-user mode, so that
+the system is back up and running, by pressing <c>CTRL-D</c>.
+</p>
+
+<impo>
+After the system starts up normally, log in as root and edit
+<path>/etc/fstab</path> so that <path>/dev/???</path> is now mounted
+automatically at <path>/home</path> instead of your old partition. For example,
+change this line:
+</impo>
+
+<pre caption="Old fstab">
+/dev/hda3   /home   ext2   defaults   1   2
+</pre>
+
+<p>
+to this line:
+</p>
+
+<pre caption="New fstab">
+/dev/???   /home   ext2   defaults   1   2
+</pre>
+
+</body>
+</section>
+<section id="step6b">
+<title>6b: /home on a shared partition</title>
+<body>
+
+<note>
+These instructions are for systems where the old <path>/home</path> is on a
+shared partition.
+</note>
+
+<pre caption="Moving the directory">
+# <i>cd /</i>
+# <i>mv /home /home.old</i>
+# <i>mkdir /home</i>
+# <i>mount /dev/??? /home</i>
+</pre>
+
+<impo>
+Now, leave single user mode by pressing <c>CTRL-D</c>. When the system is back
+up and running, edit <path>/etc/fstab</path> and add a line like the
+following:
+</impo>
+
+<pre caption="Editing fstab">
+/dev/???   /home   ext2   defaults   1   2
+</pre>
+
+<p>
+That way, your new partition will get mounted correctly the next time the
+system is rebooted.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Finishing up</title>
+<section>
+<body>
+
+<p>
+We deliberately left the old <path>/home</path> directory/partition behind,
+just in case there were problems copying files. After verifying that the system
+is running smoothly, you can either use your old <path>/home</path> partition
+for something else, or remove the <path>/home.old</path> directory.
+</p>
+
+<p>
+Congratulations, you've just moved <path>/home</path>! In my next tip, we'll
+reconfigure a system so that <path>/tmp</path> and <path>/var</path> are on
+their own shared partition. See you then.
+</p>
+
+</body>
+</section>
+<section id="resources">
+<title>Resources</title>
+<body>
+
+<ul>
+  <li>
+    In <uri link="/doc/en/articles/partitioning-p2.xml">Partitioning in
+    action</uri>, I show you step-by-step how to move <path>/var</path> and
+    <path>/tmp</path> to a new partition.
+  </li>
+  <li>
+    In my first tip, <uri link="/doc/en/articles/maximum-swappage.xml">Maximum
+    swappage</uri>, I show how to dramatically increase swap performance under
+    Linux.
+  </li>
+  <li>
+    In my second tip, <uri
+    link="/doc/en/articles/partition-planning-tips.xml">Partition planning
+    tips</uri>, I share several ways of effectively organizing your partition
+    layout.
+  </li>
+  <li>
+    I always recommend checking out the <uri
+    link="http://tldp.org/docs.html#howto">howtos</uri> at <uri
+    link="http://tldp.org/">The Linux Documentation Project</uri> -- they're
+    a valuable resource.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>About the author</title>
+<body>
+
+<p>
+Daniel Robbins lives in Albuquerque, New Mexico. He was the President/CEO of
+Gentoo Technologies Inc., the Chief Architect of the Gentoo Project and is a
+contributing author of several books published by MacMillan: Caldera OpenLinux
+Unleashed, SuSE Linux Unleashed, and Samba Unleashed. Daniel has been involved
+with computers in some fashion since the second grade when he was first exposed
+to the Logo programming language and a potentially lethal dose of Pac Man.
+This probably explains why he has since served as a Lead Graphic Artist at SONY
+Electronic Publishing/Psygnosis. Daniel enjoys spending time with his wife Mary
+and his new baby daughter, Hadassah. You can contact Daniel at
+<mail>drobbins@gentoo.org</mail>.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,364 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-install-hppa-disk.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.9</version>
+<date>September 30, 2004</date>
+
+<section>
+<title>Introduction to Block Devices</title>
+<subsection>
+<title>Block Devices</title>
+<body>
+
+<p>
+We'll take a good look at disk-oriented aspects of Gentoo Linux
+and Linux in general, including Linux filesystems, partitions and block devices.
+Then, once you're familiar with the ins and outs of disks and filesystems,
+you'll be guided through the process of setting up partitions and filesystems
+for your Gentoo Linux installation.
+</p>
+
+<p>
+To begin, we'll introduce <e>block devices</e>. The most famous block device is
+probably the one that represents the first SCSI HD in a Linux system, namely
+<path>/dev/sda</path>.
+</p>
+
+<p>
+The block devices above represent an abstract interface to the disk. User
+programs can use these block devices to interact with your disk without worrying
+about whether your drives are IDE, SCSI or something else. The program can
+simply address the storage on the disk as a bunch of contiguous,
+randomly-accessible 512-byte blocks.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Partitions and Slices</title>
+<body>
+
+<p>
+Although it is theoretically possible to use a full disk to house your Linux
+system, this is almost never done in practice. Instead, full disk block devices
+are split up in smaller, more manageable block devices. On most systems,
+these are called <e>partitions</e>. Other architectures use a similar technique,
+called <e>slices</e>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Designing a Partitioning Scheme</title>
+<subsection>
+<title>How Many and How Big?</title>
+<body>
+
+<p>
+The number of partitions is highly dependent on your environment. For instance,
+if you have lots of users, you will most likely want to have your
+<path>/home</path> separate as it increases security and makes backups easier.
+If you are installing Gentoo to perform as a mailserver, your 
+<path>/var</path> should be separate as all mails are stored inside 
+<path>/var</path>. A good choice of filesystem will then maximise your 
+performance. Gameservers will have a separate <path>/opt</path> as most gaming 
+servers are installed there. The reason is similar for <path>/home</path>: 
+security and backups.
+</p>
+
+<p>
+As you can see, it very much depends on what you want to achieve. Separate
+partitions or volumes have the following advantages:
+</p>
+
+<ul>
+<li>
+  You can choose the best performing filesystem for each partition or volume
+</li>
+<li>
+  Your entire system cannot run out of free space if one defunct tool is
+  continuously writing files to a partition or volume
+</li>
+<li>
+  If necessary, file system checks are reduced in time, as multiple checks can
+  be done in parallel (although this advantage is more with multiple disks than
+  it is with multiple partitions)
+</li>
+<li>
+  Security can be enhanced by mounting some partitions or volumes read-only, 
+  nosuid (setuid bits are ignored), noexec (executable bits are ignored) etc.
+</li>
+</ul>
+
+<p>
+However, multiple partitions have one big disadvantage: if not configured 
+properly, you might result in having a system with lots
+of free space on one partition and none on another. There is also a 15-partition
+limit for SCSI and SATA.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Using fdisk on HPPA to Partition your Disk</title>
+<body>
+
+<p>
+Use <c>fdisk</c> to create the partitions you want:
+</p>
+
+<pre caption="Partitioning the disk">
+# <i>fdisk /dev/sda</i>
+</pre>
+
+<p>
+HPPA machines use the PC standard DOS partition tables.  To create a new 
+DOS partition table, simply use the <c>o</c> command.
+</p>
+
+<pre caption="Creating a DOS partition table">
+# <i>fdisk /dev/sda</i>
+
+Command (m for help): <i>o</i>
+Building a new DOS disklabel.
+</pre>
+
+<p>
+PALO (the HPPA bootloader) needs a special partition to work.  You have 
+to create a partition of at least 16Mb at the beginning of your disk.  
+The partition type must be of type <e>f0</e> (Linux/PA-RISC boot).
+</p>
+
+<impo>
+If you ignore this and continue without a special PALO partition, your system
+will stop loving you and fail to start. Also, if your disk is larger than 2Gb,
+make sure that the boot partition is in the first 2Gb of your disk. PALO is
+unable to read a kernel after the 2Gb limit.
+</impo>
+
+<pre caption="A simple default partition schema">
+# <i>cat /etc/fstab</i>
+/dev/sda2    /boot   ext3    noauto,noatime   1 1
+/dev/sda3    none    swap    sw               0 0
+/dev/sda4    /       ext3    noatime          0 0
+
+# <i>fdisk /dev/sda</i>
+
+Command (m for help): <i>p</i>
+
+Disk /dev/sda: 4294 MB, 4294816768 bytes
+133 heads, 62 sectors/track, 1017 cylinders
+Units = cylinders of 8246 * 512 = 4221952 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1               1           8       32953   f0  Linux/PA-RISC boot
+/dev/sda2               9          20       49476   83  Linux
+/dev/sda3              21          70      206150   82  Linux swap
+/dev/sda4              71        1017     3904481   83  Linux
+</pre>
+
+<p>
+Now that your partitions are created, you can now continue with <uri
+link="#filesystems">Creating Filesystems</uri>.
+</p>
+
+</body>
+</section>
+<section id="filesystems">
+<title>Creating Filesystems</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Now that your partitions are created, it is time to place a filesystem on them. 
+If you don't care about what filesystem to choose and are happy with what we use
+as default in this handbook, continue with <uri 
+link="#filesystems-apply">Applying a Filesystem to a Partition</uri>.
+Otherwise read on to learn about the available filesystems...
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Filesystems?</title>
+<body>
+
+<p>
+Several filesystems are available. Ext2, ext3, XFS and reiserfs are found stable on 
+the HPPA architecture. The others are very experimental.
+</p>
+
+<p>
+<b>ext2</b> is the tried and true Linux filesystem but doesn't have metadata
+journaling, which means that routine ext2 filesystem checks at startup time can
+be quite time-consuming. There is now quite a selection of newer-generation
+journaled filesystems that can be checked for consistency very quickly and are
+thus generally preferred over their non-journaled counterparts. Journaled
+filesystems prevent long delays when you boot your system and your filesystem
+happens to be in an inconsistent state.
+</p>
+
+<p>
+<b>ext3</b> is the journaled version of the ext2 filesystem, providing metadata
+journaling for fast recovery in addition to other enhanced journaling modes like
+full data and ordered data journaling. ext3 is a very good and reliable
+filesystem. It has an additional hashed b-tree indexing option that enables 
+high performance in almost all situations. In short, ext3 is an excellent 
+filesystem.
+</p>
+
+<p>
+<b>ReiserFS</b> is a B*-tree based filesystem that has very good overall 
+performance and greatly outperforms both ext2 and ext3 when dealing with small 
+files (files less than 4k), often by a factor of 10x-15x. ReiserFS also scales 
+extremely well and has metadata journaling. As of kernel 2.4.18+, ReiserFS is 
+solid and usable as both general-purpose filesystem and for extreme cases such 
+as the creation of large filesystems, the use of many small files, very large 
+files and directories containing tens of thousands of files. 
+</p>
+
+<p>
+<b>XFS</b> is a filesystem with metadata journaling which comes with a robust
+feature-set and is optimized for scalability. We only recommend using this
+filesystem on Linux systems with high-end SCSI and/or fibre channel storage and
+an uninterruptible power supply. Because XFS aggressively caches in-transit data
+in RAM, improperly designed programs (those that don't take proper precautions
+when writing files to disk and there are quite a few of them) can lose a good
+deal of data if the system goes down unexpectedly.
+</p>
+
+<p>
+<b>JFS</b> is IBM's high-performance journaling filesystem. It has recently 
+become production-ready and there hasn't been a sufficient track record to 
+comment positively nor negatively on its general stability at this point.
+</p>
+
+</body>
+</subsection>
+<subsection id="filesystems-apply">
+<title>Applying a Filesystem to a Partition</title>
+<body>
+
+<p>
+To create a filesystem on a partition or volume, there are tools available for 
+each possible filesystem:
+</p>
+
+<table>
+<tr>
+  <th>Filesystem</th>
+  <th>Creation Command</th>
+</tr>
+<tr>
+  <ti>ext2</ti>
+  <ti><c>mke2fs</c></ti>
+</tr>
+<tr>
+  <ti>ext3</ti>
+  <ti><c>mke2fs -j</c></ti>
+</tr>
+<tr>
+  <ti>reiserfs</ti>
+  <ti><c>mkreiserfs</c></ti>
+</tr>
+<tr>
+  <ti>xfs</ti>
+  <ti><c>mkfs.xfs</c></ti>
+</tr>
+<tr>
+  <ti>jfs</ti>
+  <ti><c>mkfs.jfs</c></ti>
+</tr>
+</table>
+
+<p>
+For instance, to have the boot partition (<path>/dev/sda2</path> in our
+example) in ext2 and the root partition (<path>/dev/sda4</path> in our example)
+in ext3 (as in our example), you would use:
+</p>
+
+<pre caption="Applying a filesystem on a partition">
+# <i>mke2fs /dev/sda2</i>
+# <i>mke2fs -j /dev/sda4</i>
+</pre>
+
+<p>
+Now create the filesystems on your newly created partitions (or logical
+volumes).
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating the Swap Partition</title>
+<body>
+
+<p>
+<c>mkswap</c> is the command that is used to initialize swap partitions:
+</p>
+
+<pre caption="Creating a Swap signature">
+# <i>mkswap /dev/sda3</i>
+</pre>
+
+<p>
+To activate the swap partition, use <c>swapon</c>:
+</p>
+
+<pre caption="Activating the swap partition">
+# <i>swapon /dev/sda3</i>
+</pre>
+
+<p>
+Create and activate the swap now.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Mounting</title>
+<body>
+
+<p>
+Now that your partitions are initialized and are housing a filesystem, it is
+time to mount those partitions. Use the <c>mount</c> command. Don't forget to
+create the necessary mount directories for every partition you created. As an
+example we mount the root and boot partition:
+</p>
+
+<pre caption="Mounting partitions">
+# <i>mount /dev/sda4 /mnt/gentoo</i>
+# <i>mkdir /mnt/gentoo/boot</i>
+# <i>mount /dev/sda2 /mnt/gentoo/boot</i>
+</pre>
+
+<note>
+If you want your <path>/tmp</path> to reside on a separate partition, be sure to
+change its permissions after mounting: <c>chmod 1777 /mnt/gentoo/tmp</c>. This
+also holds for <path>/var/tmp</path>.
+</note>
+
+<p>
+We will also have to mount the proc filesystem (a virtual interface with the 
+kernel) on <path>/proc</path>. But first we will need to place our files on the partitions.
+</p>
+
+<p>
+Continue with <uri link="?part=1&amp;chap=5">Installing the Gentoo
+Installation Files</uri>.
+</p>
+
+</body>
+</section>
+</sections>

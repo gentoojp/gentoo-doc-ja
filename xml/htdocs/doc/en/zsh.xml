@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/zsh.xml,v 1.7 2011/09/04 17:53:40 swift Exp $ -->
+
+<guide lang="en">
+<title>zsh Configuration and Installation Guide</title>
+
+<author title="Author">
+  <mail link="hekonsek@gmail.com">Henryk Konsek</mail>
+</author>
+<author title="Author">
+  <mail link="morritt.andrew@gmail.com">Andrew Morritt</mail>
+</author>
+<author title="Editor">
+  <mail link="chriswhite@gentoo.org">Chris White</mail>
+</author>
+<author title="Editor">
+  <mail link="welp@gentoo.org">Peter Weller</mail>
+</author>
+
+<abstract>
+This guide shows how to install and configure zsh quickly. After reading this
+document you will be able use many zsh features such as advanced
+tab-completion, command correction and prompt management.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2</version>
+<date>2006-10-18</date>
+
+<chapter>
+<title>Installation</title>
+<section>
+<title>Installing zsh</title>
+<body>
+
+<p>
+To install <c>zsh</c> under Gentoo, we need to emerge the <c>app-shells/zsh</c>
+(zsh itself) and <c>app-shells/zsh-completion</c> (zsh completion scripts)
+packages.
+</p>
+
+<pre caption="Emerging zsh">
+# <i>emerge zsh zsh-completion</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Entering zsh</title>
+<body>
+
+<p>
+When you start <c>zsh</c> for the first time, you get the following message.
+You can skip this menu as we will create an init file later in this guide.
+</p>
+
+<pre caption="Skipping the initial config">
+$ <i>zsh</i>
+This is the Z Shell configuration function for new users, zsh-newuser-install.
+You are seeing this message because you have no zsh startup files
+(the files .zshenv, .zprofile, .zshrc, .zlogin in the directory
+~).  This function can help you with a few settings that should
+make your use of the shell easier.
+
+You can:
+
+(q)  Quit and do nothing.  The function will be run again next time.
+
+(0)  Exit, creating the file ~/.zshrc containing just a comment.
+     That will prevent this function being run again.
+
+(1)  Continue to the main menu.
+
+--- Type one of the keys in parentheses --- <i>q</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuration</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+To start zsh for a single session, run <c>zsh</c>. For a more permanent
+solution, please refer to the chapter on <uri link="#savingsettings">Saving
+settings</uri>. After the installation, <c>zsh</c> seems to be very simple and
+rather limited in the area of functionality. To change this, several
+configuration changes need to be performed.
+</p>
+
+</body>
+</section>
+<section>
+<title>Advanced Tab-completion</title>
+<body>
+
+<p>
+To enable the famous <c>zsh</c> tab-completion system, you need to run the
+following commands:
+</p>
+
+<pre caption="Enabling completion">
+% <i>autoload -U compinit</i>
+% <i>compinit</i>
+</pre>
+
+<p>
+Default completion style is quite plain and ugly. If you want to improve its
+appearance, enter the following commands:
+</p>
+
+<pre caption="Completion style improvements">
+% <i>zstyle ':completion:*:descriptions' format '%U%B%d%b%u'</i>
+% <i>zstyle ':completion:*:warnings' format '%BSorry, no matches for: %d%b'</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Command correction</title>
+<body>
+
+<p>
+It is also a good idea to enable the auto-correction of the commands typed:
+</p>
+
+<pre caption="Enabling correction">
+% <i>setopt correctall</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Prompts</title>
+<body>
+
+<p>
+The prompt may seem quite boring however, but we can fix it easily in several
+steps. First, we need to initialize advanced prompt support:
+</p>
+
+<pre caption="Enabling advanced prompts">
+% <i>autoload -U promptinit</i>
+% <i>promptinit</i>
+</pre>
+
+<p>
+Available prompts samples may be printed via the <c>prompt -p</c> command. Now
+we can activate our favorite one:
+</p>
+
+<pre caption="Choosing a sample prompt">
+<comment>(Replace gentoo with the prompt of your choice)</comment>
+% <i>prompt gentoo</i>
+</pre>
+
+<note>
+If you're playing around with the different prompts, and you don't want to
+see a sample of every one, you can use <c>prompt -l</c> to list the prompts
+available.
+</note>
+
+<p>
+Another option is to create your own prompt. To do this you will need to set
+the PS1 environment variable.
+</p>
+
+<pre caption="A simple custom prompt">
+% <i>export PS1="[Test Prompt] > "</i>
+[Test Prompt] >
+</pre>
+
+<p>
+While it is good to be able to create a custom text prompt, zsh also provides
+many escape sequences that allow system information to be inserted into the
+prompt. Some of the escape sequences available are:
+</p>
+
+<table>
+<tr>
+  <th>Sequence</th>
+  <th>Printed</th>
+</tr>
+<tr>
+  <ti>%T</ti>
+  <ti>System time (HH:MM)</ti>
+</tr>
+<tr>
+  <ti>%*</ti>
+  <ti>System time (HH:MM:SS)</ti>
+</tr>
+<tr>
+  <ti>%D</ti>
+  <ti>System date (YY-MM-DD)</ti>
+</tr>
+<tr>
+  <ti>%n</ti>
+  <ti>Your username</ti>
+</tr>
+<tr>
+  <ti>%B - %b</ti>
+  <ti>Begin - end bold print</ti>
+</tr>
+<tr>
+  <ti>%U - %u</ti>
+  <ti>Begin - end underlining</ti>
+</tr>
+<tr>
+  <ti>%d</ti>
+  <ti>Your current working directory</ti>
+</tr>
+<tr>
+  <ti>%~</ti>
+  <ti>Your current working directory, relative to ~</ti>
+</tr>
+<tr>
+  <ti>%M</ti>
+  <ti>The computer's hostname</ti>
+</tr>
+<tr>
+  <ti>%m</ti>
+  <ti>The computer's hostname (truncated before the first period)</ti>
+</tr>
+<tr>
+  <ti>%l</ti>
+  <ti>Your current tty</ti>
+</tr>
+</table>
+
+<p>
+These escape sequences may simply be inserted into the environment variable,
+PS1, and zsh will parse them automatically.
+</p>
+
+<pre caption="A more complex prompt">
+% <i>export PS1="[%* - %D] %d %% "</i>
+[08:44:23 - 06-02-18] /home/username %
+</pre>
+
+</body>
+</section>
+<section>
+<title>History</title>
+<body>
+
+<p>
+Unfortunately, the default zsh configuration in Gentoo does not include command
+history support. As working with a shell without history is very frustrating,
+we should enter the following commands:
+</p>
+
+<pre caption="Basic history configuration">
+% <i>export HISTSIZE=2000</i>
+% <i>export HISTFILE="$HOME/.history"</i>
+
+<comment>(History won't be saved without the following command)</comment>
+% <i>export SAVEHIST=$HISTSIZE</i>
+</pre>
+
+<!-- does not work
+<p>
+It is very comfortable to search commands in history using the up/down arrow
+keys, especially after typing the few first letters of the desired command.
+</p>
+
+<p>
+To enable this feature, enter the following commands:
+</p>
+
+<pre caption="Setting context searching">
+% <i>bindkey `tput kcuu1` history-beginning-search-backward >/dev/null 2>&amp;1</i>
+% <i>bindkey `tput kcud1` history-beginning-search-forward >/dev/null 2>&amp;1 </i>
+</pre>
+
+<p>
+To try the above feature, try the following commands:
+</p>
+
+TODO: use commands that *are* in the history, i.e. commands from above samples
+
+<pre caption="History searching based on the first letters of the commands">
+<comment>(Do not press Enter after typing)</comment>
+% <i>vim /etc/</i>
+<comment>(Now press up arrow key)</comment>
+% <i>vim /etc/fstab</i>
+<comment>(Press up arrow key once again)</comment>
+% <i>vim /etc/X11/xorg.conf</i>
+</pre>
+-->
+
+<p>
+To prevent history from recording duplicated entries (such as <c>ls -l</c>
+entered many times during single shell session), you can set the
+<c>hist_ignore_all_dups</c> option:
+</p>
+
+<pre caption="Setting ignoring of duplicates ">
+% <i>setopt hist_ignore_all_dups</i>
+</pre>
+
+<p>
+A useful trick to prevent particular entries from being recorded
+into a history by preceding them with at least one space.
+</p>
+
+<pre caption="Preventing particular entry from being recorded">
+% <i>setopt hist_ignore_space</i>
+
+<comment>(This command won't be recorded. Note the extra space before it.)</comment>
+% <i> cat /proc/cpuinfo</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Miscellaneous settings</title>
+<body>
+
+<p>
+You can set the <c>autocd</c> option if you want to avoid tedious typing of
+<c>cd</c> command while changing current directory (for example
+<c>/etc</c> instead of <c>cd /etc</c>).
+</p>
+
+<pre caption="Setting autocd option">
+% <i>setopt autocd</i>
+</pre>
+
+<p>
+If standard bash-like globbing does not satisfy you, <c>extendedglob</c>
+option may be set to enable extended globbing (one similar to
+regular expressions).
+</p>
+
+<pre caption="Setting extended globbing">
+% <i>setopt extendedglob</i>
+</pre>
+
+<p>
+When option above is set, you are able to use extended globbing queries
+such as <c>cp ^*.(tar|bz2|gz)</c>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="savingsettings">
+<title>Saving settings</title>
+<section>
+<title>Saving zsh settings</title>
+<body>
+
+<p>
+Once we have customized <c>zsh</c> the way we like it, it is a good idea to save
+these options as the <c>zsh</c> defaults for the system.  One possible way to
+achieve this is to write our settings in the <path>/etc/zsh/zshrc</path> script.
+Alternatively, we could make them the defaults for our account only be editing
+<path>~/.zshrc</path>.
+</p>
+
+<pre caption="An example zshrc">
+#!/bin/zsh
+
+# completion
+autoload -U compinit
+compinit
+
+# correction
+setopt correctall
+
+# prompt
+autoload -U promptinit
+promptinit
+prompt gentoo
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Making zsh default shell</title>
+<section>
+<title>Option for users with root privileges</title>
+<body>
+
+<p>
+We can change shell for given user with <c>usermod</c> command.
+</p>
+
+<pre caption="Switching to zsh permanently using usermod">
+# <i>usermod -s /bin/zsh userlogin</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Alternative for non-root users</title>
+<body>
+
+<p>
+If your system administrator (despite gentle requests, that is) refuses to set
+the shell to zsh for you, you can set <c>bash</c> to execute <c>zsh</c> on
+startup, all you need to do is make a slight modification to your
+<path>~/.bashrc</path>.
+</p>
+
+<pre caption="Sample ~/.bashrc">
+<comment>(Add the following to your ~/.bashrc)</comment>
+exec zsh
+</pre>
+
+<p>
+Another method of changing shells is to use the <c>chsh</c> command (a utility
+used to change a user's login shell). A normal user may only change the login
+shell for his own account. As root, you can change the login shell of any user.
+</p>
+
+<pre caption="Switching to zsh permanently using chsh">
+<comment>(Replace "username" with your own username)</comment>
+$ <i>chsh -s /bin/zsh username</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/man-guide.xml,v 1.3 2008/06/19 13:51:24 shindo Exp $ -->
+
+<guide link="/doc/ja/man-guide.xml" lang="ja">
+<title>Gentoo Man ガイド</title>
+
+<author title="Author">
+<mail link="chriswhite@gentoo.org">Chris White</mail>
+</author>
+<author title="翻訳">
+<mail link="shindo@gentoo.gr.jp">シンドウナオアキ</mail>
+</author>
+
+<abstract>
+このガイドではmanを使ってmanページを操作する方法を説明します。</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2</version>
+<date>2006-06-18</date>
+
+<!-- Original revision: 1.5 -->
+
+
+<chapter>
+<title>はじめに</title>
+<section>
+<title>manプログラム</title>
+<body>
+
+<p>
+Linuxを使うなかで誰もが使ってきたものがあります。それが<c>man</c>コマンドです。一方、manプログラム自身が構造的にかなり単純化されており、単純にページをスクロールする以上の機能が少しだけあるくらいです。このドキュメントがこれらの機能を理解するのに役立てば幸いです。</p>
+
+</body>
+</section>
+<section>
+<title>manの配置</title>
+<body>
+
+<p>Man ページは主に<path>/usr/share/man</path>ディレクトリに置かれます。しかし、<c>MANPATH</c> 環境変数の場所に置かれていればmanを使うことができます。Gentooでは通常<path>/etc/env.d</path>の<c>MANPATH</c>環境変数が指す先に置かれるでしょう。これらのディレクトリのなかにmanX(Xはセクション番号)に対応するいくつかのフォルダがあります。たとえば、一般的なmanの配置は次のようになるでしょう:</p>
+
+<pre caption="一般的なmanの構造">
+$ <i>ls /usr/share/man | grep man</i>
+man0p
+man1
+man1p
+man2
+man3
+man3p
+man4
+man5
+man6
+man7
+man8
+man9
+mann
+</pre>
+
+<p>今のセクション番号がほぼスタンダードなものです。ただし、<path>mann</path> と <path>man#p</path> フォルダがあることに注意してください。つぎの表は先のmanページディレクトリと対応する内容についての一覧です:</p>
+
+<table>
+<tr>
+<th>manディレクトリ</th>
+<th>説明</th>
+</tr>
+<tr>
+<ti>man0p</ti>
+<ti>
+名前につく<c>p</c>はPOSIXを意味しています。このディレクトリのManページはさまざまなPOSIXヘッダファイルについての説明です。</ti>
+</tr>
+<tr>
+<ti>man1</ti>
+<ti>
+このセクションは一般的なコマンドに関するものです。ほとんどのプログラムはそれらのmanをここに収めるので、このセクションがもっとも大きくなりがちです。</ti>
+</tr>
+<tr>
+<ti>man1p</ti>
+<ti>このセクションは1で説明されているコマンドのPOSIXバージョンの説明になります。基本的なコマンドだけが説明されるので、man1よりも小さくなります。</ti>
+</tr>
+<tr>
+<ti>man2</ti>
+<ti>このセクションはLinuxカーネルシステムコールに関する説明です。</ti>
+</tr>
+<tr>
+<ti>man3</ti>
+<ti>このセクションは標準Cライブラリ関数に関する説明です。</ti>
+</tr>
+<tr>
+<ti>man4</ti>
+<ti>
+このセクションはスペシャルデバイスに関する説明です。これらのデバイスは一般的にはカーネルにより異なりますが、<c>Xorg-X11</c>についてはここに項目があります。</ti>
+</tr>
+<tr>
+<ti>man5</ti>
+<ti>
+このセクションでは特定のファイルの構造とプログラムがそれをどう使うかという両方を説明します。このドキュメントを読んでいる方々は<c>portage</c>のファイル構成の解説や<c>man 5 portage</c>や<path>make.conf</path>の構成に関連して<c>man 5 portage</c>や<c>man 5 make.conf</c> に馴染みがあるかもしれません。</ti>
+</tr>
+<tr>
+<ti>man6</ti>
+<ti>このセクションはゲームやその他の特別なおもちゃを紹介しています。</ti>
+</tr>
+<tr>
+<ti>man7</ti>
+<ti>
+このセクションは規格やその他の項目について説明します。この規格には文字セットやSQL構文、ISO規格、正規表現構文などが含まれることがあります。</ti>
+</tr>
+<tr>
+<ti>man8</ti>
+<ti>
+このセクションでは管理者向けのコマンド(通常はrootユーザーにより実行されるもの)について説明します。</ti>
+</tr>
+<tr>
+<ti>man9</ti>
+<ti>
+このセクションは幾分量がすくないですが、カーネルのさまざまな部分に関する文書が収められています。</ti>
+</tr>
+<tr>
+<ti>mann</ti>
+<ti>
+このセクションはおもに<c>Tcl/Tk</c>により使われます。<c>n</c> は新しい(new)の意味です。</ti>
+</tr>
+</table>
+
+<p>このリストは広範囲にわたる詳細なものではないですが、ほとんどの人が興味をもつmanページについてはカバーしています。また、あるセクションがどういったものなのかは、このテーブルを見るように簡単にわかるとおもいます。次の章ではこの配置を詳しくみるためにmanの使い方をみてみましょう。</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>manを利用する</title>
+<section>
+<title>manの配置を見渡す</title>
+<body>
+
+<p>
+manレイアウトを理解したところで、いくつかのコマンドについてみてみましょう。ときおり必要なmanページを絞り込む必要があります。まず初めに、セクションでひきます。セクションの説明を知るためには一度<c>man section intro</c>を使ってみてください。つぎのようになります:
+</p>
+
+<pre caption="セクション説明にman intoroを使う">
+$ <i>man 3 intro</i>
+<comment>(出力は文書にあわせて多少変更されるかもしれません)</comment>
+INTRO(3)               Linux Programmer's Manual                INTRO(3)
+
+
+
+NAME
+        intro - Introduction to library functions
+
+DESCRIPTION
+        This chapter describes all library functions excluding the library
+        functions described in chapter 2, which implement system calls.
+        There are various function groups which can be identified by a
+        letter which is appended to the chapter number:
+....
+</pre>
+
+<p>残念ながら、常にこのようにきれいにうごくとは限りません。しかし、幸いなことに複数回答を返す別な検索コマンドが用意されています (複数回答とはライブラリとシステムコマンドが同じ名前をもつような場合です)これを行うには、<c>-K</c> 引数を次のように使います:
+</p>
+
+<pre caption="文字列検索をするためにman -Kを使う">
+$ <i>man -K sleep</i>
+/usr/share/man/man0p/time.h.0p.gz?[ynq] <i>n</i>
+/usr/share/man/man0p/unistd.h.0p.gz?[ynq] <i>n</i>
+/usr/share/man/man2/alarm.2.gz?[ynq] <i>n</i>
+/usr/share/man/man2/pause.2.gz?[ynq] <i>n</i>
+/usr/share/man/man2/futex.2.gz?[ynq] <i>n</i>
+/usr/share/man/man2/nanosleep.2.gz?[ynq] <i>y</i>
+/usr/share/man/man2/semop.2.gz?[ynq] <i>q</i>
+</pre>
+
+<p>
+ときどき出力がもっと大きくなってしまうことがあります。そういった場合は、より明確なキーワードで絞り込めばよいでしょう。manページがどこにあるか分かったところで、次のセクションではmanページの見方にうつりましょう。</p>
+
+</body>
+</section>
+<section>
+<title>manページの見方</title>
+<body>
+
+<p>manページを見るには二つのやり方があります。一つは<c>man [man page
+name]</c>です。二つ目のやり方は<c>man [section] [man page name]</c>です。<c>bc</c> を例にとってみましょう。<c>bc</c>について最初にでてきたページを見ることができます(おそらくはセクション1でしょう。なぜなら<c>bc</c>に関するmanページが含まれる最初のセクションだからです):
+</p>
+
+<pre caption="デフォルトのmanページを見る">
+$ <i>man bc</i>
+bc(1)                                            bc(1)
+
+
+NAME
+        bc - An arbitrary precision calculator language
+...
+</pre>
+
+<p>
+それでは、POSIXバージョンが必要な場合はどうすればいいでしょう。その場合は二つ目の形式をとることができます:
+</p>
+
+<pre caption="セクションでmanページを特定して見る">
+$ <i>man 1p bc</i>
+BC(P)        POSIX Programmer's Manual           BC(P)
+
+
+NAME
+        bc - arbitrary-precision arithmetic language
+...
+</pre>
+
+<p>
+これでmanページが表示されました。manページがでましたので、実際に使ってみましょう。つぎのセクションでは操作と検索についてみてみます。</p>
+
+</body>
+</section>
+<section>
+<title>manページの操作と検索</title>
+<body>
+
+<p>
+manページの操作方法は非常に簡単です。上下ボタンを使って行ごとに上下に移動します。ページごとに移動するには、ページアップ、ページダウンキー使います。ここでこれらの操作方法の説明の前提として、環境変数<c>PAGER</c>がデフォルトページャーの<c>less</c>を使うよう設定されていることに注意してください。Less には他にもいくつか操作コマンドがありますが、たいていは方向キーで十分でしょう:
+</p>
+
+<pre caption="less の補足的な操作キー">
+e  ^E  j  ^N  CR  *  １行進む(または N 行)
+y  ^Y  k  ^K  ^P  *  一行戻る (または N 行)
+f  ^F  ^V  SPACE  *  一ウィンドウ分素進む(または N 行)
+b  ^B  ESC-v      *  1ウィンドウ分戻る(または N 行)
+z                 *  1ウィンドウ分進む (かつウィンドウをNにセットする)
+w                 *  1ウィンドウ分戻る(かつウィンドウをNにセットする)
+ESC-SPACE         *  1ウインドウ分進むが、ファイルの末尾で停止しない
+d  ^D             *  ウィンドウの半分だけ進む(かつウィンドウの半分をNにセットする)
+u  ^U             *  ウィンドウの半分だけ戻る(かつウィンドウの半分をNにセットする)
+ESC-)  右方向キー *  スクリーンの半分(またはN文字分)右にずれる
+ESC-(  左方向キー  *  右にスクリーンの半分(またはN文字分)左にずれる
+F                    tail -fのようにずっと進みつづける</pre>
+
+<p>
+一方で検索はもうすこし面白いです。もっとも基本的な二つの検索は
+<c>/パターン</c> と <c>?パターン</c>です。前者が文末に向かって検索し、後者が文頭に向かって検索します。<c>パターン</c>は正規表現で<c>man 7 regex</c>で説明されています。<c>emerege</c>の<c>-D</c>オプションを例にとってみましょう。まず初めにemergeのmanページを開きます:
+</p>
+
+<pre caption="emergeのmanページを開く">
+$ <i>man emerge</i>
+</pre>
+
+<p>
+つぎにスクリーンで<c>/</c>と押して、文末に向かって検索するための入力プロンプトを表示し、検索パターンを入力します:
+</p>
+
+<pre caption="文末に向かっての検索プロンプトを表示する">
+        gracefully handles updating installed packages to newer releases as well.
+        It handles both source and binary packages, and it can be used to create
+        binary packages for distribution.
+
+EBUILDS, TBZ2S, CLASSES AND DEPENDENCIES
+/<i>\-D</i>
+</pre>
+
+<note>
+<c>\</c>は<c>-</c>記号をエスケープするためのもので、通常正規表現の一部として使われます。</note>
+
+<p>
+これでmanページが検索され、見つかった項目がフォーカスされます:
+</p>
+
+<pre caption="文末に向かっての検索結果">
+--deep (-D)
+        When used in conjunction with --update, this flag forces emerge to consider the entire
+        dependency tree of packages, instead of checking only the immediate dependencies of
+        the packages.  As an example, this catches updates in libraries that are not directly
+        listed in the  dependencies of a package.
+</pre>
+
+<p>
+もし誤って検索結果にヒットしてしまい、同じ結果に対して検索を続けたい場合は、単純に<c>/</c>キーを再度押して、エンターを押してください(つまり、パターンを入力しないということ)。これで最後に使われたパターンをデフォルトにした検索になります。現在、いくつかのmanページではオプションが記載され、そのあとに説明がされています。<c>man 5 portage</c>manページを例にとってみましょう。使われているファイルが記載され、その使い方が説明されます。文末に向けて数回検索を繰りかえして結果を得るかもしれませんが、二つ目の検索方法の文頭への逆方向検索を使って、これをもっと楽に行うことができます。<path>package.unmask</path>についての説明を見つけるためにこの方法をつかってみましょう。まず、<c>man 5 portage</c>を開きます:
+</p>
+
+<pre caption="man 5 portage manページを開く">
+$ <i>man 5 portage</i>
+</pre>
+
+<p>
+<c>SHIFT+g</c>を押してみましょう。これでページの最後に移動します:
+</p>
+
+<pre caption="SHIFT+g の後manページの最後に">
+SEE ALSO
+        emerge(1), ebuild(1), ebuild(5), make.conf(5)
+
+Portage 2.0.51        Jan 2004            PORTAGE(5)
+lines 418-442/442 (END)
+</pre>
+
+<p>
+ここで、逆方向検索オプションの<c>?pattern</c>に検索パターンを入力してみましょう。まず、<c>?</c>キーを押し、プロンプトを表示し、検索語である<c>package.unmask</c>を入力します。
+</p>
+
+<pre caption="検索内容を決める">
+SEE ALSO
+        emerge(1), ebuild(1), ebuild(5), make.conf(5)
+
+Portage 2.0.51        Jan 2004           PORTAGE(5)
+?<i>package.unmask</i>
+</pre>
+
+<p>
+検索結果を表示するためにエンターを押します:
+</p>
+
+<pre caption="検索結果">
+package.unmask
+        Just like package.mask above, except here you list packages you want to unmask.
+        Useful for overriding the global  package.mask  file (see below).  Note that
+        this does not override packages that are masked via KEYWORDS.
+...
+</pre>
+
+<p>
+これで検索が完了します！<c>/</c>と同じように<c>?</c>で検索パターンをつけないことで、最後のパターンが検索に使われます。</p>
+
+</body>
+</section>
+<section>
+<title>おわりに</title>
+<body>
+
+<p>
+これでmanガイドの最後です。manページを操作するのに役立ち、そしてより経験のあるユーザーにはちょっとした新しいこつとなれば幸いです。man ページを操作するのに別な方法を好む方には、次のようなものがあります:
+</p>
+
+<ul>
+<li>app-text/man2html - manページをhtmlに変換してくれるプログラム</li>
+<li>app-text/tkman - tkベースのmanページブラウザ</li>
+</ul>
+
+<p>
+また、<c>KDE</c> Webブラウザ<c>Konqueror</c>はアドレスバーのなかで<c>man:</c>構文を使うことでmanページを見ることができます。</p>
+
+</body>
+</section>
+</chapter>
+</guide>

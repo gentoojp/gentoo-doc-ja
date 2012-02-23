@@ -1,0 +1,685 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:53+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/articles/openssh-key-management-p1.xml:6
+#, no-wrap
+msgid "OpenSSH key management, Part 1"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/articles/openssh-key-management-p1.xml:13
+#, no-wrap
+msgid ""
+"In this series, you'll learn how RSA and DSA authentication work, and see how\n"
+"to set up passwordless authentication the right way. In the first article of\n"
+"the series, Daniel Robbins focuses on introducing the RSA and DSA\n"
+"authentication protocols and showing you how to get them working over the\n"
+"network.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/openssh-key-management-p1.xml:29
+#, no-wrap
+msgid "Understanding RSA/DSA authentication"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:34
+#, no-wrap
+msgid ""
+"Many of us use the excellent OpenSSH (see <uri\n"
+"link=\"#resources\">Resources</uri> later in this article) as a secure, encrypted\n"
+"replacement for the venerable <c>telnet</c> and <c>rsh</c> commands. One of\n"
+"OpenSSH's more intriguing features is its ability to authenticate users using\n"
+"the RSA and DSA authentication protocols, which are based on a pair of\n"
+"complementary numerical keys. As one of its main appeals, RSA and DSA\n"
+"authentication promise the capability of establishing connections to remote\n"
+"systems <e>without supplying a password</e>. While this is appealing, new\n"
+"OpenSSH users often configure RSA/DSA the quick and dirty way, resulting in\n"
+"passwordless logins, but opening up a big security hole in the process.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/openssh-key-management-p1.xml:49
+#, no-wrap
+msgid "What is RSA/DSA authentication?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:53
+#, no-wrap
+msgid ""
+"SSH, specifically OpenSSH (a completely free implementation of SSH), is an\n"
+"incredible tool. Like <c>telnet</c> or <c>rsh</c>, the ssh client can be used\n"
+"to log in to a remote machine. All that's required is for this remote machine\n"
+"to be running <c>sshd</c>, the <c>ssh</c> server process. However, unlike\n"
+"<c>telnet</c>, the ssh protocol is very secure. It uses special algorithms to\n"
+"encrypt the data stream, ensure data stream integrity and even perform\n"
+"authentication in a safe and secure way.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:63
+#, no-wrap
+msgid ""
+"However, while <c>ssh</c> is really great, there is a certain component of\n"
+"<c>ssh</c> functionality that is often ignored, dangerously misused, or simply\n"
+"misunderstood. This component is OpenSSH's RSA/DSA key authentication system,\n"
+"an alternative to the standard secure password authentication system that\n"
+"OpenSSH uses by default.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:71
+#, no-wrap
+msgid ""
+"OpenSSH's RSA and DSA authentication protocols are based on a pair of specially\n"
+"generated cryptographic keys, called the <e>private key</e> and the <e>public\n"
+"key</e>. The advantage of using these key-based authentication systems is that\n"
+"in many cases, it's possible to establish secure connections without having to\n"
+"manually type in a password.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:79
+#, no-wrap
+msgid ""
+"While the key-based authentication protocols are relatively secure, problems\n"
+"arise when users take certain shortcuts in the name of convenience, without\n"
+"fully understanding their security implications. In this article, we'll take a\n"
+"good look at how to correctly use RSA and DSA authentication protocols without\n"
+"exposing ourselves to any unnecessary security risks. In my next article, I'll\n"
+"show you how to use <c>ssh-agent</c> to cache decrypted private keys, and \n"
+"introduce <c>keychain</c>, an <c>ssh-agent</c> front-end that offers a number \n"
+"of convenience advantages without sacrificing security. If you've always wanted \n"
+"to get the hang of the more advanced authentication features of OpenSSH, then \n"
+"read on.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/openssh-key-management-p1.xml:94
+#, no-wrap
+msgid "How RSA/DSA keys work"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:98
+#, no-wrap
+msgid ""
+"Here's a quick general overview of how RSA/DSA keys work. Let's start with a \n"
+"hypothetical scenario where we'd like to use RSA authentication to allow a \n"
+"local Linux workstation (named <e>localbox</e>) to open a remote shell on \n"
+"<e>remotebox</e>, a machine at our ISP. Right now, when we try to connect to \n"
+"<e>remotebox</e> using the <c>ssh</c> client, we get the following prompt:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:105
+#, no-wrap
+msgid "Connecting to remotebox"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:106
+#, no-wrap
+msgid ""
+"$ <i>ssh drobbins@remotebox</i>\n"
+"drobbins@remotebox's password:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:111
+#, no-wrap
+msgid ""
+"Here we see an example of the <c>ssh</c> <e>default</e> way of handling\n"
+"authentication. Namely, it asks for the password of the <e>drobbins</e> account\n"
+"on <e>remotebox</e>. If we type in our password for <e>remotebox</e>,\n"
+"<c>ssh</c> uses its secure password authentication protocol, transmitting our\n"
+"password over to <e>remotebox</e> for verification. However, unlike what\n"
+"<c>telnet</c> does, here our password is encrypted so that it can not be\n"
+"intercepted by anyone sniffing our data connection. Once <e>remotebox</e>\n"
+"authenticates our supplied password against its password database, if\n"
+"successful, we're allowed to log on and are greeted with a <e>remotebox</e>\n"
+"shell prompt. While the <c>ssh</c> default authentication method is quite\n"
+"secure, RSA and DSA authentication open up some new possibilities.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:125
+#, no-wrap
+msgid ""
+"However, unlike the <c>ssh</c> secure password authentication, RSA\n"
+"authentication requires some initial configuration. We need to perform these\n"
+"initial configuration steps only once. After that, RSA authentication between\n"
+"<e>localbox</e> and <e>remotebox</e> will be totally painless. To set up RSA\n"
+"authentication, we first need to generate a pair of keys, one private and one\n"
+"public. These two keys have some very interesting properties. The public key\n"
+"can be used to encrypt a message, and only the holder of the private key can\n"
+"decrypt it. The public key can only be used for <e>encryption</e>, and the\n"
+"private key can only be used for <e>decryption</e> of a message encoded by the\n"
+"matching public key. The RSA (and DSA) authentication protocols use the special\n"
+"properties of key pairs to perform secure authentication, without needing to\n"
+"transmit any confidential information over the network.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:140
+#, no-wrap
+msgid ""
+"To get RSA or DSA authentication working, we perform a single one-time\n"
+"configuration step. We copy our <e>public key</e> over to <e>remotebox</e>.\n"
+"The public key is called \"public\" for a reason. Since it can only be used to\n"
+"<e>encrypt</e> messages for us, we don't need to be too concerned about it\n"
+"falling into the wrong hands. Once our public key has been copied over to\n"
+"<e>remotebox</e> and placed in a special file\n"
+"(<path>~/.ssh/authorized_keys</path>) so that <e>remotebox</e>'s <c>sshd</c>\n"
+"can locate it, we're ready to use RSA authentication to log onto\n"
+"<e>remotebox</e>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:152
+#, no-wrap
+msgid ""
+"To do this, we simply type <c>ssh drobbins@remotebox</c> at <e>localbox</e>'s\n"
+"console, as we always have. However, this time, <c>ssh</c> lets\n"
+"<e>remotebox</e>'s <c>sshd</c> know that it would like to use the RSA\n"
+"authentication protocol. What happens next is rather interesting.\n"
+"<e>Remotebox</e>'s <c>sshd</c> generates a random number, and encrypts it using\n"
+"our public key that we copied over earlier. Then, it sends this encrypted\n"
+"random number back to the <c>ssh</c> running on <e>localbox</e>. In turn, our\n"
+"<c>ssh</c> uses our <e>private key</e> to decrypt this random number, and then\n"
+"sends it back to <e>remotebox</e>, saying in effect \"See, I really <e>do</e>\n"
+"hold the matching private key; I was able to successfully decrypt your\n"
+"message!\" Finally, <c>sshd</c> concludes that we should be allowed to log in,\n"
+"since we hold a matching private key. Thus, the fact that we hold a matching\n"
+"private key grants us access to <e>remotebox</e>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/openssh-key-management-p1.xml:170
+#, no-wrap
+msgid "Two observations"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:174
+#, no-wrap
+msgid ""
+"There are two important observations about the RSA and DSA authentication. The\n"
+"first is that we really only need to generate one pair of keys. We can then\n"
+"copy our public key to the remote machines that we'd like to access and they\n"
+"will all happily authenticate against our single private key. In other words,\n"
+"we don't need a key pair for <e>every</e> system we'd like to access. Just one\n"
+"pair will suffice.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:183
+#, no-wrap
+msgid ""
+"The other observation is that our <e>private key should not fall into the wrong\n"
+"hands</e>. The private key is the one thing that grants us access to our remote\n"
+"systems, and anyone that possesses our private key is granted exactly the same\n"
+"privileges that we are. Just as we wouldn't want strangers to have keys to our\n"
+"house, we should protect our private key from unauthorized use. In the world of\n"
+"bits and bytes, this means that no one should be able to read or copy our\n"
+"private key.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:193
+#, no-wrap
+msgid ""
+"Of course, the <c>ssh</c> developers are aware of the private keys' importance,\n"
+"and have built a few safeguards into <c>ssh</c> and <c>ssh-keygen</c> so that\n"
+"our private key is not abused. First, <c>ssh</c> is configured to print out a\n"
+"big warning message if our key has file permissions that would allow it to be\n"
+"read by anyone but us. Secondly, when we create our public/private key pair\n"
+"using <c>ssh-keygen</c>, <c>ssh-keygen</c> will ask us to enter a passphrase.\n"
+"If we do, our private key will be encrypted using this passphrase, so that even\n"
+"if it is stolen, it will be useless to anyone who doesn't happen to know the\n"
+"passphrase. Armed with that knowledge, let's take a look at how to configure\n"
+"<c>ssh</c> to use the RSA and DSA authentication protocols.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/openssh-key-management-p1.xml:208
+#, no-wrap
+msgid "ssh-keygen up close"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:212
+#, no-wrap
+msgid ""
+"The first step in setting up RSA authentication begins with generating a\n"
+"public/private key pair. RSA authentication is the original form of <c>ssh</c>\n"
+"key authentication, so RSA should work with any version of OpenSSH, although I\n"
+"recommend that you install the most recent version available, which was\n"
+"openssh-2.9_p2 at the time this article was written. Generate a pair of RSA\n"
+"keys as follows:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:220
+#, no-wrap
+msgid "Using ssh-keygen"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:221
+#, no-wrap
+msgid ""
+"$ <i>ssh-keygen</i>\n"
+"Generating public/private rsa1 key pair.\n"
+"Enter file in which to save the key (/home/drobbins/.ssh/identity): <comment>(hit enter)</comment>\n"
+"Enter passphrase (empty for no passphrase): <comment>(enter a passphrase)</comment>\n"
+"Enter same passphrase again: <comment>(enter it again)</comment>\n"
+"Your identification has been saved in /home/drobbins/.ssh/identity.\n"
+"Your public key has been saved in /home/drobbins/.ssh/identity.pub.\n"
+"The key fingerprint is:\n"
+"a4:e7:f2:39:a7:eb:fd:f8:39:f1:f1:7b:fe:48:a1:09 drobbins@localbox\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:233
+#, no-wrap
+msgid ""
+"When <c>ssh-keygen</c> asks for a default location for the key, we hit enter \n"
+"to accept the default of <path>/home/drobbins/.ssh/identity</path>.\n"
+"<c>ssh-keygen</c> will store the private key at the above path, and the\n"
+"<e>public</e> key will be stored right next to it, in a file called \n"
+"identity.pub.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:241
+#, no-wrap
+msgid ""
+"Also note that <c>ssh-keygen</c> prompted us to enter a passphrase. When\n"
+"prompted, we entered a good passphrase (seven or more hard-to-predict\n"
+"characters). <c>ssh-keygen</c> then encrypted our private key\n"
+"(<path>~/.ssh/identity</path>) using this passphrase so that our private key\n"
+"will be useless to anyone who does not know it.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/openssh-key-management-p1.xml:251
+#, no-wrap
+msgid "The quick compromise"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:255
+#, no-wrap
+msgid ""
+"When we specify a passphrase, it allows <c>ssh-keygen</c> to secure our private\n"
+"key against misuse, but it also creates a minor inconvenience. Now, every time\n"
+"we try to connect to our <e>drobbins@remotebox</e> account using <c>ssh</c>,\n"
+"<c>ssh</c> will prompt us to enter the passphrase so that it can decrypt our\n"
+"private key and use it for RSA authentication. Again, we won't be typing in our\n"
+"password for the <e>drobbins</e> account on <e>remotebox</e>, we'll be typing\n"
+"in the passphrase needed to locally decrypt our private key.  Once our private\n"
+"key is decrypted, our <c>ssh</c> client will take care of the rest. While the\n"
+"mechanics of using our remote password and the RSA passphrase are completely\n"
+"different, in practice we're still prompted to type a \"secret phrase\" into\n"
+"<c>ssh</c>.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:268
+#: en/articles/openssh-key-management-p1.xml:285
+#, no-wrap
+msgid "Logging in with passphrase"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:269
+#, no-wrap
+msgid ""
+"$ <i>ssh drobbins@remotebox</i>\n"
+"Enter passphrase for key '/home/drobbins/.ssh/identity': <comment>(enter passphrase)</comment>\n"
+"Last login: Thu Jun 28 20:28:47 2001 from localbox.gentoo.org \n"
+"\n"
+"Welcome to remotebox!\n"
+"\n"
+"$\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:279
+#, no-wrap
+msgid ""
+"Here's where people are often mislead into a quick compromise. A lot of the\n"
+"time, people will create unencrypted private keys just so that they don't need\n"
+"to type in a password. That way, they simply type in the ssh command, and\n"
+"they're immediately authenticated via RSA (or DSA) and logged in.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:286
+#, no-wrap
+msgid ""
+"$ <i>ssh drobbins@remotebox</i>\n"
+"Last login: Thu Jun 28 20:28:47 2001 from localbox.gentoo.org \n"
+"\n"
+"Welcome to remotebox!\n"
+"\n"
+"$\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:295
+#, no-wrap
+msgid ""
+"However, while this is convenient, you shouldn't use this approach without\n"
+"fully understanding its security impact. With an unencrypted private key, if\n"
+"anyone ever hacks into <e>localbox</e>, they'll also get automatic access to\n"
+"<e>remotebox</e> and any other systems that have been configured with the\n"
+"public key.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:303
+#, no-wrap
+msgid ""
+"I know what you're thinking. Passwordless authentication, despite being a bit\n"
+"risky does seem really appealing. I totally agree. But <e>there is a better\n"
+"way!</e> Stick with me, and I'll show you how to gain the benefits of\n"
+"passwordless authentication without compromising your private key security.\n"
+"I'll show you how to masterfully use <c>ssh-agent</c> (the thing that makes\n"
+"<e>secure</e> passwordless authentication possible in the first place) in my\n"
+"next article. Now, let's get ready to use <c>ssh-agent</c> by setting up RSA\n"
+"and DSA authentication. Here step-by-step directions.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/openssh-key-management-p1.xml:316
+#, no-wrap
+msgid "RSA key pair generation"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:320
+#, no-wrap
+msgid ""
+"To set up RSA authentication, we'll need to perform the one-time step of\n"
+"generating a public/private key pair. We do this by typing:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:324
+#, no-wrap
+msgid "Generating keys..."
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:325
+#, no-wrap
+msgid "$ <i>ssh-keygen</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:329
+#, no-wrap
+msgid ""
+"Accept the default key location when prompted (typically\n"
+"<path>~/.ssh/identity</path> and <path>~/.ssh/identity.pub</path> for the\n"
+"public key), and provide <c>ssh-keygen</c> with a secure passphrase. Once\n"
+"<c>ssh-keygen</c> completes, you'll have a public key as well as a\n"
+"passphrase-encrypted private key.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/openssh-key-management-p1.xml:339
+#, no-wrap
+msgid "RSA public key install"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:343
+#, no-wrap
+msgid ""
+"Next, we'll need to configure remote systems running <c>sshd</c> to use our\n"
+"<e>public</e> RSA key for authentication. Typically, this is done by copying\n"
+"the public key to the remote system as follows:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:348
+#, no-wrap
+msgid "Copying the public key"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:349
+#, no-wrap
+msgid "$ <i>scp ~/.ssh/identity.pub drobbins@remotebox:</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:353
+#, no-wrap
+msgid ""
+"Since RSA authentication isn't fully set up yet, we'll be prompted to enter our\n"
+"password on <e>remotebox</e>. Do so. Then, log in to <e>remotebox</e> and\n"
+"append the public key to the <path>~/.ssh/authorized_keys</path> file like so:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:358
+#, no-wrap
+msgid "Installing the public key"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:359
+#, no-wrap
+msgid ""
+"$ <i>ssh drobbins@remotebox</i>\n"
+"drobbins@remotebox's password: <comment>(enter password)</comment>\n"
+"Last login: Thu Jun 28 20:28:47 2001 from localbox.gentoo.org \n"
+"\n"
+"Welcome to remotebox!\n"
+"\n"
+"$ <i>cat identity.pub >> ~/.ssh/authorized_keys</i>\n"
+"$ <i>exit</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:370
+#, no-wrap
+msgid ""
+"Now, with RSA authentication configured, we should be prompted to enter our RSA\n"
+"<e>passphrase</e> (rather than our <e>password</e>) when we try to connect to \n"
+"<e>remotebox</e> using <c>ssh</c>.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:375
+#, no-wrap
+msgid "Logging in with pubkey authentication"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:376
+#, no-wrap
+msgid ""
+"$ <i>ssh drobbins@remotebox</i>\n"
+"Enter passphrase for key '/home/drobbins/.ssh/identity': \n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:381
+#, no-wrap
+msgid ""
+"Hurray, RSA authentication configuration complete! If you weren't prompted for\n"
+"a passphrase, here are a few things to try. First, try logging in by typing\n"
+"<c>ssh -1 drobbins@remotebox</c>. This will tell ssh to only use version 1 of\n"
+"the ssh protocol, and may be required if for some reason the remote system is\n"
+"defaulting to DSA authentication. If that doesn't work, make sure that you\n"
+"don't have a line that reads <c>RSAAuthentication no</c> in your\n"
+"<path>/etc/ssh/ssh_config</path>. If you do, comment it out by pre-pending it\n"
+"with a \"#\". Otherwise, try contacting the <e>remotebox</e> system administrator\n"
+"and verifying that they have enabled RSA authentication on their end and have\n"
+"the appropriate settings in <path>/etc/ssh/sshd_config</path>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/openssh-key-management-p1.xml:396
+#, no-wrap
+msgid "DSA key generation"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:400
+#, no-wrap
+msgid ""
+"While RSA keys are used by version 1 of the <c>ssh</c> protocol, DSA keys are\n"
+"used for protocol level 2, an updated version of the <c>ssh</c> protocol. Any\n"
+"modern version of OpenSSH should be able to use both RSA and DSA keys.\n"
+"Generating DSA keys using OpenSSH's <c>ssh-keygen</c> can be done similarly to\n"
+"RSA in the following manner:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:407
+#, no-wrap
+msgid "Generating a DSA key pair"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/openssh-key-management-p1.xml:408
+#, no-wrap
+msgid "$ <i>ssh-keygen -t dsa</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:412
+#, no-wrap
+msgid ""
+"Again, we'll be prompted for a passphrase. Enter a secure one. We'll also be\n"
+"prompted for a location to save our DSA keys. The default, normally\n"
+"<path>~/.ssh/id_dsa</path> and <path>~/.ssh/id_dsa.pub</path>, should be fine.\n"
+"After our one-time DSA key generation is complete, it's time to install our DSA\n"
+"public key to remote systems.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/openssh-key-management-p1.xml:422
+#, no-wrap
+msgid "DSA public key install"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:426
+#, no-wrap
+msgid ""
+"Again, DSA public key installation is almost identical to RSA. For DSA, we'll\n"
+"want to copy our <path>~/.ssh/id_dsa.pub</path> file to <e>remotebox</e>, and\n"
+"then append it to the <path>~/.ssh/authorized_keys2</path> on <e>remotebox</e>.\n"
+"Note that this file has a different name than the RSA\n"
+"<path>authorized_keys</path> file. Once configured, we should be able to log in\n"
+"to <e>remotebox</e> by typing in our DSA private key passphrase rather than\n"
+"typing in our actual <e>remotebox</e> password.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/articles/openssh-key-management-p1.xml:436
+#, no-wrap
+msgid ""
+"Nowadays you should only use version 2 of the ssh protocol, as version 1 has\n"
+"weaknesses.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/openssh-key-management-p1.xml:443
+#, no-wrap
+msgid "Next time"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/openssh-key-management-p1.xml:447
+#, no-wrap
+msgid ""
+"Right now, you should have RSA or DSA authentication working, but you still\n"
+"need to type in your passphrase for every new connection. In my next article,\n"
+"we'll see how to use <c>ssh-agent</c>, a really nice system that allows us to\n"
+"establish connections <e>without</e> supplying a password, but also allows us\n"
+"to keep our private keys encrypted on disk. I'll also introduce\n"
+"<c>keychain</c>, a very handy <c>ssh-agent</c> front-end that makes\n"
+"<c>ssh-agent</c> even more secure, convenient, and fun to use. Until then,\n"
+"check out the handy resources below to keep yourself on track.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/openssh-key-management-p1.xml:461
+#, no-wrap
+msgid "Resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/openssh-key-management-p1.xml:467
+#, no-wrap
+msgid ""
+"    Read Daniel's other two articles in this series, <uri\n"
+"    link=\"/doc/en/articles/openssh-key-management-p2.xml\">OpenSSH key \n"
+"    management, Part 2</uri> and <uri \n"
+"    link=\"/doc/en/articles/openssh-key-management-p3.xml\">OpenSSH key \n"
+"    management, Part 3</uri>\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/openssh-key-management-p1.xml:474
+#, no-wrap
+msgid ""
+"    Be sure to visit the home of <uri\n"
+"    link=\"http://www.openssh.com\">OpenSSH</uri> development.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/openssh-key-management-p1.xml:478
+#, no-wrap
+msgid ""
+"    Check out the <uri link=\"http://www.openssh.com/faq.html\">OpenSSH\n"
+"    FAQ</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/openssh-key-management-p1.xml:482
+#, no-wrap
+msgid ""
+"    <uri link=\"http://www.chiark.greenend.org.uk/~sgtatham/putty/\">PuTTY</uri>\n"
+"    is an excellent <c>ssh</c> client for Windows machines.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/openssh-key-management-p1.xml:486
+#, no-wrap
+msgid ""
+"    You may find O'Reilly's <e>SSH, The Secure Shell: The Definitive Guide</e>\n"
+"    to be helpful. The <uri link=\"http://www.snailbook.com/\">authors'\n"
+"    site</uri> contains information about the book, a FAQ, news, and updates.\n"
+"  "
+msgstr ""

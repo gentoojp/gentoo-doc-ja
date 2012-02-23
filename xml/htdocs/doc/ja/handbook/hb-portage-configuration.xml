@@ -1,0 +1,294 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-portage-configuration.xml,v 1.8 2008/10/08 16:03:11 shindo Exp $ -->
+
+<!-- Original revision: 1.17 -->
+<!-- Translator: igarashi -->
+
+<sections>
+
+<abstract>
+Portageは、設定ファイル内で設定できる変数や環境変数としての変数を通して、自在に設定可能です。
+</abstract>
+
+<version>1.9</version>
+<date>2008-02-28</date>
+
+<section>
+<title>Portage設定</title>
+<subsection>
+<body>
+
+<p>
+前述したとおり、Portageは、<path>/etc/make.conf</path>で定義すべき多くの変数を通して調整可能です。より詳細で完全な情報は、以下のようにして<path>make.conf</path>のmanページを参照してください。
+</p>
+
+<pre caption="make.confのmanページを読む">
+$ <i>man make.conf</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>ビルドに関するオプション</title>
+<subsection>
+<title>configureスクリプトとコンパイラのオプション</title>
+<body>
+
+<p>
+Portageはアプリケーションをビルドする際に、コンパイラとconfigureスクリプトに以下の変数の内容を渡します。
+</p>
+
+<ul>
+  <li>
+    CFLAGS &amp; CXXFLAGS変数は、CおよびC++ソースのコンパイルのために希望するコンパイラフラグを定義します。
+  </li>
+  <li>
+    CHOST変数は、アプリケーションのconfigureスクリプトのためのビルドホスト情報を定義します。
+  </li>
+  <li>
+    MAKEOPTS変数は、<c>make</c>コマンドに渡され、通常、コンパイル時の並列数を定義するために設定されます。<c>make</c>オプションに関するより詳細な情報は、makeのmanページにあります。
+  </li>
+</ul>
+
+<p>
+USE変数は、configureやコンパイルの実行中にも使用されますが、前の章で懇切丁寧に説明されているので、ここでは説明しません。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>マージオプション</title>
+<body>
+
+<p>
+Portageは、特定のソフトウェアタイトルの新しいバージョンのマージが完了したとき、もう使用されない古いバージョンをシステムから削除します。Portageは、古いバージョンをアンマージする前に、5秒間だけユーザのアクションを待ちます。この5秒は、CLEAN_DELAY変数によって定義されます。
+</p>
+
+<p>
+EMERGE_DEFAULT_OPTSを設定することで、<c>emerge</c>が実行されるとき、常に特定のオプションを使用するようにできます。
+いくつかの有用なオプションとしては、--ask、--verbose、--treeなどでしょう。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>ファイルの保護設定</title>
+<subsection>
+<title>Portageの保護対象ディレクトリ</title>
+<body>
+
+<p>
+Portageは、ファイルが<e>保護対象</e>ディレクトリにない場合、ソフトウェアタイトルの新しいバージョンによって提供されるファイルで上書きします。これらの保護対象ディレクトリは、CONFIG_PROTECT変数によって定義され、通常は設定ファイルがあるディレクトリです。複数のディレクトリが、スペースで区切られて指定されます。
+</p>
+
+<p>
+保護対象ディレクトリに書き込まれるファイルは、名前が変更され、ユーザには(推定可能な)設定ファイルの新しいバージョンがあることが警告されます。
+</p>
+
+<p>
+以下のようにして、<c>emerge --info</c>の出力結果から、現在のCONFIG_PROTECT設定を見つけることができます。
+</p>
+
+<pre caption="CONFIG_PROTECT設定の確認">
+$ <i>emerge --info | grep 'CONFIG_PROTECT='</i>
+</pre>
+
+<p>
+Portageの設定ファイル保護機能に関するより詳細な情報は、<c>emerge</c>のmanpageのCONFIGURATION FILESの章で見ることができます。
+</p>
+
+<pre caption="設定ファイル保護機能に関するより詳細な情報の参照">
+$ <i>man emerge</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>排他ディレクトリ</title>
+<body>
+
+<p>
+保護対象ディレクトリのサブディレクトリの一部を'保護対象から除外'するには、CONFIG_PROTECT_MASK変数を使用します。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>ダウンロードオプション</title>
+<subsection>
+<title>サーバの位置情報</title>
+<body>
+
+<p>
+必要な情報またはデータが、システムで利用できない場合、Portageは、インターネットから取得しようとします。各種情報およびデータ取得元のサーバ位置情報は、以下の変数によって定義されます。
+</p>
+
+<ul>
+  <li>
+    GENTOO_MIRRORS変数は、ソースコードがあるサーバのリストを定義します。(distfiles)
+  </li>
+  <li>
+    PORTAGE_BINHOST変数は、システムの構築済みパッケージがある専用サーバの位置情報を定義します。
+  </li>
+</ul>
+
+<p>
+三つ目の変数は、Portageツリーを更新するときに使用するrsyncサーバの位置情報に関係します。
+</p>
+
+<ul>
+  <li>
+    SYNC変数は、PortageがPortageツリーを取得するために使用する専用サーバを定義します。
+  </li>
+</ul>
+
+<p>
+GENTOO_MIRRORS変数とSYNC変数は、<c>mirrorselect</c>アプリケーションを通して自動的に設定される可能性があります。mirrorselectを使用する前に、始めに<c>emerge mirrorselect</c>をする必要があります。より詳細な情報は、mirrorselectのオンラインヘルプを以下のようにして参照してください。
+</p>
+
+<pre caption="mirrorselectに関する詳細な情報の参照">
+# <i>mirrorselect --help</i>
+</pre>
+
+<p>
+あなたの環境が、proxyサーバを使用する必要があるなら、プロキシサーバを定義するために、http_proxy変数とftp_proxy変数とRSYNC_PROXY変数を使用できます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>ソースコード取得用コマンド</title>
+<body>
+
+<p>
+Portageはソースコードを取得する必要がある場合、デフォルトで<c>wget</c>コマンドを使用します。FETCHCOMMAND変数によって、このコマンドを変更することができます。
+</p>
+
+<p>
+Portageは、既に一部分がダウンロード済みのソースコードを、中断したところから再開することができます。その用途のためのコマンドは、デフォルトでは、<c>wget</c>コマンドを使用しますが、RESUMECOMMAND変数によって変更することができます。
+</p>
+
+<p>
+FETCHCOMMAND変数やRESUMECOMMAND変数に設定したコマンドが、適切な位置にソースコードを保存していることを確認してください。変数内には、ソースコードの位置とdistfilesの位置をそれぞれ正確に示すために、\${URI}と\${DISTDIR}を使用すべきです。
+</p>
+
+<p>
+プロトコル別のハンドラもFETCHCOMMAND_HTTP変数、FETCHCOMMAND_FTP変数、RESUMECOMMAND_HTTP変数、RESUMECOMMAND_FTP変数などで定義できます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>rsync設定</title>
+<body>
+
+<p>
+Portageツリーを更新する目的で、Portageによって使用されるrsyncコマンドを変更することはできませんが、rsyncコマンドに関連するいくつかの変数を設定することはできます。
+</p>
+
+<ul>
+  <li>
+    PORTAGE_RSYNC_OPTSは、それぞれスペース区切りで、同期する時に使われるデフォルトの変数を設定します。
+    これらは、<e>正確に</e>何をしようとしているのかわからない限り、変更すべきではありません。
+    特定の必須オプションはPORTAGE_RSYNC_OPTSが空でも使用されることに注意してください。
+  </li>
+  <li>
+    PORTAGE_RSYNC_EXTRA_OPTSは同期する時の追加オプションを設定するために使用されます。
+    各オプションはスペース区切りです。
+    <ul>
+      <li>
+	 --timeout=&lt;number&gt;: これは、rsyncが通信がタイムアウトしたと見なすまでに、何秒間接続を待機させておくことができるかを定義します。
+	 この変数のデフォルトは180ですが、ダイヤルアップユーザや低速なコンピュータを使用している人は300以上に設定したほうがよいかもしれません。
+      </li>
+      <li>
+	 --exclude-from=/etc/portage/rsync_excludes: これは、rsyncがアップデート処理を行う間、無視すべきパッケージまたはカテゴリを記入したファイルを指しています。
+	 この場合は <path>/etc/portage/rsync_excludes</path>を指しています。
+	 このファイルの構文を知りたい場合は<uri link="?part=3&amp;chap=5">Portageツリーの一部を使う</uri>を読んでください。
+      </li>
+      <li>
+	--quiet: スクリーンへの出力を減らします。
+      </li>
+      <li>
+	--verbose: 完全なファイルリストを表示します。
+      </li>
+      <li>
+	--progress: 各ファイルに対して進行度合いを表示します。
+      </li>
+    </ul>
+  </li>
+  <li>
+    PORTAGE_RSYNC_RETRIESは、rsyncがSYNC変数で指定されたミラーへの接続試行をやめるまでに、何回接続を試みるか定義します。
+    この変数のデフォルトは3です。
+  </li>
+</ul>
+
+<p>
+これらのオプションのさらに詳細な情報や他のオプションについては、<c>man rysnc</c>を読んでください。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Gentoo設定</title>
+<subsection>
+<title>ブランチの選択</title>
+<body>
+
+<p>
+ACCEPT_KEYWORDS変数によってデフォルトブランチを変更できます。デフォルトは、あなたのアーキテクチャの安定版ブランチです。Gentooのブランチのより詳細な情報は、次の章にあります。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Portageの機能</title>
+<body>
+
+<p>
+FEATURES変数を通してPortageの特定の機能を有効にできます。Portageの機能は、前の章(<uri link="?part=2&amp;chap=3">Portageの機能</uri>)で説明されています。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Portageの振舞い</title>
+<subsection>
+<title>リソースの管理</title>
+<body>
+
+<p>
+PORTAGE_NICENESS変数によって、Portageが実行される優先順位(nice値)を増減できます。PORTAGE_NICENESS変数の値は、デフォルトのnice値に<e>追加されます</e>。
+</p>
+
+<p>
+nice値に関するより詳細な情報は、以下のようにして、niceコマンドのmanページを参照してください。
+</p>
+
+<pre caption="nice値に関するより詳細な情報の参照">
+$ <i>man nice</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>出力形式</title>
+<body>
+
+<p>
+デフォルトが"false"であるNOCOLOR変数は、カラー出力を止めるべきかどうかを定義します。
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

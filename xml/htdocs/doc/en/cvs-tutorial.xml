@@ -1,0 +1,974 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/cvs-tutorial.xml,v 1.21 2011/09/04 17:53:40 swift Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+
+<title>Gentoo Linux CVS Tutorial</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<author title="Editor">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+
+<abstract>
+This tutorial introduces readers to CVS, the Concurrent Versions System, used
+by developers around the world to develop software in a flexible and
+collaborative manner.  Intended for those new to CVS, this tutorial will get
+both general users and new developers up to speed quickly.  Whether you'd like
+to use CVS to "check out" the latest sources of a particular software package,
+or whether you'd like to begin using CVS as a full-fledged developer, this
+tutorial is for you.
+</abstract>
+
+<version>1.9</version>
+<date>2008-05-20</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>Tutorial layout</title>
+<body>
+
+<p>
+This tutorial has two parts.  The first shows you how to use CVS as a
+non-developer, i.e. how to get sources from CVS and keep them updated.  The
+second part introduces you to using CVS as a developer, showing you how to
+modify, add and remove files on CVS and perform other developer-related tasks.
+If you are new to CVS, it's recommended that you begin in the first section and
+proceed to the second section; if you have some basic CVS experience but are
+going to be using CVS as a full-fledged developer for the first time, you
+should find everything you need in the second section, but you may want to go
+through the first section as a review.
+</p>
+
+</body>
+</section>
+<section>
+<title>What is CVS and what does it do?</title>
+<body>
+
+<p>
+CVS is a client/server system allowing developers to store their projects in a
+central location, called a repository.  Using the cvs client tools, developers
+can make changes to the contents of the repository.  In turn, the cvs repository
+tracks every change made to every file, creating a complete
+history of the evolution of the development project.  Developers can request
+older versions of a particular source file, view a log of changes, and perform
+other useful tasks as needed.
+</p>
+
+</body>
+</section>
+<section>
+<title>The role of CVS</title>
+<body>
+
+<p>
+A lot of open software projects have their own CVS servers, which are used by
+the project developers as a central repository for all their work.  Developers
+often make improvements to the sources in the CVS repository on a daily basis;
+and often, these developers are scattered around the world, yet CVS provides
+the necessary mechanism to unite their project into a centralized, cohesive
+whole.  CVS creates the "organizational glue" that allows these developers to
+make improvements to the code without stepping on each other's toes, losing
+important data or missing each other's critical updates to particular source
+files.
+</p>
+
+</body>
+</section>
+<section>
+<title>CVS -- the latest developer sources</title>
+<body>
+
+<p>
+When the developers are ready, they'll roll some their current work on CVS into
+a .tar.gz file and release it as a new official version of their software
+package.  However, the latest official release sometimes isn't recent enough,
+for a variety of possible reasons.  In the first section of this tutorial, I'll
+show you how to use CVS for this purpose -- acquiring the latest and greatest
+developer version of the sources for your own personal use.
+</p>
+
+</body>
+</section>
+<section>
+<title>Installing CVS</title>
+<body>
+
+<p>
+To install cvs, just type in <c>emerge cvs</c>:
+</p>
+
+<pre caption="Installing CVS">
+# <i>emerge cvs</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>The CVSROOT</title>
+<body>
+
+<p>
+Before we begin, there are a few CVS fundamentals that you need to know.  The
+first is that in order to connect to a CVS repository, you first need to know a
+path called the "CVSROOT".  The CVSROOT is a string, like a URL, that tells
+the cvs command where the remote repository is and how we'd like to connect to
+it.  Just to make things interesting, CVS has a number of CVSROOT formats,
+depending on whether the CVS repository is local or remote and what method
+you're going to use to connect to it.  Here are some example CVSROOTs, along
+with explanations...
+</p>
+
+</body>
+</section>
+<section>
+<title>A local CVSROOT</title>
+<body>
+
+<pre caption="Setting CVSROOT">
+CVSROOT=/var/cvsroot
+</pre>
+
+<p>
+This is an example of a local CVSROOT path; you'd use a CVSROOT like this if
+you wanted to connect to a local repository that exists at /var/cvsroot; or
+maybe you have a repository mounted via NFS at /var/cvsroot.
+</p>
+
+</body>
+</section>
+<section>
+<title>A remote password server CVSROOT</title>
+<body>
+
+<pre caption="Setting CVSROOT with authentification">
+CVSROOT=:pserver:cvs@foo.bar.com:/var/cvsroot
+</pre>
+
+<p>
+Here's an example of a CVSROOT for a remote repository that exists on the
+foo.bar.com host and lives in the /var/cvsroot directory on that machine.  The
+leading ":pserver:" part tells our client to connect to this remote machine
+using the CVS password server protocol, a protocol that's built-in to CVS.
+Typically, public CVS repositories use the password server protocol to allow
+access to anonymous users.
+</p>
+
+</body>
+</section>
+<section>
+<title>A remote rsh/ssh CVSROOT</title>
+<body>
+
+<pre caption="RSH/SSH CVSROOT">
+CVSROOT=drobbins@foo.bar.com:/data/cvs
+</pre>
+
+<p>
+Here's an example of a CVSROOT that uses the RSH or SSH protocol; in this
+example, the CVS server will attempt to access the repository on foo.bar.com
+using the drobbins account.  If the CVS_RSH environment variable is set to
+"ssh", then our cvs client will attempt to use ssh to connect; otherwise rsh
+will be used.  The ssh access method is popular with those who are concerned
+about security; however, neither the RSH or SSH method provides a way for
+anonymous users to get the sources.  In order to use this method, you must have
+a login account at foo.bar.com.
+</p>
+
+</body>
+</section>
+<section>
+<title>A few more things...</title>
+<body>
+
+<p>
+In addition to the CVSROOT, you'll also need to know the name of the module
+(collection of sources) that you'd like to check out, as well as an anonymous
+password that you'll need to log in to the CVS password server.  Unlike
+anonymous ftp, there is no "standard" format for the anonymous password, so
+you'll need to get the specific password from the developer web site or the
+developers themselves.  Once you have all this info, you're ready to begin.
+</p>
+
+</body>
+</section>
+<section>
+<title>Interacting with CVS, part 1</title>
+<body>
+
+<p>
+Grabbing the sources is a two-stage process.  First, we log in to the password
+server.  Then, we grab the sources with a <c>checkout</c> command.  Here's an
+example set of commands that can be used to check out the latest Samba sources,
+a popular UNIX/Windows integration project:
+</p>
+
+<pre caption="Setting up CVSROOT">
+# <i>export CVSROOT=:pserver:cvs@pserver.samba.org:/cvsroot</i>
+</pre>
+
+<p>
+This first command sets the CVSROOT environment variable.  If you don't set
+this variable, the following two commands will require an additional <c>-d
+:pserver:cvs@pserver.samba.org:/cvsroot</c> following the <c>cvs</c> command.
+Exporting the CVSROOT saves a us bit of typing.
+</p>
+
+</body>
+</section>
+<section>
+<title>Interacting with CVS, part 2</title>
+<body>
+
+<p>
+Here are the commands needed to get a current copy of the developer sources.
+You may want to jump forward to the next panel to read the explanation of
+these commands, and then jump back here:
+</p>
+
+<pre caption="Checking out sources">
+# <i>cvs login</i>
+(Logging in to cvs@pserver.samba.org)
+CVS password: <comment>(enter password here)</comment>
+
+# <i>cvs -z5 co samba</i>
+U samba/COPYING
+U samba/Manifest
+U samba/README
+U samba/Read-Manifest-Now
+U samba/Roadmap
+U samba/WHATSNEW.txt
+<comment>(this is just a snippet of the complete cvs co output)</comment>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Interacting with CVS -- the explanation</title>
+<body>
+
+<p>
+The first cvs command above logs us in to the pserver, and the second tells our
+CVS client to check out ("co") the samba module using a gzip compression level
+of 5 ("-z5") to speed up the transfer over a slow link.  For every new file
+that is created locally, cvs prints out a "U [path]" indicating that this
+particular file has been updated on disk.
+</p>
+
+</body>
+</section>
+<section>
+<title>Checkout complete</title>
+<body>
+
+<p>
+Once the checkout command completes, you'll see a "samba" directory in your
+current working directory that contains the latest sources.  You'll also notice
+that all the directories have a "CVS" directory inside them -- CVS stores
+accounting information inside these directories, and they can safely be ignored.
+From this point forward, we don't need to worry about having the CVSROOT
+environment variable set nor do we need to specify it on the command line
+because it's now cached inside all those extra "CVS" directories.  Remember --
+you only need to have the CVSROOT set for the initial login and checkout.
+</p>
+
+</body>
+</section>
+<section>
+<title>Updating the sources</title>
+<body>
+
+<p>
+Well, there you are -- fresh sources!  Now that you have the sources, you can
+go ahead and compile and install them, inspect them, or do whatever you like
+with them.
+</p>
+
+<p>
+Every now and then, you may want to bring your checked-out source directory
+in-sync with the current version on CVS.  To do this, you don't need to log in
+to the pserver again; your authentication info is also cached by cvs inside
+those "CVS" accounting directories.  First, enter the main checked-out
+directory (in this case "samba"), and type:
+</p>
+
+<pre caption="Updating your sources">
+# <i>cvs update -dP</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Looking at "cvs update", part 1</title>
+<body>
+
+<p>
+If there are any new files, cvs will output "U [path]" lines for each one as it
+updates them.  Also, if you compiled the sources, you will probably see a lot
+of "? [path]" lines; these are object files that cvs notices are not from the
+remote repository.
+</p>
+
+</body>
+</section>
+<section>
+<title>Looking at "cvs update", part 2</title>
+<body>
+
+<p>
+Also, notice the two command-line options we used for "cvs update".  "-d" tells
+cvs to create any new directories that may have been added to the repository
+(this doesn't happen by default), and "-P" tells cvs to remove any empty
+directories from your locally checked-out copy of the sources.  "-P" is a good
+idea, because cvs has a tendency to collect a lot of empty (once used, but now
+abandoned) directory trees over time.
+</p>
+
+<p>
+When it comes to simply grabbing the latest sources, that's about all you need
+to know.  Now, we take a look at how to interact with CVS as a developer.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>CVS for developers</title>
+<section>
+<title>Modifying files</title>
+<body>
+
+<p>
+As a developer, you'll need to modify files on CVS.  To do this, simply make
+the appropriate changes to your local copy of the repository.  The changes you
+make to the sources are not applied to the remote repository until you
+explictly tell cvs to "commit" your changes.  When you've tested all your
+modifications to ensure that they work properly and you're ready to apply your
+changes to the repository, follow this two-step process.  First, update your
+sources by typing the following command in your main source directory:
+</p>
+
+<pre caption="Updating sources and directories">
+# <i>cvs update -dP</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>CVS merges others' changes</title>
+<body>
+
+<p>
+As we've seen earlier, "cvs update" will bring your sources up-to-date with the
+current version in the repository -- but what happens to the changes you've
+made?  Don't worry, they aren't thrown away.  If another developer made changes
+to a file that you haven't touched, your local file will be updated so that
+it's in-sync with the version on the repository.
+</p>
+
+<p>
+And, if you modified lines 1-10 of a local file, and another developer deleted
+lines 40-50, added 12 new lines at the end of the file, modified lines 30-40 and
+then committed their changes to the repository before you, cvs will
+intelligently merge these changes into your locally modified copy so that none
+of your changes are lost. This allows two or more developers to work on
+different parts of the same file at the same time.
+</p>
+
+</body>
+</section>
+<section>
+<title>Merging isn't perfect</title>
+<body>
+
+<p>
+However, if two or more developers have made changes to the <e>same region of
+the same file</e>, then things get a bit more complicated.  If that happens,
+then cvs will tell you that there's been a conflict.  No work will be lost, but
+a bit of manual intervention will be required, since cvs now requires your
+input on how to merge the conflicting changes.
+</p>
+
+</body>
+</section>
+<section>
+<title>The commit</title>
+<body>
+
+<p>
+We'll look at exactly how conflicts can be resolved in just a little bit, but
+for now, let's assume that there are no conflicts after you typed "cvs update
+-dP" -- there usually aren't.  With no conflicts, your local sources are
+up-to-date, and you're ready to commit your changes to the repository by typing
+the following command in your main source directory:
+</p>
+
+<pre caption="Committing changes">
+# <i>cvs commit</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>What commit does</title>
+<body>
+
+<p>
+"cvs commit" doesn't <e>just</e> apply your changes to the repository.
+Before actually committing your changes to the remote repository, cvs will fire
+up your default editor so that you can type in a description of your
+modifications.  Once you've entered your comments, saved the file and exited
+the editor, your changes (and comments) will be applied to the remote
+repository and will be available to the other developers in your team.
+</p>
+
+</body>
+</section>
+<section>
+<title>Viewing the log</title>
+<body>
+
+<p>
+It's really easy to view the complete history of a particular file, along
+with any comments that the developers (including you) may have made when
+committing. To view this information, type:
+</p>
+
+<pre caption="View log information">
+# <i>cvs log myfile.c</i>
+</pre>
+
+<p>
+The "cvs log" command is recursive, so if you want to see the complete log for
+an entire directory tree, just enter the directory and type:
+</p>
+
+<pre caption="View log information with a pager">
+# <i>cvs log | less</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Commit options</title>
+<body>
+
+<p>
+You may want to use another editor than the one cvs starts by default when you
+type "cvs commit". If so, simply set the EDITOR environment variable to the name
+of the editor you want to use.  Putting a setting such as this one in your
+<path>~/.bashrc</path> would be a good idea:
+</p>
+
+<pre caption="Setting your editor">
+export EDITOR=jpico
+</pre>
+
+<p>
+Alternatively, you can also specify a log message as a command line option so
+that cvs doesn't need to load up an editor in the first place:
+</p>
+
+<pre caption="Committing changes with a small log information">
+# <i>cvs commit -m 'I fixed a few silly bugs in portage.py'</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>The .cvsrc file</title>
+<body>
+
+<p>
+Before we continue looking at more cvs commands, I recommend setting up a
+<path>~/.cvsrc</path> file.  By creating a <path>.cvsrc</path> file in your
+home directory, you can tell cvs to use preferred command-line options by
+default so that you don't have to remember to type them in each time.  Here's a
+recommended default <path>.cvsrc</path> file:
+</p>
+
+<pre caption="Recommended defaults">
+cvs -q
+diff -u -b -B
+checkout -P
+update -d -P
+</pre>
+
+</body>
+</section>
+<section>
+<title>The .cvsrc file, continued</title>
+<body>
+
+<p>
+In addition to setting useful options for a bunch of cvs commands, the first
+line of the <path>.cvsrc</path> puts cvs into quiet mode, which has the primary
+benefit of making the <c>cvs update</c> output more consise and readable.  Also,
+once you have this .cvsrc in place, you can type <c>cvs update</c> instead of
+typing <c>cvs update -dP</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Adding a file to the repository</title>
+<body>
+
+<p>
+It's really easy to add a source file to CVS.  First, create the file with your
+favorite text editor.  Then, type the following:
+</p>
+
+<pre caption="Adding a file">
+# <i>cvs add myfile.c</i>
+cvs server: use 'cvs commit' to add this file permanently
+</pre>
+
+<p>
+This will tell cvs to add this file to the repository the next time you do a
+<c>cvs commit</c>.  Until then, other developers won't be able to see it.
+</p>
+
+</body>
+</section>
+<section>
+<title>Adding a directory to the repository</title>
+<body>
+
+<p>
+The process of adding a directory to CVS is similar:
+</p>
+
+<pre caption="Adding a directory">
+# <i>mkdir foo</i>
+# <i>cvs add foo</i>
+Directory /var/cvsroot/mycode/foo added to the repository
+</pre>
+
+<p>
+Unlike adding a file, when you add a directory it appears on the repository
+immediately; a cvs commit isn't required.  Once you add a local directory to
+cvs, you'll notice that a "CVS" directory will be created inside it to serve as
+a container for cvs accounting data.  Thus, you can easily tell if a particluar
+directory has been added to cvs by looking inside it for a "CVS" directory.
+</p>
+
+</body>
+</section>
+<section>
+<title>"cvs add" notes</title>
+<body>
+
+<p>
+Oh, and as you might guess, before you add a file or directory to the
+repository, you must make sure that its parent directory has already been added
+to CVS.  Otherwise, you'll get an error that looks like this:
+</p>
+
+<pre caption="Adding a file, but receive a failure">
+# <i>cvs add myfile.c</i>
+cvs add: cannot open CVS/Entries for reading: No such file or directory
+cvs [add aborted]: no repository
+</pre>
+
+</body>
+</section>
+<section>
+<title>Getting familiar with "cvs update", part 1</title>
+<body>
+
+<p>
+Before we take a look at how to resolve conflicts, let's get familiar with the
+output of the "cvs update" command.  If you created a ~/.cvsrc file that
+contains a "cvs -q" line, you'll find "cvs update" output a lot easier to read.
+"cvs update" informs you of what it does and sees by printing out a single
+character, a space, and a filename; as an example:
+</p>
+
+<pre caption="Updating CVS">
+# <i>cvs update -dP</i>
+? distfiles
+? packages
+? profiles
+</pre>
+
+</body>
+</section>
+<section>
+<title>Getting familiar with "cvs update", part 2</title>
+<body>
+
+<p>
+"cvs update" uses the "?" character to tell you that it doesn't know anything
+about these particular files that it finds in the local copy of your repository.
+They're not officially part of the repository, nor have they been scheduled for
+addition. Here's a list of all the other single-character informational messages
+that CVS uses:
+</p>
+
+<pre caption="Informational message: U">
+U [path]
+</pre>
+
+<p>
+Used when a new file is created in your local repository, or an untouched (by
+you) file has been updated.
+</p>
+
+<pre caption="Informational message: A">
+A [path]
+</pre>
+
+<p>
+This file is scheduled for addition and will be officially added to the
+repository when you do a <c>cvs commit</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Getting familiar with "cvs update", part 3</title>
+<body>
+
+<pre caption="Informational message: R">
+R [path]
+</pre>
+
+<p>
+Like "A", an "R" lets you know that this file is scheduled for removal.  The
+file will be removed from the repository as soon as you <c>cvs commit</c>.
+</p>
+
+<pre caption="Informational message: M">
+M [path]
+</pre>
+
+<p>
+This means that this file has been modified by you; additionally, it's possible
+that new changes from the repository were merged into this file successfully.
+</p>
+
+<pre caption="Informational message: C">
+C [path]
+</pre>
+
+<p>
+The "C" character indicates that this file has a conflict and requires manual
+fixing before you can "cvs commit" your changes.
+</p>
+
+</body>
+</section>
+<section>
+<title>Resolving conflicts intro</title>
+<body>
+
+<p>
+Now, let's take a look at how to resolve a conflict.  I'm very involved in the
+Gentoo Linux project, and we have our own cvs server set up at cvs.gentoo.org.
+We developers spend most of our time hacking away at the sources inside the
+"gentoo-x86" module.  Inside the gentoo-x86 module, we have a file called
+"ChangeLog" that houses (you guessed it) a description of the major changes we
+make to the files in the repository.
+</p>
+
+</body>
+</section>
+<section>
+<title>An example conflict</title>
+<body>
+
+<p>
+Because this file is modified nearly
+every time a developer makes a major change to CVS, it's a primary source of
+conflicts -- here's an example conflict.  Let's say I add the following lines
+to the top of the ChangeLog:
+</p>
+
+<pre caption="ChangeLog entry">
+date 25 Feb 2001
+
+This is the thing I added myself
+</pre>
+
+<p>
+However, let's say that before I'm able to commit these three new lines, another
+developer adds these lines to the top of the ChangeLog and commits their
+changes:
+</p>
+
+<pre caption="ChangeLog entry 2">
+date 25 Feb 2001
+
+This is the part added by another developer
+</pre>
+
+
+</body>
+</section>
+<section>
+<title>An example conflict, continued</title>
+<body>
+
+<p>
+Now, when I run <c>cvs update -dP</c> (as you should before every commit), cvs
+isn't able to merge the changes into my local copy of ChangeLog because we
+both have added lines to the exact same part of the file -- how is cvs to know
+which version to use? So, I get the following error from CVS:
+</p>
+
+<pre caption="CVS error">
+RCS file: /var/cvsroot/gentoo-x86/ChangeLog,v
+retrieving revision 1.362
+retrieving revision 1.363
+Merging differences between 1.362 and 1.363 into ChangeLog
+rcsmerge: warning: conflicts during merge
+cvs server: conflicts found in ChangeLog
+C ChangeLog
+</pre>
+
+</body>
+</section>
+<section>
+<title>Conflict resolution, part 1</title>
+<body>
+
+<p>
+Argh -- a conflict!  Fortunately, fixing conflicts is easy.  If I fire up my
+favorite text editor, I see the following text at the top of the ChangeLog
+file:
+</p>
+
+<pre caption="ChangeLog conflict">
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; ChangeLog
+date 25 Feb 2001
+
+This is the thing I added myself
+
+=======
+date 25 Feb 2001
+
+This is the part added by another developer
+
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; 1.363
+</pre>
+
+
+</body>
+</section>
+<section>
+<title>Conflict resolution, part 2</title>
+<body>
+
+<p>
+Instead of choosing one version over the other, cvs has added both versions to
+the ChangeLog file, and surrounded them with special separators to clearly mark
+the conflict in question.  Now, it's up to me to replace this region with the
+text that <e>should</e> appear in ChangeLog; in this case, the replacement text
+is neither one or the other version but a combination of both:
+</p>
+
+<pre caption="ChangeLog entry">
+date 25 Feb 2001
+
+This is the thing I added myself
+
+This is the part added by another developer
+</pre>
+
+<p>
+Now that I've replaced the conflicting region of the file with the appropriate
+text (and removed the "=======", etc markers), I can now commit my changes to
+cvs without any problems.
+</p>
+
+</body>
+</section>
+<section>
+<title>Conflict resolution tips</title>
+<body>
+
+<p>
+Whenever you need to edit a file for conflicts, make sure that you scan the
+entire file so that you catch all of them; if you forget to address a
+particular conflict, cvs won't allow you to commit until it's resolved!  It's
+also obviously very important to remove the special markers that cvs added to
+the conflicting file.  Another tip -- if you make a mistake while fixing the
+conflict and then ("D'oh!") accidentally save your changes, you can find an
+original copy of your version in the file ".#filename.version".
+</p>
+
+</body>
+</section>
+<section>
+<title>Removing a file</title>
+<body>
+
+<p>
+Now, it's time to learn our final CVS skill -- removing files from the
+repository.  Removing a file is a two-stage process.  First, delete the file
+from your local copy of the sources, and then execute the appropriate <c>cvs
+remove</c> command:
+</p>
+
+<pre caption="Removing a file">
+# <i>rm myoldfile.c</i>
+# <i>cvs remove myoldfile.c</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Removing a file, continued</title>
+<body>
+
+<p>
+The file will then be scheduled for removal from the repository the next time
+you do a commit.  Once committed, the file will be officially deleted from the
+current version of the repository.  However, cvs won't throw this file away,
+and will still keep a complete record of its contents and its history, just
+in case you need it back in the future.  This is just one of the many ways that
+cvs protects your valuable source code.
+</p>
+
+<p>
+<c>cvs remove</c> is recursive, which means that you can delete a bunch of
+files, and then run the <c>cvs remove</c> command with no other arguments from
+a parent directory. Doing this will cause all of the deleted files to be tagged
+for removal at the next commit.
+</p>
+
+</body>
+</section>
+<section>
+<title>Removing a directory</title>
+<body>
+
+<p>
+If you'd like to remove an entire directory, I recommend the following process.
+First, physically delete and "cvs remove" all files in the directory:
+</p>
+
+<pre caption="Removing a directory">
+# <i>rm *.c</i>
+# <i>cvs remove</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Removing a directory, continued</title>
+<body>
+
+<p>
+Then, perform a commit:
+</p>
+
+<pre caption="Commit your changes">
+# cvs commit
+</pre>
+
+<p>
+Here comes the trick.  Perform the following steps to delete the directory:
+</p>
+
+<pre caption="Removing a directory">
+# <i>cd ..</i>
+# <i>cvs remove mydir</i>
+# <i>rm -rf mydir</i>
+</pre>
+
+<p>
+Notice that removing the directory didn't require another commit -- directories
+are added to and removed from the repository in real-time.
+</p>
+
+</body>
+</section>
+<section>
+<title>Retrieving an older version</title>
+<body>
+
+<p>
+CVS wouldn't be a good versioning system if you can't retrieve older versions
+from the repository. You can pull back files based on a specific date, but of
+course also on the revision number. The next example pulls back revision 1.202
+of <path>filename</path> and overwrites the current <path>filename</path> with
+this version:
+</p>
+
+<pre caption="Retrieving a file based on the revision number">
+$ <i>cvs update -p -r 1.202 filename &gt; filename</i>
+</pre>
+
+<p>
+If you want to pull back files based on their date, use the <c>-D</c> argument.
+You can use entire date/timestamps, but also relative names such as
+<e>yesterday</e> or <e>last week</e>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Complete!</title>
+<body>
+
+<p>
+Your introduction to CVS is complete -- I hope that this tutorial has been
+helpful. There's much more to CVS than I've been able to cover in this
+introductory tutorial, but thankfully there are a bunch of great CVS resources
+you can use to further expand your CVS knowledge:
+</p>
+
+<ul>
+  <li>
+    <uri>http://www.cvshome.org</uri> is the home of CVS development,
+    and offers a bunch of documentation on CVS, including the <uri
+    link="http://www.cvshome.org/docs/manual">official CVS
+    documentation online</uri>
+  </li>
+  <li>
+    The <uri link="http://www.durak.org/cvswebsites/">CVS Version Control for
+    Web Site Projects site</uri> has good info on how to use CVS for developing
+    web sites
+  </li>
+  <li>
+    Karl Fogel has written a book called <uri
+    link="http://cvsbook.red-bean.com/">Open Source Development with CVS</uri>.
+    A number of chapters are available for free from the website.
+  </li>
+  <li>
+    <uri link="http://www.freebsd.org/projects/cvsweb.html">cvsweb</uri>
+    is a really great CGI script that provides a web interface to your CVS
+    repository; excellent for browsing.
+  </li>
+  <li>
+    The <uri link="http://www.loria.fr/~molli/cvs-index.html">CVS Bubbles</uri>
+    site has a bunch of good resources including a CVS FAQ-o-matic.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>About this document</title>
+<body>
+
+<p>
+The original version of this article was first published on IBM
+developerWorks, and is property of Westtech Information Services. This
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux documentation team.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

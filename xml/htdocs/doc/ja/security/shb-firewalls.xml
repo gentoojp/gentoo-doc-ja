@@ -1,0 +1,1054 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/security/shb-firewalls.xml,v 1.6 2008/08/24 13:58:07 shindo Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.4</version>
+<date>2007-02-11</date>
+<!-- Original revision: 1.7 -->
+
+<section>
+<title>ファイアーウォール</title>
+<body>
+
+<p>
+よくファイアーウォールが究極のセキュリティを提供すると考えるが人がいますが、それは間違っています。
+ほとんどの場合、誤った設定を行ったファイアーウォールはファイアーウォールを持たない場合に比べてもセキュリティ的に弱くなります。
+ファイアーウォールは、また、ソフトウェアの一つであり、他のソフトウェアと同様に扱う必要があります。
+なぜならそれらはバグを含む可能性があるからです。
+</p>
+
+<p>
+ですので、ファイアーウォールを設置する前に考えてください。あなたは本当にファイアーウォールが必要ですか?
+もし必要と考えるならば、どう機能すべきか、どういったタイプのファイアーウォールか、誰が操作するのかポリシーを書いてください。
+しかし最初にこのガイドを読んでください。
+</p>
+
+<p>
+ファイアーウォールは2つの目的で使用されます。
+</p>
+
+<ul>
+<li>ユーザを(ワームやアタッカーから)守る</li>
+<li>ユーザ(従業員や子供達を)を閉じ込める</li>
+</ul>
+
+<p>
+基本的に3つのタイプのファイアーウォールがあります。
+</p>
+
+<ul>
+<li>パケットフィルタリング</li>
+<li>サーキットリレー</li>
+<li>アプリケーションゲートウェイ</li>
+</ul>
+
+<p>
+ファイアーウォールは専用のマシンとして、他のサービスが実行されることがは無い用にすべきです。
+(又は<c>sshd</c>が唯一のサービスとしてください。)
+そして、このガイドが推奨する方法でセキュアにしてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>パケットフィルタリング</title>
+<body>
+
+<p>
+全てのネットワークトラフィックはパケットから成ります。
+巨大なトラフィックは簡単に扱えるよう小さなパケットに分割され、目的地に到達した時点で、再度組み立てられます。
+パケットのヘッダーには全てのパケットには、どのように、どこへ配送されるかと言う情報が含まれています。
+これらの情報こそ、まさにファイアーウォールが利用するものです。
+フィルタリングは以下に基づいて行われます。
+</p>
+
+<ul>
+<li>パケットの送信元/送信先IPアドレスによる、許可/禁止</li>
+<li>パケットの送信元/送信先ポートによる、許可/禁止</li>
+<li>パケットのプロトコルによる、許可/禁止</li>
+<li>パケットの特定のプロトコルに含まれるフラグによる、許可/禁止</li>
+</ul>
+
+<p>
+言い替えれば、これらのフィルタリングは全て、パケットのデータに含まれるヘッダーに基づいて
+行われており、コンテンツには基づいていません。
+</p>
+
+<p>
+短所
+</p>
+
+<ul>
+<li>
+  パケットのアドレス情報は偽造されたIPアドレス(又は送信者により<e>なりすまされた</e>)可能性があります。
+</li>
+<li>
+許可されたパケットのデータやリクエスト内に、攻撃者がファイアーウォール上やファイアーウォールの後ろにあるサービスの既知のバグを悪用するための、
+好ましくないデータが含まれていることもありえます。
+</li>
+<li>たいていは一つの失敗が全体に影響を及ぼします。</li>
+</ul>
+
+<p>
+長所
+</p>
+
+<ul>
+<li>シンプルで簡単に適用できます。</li>
+<li>
+  アタックが起こる前に、警告を与えることができます。(例えばポートスキャンを発見して)
+</li>
+<li>SYNアタックをうまく防ぎます。</li>
+</ul>
+
+<p>
+Linuxでのフリーのパケットフィルタの例です。
+</p>
+
+<ul>
+<li>
+  <uri link="http://www.iptables.org">Iptables</uri>(訳注：<uri link="http://www.linux.or.jp/JF/JFdocs/packet-filtering-HOWTO-7.html">Linux 2.4 Packet Filtering HOWTO: iptablesを使う</uri>が参考になると思います)
+</li>
+<li>
+  <uri link="http://www.linuxdocs.org/HOWTOs/IPCHAINS-HOWTO.html">Ipchains</uri>(訳注：日本語訳が<uri link="http://www.linux.or.jp/JF/JFdocs/IPCHAINS-HOWTO.html">http://www.linux.or.jp/JF/JFdocs/IPCHAINS-HOWTO.html</uri>にあります)
+</li>
+<li>
+  <uri link="http://www.smoothwall.org">SmoothWall</uri>(訳注：パケットフィルタのソフトではなく、ファイアーウォールとして簡単に使えるディストリビューション)
+</li>
+</ul>
+<!--FIXME: should SmoothWall really be included, since it uses iptables?-->
+<note>
+iptablesを使用する事をお薦めします。ipchainsは廃止されました。
+</note>
+
+</body>
+</section>
+<section>
+<title>サーキットリレー</title>
+<body>
+
+<p>
+サーキットレベルのゲートウェイはデータの交換を許可する前にコネクションの妥当性を確認するファイアーウォールです。
+これは単純なパケットのヘッダーによる許可や拒否ではなく、終端の間とのコネクションの妥当性が、セッションが開かれデータの交換を許可する前に、
+設定されたルールに基づいて確認されます。フィルタリングは以下に基づき行われます。
+</p>
+
+<ul>
+<li>送信元/送信先のIPアドレス</li>
+<li>送信元/送信先のポート</li>
+<li>期間</li>
+<li>プロトコル</li>
+<li>ユーザ</li>
+<li>パスワード</li>
+</ul>
+
+<p>
+全てのトラフィックは確認され、監視され、不要なトラフィックは破棄することができます。
+</p>
+
+<p>
+短所
+</p>
+
+<ul>
+<li>
+  トランスポート層で機能し、通常通信処理を提供しているプログラムに相当の変更が必要かもしれません。
+</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>アプリケーションゲートウェイ</title>
+<body>
+
+<p>
+アプリケーションレベルのゲートウェイはクライアントに代わって、リモートシステムとデータの交換を行うアプリケーションプロキシです。
+アプリケーションゲートウェイは、公衆網から安全に遠ざけられ、DMZ(非武装地帯:プライベートネットワークの一部でファイアーウォール
+を通過してアクセスできる)、もしくは外部からの通信を通さないファイアーウォールの背後に置かれます。
+フィルタリングは以下に基づきます。
+</p>
+
+<ul>
+<li>送信元/送信先IPアドレスによる、許可/禁止</li>
+<li>パケットの中身</li>
+<li>ファイルタイプや拡張子に基づくファイルアクセスの制限</li>
+</ul>
+
+<p>
+長所
+</p>
+
+<ul>
+<li>ファイルをキャッシュできることからネットワークのパフォーマンスを上げる</li>
+<li>全てのコネクションで詳細なログがとれる</li>
+<li>拡張可能(いくつかのプロキシサーバでキャッシュデータを共有できる)</li>
+<li>ダイレクトに外部と接続することがなくなる</li>
+<li>その場でパケットの中身を変更できる</li>
+</ul>
+
+<p>
+短所
+</p>
+
+<ul>
+<li>設定が複雑</li>
+</ul>
+
+<p>
+アプリケーションはrootで動作させる必要もないですし、ホストの背後にいるマシンはインターネットからアクセスできないので、
+最もセキュアなソリューションと考えられています。
+</p>
+
+<p>
+フリーなアプリケーションゲートウェイの例
+</p>
+
+<ul>
+<li><uri link="http://www.squid-cache.org/">Squid</uri></li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Iptables</title>
+<body>
+
+<p>
+iptablesを使用するためには、カーネルで有効になっている必要があります。
+iptablesをモジュールとして追加し、(<c>iptables</c>コマンドは必要な時にロードされます。)カーネルを再構築します。
+(しかし、もし以前に議論したように、Loadable Kernel Modulesを無効にしたいなら、iptablesをカーネルに組み込んでコンパイルするかもしれません)
+iptablesのカーネル設定の詳細は、<uri link="http://iptables-tutorial.frozentux.net/iptables-tutorial.html#PREPARATIONS">Iptables Tutorial Chapter 5: Preparations</uri>を参照してください。
+新しいカーネルをコンパイルした後(又はカーネルをコンパイルしている間)、<c>iptables</c>コマンドを加える必要があります。
+単に<c>emerge iptables</c>を実行すれば、iptablesは動作するでしょう。
+</p>
+
+<p>
+<c>iptables -L</c>を実行しiptablesの動作をテストします。
+もし、失敗したら何かが間違っています。もう一度設定をチェックしてください。
+</p>
+
+<p>
+iptablesはLinux 2.4.xカーネルにおいて、大幅に改良を加えられた新しいパケットフィルタです。
+iptablesは以前のLinux 2.2.xカーネルのパケットフィルタであるipchainsの後継です。
+最も主要な改良はiptablesがステートフルなパケットフィルタリングを行うことができる点です。
+ステートフルなパケットフィルタリングを使うと、確立されたそれぞれのTCPコネクションを追跡することができます。
+</p>
+
+<p>
+TCPコネクションは送信元IPアドレス、送信先IPアドレス、送信元ポート、送信先ポート、
+そしてデータを失わず再構築出来るようなシーケンス番号等の情報を含む連続したパケットをから成ります。
+TCPはコネクション型のプロトコルで、反対にUDPはコネクションレス型のプロトコルです。
+</p>
+
+<p>
+TCPパケットのヘッダーを検査する事により、ステートフルなパケットフィルタは、受け取ったTCPパケットが既にコネクションが確立されたものなのか、
+そうでないのか判断でき、受け入れるか拒否するか決められます。
+</p>
+
+<p>
+ステートレスなパケットフィルタは、TCPパケットヘッダーを操作することで拒否されるべきパケットが、
+パケットフィルタに受け入れられるものとしてごまかされる可能性があります。
+TCPヘッダーのSYNフラグや他のフラグを操作することにより悪意のあるパケットを確立されたコネクションの一部に流すことができます。
+(パケットフィルタ自身がコネクションの追跡を行っていないので)
+ステートフルなパケットフィルタリングは、このように既に確立されたコネクションの一部でないパケットを拒否することができます。
+これはポートスキャンの一種で、ファイアーウォールにはありふれたSYNパケットとしてしかログに記録される事がない「ステルススキャン」を止めることができます。
+</p>
+
+<p>
+iptablesはいくつかの他の機能として、NAT(ネットワークアドレス変換)やレート制限があります。
+レート制限は、SYN floodによるDos(サービス拒否)攻撃を防ぐのに非常に役立ちます。
+</p>
+
+<p>
+TCPコネクションの確立はいわゆるスリーウェイハンドシェイクにより行われます。
+TCPコネクションが確立されるとき、クライアント側はサーバにSYNフラグをセットしたパケットを送ります。
+サーバ側は、SYNパケットを受け取ると、応答としてSYN+ACKパケットをクライアント側に送り返します。
+SYN+ACKパケットを受け取ると、クライアント側は3番目にACKパケットで応答し、これによりコネクションが確立されます。
+</p>
+
+<p>
+SYN flood攻撃はSYNパケットを送り、SYN+ACKパケットの応答をしない事により行います。
+クライアント側は応答をする必要がないため、無理矢理偽の送信元アドレスのパケットを作ることが出来ます。
+サーバ側のシステムはSYNパケットを受け取ると、キューから登録が削除されず、最後のACKパケットがくるまで待ちます。
+このためキューにハーフオープンなコネクションが登録されます。
+キューは限られた数の枠しか持たず、全ての枠が埋まると、それ以上のコネクションを開けなくなります。
+もし、ACKパケットが特定のタイムアウトする期間までに受け取られなかった場合、キューは自動的に登録を削除します。
+タイムアウトの設定は変更可能ですが、通常は30〜60秒かそれ以上です。
+クライアント側は攻撃を始めるに当たって、異なったIPアドレスを送信元とするたくさんのSYNパケットを作成し、
+可能な限りはやく目標のIPアドレスに送信します。その結果、キューはハーフオープンなコネクションで埋められ、
+他の正当なクライアントからサーバへの接続が妨害されます。
+</p>
+
+<p>
+これにはレート制限が有効です。
+<c>-m limit --limit 1/s</c>を用いることで、受け入れるSYNパケットを制限することが出来ます。
+これは一秒間に受け入れるSYNパケットの数を制限することで、我々のリソースがSYN flood攻撃から守られます。
+</p>
+
+<note>
+SYN floodを防ぐ他の手段としては<uri link ="http://cr.yp.to/syncookies.html">SYN cookies</uri>があります。
+SYN cookiesはコンピュータの接続キューをSYNパケットで満たすことなく応答させることができます。
+SYN cookiesはLinux カーネルの設定で有効にできますが、現時点では実験的なものとされています。
+</note>
+
+<p>
+実際に見てみましょう
+</p>
+
+<p>
+iptablesはカーネルによりロードされ、ルールを設置できる5つのフックを持っています。
+これらは<c>INPUT</c>、 <c>OUTPUT</c>、 <c>FORWARD</c>、<c>PREROUTING</c>そして <c>POSTROUTING</c>です。
+これらはそれぞれチェインと呼ばれ、ルールのリストを作ります。
+それぞれのルールはパケットのヘッダーにマッチした場合は、パケットに対して何をするかが指定されます。
+もしルールがパケットにマッチしなかった場合は、次のチェインのルールが調べられます。
+</p>
+
+<p>
+主な5つのチェインに直接ルールを設定することもできるし、新しいチェインを作り、ルールとして既存のチェインにそれらを加えることが出来ます。
+iptablesは以下のオプションをサポートしています。
+</p>
+
+<table>
+<tr>
+  <th>オプション</th>
+  <th>説明</th>
+</tr>
+<tr>
+  <ti>-A</ti>
+  <ti>追加</ti>
+</tr>
+<tr>
+  <ti>-D</ti>
+  <ti>削除</ti>
+</tr>
+<tr>
+  <ti>-I</ti>
+  <ti>挿入</ti>
+</tr>
+<tr>
+  <ti>-R</ti>
+  <ti>置換</ti>
+</tr>
+<tr>
+  <ti>-L</ti>
+  <ti>リスト</ti>
+</tr>
+<tr>
+  <ti>-F</ti>
+  <ti>あるチェインや全てのチェインからルールを削除</ti>
+</tr>
+<tr>
+  <ti>-Z</ti>
+  <ti>あるチェインや全てのチェインのカウンターをゼロに</ti>
+</tr>
+<tr>
+  <ti>-C</ti>
+  <ti>パケットをチェインでテスト</ti>
+</tr>
+<tr>
+  <ti>-N</ti>
+  <ti>新しいユーザ定義チェインを作る</ti>
+</tr>
+<tr>
+  <ti>-X</ti>
+  <ti>ユーザ定義チェインを削除する</ti>
+</tr>
+<tr>
+  <ti>-P</ti>
+  <ti>チェインのターゲットのポリシーを変更</ti>
+</tr>
+<tr>
+  <ti>-E</ti>
+  <ti>チェインの名前を変更</ti>
+</tr>
+<tr>
+  <ti>-p</ti>
+  <ti>プロトコル</ti>
+</tr>
+<tr>
+  <ti>-s</ti>
+  <ti>送信元アドレス/マスク</ti>
+</tr>
+<tr>
+  <ti>-d</ti>
+  <ti>送信先アドレス/マスク</ti>
+</tr>
+<tr>
+  <ti>-i</ti>
+  <ti>入力の名前(イーサネットの名前)</ti>
+</tr>
+<tr>
+  <ti>-o</ti>
+  <ti>出力の名前(イーサネットの名前)</ti>
+</tr>
+<tr>
+  <ti>-j</ti>
+  <ti>ジャンプ(ルールのターゲット)</ti>
+</tr>
+<tr>
+  <ti>-m</ti>
+  <ti>拡張されたマッチング(拡張モジュールと一緒に使用)</ti>
+</tr>
+<tr>
+  <ti>-n</ti>
+  <ti>アドレスとポートを数字で表示</ti>
+</tr>
+<tr>
+  <ti>-t</ti>
+  <ti>操作するテーブル</ti>
+</tr>
+<tr>
+  <ti>-v</ti>
+  <ti>冗長モード</ti>
+</tr>
+<tr>
+  <ti>-x</ti>
+  <ti>数字を拡張(厳密な数字)</ti>
+</tr>
+<tr>
+  <ti>-f</ti>
+  <ti>二番目またはより分割されたパケットのみマッチング</ti>
+</tr>
+<tr>
+  <ti>-V</ti>
+  <ti>パケットのバージョン</ti>
+</tr>
+<tr>
+  <ti>--line-numbers</ti>
+  <ti>一覧表示時に行番号を表示</ti>
+</tr>
+</table>
+
+<p>
+iptablesに慣れるため、最初に全てのICMPパケットをブロックしてみましょう。
+</p>
+
+<pre caption="全てのICMPパケットをブロックする">
+# <i>iptables -A INPUT -p icmp -j DROP</i>
+</pre>
+
+<p>
+最初に我々のルールが追加されるチェイン、マッチするパケットのプロトコル、最終的なターゲットを指定します。
+ターゲットはユーザが指定したチェインまたは専用のターゲット<c>ACCEPT</c>、 <c>DROP</c>、
+ <c>REJECT</c>、 <c>LOG</c>、 <c>QUEUE</c>、 又は <c>MASQUERADE</c>を指定します。
+この場合に用いた<c>DROP</c>は、クライアントに応答することなく、パケットを破棄します。
+</p>
+
+<note>
+<c>LOG</c>ターゲットは「non-teminating」として知られています。
+もし、パケットが<c>LOG</c>ターゲットのルールにマッチした場合、評価を止めることなく、
+パケットはさらに先のルールのマッチングが続けられます。
+これによりパケットが通常処理される間のログをとることができます。
+</note>
+
+<p>
+さて、<c>ping localhost</c>を実行してみましょう。iptablesは入ってくるICMPメッセージを破棄しているので、
+何も応答が帰ってこないでしょう。また、同様にICMPの応答を破棄しているので、他のマシンへのpingも出来ないでしょう。
+ICMPが使えるようにチェインを消去しましょう。
+</p>
+
+<pre caption="全てのルールを削除する">
+# <i>iptables -F</i>
+</pre>
+
+<p>
+iptablesでのステートフルなパケットフィルタリングについて見てみましょう。
+もし、eth0に入ってくるパケットに対してステートフルな検査を行いたいときは、以下のコマンドを実行します。
+</p>
+
+<pre caption="既に確立されたコネクションからのパケットを許可する">
+# <i>iptables -A INPUT -i eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT</i>
+</pre>
+
+<p>
+これは既に確立されたコネクション又は、INPUTチェインに関するパケットを許可します。
+また、状態テーブルにないパケットを破棄するには<c>iptables -A INPUT -i eth0 -m state --state INVALID -j DROP</c>
+を先ほどのコマンドの前に実行します。
+iptableにより拡張された"state"によりステートフルパケットフィルタリングを行うことが出来ます。
+もし、他のマシンからの接続を許可する場合は<c>--state NEW</c>を用います。
+iptablesはさまざまな用途のためのモジュールを含みます。いくつかを下記に示します。
+</p>
+
+<table>
+<tr>
+  <th>Module/Match</th>
+  <th>Description</th>
+  <th>Extended options</th>
+</tr>
+<tr>
+  <ti>mac</ti>
+  <ti>入ってくるパケットに対してmacアドレスでのマッチングの拡張</ti>
+  <ti>--mac-source</ti>
+</tr>
+<tr>
+  <ti>state</ti>
+  <ti>ステートフルな検査を可能にする</ti>
+  <ti>--state (ESTABLISHED、RELATED、INVALID、NEW)</ti>
+</tr>
+<tr>
+  <ti>limit</ti>
+  <ti>マッチしたレートを制限します</ti>
+  <ti>--limit, --limit-burst</ti>
+</tr>
+<tr>
+  <ti>owner</ti>
+  <ti>パケットに関していくつかの特徴にマッチするか試す</ti>
+  <ti>
+    --uid-owner userid --gid-owner groupid --pid-owner processid --sid-owner 
+    sessionid
+  </ti>
+</tr>
+<tr>
+  <ti>unclean</ti>
+  <ti>いくつかのランダムなチェックを行う</ti><ti></ti>
+</tr>
+</table>
+
+<p>
+ユーザ定義チェインを作成して、既存のチェインに適用しましょう。
+</p>
+
+<pre caption="ユーザ定義チェインの作成">
+<comment>(一つのルールで新しいチェインを作成する)</comment>
+# <i>iptables -X mychain</i>
+# <i>iptables -N mychain</i>
+# <i>iptables -A mychain -i eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT</i>
+<comment>(デフォルトのポリシーは出ていく通信は許し、入ってくる通信は拒否する)</comment>
+# <i>iptables -P OUTPUT ACCEPT</i>
+# <i>iptables -P INPUT DROP</i>
+<comment>(INPUTチェインに追加する)</comment>
+# <i>iptables -A INPUT -j mychain</i>
+</pre>
+
+<p>
+INPUTチェインにルールを適用することで、全ての出ていく通信は許し、全ての入ってくる通信は拒否します。
+</p>
+
+<p>
+<uri link="http://www.iptables.org/documentation/index.html#HOWTO">Netfilter/iptables documentation</uri>
+にもドキュメントがあります。
+</p>
+
+<p>
+実際の例を見てみましょう。この場合ファイアーウォール/ゲートウェイのポリシーは
+</p>
+
+<ul>
+<li>ファイアーウォールへの接続はSSH(22番ポート)を通してのみとする</li>
+<li>
+ローカルネットワークはHTTP、HTTPS、そしてSSHのアクセスがある(DNSも許可してもいいかもしれません)
+</li>
+<li>
+ICMPによる通信はペイロードを含む事ができ、許可しない。もちろんいくつかのICMP通信は許可される必要がある
+</li>
+<li>ポートスキャンは検出されログに記録される</li>
+<li>SYN攻撃を防ぐ</li>
+<li>その他の通信は拒否され、ログに記録される</li>
+</ul>
+
+<pre caption="/etc/init.d/firewall">
+#!/sbin/runscript
+IPTABLES=/sbin/iptables
+IPTABLESSAVE=/sbin/iptables-save
+IPTABLESRESTORE=/sbin/iptables-restore
+FIREWALL=/etc/firewall.rules
+DNS1=212.242.40.3
+DNS2=212.242.40.51
+#内部ネットワーク
+IIP=10.0.0.2
+IINTERFACE=eth0
+LOCAL_NETWORK=10.0.0.0/24
+#外部ネットワーク
+OIP=217.157.156.144
+OINTERFACE=eth1
+
+opts="${opts} showstatus panic save restore showoptions rules"
+
+depend() {
+  need net
+}
+
+rules() {
+  stop
+  ebegin "Setting internal rules"
+
+  einfo "Setting default rule to drop"
+  $IPTABLES -P FORWARD DROP
+  $IPTABLES -P INPUT   DROP
+  $IPTABLES -P OUTPUT  DROP
+
+  #デフォルトのルール
+  einfo "Creating states chain"
+  $IPTABLES -N allowed-connection
+  $IPTABLES -F allowed-connection
+  $IPTABLES -A allowed-connection -m state --state ESTABLISHED,RELATED -j ACCEPT
+  $IPTABLES -A allowed-connection -i $IINTERFACE -m limit -j LOG --log-prefix \ 
+      "Bad packet from ${IINTERFACE}:"
+  $IPTABLES -A allowed-connection -j DROP
+
+  #ICMP通信
+  einfo "Creating icmp chain"
+  $IPTABLES -N icmp_allowed
+  $IPTABLES -F icmp_allowed
+  $IPTABLES -A icmp_allowed -m state --state NEW -p icmp --icmp-type \ 
+      time-exceeded -j ACCEPT
+  $IPTABLES -A icmp_allowed -m state --state NEW -p icmp --icmp-type \ 
+      destination-unreachable -j ACCEPT
+  $IPTABLES -A icmp_allowed -p icmp -j LOG --log-prefix "Bad ICMP traffic:"
+  $IPTABLES -A icmp_allowed -p icmp -j DROP
+
+  #入力通信
+  einfo "Creating incoming ssh traffic chain"
+  $IPTABLES -N allow-ssh-traffic-in
+  $IPTABLES -F allow-ssh-traffic-in
+  #Flood protection
+  $IPTABLES -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags \ 
+      ALL RST --dport ssh -j ACCEPT
+  $IPTABLES -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags \ 
+      ALL FIN --dport ssh -j ACCEPT
+  $IPTABLES -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags \ 
+      ALL SYN --dport ssh -j ACCEPT
+  $IPTABLES -A allow-ssh-traffic-in -m state --state RELATED,ESTABLISHED -p tcp --dport ssh -j ACCEPT
+
+  #出力通信
+  einfo "Creating outgoing ssh traffic chain"
+  $IPTABLES -N allow-ssh-traffic-out
+  $IPTABLES -F allow-ssh-traffic-out
+  $IPTABLES -A allow-ssh-traffic-out -p tcp --dport ssh -j ACCEPT
+
+  einfo "Creating outgoing dns traffic chain"
+  $IPTABLES -N allow-dns-traffic-out
+  $IPTABLES -F allow-dns-traffic-out
+  $IPTABLES -A allow-dns-traffic-out -p udp -d $DNS1 --dport domain \ 
+      -j ACCEPT
+  $IPTABLES -A allow-dns-traffic-out -p udp -d $DNS2 --dport domain \ 
+     -j ACCEPT
+
+  einfo "Creating outgoing http/https traffic chain"
+  $IPTABLES -N allow-www-traffic-out
+  $IPTABLES -F allow-www-traffic-out
+  $IPTABLES -A allow-www-traffic-out -p tcp --dport www -j ACCEPT
+  $IPTABLES -A allow-www-traffic-out -p tcp --dport https -j ACCEPT
+
+  #ポートスキャンを検知
+  einfo "Creating portscan detection chain"
+  $IPTABLES -N check-flags
+  $IPTABLES -F check-flags
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL FIN,URG,PSH -m limit \ 
+      --limit 5/minute -j LOG --log-level alert --log-prefix "NMAP-XMAS:" 
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL FIN,URG,PSH -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL ALL -m limit --limit \ 
+      5/minute -j LOG --log-level 1 --log-prefix "XMAS:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL ALL -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG \ 
+      -m limit --limit 5/minute -j LOG --log-level 1 --log-prefix "XMAS-PSH:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL NONE -m limit \ 
+      --limit 5/minute -j LOG --log-level 1 --log-prefix "NULL_SCAN:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL NONE -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags SYN,RST SYN,RST -m limit \ 
+      --limit 5/minute -j LOG --log-level 5 --log-prefix "SYN/RST:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags SYN,FIN SYN,FIN -m limit \ 
+      --limit 5/minute -j LOG --log-level 5 --log-prefix "SYN/FIN:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
+
+  # 無効な状態をチェインに追加、適用
+  einfo "Applying chains to INPUT"
+  $IPTABLES -A INPUT -m state --state INVALID -j DROP
+  $IPTABLES -A INPUT -p icmp -j icmp_allowed 
+  $IPTABLES -A INPUT -j check-flags
+  $IPTABLES -A INPUT -i lo -j ACCEPT
+  $IPTABLES -A INPUT -j allow-ssh-traffic-in
+  $IPTABLES -A INPUT -j allowed-connection
+
+  einfo "Applying chains to FORWARD"
+  $IPTABLES -A FORWARD -m state --state INVALID -j DROP
+  $IPTABLES -A FORWARD -p icmp -j icmp_allowed 
+  $IPTABLES -A FORWARD -j check-flags
+  $IPTABLES -A FORWARD -o lo -j ACCEPT
+  $IPTABLES -A FORWARD -j allow-ssh-traffic-in
+  $IPTABLES -A FORWARD -j allow-www-traffic-out
+  $IPTABLES -A FORWARD -j allowed-connection
+
+  einfo "Applying chains to OUTPUT"
+  $IPTABLES -A OUTPUT -m state --state INVALID -j DROP
+  $IPTABLES -A OUTPUT -p icmp -j icmp_allowed
+  $IPTABLES -A OUTPUT -j check-flags
+  $IPTABLES -A OUTPUT -o lo -j ACCEPT
+  $IPTABLES -A OUTPUT -j allow-ssh-traffic-out
+  $IPTABLES -A OUTPUT -j allow-dns-traffic-out
+  $IPTABLES -A OUTPUT -j allow-www-traffic-out
+  $IPTABLES -A OUTPUT -j allowed-connection
+
+  #クライアントにNAT(アドレス変換)を介した通信を許可
+  $IPTABLES -t nat -A POSTROUTING -o $OINTERFACE -j MASQUERADE 
+  eend $?
+}
+
+start() {
+  ebegin "Starting firewall"
+  if [ -e "${FIREWALL}" ]; then
+    restore
+  else
+    einfo "${FIREWALL} does not exists. Using default rules."
+    rules
+  fi
+  eend $?
+}
+
+stop() {
+  ebegin "Stopping firewall"
+  $IPTABLES -F
+  $IPTABLES -t nat -F
+  $IPTABLES -X
+  $IPTABLES -P FORWARD ACCEPT
+  $IPTABLES -P INPUT   ACCEPT
+  $IPTABLES -P OUTPUT  ACCEPT
+  eend $?
+}
+
+showstatus() {
+  ebegin "Status"
+  $IPTABLES -L -n -v --line-numbers
+  einfo "NAT status"
+  $IPTABLES -L -n -v --line-numbers -t nat
+  eend $?
+}
+
+panic() {
+  ebegin "Setting panic rules"
+  $IPTABLES -F
+  $IPTABLES -X
+  $IPTABLES -t nat -F
+  $IPTABLES -P FORWARD DROP
+  $IPTABLES -P INPUT   DROP
+  $IPTABLES -P OUTPUT  DROP
+  $IPTABLES -A INPUT -i lo -j ACCEPT
+  $IPTABLES -A OUTPUT -o lo -j ACCEPT
+  eend $?
+}
+
+save() {
+  ebegin "Saving Firewall rules"
+  $IPTABLESSAVE &gt; $FIREWALL
+  eend $?
+}
+
+restore() {
+  ebegin "Restoring Firewall rules"
+  $IPTABLESRESTORE &lt; $FIREWALL
+  eend $?
+}
+
+restart() {
+  svc_stop; svc_start
+}
+
+showoptions() {
+  echo "Usage: $0 {start|save|restore|panic|stop|restart|showstatus}"
+  echo "start)      will restore setting if exists else force rules"
+  echo "stop)       delete all rules and set all to accept"
+  echo "rules)      force settings of new rules"
+  echo "save)       will store settings in ${FIREWALL}"
+  echo "restore)    will restore settings from ${FIREWALL}"
+  echo "showstatus) Shows the status" 
+}
+</pre>
+
+<p>
+ファイアーウォール構築のアドバイス
+</p>
+
+<ol>
+<li>ファイアーウォールを作る前に、ポリシーを決める</li>
+<li>シンプルに保つ</li>
+<li>
+プロトコルがどのように動作するか知る(関連した<uri link="http://www.ietf.org/">RFC</uri>(Request For Comments)を読む)
+</li>
+<li>
+ファイアーウォールがrootで動作するソフトウェアであることを覚えておく
+</li>
+<li>ファイアーウォールをテストする</li>
+</ol>
+
+<p>
+もしiptablesを理解するのが困難な場合や、長い期間きちんとしたファイアーウォールをセットアップしたいなら、
+<uri link="http://www.shorewall.net">Shorewall</uri>を使うと良いでしょう。
+ファイアーウォールのルールを作成する上では基本的にiptablesが使われますが、特定のプロトコルではなくルールに特化しています。
+</p>
+
+</body>
+</section>
+<section>
+<title>Squid</title>
+<body>
+
+<p>
+Squidは大変強力なproxyサーバです。Squidは、時間やPathやURIの正規表現、送信元や送信先のIPアドレス、ドメイン、ブラウザ、ユーザ認証、
+MIMEタイプ、ポート番号(プロトコル)により通信をフィルタすることができます。
+たぶんいくつかの特徴を忘れてしまっているかもしれませんが、ここで全ての特徴を列挙することは大変難しいです。
+</p> 
+
+<p>
+以下の例は、ポルノサイトのフィルタの代わりに、バナーフィルタ加えました。
+理由は、Gentoo.orgはポルノサイトとしてリストされるべきでないからです。
+また、あなたにとって良いサイトを探すのは時間の無駄だからです。
+</p>
+
+<p>
+この場合のポリシーは
+</p>
+
+<ul>
+<li>
+ネットサーフィン(HTTP/HTTPS)は就業時間中(月曜から金曜の8時から17時と土曜日の8時から13時)も許可するが、
+従業員が遅くまで残っている場合は働くべきで、ネットサーフィンするべきでない。
+</li>
+<li>
+ファイルのダウンロードは許可しない(.exe、 .com、 .arj、 .zip、 .asf、 .avi、 .mpg、.mpeg、 etc)
+</li>
+<li>
+バナーは好きでないので、透明なgifで置き換える(ここが工夫する所です)
+</li>
+<li>
+他の全てのインターネットへの通信とインターネットからの接続は拒否する
+</li>
+</ul>
+
+<p>
+これは4つの<e>簡単な</e>手順で実現できます。
+</p>
+
+<pre caption="/etc/squid/squid.conf">
+#ipアドレスとポートを割り当てます。
+http_port 10.0.2.1:3128
+
+# 基本的な設定
+hierarchy_stoplist cgi-bin ?
+acl QUERY urlpath_regex cgi-bin \?
+no_cache deny QUERY
+
+# 基本的なアクセス制限リスト
+acl all src 0.0.0.0/0.0.0.0
+acl manager proto cache_object
+acl localhost src 127.0.0.1/255.255.255.255
+
+# 誰がプロキシサーバにアクセスできるかを追加
+acl localnet src 10.0.0.0/255.255.0.0
+
+# ポート
+acl SSL_ports port 443
+acl Safe_ports port 80
+acl Safe_ports port 443
+acl purge method PURGE
+
+# 正規表現に基づいたアクセス制限リストを追加
+# expressions within urls
+acl archives urlpath_regex "/etc/squid/files.acl"
+acl url_ads url_regex "/etc/squid/banner-ads.acl"
+
+# 日時に基づくアクセス制限リストを追加
+acl restricted_weekdays time MTWHF 8:00-17:00
+acl restricted_weekends time A 8:00-13:00
+
+acl CONNECT method CONNECT
+
+#ローカルホストからのmanager権限でのアクセスを許可する
+http_access allow manager localhost
+http_access deny manager
+
+# ローカルホストからのPURGEリクエスト(訳注：キャッシュ内のオブジェクトの削除)を許可する
+http_access allow purge localhost
+http_access deny purge
+
+# 未知のポートへのリクエストを拒否する
+http_access deny !Safe_ports
+
+# SSLポート以外へのCONNECTを拒否する
+http_access deny CONNECT !SSL_ports
+
+# 独自のルール
+
+# バナーが取り外されるとき、表示されるページを追加する。
+# a banner is removed
+deny_info NOTE_ADS_FILTERED url_ads
+
+# それらを拒否する
+http_access deny url_ads
+
+# 全てのアーカイブは拒否する
+http_access deny archives
+
+# 勤務時間のアクセスを制限する
+http_access allow localnet restricted_weekdays
+http_access allow localnet restricted_weekends
+
+# 残りは拒否する
+http_access deny all
+</pre>
+
+<p>
+次にユーザにダウンロードされたくないファイルをファイルに設定します。
+私はzip、 viv、 exe、 mp3、 rar、 ace、 avi、 mov、 mpg、 mpeg、 au、 ra、 arj、 tar、 gz　そして z を加えました。
+</p>
+
+<pre caption="/etc/squid/files.acl">
+\.[Zz][Ii][pP]$
+\.[Vv][Ii][Vv].*
+\.[Ee][Xx][Ee]$
+\.[Mm][Pp]3$
+\.[Rr][Aa][Rr]$
+\.[Aa][Cc][Ee]$
+\.[Aa][Ss][Ff]$
+\.[Aa][Vv][Ii]$
+\.[Mm][Oo][Vv]$
+\.[Mm][Pp][Gg]$
+\.[Mm][Pp][Ee][Gg]$
+\.[Aa][Uu]$
+\.[Rr][Aa]$
+\.[Aa][Rr][Jj]$
+\.[Tt][Aa][Rr]$
+\.[Gg][Zz]$
+\.[Zz]$
+</pre>
+
+<note>
+全ての文字について[]で囲って小文字と大文字をを表記する点に注意してください。
+これを行うと、aviの代わりにAvIファイルにアクセスされた場合も、フィルタはだまされることがありません。
+</note>
+
+<p>
+次にバナーを検知する正規表現を追加しましょう。もっとうまい方法があるかもしれませんが。
+</p>
+
+<pre caption="/etc/squid/banner-ads.acl">
+/adv/.*\.gif$
+/[Aa]ds/.*\.gif$
+/[Aa]d[Pp]ix/
+/[Aa]d[Ss]erver
+/[Aa][Dd]/.*\.[GgJj][IiPp][FfGg]$
+/[Bb]annerads/
+/adbanner.*\.[GgJj][IiPp][FfGg]$
+/images/ad/
+/reklame/
+/RealMedia/ads/.*
+^http://www\.submit-it.*
+^http://www\.eads.*
+^http://ads\.
+^http://ad\.
+^http://ads02\.
+^http://adaver.*\.
+^http://adforce\.
+adbot\.com
+/ads/.*\.gif.*
+_ad\..*cgi
+/Banners/
+/SmartBanner/
+/Ads/Media/Images/
+^http://static\.wired\.com/advertising/
+^http://*\.dejanews\.com/ads/
+^http://adfu\.blockstackers\.com/
+^http://ads2\.zdnet\.com/adverts
+^http://www2\.burstnet\.com/gifs/
+^http://www.\.valueclick\.com/cgi-bin/cycle
+^http://www\.altavista\.com/av/gifs/ie_horiz\.gif
+</pre>
+
+<p>
+最後の手順として、バナーが削除された時に表示されてほしいファイルを指定します。
+それは基本的にに4x4の透明なgifイメージを含む途中までのhtmlファイルです。
+</p>
+
+<pre caption="/etc/squid/errors/NOTE_ADS_FILTERED">
+&lt;HTML&gt;
+&lt;HEAD&gt;
+&lt;META HTTP-EQUIV="REFRESH" CONTENT="0; URL=http://localhost/images/4x4.gif"&gt;
+&lt;TITLE>ERROR: The requested URL could not be retrieved&lt;/TITLE&gt;
+&lt;/HEAD&gt;
+&lt;BODY&gt;
+&lt;H1&gt;Add filtered!&lt;/H1&gt;
+</pre>
+
+<note>
+&lt;HTML&gt;や &lt;BODY&gt;タグを閉じないでください。squidにより行われます。
+</note>
+
+<p>
+ここまで見てきたように、Squidはたくさんの可能性を持ち、フィルタリングとしてもにもプロキシとしても効果的です。
+非常に大きいネットワークでSquidプロキシを代わりに使用することさえできます。
+上記に上げたような設定は、1から20人程のユーザを持つ小さなネットワークに適しています。
+</p>
+
+<p>
+しかし、Squidが安全で誰も外からアクセスできない場所にある場合、
+パケットフィルタ(iptables)とアプリケーションゲートウェイ(Squid)の組合せは、最良の解決策でしょう。
+我々はまだ内部からの攻撃について注意する必要があります。
+</p>
+
+<p>
+あなたのクライアントのブラウザを、プロキシサーバを使うように設定する必要があります。
+ゲートウェイは、ユーザが外部との通信をプロキシを使わずに行うことを禁止します。
+</p>
+
+<note>
+Mozilla Firefoxでは 編集->設定->詳細->ネットワーク で設定を行います。
+</note>
+
+<p>
+また、iptablesを用いることで、全ての外部への通信をSquidプロキシに透過的に送るができます。
+これはforwarding/preroutingルールをゲートウェイに追加することで行えます。
+</p>
+
+<pre caption="プロキシサーバへのポートフォワードを有効にする">
+# <i>iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to proxyhost:3128</i>
+# <i>iptables -t nat -A PREROUTING -p tcp --dport 443 -j DNAT --to proxyhost:3128</i>
+</pre>
+
+<note>
+プロキシがパケットフィルタリングを行うホスト上で動いている場合、これは推奨できません。
+あなたがスペアのマシンを持っていない場合、<c>DNAT</c>ターゲットの替わりに、<c>REDIRECT</c>ターゲットを用いる必要があります。
+(<c>REDIRECT</c>はパケットを直接ローカルホストに転送します。)
+</note>
+
+</body>
+</section>
+<section>
+<title>これまでに学んだこと</title>
+<body>
+
+<p>
+我々は以上の事を学びました。
+</p>
+
+<ol>
+<li>
+ファイアーウォールはリスクにもなる。悪い設定はファイアーウォールが無い場合よりもより悪い
+</li>
+<li>ゲートウェイと透過なプロキシの基本的な設定</li>
+<li>よいファイアーウォールの鍵は、許可したいプロトコルを知ることである</li>
+<li>
+IP通信はいつも正当なデータを含んでいるわけではない
+(例 ICMPパケットは悪意のあるペイロードを含むことができる)
+</li>
+<li>SYNアタックをどのように防ぐか</li>
+<li>HTTP通信をフィルタリングして不愉快な画像や、ウイルスのダウンロードを排除する</li>
+<li>
+パケットフィルタとアプリケーションゲートウェイを組み合わせてよりよい制御を提供する
+</li>
+</ol>
+
+<p>
+もし<e>本当に</e>必要なら、あなたのニーズにマッチしたファイアーウォールを構築しましょう。
+</p>
+
+</body>
+</section>
+
+</sections>

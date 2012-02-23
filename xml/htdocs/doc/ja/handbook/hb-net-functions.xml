@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-net-functions.xml,v 1.3 2008/06/23 23:32:07 shindo Exp $ -->
+
+<!-- Original revision: 1.11 -->
+<!-- Translator: igarashi -->
+
+<sections>
+
+<abstract>
+If you're feeling adventurous, you can add your own functions to networking.
+もしあなたが冒険好きだったら、あなた独自の関数をネットワークの仕組みに組み込むことができます。
+</abstract>
+
+
+<version>8.0</version>
+<date>2007-05-07</date>
+
+<section>
+<title>標準フック関数</title>
+<body>
+
+<p>
+<c>start</c>/<c>stop</c>操作に関連して呼び出される4つの関数が定義できます。
+それらの関数は、一つの関数で複数のアダプタを制御できるように、インターフェース名が最初に渡されて呼び出されます。
+</p>
+
+<p>
+対象のインターフェースの有効化処理や無効化処理が続行可能であることを示すには、<c>preup()</c>と<c>predown()</c>関数の戻り値は、0 (成功)でなければなりません。
+<c>preup()</c>がゼロ以外の値を返すと、インターフェースの有効化処理は中断されます。
+<c>predown()</c>がゼロ以外の値を返すと、インターフェースの無効化処理の続行は認められません。
+</p>
+
+<p>
+<c>postup()</c>と<c>postdown()</c>関数の戻り値は無視されます。失敗を示す場合は何もすることがないからです。
+</p>
+
+<p>
+<c>${IFACE}</c>には起動/停止しようとしているインターフェースが設定されます。
+<c>${IFVAR}</c>はbashが許容する変数名に変換された<c>${IFACE}</c>です。
+</p>
+
+<pre caption="pre/post up/down関数の例">
+preup() {
+  <comment># 起動前のインターフェースの物理接続テスト。一部のネットワークアダプタ
+  # にのみ有効です。ethtoolパッケージがインストールされている
+  # 必要があります。</comment>
+  if ethtool ${IFACE} | grep -q 'Link detected: no'; then
+    ewarn "No link on ${IFACE}, aborting configuration"
+    return 1
+  fi
+
+  <comment># 成功時は0を忘れずに返します</comment>
+  return 0
+}
+
+predown() {
+  <comment># このスクリプトのデフォルトの処理は、NFSルートのテストをして
+  # その場合にインターフェースの停止処理を中断することです。predown()関数を
+  # 定義するとこの処理を上書きしてしまうことに注意してください。やはり
+  # その処理を必要とするなら、このような感じ...</comment>
+  if is_net_fs /; then
+    eerror "root filesystem is network mounted -- can't stop ${IFACE}"
+    return 1
+  fi
+
+  <comment># 成功時は0を忘れずに返します</comment>
+  return 0
+}
+
+postup() {
+  <comment># この関数は、例えばダイナミックDNSサービスに登録するとき
+  # 使えます。他にはインターフェースが起動したときにメールの送受信を
+  # することにも使えます。</comment>
+       return 0
+}
+
+postdown() {
+  <comment># この関数はほとんど一貫性のためにあります... まだこの関数を
+  # 使用して行うのに何かふさわしいものを考え付いたことはありません ;-)</comment>
+  return 0
+}
+</pre>
+
+</body>
+</section>
+<section>
+<title>Wireless Toolsのフック関数</title>
+<body>
+
+<note>
+WPA Supplicantとの組み合わせでは動作しません。- ですが<c>${ESSID}</c>と<c>${ESSIDVAR}</c>変数は<c>postup()</c>関数で利用可能です。
+</note>
+
+<p>
+associate関数に関連して呼び出される2つの関数が定義できます。
+それらの関数は、一つの関数で複数のアダプタを制御できるように、インターフェース名が最初に渡されて呼び出されます。
+</p>
+
+<p>
+対象のインターフェースの有効化や無効化処理が続行可能であることを示すには、<c>preassociate()</c>関数の戻り値は、0 (成功)でなければなりません。
+<c>preassociate()</c>ゼロ以外の値を返すと、インターフェースの有効化処理は中断されます。
+</p>
+
+<p>
+<c>postassociate()</c>関数の戻り値は無視されます。失敗を示す場合は何もすることがないからです。
+</p>
+
+<p>
+<c>${ESSID}</c>は接続しようしているAPの正確なESSIDが設定されます。
+<c>${ESSIDVAR}は</c>bashが許容する変数名に変換された<c>${ESSID}</c>です。
+</p>
+
+<pre caption="pre/post associate関数">
+preassociate() {
+  <comment># 以下の処理は、leap_user_ESSIDとleap_pass_ESSIDの2つの設定変数
+  # を追加します。接続されようとしているESSID向けに両方が設定されたら、
+  # CISCO LEAPスクリプトを実行します。</comment>
+
+  local user pass
+  eval user="\$\{leap_user_${ESSIDVAR}\}"
+  eval pass="\$\{leap_pass_${ESSIDVAR}\}"
+
+  if [[ -n ${user} &amp;&amp; -n ${pass} ]]; then
+    if [[ ! -x /opt/cisco/bin/leapscript ]]; then
+      eend "For LEAP support, please emerge net-misc/cisco-aironet-client-utils"
+      return 1
+    fi
+    einfo "Waiting for LEAP Authentication on "${ESSID//\\\\//}""
+    if /opt/cisco/bin/leapscript ${user} ${pass} | grep -q 'Login incorrect'; then
+      ewarn "Login Failed for ${user}"
+      return 1
+    fi
+  fi
+
+  return 0
+}
+
+postassociate() {
+  <comment># この関数はほとんど一貫性のためにあります... まだこの関数を
+  # 使用して行うのに何かふさわしいものを考え付いたことはありません ;-)</comment>
+
+  return 0
+}
+</pre>
+
+<note>
+<c>${ESSID}</c>と<c>${ESSIDVAR}</c>は<c>predown()</c>と<c>postdown()</c>関数では利用できません。
+</note>
+
+</body>
+</section>
+
+</sections>

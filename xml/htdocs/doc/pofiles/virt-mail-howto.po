@@ -1,0 +1,1788 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:53+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/virt-mail-howto.xml:6
+#, no-wrap
+msgid "Virtual Mailhosting System with Postfix Guide"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/virt-mail-howto.xml:28
+#, no-wrap
+msgid ""
+"This document details how to create a virtual mailhosting system based upon\n"
+"postfix, mysql, courier-imap, and cyrus-sasl.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/virt-mail-howto.xml:36 en/virt-mail-howto.xml:1020
+#, no-wrap
+msgid "Introduction"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:41
+#, no-wrap
+msgid ""
+"For most Gentoo users, a simple mail client and fetchmail will do. However, if\n"
+"you're hosting a domain with your system, you'll need a full blown MTA (Mail\n"
+"Transfer Agent). And if you're hosting multiple domains, then you'll definitely\n"
+"need something more robust to handle all of the email for your users. This\n"
+"system was designed to be an elegant solution to that problem.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:49
+#, no-wrap
+msgid ""
+"A virtual mail system needs to be able to handle email for numerous domains\n"
+"with multiple users over a variety of interfaces. This presents some issues\n"
+"that must be dealt with. For instance, what if you have two users on different\n"
+"domains that want the same user name? If you are providing imap access and\n"
+"smtp-auth, how do combine the various authentication daemons into a single\n"
+"system?  How do you provide security for the numerous components that comprise\n"
+"the system? How do you manage it all?\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:59
+#, no-wrap
+msgid ""
+"This howto will show you how to set up with a mail system capable of handling\n"
+"mail for as many domains as your hardware can handle, supports virtual mail\n"
+"users that don't require shell accounts, has domain specific user names, can\n"
+"authenticate web, imap, smtp, and pop3 clients against a single database,\n"
+"utilizes ssl for transport layer security, has a web interface, can handle\n"
+"mailing lists for any domain on the machine, and is controlled by a nice,\n"
+"central and easy mysql database.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:69
+#, no-wrap
+msgid ""
+"There are quite a variety of ways to go about setting up a virtual mailhosting\n"
+"system. With so may options, another may be the best choice for your specific\n"
+"needs. Consider investigating <uri>http://www.qmail.org/</uri> and\n"
+"<uri>http://www.exim.org/</uri> to explore your options.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:76
+#, no-wrap
+msgid ""
+"The following packages are used in this setup: apache, courier-imap,\n"
+"courier-authlib postfix, mod_php, phpmyadmin, squirrelmail, cyrus-sasl, mysql,\n"
+"php, and mailman.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:82
+#, no-wrap
+msgid ""
+"Make sure to turn on the following USE variables in <path>/etc/make.conf</path>\n"
+"before compiling the packages: <c>USE=\"mysql imap libwww maildir\n"
+"sasl ssl\"</c>. Otherwise you will most likely have to recompile things to\n"
+"get the support you need for all the protocols. Further, it's a good idea to\n"
+"turn off any other mail and network variables, like ipv6.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/virt-mail-howto.xml:90
+#, no-wrap
+msgid ""
+"You need a domain name to run a public mail server, or at least an MX record\n"
+"for a domain. Ideally you would have control of at least two domains to take\n"
+"advantage of your new virtual domain functionality.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/virt-mail-howto.xml:96
+#, no-wrap
+msgid ""
+"Make sure <path>/etc/conf.d/hostname</path> is set to the right hostname for\n"
+"your mail server. You can apply any changes you make to this file by running\n"
+"<c>/etc/init.d/hostname restart</c>. Verify your hostname is set correctly with\n"
+"<c>hostname</c>. Also verify that there are no conflicting entries in\n"
+"<path>/etc/hosts</path>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/virt-mail-howto.xml:104
+#, no-wrap
+msgid ""
+"It is recommended that you read this entire document and familiarize yourself\n"
+"with all the steps before attempting the install. If you run into problems with\n"
+"any of the steps, check the troubleshooting guide at the end of this document.\n"
+"Also, not all the referenced packages are necessary, this set up is very\n"
+"flexible. For instance, if you do not desire a web interface, feel free to skip\n"
+"the squirrelmail section.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/virt-mail-howto.xml:117
+#, no-wrap
+msgid "Postfix Basics"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:121
+#, no-wrap
+msgid "Install postfix"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:122
+#, no-wrap
+msgid "# <i>emerge postfix</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><warn>
+#: en/virt-mail-howto.xml:126
+#, no-wrap
+msgid ""
+"Verify that you have not installed any other MTA, such as ssmtp, exim, or\n"
+"netqmail, or you will surely have BIG problems.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:131
+#, no-wrap
+msgid ""
+"After postfix is installed, it's time to configure it. Change the following\n"
+"options in <path>/etc/postfix/main.cf</path>. Remember to replace\n"
+"<c>$variables</c> with your own names.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:136 en/virt-mail-howto.xml:327
+#: en/virt-mail-howto.xml:782
+#, no-wrap
+msgid "/etc/postfix/main.cf"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:137
+#, no-wrap
+msgid ""
+"myhostname = $host.domain.name\n"
+"mydomain = $domain.name\n"
+"inet_interfaces = all\n"
+"mydestination = $myhostname, localhost.$mydomain $mydomain\n"
+"mynetworks = my.ip.net.work/24, 127.0.0.0/8\n"
+"home_mailbox = .maildir/\n"
+"local_destination_concurrency_limit = 2\n"
+"default_destination_concurrency_limit = 10\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:148
+#, no-wrap
+msgid ""
+"Next change the following in <path>/etc/postfix/master.cf</path>. This will\n"
+"turn on verbose output for debugging:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:152
+#, no-wrap
+msgid "/etc/postfix/master.cf"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:153
+#, no-wrap
+msgid ""
+"# service type  private unpriv  chroot  wakeup  maxproc command + args\n"
+"#               (yes)   (yes)   (yes)   (never) (50)\n"
+"#\n"
+"==========================================================================\n"
+"<comment>(Just add the \"-v\" after the smtpd in the following line)</comment>\n"
+"smtp      inet  n       -       n       -       -       smtpd -v\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:162
+#, no-wrap
+msgid ""
+"Next, edit <path>/etc/mail/aliases</path> to add your local aliases. There\n"
+"should at least be an alias for root like: <c>root:   your@email.address</c>.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:166
+#, no-wrap
+msgid "Starting postfix for the first time"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:167
+#, no-wrap
+msgid ""
+"# <i>/usr/bin/newaliases</i>\n"
+"<comment>(This will install the new aliases. You only need to do this\n"
+"when you update or install aliases.)</comment>\n"
+"\n"
+"# <i>/etc/init.d/postfix start</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:175
+#, no-wrap
+msgid ""
+"Now that postfix is running, fire up your favorite console mail client and send\n"
+"yourself an email. I use <c>mutt</c> for all my console mail. Verify that\n"
+"postfix is delivering mail to local users, once that's done, we're on to the\n"
+"next step.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/virt-mail-howto.xml:182
+#, no-wrap
+msgid ""
+"I strongly recommend that you verify this basic postfix setup is functioning\n"
+"before you progress to the next step of the howto.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/virt-mail-howto.xml:191
+#, no-wrap
+msgid "Courier-imap"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:195
+#, no-wrap
+msgid "Install courier-imap and courier-authlib"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:196
+#, no-wrap
+msgid "# <i>emerge courier-imap courier-authlib</i>\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:199
+#, no-wrap
+msgid "Courier-imap configuration"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:200
+#, no-wrap
+msgid ""
+"# <i>cd /etc/courier-imap</i>\n"
+"<comment>(If you want to use the ssl capabilities of courier-imap or pop3,\n"
+"you'll need to create certs for this purpose.\n"
+"This step is recommended. If you do not want to use ssl, skip this step.)</comment>\n"
+"\n"
+"# <i>nano -w pop3d.cnf</i>\n"
+"# <i>nano -w imapd.cnf</i>\n"
+"<comment>(Change the C, ST, L, CN, and email parameters to match your server.)</comment>\n"
+"\n"
+"# <i>mkpop3dcert</i>\n"
+"# <i>mkimapdcert</i>\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:213
+#, no-wrap
+msgid "Start the courier services you need."
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:214
+#, no-wrap
+msgid ""
+"# <i>/etc/init.d/courier-imapd start</i>\n"
+"# <i>/etc/init.d/courier-imapd-ssl start</i>\n"
+"# <i>/etc/init.d/courier-pop3d start</i>\n"
+"# <i>/etc/init.d/courier-pop3d-ssl start</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:221
+#, no-wrap
+msgid ""
+"Start up your favorite mail client and verify that all connections you've\n"
+"started work for receiving and sending mail. Of course, you won't be able to log\n"
+"on to any of the services because authentication hasn't been configured yet, but\n"
+"it is wise to check if the connections themselves work or not.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:228
+#, no-wrap
+msgid ""
+"Now that the basics work, we're going to do a whole bunch of stuff at once to\n"
+"get the rest of the system running. Again, please verify that what we've\n"
+"installed already works before progressing.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/virt-mail-howto.xml:238
+#, no-wrap
+msgid "Cyrus-sasl"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:243
+#, no-wrap
+msgid ""
+"Next we're going to install cyrus-sasl. Sasl is going to play the role of\n"
+"actually passing your auth variables to courier-auth, which will in turn pass\n"
+"that information to mysql for authentication of smtp users.  For this howto,\n"
+"we'll not even try to verify that sasl is working until mysql is set up and\n"
+"contains a test user. Which is fine since we'll be authenticating against\n"
+"mysql in the end anyway.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:251
+#, no-wrap
+msgid "Configuring and installing the cyrus-sasl ebuild"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:252
+#, no-wrap
+msgid "# <i>emerge cyrus-sasl</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:256
+#, no-wrap
+msgid "Next, edit <path>/etc/sasl2/smtpd.conf</path>.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:259
+#, no-wrap
+msgid "Starting sasl"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:260
+#, no-wrap
+msgid ""
+"# <i>nano -w /etc/sasl2/smtpd.conf</i>\n"
+"mech_list: PLAIN LOGIN\n"
+"pwcheck_method: saslauthd\n"
+"# <i>nano -w /etc/conf.d/saslauthd</i>\n"
+"SASLAUTHD_OPTS=\"${SASLAUTH_MECH} -a rimap -r\"\n"
+"SASLAUTHD_OPTS=\"${SASLAUTHD_OPTS} -O localhost\"\n"
+"# <i>/etc/init.d/saslauthd start</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/virt-mail-howto.xml:274
+#, no-wrap
+msgid "SSL Certs for Postfix and Apache"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:279
+#, no-wrap
+msgid "Next we're going to make a set of ssl certificates for postfix and apache.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:282
+#, no-wrap
+msgid "Making ssl certicates"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:283
+#, no-wrap
+msgid ""
+"# <i>cd /etc/ssl/</i>\n"
+"# <i>nano -w openssl.cnf</i>\n"
+"\n"
+"<comment>Change the following default values for your domain:</comment>\n"
+"countryName_default\n"
+"stateOrProvinceName_default\n"
+"localityName_default\n"
+"0.organizationName_default\n"
+"commonName_default\n"
+"emailAddress_default.\n"
+"\n"
+"<comment>(If the variables are not already present, just add them in a sensible place.)</comment>\n"
+"\n"
+"# <i>cd misc</i>\n"
+"# <i>./CA.pl -newreq-nodes</i>\n"
+"# <i>./CA.pl -newca</i>\n"
+"# <i>./CA.pl -sign</i>\n"
+"# <i>cp newcert.pem /etc/postfix</i>\n"
+"# <i>cp newkey.pem /etc/postfix</i>\n"
+"# <i>cp demoCA/cacert.pem /etc/postfix</i>\n"
+"<comment>(Now we do the same thing for apache.)</comment>\n"
+"\n"
+"# <i>openssl req -new > new.cert.csr</i>\n"
+"# <i>openssl rsa -in privkey.pem -out new.cert.key</i>\n"
+"# <i>openssl x509 -in new.cert.csr -out new.cert.cert -req -signkey new.cert.key -days 365</i>\n"
+"<comment>(Just leave the resulting certificates here for now.\n"
+"We'll install them after Apache is installed.)</comment>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/virt-mail-howto.xml:317
+#, no-wrap
+msgid "Adding SSL and SASL support to Postfix"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:322
+#, no-wrap
+msgid ""
+"Now edit the postfix config's to make it aware of your new sasl and ssl\n"
+"capabilities. Add the following parameters to the end of the file where they\n"
+"will be easy to find.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:328
+#, no-wrap
+msgid ""
+"# <i>nano -w /etc/postfix/main.cf</i>\n"
+"\n"
+"smtpd_sasl_auth_enable = yes\n"
+"smtpd_sasl_security_options = noanonymous\n"
+"broken_sasl_auth_clients = yes\n"
+"smtpd_sasl_local_domain =\n"
+"\n"
+"<comment>(The broken_sasl_auth_clients option and the login auth method\n"
+"are for outlook and outlook express only and are undocumented.\n"
+"Isn't having to hack software for stupid, broken, M$ BS great?\n"
+"smtpd_sasl_local_domain appends a domain name to clients using\n"
+"smtp-auth. Make sure it's blank or your user names will get\n"
+"mangled by postfix and be unable to auth.)</comment>\n"
+"\n"
+"smtpd_recipient_restrictions =\n"
+"  permit_sasl_authenticated,\n"
+"  permit_mynetworks,\n"
+"  reject_unauth_destination\n"
+"\n"
+"<comment>(The next two options enable outgoing encryption.)</comment>\n"
+"smtp_use_tls = yes\n"
+"smtp_tls_note_starttls_offer = yes\n"
+"smtpd_use_tls = yes\n"
+"#smtpd_tls_auth_only = yes\n"
+"smtpd_tls_key_file = /etc/postfix/newkey.pem\n"
+"smtpd_tls_cert_file = /etc/postfix/newcert.pem\n"
+"smtpd_tls_CAfile = /etc/postfix/cacert.pem\n"
+"smtpd_tls_loglevel = 3\n"
+"smtpd_tls_received_header = yes\n"
+"smtpd_tls_session_cache_timeout = 3600s\n"
+"tls_random_source = dev:/dev/urandom\n"
+"\n"
+"<comment>(smtpd_tls_auth_only is commented out to ease testing the system.\n"
+"You can turn this on later if you desire.)</comment>\n"
+"\n"
+"# <i>postfix reload</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:367
+#, no-wrap
+msgid ""
+"Now we're going to verify that the config's we added were picked up by postfix.\n"
+"For this we are going to use <c>telnet</c> (provided by for instance\n"
+"<c>net-misc/netkit-telnetd</c>) although you can also use <c>nc</c> (provided by\n"
+"<c>net-analyzer/netcat</c>):\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:373
+#, no-wrap
+msgid "Verifying sasl and tls support"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:374
+#, no-wrap
+msgid ""
+"# <i>telnet localhost 25</i>\n"
+"\n"
+"Trying 127.0.0.1...\n"
+"Connected to localhost.\n"
+"Escape character is '^]'.\n"
+"220 mail.domain.com ESMTP Postfix\n"
+"<i>EHLO domain.com</i>\n"
+"250-mail.domain.com\n"
+"250-PIPELINING\n"
+"250-SIZE 10240000\n"
+"250-VRFY\n"
+"250-ETRN\n"
+"250-STARTTLS\n"
+"250-AUTH LOGIN PLAIN\n"
+"250-AUTH=LOGIN PLAIN\n"
+"250-XVERP\n"
+"250 8BITMIME\n"
+"<i>^]</i>\n"
+"telnet> <i>quit</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:396
+#, no-wrap
+msgid ""
+"Verify that the above AUTH and STARTTLS lines now appear in your postfix\n"
+"install. As I said before, as it stands now AUTH will not work. that's because\n"
+"sasl will try to auth against it's sasldb, instead of the shadow file for some\n"
+"unknown reason, which we have not set up. So we're going to just plow through\n"
+"and set up mysql to hold all of our auth and virtual domain information.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/virt-mail-howto.xml:408
+#, no-wrap
+msgid "The vmail user"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:413
+#, no-wrap
+msgid ""
+"Before we set up our virtual mailhosting environment, we create a functional\n"
+"user under which the virtual mailboxes will be hosted. For clarity's sake we\n"
+"will call this <e>vmail</e>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:418
+#, no-wrap
+msgid "Adding the vmail user"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:419
+#, no-wrap
+msgid "# <i>useradd -d /home/vmail -s /bin/false -m vmail</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:423
+#, no-wrap
+msgid ""
+"So now you've set up the vmail account. You can create multiple accounts if you\n"
+"want (to keep some structure in your set of virtual mail accounts). The user id,\n"
+"group id and home dirs are referenced in the MySQL tables.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:429
+#, no-wrap
+msgid ""
+"Next to the user account we also need to create the location where the mailboxes\n"
+"will reside:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:433
+#, no-wrap
+msgid "Creating mailboxes"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:434
+#, no-wrap
+msgid ""
+"# <i>mkdir -p /home/vmail/virt-domain.com/foo</i>\n"
+"# <i>chown -R vmail:vmail /home/vmail/virt-domain.com</i>\n"
+"# <i>maildirmake /home/vmail/virt-domain.com/foo/.maildir</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/virt-mail-howto.xml:444
+#, no-wrap
+msgid "MySQL"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:449
+#, no-wrap
+msgid ""
+"Next we're going to install and configure MySQL. You'll need the <uri\n"
+"link=\"http://www.gentoo.org/doc/en/files/genericmailsql.sql\">genericmailsql.sql</uri>\n"
+"dumpfile for this step.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:454
+#, no-wrap
+msgid "Installing and configuring MySQL"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:455
+#, no-wrap
+msgid ""
+"# <i>emerge mysql</i>\n"
+"\n"
+"# <i>/usr/bin/mysql_install_db</i>\n"
+"<comment>(After this command runs follow the onscreen directions\n"
+"for adding a root password with mysql, otherwise your db will\n"
+"be wide open.)</comment>\n"
+"\n"
+"# <i>/etc/init.d/mysql start</i>\n"
+"# <i>mysqladmin -u root -p create mailsql</i>\n"
+"# <i>mysql -u root -p mailsql &lt; genericmailsql.sql</i>\n"
+"# <i>mysql -u root -p mysql</i>\n"
+"mysql> <i>GRANT SELECT,INSERT,UPDATE,DELETE</i>\n"
+"  ->     <i>ON mailsql.*</i>\n"
+"  ->     <i>TO mailsql@localhost</i>\n"
+"  ->     <i>IDENTIFIED BY '$password';</i>\n"
+"Query OK, 0 rows affected (0.02 sec)\n"
+"\n"
+"mysql> <i>FLUSH PRIVILEGES;</i>\n"
+"Query OK, 0 rows affected (0.00 sec)\n"
+"\n"
+"mysql> <i>quit</i>\n"
+"<comment>(Verify that the new mailsql user can connect to the mysql server.)</comment>\n"
+"\n"
+"# <i>mysql -u mailsql -p mailsql</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:482
+#, no-wrap
+msgid ""
+"Your new database has default values and tables set up for two domains. The\n"
+"following tables are included:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/virt-mail-howto.xml:487
+#, no-wrap
+msgid "alias - local email alias and mailman alias information."
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/virt-mail-howto.xml:488
+#, no-wrap
+msgid "relocated - relocated user email address maps"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/virt-mail-howto.xml:490
+#, no-wrap
+msgid ""
+"    transport - default mail transport information for all domains you are\n"
+"    hosting\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/virt-mail-howto.xml:493
+#, no-wrap
+msgid "users - all user account information"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/virt-mail-howto.xml:494
+#, no-wrap
+msgid "virtual - virtual domain email alias maps"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:497
+#, no-wrap
+msgid "alias table sample"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:498
+#, no-wrap
+msgid ""
+"id   alias      destination\n"
+"1    root       foo@bar.com\n"
+"2    postmaster foo@bar.com\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:503
+#, no-wrap
+msgid "user table sample"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:504
+#, no-wrap
+msgid ""
+"<comment>(Line wrapped for clarity.)</comment>\n"
+"id email            clear     name     uid     gid     homedir     \\\n"
+"  maildir                                quota  postfix\n"
+"10 foo@virt-domain.com $password realname virtid  virtid  /home/vmail \\\n"
+"  /home/vmail/virt-domain.com/foo/.maildir/        y\n"
+"13 foo@bar.com      $password realname localid localid /home/foo   \\\n"
+"  /home/foo/.maildir/                           y\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:514
+#, no-wrap
+msgid ""
+"The values of the <c>virtid</c> uid and gid should be those of the <c>vmail</c>\n"
+"user and group.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:518
+#, no-wrap
+msgid "transport table sample"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:519
+#, no-wrap
+msgid ""
+"id   domain          destination\n"
+"1    bar.com         local:\n"
+"2    virt-domain.com virtual:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:524
+#, no-wrap
+msgid "virtual table sample"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:525
+#, no-wrap
+msgid ""
+"id   email                destination\n"
+"3    root@virt-domain.com other@email.address\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/virt-mail-howto.xml:534
+#, no-wrap
+msgid "Apache and phpMyAdmin"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:539
+#, no-wrap
+msgid ""
+"Next we'll set up apache and add an interface to interact with the database\n"
+"more easily.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:543
+#, no-wrap
+msgid "Setting up apache and phpmyadmin"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:544
+#, no-wrap
+msgid "# <i>emerge apache phpmyadmin</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:548
+#, no-wrap
+msgid ""
+"There are plenty of guides out there about how to set up apache with php,\n"
+"including guides provided by the <uri link=\"/proj/en/php/\">Gentoo PHP\n"
+"Project</uri>. There are also numerous posts on\n"
+"<uri>http://forums.gentoo.org</uri> detailing how to solve problems with the\n"
+"installation. So, that said, we're not going to cover it here.  Set up the\n"
+"apache and php installs, then continue with this howto. Now, a word for the\n"
+"wise: .htaccess the directory that you put phpmyadmin in. If you do not do this,\n"
+"search engine spiders will come along and index the page which in turn will mean\n"
+"that anyone will be able to find your phpmyadmin page via google and in turn be\n"
+"able to come change your database however they want which is <e>BAD!</e>  There\n"
+"are many howtos on this including:\n"
+"<uri>http://www.csoft.net/docs/micro/htaccess.html.en</uri>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:563
+#, no-wrap
+msgid ""
+"Now we're going to install the Apache certificates we made previously. The\n"
+"Apache-SSL directives that you need to use the resulting cert are:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/virt-mail-howto.xml:568
+#, no-wrap
+msgid "SSLCertificateFile /path/to/certs/new.cert.cert"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/virt-mail-howto.xml:569
+#, no-wrap
+msgid "SSLCertificateKeyFile /path/to/certs/new.cert.key"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:572
+#, no-wrap
+msgid "Install Apache SSL certificates"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:573
+#, no-wrap
+msgid ""
+"# <i>cp /etc/ssl/misc/new.cert.cert /etc/apache2/ssl/</i>\n"
+"# <i>cp /etc/ssl/misc/new.cert.key /etc/apache2/ssl/</i>\n"
+"# <i>cd /etc/apache2/vhosts.d</i>\n"
+"<comment>(Check if you have an ssl-vhost template already.\n"
+" Copy that one instead of the default_vhost if that is the case)</comment>\n"
+"# <i>cp 00_default_vhost.conf ssl-vhost.conf</i>\n"
+"# <i>nano -w ssl-vhost.conf</i>\n"
+"\n"
+"<comment>(Change the following parameters)</comment>\n"
+"NameVirtualHost host.domain.name:443\n"
+"\n"
+"&lt;VirtualHost host.domain.name:443&gt;\n"
+"  ServerName host.domain.name\n"
+"  ServerAdmin your@email.address\n"
+"\n"
+"  DocumentRoot \"/var/www/localhost/htdocs/phpmyadmin\";\n"
+"  &lt;Directory \"/var/www/localhost/htdocs/phpmyadmin\"&gt;\n"
+"    ...\n"
+"  &lt;/Directory&gt;\n"
+"\n"
+"  SSLCertificateFile /etc/apache2/ssl/new.cert.cert\n"
+"  SSLCertificateKeyFile /etc/apache2/ssl/new.cert.key\n"
+"  SSLEngine on\n"
+"  ...\n"
+"&lt;/VirtualHost&gt;\n"
+"\n"
+"# <i>nano -w /etc/conf.d/apache2</i>\n"
+"<comment>(Add -D SSL -D PHP5 to the APACHE2_OPTS)</comment>\n"
+"\n"
+"# <i>/etc/init.d/apache2 restart</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:606
+#, no-wrap
+msgid "Next, configure phpMyAdmin.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:609
+#, no-wrap
+msgid "Configuring phpMyAdmin"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:610
+#, no-wrap
+msgid ""
+"# <i>cd /var/www/localhost/htdocs/phpmyadmin</i>\n"
+"# <i>cp config.sample.inc.php config.inc.php</i>\n"
+"# <i>nano -w config.inc.php</i>\n"
+"<comment>(Change the following parameters.)</comment>\n"
+"$cfg['blowfish_secret'] = 'someverysecretpassphraze';\n"
+"\n"
+"$cfg['Servers'][$i]['host'] = 'localhost';          // MySQL hostname\n"
+"$cfg['Servers'][$i]['controluser'] = 'mailsql';     // MySQL control user settings\n"
+"                                                    // (this user must have read-only\n"
+"$cfg['Servers'][$i]['controlpass'] = '$password';   // access to the \"mysql/user\"\n"
+"                                                    // and \"mysql/db\" tables)\n"
+"$cfg['Servers'][$i]['user'] = 'mailsql';            // MySQL user\n"
+"$cfg['Servers'][$i]['password'] = '$password';      // MySQL password\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:626
+#, no-wrap
+msgid ""
+"Now enter the phpmyadmin page and browse the tables. You'll want to add in your\n"
+"local aliases, edit your user table to add a test user, and change your\n"
+"transport table to add information about your domains. The default values\n"
+"supplied with the dumpfile should be a sufficient guide to what values need to\n"
+"go where. Make sure that if you put information in the database that it is\n"
+"accurate. For instance, make sure the local user's home dir exists and that the\n"
+"correct uid/gid values are in place. The maildirs should be created\n"
+"automatically by postfix when the user receives their first email. So, in\n"
+"general, it's a good idea to send a \"Welcome\" mail to a new user after you\n"
+"setup their account to make sure the .maildir gets created.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/virt-mail-howto.xml:643
+#, no-wrap
+msgid "Configuring MySQL Authentication and vhosts"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:648
+#, no-wrap
+msgid ""
+"Next we'll reconfigure our authentication to use the mailsql database in\n"
+"courier-imap and postfix.  In all of the following examples, replace\n"
+"<c>$password</c> with the password you set for the mailsql mysql user.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:653
+#, no-wrap
+msgid "Configuring authentication"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:654
+#, no-wrap
+msgid ""
+"# <i>nano -w /etc/courier/authlib/authdaemonrc</i>\n"
+"authmodulelist=\"authmysql authpam\"\n"
+"\n"
+"# <i>nano -w /etc/courier/authlib/authmysqlrc</i>\n"
+"MYSQL_SERVER            localhost\n"
+"MYSQL_USERNAME       mailsql\n"
+"MYSQL_PASSWORD      $password\n"
+"MYSQL_DATABASE          mailsql\n"
+"MYSQL_USER_TABLE        users\n"
+"<comment>(Make sure the following line is commented out since we're storing plaintext.)</comment>\n"
+"#MYSQL_CRYPT_PWFIELD    crypt\n"
+"MYSQL_CLEAR_PWFIELD     clear\n"
+"MYSQL_UID_FIELD         uid\n"
+"MYSQL_GID_FIELD         gid\n"
+"MYSQL_LOGIN_FIELD       email\n"
+"MYSQL_HOME_FIELD        homedir\n"
+"MYSQL_NAME_FIELD        name\n"
+"MYSQL_MAILDIR_FIELD     maildir\n"
+"\n"
+"# <i>/etc/init.d/courier-authlib restart</i>\n"
+"# <i>/etc/init.d/saslauthd restart</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:678
+#, no-wrap
+msgid ""
+"We're almost there, I promise! Next, set up the rest of the necessary configs\n"
+"for postfix to interract with the database for all its other transport needs.\n"
+"Remember to replace each value with the name of your own user, user id,\n"
+"password, alias, email address, and so on.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:684
+#, no-wrap
+msgid "/etc/postfix/mysql-aliases.cf"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:685
+#, no-wrap
+msgid ""
+"# <i>nano -w /etc/postfix/mysql-aliases.cf</i>\n"
+"# mysql-aliases.cf\n"
+"\n"
+"user         = mailsql\n"
+"password     = $password\n"
+"dbname       = mailsql\n"
+"table        = alias\n"
+"select_field = destination\n"
+"where_field  = alias\n"
+"hosts        = unix:/var/run/mysqld/mysqld.sock\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:697
+#, no-wrap
+msgid "/etc/postfix/mysql-relocated.cf"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:698
+#, no-wrap
+msgid ""
+"# <i>nano -w /etc/postfix/mysql-relocated.cf</i>\n"
+"# mysql-relocated.cf\n"
+"\n"
+"user         = mailsql\n"
+"password     = $password\n"
+"dbname       = mailsql\n"
+"table        = relocated\n"
+"select_field = destination\n"
+"where_field  = email\n"
+"hosts        = unix:/var/run/mysqld/mysqld.sock\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:710
+#, no-wrap
+msgid "/etc/postfix/mysql-transport.cf (optional)"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:711
+#, no-wrap
+msgid ""
+"# <i>nano -w /etc/postfix/mysql-transport.cf</i>\n"
+"# mysql-transport.cf\n"
+"\n"
+"user         = mailsql\n"
+"password     = $password\n"
+"dbname       = mailsql\n"
+"table        = transport\n"
+"select_field = destination\n"
+"where_field  = domain\n"
+"hosts        = unix:/var/run/mysqld/mysqld.sock\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:723
+#, no-wrap
+msgid "/etc/postfix/mysql-virtual-gid.cf (optional)"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:724
+#, no-wrap
+msgid ""
+"# <i>nano -w /etc/postfix/mysql-virtual-gid.cf</i>\n"
+"# mysql-virtual-gid.cf\n"
+"\n"
+"user            = mailsql\n"
+"password        = $password\n"
+"dbname          = mailsql\n"
+"table           = users\n"
+"select_field    = gid\n"
+"where_field     = email\n"
+"additional_conditions = and postfix = 'y'\n"
+"hosts           = unix:/var/run/mysqld/mysqld.sock\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:737
+#, no-wrap
+msgid "/etc/postfix/mysql-virtual-maps.cf"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:738
+#, no-wrap
+msgid ""
+"# <i>nano -w /etc/postfix/mysql-virtual-maps.cf</i>\n"
+"# mysql-virtual-maps.cf\n"
+"\n"
+"user            = mailsql\n"
+"password        = $password\n"
+"dbname          = mailsql\n"
+"table           = users\n"
+"select_field    = maildir\n"
+"where_field     = email\n"
+"additional_conditions = and postfix = 'y'\n"
+"hosts           = unix:/var/run/mysqld/mysqld.sock\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:751
+#, no-wrap
+msgid "/etc/postfix/mysql-virtual-uid.cf (optional)"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:752
+#, no-wrap
+msgid ""
+"# <i>nano -w /etc/postfix/mysql-virtual-uid.cf</i>\n"
+"# mysql-virtual-uid.cf\n"
+"\n"
+"user            = mailsql\n"
+"password        = $password\n"
+"dbname          = mailsql\n"
+"table           = users\n"
+"select_field    = uid\n"
+"where_field     = email\n"
+"additional_conditions = and postfix = 'y'\n"
+"hosts           = unix:/var/run/mysqld/mysqld.sock\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:765
+#, no-wrap
+msgid "/etc/postfix/mysql-virtual.cf"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:766
+#, no-wrap
+msgid ""
+"# <i>nano -w /etc/postfix/mysql-virtual.cf</i>\n"
+"# mysql-virtual.cf\n"
+"\n"
+"user         = mailsql\n"
+"password     = $password\n"
+"dbname       = mailsql\n"
+"table        = virtual\n"
+"select_field = destination\n"
+"where_field  = email\n"
+"hosts        = unix:/var/run/mysqld/mysqld.sock\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:779
+#, no-wrap
+msgid "Lastly, edit <path>/etc/postfix/main.cf</path> one more time.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:783
+#, no-wrap
+msgid ""
+"# <i>nano -w /etc/postfix/main.cf</i>\n"
+"<comment>(Ensure that there are no other alias_maps definitions)</comment>\n"
+"alias_maps = mysql:/etc/postfix/mysql-aliases.cf\n"
+"relocated_maps = mysql:/etc/postfix/mysql-relocated.cf\n"
+"\n"
+"local_transport = local\n"
+"local_recipient_maps = $alias_maps $virtual_mailbox_maps unix:passwd.byname\n"
+"\n"
+"virtual_transport = virtual\n"
+"<comment>(The domains listed by the mydestination should not be listed in\n"
+" the virtual_mailbox_domains parameter)</comment>\n"
+"virtual_mailbox_domains = virt-domain.com, $other-virtual-domain.com\n"
+"\n"
+"virtual_minimum_uid = 1000\n"
+"<comment>(Substitute $vmail-gid with the GID of the vmail group)</comment>\n"
+"virtual_gid_maps = static:$vmail-gid\n"
+"virtual_mailbox_maps = mysql:/etc/postfix/mysql-virtual-maps.cf\n"
+"virtual_alias_maps = mysql:/etc/postfix/mysql-virtual.cf\n"
+"<comment>(Substitute $vmail-uid with the UID of the vmail user)</comment>\n"
+"virtual_uid_maps = static:$vmail-uid\n"
+"virtual_mailbox_base = /\n"
+"#virtual_mailbox_limit =\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:808
+#, no-wrap
+msgid ""
+"For security reasons you should change the permissions of the various\n"
+"<path>/etc/mail/mysql-*.cf</path>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:812
+#, no-wrap
+msgid "Changing file permission"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:813
+#, no-wrap
+msgid ""
+"# <i>chmod 640 /etc/postfix/mysql-*.cf</i>\n"
+"# <i>chgrp postfix /etc/postfix/mysql-*.cf</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:818
+#, no-wrap
+msgid ""
+"As of Postfix 2.0.x, there were a number of significant changes over the 1.1.x\n"
+"release. Notably the transport, virtual-gid, and virtual-uid tables are no\n"
+"longer necessary. The tables are still included if you wish to use them.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/virt-mail-howto.xml:824
+#, no-wrap
+msgid ""
+"It is recommended that you read VIRTUAL_README included with the postfix docs\n"
+"for more information.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:828
+#, no-wrap
+msgid "Make postfix reload its tables"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:829
+#, no-wrap
+msgid "# <i>postfix reload</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:833
+#, no-wrap
+msgid ""
+"Now, if all went well, you should have a functioning mailhost. Users should be\n"
+"able to authenticate against the sql database, using their full email address,\n"
+"for pop3, imap, and smtp. I would highly suggest that you verify that\n"
+"everything is working at this point. If you run into problems (with as many\n"
+"things as this setup has going on, it's likely that you will) check the\n"
+"troubleshooting section of this howto.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/virt-mail-howto.xml:846
+#, no-wrap
+msgid "Squirrelmail"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:850
+#, no-wrap
+msgid "Install squirrelmail"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:851
+#, no-wrap
+msgid ""
+"# <i>emerge squirrelmail</i>\n"
+"<comment>(Install squirrelmail to localhost so that it's accessed by http://localhost/mail)\n"
+"(Substitute 1.4.3a-r2 with the version you use)</comment>\n"
+"\n"
+"# <i>webapp-config -I -h localhost -d /mail squirrelmail 1.4.3a-r2</i>\n"
+"# <i>cd /var/www/localhost/htdocs/mail/config</i>\n"
+"# <i>perl ./conf.pl</i>\n"
+"<comment>(Change your Organization, Server, and Folder settings for squirrelmail.\n"
+"Now you should be able to login to squirrelmail, again - with your full email address,\n"
+"and use your new webmail setup.)</comment>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/virt-mail-howto.xml:868
+#, no-wrap
+msgid "Mailman"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:873
+#, no-wrap
+msgid ""
+"Last step: mailman. The new version of mailman has very nice virtual domain\n"
+"support, which is why I use it, not to mention it's really a great package. To\n"
+"get this package installed and working correctly for virtual domains is going\n"
+"to require a bit of hacking. I really recommend reading all of the mailman\n"
+"documentation, including README.POSTFIX.gz, to understand what's being done\n"
+"here.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:881
+#, no-wrap
+msgid "Install mailman"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:882
+#, no-wrap
+msgid "# <i>emerge mailman</i>\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:885
+#, no-wrap
+msgid "Setting defaults: Mailman/Defaults.py"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:886
+#, no-wrap
+msgid ""
+"# <i> nano -w /usr/local/mailman/Mailman/Defaults.py</i>\n"
+"<comment>(Change the values below to reflect your primary domain, virtuals will be set next.)</comment>\n"
+"DEFAULT_EMAIL_HOST = 'domain.com'\n"
+"DEFAULT_URL_HOST = 'www.domain.com'\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:892
+#, no-wrap
+msgid "mailman config: mm_cfg.py"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:893
+#, no-wrap
+msgid ""
+"# <i>nano -w /usr/local/mailman/Mailman/mm_cfg.py</i>\n"
+"MTA = \"Postfix\"\n"
+"POSTFIX_STYLE_VIRTUAL_DOMAINS = ['virt-domain.com', 'virt.domain2.com']\n"
+"add_virtualhost('www.virt.domain.com', 'virt.domain.com')\n"
+"add_virtualhost('www.virt.domain2.com', 'virt.domain2.com')\n"
+"<comment>(This is required for your virtual domains for mailman to function.)</comment>\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:901
+#, no-wrap
+msgid "And last but not least"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:902
+#, no-wrap
+msgid ""
+"<comment>(Once that's finished, add your first list.)</comment>\n"
+"\n"
+"# <i>su mailman</i>\n"
+"# <i>cd ~</i>\n"
+"# <i>./bin/newlist --urlhost='www.virt-domain.com' --emailhost='virt-domain.com' test</i>\n"
+"Enter the email of the person running the list: <i>your@email.address</i>\n"
+"Initial test password:\n"
+"Hit enter to continue with test owner notification...\n"
+"<comment>(Virtual domain lists may also be specified with\n"
+"list@domain.com style list names.)</comment>\n"
+"# <i>./bin/genaliases</i>\n"
+"<comment>(Now that your aliases have been generated,\n"
+"verify that they were added successfully.)</comment>\n"
+"\n"
+"# <i>nano -w data/aliases</i>\n"
+"# STANZA START: test\n"
+"# CREATED:\n"
+"test:             \"|/usr/local/mailman/mail/mailman post test\"\n"
+"test-admin:       \"|/usr/local/mailman/mail/mailman admin test\"\n"
+"test-bounces:     \"|/usr/local/mailman/mail/mailman bounces test\"\n"
+"test-confirm:     \"|/usr/local/mailman/mail/mailman confirm test\"\n"
+"test-join:        \"|/usr/local/mailman/mail/mailman join test\"\n"
+"test-leave:       \"|/usr/local/mailman/mail/mailman leave test\"\n"
+"test-owner:       \"|/usr/local/mailman/mail/mailman owner test\"\n"
+"test-request:     \"|/usr/local/mailman/mail/mailman request test\"\n"
+"test-subscribe:   \"|/usr/local/mailman/mail/mailman subscribe test\"\n"
+"test-unsubscribe: \"|/usr/local/mailman/mail/mailman unsubscribe test\"\n"
+"# STANZA END: test\n"
+"\n"
+"<comment>(Create the required mailman list)</comment>\n"
+"# <i>./bin/newlist mailman</i>\n"
+"# <i>./bin/genaliases</i>\n"
+"\n"
+"<comment>(Return to the root user)</comment>\n"
+"# <i>exit</i>\n"
+"\n"
+"# <i>/etc/init.d/mailman start</i>\n"
+"# <i>rc-update add mailman default</i>\n"
+"<comment>(To start mailman at once and on every reboot.)</comment>\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:943
+#, no-wrap
+msgid "Adding mailman alias support to postfix"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:944
+#, no-wrap
+msgid ""
+"# <i>nano -w /etc/postfix/main.cf</i>\n"
+"owner_request_special = no\n"
+"recipient_delimiter = +\n"
+"<comment>(Read README.POSTFIX.gz for details on this.)</comment>\n"
+"\n"
+"alias_maps     =\n"
+"  hash:/usr/local/mailman/data/aliases,\n"
+"  mysql:/etc/postfix/mysql-aliases.cf\n"
+"\n"
+"virtual_alias_maps =\n"
+"  hash:/usr/local/mailman/data/virtual-mailman,\n"
+"  mysql:/etc/postfix/mysql-virtual.cf\n"
+"<comment>(This adds mailman alias file support to postfix\n"
+"You may of course use the mysql tables for this,\n"
+"but I hate doing that by hand. Also, if you are not\n"
+"using virtual domains, adding the virtual alias maps\n"
+"to postfix may cause problems, be warned.)</comment>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:964
+#, no-wrap
+msgid ""
+"You should now be able to setup mailing lists for any domain on your box.  Last\n"
+"note on this, make sure you run all mailman commands as the user mailman (<c>su\n"
+"mailman</c>) or else the permissions will be wrong and you'll have to fix them.\n"
+"Read the mailman doc's for more information on setting up and managing mailman\n"
+"lists.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/virt-mail-howto.xml:976
+#, no-wrap
+msgid "Content Filtering and Anti-Virus"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:981
+#, no-wrap
+msgid ""
+"For content filtering and Anti-Virus, please consult our <uri\n"
+"link=\"/doc/en/mailfilter-guide.xml\">mail filtering gateway guide</uri>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/virt-mail-howto.xml:990
+#, no-wrap
+msgid "Wrap Up"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:995
+#, no-wrap
+msgid ""
+"Ok, you're all set, edit <path>/etc/postfix/master.cf</path> and turn off\n"
+"verbose mode for production use. You'll probably also want to add the services\n"
+"to your startup routine to make sure everything comes back up on a reboot. Make\n"
+"sure to add all the services you're using - apache, mysql, saslauthd, postfix,\n"
+"courier-imapd, courier-imapd-ssl, courier-pop3d, and courier-pop3d-ssl are all\n"
+"up to your decision on what access you want to provide. I generally have all\n"
+"the services enabled.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1004
+#, no-wrap
+msgid "Wrap up"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1005
+#, no-wrap
+msgid ""
+"# <i>postfix reload</i>\n"
+"# <i>rc-update add $service default</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:1010
+#, no-wrap
+msgid "<e>Have fun!</e>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/virt-mail-howto.xml:1018
+#, no-wrap
+msgid "Troubleshooting"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:1024
+#, no-wrap
+msgid ""
+"Troubleshooting: This is a short troubleshooting guide for the set up we've\n"
+"detailed how to install here. It is not exhaustive, but meant as a place to get\n"
+"you started in figuring out problems. With a complicated setup such as this,\n"
+"it's imperative that you narrow down the problem to the particular component\n"
+"that is malfunctioning. In general I do that by following a few steps. Start\n"
+"from the base of the system and work your way up, ruling out components that\n"
+"work along the way until you discover which component is having the problem.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/virt-mail-howto.xml:1036
+#, no-wrap
+msgid "Step 1: Check your config files"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:1040
+#, no-wrap
+msgid ""
+"Typos are killers, especially when dealing with authentication systems. Scan\n"
+"your config's and mailsql database for typo's. You can debug all you want, but\n"
+"if you're not passing the right information back and forth to your mail system,\n"
+"it's not going to work. If you make a change to a config file for a service,\n"
+"make sure you restart that service so that the config change gets picked up.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1047
+#, no-wrap
+msgid "How to restart a service"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1048
+#, no-wrap
+msgid "# <i>/etc/init.d/service restart</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/virt-mail-howto.xml:1054
+#, no-wrap
+msgid "Step 2: Are all the necessary services actually running?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:1058
+#, no-wrap
+msgid ""
+"If it's not running, start it up. It's awful hard to debug a service that isn't\n"
+"running. Sometimes a service will act like it's started but still not function.\n"
+"Sometimes, when a bad config is used, or a bad transmission comes into a mail\n"
+"component, the service will hang and keep the port from being used by another\n"
+"process. Sometimes you can detect this with netstat. Or, if you've been at it\n"
+"awhile, just take a break and reboot your box in the meantime. That will clear\n"
+"out any hung services. Then you can come back fresh and try it again.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1067
+#, no-wrap
+msgid "Checking the status of a service"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1068
+#, no-wrap
+msgid ""
+"# <i>/etc/init.d/$service status</i>\n"
+"# <i>netstat -a | grep $service (or $port)</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/virt-mail-howto.xml:1075
+#, no-wrap
+msgid "Step 3: Are all the service using the current config's?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:1079
+#, no-wrap
+msgid ""
+"If you've recently made a change to a config file, restart that service to make\n"
+"sure it's using the current version. Some of the components will dump their\n"
+"current config's to you, like postfix.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1084
+#, no-wrap
+msgid "Some services can dump their current config"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1085
+#, no-wrap
+msgid ""
+"# <i>apache2ctl fullstatus</i> (needs lynx installed)\n"
+"# <i>apache2ctl configtest</i> (checks config sanity)\n"
+"# <i>postconf -n</i> (will tell you exactly what param's postfix is using)\n"
+"# <i>/etc/init.d/$service restart</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/virt-mail-howto.xml:1094
+#, no-wrap
+msgid "Step 4: Check the logs"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:1098
+#, no-wrap
+msgid ""
+"Repeat after me, logs are my friend. My next troubleshooting stop is always the\n"
+"logs. Sometimes it's helpful to try a failed operation again then check the\n"
+"logs so that the error message is right at the bottom (or top depending on your\n"
+"logger) instead of buried in there somewhere. See if there is any information\n"
+"in your log that can help you diagnose the problem, or at the very least,\n"
+"figure out which component is having the problem.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1106
+#, no-wrap
+msgid "Checking the logs"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1107
+#, no-wrap
+msgid ""
+"# <i>kill -USR1 `ps -C metalog -o pid=`</i>(to turn off metalog buffering)\n"
+"# <i>nano -w /var/log/mail/current</i>\n"
+"# <i>cat /var/log/mysql/mysql.log</i>\n"
+"# <i>tail /var/log/apache2/error_log</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:1114
+#, no-wrap
+msgid ""
+"You may also find the debug_peer parameters in main.cf helpful. Setting these\n"
+"will increase log output over just verbose mode.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1118
+#, no-wrap
+msgid "adding debug_peer support"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1119
+#, no-wrap
+msgid ""
+"# <i>nano -w /etc/postfix/main.cf</i>\n"
+"debug_peer_level = 5\n"
+"debug_peer_list = $host.domain.name\n"
+"<comment>(Uncomment one of the suggested debugger\n"
+"commands as well.)</comment>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/virt-mail-howto.xml:1129
+#, no-wrap
+msgid "Step 5: Talk to the service itself"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:1133
+#, no-wrap
+msgid ""
+"SMTP, IMAP, and POP3 all respond to telnet sessions. As we've seen earlier when\n"
+"we verified postfix's config. Sometimes it's helpful to open a telnet session\n"
+"to the service itself and see what's happening.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1138
+#, no-wrap
+msgid "Connect to a service with telnet"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1139
+#, no-wrap
+msgid ""
+"# <i>telnet localhost $port</i>\n"
+"<comment>(SMTP is 25, IMAP is 143, POP3 is 110. You should receive at least an OK string,\n"
+"letting you know that the service is running and ready to respond to requests.)</comment>\n"
+"\n"
+"Trying 127.0.0.1...\n"
+"Connected to localhost.\n"
+"Escape character is '^]'.\n"
+"* OK Courier-IMAP ready. Copyright 1998-2002 Double Precision, Inc.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/virt-mail-howto.xml:1152
+#, no-wrap
+msgid "Step 6: Sometimes only the big guns will give you the information you need: strace"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:1156
+#, no-wrap
+msgid ""
+"You should have this installed anyway. This is an invaluable tool for debugging\n"
+"software. You can start commands from the command line with strace and watch\n"
+"all the system calls as they happen. It often dumps a huge amount of\n"
+"information, so you'll either need to watch it realtime as you retry a failed\n"
+"transaction with the mail system, or dump the output to a file for review.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1163
+#, no-wrap
+msgid "Using strace"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/virt-mail-howto.xml:1164
+#, no-wrap
+msgid ""
+"# <i>emerge strace</i>\n"
+"# <i>strace $command</i>\n"
+"# <i>strace -p `ps -C $service -o pid=`</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/virt-mail-howto.xml:1172
+#, no-wrap
+msgid "Step 7: Research"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/virt-mail-howto.xml:1176
+#, no-wrap
+msgid ""
+"Once you have the information, if you can diagnose and fix the problem, great!\n"
+"If not, you'll probably need to go digging on the net for information that will\n"
+"help you fix it. Here's a list of sites you can check to see if your error has\n"
+"already been resolved. There's also a really good howto on setting up smtp-auth\n"
+"which contains some great debugging ideas.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/virt-mail-howto.xml:1184
+#, no-wrap
+msgid "<uri>http://forums.gentoo.org/</uri> - Great forums for gentoo users"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/virt-mail-howto.xml:1186
+#, no-wrap
+msgid ""
+"    <uri>http://bugs.gentoo.org/</uri> - Bugs database for gentoo - great place\n"
+"    to look for specific errors\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/virt-mail-howto.xml:1189
+#, no-wrap
+msgid "<uri>http://postfix.state-of-mind.de/</uri> - smtp-auth howto"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/virt-mail-howto.xml:1191
+#, no-wrap
+msgid ""
+"    <uri>http://marc.theaimsgroup.com/?l=postfix-users</uri> - Postfix mailing\n"
+"    lists - searchable\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/virt-mail-howto.xml:1195
+#, no-wrap
+msgid ""
+"    <uri>http://sourceforge.net/mailarchive/forum.php?forum_id=6705</uri> -\n"
+"    Courier-imap mailing list archives - not searchable\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/virt-mail-howto.xml:1199
+#, no-wrap
+msgid ""
+"    <uri>http://www.google.com/</uri> - If all else fails, there's always\n"
+"    google, which has never failed me\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/virt-mail-howto.xml:1203
+#, no-wrap
+msgid ""
+"    I also spend a lot of time on <uri\n"
+"    link=\"irc://irc.gentoo.org/gentoo\">#gentoo</uri>. IRC is a great place to go\n"
+"    for help.\n"
+"  "
+msgstr ""

@@ -1,0 +1,509 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/lvm2.xml,v 1.27 2011/12/26 15:22:40 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoo LVM2 installation</title>
+
+<author title="Author">
+  <mail link="avi@CFFtechnologies.com">Avi Schwartz</mail>
+</author>
+<author title="Contributor">
+  <mail link="rajiv@gentoo.org">Rajiv Manglani</mail>
+</author>
+<author title="Editor">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+
+<abstract>
+This guide describes how to setup your Gentoo machine using the Logical Volume
+Manager version 2 (LVM2).
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>4</version>
+<date>2011-12-26</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<body>
+
+<p>
+This guide is based on an example with two SATA hard disks.  It means that you
+will more than likely need to change the drive, partition names and partition
+sizes to match your own setup and needs.
+</p>
+
+<warn>
+This document is not intended to be an LVM2 tutorial.  It serves as a
+supplement to the Gentoo installation procedure as described in the <uri
+link="/doc/en/handbook/handbook-x86.xml?part=1">Handbook, Part 1</uri>. Make
+sure you <e>read</e> the Gentoo Installation Manual <e>before</e> you start
+your installation process.
+</warn>
+
+<note>
+For a complete LVM HOWTO point your browser to
+<uri>http://tldp.org/HOWTO/LVM-HOWTO</uri>
+</note>
+
+</body>
+</section>
+<section>
+<title>Initial requirements</title>
+<body>
+
+<p>
+If you do a fresh install of Gentoo, you will need to use a bootable CD with
+LVM2 support such as a Gentoo Installation CD. You can find the Installation CDs
+for an x86 architecture on our <uri link="/main/en/mirrors.xml">mirrors</uri>
+under <path>/releases/x86/current/installcd</path>. Other architectures might be
+supported as well.
+</p>
+
+<p>
+If you install LVM2 on a currently running system with some spare hard disk
+space, you will need to enable the LVM2 module (<path>dm-mod</path>) in the
+kernel. This module is available in <path>gentoo-sources</path>. Compiling
+your kernel and getting LVM2 to work is covered later in this guide.
+</p>
+
+<p>
+Not all 2.4 kernels provided by Gentoo support LVM2!
+</p>
+
+</body>
+</section>
+<section>
+<title>Partitions</title>
+<body>
+
+<p>
+Our example system has two SATA hard disks and will be partitioned as follows:
+</p>
+
+<ul>
+  <li>/dev/sda1  --  /boot</li>
+  <li>/dev/sda2  --  (swap)</li>
+  <li>/dev/sda3  --  /</li>
+  <li>/dev/sda4  --  Will be used by LVM2</li>
+  <li>/dev/sdb1  --  Will be used by LVM2</li>
+</ul>
+
+<impo>
+Pay attention to the partition names as it is easy to confuse the a's and b's,
+and the partition numbers. One false move could wipe out the wrong partition.
+You have been warned!
+</impo>
+
+<p>
+OK, time to start...
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Installation</title>
+<section>
+<body>
+
+<p>
+Follow the handbook, but with the following amendments to chapter <e>4.
+Preparing the Disks</e>:
+</p>
+
+<p>
+Use <c>fdisk</c> as described in the handbook, but use the partition scheme
+mentioned above as an example. It is only <e>an example</e>, adapt it to your
+own needs.
+</p>
+
+<p>
+Create a small physical <path>/boot</path> partition (sda1). In this example,
+<path>/boot</path> will be not managed by LVM2. This partition will contain
+your bootloader and your kernel(s).  A 64MB partition should be well enough for
+quite a few kernel generations.
+</p>
+
+<p>
+Create a swap partition (sda2).
+</p>
+
+<p>
+Create a / (root) partition (sda3). If you are interested in trying to put your
+root partition under LVM management (which we do not recommend), see the
+resources section at the end of this guide for a link to a mini-howto on how to
+do this. The size of the root partition need not be large if you will keep
+<path>/opt /usr /home /var</path> and <path>/tmp</path> in an LVM2 Volume Group
+(vg). In this case, 1GB should be sufficient.
+</p>
+
+<note>
+It is <b>not</b> recommended to put the following directories in an
+LVM2 partition: <path>/etc</path>, <path>/lib</path>, <path>/mnt</path>,
+<path>/proc</path>, <path>/sbin</path>, <path>/dev</path>, and
+<path>/root</path>. This way, you would still be able to log into your system
+(crippled, but still somewhat usable, as root) if something goes terribly wrong.
+</note>
+
+<p>
+Assuming the <path>/boot</path>, swap and root partitions do not use the whole
+physical disk, create a fourth partition on this disk and set it to type 8e
+(Linux LVM).  If you have more physical drives you would like to use with LVM,
+create one partition on each and give them the same type (8e).
+</p>
+
+<note>
+Considering the huge size of current disks, you might consider splitting your
+hard disks into smaller partitions instead of creating a big partition that
+will be added to an LVM2 volume group in one block. LVM2 makes it easy to
+extend your volumes after all. This leaves you some unallocated partitions you
+might need to use outside of an LVM2 group. In short, don't use your disk space
+until you know you need it. As an example, one contributor had split his
+160&nbsp;Gb hard disk into 8 partitions of 20&nbsp;Gb each.
+</note>
+
+<p>
+Create the filesystems on <path>/dev/sda1</path> and <path>/dev/sda3</path>,
+and create and activate the swap on <path>/dev/sda2</path> as described in the
+handbook.
+</p>
+
+<p>
+Start the lvm service.
+</p>
+
+<pre caption="Starting the lvm service">
+# <i>rc-config start lvm</i>
+</pre>
+
+<p>
+It is recommended to add the lvm service to the boot runlevel. This way LVM2
+will be activated each time the system boots.
+</p>
+
+<pre caption="Adding lvm to the boot runlevel">
+# <i>rc-config add lvm boot</i>
+</pre>
+
+<p>
+Before scanning and activating LVM, you might want to edit
+<path>/etc/lvm/lvm.conf</path> to exclude some devices. By default, LVM2 will
+scan all devices, even your CDROM which can generate error messages. In the
+following example, the line that allows scanning of all devices is replaced by
+one that rejects every device but our two SATA disks.
+</p>
+
+<pre caption="Activating LVM">
+<comment>(Avoid scanning all devices but our disks)</comment>
+# <i>nano -w /etc/lvm/lvm.conf</i>
+<comment>(Look for the following line)</comment>
+    filter = [ "a/.*/" ]
+<comment>(Replace it with the following one to scan
+/dev/sda and /dev/sdb and reject anything else)</comment>
+    filter = [ "a|/dev/hd[ab]|", "r/.*/" ]
+<comment>(Save the file and quit nano)</comment>
+# <i>vgscan</i>
+  Reading all physical volumes.  This may take a while...
+  No volume groups found
+<comment>(Make any previously set up volume groups available)</comment>
+# <i>vgchange -a y</i>
+</pre>
+
+<p>
+Prepare the partitions.
+</p>
+
+<pre caption="Preparing the partitions">
+# <i>pvcreate /dev/sda4 /dev/sdb1</i>
+  No physical volume label read from /dev/sda4
+  Physical volume "/dev/sda4" successfully created
+  No physical volume label read from /dev/sdb1
+  Physical volume "/dev/sdb1" successfully created
+</pre>
+
+<p>
+Setup a volume group. A volume group is the result of combining several
+physical units into a single logical device.
+</p>
+
+<p>
+In our example, <path>/dev/sda1</path>, <path>/dev/sda2</path> and
+<path>/dev/sda3</path> are the <path>/boot</path>, swap and root partitions so
+we need to combine <path>/dev/sda4</path> and <path>/dev/sdb1</path>. It can be
+done with a single command, but, as an example, we will create our volume group
+and extend it.
+</p>
+
+<pre caption="Creating and extending a volume group">
+<comment>(Create a volume group named vg)</comment>
+# <i>vgcreate vg /dev/sda4</i>
+  /etc/lvm/backup: fsync failed: Invalid argument <comment>(Ignore this warning)</comment>
+  Volume group "vg" successfully created
+<comment>(Extending an existing volume group)</comment>
+# <i>vgextend vg /dev/sdb1</i>
+  /etc/lvm/backup: fsync failed: Invalid argument <comment>(Ignore this warning, again and later as well)</comment>
+  Volume group "vg" successfully extended
+</pre>
+
+<p>
+Create the logical volumes.  Logical volumes are the equivalent of partitions
+you would create using fdisk in a non LVM2 environment. In our example, we
+create the following partitions:
+</p>
+
+<table>
+<tr>
+  <th>Directory</th>
+  <th>Size</th>
+</tr>
+<tr>
+  <ti>/usr</ti>
+  <ti>10 GB</ti>
+</tr>
+<tr>
+  <ti>/home</ti>
+  <ti>5 GB</ti>
+</tr>
+<tr>
+  <ti>/opt</ti>
+  <ti>5 GB</ti>
+</tr>
+<tr>
+  <ti>/var</ti>
+  <ti>10 GB</ti>
+</tr>
+<tr>
+  <ti>/tmp</ti>
+  <ti>2 GB</ti>
+</tr>
+</table>
+
+<p>
+Since we are going to use LVM2, we should not worry too much about partition
+sizes because they can always be expanded as needed.
+</p>
+
+<note>
+As Terje Kvernes commented, it is easier to increase the size of a partition
+then to shrink it.  You might therefore want to start with smaller partitions
+and increase their size as needed.
+</note>
+
+<pre caption="Creating and extending logical volumes">
+# <i>lvcreate -L10G -nusr  vg</i>
+  Logical volume "usr" created <comment>(Further similar messages not displayed)</comment>
+# <i>lvcreate -L5G  -nhome vg</i>
+# <i>lvcreate -L5G  -nopt  vg</i>
+# <i>lvcreate -L10G -nvar  vg</i>
+# <i>lvcreate -L2G  -ntmp  vg</i>
+<comment>(As an example, let's extend a logical volume with 5 extra Gbytes)</comment>
+# <i>lvextend -L+5G /dev/vg/home</i>
+</pre>
+
+<p>
+Create filesystems on the logical volumes the same way you would on a regular
+partition.  We use ext3 on the logical volumes but any filesystem of your
+choice will work:
+</p>
+
+<pre caption="Creating the filesystems">
+# <i>mke2fs -j /dev/vg/usr</i>
+# <i>mke2fs -j /dev/vg/home</i>
+# <i>mke2fs -j /dev/vg/opt</i>
+# <i>mke2fs -j /dev/vg/var</i>
+# <i>mke2fs -j /dev/vg/tmp</i>
+</pre>
+
+<p>
+Mount your partitions as described in the handbook and mount your LVM2 logical
+volumes as if they were partitions. Replace the usual <path>/dev/hdxx</path>
+with <path>/dev/vg/logical_volumename</path>.
+</p>
+
+<pre caption="Mounting your logical volumes">
+<comment>(Make sure you have mounted your root partition as described in the handbook first)</comment>
+# <i>mkdir /mnt/gentoo/usr</i>
+# <i>mount /dev/vg/usr /mnt/gentoo/usr</i>
+# <i>mkdir /mnt/gentoo/home</i>
+# <i>mount /dev/vg/home /mnt/gentoo/home</i>
+# <i>mkdir /mnt/gentoo/opt</i>
+# <i>mount /dev/vg/opt /mnt/gentoo/opt</i>
+# <i>mkdir /mnt/gentoo/var</i>
+# <i>mount /dev/vg/var /mnt/gentoo/var</i>
+# <i>mkdir /mnt/gentoo/tmp</i>
+# <i>mount /dev/vg/tmp /mnt/gentoo/tmp</i>
+</pre>
+
+<note>
+The rest of the installation handbook is mostly unchanged so we shall not
+walk you through it again except to point out differences.
+</note>
+
+<p>
+When configuring your kernel, make sure to configure your kernel to
+support LVM2 (not all 2.4 kernels do). Select the LVM2 module as follows:
+</p>
+
+<pre caption="Selecting the LVM2 module in a 2.4.x kernel">
+Multi-device support (RAID and LVM)  ---&gt;
+  [*] Multiple devices driver support (RAID and LVM)
+  &lt; &gt;  RAID support
+<comment>(Note that LVM is not selected on purpose, this was for LVM1)</comment>
+  &lt; &gt;  Logical volume manager (LVM) support
+  &lt;M&gt;  Device-mapper support
+  &lt; &gt;   Mirror (RAID-1) support
+</pre>
+
+<pre caption="Selecting the LVM2 module in a 2.6.x kernel">
+Device Drivers  ---&gt;
+ Multiple devices driver support (RAID and LVM) ---&gt;
+   [*] Multiple devices driver support (RAID and LVM)
+   &lt; &gt;   RAID support
+   &lt;M&gt;   Device mapper support
+</pre>
+
+<p>
+The compiled module is called <path>dm-mod.ko</path>
+</p>
+
+<p>
+Now, install the lvm2 package.
+</p>
+
+<impo>
+Make sure your <path>/usr/src/linux</path> link points to the kernel sources you
+are using because the lvm2 ebuild depends on the device-mapper ebuild which
+will check the presence of a required source file under
+<path>/usr/src/linux/include/linux</path>.
+</impo>
+
+<pre caption="Emerging the LVM2 package">
+# <i>emerge lvm2</i>
+</pre>
+
+<p>
+Edit <path>/etc/lvm/lvm.conf</path> as described <uri
+link="#doc_chap2_pre2">earlier</uri>. The file you previously edited is part of
+your installation environment and will disappear after the next reboot.  This
+time, you edit the real one inside your new Gentoo install.
+</p>
+
+<p>
+When editing your <path>/etc/fstab</path> file, follow the handbook and add
+your LVM2 logical volumes as needed.  Again, here are a few lines needed for
+our example:
+</p>
+
+<pre caption="Extract of /etc/fstab">
+/dev/sda1     /boot   ext3    noauto,noatime 1 2
+/dev/sda2     none    swap    sw             0 0
+/dev/sda3     /       ext3    noatime        0 1
+# Logical volumes
+/dev/vg/usr   /usr    ext3    noatime        0 2
+/dev/vg/home  /home   ext3    noatime        0 2
+/dev/vg/opt   /opt    ext3    noatime        0 2
+/dev/vg/var   /var    ext3    noatime        0 2
+/dev/vg/tmp   /tmp    ext3    noatime        0 2
+</pre>
+
+<p>
+When you reach the end of the installation part of the handbook, don't forget
+to umount all your LVM2 logical volumes as well and for a good measure run the
+following command before you reboot:
+</p>
+
+<pre caption="Shutting down LVM2">
+# <i>vgchange -a n</i>
+</pre>
+
+<p>
+Restart your machine and all partitions should be visible and mounted.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Continuing After a Reboot</title>
+<section>
+<body>
+
+<p>
+If you have interrupted the Gentoo installation at one point and want to
+continue, you need to create the volume device nodes first:
+</p>
+
+<pre caption="Reactivating the volumes">
+# <i>vgscan --mknodes</i>
+</pre>
+
+<p>
+Installation CDs with less recent tools might need to reactivate the volumes
+instead:
+</p>
+
+<pre caption="Reactivating the volumes">
+<comment>(Deactivate all volumes first)</comment>
+# <i>vgchange -a n</i>
+<comment>(Export all the volumes)</comment>
+# <i>vgexport -a</i>
+<comment>(Import all volumes)</comment>
+# <i>vgimport -a</i>
+<comment>(Reactivate all volumes)</comment>
+# <i>vgchange -a y</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Resources</title>
+<section>
+<body>
+
+<ul>
+  <li>
+    The official <uri link="http://sources.redhat.com/lvm2">LVM2 home page</uri>
+  </li>
+  <li>
+    The <uri link="http://tldp.org/HOWTO/LVM-HOWTO">LVM Howto</uri>
+  </li>
+  <li>
+    Daniel Robbins's articles on LVM for IBM's DeveloperWorks: <uri
+    link="/doc/en/articles/lvm-p1.xml">Part 1</uri> and <uri
+    link="/doc/en/articles/lvm-p2.xml">Part 2</uri>
+  </li>
+  <li>
+    How to boot your root FS off of LVM1:
+    <uri>http://www.the-infinite.org/archive/docs/lvm/howto-boot-off-root-lv.txt</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Acknowledgements</title>
+<section>
+<body>
+
+<p>
+Thanks <mail link="bangert@gentoo.org">Thilo Bangert</mail> and <mail
+link="terjekv@math.uio.no">Terje Kvernes</mail> for their help and comments on
+this document.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

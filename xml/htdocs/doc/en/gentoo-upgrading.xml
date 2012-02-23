@@ -1,0 +1,685 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-upgrading.xml,v 1.42 2011/09/04 17:53:40 swift Exp $ -->
+
+<guide>
+<title>Gentoo Upgrading Guide</title>
+
+<author title="Author">
+  <mail link="greg_g@gentoo.org">Gregorio Guidi</mail>
+</author>
+<author title="Editor">
+  <mail link="wolf31o2@gentoo.org">Chris Gianelloni</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+
+<abstract>
+This document explains how new Gentoo releases affect existing installs.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2.11</version>
+<date>2008-07-06</date>
+
+<chapter>
+<title>Gentoo and Upgrades</title>
+<section>
+<title>Philosophy</title>
+<body>
+
+<p>
+Here in Gentoo land, the concept of upgrading is quite different compared to 
+the rest of the Linux world.  You probably already know that we never got in 
+touch with the "classic" way of upgrading software: waiting for a new release, 
+downloading it, burning, putting it in the cdrom drive and then following the 
+upgrade instructions.
+</p>
+
+<p>
+You know (being a Gentoo user after all) that this process is extremely 
+frustrating for power users that want to live on the bleeding edge.  Even power 
+users from other distributions probably share the same feelings, given the 
+popularity and spread of tools like apt or apt-rpm which make it 
+possible to have quick and frequent updates.  However, no distribution is more 
+suited than Gentoo to satisfy these kind of demanding users.  From the 
+beginning, Gentoo was designed around the concept of fast, incremental 
+updates.
+</p>
+
+<p>
+Ideally, you install once and never bother with releases: just follow the
+instructions in <uri
+link="/doc/en/handbook/handbook-x86.xml?part=2&amp;chap=1">A Portage
+Introduction</uri> in the <uri link="/doc/en/handbook/">Gentoo Handbook</uri>
+that explain how to keep your system up to date.  While that's the way things
+usually go, sometimes changes are made to the core system which require updates
+to be done manually.
+</p>
+
+</body>
+</section>
+<section>
+<title>Releases and Profiles</title>
+<body>
+
+<p>
+A recurring question about the Gentoo release process is: "Why roll out new
+releases frequently, if they are not intended to let users update software?"
+There are various reasons:
+</p>
+
+<ul>
+  <li>
+    A new release means new Installation CDs with bugfixes and more features
+  </li>
+  <li>
+    A new release provides an updated set of GRP packages, so that users that
+    choose "the fast way" to install (stage3 + precompiled packages) end up
+    with a system that is not outdated
+  </li>
+  <li>
+    Finally, a new release may, from time to time, implement some features that
+    are incompatible with previous releases
+  </li>
+</ul>
+
+<p>
+When a release includes new incompatible features, or provides a set of core
+packages and settings that deeply modify the behavior of the system, we say 
+that it provides a new <e>profile</e>.
+</p>
+
+<p>
+A <e>profile</e> is a set of configuration files, stored in a subdirectory of
+<path>/usr/portage/profiles</path>, that describe things such as the ebuilds
+that are considered <e>system</e> packages, the default USE flags, the default
+mapping for virtual packages, and the architecture on which the system is running.
+</p>
+
+<p>
+The profile in use is determined by the symbolic link
+<path>/etc/make.profile</path>, which points to a subdirectory of
+<path>/usr/portage/profiles</path> which holds the profile files.  For 
+instance, the default x86 2008.0 profile can be found 
+at <path>/usr/portage/profiles/default/linux/x86/2008.0</path>.
+The files in the parent directories are part of the profile as well (and 
+are therefore shared by different subprofiles). This is why we call these
+<e>cascaded profiles</e>.
+</p>
+
+<p>
+Profiles obsoleted by new ones are kept in <path>/usr/portage/profiles</path>
+along with the current ones, but they are marked as deprecated.  When that 
+happens a file named <path>deprecated</path> is put in the profile directory.
+The content of this file is the name of the profile that should be "upgraded 
+to"; Portage uses this information to automatically warn you when you should 
+update to a new profile.
+</p>
+
+<p>
+There are various reasons that a new profile may be created: the release of 
+new versions of core packages (such as <c>baselayout</c>, <c>gcc</c>, or 
+<c>glibc</c>) that are incompatible with previous versions, a change in 
+the default USE flags or in the virtual mappings, or maybe a change in 
+system-wide settings.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Keeping up with new releases</title>
+<section>
+<title>Releases without profile changes</title>
+<body>
+
+<p>
+If a new Gentoo release does not include a new profile then you can safely
+pretend that it never happened. :)
+</p>
+
+<p>
+If you update your installed packages 
+<uri link="/doc/en/handbook/handbook-x86.xml?part=2&amp;chap=1">as explained in
+the Gentoo Handbook</uri>, then your system will be exactly the same as one
+that has been installed using the new release.
+</p>
+
+</body>
+</section>
+<section>
+<title>Releases with profile changes</title>
+<body>
+
+<p>
+If a release (such as 2008.0 for x86) introduces a new profile, you have the
+choice to migrate to the new profile.
+</p>
+
+<p>
+Naturally, you are not forced to do so, and you can continue to use the old 
+profile and just update your packages
+<uri link="/doc/en/handbook/handbook-x86.xml?part=2&amp;chap=1">as explained 
+in the Gentoo Handbook</uri>.
+</p>
+
+<p>
+However, Gentoo strongly recommends updating your profile if it becomes 
+deprecated.  When this happens, it means that Gentoo developers no longer
+plan on supporting it.
+</p>
+
+<p>
+If you decide to migrate to the new profile, then you will have to manually
+perform the update.  The way you update may vary significantly from release 
+to release; it depends on how deep the modifications introduced in the new
+profile are.
+</p>
+
+<p>
+In the simplest case you only have to change the <path>/etc/make.profile</path>
+symlink, in the worst case you may have to recompile your system from scratch
+while doing a neat voodoo dance.  Migration is usually covered in the release
+notes. You can also find <uri link="#instructions">instructions</uri> at the
+end of this guide.
+</p>
+
+</body>
+</section>
+<section>
+<title>Supported profiles</title>
+<body>
+
+<p>
+You can view the list of profiles on your architecture officially supported by
+Gentoo developers when you <c>emerge eselect</c> and then run the following
+command:
+</p>
+
+<pre caption="Viewing supported profiles">
+# <i>eselect profile list</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="instructions">
+<title>Profile updating instructions</title>
+<section id="general">
+<title>General instructions</title>
+<body>
+
+<impo>
+Make sure your Portage is updated before performing any profile changes.
+</impo>
+
+<p>
+First, run <c>emerge eselect</c>. The <c>eselect</c> utility will let you view
+and select profiles easily, without needing to create or remove symlinks by
+hand.
+</p>
+
+<pre caption="Profile selection with eselect">
+<comment>(View available profiles)</comment>
+# <i>eselect profile list</i>
+
+<comment>(Select the number of your desired profile from the list)</comment>
+# <i>eselect profile set &lt;number&gt;</i>
+</pre>
+
+<p>
+If you'd still prefer to change profiles manually, then simply do the following:
+</p>
+
+<pre caption="Changing profiles manually">
+# <i>rm /etc/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/make.profile</i>
+</pre>
+
+<note>
+There are <b>desktop</b> and <b>server</b> subprofiles for most architectures.
+Examine these profiles carefully, as they may serve your needs better than the
+extremely minimal default profiles.
+</note>
+
+<note>
+The <c>developer</c> subprofile is specifically for Gentoo Linux development
+tasks. It is <e>not</e> meant to help set up general development environments.
+</note>
+
+</body>
+</section>
+<section>
+<title>Updating to 2008.0, 2007.0, or 2006.1</title>
+<body>
+
+<p>
+If you intend to upgrade to these profiles, you should be aware that they expect
+the system to be set to a Unicode locale by default; specifically that
+UNICODE="yes" is set in <path>/etc/rc.conf</path>. For this to work, you must
+have created a Unicode locale for your system to use. Please read our <uri
+link="/doc/en/utf-8.xml">UTF-8 guide</uri> to learn how to create the proper
+locale.
+</p>
+
+<p>
+Alternatively, if you do not wish to set a locale, you should specify
+UNICODE="no" in <path>/etc/rc.conf</path>, and re-emerge <c>baselayout</c> (or
+wait until your next <c>baselayout</c> update) with the <c>-unicode</c> USE
+flag. You can set <c>-unicode</c> just for <c>baselayout</c>, or you can set it
+globally for all packages by adding it to your USE variable in
+<path>/etc/make.conf</path>.
+</p>
+
+<pre caption="Optional: removing Unicode support">
+<comment>(To remove Unicode support just for baselayout)</comment>
+# <i>echo "sys-apps/baselayout -unicode" >> /etc/portage/package.use</i>
+# <i>emerge -a baselayout</i>
+
+<comment>(To remove Unicode support from your whole system)</comment>
+# <i>nano -w /etc/make.conf</i>
+USE="-unicode"
+# <i>emerge -a baselayout</i>
+</pre>
+
+<note>
+If you are updating to a 2007.0 profile on the Sparc architecture, then you will
+need to follow the <uri link="/doc/en/gcc-upgrading.xml">GCC Upgrading
+Guide</uri>, as <c>gcc-4</c> is the default compiler.
+</note>
+
+<p>
+Finally, follow the <uri link="#general">general instructions</uri> for updating
+your profile.
+</p>
+
+</body>
+</section>
+<section>
+<title>Updating to 2006.0</title>
+<body>
+
+<p>
+To switch to the 2006.0 profile, point the <path>/etc/make.profile</path>
+symlink to the new location. Make sure your Portage is updated before you
+change your profile.
+</p>
+
+<pre caption="Changing to a 2006.0 profile">
+# <i>rm /etc/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/make.profile</i>
+</pre>
+
+<p>
+<b>alpha</b> - Users that use a 2.4 kernel or don't want to use NPTL should use
+the default-linux/alpha/no-nptl profile.  More information is available in <uri
+link="/proj/en/releng/release/2006.0/alpha-release-notes.xml">the alpha release
+notes</uri>.
+</p>
+
+<p>
+<b>ppc</b> - The merge of the ppc32 and ppc64 profiles went forward. The ppc32
+profile has been changed in a way that offers a minimalistic generic profile
+for all purposes, located in default-linux/ppc/ppc32. The release-dependent
+profile is optimized for desktop-usage and located in
+default-linux/ppc/ppc32/2006.0. There are some subprofiles available for G3 and
+G4 processors, and G3/Pegasos and G4/Pegasos for the Pegasos Open Desktop
+Workstation. Make sure you choose the correct subprofile for your system when
+migrating to a 2006.0 profile.
+</p>
+
+<p>
+<b>sparc</b> - Upgrading to the <b>2.4</b>-kernel based 2006.0/2.4 profile
+requires manual user intervention (unmerging java stuff) and an <c>emerge -e
+world</c> because of the <uri link="/doc/en/gcc-upgrading.xml">gcc
+upgrade</uri>.<br/>
+Upgrading to the <b>2.6</b>-kernel based 2006.0 profile which is not considered
+stable also requires an entry in <path>/etc/portage/package.unmask</path> to
+umask a 2.6 version of <c>gentoo-sources</c> and a full rebuild.
+</p>
+
+<p>
+<b>All other archs</b> - There are no fundamental changes in this profile. No
+specific action needs to be performed.
+</p>
+
+</body>
+</section>
+<section>
+<title>Updating to 2005.1</title>
+<body>
+
+<p>
+To switch to the 2005.1 profile, point the <path>/etc/make.profile</path>
+symlink to the new location. Make sure your Portage is updated before you
+change your profile.
+</p>
+
+<pre caption="Changing to a 2005.1 profile">
+# <i>rm /etc/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/make.profile</i>
+</pre>
+
+<p>
+<b>All archs</b> - There are no fundamental changes in this profile. No
+specific action needs to be performed.
+</p>
+
+<p>
+<b>ppc</b> - With the 2005.1 release, the ppc and ppc64 profiles were merged
+and a number of subprofiles for specific subarchitectures were created. Make
+sure you choose the correct subprofile for your system when migrating to a
+2005.1 profile.
+</p>
+
+</body>
+</section>
+<section>
+<title>Updating to 2005.0</title>
+<body>
+
+<p>
+With the introduction of 2005.0, several architectures have decided to define
+additional profiles. Make sure you read the description of said profiles before
+you decide to migrate to one of them. Most architectures now also default to the
+2.6 kernel tree where 2.4 was chosen previously.
+</p>
+
+<p>
+Some architectures require a bit more actions to be completed in order to
+convert from one profile to another. If that is the case, the step-by-step
+guides are linked from the table.
+</p>
+
+<table>
+<tr>
+  <th>Profile</th>
+  <th>Description</th>
+  <th>Specific Upgrade Guide</th>
+</tr>
+<tr>
+  <ti>default-linux/alpha/2005.0</ti>
+  <ti>Default Alpha 2005.0 profile for 2.6 kernels</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/alpha/2005.0/2.4</ti>
+  <ti>Alpha 2005.0 profile for 2.4 kernels</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/amd64/2005.0</ti>
+  <ti>Default AMD64 2005.0 profile for 2.6 kernels</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/amd64/2005.0/no-multilib</ti>
+  <ti>AMD64 2005.0 profile for multilib-disabled system installations</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/arm/2005.0</ti>
+  <ti>Default ARM 2005.0 profile for 2.6 kernels</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/hppa/2005.0</ti>
+  <ti>Default HPPA 2005.0 profile for 2.6 kernels</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/hppa/2005.0/2.4</ti>
+  <ti>HPPA 2005.0 profile for 2.4 kernels</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/mips/2005.0</ti>
+  <ti>Default MIPS 2005.0 profile</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/mips/cobalt/2005.0</ti>
+  <ti>Cobalt specific MIPS 2005.0 profile</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/mips/mips64/n32/2005.0</ti>
+  <ti>2005.0 profile for n32-supporting MIPS platforms</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/mips/mips64/ip28/2005.0</ti>
+  <ti>Indigo2 Impact specific 64-bit 2005.0 profile</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/mips/mips64/2005.0</ti>
+  <ti>64-bit MIPS 2005.0 profile</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/ppc/2005.0</ti>
+  <ti>Default PPC 2005.0 profile for 2.6 kernels</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/ppc64/2005.0</ti>
+  <ti>Default PPC64 2005.0 profile for 2.6 kernels</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/s390/2005.0</ti>
+  <ti>Default S390 2005.0 profile</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/sparc/sparc32/2005.0</ti>
+  <ti>Default Sparc 32-bit 2005.0 profile</ti>
+  <ti></ti>
+</tr>
+<!-- http://dev.gentoo.org/~dsd/kernel-2.6.htm 
+     No subprofiles for sparc
+<tr>
+  <ti>default-linux/sparc/sparc32/2005.0/2.6</ti>
+  <ti>Sparc 32-bit 2005.0 profile for 2.6 kernels</ti>
+  <ti></ti>
+</tr>
+-->
+<tr>
+  <ti>default-linux/sparc/sparc64/2005.0</ti>
+  <ti>Default Sparc 64-bit 2005.0 profile</ti>
+  <ti></ti>
+</tr>
+<!-- http://dev.gentoo.org/~dsd/kernel-2.6.htm
+     No subprofiles for sparc
+<tr>
+  <ti>default-linux/sparc/sparc64/2005.0/2.6</ti>
+  <ti>Sparc 64-bit 2005.0 profile for 2.6 kernels</ti>
+  <ti></ti>
+</tr>
+-->
+<tr>
+  <ti>default-linux/x86/2005.0</ti>
+  <ti>Default x86 2005.0 profile for 2.6 kernels</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/x86/2005.0/2.4</ti>
+  <ti>x86 2005.0 profile for 2.4 kernels</ti>
+  <ti></ti>
+</tr>
+</table>
+
+<p>
+To switch to the selected profile, point the <path>/etc/make.profile</path>
+symlink to the new location. Make sure your Portage is updated before you change
+your profile!
+</p>
+
+<pre caption="Changing to a 2005.0 profile">
+# <i>rm /etc/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/make.profile</i>
+</pre>
+
+<p>
+If you are running a Linux 2.4-based system but want to migrate to a 2.6-based
+kernel, make sure you read our <uri link="/doc/en/migration-to-2.6.xml">Gentoo
+Linux 2.6 Migration Guide</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Updating to 2004.3</title>
+<body>
+
+<p>
+With the introduction of the 2004.3 profiles, users are not going to see huge
+modifications of their systems (see below for details). However, Gentoo
+developers decided to push out this new profile and to deprecate quite a few of
+the old ones to speed up the adoption of <e>stacked profiles</e>, that is, the
+profiles that follow the new layout of the <path>/usr/portage/profiles</path>
+directory, for instance
+<path>/usr/portage/profiles/default-linux/x86/2004.3</path> (supported by
+Portage 2.0.51 or later).
+</p>
+
+<p>
+To switch to the 2004.3 profile, point the <path>/etc/make.profile</path>
+symlink to the new location:
+</p>
+
+<warn>
+Don't forget to upgrade Portage <e>before</e> you change your profile!!!
+</warn>
+
+<pre caption="Updating the /etc/make.profile symlink">
+<comment>substitute &lt;arch&gt; with your arch</comment>
+# <i>rm /etc/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/default-linux/&lt;arch&gt;/2004.3 /etc/make.profile</i>
+</pre>
+
+<p>
+<b>All archs</b> - As said above, there are no big changes introduced in this
+profile. However, it should be noted that <c>sys-apps/slocate</c> and
+<c>net-misc/dhcpcd</c> are no longer considered system packages. This means
+that if you run <c>emerge --depclean</c>, Portage will try to remove them from
+your system. If you need any of those packages, add them to
+<path>/var/lib/portage/world</path> after the profile switch, or manually
+emerge them.
+</p>
+
+<p>
+<b>ppc</b> - <c>sys-fs/udev</c> is now the default instead of 
+<c>sys-fs/devfs</c> for newly installed machines. This has no 
+effect on already installed machines, though.
+</p>
+
+</body>
+</section>
+<section>
+<title>Updating Portage to Support Cascading Profiles</title>
+<body>
+
+<p>
+Although this section does not seem to integrate well in this upgrading guide,
+it is quite important. Any profile listed above this section requires a Portage
+version that supports cascading profiles. However, some obsoleted profiles don't
+allow the user to upgrade Portage or the user is using a profile that isn't
+available anymore - any attempt to upgrade Portage will result in a failure.
+</p>
+
+<p>
+To work around this problem, users can set a temporary symbolic link to the
+<e>obsolete</e> profile, allowing them to upgrade their Portage after which
+they can continue with the upgrade procedure set forth in this guide. Please
+substitute <c>&lt;arch&gt;</c> with your respective architecture:
+</p>
+
+<pre caption="Updating Portage through the obsolete profile">
+# <i>rm /etc/make.profile</i>
+# <i>cd /etc</i>
+# <i>ln -sf ../usr/portage/profiles/obsolete/&lt;arch&gt; make.profile</i>
+# <i>emerge -n '>=sys-apps/portage-2.0.51'</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Updating to 2004.2</title>
+<body>
+
+<p>
+To switch to the 2004.2 profile, point the <path>/etc/make.profile</path> 
+symlink to the new location:
+</p>
+
+<warn>
+Don't forget to upgrade Portage <e>before</e> you change your profile!!!
+</warn>
+
+<pre caption="Updating the /etc/make.profile symlink">
+<comment>substitute &lt;arch&gt; with your arch</comment>
+# <i>rm /etc/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/default-linux/&lt;arch&gt;/2004.2 /etc/make.profile</i>
+</pre>
+
+<p>
+<b>x86</b> - This profile changes the default X11 implementation from
+<c>x11-base/xfree</c> to <c>x11-base/xorg-x11</c>.  This change only touches
+the <e>default</e> value, and is only relevant for those who have not installed
+an X server yet.  If you already have one installed, then it will not affect
+you at all; you are free to switch from one X server to the other exactly as
+before.
+</p>
+
+<p>
+<b>amd64</b> - There are no fundamental changes from previous profiles, no
+specific action needs to be performed.
+</p>
+
+</body>
+</section>
+<section>
+<title>Updating to 2004.0</title>
+<body>
+
+<p>
+To switch to the 2004.0 profile, point the <path>/etc/make.profile</path> 
+symlink to the new location:
+</p>
+
+<pre caption="Updating the /etc/make.profile symlink">
+<comment>substitute &lt;arch&gt; with your arch</comment>
+# <i>rm /etc/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/default-&lt;arch&gt;-2004.0 /etc/make.profile</i>
+</pre>
+
+<p>
+<b>All archs</b> - There are no fundamental changes from previous profiles, no
+specific action needs to be performed.
+</p>
+
+</body>
+</section>
+<section>
+<title>Updating from profiles older than 1.4 to 1.4</title>
+<body>
+
+<p>
+The instructions for this upgrade are quite complex, you can find them
+<uri link="/doc/en/new-upgrade-to-gentoo-1.4.xml">here</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

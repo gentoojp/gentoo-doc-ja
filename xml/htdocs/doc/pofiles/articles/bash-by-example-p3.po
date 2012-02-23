@@ -1,0 +1,1211 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/articles/bash-by-example-p3.xml:6
+#, no-wrap
+msgid "Bash by example, Part 3"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/articles/bash-by-example-p3.xml:13
+#, no-wrap
+msgid ""
+"In his final Bash by example article, Daniel Robbins takes a good look at the\n"
+"Gentoo Linux ebuild system, an excellent example of the power of bash. Step by\n"
+"step, he shows you how the ebuild system was implemented, and touches on many\n"
+"handy bash techniques and design strategies. By the end of the article, you'll\n"
+"have a good grasp of what's involved in producing a full-blown bash-based\n"
+"application, as well as a start at coding your own auto-build system.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/bash-by-example-p3.xml:30
+#, no-wrap
+msgid "Exploring the ebuild system"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/bash-by-example-p3.xml:32
+#, no-wrap
+msgid "Enter the ebuild system"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:36
+#, no-wrap
+msgid ""
+"I've really been looking forward to this third and final <e>Bash by example</e>\n"
+"article, because now that we've already covered bash programming fundamentals in\n"
+"<uri link=\"/doc/en/articles/bash-by-example-p1.xml\">Part 1</uri> and <uri\n"
+"link=\"/doc/en/articles/bash-by-example-p2.xml\">Part 2</uri>, we can focus on\n"
+"more advanced topics, like bash application development and program design. For\n"
+"this article, I will give you a good dose of practical, real-world bash\n"
+"development experience by presenting a project that I've spent many hours coding\n"
+"and refining: The Gentoo Linux ebuild system.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:47
+#, no-wrap
+msgid ""
+"I'm the chief architect of Gentoo Linux, a next-generation Linux OS currently in\n"
+"beta. One of my primary responsibilities is to make sure that all of the binary\n"
+"packages (similar to RPM packages) are created properly and work together. As\n"
+"you probably know, a standard Linux system is not composed of a single unified\n"
+"source tree (like BSD), but is actually made up of about 25+ core packages that\n"
+"work together. Some of the packages include:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/articles/bash-by-example-p3.xml:57
+#, no-wrap
+msgid "Package"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/articles/bash-by-example-p3.xml:58
+#, no-wrap
+msgid "Description"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/bash-by-example-p3.xml:61
+#, no-wrap
+msgid "linux"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/bash-by-example-p3.xml:62
+#, no-wrap
+msgid "The actual kernel"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/bash-by-example-p3.xml:65
+#, no-wrap
+msgid "util-linux"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/bash-by-example-p3.xml:66
+#, no-wrap
+msgid "A collection of miscellaneous Linux-related programs"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/bash-by-example-p3.xml:69
+#, no-wrap
+msgid "e2fsprogs"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/bash-by-example-p3.xml:70
+#, no-wrap
+msgid "A collection of ext2 filesystem-related utilities"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/bash-by-example-p3.xml:73
+#, no-wrap
+msgid "glibc"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/bash-by-example-p3.xml:74
+#, no-wrap
+msgid "The GNU C library"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:79
+#, no-wrap
+msgid ""
+"Each package is in its own tarball and is maintained by separate independent\n"
+"developers, or teams of developers. To create a distribution, each package has\n"
+"to be separately downloaded, compiled, and packaged. Every time a package must\n"
+"be fixed, upgraded, or improved, the compilation and packaging steps must be\n"
+"repeated (and this gets old really fast). To help eliminate the repetitive steps\n"
+"involved in creating and updating packages, I created the ebuild system, written\n"
+"almost entirely in bash. To enhance your bash knowledge, I'll show you how I\n"
+"implemented the unpack and compile portions of the ebuild system, step by step.\n"
+"As I explain each step, I'll also discuss why certain design decisions were\n"
+"made. By the end of this article, not only will you have an excellent grasp of\n"
+"larger-scale bash programming projects, but you'll also have implemented a good\n"
+"portion of a complete auto-build system.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/bash-by-example-p3.xml:96
+#, no-wrap
+msgid "Why bash?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:100
+#, no-wrap
+msgid ""
+"Bash is an essential component of the Gentoo Linux ebuild system. It was chosen\n"
+"as ebuild's primary language for a number of reasons. First, it has an\n"
+"uncomplicated and familiar syntax that is especially well suited for calling\n"
+"external programs. An auto-build system is \"glue code\" that automates the\n"
+"calling of external programs, and bash is very well suited to this type of\n"
+"application. Second, Bash's support for functions allowed the ebuild system to\n"
+"have modular, easy-to-understand code. Third, the ebuild system takes advantage\n"
+"of bash's support for environment variables, allowing package maintainers and\n"
+"developers to configure it easily, on-the-fly.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/bash-by-example-p3.xml:114
+#, no-wrap
+msgid "Build process review"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:118
+#, no-wrap
+msgid ""
+"Before we look at the ebuild system, let's review what's involved in getting a\n"
+"package compiled and installed. For our example, we will look at the \"sed\"\n"
+"package, a standard GNU text stream editing utility that is part of all Linux\n"
+"distributions. First, download the source tarball (<path>sed-3.02.tar.gz</path>)\n"
+"(see <uri link=\"#resources\">Resources</uri>). We will store this archive in\n"
+"<path>/usr/src/distfiles</path>, a directory we will refer to using the\n"
+"environment variable <c>$DISTDIR</c>. <c>$DISTDIR</c> is the directory where all\n"
+"of our original source tarballs live; it's a big vault of source code.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:129
+#, no-wrap
+msgid ""
+"Our next step is to create a temporary directory called <path>work</path>, which\n"
+"houses the uncompressed sources. We'll refer to this directory later using the\n"
+"<c>$WORKDIR</c> environment variable. To do this, change to a directory where we\n"
+"have write permission and type the following:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:135
+#: en/articles/bash-by-example-p3.xml:148
+#, no-wrap
+msgid "Uncompressing sed into a temporary directory"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:136
+#, no-wrap
+msgid ""
+"$ <i>mkdir work</i>\n"
+"$ <i>cd work</i>\n"
+"$ <i>tar xzf /usr/src/distfiles/sed-3.02.tar.gz</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:142
+#, no-wrap
+msgid ""
+"The tarball is then decompressed, creating a directory called\n"
+"<path>sed-3.02</path> that contains all of the sources. We'll refer to the\n"
+"<path>sed-3.02</path> directory later using the environment variable\n"
+"<c>$SRCDIR</c>. To compile the program, type the following:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:149
+#, no-wrap
+msgid ""
+"$ <i>cd sed-3.02</i>\n"
+"$ <i>./configure --prefix=/usr</i>\n"
+"<comment>(autoconf generates appropriate makefiles, this can take a while)</comment>\n"
+"\n"
+"$ <i>make</i>\n"
+"\n"
+"<comment>(the package is compiled from sources, also takes a bit of time)</comment>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:159
+#, no-wrap
+msgid ""
+"We're going to skip the \"make install\" step, since we are just covering the\n"
+"unpack and compile steps in this article. If we wanted to write a bash script to\n"
+"perform all these steps for us, it could look something like this:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:164
+#, no-wrap
+msgid "Sample bash script to perform the unpack/compile process"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:165
+#, no-wrap
+msgid ""
+"#!/usr/bin/env bash\n"
+"\n"
+"if [ -d work ]\n"
+"then\n"
+"<comment># remove old work directory if it exists</comment>\n"
+"      rm -rf work\n"
+"fi\n"
+"mkdir work\n"
+"cd work\n"
+"tar xzf /usr/src/distfiles/sed-3.02.tar.gz\n"
+"cd sed-3.02\n"
+"./configure --prefix=/usr\n"
+"make\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/bash-by-example-p3.xml:183
+#, no-wrap
+msgid "Generalizing the code"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:187
+#, no-wrap
+msgid ""
+"Although this autocompile script works, it's not very flexible. Basically, the\n"
+"bash script just contains the listing of all the commands that were typed at the\n"
+"command line. While this solution works, it would be nice to make a generic\n"
+"script that can be configured quickly to unpack and compile any package just by\n"
+"changing a few lines. That way, it's much less work for the package maintainer\n"
+"to add new packages to the distribution. Let's take a first stab at doing this\n"
+"by using lots of different environment variables, making our build script more\n"
+"generic:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:197
+#, no-wrap
+msgid "A new, more general script"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:198
+#, no-wrap
+msgid ""
+"#!/usr/bin/env bash\n"
+"\n"
+"<comment># P is the package name</comment>\n"
+"\n"
+"P=sed-3.02\n"
+"\n"
+"<comment># A is the archive name</comment>\n"
+"\n"
+"A=${P}.tar.gz\n"
+"\n"
+"export ORIGDIR=`pwd`\n"
+"export WORKDIR=${ORIGDIR}/work\n"
+"export SRCDIR=${WORKDIR}/${P}\n"
+"\n"
+"if [ -z \"$DISTDIR\" ]\n"
+"then\n"
+"<comment># set DISTDIR to /usr/src/distfiles if not already set</comment>\n"
+"        DISTDIR=/usr/src/distfiles\n"
+"fi\n"
+"export DISTDIR\n"
+"\n"
+"if [ -d ${WORKDIR} ]\n"
+"then    \n"
+"<comment># remove old work directory if it exists</comment>\n"
+"        rm -rf ${WORKDIR}\n"
+"fi\n"
+"\n"
+"mkdir ${WORKDIR}\n"
+"cd ${WORKDIR}\n"
+"tar xzf ${DISTDIR}/${A}\n"
+"cd ${SRCDIR}\n"
+"./configure --prefix=/usr\n"
+"make\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:234
+#, no-wrap
+msgid ""
+"We've added a lot of environment variables to the code, but it still does\n"
+"basically the same thing. However, now, to compile any standard GNU\n"
+"autoconf-based source tarball, we can simply copy this file to a new file (with\n"
+"an appropriate name to reflect the name of the new package it compiles), and\n"
+"then change the values of <c>$A</c> and <c>$P</c> to new values. All other\n"
+"environment variables automatically adjust to the correct settings, and the\n"
+"script works as expected. While this is handy, there's a further improvement\n"
+"that can be made to the code. This particular code is much longer than the\n"
+"original \"transcript\" script that we created. Since one of the goals for any\n"
+"programming project should be the reduction of complexity for the user, it would\n"
+"be nice to dramatically shrink the code, or at least organize it better. We can\n"
+"do this by performing a neat trick -- we'll split the code into two separate\n"
+"files. Save this file as <path>sed-3.02.ebuild</path>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:249
+#, no-wrap
+msgid "sed-3.02.ebuild"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:250
+#, no-wrap
+msgid ""
+"<comment>#the sed ebuild file -- very simple!</comment>\n"
+"P=sed-3.02\n"
+"A=${P}.tar.gz\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:256
+#, no-wrap
+msgid ""
+"Our first file is trivial, and contains only those environment variables that\n"
+"must be configured on a per-package basis. Here's the second file, which\n"
+"contains the brains of the operation. Save this one as \"ebuild\" and make it\n"
+"executable:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:262
+#, no-wrap
+msgid "The ebuild script"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:263
+#, no-wrap
+msgid ""
+"#!/usr/bin/env bash\n"
+"\n"
+"\n"
+"if [ $# -ne 1 ]\n"
+"then\n"
+"        echo \"one argument expected.\"\n"
+"        exit 1\n"
+"fi\n"
+"\n"
+"if [ -e \"$1\" ]\n"
+"then\n"
+"        source $1\n"
+"else\n"
+"        echo \"ebuild file $1 not found.\"\n"
+"        exit 1\n"
+"fi\n"
+"\n"
+"export ORIGDIR=`pwd`\n"
+"export WORKDIR=${ORIGDIR}/work\n"
+"export SRCDIR=${WORKDIR}/${P}\n"
+"\n"
+"if [ -z \"$DISTDIR\" ]\n"
+"then\n"
+"        <comment># set DISTDIR to /usr/src/distfiles if not already set</comment>\n"
+"        DISTDIR=/usr/src/distfiles\n"
+"fi\n"
+"export DISTDIR\n"
+"\n"
+"if [ -d ${WORKDIR} ]\n"
+"then    \n"
+"        # remove old work directory if it exists \n"
+"        rm -rf ${WORKDIR}\n"
+"fi\n"
+"\n"
+"mkdir ${WORKDIR}\n"
+"cd ${WORKDIR}\n"
+"tar xzf ${DISTDIR}/${A}\n"
+"cd ${SRCDIR}\n"
+"./configure --prefix=/usr\n"
+"make\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:306
+#, no-wrap
+msgid ""
+"Now that we've split our build system into two files, I bet you're wondering how\n"
+"it works. Basically, to compile sed, type:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:310
+#, no-wrap
+msgid "Testing the above ebuild"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:311
+#, no-wrap
+msgid "$ <i>./ebuild sed-3.02.ebuild</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:315
+#, no-wrap
+msgid ""
+"When \"ebuild\" executes, it first tries to \"source\" variable <c>$1</c>. What does\n"
+"this mean? From my previous article, recall that <c>$1</c> is the first command\n"
+"line argument -- in this case, <path>sed-3.02.ebuild</path>. In bash, the\n"
+"\"source\" command reads in bash statements from a file, and executes them as if\n"
+"they appeared immediately in the file the \"source\" command is in. So, \"source\n"
+"${1}\" causes the \"ebuild\" script to execute the commands in\n"
+"<path>sed-3.02.ebuild</path>, which cause <c>$P</c> and <c>$A</c> to be defined.\n"
+"This design change is really handy, because if we want to compile another\n"
+"program instead of sed, we can simply create a new <path>.ebuild</path> file and\n"
+"pass it as an argument to our \"ebuild\" script. That way, the\n"
+"<path>.ebuild</path> files end up being really simple, while the complicated\n"
+"brains of the ebuild system get stored in one place -- our \"ebuild\" script. This\n"
+"way, we can upgrade or enhance the ebuild system simply by editing the \"ebuild\"\n"
+"script, keeping the implementation details outside of the ebuild files. Here's a\n"
+"sample ebuild file for <c>gzip</c>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:332
+#, no-wrap
+msgid "gzip-1.2.4a.ebuild"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:333
+#, no-wrap
+msgid ""
+"<comment>#another really simple ebuild script!</comment>\n"
+"P=gzip-1.2.4a\n"
+"A=${P}.tar.gz\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/bash-by-example-p3.xml:341
+#, no-wrap
+msgid "Adding functionality"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:345
+#, no-wrap
+msgid ""
+"OK, we're making some progress. But, there is some additional functionality I'd\n"
+"like to add. I'd like the ebuild script to accept a second command-line\n"
+"argument, which will be <c>compile</c>, <c>unpack</c>, or <c>all</c>. This\n"
+"second command-line argument tells the ebuild script which particular step of\n"
+"the build process to perform. That way, I can tell ebuild to unpack the archive,\n"
+"but not compile it (just in case I need to inspect the source archive before\n"
+"compilation begins).  To do this, I'll add a case statement that will test\n"
+"variable <c>$2</c>, and do different things based on its value. Here's what the\n"
+"code looks like now:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:356
+#, no-wrap
+msgid "ebuild, revision 2"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:357
+#, no-wrap
+msgid ""
+"#!/usr/bin/env bash\n"
+"\n"
+"if [ $# -ne 2 ]\n"
+"then\n"
+"        echo \"Please specify two args - .ebuild file and unpack, compile or all\"\n"
+"        exit 1\n"
+"fi\n"
+"\n"
+"\n"
+"if [ -z \"$DISTDIR\" ]\n"
+"then\n"
+"<comment> # set DISTDIR to /usr/src/distfiles if not already set</comment>\n"
+"        DISTDIR=/usr/src/distfiles\n"
+"fi\n"
+"export DISTDIR\n"
+"\n"
+"ebuild_unpack() {\n"
+"        <comment> #make sure we're in the right directory</comment>\n"
+"        cd ${ORIGDIR}\n"
+"        \n"
+"        if [ -d ${WORKDIR} ]\n"
+"        then    \n"
+"                rm -rf ${WORKDIR}\n"
+"        fi\n"
+"\n"
+"        mkdir ${WORKDIR}\n"
+"        cd ${WORKDIR}\n"
+"        if [ ! -e ${DISTDIR}/${A} ]\n"
+"        then\n"
+"            echo \"${DISTDIR}/${A} does not exist.  Please download first.\"\n"
+"            exit 1\n"
+"        fi    \n"
+"        tar xzf ${DISTDIR}/${A}\n"
+"        echo \"Unpacked ${DISTDIR}/${A}.\"\n"
+"        #source is now correctly unpacked\n"
+"}\n"
+"\n"
+"\n"
+"ebuild_compile() {\n"
+"        \n"
+"        <comment> #make sure we're in the right directory</comment>\n"
+"        cd ${SRCDIR}\n"
+"        if [ ! -d \"${SRCDIR}\" ]\n"
+"        then\n"
+"                echo \"${SRCDIR} does not exist -- please unpack first.\"\n"
+"                exit 1\n"
+"        fi\n"
+"        ./configure --prefix=/usr\n"
+"        make     \n"
+"}\n"
+"\n"
+"export ORIGDIR=`pwd`\n"
+"export WORKDIR=${ORIGDIR}/work\n"
+"\n"
+"if [ -e \"$1\" ]\n"
+"then\n"
+"        source $1\n"
+"else\n"
+"        echo \"Ebuild file $1 not found.\"\n"
+"        exit 1\n"
+"fi\n"
+"\n"
+"export SRCDIR=${WORKDIR}/${P}\n"
+"\n"
+"case \"${2}\" in\n"
+"        unpack)\n"
+"                ebuild_unpack\n"
+"                ;;\n"
+"        compile)\n"
+"                ebuild_compile\n"
+"                ;;\n"
+"        all)\n"
+"                ebuild_unpack\n"
+"                ebuild_compile\n"
+"                ;;\n"
+"        *)\n"
+"                echo \"Please specify unpack, compile or all as the second arg\"\n"
+"                exit 1\n"
+"                ;;\n"
+"esac\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:440
+#, no-wrap
+msgid ""
+"We've made a lot of changes, so let's review them. First, we placed the compile\n"
+"and unpack steps in their own functions, and called <c>ebuild_compile()</c> and\n"
+"<c>ebuild_unpack()</c>, respectively. This is a good move, since the code is\n"
+"getting more complicated, and the new functions provide some modularity, which\n"
+"helps to keep things organized. On the first line in each function, I explicitly\n"
+"<c>cd</c> into the directory I want to be in because, as our code is becoming\n"
+"more modular rather than linear, it's more likely that we might slip up and\n"
+"execute a function in the wrong current working directory. The <c>cd</c>\n"
+"commands explicitly put us in the right place, and prevent us from making a\n"
+"mistake later -- an important step -- especially if you will be deleting files\n"
+"inside the functions.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:454
+#, no-wrap
+msgid ""
+"Also, I added a useful check to the beginning of the <c>ebuild_compile()</c>\n"
+"function.  Now, it checks to make sure the <c>$SRCDIR</c> exists, and, if not,\n"
+"it prints an error message telling the user to unpack the archive first, and\n"
+"then exits. If you like, you can change this behavior so that if <c>$SRCDIR</c>\n"
+"doesn't exist, our ebuild script will unpack the source archive automatically.\n"
+"You can do this by replacing <c>ebuild_compile()</c> with the following code:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:462
+#, no-wrap
+msgid "A new spin on ebuild_compile()"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:463
+#, no-wrap
+msgid ""
+"ebuild_compile() {\n"
+"        <comment>#make sure we're in the right directory</comment>\n"
+"        if [ ! -d \"${SRCDIR}\" ]\n"
+"        then\n"
+"                ebuild_unpack\n"
+"        fi\n"
+"        cd ${SRCDIR}\n"
+"        ./configure --prefix=/usr\n"
+"        make     \n"
+"}\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:476
+#, no-wrap
+msgid ""
+"One of the most obvious changes in our second version of the ebuild script is\n"
+"the new case statement at the end of the code. This case statement simply checks\n"
+"the second command-line argument, and performs the correct action, depending on\n"
+"its value. If we now type:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:482
+#, no-wrap
+msgid "Default action"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:483
+#, no-wrap
+msgid "$ <i>ebuild sed-3.02.ebuild</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:487
+#, no-wrap
+msgid ""
+"We'll actually get an error message. ebuild now wants to be told what to do, as\n"
+"follows:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:491
+#, no-wrap
+msgid "Unpacking"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:492
+#, no-wrap
+msgid "$ <i>ebuild sed-3.02.ebuild unpack</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:496
+#: en/articles/bash-by-example-p3.xml:504
+#, no-wrap
+msgid "or:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:499
+#, no-wrap
+msgid "Compiling"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:500
+#, no-wrap
+msgid "$ <i>ebuild sed-3.02.ebuild compile</i>\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:507
+#, no-wrap
+msgid "Unpacking and compiling"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:508
+#, no-wrap
+msgid "$ <i>ebuild sed-3.02.ebuild all</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/articles/bash-by-example-p3.xml:512
+#, no-wrap
+msgid ""
+"If you provide a second command-line argument, other than those listed above,\n"
+"you get an error message (the * clause), and the program exits.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/bash-by-example-p3.xml:519
+#, no-wrap
+msgid "Modularizing the code"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:523
+#, no-wrap
+msgid ""
+"Now that the code is quite advanced and functional, you may be tempted to create\n"
+"several more ebuild scripts to unpack and compile your favorite programs. If you\n"
+"do, sooner or later you'll come across some sources that do not use autoconf\n"
+"(<c>./configure</c>) or possibly others that have non-standard compilation\n"
+"processes.  We need to make some more changes to the ebuild system to\n"
+"accommodate these programs. But before we do, it is a good idea to think a bit\n"
+"about how to accomplish this.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:533
+#, no-wrap
+msgid ""
+"One of the great things about hard-coding <c>./configure --prefix=/usr; make</c>\n"
+"into our compile stage is that, most of the time, it works. But, we must also\n"
+"have the ebuild system accommodate sources that do not use autoconf or normal\n"
+"Makefiles. To solve this problem, I propose that our ebuild script should, by\n"
+"default, do the following:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ol><li>
+#: en/articles/bash-by-example-p3.xml:542
+#, no-wrap
+msgid ""
+"    If there is a configure script in <c>${SRCDIR}</c>, execute it as follows:\n"
+"   <c>./configure --prefix=/usr</c>. Otherwise, skip this step.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ol><li>
+#: en/articles/bash-by-example-p3.xml:545
+#, no-wrap
+msgid "Execute the following command: make"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:549
+#, no-wrap
+msgid ""
+"Since ebuild only runs configure if it actually exists, we can now automatically\n"
+"accommodate those programs that don't use autoconf and have standard makefiles.\n"
+"But what if a simple \"make\" doesn't do the trick for some sources? We need a way\n"
+"to override our reasonable defaults with some specific code to handle these\n"
+"situations. To do this, we'll transform our <c>ebuild_compile()</c> function\n"
+"into two functions. The first function, which can be looked at as a \"parent\"\n"
+"function, will still be called <c>ebuild_compile()</c>. However, we'll have a\n"
+"new function, called <c>user_compile()</c>, which contains only our reasonable\n"
+"default actions:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:560
+#, no-wrap
+msgid "ebuild_compile() split into two functions"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:561
+#, no-wrap
+msgid ""
+"user_compile() {\n"
+"        <comment>#we're already in ${SRCDIR}</comment>\n"
+"        if [ -e configure ]\n"
+"        then\n"
+"                #run configure script if it exists\n"
+"                ./configure --prefix=/usr\n"
+"        fi\n"
+"        #run make\n"
+"        make\n"
+"}              \n"
+"\n"
+"ebuild_compile() {\n"
+"        if [ ! -d \"${SRCDIR}\" ]\n"
+"        then\n"
+"                echo \"${SRCDIR} does not exist -- please unpack first.\"\n"
+"                exit 1\n"
+"        fi\n"
+"        <comment>#make sure we're in the right directory</comment>\n"
+"        cd ${SRCDIR}\n"
+"        user_compile\n"
+"}\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:585
+#, no-wrap
+msgid ""
+"It may not seem obvious why I'm doing this right now, but bear with me. While\n"
+"the code works almost identically to our previous version of ebuild, we can now\n"
+"do something that we couldn't do before -- we can override <c>user_compile()</c>\n"
+"in <path>sed-3.02.ebuild</path>. So, if the default <c>user_compile()</c>\n"
+"function doesn't meet our needs, we can define a new one in our\n"
+"<path>.ebuild</path> file that contains the commands required to compile the\n"
+"package. For example, here's an ebuild file for <c>e2fsprogs-1.18</c>, which\n"
+"requires a slightly different <c>./configure</c> line:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:595
+#, no-wrap
+msgid "e2fsprogs-1.18.ebuild"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:596
+#, no-wrap
+msgid ""
+"<comment>#this ebuild file overrides the default user_compile()</comment>\n"
+"P=e2fsprogs-1.18\n"
+"A=${P}.tar.gz\n"
+" \n"
+"user_compile() {\n"
+"       ./configure --enable-elf-shlibs\n"
+"       make\n"
+"}\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:607
+#, no-wrap
+msgid ""
+"Now, <c>e2fsprogs</c> will be compiled exactly the way we want it to be. But,\n"
+"for most packages, we can omit any custom <c>user_compile()</c> function in the\n"
+"<path>.ebuild</path> file, and the default <c>user_compile()</c> function is\n"
+"used instead.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:614
+#, no-wrap
+msgid ""
+"How exactly does the ebuild script know which <c>user_compile()</c> function to\n"
+"use? This is actually quite simple. In the ebuild script, the default\n"
+"<c>user_compile()</c> function is defined before the\n"
+"<path>e2fsprogs-1.18.ebuild</path> file is sourced. If there is a\n"
+"<c>user_compile()</c> in <path>e2fsprogs-1.18.ebuild</path>, it overwrites the\n"
+"default version defined previously. If not, the default <c>user_compile()</c>\n"
+"function is used.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:624
+#, no-wrap
+msgid ""
+"This is great stuff; we've added a lot of flexibility without requiring any\n"
+"complex code if it's not needed. We won't cover it here, but you could also make\n"
+"similar modifications to <c>ebuild_unpack()</c> so that users can override the\n"
+"default unpacking process. This could come in handy if any patching has to be\n"
+"done, or if the files are contained in multiple archives. It is also a good idea\n"
+"to modify our unpacking code so that it recognizes bzip2-compressed tarballs by\n"
+"default.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/bash-by-example-p3.xml:636
+#, no-wrap
+msgid "Configuration files"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:640
+#, no-wrap
+msgid ""
+"We've covered a lot of sneaky bash techniques so far, and now it's time to cover\n"
+"one more. Often, it's handy for a program to have a global configuration file\n"
+"that resides in <path>/etc</path>. Fortunately, this is easy to do using bash.\n"
+"Simply create the following file and save it as <path>/etc/ebuild.conf</path>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:646
+#, no-wrap
+msgid "/ect/ebuild.conf"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:647
+#, no-wrap
+msgid ""
+"<comment># /etc/ebuild.conf: set system-wide ebuild options in this file</comment>\n"
+"\n"
+"<comment># MAKEOPTS are options passed to make</comment>\n"
+"MAKEOPTS=\"-j2\"\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:654
+#, no-wrap
+msgid ""
+"In this example, I've included just one configuration option, but you could\n"
+"include many more. One of the beautiful things about bash is that this file can\n"
+"be parsed by simply sourcing it. This is a design trick that works with most\n"
+"interpreted languages. After <path>/etc/ebuild.conf</path> is sourced,\n"
+"<c>$MAKEOPTS</c> is defined inside our ebuild script. We'll use it to allow the\n"
+"user to pass options to make. Normally, this option would be used to allow the\n"
+"user to tell ebuild to do a parallel make. This is explained below.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/articles/bash-by-example-p3.xml:664
+#, no-wrap
+msgid ""
+"<b>What is a parallel make?</b> To speed compilation on multiprocessor systems,\n"
+"make supports compiling a program in parallel. This means that instead of\n"
+"compiling just one source file at a time, make compiles a user-specified number\n"
+"of source files simultaneously (so those extra processors in a multiprocessor\n"
+"system are used). Parallel makes are enabled by passing the <c>-j #</c> option\n"
+"to make, as follows: <c>make -j4 MAKE=\"make -j4\"</c>. This code instructs make\n"
+"to compile four programs simultaneously. The <c>MAKE=\"make -j4\"</c> argument\n"
+"tells make to pass the <c>-j4</c> option to any child make processes it\n"
+"launches.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:676
+#, no-wrap
+msgid "Here's the final version of our ebuild program:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:679
+#, no-wrap
+msgid "ebuild, the final version"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/bash-by-example-p3.xml:680
+#, no-wrap
+msgid ""
+"#!/usr/bin/env bash\n"
+"\n"
+"if [ $# -ne 2 ]\n"
+"then\n"
+"        echo \"Please specify ebuild file and unpack, compile or all\"\n"
+"        exit 1\n"
+"fi\n"
+"\n"
+"source /etc/ebuild.conf\n"
+"\n"
+"if [ -z \"$DISTDIR\" ]\n"
+"then\n"
+"        <comment># set DISTDIR to /usr/src/distfiles if not already set</comment>\n"
+"        DISTDIR=/usr/src/distfiles\n"
+"fi\n"
+"export DISTDIR\n"
+"\n"
+"ebuild_unpack() {\n"
+"        <comment>#make sure we're in the right directory</comment>\n"
+"        cd ${ORIGDIR}\n"
+"        \n"
+"        if [ -d ${WORKDIR} ]\n"
+"        then    \n"
+"                rm -rf ${WORKDIR}\n"
+"        fi\n"
+"\n"
+"        mkdir ${WORKDIR}\n"
+"        cd ${WORKDIR}\n"
+"        if [ ! -e ${DISTDIR}/${A} ]\n"
+"        then\n"
+"                echo \"${DISTDIR}/${A} does not exist.  Please download first.\"\n"
+"                exit 1\n"
+"        fi\n"
+"        tar xzf ${DISTDIR}/${A}\n"
+"        echo \"Unpacked ${DISTDIR}/${A}.\"\n"
+"        <comment>#source is now correctly unpacked</comment>\n"
+"}\n"
+"\n"
+"user_compile() {\n"
+"        <comment>#we're already in ${SRCDIR}</comment>\n"
+"        if [ -e configure ]\n"
+"        then\n"
+"                <comment>#run configure script if it exists</comment>\n"
+"                ./configure --prefix=/usr\n"
+"        fi\n"
+"        <comment>#run make</comment>\n"
+"        make $MAKEOPTS MAKE=\"make $MAKEOPTS\"  \n"
+"} \n"
+"\n"
+"ebuild_compile() {\n"
+"        if [ ! -d \"${SRCDIR}\" ]\n"
+"        then\n"
+"                echo \"${SRCDIR} does not exist -- please unpack first.\"\n"
+"                exit 1\n"
+"        fi\n"
+"        <comment>#make sure we're in the right directory</comment>\n"
+"        cd ${SRCDIR}\n"
+"        user_compile\n"
+"}\n"
+"\n"
+"export ORIGDIR=`pwd`\n"
+"export WORKDIR=${ORIGDIR}/work\n"
+"\n"
+"if [ -e \"$1\" ]\n"
+"then\n"
+"        source $1\n"
+"else\n"
+"        echo \"Ebuild file $1 not found.\"\n"
+"        exit 1\n"
+"fi\n"
+"\n"
+"export SRCDIR=${WORKDIR}/${P}\n"
+"\n"
+"case \"${2}\" in\n"
+"        unpack)\n"
+"                ebuild_unpack\n"
+"                ;;\n"
+"        compile)\n"
+"                ebuild_compile\n"
+"                ;;\n"
+"        all)\n"
+"                ebuild_unpack\n"
+"                ebuild_compile\n"
+"                ;;\n"
+"        *)\n"
+"                echo \"Please specify unpack, compile or all as the second arg\"\n"
+"                exit 1\n"
+"                ;;\n"
+"esac\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:772
+#, no-wrap
+msgid ""
+"Notice <path>/etc/ebuild.conf</path> is sourced near the beginning of the file.\n"
+"Also, notice that we use <c>$MAKEOPTS</c> in our default <c>user_compile()</c>\n"
+"function. You may be wondering how this will work -- after all, we refer to\n"
+"<c>$MAKEOPTS</c> before we source <path>/etc/ebuild.conf</path>, which actually\n"
+"defines <c>$MAKEOPTS</c> in the first place.  Fortunately for us, this is OK\n"
+"because variable expansion only happens when <c>user_compile()</c> is executed.\n"
+"By the time <c>user_compile()</c> is executed, <path>/etc/ebuild.conf</path> has\n"
+"already been sourced, and <c>$MAKEOPTS</c> is set to the correct value.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/bash-by-example-p3.xml:785
+#, no-wrap
+msgid "Wrapping it up"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:789
+#, no-wrap
+msgid ""
+"We've covered a lot of bash programming techniques in this article, but we've\n"
+"only touched the surface of the power of bash. For example, the production\n"
+"Gentoo Linux ebuild system not only automatically unpacks and compiles each\n"
+"package, but it can also:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/bash-by-example-p3.xml:797
+#, no-wrap
+msgid ""
+"  Automatically download the sources if they are not found in <c>$DISTDIR</c>\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/bash-by-example-p3.xml:800
+#, no-wrap
+msgid ""
+"  Verify that the sources are not corrupted by using MD5 message digests\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/bash-by-example-p3.xml:803
+#, no-wrap
+msgid ""
+"     If requested, install the compiled application into the live filesystem,\n"
+"     recording all installed files so that the package can be easily\n"
+"     uninstalled at a later date.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/bash-by-example-p3.xml:808
+#, no-wrap
+msgid ""
+"    If requested, package the compiled application in a tarball (compressed the\n"
+"    way you like it) so that it can be installed later, on another computer, or\n"
+"    during the CD-based installation process (if you are building a distribution\n"
+"    CD)\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:816
+#, no-wrap
+msgid ""
+"In addition, the production ebuild system has several other global configuration\n"
+"options, allowing the user to specify options such as what optimization flags to\n"
+"use during compilation, and whether optional support for packages like GNOME and\n"
+"slang should be enabled by default in those packages that support it.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/bash-by-example-p3.xml:823
+#, no-wrap
+msgid ""
+"It's clear that bash can accomplish much more than what I've touched on in this\n"
+"series of articles. I hope you've learned a lot about this incredible tool, and\n"
+"are excited about using bash to speed up and enhance your development projects.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/bash-by-example-p3.xml:833
+#, no-wrap
+msgid "Resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/bash-by-example-p3.xml:835
+#, no-wrap
+msgid "Useful links"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/bash-by-example-p3.xml:840
+#, no-wrap
+msgid ""
+"     Download the source tarball (<path>sed-3.02.tar.gz</path>) from\n"
+"     <uri>ftp://ftp.gnu.org/pub/gnu/sed</uri>\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/bash-by-example-p3.xml:844
+#, no-wrap
+msgid ""
+"    Read <uri link=\"/doc/en/articles/bash-by-example-p1.xml\">Bash by example:\n"
+"    Part 1</uri>. \n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/bash-by-example-p3.xml:848
+#, no-wrap
+msgid ""
+"    Read <uri link=\"/doc/en/articles/bash-by-example-p2.xml\">Bash by example:\n"
+"    Part 2</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/bash-by-example-p3.xml:852
+#, no-wrap
+msgid ""
+"    Visit the home page of the <uri link=\"http://gentoo.org\">Gentoo\n"
+"    Project</uri>\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/bash-by-example-p3.xml:856
+#, no-wrap
+msgid ""
+"    Check out the <uri\n"
+"    link=\"http://www.gnu.org/software/bash/manual/bash.html\">bash\n"
+"    online reference manual</uri>.\n"
+"  "
+msgstr ""

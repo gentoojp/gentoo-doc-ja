@@ -1,0 +1,190 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-install-alpha-bootloader.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.8</version>
+<date>September 24, 2004</date>
+
+<section>
+<title>Making your Choice</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Now that your kernel is configured and compiled and the necessary system
+configuration files are filled in correctly, it is time to install a
+program that will fire up your kernel when you start the system. Such a
+program is called a <e>bootloader</e>. 
+</p>
+
+<p>
+Several bootloaders exist for Linux/Alpha. You must choose one of the supported
+bootloaders, not all. You have the choice between <uri link="#aboot">aBoot</uri>
+and <uri link="#milo">MILO</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="aboot">
+<title>Default: Using aboot</title>
+<body>
+
+<p>
+We first install aboot on our system. Of course we use <c>emerge</c> to
+do so:
+</p>
+
+<pre caption = "Installing aboot">
+# <i>emerge --usepkg aboot</i>
+</pre>
+
+<p>
+The next step is to make our bootdisk bootable. This will start
+<c>aboot</c> when you boot your system. We make our bootdisk bootable by
+writing the <c>aboot</c> bootloader to the start of the disk.
+</p>
+
+<pre caption = "Making your bootdisk bootable">
+# <i>swriteboot -f3 /dev/sda /boot/bootlx</i> 
+# <i>abootconf /dev/sda 2</i>
+</pre>
+
+<note>
+If you use a different partitioning scheme than the one we use
+throughout this chapter, you have to change the commands accordingly.
+Please read the appropriate manual pages (<c>man 8 swriteboot</c> and
+<c>man 8 abootconf</c>).
+</note>
+
+<p>
+Additionally, you can make Gentoo boot automatically by setting up the 
+aboot configuration file and some SRM variables.  You can try setting 
+these variables from Linux, but it may be easier to do so from the SRM 
+console itself.
+</p>
+
+<pre caption = "Automatically booting Gentoo">
+# <i>echo '0:2/boot/vmlinux.gz root=/dev/sda2' &gt; /etc/aboot.conf</i>
+# <i>cd /proc/srm_environment/named_variables</i>
+# <i>echo -n 0 &gt; boot_osflags</i>
+# <i>echo -n '' &gt; boot_file</i>
+# <i>echo -n 'BOOT' &gt; auto_action</i>
+# <i>echo -n 'dkc100' &gt; bootdef_dev</i>
+<comment>(Substitute dkc100 with whatever your boot device is)</comment>
+</pre>
+
+<p>
+If you need to get into the SRM console again in the future (to recover 
+your Gentoo install, play with some variables, or whatever), just hit 
+CTRL+C to abort the automatic loading process.
+</p>
+
+<p>
+If you're installing using a serial console, don't forget to include 
+the serial console boot flag in <path>aboot.conf</path>.  See  
+<path>/etc/aboot.conf.example</path> for some further information.
+</p>
+
+<p>
+Aboot is now configured and ready to use. Continue with <uri
+link="#reboot">Rebooting the System</uri>.
+</p>
+
+</body>
+</section>
+<section id="milo">
+<title>Alternative: Using MILO</title>
+<body>
+
+<p>
+Before continuing, you should decide on how to use MILO. In this
+section, we will assume that you want to make a MILO boot floppy. If you
+are going to boot from an MS-DOS partition on your hard disk, you should
+amend the commands appropriately.
+</p>
+
+<p>
+To install MILO, we use <c>emerge</c>.
+</p>
+
+<pre caption = "Installing MILO">
+# <i>emerge --usepkg milo</i>
+</pre>
+
+<p>
+After MILO has been installed, the MILO images should be in
+<path>/opt/milo</path>. The commands below make a bootfloppy for use
+with MILO. Remember to use the correct image for your Alpha-system.
+</p>
+
+<pre caption = "Installing MILO on a floppy">
+<comment>(First insert a blank floppy)</comment>
+# <i>fdformat /dev/fd0</i>
+# <i>mformat a:</i>
+# <i>mcopy /opt/milo/milo-2.2-18-gentoo-ruffian a:\milo</i>
+# <i>mcopy /opt/milo/linload.exe a:\lilnload.exe</i>
+<comment>(Only if you have a Ruffian:</comment>     
+  # <i>mcopy /opt/milo/ldmilo.exe a:\ldmilo.exe</i>
+<comment>)</comment>
+# <i>echo -ne '\125\252' | dd of=/dev/fd0 bs=1 seek=510 count=2</i>
+</pre>
+
+<p>
+Your MILO boot floppy is now ready to boot Gentoo Linux. You may need to
+set environment variables in your ARCS Firmware to get MILO to start;
+this is all explained in the <uri
+link="http://tldp.org/HOWTO/MILO-HOWTO/">MILO-HOWTO</uri> with some examples 
+on common systems, and examples of the commands to use in interactive mode.
+</p>
+
+<p>
+Not reading the <uri link="http://tldp.org/HOWTO/MILO-HOWTO/">MILO-HOWTO</uri> 
+is a <e>bad</e> idea.
+</p>
+
+<p>
+Now continue with <uri link="#reboot">Rebooting the System</uri>.
+</p>
+
+</body>
+</section>
+<section id="reboot">
+<title>Rebooting the System</title>
+<subsection>
+<body>
+
+<p>
+Exit the chrooted environment and unmount all mounted partitions. Then type in 
+that one magical command you have been waiting for: <c>reboot</c>.
+</p>
+
+<pre caption="Exiting the chroot, unmounting all partitions and rebooting">
+# <i>exit</i>
+cdimage ~# <i>cd</i>
+cdimage ~# <i>umount /mnt/gentoo/boot /mnt/gentoo/proc /mnt/gentoo</i>
+cdimage ~# <i>reboot</i>
+</pre>
+
+<p>
+Of course, don't forget to remove the bootable CD, otherwise the CD will be
+booted again instead of your new Gentoo system.
+</p>
+
+<p>
+Once rebooted in your Gentoo installation, finish up with <uri
+link="?part=1&amp;chap=11">Finalizing your Gentoo Installation</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+
+</sections>

@@ -1,0 +1,227 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-22 05:07+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <sections><section><title>
+#: en/security/shb-chroot.xml:14
+#, fuzzy, no-wrap
+msgid "Chrooting"
+msgstr "Chrooting"
+
+#. type: Content of: <sections><section><body><p>
+#: en/security/shb-chroot.xml:18
+#, fuzzy, no-wrap
+msgid ""
+"Chrooting a service is a way of limiting a service (or user) environment "
+"to\n"
+"only accessing what it should and not gaining access (or information) that\n"
+"could lead to root access. By running the service as another user than\n"
+"<c>root</c> (<c>nobody</c>, <c>apache</c>, <c>named</c>) an attacker can "
+"only\n"
+"access files with the permissions of this user. This means that an "
+"attacker\n"
+"cannot gain <c>root</c> access even if the services has a security flaw.\n"
+msgstr ""
+"Chrootとは、サービス(またはユーザ)の環境をアクセスすべき場所にのみ制限し、rootでのアクセスを行うことが出来るアクセス(または情報)を得ることがないように制限する方法です。\n"
+"サービスを<c>root</c>以外のユーザ(<c>nobody</c>、<c>apache</c>、<c>named</c>)で動作させることにより、攻撃者はこのユーザに許可されているファイルのみアクセスすることが出来ます。\n"
+"これはつまり、サービスにセキュリティ上の欠陥があったとしても、攻撃者は<c>root</c>アクセスを得ることが出来ないと言うことです。\n"
+
+#. type: Content of: <sections><section><body><p>
+#: en/security/shb-chroot.xml:27
+#, fuzzy, no-wrap
+msgid ""
+"Some services like <c>pure-ftpd</c> and <c>bind</c> have features for\n"
+"chrooting, and other services do not. If the service supports it, use it,\n"
+"otherwise you have to figure out how to create your own. Lets see how to "
+"create\n"
+"a chroot, for a basic understanding of how chroots work, we will test it "
+"with\n"
+"<c>bash</c> (easy way of learning).\n"
+msgstr ""
+"<c>pure-ftpd</c>や<c>bind</c>といったいくつかのサービスにはchrootを行う機能があり、他にはありません。\n"
+"サービスがこれをサポートしているのなら、それを使用します。\n"
+"そうでなければ自分自身で作成する方法を理解しなければなりません。\n"
+"chrootの作成方法を知ったり、chrootの動作方法に関する基本的な理解を行うために、<c>bash</c>でテストしましょう(学ぶための簡単な方法です)。\n"
+
+#. type: Content of: <sections><section><body><p>
+#: en/security/shb-chroot.xml:35
+#, fuzzy, no-wrap
+msgid ""
+"Create the <path>/chroot</path> directory with <c>mkdir /chroot</c>. And "
+"find what\n"
+"dynamic libraries that <c>bash</c> is compiled with (if it is compiled "
+"with\n"
+"<c>-static</c> this step is not necessary):\n"
+msgstr ""
+"<c>mkdir /chroot</c>で<path>/chroot</path>ディレクトリを作成します。\n"
+"そして、<c>bash</c>とともにコンパイルされたダイナミックライブラリを探します(<c>-static</c>を用いてコンパイルされたのなら、この行程は必要ありません)。\n"
+
+#. type: Content of: <sections><section><body><p>
+#: en/security/shb-chroot.xml:41
+#, fuzzy, no-wrap
+msgid "The following command will create a list of libraries used by <c>bash</c>.\n"
+msgstr "以下のコマンドは、<c>bash</c>が使用するライブラリの一覧を作成します。\n"
+
+#. type: Attribute 'caption' of: <sections><section><body><pre>
+#: en/security/shb-chroot.xml:44
+#, fuzzy, no-wrap
+msgid "Get listing of used libraries"
+msgstr "使用されるライブラリの一覧を取得"
+
+#. type: Content of: <sections><section><body><pre>
+#: en/security/shb-chroot.xml:45
+#, fuzzy, no-wrap
+msgid ""
+"# <i>ldd /bin/bash</i>\n"
+"  libncurses.so.5 => /lib/libncurses.so.5 (0x4001b000)\n"
+"  libdl.so.2 => /lib/libdl.so.2 (0x40060000)\n"
+"  libc.so.6 => /lib/libc.so.6 (0x40063000)\n"
+"  /lib/ld-linux.so.2 => /lib/ld-linux.so.2 (0x40000000)\n"
+msgstr ""
+"# <i>ldd /bin/bash</i>\n"
+"  libncurses.so.5 => /lib/libncurses.so.5 (0x4001b000)\n"
+"  libdl.so.2 => /lib/libdl.so.2 (0x40060000)\n"
+"  libc.so.6 => /lib/libc.so.6 (0x40063000)\n"
+"  /lib/ld-linux.so.2 => /lib/ld-linux.so.2 (0x40000000)\n"
+
+#. type: Content of: <sections><section><body><p>
+#: en/security/shb-chroot.xml:53
+#, fuzzy, no-wrap
+msgid "Now lets create the environment for <c>bash</c>.\n"
+msgstr "では<c>bash</c>用の環境を作成しましょう。\n"
+
+#. type: Attribute 'caption' of: <sections><section><body><pre>
+#: en/security/shb-chroot.xml:56
+#, fuzzy, no-wrap
+msgid "Create chroot-environment for bash"
+msgstr "bash用のchroot環境の作成"
+
+#. type: Content of: <sections><section><body><pre>
+#: en/security/shb-chroot.xml:57
+#, fuzzy, no-wrap
+msgid ""
+"# <i>mkdir /chroot/bash</i>\n"
+"# <i>mkdir /chroot/bash/bin</i>\n"
+"# <i>mkdir /chroot/bash/lib</i>\n"
+msgstr ""
+"# <i>mkdir /chroot/bash</i>\n"
+"# <i>mkdir /chroot/bash/bin</i>\n"
+"# <i>mkdir /chroot/bash/lib</i>\n"
+
+#. type: Content of: <sections><section><body><p>
+#: en/security/shb-chroot.xml:63
+#, fuzzy, no-wrap
+msgid ""
+"Next copy the files used by <c>bash</c> (<path>/lib</path>) to the "
+"chrooted\n"
+"<path>lib</path> and copy the bash command to the chrooted "
+"<path>bin</path>\n"
+"directory. This will create the exact same environment, just with less\n"
+"functionality. After copying try it out: <c>chroot /chroot/bash "
+"/bin/bash</c>.\n"
+"If you get an prompt saying <path>/</path> it works! Otherwise it will "
+"properly\n"
+"tell you what a file is missing. Some shared libraries depend on each "
+"other.\n"
+msgstr ""
+"次に、<c>bash</c>によって使用されるファイル(<path>/lib</path>)をchrootされた<path>lib</path>にコピーし、bashコマンドをchroot環境の<path>bin</path>ディレクトリにコピーします。\n"
+"これは、機能性を損なうことなく、全く同じ環境を作成します。\n"
+"コピーが完了したら、<c>chroot /chroot/bash /bin/bash</c>を行います。\n"
+"プロンプトが<path>/</path>となったら、動作しています。\n"
+"そうでなければ、どのファイルが欠けているかをしっかりと報告してくれるでしょう。\n"
+"いくつかの共有ライブラリはお互いに依存しあっています。\n"
+
+#. type: Content of: <sections><section><body><p>
+#: en/security/shb-chroot.xml:72
+#, fuzzy, no-wrap
+msgid ""
+"You will notice that inside the chroot nothing works except "
+"<c>echo</c>. This\n"
+"is because we have no other commands in out chroot environment than bash "
+"and\n"
+"<c>echo</c> is a build-in functionality.\n"
+msgstr ""
+"chroot内では、<c>echo</c>以外が動作しないと言うことに気づくでしょう。\n"
+"これは、bash以外のコマンドをchroot環境に入れていないからであり、<c>echo</c>はビルドインの機能だからです。\n"
+
+#. type: Content of: <sections><section><body><p>
+#: en/security/shb-chroot.xml:78
+#, fuzzy, no-wrap
+msgid ""
+"This is basically the same way you would create a chrooted service. The "
+"only\n"
+"difference is that services sometimes rely on devices and configuration "
+"files\n"
+"in <path>/etc</path>. Simply copy them (devices can be copied with <c>cp\n"
+"-a</c>) to the chrooted environment, edit the init script to use chroot "
+"before\n"
+"executing. It can be difficult to find what devices and configuration files "
+"a\n"
+"services need. This is where the <c>strace</c> command becomes "
+"handy. Start\n"
+"the service with <c>/usr/bin/strace</c> bash and look for open, read, stat "
+"and\n"
+"maybe connect. This will give you a clue on what files to copy. But in "
+"most\n"
+"cases just copy the passwd file (edit the copy and remove users that has\n"
+"nothing to do with the service), <path>/dev/zero</path>, "
+"<path>/dev/log</path>\n"
+"and <path>/dev/random</path>.\n"
+msgstr ""
+"これは、chrootサービスを作成するのと基本的には同じ方法です。\n"
+"唯一異なる点は、サービスはしばしばデバイスや<path>/etc</path>にある設定ファイルに依存しているということです。\n"
+"単にそれらをchroot環境にコピーし(デバイスは<c>cp "
+"-a</c>でコピーできます)、実行する前にchrootを使用するようにinitスクリプトを編集します。\n"
+"どのデバイスと設定ファイルがサービスに必要かを見つけることは困難です。\n"
+"これには、<c>strace</c>コマンドが便利です。\n"
+"サービスを<c>/usr/bin/strace</c>とともに起動し、open、read、stat、そしてconnectを探します。(訳注：原文では<c>/usr/bin/strace</c> "
+"bashとなっていますが、誤りであると思われるのでbashを削除しました)\n"
+"これは、どのファイルをコピーするかの手がかりになります。\n"
+"ですが、ほとんどの場合はpasswdファイル(コピーを編集し、サービスに不要なユーザを削除します)、<path>/dev/zero</path>、<path>/dev/log</path>、そして<path>/dev/random</path>をコピーするだけです。\n"
+
+#. type: Content of: <sections><section><title>
+#: en/security/shb-chroot.xml:94
+#, fuzzy, no-wrap
+msgid "User Mode Linux"
+msgstr "User Mode Linux"
+
+#. type: Content of: <sections><section><body><p>
+#: en/security/shb-chroot.xml:98
+#, fuzzy, no-wrap
+msgid ""
+"Another way of creating a more secure environment is by running a virtual\n"
+"machine. A virtual machine, as the name implies, is a process that runs on "
+"top\n"
+"of your real operating system providing a hardware and operating system\n"
+"environment that appears to be its own unique machine. The security benefit "
+"is\n"
+"that if the server running on the virtual machine is compromised, only the\n"
+"virtual server is affected and not the parent installation.\n"
+msgstr ""
+"より安全な環境を作成する別の方法に、仮想マシンの実行があります。\n"
+"仮想マシンとは、その名が示すとおり、実際のOS上で動作し、単一のマシンとして存在するようにハードウェアとOS環境を提供するプロセスです。\n"
+"セキュリティ上の利点として、仮想マシンで動作しているサーバに障害が発生しても、仮想サーバのみが影響し、別のインストールには影響しません。\n"
+
+#. type: Content of: <sections><section><body><p>
+#: en/security/shb-chroot.xml:107
+#, fuzzy, no-wrap
+msgid ""
+"For more information about how to setup User Mode Linux consult the <uri\n"
+"link=\"/doc/en/uml.xml\">User Mode Linux Guide</uri>.\n"
+msgstr ""
+"User Mode Linuxの設定方法に関するより詳しい情報は、<uri link=\"/doc/en/uml.xml\">User Mode "
+"Linux Guide</uri>を参照してください。\n"

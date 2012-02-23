@@ -1,0 +1,665 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/qmail-howto.xml,v 1.42 2010/11/14 15:36:34 nightmorph Exp $ -->
+
+<guide disclaimer="draft">
+<title>netqmail/vpopmail Virtual Mail Hosting System Guide</title>
+
+<author title="Author">
+  <mail link="vapier"/>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This document details how to create a mail hosting system based upon netqmail,
+vpopmail, courier-imap, mysql, and horde's imp.
+</abstract>
+
+<license/>
+
+<version>2</version>
+<date>2010-11-14</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<body>
+
+<p>
+Whether you're providing e-mail for just system daemons, a single server, a
+domain, or for many virtual domains, netqmail can easily be setup to handle your
+needs. This guide will help you setup netqmail for all of these scenarios with a
+focus on remote access and encrypted communications the whole way through.
+</p>
+
+<p>
+Specifically, the packages this guide will help you with are netqmail,
+courier-imap, vpopmail, and horde/imp. These core packages will also bring in
+daemontools, ucspi-tcp, mysql, apache, and mod_php.  netqmail provides the core
+mta functions, courier-imap provides remote retrieval services, vpopmail
+provides virtual domain management, and horde/imp provides webmail access.
+</p>
+
+<p>
+Before emerging anything, you will need the following USE variables enabled.
+If you've already emerged any of these packages, you may have to re-emerge them.
+<c>USE="maildir ssl imap mysql"</c>.  Additionally, if you want to use
+horde/imp for your webmail then you will need <c>USE="nls"</c> before emerging
+mod_php.
+</p>
+
+<note>
+This guide is written in steps.  If at anytime you feel your setup is
+'complete', you do not need to continue.
+</note>
+
+<p>
+The last step of course is to commit yourself to the netqmail system.  There are
+many other packages with which you could build your e-mail system.  Now is the
+time to research and decide that netqmail is for you.  We have another <uri
+link="virt-mail-howto.xml">lovely guide</uri> centered around <uri
+link="http://www.postfix.org/">Postfix</uri>, or you could look into <uri
+link="http://www.exim.org/">exim</uri>.  It's up to you to choose the best
+solution for yourself; it is up to us to show you how to use netqmail.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>netqmail (talking to myself)</title>
+<section>
+<body>
+
+<pre caption="Emerge netqmail">
+# <i>emerge mail-mta/netqmail</i>
+</pre>
+
+<impo>
+This guide is designed around netqmail-1.05-r4 or later.  Will it work with
+earlier versions?  Maybe.  Should you upgrade? Yes, if you want to be sure this
+guide will work.
+</impo>
+
+<warn>
+If you get a message like <c>the virtual/mta package conflicts with another
+package</c> then you need to make sure to unmerge the other MTA on your system.
+To figure out what package that is, just run <c>emerge netqmail -p</c>.
+</warn>
+
+<p>
+Emerging netqmail will also emerge ucspi-tcp and daemontools.  You can read up
+on <uri link="http://cr.yp.to/ucspi-tcp.html">ucspi-tcp</uri> and on <uri
+link="http://cr.yp.to/daemontools.html">daemontools</uri> if you like.
+Basically, daemontools is responsible for managing netqmail as a service while
+ucspi-tcp is responsible for managing the incoming TCP connections to the
+netqmail service.
+</p>
+
+<p>
+First we have a few post-install configuration steps.
+</p>
+
+<pre caption="Out-of-the-box setup for netqmail">
+<comment>(Customize to fit your personal information)</comment>
+# <i>nano /var/qmail/control/servercert.cnf</i>
+# <i>emerge --config netqmail</i>
+</pre>
+
+<p>
+The design of netqmail has been completely around the focus of security.  To
+this end, e-mail is never sent to the user 'root'.  So now you have to select a
+user on your machine to receive mail that would normally be destined for 'root'.
+From now on in this guide, I will refer to that user as I have it in my setup,
+'vapier'.
+</p>
+
+<pre caption="Setting up non-root account for mail">
+# <i>cd /var/qmail/alias</i>
+# <i>echo vapier > .qmail-root</i>
+# <i>echo vapier > .qmail-postmaster</i>
+# <i>echo vapier > .qmail-mailer-daemon</i>
+</pre>
+
+<p>
+Now we want to get the netqmail delivery service up and running.
+</p>
+
+<pre caption="Start netqmail delivery service">
+# <i>rc-update add svscan default</i>
+# <i>/etc/init.d/svscan start</i>
+# <i>cd /service</i>
+# <i>ln -s /var/qmail/supervise/qmail-send qmail-send</i>
+</pre>
+
+<p>
+We want to make sure netqmail is working correctly, so here's a quick test.
+</p>
+
+<pre caption="Test delivery service">
+# <i>ssh vapier@localhost</i>
+# <i>maildirmake .maildir</i>
+# <i>qmail-inject root &lt;&lt; EOF
+test root e-mail!
+EOF</i>
+# <i>qmail-inject postmaster &lt;&lt; EOF
+test postmaster e-mail!
+EOF</i>
+# <i>qmail-inject vapier &lt;&lt; EOF
+test vapier e-mail!
+EOF</i>
+# <i>mutt</i>
+<comment>(You should now have 3 e-mails in your inbox)</comment>
+</pre>
+
+<p>
+And that's all!  Now you have a mail system that will handle mail for your
+local machine and the system daemons/users who utilize it.
+</p>
+
+<warn>
+If you don't receive any mail or you see weird errors in the log files (check
+<path>/var/log/qmail/</path>) involving 'localhost.localhost', then that means
+your domain/dns information is not setup properly.  By default, netqmail
+utilizes the output of <c>hostname --fqdn</c>.  If, on your machine, this
+returns 'localhost', then check your <path>/etc/conf.d/hostname</path>,
+<path>/etc/hosts</path>, and your dns to make sure everything is correct.  Once
+you have, edit the configuration files in <path>/var/qmail/control/</path>.  Use
+the example setups that follow if you need some more help.
+</warn>
+
+<pre caption="Example /var/qmail/control/ files for a 2nd level domain">
+# <i>hostname --fqdn</i>
+wh0rd.org
+# <i>cat me</i>
+wh0rd.org
+# <i>cat defaultdomain</i>
+wh0rd.org
+# <i>cat plusdomain</i>
+wh0rd.org
+# <i>cat locals</i>
+wh0rd.org
+# <i>cat rcpthosts</i>
+wh0rd.org
+</pre>
+
+<pre caption="Example /var/qmail/control/ files for a 3rd level domain">
+# <i>hostname --fqdn</i>
+mail.wh0rd.org
+# <i>cat me</i>
+mail.wh0rd.org
+# <i>cat defaultdomain</i>
+wh0rd.org
+# <i>cat plusdomain</i>
+wh0rd.org
+# <i>cat locals</i>
+mail.wh0rd.org
+# <i>cat rcpthosts</i>
+mail.wh0rd.org
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>vpopmail</title>
+<section>
+<body>
+
+<pre caption="Emerge vpopmail">
+# <i>emerge vpopmail</i>
+</pre>
+
+<impo>
+This guide is designed around vpopmail-5.4.6 or later.  Will it work with
+earlier versions?  Maybe.  Should you upgrade?  Yes, if you want to be sure
+this guide will work.
+</impo>
+
+<p>
+vpopmail takes a little bit more effort to setup than the previous packages.
+Since vpopmail runs off of mysql, we'll have to make sure that it's up and
+running first.  Then we can setup the vpopmail database and move on.
+Before you do this step, you should make sure you've already emerged
+and setup mysql properly.  Note that the password I will use for the
+vpopmail database is 'vpoppw', you however should pick a different one.
+</p>
+
+<pre caption="Setting up vpopmail in mysql">
+# <i>rc-update add mysql default</i>
+<comment>If you just emerged mysql for the first time, make sure you run
+the <i>ebuild &lt;mysql.ebuild&gt; config</i> command and follow the
+directions before starting the mysql server.</comment>
+# <i>/etc/init.d/mysql start</i>
+# <i>nano /etc/vpopmail.conf</i>
+<comment>(Change the password from 'secret' to 'vpoppw')</comment>
+# <i>mysql -p &lt;&lt; EOF
+create database vpopmail;
+use mysql;
+grant select, insert, update, delete, create, drop on vpopmail.* to vpopmail@localhost identified by 'vpoppw';
+flush privileges;
+EOF</i>
+<comment>(The following steps may or may not be needed, but we run them just to be sure)</comment>
+# <i>chown root:vpopmail /etc/vpopmail.conf</i>
+# <i>chmod 640 /etc/vpopmail.conf</i>
+# <i>chown root:vpopmail /var/vpopmail/bin/vchkpw</i>
+# <i>chmod 4711 /var/vpopmail/bin/vchkpw</i>
+</pre>
+
+<warn>
+If you experience permission problems with mysql/vpopmail, you may want to
+try restarting mysql.  Just run <c>/etc/init.d/mysql restart</c>.
+</warn>
+
+<p>
+At this point in time, vpopmail is ready to roll.  In this guide, we will be
+providing virtual hosting for the domain 'wh0rd.org'.  This means we need to
+tell vpopmail about this domain we want it to host for us.  We'll also quickly
+add an user account for 'vapier' while we're here.
+</p>
+
+<pre caption="Adding a domain">
+<comment>(You only have to do this if the <i>vadddomain</i> step below results in "command not found")</comment>
+# <i>source /etc/profile</i>
+
+<comment>(While debugging vpopmail, you may want to consult the logs)</comment>
+# <i>mysql -u vpopmail -p</i>
+mysql> <i>select * from vpopmail.vlog;</i>
+
+# <i>vadddomain wh0rd.org postpass</i>
+<comment>(Now quickly verify the domain is setup properly)</comment>
+# <i>printf "postmaster@wh0rd.org\0postpass\0blah\0" | vchkpw `which id` 3&lt;&amp;0</i>
+uid=89(vpopmail) gid=89(vpopmail) groups=0(root)
+<comment>(If you don't see something similar to above, then permissions somewhere are incorrect)</comment>
+# <i>vadduser vapier@wh0rd.org vappw</i>
+</pre>
+
+<p>
+Every domain that vpopmail creates comes with a 'postmaster' account.  Here we
+told vpopmail that the password for the postmaster account is 'postpass'.
+Before vpopmail can be truly useful, we'll need to be able to receive mail
+via courier and send mail via netqmail and SMTP.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Courier POP/IMAP</title>
+<section>
+<body>
+
+<pre caption="Emerge courier-imap">
+# <i>emerge net-mail/courier-imap</i>
+</pre>
+
+<impo>
+You must emerge courier-imap after vpopmail.  That way the authvchkpw module
+will be built.
+</impo>
+
+<impo>
+This guide is designed around net-mail/courier-imap-3.0.7 or later.  Will
+it work with earlier versions?  Maybe.  Should you upgrade?  Yes, if you want
+to be sure this guide will work.
+</impo>
+
+<p>
+Now for the common post-install configuration steps.  These steps are only
+needed if you wish to run SSL encrypted communications (which you should !).
+Otherwise you can skip to the last two steps in the two following code
+listings, removing the '-ssl' from the init script name each time.
+</p>
+
+<pre caption="Out-of-the-box setup for POP3/SSL">
+# <i>nano /etc/courier/authlib/authdaemonrc</i>
+<comment>(Set the authmodulelist variable to only contain "authvchkpw")</comment>
+# <i>cd /etc/courier-imap</i>
+# <i>nano pop3d.cnf</i>
+<comment>(Edit the [ req_dn ] section)</comment>
+# <i>mkpop3dcert</i>
+# <i>rc-update add courier-pop3d-ssl default</i>
+# <i>/etc/init.d/courier-pop3d-ssl start</i>
+</pre>
+
+<pre caption="Out-of-the-box setup for IMAP/SSL">
+# <i>cd /etc/courier-imap</i>
+# <i>nano imapd.cnf</i>
+<comment>(Edit the [ req_dn ] section)</comment>
+# <i>mkimapdcert</i>
+# <i>rc-update add courier-imapd-ssl default</i>
+# <i>/etc/init.d/courier-imapd-ssl start</i>
+</pre>
+
+<p>
+Your mail client should now be able to login to the host running courier and
+retrieve mail for the virtual host.  In my case, I am now able to login with
+the username 'vapier@wh0rd.org' and password 'vappw'.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>netqmail (talking to the world)</title>
+<section>
+<body>
+
+<p>
+Let's get SMTP up and running while making sure we don't create another spam
+hole for people to abuse.
+</p>
+
+<pre caption="Start netqmail SMTP service">
+# <i>cd /var/qmail/control/</i>
+# <i>nano conf-smtpd</i>
+<comment>(Uncomment the SMTP-AUTH variables and set QMAIL_SMTP_CHECKPASSWORD to /var/vpopmail/bin/vchkpw)</comment>
+# <i>nano servercert.cnf</i>
+<comment>(Edit the [ req_dn ] section)</comment>
+# <i>mkservercert</i>
+# <i>cd /service</i>
+# <i>ln -s /var/qmail/supervise/qmail-smtpd qmail-smtpd</i>
+# <i>/etc/init.d/svscan restart</i>
+</pre>
+
+<p>
+Assuming you haven't tweaked the netqmail control files at all, netqmail will
+now accept mail for the wh0rd.org virtual domain and for users of the local
+machine.  Furthermore, netqmail will relay mail for anyone who sends via
+127.0.0.1 and for anyone who is able to authenticate with vpopmail.  When you
+setup your mail client to send mail, make sure you select options like 'Server
+requires authentication'.  In my case, I set the user as 'vapier@wh0rd.org' and
+my password as 'vappw'.  The last detail is to make sure you tell your mail
+client to use SSL/TLS for SMTP communication. netqmail will not let you
+authenticate if the session is not encrypted.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Horde / IMP Webmail Client</title>
+<section>
+<body>
+
+<p>
+Although there are plenty of webmail clients out there (and you're free to use
+any of them), I prefer the <uri link="http://www.horde.org/imp/">IMP Webmail
+Client</uri> that is part of the Horde framework.  The biggest reason is that
+Horde can simply provide Webmail access, or you can easily add other components
+to handle Address Books, Calendars, Tasks, etc...  If this hasn't convinced
+you yet, then perhaps you need to read up on <uri
+link="http://www.horde.org/">Horde</uri> for yourself.
+</p>
+
+<p>
+On to the good stuff!  We need to emerge IMP now.
+</p>
+
+<pre caption="Emerge IMP">
+# <i>emerge horde-imp</i>
+</pre>
+
+<p>
+Now we setup IMP real quick.
+</p>
+
+<pre caption="Out-of-the-box setup for IMP">
+# <i>cd /var/www/localhost/htdocs/horde/imp/config/</i>
+# <i>nano servers.php</i>
+
+<comment>(Edit the $servers['imap'] array:)</comment>
+$servers['imap'] = array(
+  'name' => 'wh0rd.org',
+  'server' => 'localhost',
+  'protocol' => 'imap/ssl/novalidate-cert',
+  'port' => 993,
+  'folders' => '',
+  'namespace' => 'INBOX.',
+  'maildomain' => 'wh0rd.org',
+  'smtphost' => 'localhost',
+  'realm' => '',
+  'preferred' => ''
+);
+</pre>
+
+<p>
+Finally, we bring up apache so we can start using webmail.
+</p>
+
+<pre caption="Running apache">
+# <i>nano /etc/conf.d/apache2</i>
+<comment>(Uncomment APACHE2_OPTS="-D SSL -D PHP5")</comment>
+# <i>rc-update add apache2 default</i>
+# <i>/etc/init.d/apache2 start</i>
+</pre>
+
+<warn>
+You should really look into forcing https on users of horde.  This isn't a
+trivial issue, but you should look into it for the sake of security.
+</warn>
+
+<p>
+To test out the new IMP setup, launch a web browser and visit
+<uri>http://localhost/horde/</uri> (or change localhost with the server you're
+setting this up on).  You should see the Horde welcome page where you can login.
+Again, in my setup, I simply login with 'vapier@wh0rd.org' and 'vappw' as my
+username and password.
+</p>
+
+<p>
+At this point, Horde and IMP are all setup.  You should, however, go back
+through the config directories and tweak each to your heart's content.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Extra packages</title>
+<section>
+<title>qmailadmin</title>
+<body>
+
+<p>
+The first package I would suggest you look into is <uri
+link="http://www.inter7.com/qmailadmin.html">qmailadmin</uri>. It's a web based
+interface for managing virtual domains. Simply <c>emerge net-mail/qmailadmin</c>
+and then point your webbrowser to <uri>http://localhost/cgi-bin/qmailadmin</uri>
+in order to use it. Makes life a lot easier.
+</p>
+
+</body>
+</section>
+<section>
+<title>qmHandle</title>
+<body>
+
+<p>
+If you run into problems with netqmail queues and have a hard time debugging the
+situation, you may want to look into <uri
+link="http://qmhandle.sourceforge.net/">qmHandle</uri>.  It's a simple perl
+program which allows you to view and manage the netqmail message queue.  Again,
+all you need to do is <c>emerge net-mail/qmhandle</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>horde add ons</title>
+<body>
+
+<p>
+I would highly recommend looking into the many other Horde applications.  The
+<uri link="http://www.horde.org/turba/">Turba</uri>, <uri
+link="http://www.horde.org/kronolith/">Kronolith</uri>, and <uri
+link="http://www.horde.org/nag/">Nag</uri> applications complement IMP very
+well for instance. Their configuration is similar to that of IMP, so you
+should have no trouble setting them up.  Just remember to edit registry.php in
+the horde config directory so the new applications show up at the bottom of
+the horde website.
+</p>
+
+</body>
+</section>
+<section>
+<title>ucspi-tcp</title>
+<body>
+
+<p>
+netqmail utilizes ucspi-tcp to handle the incoming connections for netqmail.  If
+you wish to customize these filtering rules, then see the configuration files in
+<path>/etc/tcprules.d/</path> (older versions put files in <path>/etc</path>).
+There you'll find two files for each service, the configuration file (i.e.
+tcp.qmail-smtp) and the compiled version of this file that ucspi-tcp uses (i.e.
+tcp.qmail-smtp.cdb).  Whenever you update the configuration file, you'll have to
+rebuild the binary version of it. Just run <c>tcprules tcp.qmail-smtp.cdb
+tcp.qmail-smtp.tmp &lt; tcp.qmail-smtp</c>.  Every time a connection is made to
+the netqmail service, the compiled rules file is re-read, so there's no need to
+restart the service.
+</p>
+
+</body>
+</section>
+<section>
+<title>qmail-scanner</title>
+<body>
+
+<p>
+If you wish to do content filtering on your mail server (spam and virus), then
+you'll need to use a different queuing program than the default one.  One good
+program for doing so is <uri
+link="http://qmail-scanner.sourceforge.net/">qmail-scanner</uri>.
+Just <c>emerge qmail-scanner</c> and edit the
+<path>/etc/tcprules.d/tcp.qmail-smtp</path> file.
+</p>
+
+<impo>
+The build process of qmail-scanner is quite ugly.  In order to support
+packages, they must already be on your system.  This means you will have
+to emerge SpamAssassin and/or Clam AntiVirus before you emerge
+qmail-scanner.  See the relevant following sections for more information.
+</impo>
+
+<pre caption="Changing the queuer">
+# <i>cd /etc/tcprules.d/</i>
+# <i>nano tcp.qmail-smtp</i>
+<comment>(Add QMAILQUEUE="/var/qmail/bin/qmail-scanner-queue" to the catchall allow rule)</comment>
+# <i>tcprules tcp.qmail-smtp.cdb tcp.qmail-smtp.tmp &lt; tcp.qmail-smtp</i>
+</pre>
+
+<p>
+See the following sections for setting up spam and virus filtering.  You may
+want to set a few custom options by editing
+<path>/var/qmail/bin/qmail-scanner-queue.pl</path>.
+</p>
+
+</body>
+</section>
+<section>
+<title>SpamAssassin</title>
+<body>
+
+<p>
+One of the best Open Source spam filters out there is <uri
+link="http://www.spamassassin.org/">SpamAssassin</uri>.  Just <c>emerge
+mail-filter/spamassassin</c> to install.  The package comes in two flavors, a
+command line version and a client/server version.  For servers that will be
+handling a small amount of mail, running with the command line version is OK,
+but for anyone whose server will be handling appreciative loads should utilize
+the client/server version.
+</p>
+
+<pre caption="Out-of-the-box setup for SpamAssassin">
+# <i>nano /etc/mail/spamassassin/local.cf</i>
+<comment>(At the bare minimum, add these options:)</comment>
+required_hits 6
+skip_rbl_checks 1
+
+# <i>rc-update add spamd default</i>
+# <i>/etc/init.d/spamd start</i>
+# <i>nano /var/qmail/bin/qmail-scanner-queue.pl</i>
+<comment>(Make sure the $spamc_binary variable is set to '/usr/bin/spamc'.)</comment>
+<comment>(If it is set to '', then see the note below.)</comment>
+</pre>
+
+<impo>
+If you did not have SpamAssassin on your system before you emerged
+qmail-scanner, you will have to re-emerge qmail-scanner now.  Its build
+process is pretty ugly and will only add in features for packages it detects
+on the system at build time.
+</impo>
+
+<p>
+At this point, incoming mail should be sent through qmail-scanner which will
+run it through SpamAssassin for you.
+</p>
+
+</body>
+</section>
+<section>
+<title>Clam AntiVirus</title>
+<body>
+
+<p>
+Like SpamAssassin, <uri link="http://www.clamav.net/">Clam AntiVirus</uri>
+comes in two flavors.  I'll give you a quick run down on how to quickly setup
+the client/server version.  First, just <c>emerge app-antivirus/clamav</c>.
+</p>
+
+<pre caption="Out-of-the-box setup for Clam AntiVirus">
+# <i>nano /etc/conf.d/clamd</i>
+<comment>(Set START_CLAMD=yes)</comment>
+# <i>nano /etc/clamav.conf</i>
+<comment>(Setup stuff the way you want it)</comment>
+# <i>rc-update add clamd default</i>
+# <i>/etc/init.d/clamd start</i>
+# <i>nano /var/qmail/bin/qmail-scanner-queue.pl</i>
+<comment>(Make sure the $clamscan_binary variable is set to '/usr/bin/clamscan'.)</comment>
+<comment>(If it is set to '', then see the note below.)</comment>
+# <i>nano /var/qmail/control/conf-common</i>
+<comment>(If ClamAV reports memory problems try rasing the softlimit)</comment>
+</pre>
+
+<impo>
+If you did not have Clam AntiVirus on your system before you emerged
+qmail-scanner, you will have to re-emerge qmail-scanner now.  Its build
+process is pretty ugly and will only add in features for packages it detects
+on the system at build time.
+</impo>
+
+<p>
+At this point, incoming mail should be sent through qmail-scanner which will
+run it through Clam AntiVirus for you.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Final Notes</title>
+<section>
+<body>
+
+<p>
+I have no final notes other than if you experience any troubles with the guide,
+please contact <mail link="vapier@gentoo.org">me</mail> or file a bug with
+<uri link="http://bugs.gentoo.org/">Gentoo's Bugtracking Website</uri>.  If
+you have some interesting bits you think would enhance this guide, by all means
+send it my way for inclusion.  I love netqmail and would gladly add stuff that
+could possibly enhance a user's experience with the mta.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

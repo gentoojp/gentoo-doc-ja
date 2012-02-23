@@ -1,0 +1,345 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-hppa-kernel.xml,v 1.50 2012/02/22 21:27:45 swift Exp $ -->
+
+<sections>
+
+<version>12</version>
+<date>2012-02-22</date>
+
+<section>
+<title>Timezone</title>
+<body>
+
+<p>
+You first need to select your timezone so that your system knows where it is
+located. Look for your timezone in <path>/usr/share/zoneinfo</path>, then copy
+it to <path>/etc/localtime</path>. Please avoid the
+<path>/usr/share/zoneinfo/Etc/GMT*</path> timezones as their names do not
+indicate the expected zones. For instance, <path>GMT-8</path> is in fact
+GMT+8.
+</p>
+
+<pre caption="Setting the timezone information">
+# <i>ls /usr/share/zoneinfo</i>
+<comment>(Suppose you want to use Europe/Brussels)</comment>
+# <i>cp /usr/share/zoneinfo/Europe/Brussels /etc/localtime</i>
+<comment>(Next set the timezone)</comment>
+# <i>echo "Europe/Brussels" &gt; /etc/timezone</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Installing the Sources</title>
+<subsection>
+<title>Choosing a Kernel</title>
+<body>
+
+<p>
+The core around which all distributions are built is the Linux kernel. It is the
+layer between the user programs and your system hardware. Gentoo provides its
+users several possible kernel sources. A full listing with description is
+available at the <uri link="/doc/en/gentoo-kernel.xml">Gentoo Kernel
+Guide</uri>. 
+</p>
+
+<p>
+For <keyval id="arch"/>-based systems we have <c>gentoo-sources</c>
+(kernel source patched for extra features).
+</p>
+
+<p>
+Choose your kernel source and install it using <c>emerge</c>.
+</p>
+
+<pre caption="Installing a kernel source">
+# <i>emerge gentoo-sources</i>
+</pre>
+
+<p>
+When you take a look in <path>/usr/src</path> you should see a symlink called
+<path>linux</path> pointing to your kernel source. In this case, the installed
+kernel source points to <c>gentoo-sources-<keyval id="kernel-version"/></c>.
+Your version may be different, so keep this in mind.
+</p>
+
+<pre caption="Viewing the kernel source symlink">
+# <i>ls -l /usr/src/linux</i>
+lrwxrwxrwx    1 root     root           12 Oct 13 11:04 /usr/src/linux -&gt; linux-<keyval id="kernel-version"/>
+</pre>
+
+<p>
+Now it is time to configure and compile your kernel source. All architectures 
+can use <c>genkernel</c> for this, which will build a generic kernel as used 
+by the Installation CD. We explain the "manual" configuration first though, as
+it is the best way to optimize your environment.
+</p>
+
+<p>
+If you want to manually configure your kernel, continue now with <uri
+link="#manual">Default: Manual Configuration</uri>. If you want to use 
+<c>genkernel</c> you should read <uri link="#genkernel">Alternative: Using 
+genkernel</uri> instead.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="manual">
+<title>Default: Manual Configuration</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Manually configuring a kernel is often seen as the most difficult procedure a
+Linux user ever has to perform. Nothing is less true -- after configuring a
+couple of kernels you don't even remember that it was difficult ;)
+</p>
+
+<p>
+However, one thing <e>is</e> true: you must know your system when you start
+configuring a kernel manually. Most information can be gathered by emerging 
+pciutils (<c>emerge pciutils</c>) which contains <c>lspci</c>. You will now 
+be able to  use <c>lspci</c> within the chrooted environment. You may safely 
+ignore any <e>pcilib</e> warnings (like pcilib: cannot open 
+/sys/bus/pci/devices) that <c>lspci</c> throws out. Alternatively, you can run 
+<c>lspci</c> from a <e>non-chrooted</e> environment. The results are the same. 
+You can also run <c>lsmod</c> to see what kernel modules the Installation CD 
+uses (it might provide you with a nice hint on what to enable).
+</p>
+
+<p>
+Now go to your kernel source directory and execute <c>make menuconfig</c>. This
+will fire up an ncurses-based configuration menu.
+</p>
+
+<pre caption="Invoking menuconfig">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+You will be greeted with several configuration sections. We'll first list some
+options you must activate (otherwise Gentoo will not function, or not function
+properly without additional tweaks).
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating Required Options</title>
+<body>
+
+<p>
+First go to <c>File Systems</c> and select support for the filesystems you use.
+<e>Don't</e> compile them as modules, otherwise your Gentoo system will not be
+able to mount your partitions. Also select <c>Virtual memory</c> and <c>/proc
+file system</c>:
+</p>
+
+<pre caption="Selecting necessary file systems">
+File systems ---&gt;
+  Pseudo Filesystems ---&gt;
+    [*] /proc file system support
+    [*] Virtual memory file system support (former shm fs)
+
+<comment>(Select one or more of the following options as needed by your system)</comment>
+  &lt;*&gt; Reiserfs support
+  &lt;*&gt; Ext3 journalling file system support
+  &lt;*&gt; JFS filesystem support
+  &lt;*&gt; Second extended fs support
+  &lt;*&gt; XFS filesystem support
+</pre>
+
+<p>
+If you are using PPPoE to connect to the Internet or you are using a dial-up
+modem, you will need the following options in the kernel:
+</p>
+
+<pre caption="Selecting PPPoE necessary drivers">
+Device Drivers ---&gt;
+  Networking support ---&gt;
+    &lt;*&gt; PPP (point-to-point protocol) support
+    &lt;*&gt;   PPP support for async serial ports
+    &lt;*&gt;   PPP support for sync tty ports
+</pre>
+
+<p>
+The two compression options won't harm but are not definitely needed, neither
+does the <c>PPP over Ethernet</c> option, that might only be used by <c>ppp</c>
+when configured to do kernel mode PPPoE.
+</p>
+
+<p>
+If you require it, don't forget to include support in the kernel for your
+ethernet card.
+</p>
+
+<p>
+If you have a HIL mouse or keyboard, do not forget to compile in support for
+them.
+</p>
+
+<pre caption="Activating HIL support">
+Input core support ---&gt;
+  [*] Keyboard support
+  [*] Mouse support
+  [*] Event interface support
+</pre>
+
+<p>
+If you have no mouse on your HIL port, only use the basic support:
+</p>
+
+<pre caption="Basic HIL support">
+HIL support ---&gt;
+  [*] HIL Keyboard (basic) support
+</pre>
+
+<p>
+If you however want <e>full</e> HIL support, select the following options:
+</p>
+
+<pre caption="Full HIL support">
+HIL support ---&gt;
+  [*] HP System Device Controller i8042 Support
+  [*] HIL MLC Support
+  [*] HIL Keyboard (full) support
+  [*] HIL Mouse &amp; Pointer support
+</pre>
+
+<p>
+Also include display driver support:
+</p>
+
+<pre caption="Display Driver support">
+Graphics support ---&gt;
+  [*] Support for frame buffer devices
+      [*] HP STI frame buffer device support
+  Console display driver support ---&gt;
+      [*] STI text console
+</pre>
+
+<p>
+When you've finished configuring the kernel, continue with <uri 
+link="#compiling">Compiling and Installing</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection id="compiling">
+<title>Compiling and Installing</title>
+<body>
+
+<impo>
+If you want to compile a 64-bit kernel, you'll need to first emerge
+<c>kgcc64</c>. However, running a 64-bit kernel is discouraged. You should only
+run a 64-bit kernel if you have more than 4GB of RAM or if your server requires
+it, i.e. on the A500.
+</impo>
+
+<p>
+Now that your kernel is configured, it is time to compile and install it. Exit 
+the configuration and start the compilation process:
+</p>
+
+<pre caption="Compiling the kernel">
+# <i>make &amp;&amp; make modules_install</i>
+</pre>
+
+<p>
+When the kernel has finished compiling, copy the kernel image to
+<path>/boot</path>. Use whatever name you feel is appropriate for your kernel
+choice and remember it as you will need it later on when you configure your
+bootloader. Remember to replace <c><keyval id="kernel-name"/></c> with the
+name and version of your kernel.
+</p>
+
+<pre caption="Installing the kernel">
+# <i>cp vmlinux /boot/<keyval id="kernel-name"/></i>
+</pre>
+
+<p>
+Now continue with <uri link="#kernel_modules">Kernel Modules</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="genkernel">
+<title>Alternative: Using genkernel</title>
+<body>
+
+<p>
+If you are reading this section, you have chosen to use our <c>genkernel</c>
+script to configure your kernel for you.
+</p>
+
+<p>
+Now that your kernel source tree is installed, it's now time to compile your
+kernel by using our <c>genkernel</c> script to automatically build a kernel for
+you. <c>genkernel</c> works by configuring a kernel nearly identically to the
+way our Installation CD kernel is configured. This means that when you use
+<c>genkernel</c> to build your kernel, your system will generally detect all
+your hardware at boot-time, just like our Installation CD does. Because
+genkernel doesn't require any manual kernel configuration, it is an ideal
+solution for those users who may not be comfortable compiling their own
+kernels.
+</p>
+
+<p>
+Now, let's see how to use genkernel. First, emerge the genkernel ebuild:
+</p>
+
+<pre caption="Emerging genkernel">
+# <i>emerge genkernel</i>
+</pre>
+
+<p>
+Now, compile your kernel sources by running <c>genkernel all</c>.
+Be aware though, as <c>genkernel</c> compiles a kernel that supports almost all 
+hardware, this compilation will take quite a while to finish!
+</p>
+
+<p>
+Note that, if your boot partition doesn't use ext2 or ext3 as filesystem you
+need to manually configure your kernel using <c>genkernel --menuconfig all</c>
+and add support for your filesystem <e>in</e> the kernel (i.e. <e>not</e> as a
+module).
+</p>
+
+<pre caption="Running genkernel">
+# <i>genkernel all</i>
+</pre>
+
+<p>
+Once <c>genkernel</c> completes, a kernel, full set of modules and 
+<e>initial ram disk</e> (initramfs) will be created. We will use the kernel 
+and initrd when configuring a boot loader later in this document. Write
+down the names of the kernel and initrd as you will need it when writing
+the bootloader configuration file. The initrd will be started immediately after 
+booting to perform hardware autodetection (just like on the Installation CD) 
+before your "real" system starts up.
+</p>
+
+<pre caption="Checking the created kernel image name and initrd">
+# <i>ls /boot/kernel* /boot/initramfs*</i>
+</pre>
+
+</body>
+</section>
+<section id="kernel_modules">
+<title>Kernel Modules</title>
+
+<subsection>
+<include href="hb-install-kernelmodules.xml"/>
+</subsection>
+
+</section>
+</sections>

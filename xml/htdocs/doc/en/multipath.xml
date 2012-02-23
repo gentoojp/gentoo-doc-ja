@@ -1,0 +1,422 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/multipath.xml,v 1.4 2011/02/07 23:43:27 nightmorph Exp $ -->
+
+<guide>
+<title>Multipathing for Gentoo</title>
+
+<author title="Author">
+  <mail link="tsunam"/>
+</author>
+<author title="Author">
+  <mail link="matthew.summers@liquidustech.com">Matthew Summers</mail>
+</author>
+<author title="Author">
+  <mail link="richard.anderson@liquidustech.com">Richard Anderson</mail>
+</author>
+<author title="Author">
+  <mail link="steve.rucker@liquidustech.com">Steve Rucker</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This document teaches you how to set up multipathing services for data storage.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>3</version>
+<date>2011-02-07</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<body>
+
+<p>
+Multipathing services, generally deployed in enterprise environments, provide a
+means for high performance, load-balanced, and fault-tolerant data storage
+either locally or via a storage area network (SAN). Multipathing facilitates a
+single storage device to be transparently accessed across one or more paths.
+For example, if there are two connections from a server Host Bus Adapter (HBA)
+to two Fibre Channel switches and then to a SAN, when the HBA module loads and
+scans the bus, it will read four paths to the SAN: the paths from the server HBA
+to and from each Fibre Channel switch and at the storage device. Taking
+advantage of this situation, Multipath allows you to make use of each path
+simultaneously or independently to ensure a constant and reliable connection to
+the data in storage. Multipath serves as a failover for all connections points
+in the event of losing one path making critical data always available due to
+redundancy in the design and implementation.
+</p>
+
+<p>
+In the most basic sense, multipathing is made of two distinct parts:
+<c>device-mapper</c> and <c>multipath-tools</c>. <b>Device Mapper</b> is the
+first key element of this application. Administrators are probably familiar with
+Device Mapper from LVM, EVMS, dm-crypt, or in this case, Multipath. In short,
+working within the kernel space Device Mapper takes one block device such as
+<path>/dev/sda</path> (as all SAN based targets will be some type of SCSI
+device) and maps it to another device.
+</p>
+
+<p>
+On a lower level, Device Mapper creates a virtual block device accepting all of
+the commands of a regular block device, but passes on the actual data to the
+real block device. As previously stated, the mapping process is all handled in
+the kernel space and not in user space.
+</p>
+
+<p>
+<b>Multipath Tools</b> is a set of userspace tools that interacts with the
+Device Mapper tools and creates structures for device handling, implementing I/O
+multipathing at the OS level. In a typical SAN environment, you will have
+multiple paths to the same storage device: a fiber card (or two) on your server
+that connects to a switch which then connects to the actual storage itself (as
+in the scenario discussed above). So administrators could possibly see the same
+device one to four times in such a situation (each card will see the LUN twice,
+once for each path it has available to it). Thus, a single drive could be
+recognized as <path>sda</path>, <path>sdb</path>, <path>sdc</path>, and
+<path>sdd</path>. If you were to mount <path>/dev/sda</path> to
+<path>/san1</path>, for instance, you would be going over the singular path from
+one fiber card to a switch and then to a port on the same storage device. If any
+of those points were to fail, you would lose your storage device suddenly and
+have to unmount and remount with another device (<path>sdb</path>).
+</p>
+
+<p>
+Consequently, this scenario is not ideal as you are only using one out of the
+four possible paths. This is where the combination of Multipath tools and Device
+Mapper are beneficial. As already explained, Device Mapper creates virtual block
+devices and then passes information to the real block devices.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Installation and Configuration</title>
+<section>
+<title>Installation and Tools</title>
+<body>
+
+<p>
+You need to emerge <c>multipath-tools</c> and <c>sg3_utils</c>. On the disk, you
+want to find the <c>wwid</c>. You can use <c>sg_vpd</c> (provided by
+<c>sg3_utils</c>) to do this.
+</p>
+
+<pre caption="Installing multipath-tools and initial configuration">
+# <i>emerge multipath-tools sg3_utils</i>
+<comment>(Replace /dev/DEVICE with your disk to find its wwid)</comment>
+# <i>/usr/bin/sg_vpd --page=di /dev/DEVICE</i>
+</pre>
+
+<p>
+Where DEVICE is the sd device, the ID will come back with a <c>0x6</c>. Replace
+<c>0x</c> with <c>3</c>, and you will have the proper ID that you'll put into
+the multipath <c>wwid</c> in <path>/etc/multipath.conf</path>. More on this in
+the next chapter.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring Gentoo for multipathing</title>
+<body>
+
+<p>
+To configure Gentoo for multipath, your kernel needs the following settings:
+</p>
+
+<pre caption="Adding multipath support">
+Device Drivers  --->
+  SCSI device support  --->
+    &lt;*&gt; SCSI target support
+    &lt;*&gt; SCSI disk support
+    [*] Probe all LUNs on each SCSI device
+  [*] Multiple devices driver support (RAID and LVM)  --->
+    &lt;*&gt;  Multipath I/O support
+    &lt;*&gt;  Device mapper support
+    &lt;*&gt;    Multipath target
+        <comment>(Select your device from the list)</comment>)
+    &lt;*&gt;      EMC CX/AX multipath support  
+    &lt;*&gt;      LSI/Engenio RDAC multipath support  
+    &lt;*&gt;      HP MSA multipath support
+</pre>
+
+<note>
+<c>scsi_id</c> is done by targets. IDE drives have two spots to which you can
+connect. An administrator has the ability to set a drive as a master and another
+drive as a slave or set to autoselect by changing the dip switches. scsi_id is
+similar. Each drive or Logical Unit Number (LUN) has a unique ID, which ranges
+from 0 to 254. A device that has ID 0 will be discovered before a device that
+has, for example, ID 120, because it performs a LIP (a scan of the SCSI bus for
+devices that respond) that starts from 0 and works its way upwards.
+</note>
+
+<p>
+In the kernel menu config, make sure CONFIG_SCSI_MULTI_LUN=y is set to ensure
+the SCSI subsystem is able to probe all Logical Unit Numbers (LUNs) (This is
+recommended as you'll stop scanning after ID 0 if you have a device on an ID of
+<c>0</c> but not <c>1</c> and then on an ID of <c>2</c>. Simply, you'll get your
+device for ID <c>0</c> but not <c>2</c>.) or whichever device you need for SCSI,
+such as a QLogic 2400 card, which is in the SCSI low-level drivers area.
+</p>
+
+<p>
+For a better understanding, consider the following scenarios:
+</p>
+
+<p>
+There are three drives with IDs of 0,1,2. Without the "probe all LUNs" setting,
+you will see IDs 0,1,2 as sda,sdb,sdc - all devices are seen. If you delete the
+ID 1 drive.  IDs 0,2 will still be seen. It might seem to make sense that you
+would see sda and sdb now (sdc would move to sdb as there is no device to fill
+it up).  However, if you don't probe all LUNs, it will perform in the following
+manner:
+</p>
+
+<p>
+Scenario 1: Without "probe all LUNs", the scan will start and ID 0 will be seen.
+ID 0 will be set to sda and then move to find ID 1. If ID 1 is not detected,
+scanning will stop and be considered complete having perceived to have scanned
+all devices even if there is a device on ID 2 or any other subsequent ID. Reboot
+for scenario two.
+</p>
+
+<p>
+Scenario 2: If you have "probe all LUNs", the scan will start and detect ID 0.
+This ID will be assigned sda and will continue to detect the next device. If ID
+1 is not detected, scanning will continue to find more devices. ID 2 will be
+located and assigned to be sdb. If no devices (IDs) are detected beyond that,
+scanning will be considered complete.
+</p>
+
+<note>
+Although it seems that it is unfeasible or even unnecessary to have devices
+spaced many LUNs apart, to account for all options it is necessary to still
+probe all LUNs. An administrator will encounter many reasons (business or
+personal) for such a setup. Therefore, the second scenario would be optimal to
+ensure that all devices are recognized and assigned an ID in the multipath setup
+process.
+</note>
+
+<p>
+So, once you probe all LUNs, all devices will be recognized and assigned an ID
+in Multipath.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Architectural Overview</title>
+<section>
+<body>
+
+<p>
+As part of Multipath Tools, there are priority groups filled with the devices
+mentioned earlier. After you have configured <c>multipath-tools</c> and started
+it with <c>/etc/init.d/multipath start</c>, you can list the groups via
+<c>multipath -l</c>. The output will look like the following:
+</p>
+
+<pre caption="multipath -l output">
+EVA_SAN (3600508b4001044ee00013000031e0000)
+[size=300 GB][features="1 queue_if_no_path"][hwhandler="0"]
+\_ round-robin 0 [active]
+\_ 0:0:0:1 sda 8:0  [active]
+\_ round-robin 0 [enabled]
+\_ 0:0:1:1 sdb 8:16 [active]
+
+EVA_SAN2 (3600508b4001044ee0001300003880000)
+[size=300 GB][features="1 queue_if_no_path"][hwhandler="0"]
+\_ round-robin 0 [active]
+\_ 0:0:0:2 sdc 8:32 [active]
+\_ round-robin 0 [enabled]
+\_ 0:0:1:2 sdd 8:48 [active]
+</pre>
+
+<p>
+By default, it will pick the first priority group (the first top round-robin for
+the EVA_SAN2, for instance, being <path>sdc</path>). In this instance, due to
+round robin it will bounce back and forth. But if one path was to fail, it would
+push all information to the other path and continue. Only if all the devices in
+a path fail will it actually fail and go to the secondary priority group.
+</p>
+
+</body>
+</section>
+<section>
+<title>Typical Configuration</title>
+<body>
+
+<p>
+A typical Multipath configuration looks like the following:
+</p>
+
+<pre caption="A typical /etc/multipath.conf file">
+defaults {
+udev_dir                /dev
+polling_interval        15
+selector                "round-robin 0"
+path_grouping_policy    group_by_prio
+failback                5
+path_checker            tur
+prio_callout            "/sbin/mpath_prio_tpc /dev/%n"
+rr_min_io               100
+rr_weight               uniform
+no_path_retry           queue
+user_friendly_names     yes
+}
+blacklist {
+devnode cciss
+devnode fd
+devnode hd
+devnode md
+devnode sr
+devnode scd
+devnode st
+devnode ram
+devnode raw
+devnode loop
+devnode sda
+}
+
+multipaths {
+multipath {
+wwid
+<comment>(To find your wwid, please use /usr/bin/sg_vpd --page=di /dev/DEVICE.
+The address will be a 0x6. Remove the 0x and replace it with 3.)</comment>
+alias DB_SAN
+}
+devices {
+device {
+<comment>(White spacing is important on these two items to match the vendor specifications.)</comment>
+"IBM     "
+"1815      FAStT "
+}
+}
+}
+</pre>
+
+<impo>
+On your devices, it is best to <c>cat</c>
+<path>/sys/block/sd(device)/device/model</path> and <c>cat</c>
+<path>/sys/block/device/sd(device)/device/vendor</path>, placing both directly
+into your devices section in <path>/etc/multipath.conf</path>. You might not
+always see the white spacing, and it's part of the name in this case. One reason
+for the device section is that not every vendor's string is in the kernel
+convention and naming, and the string, as such, is not always detected as
+required.
+</impo>
+
+<p>
+A typical multipath configuration utilizing an EVA_SAN where the device
+information is in the kernel information regarding SAN hardware detection would
+look like:
+</p>
+
+<pre caption="EVA_SAN configuration">
+multipaths {
+multipath {
+wwid  3600508b4001044ee00013000031e0000
+alias EVA_SAN
+}
+multipath {
+wwid    3600508b4001044ee0001300003880000
+alias   EVA_SAN2
+}
+}
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Setting Up Your Own Configuration</title>
+<section>
+<body>
+
+<p>
+The multipath configuration is fairly simple to accomplish because the only file
+that needs modification is <path>/etc/multipath.conf</path>.
+</p>
+
+<p>
+To begin, set the <b>polling interview</b> to how often (in seconds) path checks
+will be performed to ensure that the path is alive and healthy.
+</p>
+
+<p>
+<b>selector</b> will be set at <c>"round-robin 0"</c>.
+</p>
+
+<note>
+This round-robin value is the only selector value that will be used in this
+configuration.
+</note>
+
+<p>
+<b>prio_callout</b>: This one can be quite important, and there are a number of
+different priorities for different devices, such as:
+</p>
+
+<ul>
+  <li>mpath_prio_alua</li>
+  <li>mpath_prio_emc</li>
+  <li>mpath_prio_hds_modular</li>
+  <li>mpath_prio_netapp</li>
+  <li>mpath_prio_tpc</li>
+</ul>
+
+<note>
+For most people, <c>mpath_prio_tpc</c> will suffice as it's a conservative
+checker. Other devices like <c>mpath_prio_netapp</c> have special functionality
+for priority grouping, such as netapps.
+</note>
+
+<p>
+<b>path_grouping_policy</b> has a few different options: failover, multibus,
+group_by_prio. <c>Failover</c> will only have one disk per priority group.
+<c>Multibus</c> will put all devices into one priority group.
+<c>Group_by_prio</c> is done by a "priority value." So routes that have the same
+priority value will be grouped together, the priority values being determined by
+the callout.
+</p>
+
+<p>
+<b>no_path_retry</b> is set to <c>queue</c> as most people don't want data to
+fail to send at all. So, if all paths fail, for instance, the I/Os will queue up
+until the device returns and then sends everything again. Depending on your
+transfer, this can cause load issues.
+</p>
+
+<p>
+<b>rr_min_io</b> are the number of I/Os to do per path before switching to the
+next I/Os in the same group. If <path>sda</path> and <path>sdb</path> were in
+the same group, rr_min_io would do 100 I/Os to <path>sda</path> then do 100 to
+<path>sdb</path>, bouncing back and forth. This is a setting to tweak for each
+instance to maximize performance because the data load and size of
+transfers/request vary by company. The default in the case is <c>1000</c>, but
+some may prefer a smaller number in order to switch ports more often, when
+possible.
+</p>
+
+<p>
+<b>user_friendly_names</b> make it easier to see which device you are working
+with. For example, if you set user_friendly_names to <c>no</c>, then you'll see
+WWID instead of EVA_SAN for your device.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

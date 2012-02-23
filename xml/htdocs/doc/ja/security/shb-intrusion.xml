@@ -1,0 +1,470 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/security/shb-intrusion.xml,v 1.3 2008/06/24 15:18:11 shindo Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<sections>
+
+<version>1.3</version>
+<date>2006-11-01</date>
+
+<!-- Original revision: 1.5 -->
+
+<section>
+<title>AIDE(Advanced Intrusion Detection Environment)</title>
+<body>
+
+<p>
+AIDEとはホスト型の侵入検知システム(HIDS)で、
+Tripwireに対しフリーで提供される代替手段です(もし、Tripwireの知識が既にあれば、
+AIDEの設定ファイルを学ぶには何ら支障はないでしょう)。
+HIDSは重要な設定ファイルとバイナリに対する改ざんを検知するため使用され、
+一般的には検査されるべきファイルに対し固有の暗号ハッシュを生成し、
+安全な場所にその情報を格納します。定期的に(例えば、1日に1度)、
+格納された"既知の望ましい"ハッシュが各ファイルのカレントコピーから生成されたハッシュと比較され、
+ファイルが改ざんされていないか判断されます。
+HIDSは、システムに対し許可されない変更を検知する上で素晴らしい手段となりますが、
+適切に動作させ、かつ有効活用するには少し作業が必要になります。
+</p>
+
+<p>
+設定ファイルはファイルとディレクトリに対する正規表現、マクロ、そしてルールがベースとなっています。
+以下にマクロを示します。
+</p>
+
+<table>
+<tr>
+  <th>マクロ</th>
+  <th>説明</th>
+  <th>構文</th>
+</tr>
+<tr>
+  <ti>ifdef</ti>
+  <ti>定義されていれば</ti>
+  <ti>@@ifdef "name"</ti>
+</tr>
+<tr>
+  <ti>ifndef</ti>
+  <ti>定義されていなければ</ti>
+  <ti>@@ifndef "name"</ti>
+</tr>
+<tr>
+  <ti>define</ti>
+  <ti>変数を定義</ti>
+  <ti>@@define "name" "value"</ti>
+</tr>
+<tr>
+  <ti>undef</ti>
+  <ti>変数を未定義</ti>
+  <ti>@@undef "name"</ti>
+</tr>
+<tr>
+  <ti>ifhost</ti>
+  <ti>ホスト名と等しければ</ti>
+  <ti>@@ifhost "hostname"</ti>
+</tr>
+<tr>
+  <ti>ifnhost</ti>
+  <ti>ホスト名と等しくなければ</ti>
+  <ti>@@ifnhost "hostname"</ti>
+</tr>
+<tr>
+  <ti>endif</ti>
+<ti>
+defineとundefを除く上記マクロが定義された後に、endifは使用される必要がある
+</ti>
+<ti>@@endif</ti>
+</tr>
+</table>
+
+<p>
+もし、1台以上のGentoo Boxをお持ちで、かつ全てのマシンでAIDEを使用したいのであれば、
+上記マクロは非常に手ごろです。
+しかし、全てのマシンに同じサービスもしくは同じユーザが存在するとは限りません。
+</p>
+
+<p>
+次に、ファイルとディレクトリに対し検査を行うフラグをセットします。
+これはパーミッション、ファイル表示、暗号ハッシュ(つまり、チェックサム)を組み合わせたものです。
+</p>
+
+<table>
+<tr>
+  <th>フラグ</th>
+  <th>説明</th>
+</tr>
+<tr>
+  <ti>p</ti>
+  <ti>パーミッション</ti>
+</tr>
+<tr>
+  <ti>i</ti>
+  <ti>iノード</ti>
+</tr>
+<tr>
+  <ti>n</ti>
+  <ti>リンクの数</ti>
+</tr>
+<tr>
+  <ti>u</ti>
+  <ti>ユーザ</ti>
+</tr>
+<tr>
+  <ti>g</ti>
+  <ti>グループ</ti>
+</tr>
+<tr>
+  <ti>s</ti>
+  <ti>サイズ</ti>
+</tr>
+<tr>
+  <ti>b</ti>
+  <ti>ブロックカウント</ti>
+</tr>
+<tr>
+  <ti>m</ti>
+  <ti>mtime</ti>
+</tr>
+<tr>
+  <ti>a</ti>
+  <ti>atime</ti>
+</tr>
+<tr>
+  <ti>c</ti>
+  <ti>ctime</ti>
+</tr>
+<tr>
+  <ti>S</ti>
+  <ti>増加するサイズをチェックする</ti>
+</tr>
+<tr>
+  <ti>md5</ti>
+  <ti>MD5チェックサム</ti>
+</tr>
+<tr>
+  <ti>sha1</ti>
+  <ti>SHA1チェックサム</ti>
+</tr>
+<tr>
+  <ti>rmd160</ti>
+  <ti>RMD160チェックサム</ti>
+</tr>
+<tr>
+  <ti>tiger</ti>
+  <ti>Tigerチェックサム</ti>
+</tr>
+<tr>
+  <ti>R</ti>
+  <ti>p+i+n+u+g+s+m+c+md5</ti>
+</tr>
+<tr>
+  <ti>L</ti>
+  <ti>p+i+n+u+g</ti>
+</tr>
+<tr>
+  <ti>E</ti>
+  <ti>空グループ</ti>
+</tr>
+<tr>
+  <ti>&gt;</ti>
+  <ti>増大するログファイル p+u+g+i+n+S</ti>
+</tr>
+</table>
+
+<p>
+もし、AIDEがmhashサポートと共にコンパイルされていれば、
+他の機能もいくつサポートされていることになります。
+</p>
+
+<table>
+<tr>
+<th>フラグ</th>
+<th>説明</th>
+</tr>
+<tr>
+<ti>haval</ti>
+<ti>HAVALチェックサム</ti>
+</tr>
+<tr>
+<ti>gost</ti>
+<ti>GOSTチェックサム</ti>
+</tr>
+<tr>
+<ti>crc32</ti>
+<ti>CRC32チェックサム</ti>
+</tr>
+</table>
+
+<p>
+これで、以下のように組み合わせることにより上記フラグをベースに自分用のルールを作成できます。
+</p>
+
+<pre caption="AIDE用のルールセットを作成する">
+All=R+a+sha1+rmd160
+Norm=s+n+b+md5+sha1+rmd160
+</pre>
+
+<p>
+自分専用の設定ファイルを作成するにあたり、
+その最終段階はファイルもしくはディレクトリに対するルールの追加方法を理解するということです。
+ルールを入力するには、ファイル名もしくはディレクトリ名とルールを組み合わせます。
+代わりのルールを明示的に指定しない限り、AIDEは全てのファイルを再起的に追加します。
+</p>
+
+<table>
+<tr>
+<th>フラグ</th>
+<th>説明</th>
+</tr>
+<tr>
+<ti>!</ti>
+<ti>このファイルもしくはディレクトリを追加しません。</ti>
+</tr>
+<tr>
+<ti>=</ti>
+<ti>このディレクトリを追加します。但し、再帰的ではありません。</ti>
+</tr>
+</table>
+
+<p>
+それでは、本格的な例を見てみましょう。
+</p>
+
+<pre caption="/etc/aide/aide.conf">
+@@ifndef TOPDIR 
+@@define TOPDIR /
+@@endif
+
+@@ifndef AIDEDIR 
+@@define AIDEDIR /etc/aide
+@@endif
+
+@@ifhost smbserv
+@@define smbactive
+@@endif
+
+# The location of the database to be read.
+database=file:@@{AIDEDIR}/aide.db
+
+# The location of the database to be written.
+database_out=file:aide.db.new
+
+verbose=20
+report_url=stdout
+
+# Rule definition
+All=R+a+sha1+rmd160
+Norm=s+n+b+md5+sha1+rmd160
+
+@@{TOPDIR} Norm
+!@@{TOPDIR}etc/aide
+!@@{TOPDIR}dev
+!@@{TOPDIR}media
+!@@{TOPDIR}mnt
+!@@{TOPDIR}proc
+!@@{TOPDIR}root
+!@@{TOPDIR}sys
+!@@{TOPDIR}tmp
+!@@{TOPDIR}var/log
+!@@{TOPDIR}var/run
+!@@{TOPDIR}usr/portage
+@@ifdef smbactive
+!@@{TOPDIR}etc/smb/private/secrets.tdb
+@@endif
+=@@{TOPDIR}home Norm
+</pre>
+
+<p>
+上記の例では、トップディレクトリの始まりとAIDEディレクトリの場所をいくつかのマクロで指定しています。
+AIDEはファイル整合性を確認する際に、<path>/etc/aide/aide.db</path>ファイルをチェックします。
+しかし、アップデートしたり新規ファイルを作成した際は、<path>/etc/aide/aide.db.new</path>に情報を格納します。
+こうすることで、自動で古いデータベースファイルを上書きしません。
+<c>report_URL</c>オプションは未だ実装されていませんが、e-mailの送信、
+もしかするとスクリプトを実行することさえ可能とすべきという意図が開発者にはありました。
+</p>
+
+<p>
+AIDEのebuildには、
+実用的なデフォルトの設定ファイル、helperスクリプト、そしてcrontabスクリプトが付属しています。
+helperスクリプトは多くのタスクをあなたに代わってこなし、スクリプトを少し扱いやすくするインターフェースを提供します。
+利用可能な全てのオプションを確認するには、<c>aideinit --help</c>を実行します。
+始めるには、<c>aideinit -i</c>を実行するだけです。そうすれば、
+crontabスクリプトがデータベースを検知し、メールを必要に応じて毎日送信してくれます。
+<path>/etc/aide/aide.conf</path>ファイルを確認し、設定がマシンの状況をきちんと反映
+しているかを必ず確認して下さい。
+</p>
+
+<note>
+CPU、ディスクのアクセススピード、ファイルに設定したフラグにもよりますが、これは時間がかかります。
+</note>
+
+<note>
+忘れずにエイリアスを設定し、root宛のメールを受け取れるようにして下さい。そうしなければ、
+AIDEがリポートする内容を理解できないでしょう。
+</note>
+
+<p>
+データベースファイルをローカルに保存する場合には特有のリスクがあります。なぜなら、
+アタッカー(AIDEがインストールされていることを知っている場合)は間違いなくデータベースファイルを改竄し、
+アップデートするか<path>/usr/bin/aide</path>を変更しようとするためです。
+そのため、CDもしくは他のメディアを作成し、.dbファイルとAIDEバイナリをそこにコピーしておくべきでしょう。
+</p>
+
+<p>
+情報は、<uri link="http://www.cs.tut.fi/~rammer/aide.html">AIDE</uri>プロジェクトページで入手できます。
+</p>
+
+</body>
+</section>
+<section>
+<title>Snort</title>
+<body>
+
+<p>
+Snortとは、ネットワーク侵入検知システム(NIDS)です。インストールし設定するには、
+下記の例を使用して下さい。
+</p>
+
+<pre caption="/etc/conf.d/snort">
+PIDFILE=/var/run/snort_eth0.pid
+MODE="full"
+NETWORK="10.0.0.0/24"
+LOGDIR="/var/log/snort"
+CONF=/etc/snort/snort.conf
+SNORT_OPTS="-D -s -u snort -dev -l $LOGDIR -h $NETWORK -c $CONF"
+</pre>
+
+<pre caption="/etc/snort/snort.conf">
+<comment>(ステップ1)</comment>
+var HOME_NET 10.0.0.0/24
+var EXTERNAL_NET any
+var SMTP $HOME_NET
+var HTTP_SERVERS $HOME_NET
+var SQL_SERVERS $HOME_NET
+var DNS_SERVERS [10.0.0.2/32,212.242.40.51/32]
+var RULE_PATH ./
+
+<comment>(ステップ2)</comment>
+preprocessor frag2
+preprocessor stream4: detect_scans detect_state_problems detect_scans disable_evasion_alerts
+preprocessor stream4_reassemble: ports all
+preprocessor http_decode: 80 8080 unicode iis_alt_unicode double_encode iis_flip_slash full_whitespace
+preprocessor rpc_decode: 111 32771
+preprocessor bo: -nobrute
+preprocessor telnet_decode
+
+<comment>(ステップ3)</comment>
+include classification.config
+
+<comment>(ステップ4)</comment>
+include $RULE_PATH/bad-traffic.rules
+include $RULE_PATH/exploit.rules
+include $RULE_PATH/scan.rules
+include $RULE_PATH/finger.rules
+include $RULE_PATH/ftp.rules
+include $RULE_PATH/telnet.rules
+include $RULE_PATH/smtp.rules
+include $RULE_PATH/rpc.rules
+include $RULE_PATH/rservices.rules
+include $RULE_PATH/dos.rules
+include $RULE_PATH/ddos.rules
+include $RULE_PATH/dns.rules
+include $RULE_PATH/tftp.rules
+include $RULE_PATH/web-cgi.rules
+include $RULE_PATH/web-coldfusion.rules
+include $RULE_PATH/web-iis.rules
+include $RULE_PATH/web-frontpage.rules
+include $RULE_PATH/web-misc.rules
+include $RULE_PATH/web-attacks.rules
+include $RULE_PATH/sql.rules
+include $RULE_PATH/x11.rules
+include $RULE_PATH/icmp.rules
+include $RULE_PATH/netbios.rules
+include $RULE_PATH/misc.rules
+include $RULE_PATH/attack-responses.rules
+include $RULE_PATH/backdoor.rules
+include $RULE_PATH/shellcode.rules
+include $RULE_PATH/policy.rules
+include $RULE_PATH/porn.rules
+include $RULE_PATH/info.rules
+include $RULE_PATH/icmp-info.rules
+include $RULE_PATH/virus.rules
+# include $RULE_PATH/experimental.rules
+include $RULE_PATH/local.rules
+</pre>
+
+<pre caption="/etc/snort/classification.config">
+config classification: not-suspicious,Not Suspicious Traffic,3
+config classification: unknown,Unknown Traffic,3
+config classification: bad-unknown,Potentially Bad Traffic, 2
+config classification: attempted-recon,Attempted Information Leak,2
+config classification: successful-recon-limited,Information Leak,2
+config classification: successful-recon-largescale,Large Scale Information Leak,2
+config classification: attempted-dos,Attempted Denial of Service,2
+config classification: successful-dos,Denial of Service,2
+config classification: attempted-user,Attempted User Privilege Gain,1
+config classification: unsuccessful-user,Unsuccessful User Privilege Gain,1
+config classification: successful-user,Successful User Privilege Gain,1
+config classification: attempted-admin,Attempted Administrator Privilege Gain,1
+config classification: successful-admin,Successful Administrator Privilege Gain,1
+
+# NEW CLASSIFICATIONS
+config classification: rpc-portmap-decode,Decode of an RPC Query,2
+config classification: shellcode-detect,Executable code was detected,1
+config classification: string-detect,A suspicious string was detected,3
+config classification: suspicious-filename-detect,A suspicious filename was detected,2
+config classification: suspicious-login,An attempted login using a suspicious username was detected,2
+config classification: system-call-detect,A system call was detected,2
+config classification: tcp-connection,A TCP connection was detected,4
+config classification: trojan-activity,A Network Trojan was detected, 1
+config classification: unusual-client-port-connection,A client was using an unusual port,2
+config classification: network-scan,Detection of a Network Scan,3
+config classification: denial-of-service,Detection of a Denial of Service Attack,2
+config classification: non-standard-protocol,Detection of a non-standard protocol or event,2
+config classification: protocol-command-decode,Generic Protocol Command Decode,3
+config classification: web-application-activity,access to a potentially vulnerable web application,2
+config classification: web-application-attack,Web Application Attack,1
+config classification: misc-activity,Misc activity,3
+config classification: misc-attack,Misc Attack,2
+config classification: icmp-event,Generic ICMP event,3
+config classification: kickass-porn,SCORE! Get the lotion!,1
+</pre>
+
+<p>
+より詳細な情報は、<uri link="http://www.snort.org">Snort</uri>を参照して下さい。
+</p>
+
+</body>
+</section>
+<section>
+<title>マルウェアをchkrootkitで検知する</title>
+<body>
+
+<p>
+AIDEのようなHIDSは、システムの改ざん検知をする上で素晴らしい手段となります。
+しかし、他にも防衛線を確保できればそれに越したことはありません。
+<c>chkrootkit</c>とは、通常のシステムファイルに対しrootkit--侵入者の活動を隠蔽し、
+侵入者に継続してアクセスさせることを目的に設計されたソフトウェア--がないかをスキャンするユーティリティです。
+また、システムに対してキーロガーや他の"マルウェア"のようなものもスキャンしてくれます。
+<c>chkrootkit</c>(そして、<c>rkhunter</c>のような代替手段)は、
+攻撃発生後のシステム保守と侵入追跡の両側面で有効なツールですが、
+システムのセキュリティが確保されているということを保障してくれるものではありません。
+</p>
+
+<p>
+侵入検知を行う上で、<c>chkrootkit</c>を使用する最良の方法は、
+<c>cron</c>から定期的に実行することです。まずは、
+<path>app-admin/chkrootkit</path>をemergeします。
+<c>chkrootkit</c>は、パッケージ名と同じコマンドでコマンドラインから実行するか、
+<c>cron</c>からこのようなエントリを用い実行します。
+</p>
+
+<pre caption="cronジョブとして、chkrootkitを定期的に実行する">
+0 3 * * * /usr/sbin/chkrootkit
+</pre>
+
+</body>
+</section>
+</sections>

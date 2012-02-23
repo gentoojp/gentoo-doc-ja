@@ -1,0 +1,686 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:6
+#, no-wrap
+msgid "Gentoo Linux x86 with Software Raid and LVM2 Quick Install Guide"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:22
+#, no-wrap
+msgid ""
+"The Quick Install guide covers the Gentoo install process in a non-verbose\n"
+"manner. Its purpose is to allow users to perform a stage3 install with software\n"
+"RAID and LVM2 in no time. Users should already have prior experience with\n"
+"installing Gentoo Linux if they want to follow this guide.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:36
+#, no-wrap
+msgid "Introduction"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:41
+#, no-wrap
+msgid ""
+"This guide contains all commands you should use to complete a stage3\n"
+"installation including LVM2 on top of software RAID. This guide is targeted at\n"
+"experienced users. You need a connection to the Internet to download the stage3\n"
+"and Portage snapshots.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:48
+#, no-wrap
+msgid ""
+"New users should read the <uri link=\"/doc/en/handbook/index.xml\">Handbook</uri>\n"
+"as it gives a better overview about the installation process. The Quick Install\n"
+"guide is designed for experienced users who just need a checklist to follow.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:54
+#, no-wrap
+msgid ""
+"Timing output follows all commands that take more than a couple of seconds to\n"
+"finish. Commands were timed on an AMD 2000 1.66 Ghz PC with 512 Mb of RAM and\n"
+"two SATA disks connected to a hardware controller configured as JBOD (i.e. two\n"
+"separate hard disks are seen by Gentoo). If you have a \"hardware\" RAID\n"
+"controller on your motherboard, it is most likely <b>not</b> a hardware\n"
+"controller.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:62
+#, no-wrap
+msgid "Test box specs"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:63
+#, no-wrap
+msgid ""
+"<comment>(The following specs and the timing information should help you determine\n"
+"a rough estimate of the time you need to complete your install)</comment>\n"
+"\n"
+"# <i>grep bogo /proc/cpuinfo</i>\n"
+"bogomips       : 3337.81\n"
+"\n"
+"# <i>hdparm -tT /dev/sda /dev/sdb</i>\n"
+"/dev/sda:\n"
+"reads:   1048 MB in  2.00 seconds = 524.00 MB/sec\n"
+" Timing buffered disk reads:  152 MB in  3.01 seconds =  50.50 MB/sec\n"
+"\n"
+"/dev/sdb:\n"
+" Timing cached reads:   1048 MB in  2.00 seconds = 524.00 MB/sec\n"
+" Timing buffered disk reads:  152 MB in  3.01 seconds =  50.50 MB/sec\n"
+"\n"
+"# <i>grep MemTotal /proc/meminfo</i>\n"
+"MemTotal:       509248 kB\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:87
+#, no-wrap
+msgid "Quick Install Guide"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:92
+#, no-wrap
+msgid "Preparing the Disks"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:96
+#, no-wrap
+msgid "Load the software RAID and LVM2 modules.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:99
+#, no-wrap
+msgid "Load RAID and LVM2 modules"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:100
+#, no-wrap
+msgid ""
+"livecd ~ # <i>modprobe raid0</i>\n"
+"livecd ~ # <i>modprobe raid1</i>\n"
+"<comment>(raid5, raid6 and raid10 are also available)</comment>\n"
+"\n"
+"livecd ~ # <i>modprobe dm-mod</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:108
+#, no-wrap
+msgid ""
+"Use <c>fdisk</c> or <c>cfdisk</c> to create your partition layout.  The device\n"
+"names are likely to be either <path>/dev/sda</path> and <path>/dev/sdb</path>\n"
+"for a SATA or SCSI disks, or <path>/dev/hda</path> and <path>/dev/hdb</path>\n"
+"for IDE disks. The following layout will be used in this guide:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:117
+#, no-wrap
+msgid "<path>/dev/sda</path>"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:118
+#, no-wrap
+msgid "<path>/dev/sdb</path>"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:119
+#, no-wrap
+msgid "Type"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:122
+#, no-wrap
+msgid "<path>/dev/md1</path>"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:123
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:124
+#, no-wrap
+msgid "<path>/boot</path>"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:125
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:137
+#, no-wrap
+msgid "Raid-1 (mirroring)"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:129
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:130
+#, no-wrap
+msgid "swap"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:131
+#, no-wrap
+msgid "Normal partitions"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:134
+#, no-wrap
+msgid "<path>/dev/md3</path>"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:135
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:136
+#, no-wrap
+msgid "<path>/</path>"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:140
+#, no-wrap
+msgid "<path>/dev/md4</path>"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:141
+#, no-wrap
+msgid "LVM2 volumes"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:142
+#, no-wrap
+msgid "Raid-0 (striped)"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:147
+#, no-wrap
+msgid ""
+"The partition you boot from must not be striped. It may not be raid-5 or\n"
+"raid-0.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:152
+#, no-wrap
+msgid ""
+"On the one hand, if you want extra stability, consider using raid-1 (or even\n"
+"raid-5) for your swap partition(s) so that a drive failure would not corrupt\n"
+"your swap space and crash applications that are using it. On the other hand, if\n"
+"you want extra performance, just let the kernel use distinct swap partitions as\n"
+"it does striping by default.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:159
+#, no-wrap
+msgid "Create the partitions"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:160
+#, no-wrap
+msgid ""
+"livecd ~ # <i>fdisk /dev/sda</i>\n"
+"<comment>(Make sure you use type fd and set the bootable flag)</comment>\n"
+"\n"
+"<comment>(The rest of this guide uses the following partitioning scheme)</comment>\n"
+"livecd ~ # <i>fdisk -l /dev/sda</i>\n"
+"\n"
+"Disk /dev/sda: 299.9 GB, 299989204992 bytes\n"
+"255 heads, 63 sectors/track, 36471 cylinders\n"
+"Units = cylinders of 16065 * 512 = 8225280 bytes\n"
+"\n"
+"   Device Boot      Start         End      Blocks   Id  System\n"
+"/dev/sda1   *           1          11       88326   fd  Linux raid autodetect\n"
+"/dev/sda2              12          61      401625   82  Linux swap / Solaris\n"
+"/dev/sda3              62         311     2008125   fd  Linux raid autodetect\n"
+"/dev/sda4             312       36471   290455200   fd  Linux raid autodetect\n"
+"\n"
+"<comment>(Partition the second disk exactly as the first)</comment>\n"
+"livecd ~ # <i>fdisk /dev/sdb</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:181
+#, no-wrap
+msgid ""
+"Then create the RAID device nodes and devices. Please bear in mind that, if you\n"
+"are not using an initramfs to help during boot, the\n"
+"<c>/boot</c> and <c>/</c> mount points should use an older metadata format which\n"
+"can be specified by the <c>--metadata=0.90</c> flag:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:187
+#, no-wrap
+msgid "Create device nodes and devices"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:188
+#, no-wrap
+msgid ""
+"livecd ~ # <i>mknod /dev/md1 b 9 1</i>\n"
+"livecd ~ # <i>mknod /dev/md3 b 9 3</i>\n"
+"livecd ~ # <i>mknod /dev/md4 b 9 4</i>\n"
+"\n"
+"livecd ~ # <i>mdadm --create /dev/md1 --level=1 --raid-devices=2 --metadata=0.90 /dev/sda1 /dev/sdb1</i>\n"
+"mdadm: array /dev/md1 started.\n"
+"livecd ~ # <i>mdadm --create /dev/md3 --level=1 --raid-devices=2 --metadata=0.90 /dev/sda3 /dev/sdb3</i>\n"
+"mdadm: array /dev/md3 started.\n"
+"livecd ~ # <i>mdadm --create /dev/md4 --level=0 --raid-devices=2 /dev/sda4 /dev/sdb4</i>\n"
+"mdadm: array /dev/md4 started.\n"
+"\n"
+"<comment>(Wait until all units are ready)</comment>\n"
+"livecd ~ # <i>cat /proc/mdstat</i>\n"
+"Personalities : [raid0] [raid1]\n"
+"md4 : active raid0 sdb4[1] sda4[0]\n"
+"581006592 blocks 64k chunks\n"
+"\n"
+"md3 : active raid1 sdb3[1] sda3[0]\n"
+"1959808 blocks [2/2] [UU]\n"
+"\n"
+"md1 : active raid1 sdb1[1] sda1[0]\n"
+"88256 blocks [2/2] [UU]\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:213
+#, no-wrap
+msgid ""
+"If you use an initramfs, then it is responsible for assembling the RAID arrays\n"
+"during boot. When using a genkernel initramfs, this can be triggered using the\n"
+"<c>domdadm</c> boot option.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:219
+#, no-wrap
+msgid ""
+"Then create the LVM2 volumes in <path>/dev/md4</path>. The following scheme is\n"
+"used as an <b>example</b>:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:225
+#, no-wrap
+msgid "Directory"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:226
+#, no-wrap
+msgid "Size"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:227
+#, no-wrap
+msgid "File system"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:230
+#, no-wrap
+msgid "/usr"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:231
+#, no-wrap
+msgid "8 GB"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:232
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:247
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:252
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:257
+#, no-wrap
+msgid "ext3"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:235
+#, no-wrap
+msgid "/usr/portage"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:236
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:266
+#, no-wrap
+msgid "2 GB"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:237
+#, no-wrap
+msgid "ext2, small block size, many inodes"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:240
+#, no-wrap
+msgid "/usr/portage/distfiles"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:241
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:251
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:256
+#, no-wrap
+msgid "4 GB"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:242
+#, no-wrap
+msgid "ext2, large block size, less inodes"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:245
+#, no-wrap
+msgid "/home"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:246
+#, no-wrap
+msgid "10 GB"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:250
+#, no-wrap
+msgid "/opt"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:255
+#, no-wrap
+msgid "/var"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:260
+#, no-wrap
+msgid "/var/tmp"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:261
+#, no-wrap
+msgid "6 GB"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:262
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:267
+#, no-wrap
+msgid "ext2"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:265
+#, no-wrap
+msgid "/tmp"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:271
+#, no-wrap
+msgid "Create LVM2 volumes"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:272
+#, no-wrap
+msgid ""
+"livecd ~ # <i>vgscan</i>\n"
+"  Reading all physical volumes.  This may take a while...\n"
+"  No volume groups found\n"
+"livecd ~ # <i>vgchange -a y</i>\n"
+"  No volume groups found\n"
+"\n"
+"<comment>(Create physical volumes, we have only one in our example)</comment>\n"
+"livecd ~ # <i>pvcreate /dev/md4</i>\n"
+"  Physical volume \"/dev/md4\" successfully created\n"
+"\n"
+"<comment>(Create volume groups, again, we have only one in our example)</comment>\n"
+"livecd ~ # <i>vgcreate vg /dev/md4</i>\n"
+"  Volume group \"vg\" successfully created\n"
+"\n"
+"<comment>(Create logical volumes)</comment>\n"
+"livecd ~ # <i>lvcreate -L8G -nusr vg</i>\n"
+"  /dev/cdrom: open failed: Read-only file system\n"
+"  Logical volume \"usr\" created <comment>(Further similar messages not displayed)</comment>\n"
+"livecd ~ # <i>lvcreate -L2G -nportage vg</i>\n"
+"livecd ~ # <i>lvcreate -L4G -ndistfiles vg</i>\n"
+"livecd ~ # <i>lvcreate -L10G -nhome vg</i>\n"
+"livecd ~ # <i>lvcreate -L4G -nopt vg</i>\n"
+"livecd ~ # <i>lvcreate -L4G -nvar vg</i>\n"
+"livecd ~ # <i>lvcreate -L6G -nvartmp vg</i>\n"
+"livecd ~ # <i>lvcreate -L2G -ntmp vg</i>\n"
+"\n"
+"<comment>(Display volume groups and logical volumes)</comment>\n"
+"livecd ~ # <i>vgs</i>\n"
+"  VG   #PV #LV #SN Attr  VSize   VFree\n"
+"  vg     1   8   0 wz--n 554.09G 514.09G\n"
+"livecd ~ # <i>lvs</i>\n"
+"  LV        VG   Attr   LSize  Origin Snap%  Move Copy%\n"
+"  distfiles vg   -wi-a-  4.00G\n"
+"  home      vg   -wi-a- 10.00G\n"
+"  opt       vg   -wi-a-  4.00G\n"
+"  portage   vg   -wi-a-  2.00G\n"
+"  tmp       vg   -wi-a-  2.00G\n"
+"  usr       vg   -wi-a-  8.00G\n"
+"  var       vg   -wi-a-  4.00G\n"
+"  vartmp    vg   -wi-a-  6.00G\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:315
+#, no-wrap
+msgid ""
+"Use <c>mke2fs</c>, <c>mke2fs -j</c>, <c>mkreiserfs</c>, <c>mkfs.xfs</c> and\n"
+"<c>mkfs.jfs</c> to create file systems. Initialize swap using <c>mkswap</c> and\n"
+"<c>swapon</c>.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:320
+#, no-wrap
+msgid "Create the file systems and activate swap"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:321
+#, no-wrap
+msgid ""
+"<comment>(ext2 is all you need on the /boot partition)</comment>\n"
+"livecd ~ # <i>mke2fs /dev/md1</i>\n"
+"\n"
+"<comment>(Let's use ext3 on the root partition)</comment>\n"
+"livecd ~ # <i>mke2fs -j /dev/md3</i>\n"
+"\n"
+"<comment>(Create file systems on logical volumes)</comment>\n"
+"livecd ~ # <i>mke2fs -b 4096 -T largefile /dev/vg/distfiles</i>\n"
+"livecd ~ # <i>mke2fs -j /dev/vg/home</i>\n"
+"livecd ~ # <i>mke2fs -j /dev/vg/opt</i>\n"
+"livecd ~ # <i>mke2fs -b 1024 -N 200000 /dev/vg/portage</i>\n"
+"livecd ~ # <i>mke2fs /dev/vg/tmp</i>\n"
+"livecd ~ # <i>mke2fs -j /dev/vg/usr</i>\n"
+"livecd ~ # <i>mke2fs -j /dev/vg/var</i>\n"
+"livecd ~ # <i>mke2fs /dev/vg/vartmp</i>\n"
+"\n"
+"<comment>(Create and activate swap)</comment>\n"
+"livecd ~ # <i>mkswap /dev/sda2 &amp;&amp; mkswap /dev/sdb2</i>\n"
+"livecd ~ # <i>swapon -p 1 /dev/sda2 &amp;&amp; swapon -p 1 /dev/sdb2</i>\n"
+"<comment>(Check that all swap partitions use the same priority)</comment>\n"
+"livecd ~ # <i>swapon -v -s</i>\n"
+"Filename                   Type            Size    Used    Priority\n"
+"/dev/sda2                  partition       401616  0       1\n"
+"/dev/sdb2                  partition       401616  0       1\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:348
+#, no-wrap
+msgid ""
+"Mount the freshly created file systems on <path>/mnt/gentoo</path>. Create\n"
+"directories for the other mount points and mount them too.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:352
+#, no-wrap
+msgid "Mount the file systems"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:353
+#, no-wrap
+msgid ""
+"livecd ~ # <i>mount /dev/md3 /mnt/gentoo</i>\n"
+"livecd ~ # <i>cd /mnt/gentoo</i>\n"
+"livecd gentoo # <i>mkdir boot home usr opt var tmp</i>\n"
+"livecd gentoo # <i>mount /dev/md1 /mnt/gentoo/boot</i>\n"
+"livecd gentoo # <i>mount /dev/vg/usr /mnt/gentoo/usr</i>\n"
+"livecd gentoo # <i>mount /dev/vg/home /mnt/gentoo/home</i>\n"
+"livecd gentoo # <i>mount /dev/vg/opt /mnt/gentoo/opt</i>\n"
+"livecd gentoo # <i>mount /dev/vg/tmp /mnt/gentoo/tmp</i>\n"
+"livecd gentoo # <i>mount /dev/vg/var /mnt/gentoo/var</i>\n"
+"livecd gentoo # <i>mkdir usr/portage var/tmp</i>\n"
+"livecd gentoo # <i>mount /dev/vg/vartmp /mnt/gentoo/var/tmp</i>\n"
+"livecd gentoo # <i>mount /dev/vg/portage /mnt/gentoo/usr/portage</i>\n"
+"livecd gentoo # <i>mkdir usr/portage/distfiles</i>\n"
+"livecd gentoo # <i>mount /dev/vg/distfiles /mnt/gentoo/usr/portage/distfiles</i>\n"
+"\n"
+"<comment>(Set proper perms on tmp directories)</comment>\n"
+"livecd gentoo # <i>chmod 1777 /mnt/gentoo/tmp /mnt/gentoo/var/tmp</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:380
+#, no-wrap
+msgid "Kernel Configuration"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:384
+#, no-wrap
+msgid ""
+"Install a kernel source (usually <c>gentoo-sources</c>), configure it, compile\n"
+"it and copy the <path>arch/i386/boot/bzImage</path> file to <path>/boot</path>.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:388
+#, no-wrap
+msgid "Install a kernel source, compile it and install the kernel"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:389
+#, no-wrap
+msgid ""
+"livecd etc # <i>time emerge gentoo-sources</i>\n"
+"\n"
+"real  3m3.110s\n"
+"user  1m2.320s\n"
+"sys   0m34.990s\n"
+"livecd etc # <i>cd /usr/src/linux</i>\n"
+"livecd linux # <i>make menuconfig</i>\n"
+"\n"
+"<comment>(Configure your kernel as usual and make sure the raid and lvm modules you need are\n"
+"compiled in, i.e. <b>not</b> as modules. The same applies to the disk drivers and filesystems.)</comment>\n"
+"Multi-device support (RAID and LVM)  --->\n"
+"[*] Multiple devices driver support (RAID and LVM)\n"
+"  &lt;*&gt;   RAID support\n"
+"  &lt; &gt;     Linear (append) mode (NEW)\n"
+"  &lt;*&gt;     RAID-0 (striping) mode\n"
+"  &lt;*&gt;     RAID-1 (mirroring) mode\n"
+"  &lt; &gt;     RAID-10 (mirrored striping) mode (EXPERIMENTAL) (NEW)\n"
+"  &lt; &gt;     RAID-4/RAID-5 mode (NEW)\n"
+"  &lt; &gt;     RAID-6 mode (NEW)\n"
+"  &lt; &gt;     Multipath I/O support (NEW)\n"
+"  &lt; &gt;     Faulty test module for MD (NEW)\n"
+"  &lt;*&gt;   Device mapper support\n"
+"  &lt; &gt;     Crypt target support (NEW)\n"
+"  &lt; &gt;     Snapshot target (EXPERIMENTAL) (NEW)\n"
+"  &lt; &gt;     Mirror target (EXPERIMENTAL) (NEW)\n"
+"  &lt; &gt;     Zero target (EXPERIMENTAL) (NEW)\n"
+"  &lt; &gt;     Multipath target (EXPERIMENTAL) (NEW)\n"
+"  &lt; &gt;     Bad Block Relocation Device Target (EXPERIMENTAL) (NEW)\n"
+"\n"
+"livecd linux # <i>time make -j2</i>\n"
+"\n"
+"<comment>(Elapsed time depends highly on the options you selected)</comment>\n"
+"real  5m5.869s\n"
+"user  4m32.320s\n"
+"sys   0m32.930s\n"
+"\n"
+"livecd linux # <i>make modules_install</i>\n"
+"livecd linux # <i>cp arch/i386/boot/bzImage /boot/kernel</i>\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:437
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:444
+#, no-wrap
+msgid "Reboot"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:441
+#, no-wrap
+msgid "Exit the chrooted environment, unmount all file systems and reboot:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/gentoo-x86+raid+lvm2-quickinstall.xml:445
+#, no-wrap
+msgid ""
+"livecd conf.d # <i>exit</i>\n"
+"livecd / # <i>umount -l /mnt/gentoo/usr{/portage/distfiles,/portage,}</i>\n"
+"livecd / # <i>umount -l /mnt/gentoo/dev{/pts,/shm,}</i>\n"
+"livecd / # <i>umount -l /mnt/gentoo{/usr,/var/tmp,/tmp,/var,/opt,/dev,/proc,/home,/boot,}</i>\n"
+"livecd / # <i>reboot</i>\n"
+"<comment>(Don't forget to remove the CD)</comment>\n"
+msgstr ""

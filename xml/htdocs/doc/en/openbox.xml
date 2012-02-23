@@ -1,0 +1,960 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/openbox.xml,v 1.15 2011/03/21 20:19:03 nightmorph Exp $ -->
+
+<guide>
+<title>The Openbox Configuration HOWTO</title>
+
+<author title="Author">
+  <mail link="nathanzachary"/>
+</author>
+<author title="Author">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This guide shows you how to install the Openbox window manager, and references
+many potential programs to be used in conjunction with an Openbox session.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>7</version>
+<date>2010-12-25</date>
+
+<chapter>
+<title>Introduction</title>
+
+<section>
+<title>What is Openbox?</title>
+<body>
+
+<p>
+So, you've installed <uri link="/doc/en/xorg-config.xml">The X Server</uri> and
+realised that TWM just isn't going to cut it for your needs. You may have also
+had some experience with big desktop environments like <uri
+link="/proj/en/desktop/kde/kde4-guide.xml">KDE</uri>, <uri
+link="/doc/en/gnome-config.xml">GNOME</uri>, and <uri
+link="/doc/en/xfce-config.xml">Xfce</uri>. One component of those larger desktop
+suites is called the window manager (or WM for short). A window manager is
+responsible for the appearance and placement of the containers (or "windows")
+inside which programs run. Openbox is a minimalistic, no-frills-attached window
+manager.
+</p>
+
+</body>
+</section>
+<section>
+<title>Why should I use it?</title>
+<body>
+
+<p>
+Openbox, unlike the larger desktop environments, depends on very few libraries.
+For that reason, it can provide a lightweight graphic environment that runs
+very quickly, even on older hardware. Whether your hardware is old or new,
+Openbox also provides a highly customisable and unobtrusive working
+environment. That means that if you don't want or need a panel, taskbar, clock,
+or any other program, those choices are yours to make!
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Installation and configuration</title>
+<section>
+<title>Initial installation</title>
+<body>
+
+<p>
+After you have emerged and configured <c>xorg-server</c>, installing Openbox can
+be done in one simple command:
+</p>
+
+<pre caption="Installing Openbox">
+# <i>emerge -av openbox</i>
+</pre>
+
+<p>
+Just like with other window managers and desktop environments, you will need to
+tell the X Server to load Openbox automatically, by adding it to your
+<path>~/.xinitrc</path>.
+</p>
+
+<pre caption="Adding Openbox to your .xinitrc">
+$ <i>echo "exec openbox-session" >> ~/.xinitrc</i>
+</pre>
+
+<p>
+This will automatically start your Openbox session when you type <c>startx</c>
+at the terminal.
+</p>
+
+<impo>
+As each user has his or her own <path>.xinitrc</path>, you need to make sure to
+issue that command as <e>your user</e>, not as root.
+</impo>
+
+<note>
+If you experience problems with automounting, or if you use dbus and ConsoleKit,
+you may want to put <c>exec ck-launch-session dbus-launch --sh-syntax
+--exit-with-session openbox-session</c> in your <path>.xinitrc</path> instead of
+the default mentioned above.
+</note>
+
+<note>
+You can also replace the KDE, GNOME, or Xfce default window manager with
+Openbox by following the <uri link="#inside-desktop-env">Openbox inside desktop
+environments</uri> directions.
+</note>
+
+<p>
+Now that you have emerged Openbox and added it to your <path>.xinitrc</path>,
+go ahead and issue the <c>startx</c> command to see Openbox in action. As you
+can see, the desktop is simply a cluttered mess! In following with the Openbox
+philosophy, what you will see is a barebones environment from which you can
+build your desktop completely to your liking.
+</p>
+
+<p>
+Since you're looking at nothing more than a black screen, you may be wondering
+where the menu is. If you click your right mouse button, you will notice that a
+menu pops up in the location of your cursor. This menu is nothing more than an
+example to illustrate the style of an Openbox menu. Since it <e>is</e> just an
+example, none of the items in the menu will work unless you have actually
+emerged those programs. In the next section, you will see how to create your
+own menu that contains links to <e>your</e> programs.
+</p>
+
+<impo>
+If you click to view the menu and notice that there is nothing legible, you need
+to install some fonts. Two common choices are <c>media-fonts/corefonts</c> and
+<c>media-fonts/ttf-bitstream-vera</c>.
+</impo>
+
+</body>
+</section>
+<section>
+<title>Menu configuration</title>
+<body>
+
+<p>
+Since the default Openbox menu is essentially useless to you for the reasons
+mentioned above, it's time that we create one that will work. Everything in the
+Openbox menu is written in the appropriately named <path>menu.xml</path> file,
+which can be in the user-specific location of
+<path>~/.config/openbox/menu.xml</path>, or in the system-wide location of
+<path>/etc/xdg/openbox/menu.xml</path>. By default, the only
+<path>menu.xml</path> file that is created is the system-wide one which applies
+to all users on the system.
+</p>
+
+<p>
+An easy way to get a basic menu file which you can modify is to use MenuMaker,
+which will generate a <path>menu.xml</path> file based on the programs which
+you currently have installed on your system. To do so, you must firstly emerge
+it:
+</p>
+
+<pre caption="Installing MenuMaker">
+# <i>emerge menumaker</i>
+</pre>
+
+<p>
+Once it is installed, make sure to logout of root, and back into your user
+account.  You then instruct MenuMaker to create a menu specifically using the
+Openbox XML syntax:
+</p>
+
+<pre caption="Using MenuMaker to generate a basic Openbox menu.xml">
+$ <i>mmaker -v OpenBox3</i>
+</pre>
+
+<p>
+The generated menu will be located at
+<path>~/.config/openbox/menu.xml</path>. You can then choose to leave it as 
+your user-specific <path>menu.xml</path>, or to additionally copy it to the 
+system-wide menu configuration as well:
+</p>
+
+<pre caption="Overwriting the default system-wide menu.xml files">
+# <i>cp .config/openbox/menu.xml /etc/xdg/openbox/menu.xml</i>
+</pre>
+
+<impo>
+It is a good idea to use MenuMaker to generate a default menu, as it will have
+the Openbox root-menu items. These items include a virtual desktop switcher,
+and the commands to restart and exit your Openbox session.
+</impo>
+
+<p>
+When you open up the <path>menu.xml</path> file in your favourite editor (nano,
+for example), you will notice that the XML tags used are very human-readable
+and easily understandable. You may choose to modify the default file to fit
+your needs, or you may want to write it from scratch (don't worry, it's really
+not that difficult). The basic syntax for the menu XML is as follows:
+</p>
+
+<pre caption="Editing the menu.xml file">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;openbox_menu&gt;
+&lt;separator label="NAME_OF_SEPARATOR" /&gt;
+&lt;menu id="IDENTIFIER" label="NAME_OF_MENU"&gt;
+  &lt;item label="NAME_OF_PROGRAM"&gt;
+    &lt;action name="execute"&gt;&lt;execute&gt;/LOCATION/OF/BINARY&lt;/execute&gt;&lt;/action&gt;
+  &lt;/item&gt;
+&lt;/menu&gt;
+&lt;/openbox_menu&gt;
+</pre>
+
+<p>
+The above example will work for any applications that launch with standard 
+options in their own windows, but what if you need to append options to 
+the program at launch time?  That is no problem either, but the syntax of 
+the menu item is slightly different.
+</p>
+
+<pre caption="Editing the menu.xml file">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;openbox_menu&gt;
+&lt;separator label="NAME_OF_SEPARATOR" /&gt;
+&lt;menu id="IDENTIFIER" label="NAME_OF_MENU"&gt;
+  &lt;item label="NAME_OF_PROGRAM"&gt;
+    &lt;action name="execute"&gt;&lt;command&gt;/LOCATION/OF/BINARY --OPTION1 --OPTION2&lt;/command&gt;&lt;/action&gt;
+  &lt;/item&gt;
+&lt;/menu&gt;
+&lt;/openbox_menu&gt;
+</pre>
+
+<p>
+Simply replace anything in CAPS in the above two examples with your information.
+Alternatively, you can <c>emerge obmenu</c>, which is a graphical interface 
+allowing you to create your menus without having to manually edit the 
+<path>menu.xml</path> file. It is a very small application and offers a 
+nice amount of customisation without typing any XML.
+</p>
+
+</body>
+</section>
+<section>
+<title>Openbox theme and behaviour configuration</title>
+<body>
+
+<p>
+Aside from being minimalistic and lightweight, Openbox is also surprisingly
+customisable and flexible. As a user, you can easily change various settings
+related to theme, appearance, window placement, docking, and more. There are two
+options for configuring these settings within Openbox. You may either manually
+edit <path>~/.config/openbox/rc.xml</path>, or you may want a GUI to help you
+quickly change settings.
+</p>
+
+<p>
+If you want to manually edit <path>rc.xml</path>, you simply open up your
+favourite text editor and start making changes. You might want to make a backup
+of the original file just in case, and store it in a location like
+<path>~/.config/openbox/rc.xml.default</path>. There are plenty of comments
+within the document itself that should help you with editing. Alternatively, you
+may want to look at the <uri
+link="http://icculus.org/openbox/index.php/Help:Contents#Configuration">Openbox
+configuration guides</uri>.
+</p>
+
+<p>
+If manually editing <path>rc.xml</path> doesn't sound like your cup of tea, you
+may want to use the GTK+ application to manage your themes and behaviours in
+Openbox. The application that you will use is called ObConf, and can be
+installed on your system just as easily as was Openbox itself.
+</p>
+
+<pre caption="Installing ObConf">
+# <i>emerge obconf</i>
+</pre>
+
+<p>
+You can then open the configurator by typing <c>obconf</c> in your terminal.
+Next, you can go and add an entry for ObConf into your <path>menu.xml</path> so
+it will show up in your Openbox menu.  If the "editing the menu.xml file" code 
+listing above seemed too vague to be helpful, we'll use ObConf as an example of 
+a menu entry:
+</p>
+
+<pre caption="Editing the menu.xml file">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;openbox_menu&gt;
+&lt;menu id="1" label="Configuration"&gt;
+  &lt;item label="OpenBox Config"&gt;
+    &lt;action name="execute"&gt;&lt;execute&gt;/usr/bin/obconf&lt;/execute&gt;&lt;/action&gt;
+  &lt;/item&gt;
+&lt;/menu&gt;
+&lt;/openbox_menu&gt;
+</pre>
+
+<p>
+While ObConf is a great GUI tool for editing many behaviour-related settings 
+for Openbox, it doesn't allow one to manipulate nearly as many settings as 
+are presented in the <path>rc.xml</path> file itself.  If you are having 
+trouble finding a particular setting which you would like to change, please 
+consult the <uri link="http://openbox.org/wiki/Configuration">Openbox Wiki</uri> 
+for more information.
+</p>
+
+<note>
+In recent versions of Openbox (namely >3.4.7.2), one may experience a delay 
+in the submenu opening.  This setting was introduced into the rc.xml file, and 
+is listed as &lt;submenuShowDelay&gt;100&lt;/submenuShowDelay&gt;.  Simply 
+choose a lower number that suits your needs.
+</note>
+
+</body>
+</section>
+<section>
+<title>Autostart configuration</title>
+<body>
+
+<p>
+As mentioned above, you don't see a whole lot when you issue the <c>startx</c>
+command for the first time after installing Openbox. In addition to customising
+your menus and changing the behaviour of the window manager, you will probably
+want to have some programs automatically start with your Openbox session. There
+is an easily-editable <path>autostart.sh</path> script that allows you to do
+just that. Just like with the <path>menu.xml</path> file, there are two
+different locations of the <path>autostart.sh</path> script--the system-wide
+(<path>/etc/xdg/openbox/autostart.sh</path>), and the user-defined
+(<path>~/.config/openbox/autostart.sh</path>).
+</p>
+
+<p>
+In the default <path>autostart.sh</path>, you will notice a bunch of lines
+calling for programs like the gnome-settings-daemon, XDG, and others. These
+lines will generate errors upon logout if you don't have the programs installed
+and configured. The easiest thing to do when getting started with Openbox is to
+just comment out these lines by using the # symbol.</p>
+
+<pre caption="Commenting out lines in autostart.sh">
+# Run XDG autostart things. By default don't run anything desktop-specific
+# DESKTOP_ENV=""
+# if which /usr/lib/openbox/xdg-autostart >/dev/null; then
+#  /usr/lib/openbox/xdg-autostart $DESKTOP_ENV
+# fi
+</pre>
+
+<p>
+In the above example, the comment symbol (#) was added before each line. The
+commenting method is preferred to just deleting the lines because you may want
+to add support for some of those startup items at a later time. Thus, leaving
+the default lines in place could ease that process.
+</p>
+
+<p>
+Adding your own programs to the <path>autostart.sh</path> script is as easy as
+writing in the program name for many applications. For instance, if you have
+<uri link="http://packages.gentoo.org/package/app-admin/conky">Conky</uri> (a
+lightweight system monitor) installed, and want it to start automatically with
+your Openbox session, you simply add the following line to your
+<path>autostart.sh</path>:
+</p>
+
+<pre caption="Adding Conky to your autostart.sh">
+conky &amp;
+</pre>
+
+<p>
+The ampersand (&amp;) after the command allows that application to load up in
+the background. You will most likely want to load all the applications in your
+<path>autostart.sh</path> script in the background because doing so will let
+Openbox and other programs load without the previous one finishing.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring PolKit</title>
+<body>
+
+<p>
+Many applications depend on the <uri
+link="http://hal.freedesktop.org/docs/PolicyKit">PolKit</uri> authentication
+framework. You may need a PolKit agent, such as <c>polkit-gnome</c>, running
+in your Openbox session.
+</p>
+
+<p>
+First, install the agent:
+</p>
+
+<pre caption="Installing PolKit">
+# <i>emerge polkit-gnome</i>
+</pre>
+
+<p>
+Now configure PolKit to start automatically when you login to Openbox. Add
+the following line to <path>~/.config/openbox/autostart</path> (for a single
+user) or <path>/etc/xdg/openbox/autostart.sh</path> (for all users):
+</p>
+
+<pre caption="Start PolKit automatically">
+sleep 1 &amp;&amp; /usr/libexec/polkit-gnome-authentication-agent-1 &amp;
+</pre>
+
+</body>
+</section>
+<section>
+<title>Setting the background</title>
+<body>
+
+<p>
+Some things that you might take for granted in bigger desktop environments are
+not included by default in Openbox. One such thing is setting your desktop
+background. In order to place an image as your wallpaper, you will need to
+emerge a program like <uri
+link="http://packages.gentoo.org/package/media-gfx/feh">feh</uri> or <uri
+link="http://packages.gentoo.org/package/x11-misc/nitrogen">nitrogen</uri>.
+<c>feh</c> is a simple image viewer that can also set the background, <e>and</e>
+it can easily be put into the autostart script. Once you have emerged
+<c>feh</c>, you can issue the following command to set the background:
+</p>
+
+<pre caption="Using feh to set the background image">
+<comment>(feh has many other options instead of --bg-scale, 
+which will scale the image to the screen dimensions.
+Consult the feh documentation.)</comment>
+$ <i>feh --bg-scale /path/to/image.jpg</i>
+</pre>
+
+<p>
+Once you have set the background manually, a file called <path>.fehbg</path>
+will be created in your home directory. This file simply contains the above
+command that you just entered in the terminal, and is automatically updated
+when you issue a different background command. Now, to set your background
+automatically upon login, you can add the following line to your
+<path>autostart.sh</path> script:
+</p>
+
+<pre caption="Using feh to set the background image">
+source $HOME/.fehbg &amp;
+</pre>
+
+<p>
+If you don't particularly care for the idea of having to issue a command in the
+terminal in order to set your background, you can alternatively use
+<c>nitrogen</c>. It will allow you to set a folder for your background images,
+view thumbnails of those images, and fit, stretch, or tile them to your
+desktop.
+</p>
+
+<p>
+Installing <c>nitrogen</c> and getting it into your Openbox menu requires a few
+more steps than are readily apparent. First, you need to <c>emerge nitrogen</c>.
+Second, you need to run <c>nitrogen</c> with your backgrounds folder appended:
+</p>
+
+<pre caption="Starting nitrogen with your image folder">
+$ <i>nitrogen /path/to/your/backgrounds/folder</i>
+</pre>
+
+<p>
+Third, you can set your background image, but it will not be there after you
+logout. Just as with <c>feh</c>, you need to restore your background by editing
+your <path>autostart.sh</path> script to have the following line:
+</p>
+
+<pre caption="Restoring your background with nitrogen">
+nitrogen --restore &amp;
+</pre>
+
+<p>
+This will cause nitrogen to load automatically when you start your Openbox
+session, and that can lead to a slightly slower load time than using feh.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Programs to use with Openbox</title>
+<section>
+<body>
+
+<p>
+The following is a list of some programs which you might want to use within your
+Openbox environment. While the list contains numerous terminal emulators, file
+managers, panels, and more, it should by no means be considered exhaustive. If
+none of the programs listed fit your needs, please check the appropriate
+categories in Portage for more options.
+</p>
+
+</body>
+</section>
+<section>
+<title>Terminal emulators</title>
+<body>
+
+<ul>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/lxde-base/lxterminal">LXterminal</uri>
+    is the default terminal emulator for LXDE. It is very lightweight, and based
+    on VTE. While EvilVTE offers many more customisation options (including
+    transparency), LXterminal has a graphical interface for some of the more
+    common options (font, colors, et cetera).
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/x11-terms/evilvte">EvilVTE</uri> is
+    an extremely lightweight terminal emulator based on (you guessed it) VTE. It
+    supports tabs, multiple encodings, as well as an easy and extensible
+    configuration file.
+  </li>
+  <li>
+    <uri link="http://packages.gentoo.org/package/x11-terms/mrxvt">Mrxvt</uri>
+    is a multi-tabbed rxvt clone with XFT, transparent background and CJK
+    support. It also features session support for each tab.
+  </li>
+  <li>
+    <uri link="http://packages.gentoo.org/package/x11-terms/aterm">Aterm</uri>
+    supports transparency and backwards compatibility with rxvt. It was
+    originally designed for the AfterStep window manager, but easily integrates
+    with other environments.
+  </li>
+  <li>
+    <uri link="http://packages.gentoo.org/package/x11-terms/eterm">Eterm</uri>
+    is a terminal based on vt102 and designed to be a more feature-rich
+    replacement for xterm.
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/x11-terms/rxvt-unicode">Rxvt-unicode</uri>
+    is a clone of rxvt that supports Unicode, daemons, embedded perl, and
+    multiple fonts simultaneously.
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/x11-terms/terminal">Terminal</uri>
+    is the VTE-based default for the Xfce desktop environment, so it does
+    require some Xfce libraries to run. However, it is still fairly speedy, and
+    supports transparency and is easily customised.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>File managers</title>
+<body>
+
+<ul>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/x11-misc/pcmanfm">PCManFM</uri> is
+    the lightweight filemanager from LXDE. It supports tabbed browsing, drag and
+    drop, thumbnails for images, bookmarks, volume management, searching, and
+    more. It also provides supports for managing the desktop background and
+    drawing desktop icons (both optionally).
+  </li>
+  <li>
+    <uri link="http://packages.gentoo.org/package/xfce-base/thunar">Thunar</uri>
+    is the standard file manager from Xfce. It features a bulk renamer,
+    user-customisable actions, and an extension framework, along with many
+    optional plugins, such as media tag editing. It depends on several Xfce
+    libraries, but it's still slimmed down compared to other file managers like
+    Nautilus (from GNOME), and Konqueror (from KDE).
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/gnome-base/nautilus">Nautilus</uri>
+    is the powerful file manager from the GNOME desktop environment. It features
+    volume management, thumbnails for images, searching, and some system
+    configuration. As it depends on many of the GNOME libraries for proper
+    function, it can seem a bit heavy compared to some of the other file
+    managers.
+  </li>
+  <li>
+    <uri link="http://packages.gentoo.org/package/app-misc/gentoo">Gentoo</uri>
+    (no relation to this glorious Linux distribution) is a two-pane style file
+    manager. It is incredibly lightweight, but lacks a some features now
+    prominent in modern file managers. It should definitely be considered for
+    older hardware, or if you are wanting a barebones setup.
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/app-misc/emelfm2">emelFM2</uri> is
+    another file manager in the vein of Midnight Commander. It features a
+    two-pane window. As with the Gentoo file manager (listed above), it is
+    barebones and does not include many features prevalent in newer file
+    managers. However, it also offers a few features not found in other file
+    managers, such as a built-in commandline in a separate pane.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Desktop management</title>
+<body>
+
+<ul>
+  <li>
+    Though <uri
+    link="http://packages.gentoo.org/package/x11-misc/pcmanfm">PCManFM</uri> is
+    mainly a file manager, it also gives you the option to manage the desktop
+    background (instead of using <c>feh</c> or <c>nitrogen</c>) and draw
+    desktop icons.
+  </li>
+  <li>
+    <uri link="http://packages.gentoo.org/package/x11-misc/idesk">iDesk</uri> is
+    a simple program used to draw desktop icons. It supports shadowed and
+    anti-aliased fonts, PNG images, "snap-to-grid" placement, and changing the
+    desktop background.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Panels</title>
+<body>
+
+<ul>
+  <li>
+    <uri link="http://code.google.com/p/tint2/">Tint2</uri> is a simple,
+    lightweight panel and taskbar. It supports color, transparency, a clock,
+    drag and drop between virtual desktops, a system tray, and comes with a
+    battery monitor. You can even add a button to display the applications menu
+    from your window manager.
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/x11-misc/pypanel">PyPanel</uri> is
+    an easily customised panel written in Python and C. It features
+    transparency, shading, tinting, location and layout configuration, font
+    type, autohiding, application launcher, clock, and more.
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/lxde-base/lxpanel">LXPanel</uri> is
+    the default panel and taskbar from LXDE. It features a launcher, menu,
+    clock, and a GUI-based configurator. It is feature-rich while depending on
+    very few packages, making it a good choice for a lean system.
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/xfce-base/xfce4-panel">Xfce4-panel</uri>
+    is the default panel from the Xfce desktop environment. It supports
+    application launchers, detachable menus, a pager, tasklist, clock, applets,
+    and more.  It does, however, require a few of the Xfce libraries which are
+    not dependencies of some other panels.
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/x11-misc/fbpanel">FBpanel</uri> is
+    a simple, extremely lightweight panel that supports window lists, launchers,
+    a clock, and a few other goodies. It's not the most featureful panel, and it
+    can be cumbersome to configure, but it needs only GTK+ to run.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Pagers and systrays</title>
+<body>
+
+<ul>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/x11-misc/netwmpager">NetWMpager</uri>
+    is an EWMH-compliant pager that integrates nicely into any of the *box
+    environments. It is not as obtrusive, and is much more readily customisable
+    than many of the other available pagers.
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/x11-misc/bbpager">BBpager</uri> is
+    a desktop pager that was originally written for BlackBox, but works nicely
+    with Openbox as well. It does have some BlackBox dependencies though.
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/x11-plugins/docker">Docker</uri> is
+    the system tray that is made especially for Openbox. It has no extra
+    dependencies, and gives you the ability to view and use tray icons for
+    supported GTK and QT-based applications.
+  </li>
+  <li>
+    <uri link="http://packages.gentoo.org/package/x11-misc/trayer">Trayer</uri>
+    is a system tray that was modified from the FBpanel code, and is often used
+    with FVWM. One of its perks is that it supports transparency.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Session management</title>
+<body>
+
+<ul>
+  <li>
+    <uri link="http://packages.gentoo.org/package/lxde-base/lxsession">
+    LXsession</uri> is the stripped down session manager from LXDE. It is
+    designed to remember applications that the user was running at the last
+    logout, and to automatically restart those programs. It also supports the
+    HAL daemon.
+  </li>
+  <li>
+    <uri link="http://packages.gentoo.org/package/xfce-base/xfce4-session">
+    Xfce4-session</uri> is the session manager from, you guessed it, Xfce.  It
+    is capable of saving several sessions, and provides methods for logging out,
+    rebooting, and suspending your computer.  It does, however, have many Xfce
+    dependencies.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Configuration tools</title>
+<body>
+
+<ul>
+  <li>
+    <uri link="http://packages.gentoo.org/package/x11-misc/obconf">ObConf</uri>
+    is a GUI application allowing you to customise the Openbox window manager
+    without manually editing <path>~/.config/openbox/rc.conf</path>.
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/lxde-base/lxappearance">LXappearance</uri>
+    is a GTK theme and icon configurator used with LXDE.  It provides a nice
+    graphical interface for setting the theme and icons, while depending on very
+    few extra libraries.
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/x11-themes/gtk-chtheme">GTK-ChTheme</uri>
+    is a simple application allowing for easier switching of GTK themes and your
+    font. Currently, it does not allow for the switching of icon themes.
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/x11-themes/gtk-theme-switch">GTK-theme-switch</uri>
+    is another simple application that lets you change your GTK theme.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Miscellaneous</title>
+<body>
+
+<ul>
+  <li>
+    <uri link="http://packages.gentoo.org/package/app-admin/conky">Conky</uri>
+    is a lightweight system monitor that can display over 250 objects, including
+    date and time, CPU usage, memory usage, IMAP/POP3 email, top processes,
+    hardware sensor data, and even info from your music player. It is highly
+    customisable both in appearance and data display. We also have a <uri
+    link="/doc/en/conky-howto.xml">Conky configuration guide</uri> available.
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/app-editors/leafpad">Leafpad</uri>
+    is a simple text editor. It is very lightweight, but includes features like
+    codeset options, and the ability to undo/redo without limits.
+  </li>
+  <li>
+    <uri link="http://packages.gentoo.org/package/media-gfx/feh">feh</uri> is a
+    simple image viewer that runs from the terminal, but it also has many other
+    features. It can display a slideshow of images, create an index print,
+    dynamically zoom, and set the desktop background (detailed instructions
+    above).
+  </li>
+  <li>
+    <uri
+    link="http://packages.gentoo.org/package/media-gfx/gpicview">GPicView</uri>
+    is a GUI-based image viewer. Though it has more dependencies than
+    <c>feh</c>, it is incredibly quick to load and run.
+  </li>
+  <li>
+    <uri link="http://packages.gentoo.org/package/x11-misc/slim">SLiM</uri> is
+    the Simple Login Manager, which allows you to login to your Openbox session
+    via a graphical interface instead of the terminal. It has very few
+    dependencies, and supports many themes, but should not be used on machines
+    that require remote logins.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="inside-desktop-env">
+<title>Openbox inside desktop environments</title>
+<section>
+<title>LXDE</title>
+<body>
+
+<p>
+If installing each component of a working environment sounds like a little
+<e>too</e> much customisation, but you still want the flexibility of Openbox,
+you may want to look into a desktop environment that uses Openbox as its default
+window manager. That environment is <uri link="http://www.lxde.org/">LXDE</uri>,
+the Lightweight X Desktop Environment. Designed to require even fewer system
+resources than Xfce, it is built around Openbox.
+</p>
+
+</body>
+</section>
+<section>
+<title>Openbox inside GNOME</title>
+<body>
+
+<p>
+If you already have a GNOME environment installed, you may just want to replace
+the Metacity window manager with Openbox. Fortunately, this is quite a simple
+task! You will need to fire up your favourite editor, open your
+<path>~/.xinitrc</path> file, and put the following command inside it:
+</p>
+
+<pre caption="Adding an Openbox-GNOME session to your .xinitrc">
+exec openbox-gnome-session
+</pre>
+
+<p>
+If you use GDM or another graphical login manager, you will see a new
+"GNOME/Openbox" option in your session menu. You can simply select that option
+instead of manually editing your <path>~/.xinitrc</path>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Openbox inside KDE</title>
+<body>
+
+<p>
+Say you have KDE installed and like it, but you want more flexibility with your
+window management than KWin offers. You can use Openbox as your window manager
+inside of KDE by simply editing your <path>~/.xinitrc</path> file, and
+replacing your current exec command with the following:
+</p>
+
+<pre caption="Adding an Openbox-KDE session to your .xinitrc">
+exec openbox-kde-session
+</pre>
+
+<p>
+Now when you issue <c>startx</c> you will see KDE, but instead of KWin, you
+will have the customisability of the Openbox window manager.
+</p>
+
+<p>
+If you use KDM or another graphic login manager, you will see a new
+"KDE/Openbox" option in your session menu. You can simply select that option
+instead of manually editing your <path>~/.xinitrc</path>.
+</p>
+
+<note>
+This method of using Openbox with KDE has been tested with the KDE 3.x
+releases. While it seems highly likely that it will work with the KDE 4.x
+series, it has not been thoroughly tested as of yet.
+</note>
+
+</body>
+</section>
+<section>
+<title>Openbox inside Xfce</title>
+<body>
+
+<p>
+If you use Xfce4 and would like to replace xfwm4 with Openbox, you will need to
+go about it a little differently than with KDE or GNOME. First, you need to
+start your normal Xfce session, and open up a terminal. From the terminal,
+issue the following command:
+</p>
+
+<pre caption="Killing xfwm4 and replacing it with Openbox">
+$ <i>killall xfwm4 ; openbox &amp; exit</i>
+</pre>
+
+<p>
+Second, you need to exit out of your Xfce session, and make sure to tick the
+checkbox that says "Save session for future login."  This will keep Openbox as
+your default window manager. Third, you will notice that you can't logout
+properly when using the default menu action. To fix this problem, open up your
+<path>menu.xml</path>, and locate this line:
+</p>
+
+<pre caption="Finding the exit action in menu.xml">
+&lt;item label="Exit"&gt;
+     &lt;action name="Exit"/&gt;
+&lt;/item&gt;
+</pre>
+
+<p>
+Change it to this:
+</p>
+
+<pre caption="Replacing the exit action in menu.xml">
+&lt;item label="Exit"&gt;
+  &lt;action name="Execute"&gt;
+    &lt;command&gt;xfce4-session-logout&lt;/command&gt;
+  &lt;/action&gt;
+&lt;/item&gt;
+</pre>
+
+<note>
+With Xfce4, the root-menu provided by Xfdesktop will be used instead of the
+Openbox root-menu.
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Further documentation</title>
+<section>
+<title>External resources</title>
+<body>
+
+<p>
+While this document will easily take you through the inital installation and
+customisation of Openbox, it is by no means the only reference on the topic.
+There are several other resources that will aid you in creating your perfect
+Openbox setup. Some of them are listed below:
+</p>
+
+<ul>
+  <li>
+    On <uri link="http://openbox.org/">The Official Openbox website</uri> 
+    you will find more detailed information regarding theming, creating menus 
+    (including pipe menus), autostart scripting, and much more. This site also 
+    has information regarding new releases, upgrades, and instructions on how 
+    you can contribute to development.
+  </li>
+  <li>
+    The <uri link="http://urukrama.wordpress.com/openbox-guide/">Urukrama's
+    Guide to Openbox</uri> blog contains a plethora of information about
+    switching GTK+ themes, setting up keybindings, desktop effects, and other
+    programs to use in conjunction with Openbox. Though the tutorial was
+    originally written for use with Ubuntu, everything is applicable to Gentoo
+    (and other Linux distributions for that matter).
+  </li>
+  <li>
+    <uri link="http://www.box-look.org/">Box-Look</uri> provides numerous
+    themes, icons, wallpapers, fonts, and tools to be used with Openbox (as well
+    as the other *box window managers like Fluxbox, Blackbox, PekWM, etc.)
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

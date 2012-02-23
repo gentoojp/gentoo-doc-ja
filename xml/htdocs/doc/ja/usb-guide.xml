@@ -1,0 +1,440 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/usb-guide.xml,v 1.11 2010/02/14 07:35:04 shindo Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/usb-guide.xml" lang="ja">
+<title>Gentoo Linux USBガイド</title>
+
+<author title="Author">
+  <mail link="fox2mike@gentoo.org">Shyam Mani</mail>
+</author>
+<author title="翻訳">
+  <mail link="ikeda@cs.comp.kyutech.ac.jp">池田 健吾</mail>
+</author>
+
+<abstract>
+この文書は、Gentooシステム上でのUSBの設定や、同様に様々なUSBデバイスの設定を手助けします。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.15</version>
+<date>2009-11-29</date>
+<!-- Original revision: 1.19 -->
+<chapter>
+<title>はじめに</title>
+<section>
+<title>USBとは？</title>
+<body>
+
+<p>
+USBは、ユニバーサルシリアルバスの略で、基本的にはコンピュータと他の様々な周辺装置の間で通信を可能にする外部インタフェース標準です。
+今日、最もよく用いられているUSBデバイスには、キーボード、マウス、USBメモリ、デジタルカメラ、外付けCD &amp; DVDドライブ、プリンタなどがあります。
+</p>
+
+<p>
+現在使用されているUSBのバージョンは、USB 1.1とUSB 2.0の二つです。
+USBは、以前のバージョンに対して常に後方互換性を保ってきたので、USB 2.0はUSB 1.1に対して後方互換性があります。
+最新のUSBデバイスは通常USB 2.0に対応しています。
+USB 2.0は、最大データ転送速度 480Mbps(60Mbps)をサポートしており、これが二つの標準の間の大きな違いです。
+USBには、デバイスがすべて<e>ホットプラグ可能</e>であるという利点もあります。
+ホットプラグ可能とは、これらのデバイスを利用可能にするためにシステムを再起動する必要がないということです。
+</p>
+
+</body>
+</section>
+<section>
+<title>技術展望</title>
+<body>
+
+<p>
+カーネルの細かい設定オプションについて見ていく前に、USBの詳細について少し見ていくことにしましょう。
+もし急いでいてこの節を飛ばしたいなら、<uri link="#kernel">カーネルの設定</uri>へ進んでください。
+</p>
+
+<p>
+USBシステムは、ホストコントローラ、ハブ、その他のデバイスをつなげる<e>ルートハブ</e>から構成されます。
+ハブを含めて最大127台のUSBデバイスをサポートできます。
+ホストコントローラは、USBデバイスとOS間の単なるハードウェアインタフェースです。
+今日用いられているHCI（ホストコントローラインタフェース）は三つあります。
+Compaq主導のOHCI(Open HCI)、そしてIntel主導のUHCI(Universal HCI)とEHCI(Enhanced HCI)です。
+OHCIとUHCIの二つはUSB 1.1の業界標準インタフェースですが、EHCIはUSB 2.0用です。
+</p>
+
+<p>
+ハードウェアベンダは、システムがハードウェアと相互通信できるインタフェースをプログラマに提供しています。
+これをHCDあるいはホストコントローラデバイスといいます。
+このHCDを通してデバイスはシステムソフトウェアと相互通信します。
+次の図を見れば、よりわかりやすいでしょう。
+</p>
+
+<pre caption="USBアーキテクチャの概略">
+<comment>(Softwareは、デバイスドライバと同様に他の構成要素から構成されていますが、
+簡単のために見せていません)</comment>
+
+    + ----  Hardware  ----   + ----  Software  ---- + 
+    |                        |                      |
+    | [USB Dev] -+-> {EHCI} -+--->  ( EHCD )        | 
+    |            |           |                      |  User
+    |            `-> {UHCI} -+--->  ( UHCD )        |
+    |                        |                      |
+    + ----  Hardware  ----   + ----  Software  ---- +
+</pre>
+   
+<p>
+USBデバイスは、カスタムドライバかシステムに既にあるデバイスかどちらかを使うことができます。
+これは、デバイス<e>クラス</e>の概念に基づいています。
+これは、あるデバイスが特定の<e>クラス</e>に属していれば、同じ<e>クラス</e>に属している他のデバイスは同じデバイスドライバを利用できるというものです。
+これら<e>クラス</e>には、キーボードやマウスのような入力デバイスを対象とするUSB HID(Human Interface Device)クラス、そしてUSBメモリ、デジタルカメラ、オーディオプレーヤーなどを対象とするUSBマスストレージデバイスクラス、さらにUSBモデムやそれに似たデバイスを基本的に対象とするUSB CDC(コミュニケーションデバイスクラス)といったものがあります。
+</p>
+
+</body>
+</section>
+<section>
+<title>あなたのマシンに何がありますか？</title>
+<body>
+
+<p>
+あなたのマシンがUSB 2.0をサポートしているかどうかは、とても簡単にわかります。
+このために、<c>lspci</c>コマンドを利用します。
+</p>
+
+<note>
+<c>lspci</c>ツールは、<c>sys-apps/pciutils</c>パッケージの一部です。
+これをインストールしていない場合は、<c>emerge pciutils</c>してください。
+<c>lspci</c>コマンドを実行するにはrootでなければならないことに注意しましょう。
+</note>
+
+<pre caption="lspciの様々な出力">
+<comment>(USB 1.1準拠のシステムです。UHCIだけに注目してください)</comment>
+
+# <i>lspci -v | grep USB</i>
+0000:00:04.2 USB Controller: Intel Corp. 82371AB/EB/MB PIIX4 USB (rev 01) (prog-if 00 [UHCI])
+
+<comment>(USB 2.0準拠のシステムです。EHCIとUHCIに注目してください)</comment>
+
+00:1d.0 USB Controller: Intel Corp. 82801DB USB (Hub #1) (rev 01) (prog-if 00 [UHCI])
+00:1d.1 USB Controller: Intel Corp. 82801DB USB (Hub #2) (rev 01) (prog-if 00 [UHCI])
+00:1d.2 USB Controller: Intel Corp. 82801DB USB (Hub #3) (rev 01) (prog-if 00 [UHCI])
+00:1d.7 USB Controller: Intel Corp. 82801DB USB EHCI Controller (rev 01) (prog-if 20 [EHCI])
+</pre>
+
+<p>
+<c>lspci</c>コマンドを使うと、システムがUSB 2.0をサポートしているかがわかります。
+カーネルで対応するオプションを有効にするときにこれが役に立つでしょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="kernel">
+<title>カーネルの設定</title>
+<section>
+<title>カーネルを入手する</title>
+<body>
+
+
+<p>
+まず、あなたの選んだカーネルソースをemergeしてください。
+ここでは、<c>gentoo-sources</c>を使うことにしましょう。
+Portageで入手できる様々なカーネルソースについての詳しい情報は、<uri link="/doc/en/gentoo-kernel.xml">Gentoo Linux Kernel Guide</uri><uri link="/doc/ja/gentoo-kernel.xml">(日本語訳)</uri>をご覧ください。
+</p>
+
+<pre caption="カーネルソースを入手する">
+# <i> emerge gentoo-sources</i>
+</pre>
+
+<p>
+  さて、カーネルの設定の仕事に取りかかりましょう。
+</p>
+
+<pre caption="ソースに立ち向かう">
+# <i> cd /usr/src/linux</i>
+# <i> make menuconfig</i>
+</pre>
+
+<note>
+上の例では、<path>/usr/src/linux</path>シンボリックリンクがあなたの利用したいカーネルソースを指していると仮定しています。
+先に進む前に、利用したいカーネルソースと同じであることを確認してください。
+</note>
+
+</body>
+</section>
+<section>
+<title>カーネル用の設定オプション</title>
+<body>
+
+<p>
+では、持っているデバイス用の適切なUSBサポートを確実にするために、カーネルで有効にしなければならないオプションをいくつか見ていきましょう。
+</p>
+
+<note>
+この文書の例では、例えばUSBマスストレージデバイス(ほとんどのカメラやUSBメモリ)といった、一般に必要になるような基本的なUSBサポート用の設定オプションを紹介していきます。
+設定が必要な特定のUSBデバイスを持っているなら、カーネル標準のドライバ、または利用可能なカスタムドライバのサポートがそのデバイスにあるかどうかを調べるために、デバイスの説明書やオンライン検索を見てください。
+簡単のために、すべての例でオプションをカーネルに組み込むことに注意してください。
+モジュール式のカーネルが欲しいなら、必ず様々なモジュールを書きとめて、それに応じてあなたの設定ファイルを調整してください。
+</note>
+
+<pre caption="make menuconfigオプション">
+Device Drivers  ---&gt;
+  SCSI device support  ---&gt;
+
+<comment>(USBマスストレージを選択するときにSCSIは自動的に有効になるでしょうが、
+disk supportを有効にする必要があります)</comment>
+---   SCSI support type (disk, tape, CD-ROM)
+&lt;*&gt;   SCSI disk support
+
+<comment>(それから階層を戻ってUSB supportへ入ってください)</comment>
+USB support  ---&gt;
+
+<comment>(これはルートハブであり、USBサポートに必要です。
+これをモジュールとしてコンパイルしたい場合、usbcoreという名前になるでしょう)</comment>
+&lt;*&gt; Support for Host-side USB 
+
+<comment>(HCDを少なくとも一つ選択してください。自信が無ければ、すべて選択するとよいでしょう)</comment>
+--- USB Host Controller Drivers 
+&lt;*&gt; EHCI HCD (USB 2.0) support
+&lt; &gt; OHCI HCD support
+&lt;*&gt; UHCI HCD (most Intel and VIA) support
+
+<comment>(少し下に行くと、CDCとマスストレージの項目にたどり着きます)</comment>
+&lt; &gt; USB Modem (CDC ACM) support
+&lt;*&gt; USB Printer support
+&lt;*&gt; USB Mass Storage support
+
+<comment>(RTL8150のようなUSBネットワークカードを持っている場合、このオプションが必要になるでしょう)</comment>
+USB Network Adapters  --->
+    &lt;*&gt; USB RTL8150 based ethernet device support (EXPERIMENTAL)
+
+<comment>(Prolific 2303のようなシリアル/USBコンバータを持っている場合、このオプションが必要になるでしょう)</comment>
+USB Serial Converter support  --->
+    &lt;*&gt; USB Serial Converter support
+    &lt;*&gt; USB Prolific 2303 Single Port Serial Driver (NEW) 
+</pre>
+
+<p>
+もし、キーボードやマウス、ジョイスティック、その他何か入力デバイスをお持ちであれば、
+HIDサポートを有効にしてください。"Device drivers"に1レベル戻り、HIDサポートを次のように有効にしてください。
+</p>
+
+<pre caption="HIDサポートの有効化">
+Device drivers  ---&gt;
+  [*] HID Devices ---&gt;
+    &lt;*&gt;   USB Human Interface Device (full HID) support
+</pre>
+
+<p>
+オプションを設定しましたので、カーネルを(再)コンパイルできます。
+リブートして新しいカーネルになるとUSBサポートが動作するでしょう。
+つぎに、<uri link="#postkern">動作中のUSBを見る</uri>にすすみ、すべてが予定通りに動いているかどうか見てください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="postkern">
+<title>動作中のUSBを見る</title>
+<section>
+<title>dmesgはあなたの友達です！</title>
+<body>
+
+<p>
+ついにUSBデバイスを動作させるときがきました:)それでは初めましょう。
+この章では、様々なUSBデバイスに対してシステムがどのように応答するか見ていきます。
+512 MBのUSBメモリを挿して始めましょう。
+他の似たようなマスストレージデバイスを使うこともあるでしょう。
+何が起きているか、システムがデバイスにどのように応答したかを見るために<c>dmesg</c>を主に使います。
+</p>
+
+<note>
+<c>dmesg</c>は、ブートアップメッセージをすべて持っているカーネルのリングバッファを読むので、
+私たちが必要とする情報の前に、前もってたくさんの出力を一般的に提供するでしょう。
+次の出力例では、関連する部分だけを読みやすくするために余分にスペースを空けています。
+もし必要なら、システムの出力を見るために<c>dmesg | more</c>もしくは<c>dmesg | less</c>を使ってください。
+</note>
+
+<pre caption="USBメモリについてのdmesgの出力">
+<comment>(利用可能なUSBポートにUSBメモリを挿して、それから…)</comment>
+# <i>dmesg | less</i>
+
+<comment>(デバイスはUSB1.1として認識され、アドレスが割り当てられます。
+また、使っているHCDの種類が表示されます)</comment>
+usb 1-1: new full speed USB device using uhci_hcd and address 2
+
+<comment>(SCSIエミュレーションが自動的に始まります)</comment>
+scsi0 : SCSI emulation for USB Mass Storage devices
+usb-storage: device found at 2
+
+<comment>(モデル番号を含むデバイス情報が読み出されます)</comment>
+usb-storage: waiting for device to settle before scanning
+  Vendor: JetFlash  Model: TS512MJF2A        Rev: 1.00
+  Type:   Direct-Access                      ANSI SCSI revision: 02
+SCSI device sda: 1003600 512-byte hdwr sectors (514 MB)
+
+<comment>(最近のカーネルではライトプロテクトはEXPERIMENTAL(実験的)コードになります)</comment>
+sda: Write Protect is off
+sda: Mode Sense: 0b 00 00 08
+sda: assuming drive cache: write through
+SCSI device sda: 1003600 512-byte hdwr sectors (514 MB)
+/dev/scsi/host0/bus0/target0/lun0: p1
+Attached scsi removable disk sda at scsi0, channel 0, id 0, lun 0
+Attached scsi generic sg0 at scsi0, channel 0, id 0, lun 0,  type 0
+usb-storage: device scan complete
+<comment>(通常この時点で、/dev/sda1をマウントしてデバイスにアクセス可能です)</comment>
+
+<comment>(デバイスの接続が切れたとき、システムもそれを認識します)</comment>
+usb 1-1: USB disconnect, address 2
+</pre>
+
+<p>
+デバイスが接続されたりマウントされたりすると、通常のハードディスクのようにアクセスすることができます。
+<c>cp</c>、<c>mv</c>、<c>rm</c>などのよくある命令は正常に動作します。
+USBスティック上にファイルシステムを作成し、フォーマットすることもできます。
+</p>
+
+<pre caption="USBメモリへアクセスする">
+# <i>mount /dev/sda1 /mnt/usb</i>
+# <i>df -h</i>
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/hda8             9.4G  7.5G  1.9G  80% /
+/dev/hda9              11G  8.1G  2.4G  78% /usr
+none                  189M     0  189M   0% /dev/shm
+/dev/sda1             490M   34M  457M   7% /mnt/usb
+</pre>
+
+<note>
+デジタルカメラには、USBメモリと同じ方法でアクセスすることができます。
+私はNikon Coolpix 5200を持っていますが、同じ方法でアクセスしました。
+最近のカメラは、たいていUSBマスストレージとPTP(Picture Transfer Protocol)の2種類の画像転送方法を持っています。
+カメラは、USBマスストレージデバイスのように設定され動作します。
+それゆえ詳しくは説明しませんが、手続きはメモリースティックへのアクセスと全く同じです。
+すべてのケースでこの様に動くとは限りませんし、USBをサポートしているすべてのデジタルカメラでも動かないかもしれないことに注意してください。
+</note>
+
+<p>
+  USBマウスを持っている場合はどのように表示されるでしょうか？HIDデバイスとして表示されるはずです。
+</p>
+
+<pre caption="USBオプティカルマウス">
+# <i>dmesg | grep USB</i>
+drivers/usb/input/hid-core.c: v2.0:USB HID core driver
+usb 1-1: new low speed USB device using address 2
+input: USB HID v1.10 Mouse [Logitech USB-PS/2 Optical Mouse] on usb-0000:00:07.2-1
+</pre>
+
+<p>
+USBポートの状態を見るために使える素晴らしいコマンドは、他に<c>lsusb</c>があります。
+これは<c>sys-apps/usbutils</c>の一部で、次の章で紹介します。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ユーザ空間のUSB</title>
+<section>
+<title>素晴らしいツール</title>
+<body>
+
+<p>
+これまでは、Linux上のカーネルあるいはシステム側にUSBに関するサポートがどれだけ存在するか見てきました。
+さて、これからはユーザ空間でのUSBに関してGentooが提供しているサポートの種類をのぞいてみましょう。
+</p>
+
+<p>
+最も役に立つツールの一つは<c>lsusb</c>です。
+これは、システムに接続しているUSBデバイスをすべて一覧表示します。
+インストールは簡単です。
+</p>
+
+<pre caption="usbutilsのインストール">
+# <i>emerge usbutils</i>
+</pre>
+
+<p>
+インストールすると、<c>lsusb</c>を実行してマシンに取り付けられているUSBデバイスの簡単な情報を入手できます。
+</p>
+
+<note>
+たいてい<c>lsusb</c>を実行する場合は、rootでなければなりません。
+</note>
+
+<warn>
+<c>lsusb</c>は、<path>/proc/bus/usb</path>からUSBデバイスの情報を読み込みます。
+ここからの読み込みをカーネルで有効にしていない場合は、<c>lsusb</c>が全く動作しない可能性があります。
+<path>/proc</path>ファイルシステムのサポートをカーネルで有効にしてあって、<c>usbfs</c>が<path>/proc/bus/usb</path>でマウントされていること(自動的にマウントされます)を確認してください。
+</warn>
+
+<pre caption="lsusbの動作">
+# <i>lsusb</i>
+<comment>(これはTranscend製のUSBメモリ(512MB)です)</comment>
+Bus 001 Device 003: ID 0c76:0005 JMTek, LLC. USBdisk
+<comment>(これはオプティカルマウスです)</comment>
+Bus 001 Device 002: ID 046d:c00e Logitech, Inc. Optical Mouse
+<comment>(これはルートハブです)</comment>
+Bus 001 Device 001: ID 0000:0000
+</pre>
+
+<p>
+あなたが大量の情報を見るのが大好きな種類の人なら、<c>lsusb -v</c>を実行するのもよいでしょう。
+実行してみて、そのコマンドが出力するたくさんの情報をご覧ください。
+また<c>lsusb</c>には、現在の物理的なUSB階層をツリー形式でダンプし、それによって正確なデバイスマップをより理解しやすくなるというオプションもあります。
+これは、<c>lsusb -t</c>コマンドです。例えば、以下のような出力が得られます。
+</p>
+
+<pre caption="lsusbによるUSB階層の表示">
+# <i>lsusb -t</i>
+Bus#  1
+`-Dev#   1 Vendor 0x0000 Product 0x0000
+  |-Dev#   2 Vendor 0x046d Product 0xc00e
+  `-Dev#   3 Vendor 0x0c76 Product 0x0005
+</pre>
+
+<p>
+<c>lsusb</c>と<c>lsusb -t</c>の出力は簡単にお互い関連付けることができます。
+これはデバッグや、どのようにUSBが動作するかを理解するのに役に立ちます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>謝辞</title>
+<section>
+<title>参考文献</title>
+<body>
+
+<p>
+このガイドを書くときにお世話になったオンライン文書はかなりたくさんあります。
+その中のいくつかはとても専門的ですが本当に面白いものです。
+すべて賞賛に値すると思いました。それではご覧ください！
+</p>
+
+<ul>
+<li><uri link="http://www.usb.org">The Official USB Website</uri></li>
+<li><uri link="http://www.usb.org/about/faq">The USB FAQ</uri></li>
+<li><uri link="http://h18000.www1.hp.com/productinfo/development/openhci.html">Compaq's OHCI Standard</uri></li>
+<li><uri link="http://developer.intel.com/technology/usb/uhci11d.htm">Intel's UHCI Standard</uri></li>
+<li><uri link="http://www.intel.com/technology/usb/ehcispec.htm">Intel's EHCI Standard</uri></li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>その他の興味深いリンク</title>
+<body>
+
+<ul>
+    <li><uri link="/doc/en/liveusb.xml">Gentoo Linux LiveUSB HOWTO</uri></li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

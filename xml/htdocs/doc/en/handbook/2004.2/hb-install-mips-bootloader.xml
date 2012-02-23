@@ -1,0 +1,141 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-install-mips-bootloader.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.5</version>
+<date>October 23, 2004</date>
+
+<section>
+<title>The MIPS PROM</title>
+<subsection>
+<body>
+
+<p>
+MIPS doesn't require that you install a bootloader. The MIPS PROM handles the
+booting, but you need to install your kernel as a viable option. 
+</p>
+
+<p>
+First, install <c>dvhtool</c>, needed to copy the kernel to the SGI Volume
+Header.
+</p>
+
+<pre caption="Installing dvhtool">
+# <i>emerge dvhtool</i>
+</pre>
+
+<p>
+Now copy over the kernel to the SGI Volume Header. By default <c>dvhtool</c>
+assumes that the SGI Volume Header is on <path>/dev/sda</path>. If this is not
+the case (for instance when IRIX is installed on <path>/dev/sda</path> and
+Gentoo/MIPS on <path>/dev/sdb</path>) you need to inform <c>dvhtool</c> about it
+using <c>-d &lt;device&gt;</c>.
+</p>
+
+<pre caption="Copying a kernel to the SGI Volume Header">
+# <i>dvhtool --unix-to-vh &lt;kernel name in /boot&gt; &lt;name you want to give in volume header&gt;</i>
+</pre>
+
+<p>
+If you want to see all available entries in the volume, use
+<c>--print-volume-directory</c>:
+</p>
+
+<pre caption="Viewing all available entries in the volume">
+# <i>dvhtool --print-volume-directory</i>
+</pre>
+
+<p>
+To set up your system to boot Gentoo/MIPS you need to go tweak some settings in
+the MIPS PROM.
+</p>
+
+<p>
+Continue with <uri link="#reboot">Rebooting the System</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="reboot">
+<title>Rebooting the System</title>
+<subsection>
+<body>
+
+<p>
+Exit the chrooted environment and unmount all mounted partitions. Then type in 
+that one magical command you have been waiting for: <c>reboot</c>.
+</p>
+
+<pre caption="Exiting the chroot, unmounting all partitions and rebooting">
+# <i>exit</i>
+cdimage ~# <i>cd</i>
+cdimage ~# <i>umount /mnt/gentoo/boot /mnt/gentoo/proc /mnt/gentoo</i>
+cdimage ~# <i>reboot</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Tweaking the MIPS PROM</title>
+<subsection>
+<body>
+
+<p>
+When you are rebooted, go to the <e>System Maintenance Menu</e> and select 
+<e>Enter Command Monitor</e> (<c>5</c>). If you want to test your new Gentoo 
+installation, you can just run <c>boot -f &lt;kernel name&gt;</c>. To have your 
+system permanently boot into the Gentoo installation, you need to set some 
+variables in the MIPS PROM: 
+</p>
+
+<pre caption="Configuring the PROM to Boot Gentoo">
+1) Start System
+2) Install System Software
+3) Run Diagnostics
+4) Recover System
+5) Enter Command Monitor
+
+Option? <i>5</i>
+Command Monitor.  Type "exit" to return to the menu.
+
+<comment>(&lt;root device&gt; = Gentoo's root partition, e.g. /dev/sda3)</comment>
+&gt;&gt; <i>setenv OSLoadPartition &lt;root device&gt;</i>
+
+<comment>(To list the available kernels, type "ls")</comment>
+&gt;&gt; <i>setenv OSLoader &lt;kernel name&gt;</i>
+&gt;&gt; <i>setenv OSLoadFilename &lt;kernel name&gt;</i>
+
+<comment>(Declare the kernel parameters you want to pass)</comment>
+&gt;&gt; <i>setenv OSLoadOptions &lt;kernel parameters&gt;</i>
+
+<comment>(Provide the location of the Volume Header)</comment>
+&gt;&gt; <i>setenv SystemPartition scsi(0)disk(1)rdisk(0)partition(8)</i>
+
+<comment>(Automatically boot Gentoo)</comment>
+&gt;&gt; <i>setenv AutoLoad Yes</i>
+
+<comment>(Set the timezone)</comment>
+&gt;&gt; <i>setenv TimeZone EST5EDT</i>
+
+<comment>(Use the serial console - graphic adapter users should have "g" instead of "d1" (one))</comment>
+&gt;&gt; <i>setenv console d1</i>
+</pre>
+
+<p>
+Now you're ready to enjoy Gentoo! Boot in your Gentoo installation and finish 
+up with <uri link="?part=1&amp;chap=11">Finalizing your Gentoo 
+Installation</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

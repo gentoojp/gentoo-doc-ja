@@ -1,0 +1,682 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/l-posix3.xml,v 1.7 2011/09/04 17:53:41 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide disclaimer="articles">
+<title>POSIX threads explained, part 3</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+
+<abstract>
+In this article, the last of a three-part series on POSIX threads, Daniel takes
+a good look at how to use condition variables. Condition variables are POSIX
+thread structures that allow you to "wake up" threads when certain conditions
+are met. You can think of them as a thread-safe form of signalling. Daniel wraps
+up the article by using all that you've learned so far to implement a
+multi-threaded work crew application.
+</abstract>
+
+<!-- The original version of this article was published on IBM developerWorks,
+and is property of Westtech Information Services. This document is an updated
+version of the original article, and contains various improvements made by the
+Gentoo Linux Documentation team -->
+
+<version>1.4</version>
+<date>2005-10-09</date>
+
+<chapter>
+<title>Improve efficiency with condition variables</title>
+<section>
+<title>Condition variables explained</title>
+<body>
+
+<p>
+I ended my <uri link="/doc/en/articles/l-posix2.xml">previous article</uri> by
+describing a particular dilemma how does a thread deal with a situation where
+it is waiting for a specific condition to become true? It could repeatedly lock
+and unlock a mutex, each time checking a shared data structure for a certain
+value. But this is a waste of time and resources, and this form of busy polling
+is extremely inefficient. The best way to do this is to use the
+pthread_cond_wait() call to wait on a particular condition to become true.
+</p>
+
+<p>
+It's important to understand what pthread_cond_wait() does -- it's the heart of
+the POSIX threads signalling system, and also the hardest part to understand.
+</p>
+
+<p>
+First, let's consider a scenario where a thread has locked a mutex, in order to
+take a look at a linked list, and the list happens to be empty. This particular
+thread can't do anything -- it's designed to remove a node from the list, and
+there are no nodes available. So, this is what it does.
+</p>
+
+<p>
+While still holding the mutex lock, our thread will call
+pthread_cond_wait(&amp;mycond,&amp;mymutex). The pthread_cond_wait() call is
+rather complex, so we'll step through each of its operations one at a time.
+</p>
+
+<p>
+The first thing pthread_cond_wait() does is simultaneously unlock the mutex
+mymutex (so that other threads can modify the linked list) and wait on the
+condition mycond (so that pthread_cond_wait() will wake up when it is
+"signalled" by another thread). Now that the mutex is unlocked, other threads
+can access and modify the linked list, possibly adding items. 
+</p>
+
+<p>
+At this point, the pthread_cond_wait() call has not yet returned. Unlocking the
+mutex happens immediately, but waiting on the condition mycond is normally a
+blocking operation, meaning that our thread will go to sleep, consuming no CPU
+cycles until it is woken up. This is exactly what we want to happen. Our thread
+is sleeping, waiting for a particular condition to become true, without
+performing any kind of busy polling that would waste CPU time. From our thread's
+perspective, it's simply waiting for the pthread_cond_wait() call to return. 
+</p>
+
+<p>
+Now, to continue the explanation, let's say that another thread (call it "thread
+2") locks mymutex and adds an item to our linked list. Immediately after
+unlocking the mutex, thread 2 calls the function
+pthread_cond_broadcast(&amp;mycond). By doing so, thread 2 will cause all
+threads waiting on the mycond condition variable to immediately wake up. This
+means that our first thread (which is in the middle of a pthread_cond_wait()
+call) will now wake up.
+</p>
+
+<p>
+Now, let's take a look at what happens to our first thread. After thread 2
+called pthread_cond_broadcast(&amp;mymutex) you might think that thread 1's
+pthread_cond_wait() will immediately return. Not so! Instead,
+pthread_cond_wait() will perform one last operation: relock mymutex. Once
+pthread_cond_wait() has the lock, it will then return and allow thread 1 to
+continue execution. At that point, it can immediately check the list for any
+interesting changes.
+</p>
+
+</body>
+</section>
+<section>
+<title>Stop and review!</title>
+<body>
+
+<!-- These bits do not make any sense to me, commented out
+
+<pre caption="queue.h">
+    pthread_cond_t mycond;
+</pre>
+
+<pre caption="control.h">
+    pthread_cond_t mycond;
+
+    pthread_cond_init(&amp;mycond,NULL);
+
+    pthread_cond_destroy(&amp;mycond);
+
+    pthread_cond_wait(&amp;mycond, &amp;mymutex);
+
+    pthread_cond_broadcast(&amp;mycond);
+
+    pthread_cond_signal(&amp;mycond);
+</pre>
+-->
+<pre caption="queue.h">
+/* queue.h
+<comment>** Copyright 2000 Daniel Robbins, Gentoo Technologies, Inc.
+** Author: Daniel Robbins
+** Date: 16 Jun 2000</comment>
+*/
+typedef struct node {
+  struct node *next;
+} node;
+typedef struct queue {
+  node *head, *tail; 
+} queue;
+void queue_init(queue *myroot);
+void queue_put(queue *myroot, node *mynode);
+node *queue_get(queue *myroot);
+</pre>
+
+<pre caption="queue.c">
+/* queue.c
+<comment>** Copyright 2000 Daniel Robbins, Gentoo Technologies, Inc.
+** Author: Daniel Robbins
+** Date: 16 Jun 2000
+**
+** This set of queue functions was originally thread-aware.  I
+** redesigned the code to make this set of queue routines
+** thread-ignorant (just a generic, boring yet very fast set of queue
+** routines).  Why the change?  Because it makes more sense to have
+** the thread support as an optional add-on.  Consider a situation
+** where you want to add 5 nodes to the queue.  With the
+** thread-enabled version, each call to queue_put() would
+** automatically lock and unlock the queue mutex 5 times -- that's a
+** lot of unnecessary overhead.  However, by moving the thread stuff
+** out of the queue routines, the caller can lock the mutex once at
+** the beginning, then insert 5 items, and then unlock at the end.
+** Moving the lock/unlock code out of the queue functions allows for
+** optimizations that aren't possible otherwise.  It also makes this
+** code useful for non-threaded applications.
+**
+** We can easily thread-enable this data structure by using the
+** data_control type defined in control.c and control.h.</comment> */
+#include &lt;stdio.h&gt;
+#include "queue.h"
+void queue_init(queue *myroot) {
+  myroot->head=NULL;
+  myroot->tail=NULL;
+}
+void queue_put(queue *myroot,node *mynode) {
+  mynode->next=NULL;
+  if (myroot->tail!=NULL)
+    myroot->tail->next=mynode;
+  myroot->tail=mynode;
+  if (myroot->head==NULL)
+    myroot->head=mynode;
+}
+node *queue_get(queue *myroot) {
+  //get from root
+  node *mynode;
+  mynode=myroot->head;
+  if (myroot->head!=NULL)
+    myroot->head=myroot->head->next;
+  return mynode;
+}
+</pre>
+
+<pre caption="control.h">
+#include &lt;pthread.h&gt;
+typedef struct data_control {
+  pthread_mutex_t mutex;
+  pthread_cond_t cond;
+  int active;
+} data_control;
+</pre>
+
+<pre caption="control.c">
+/* control.c
+<comment>** Copyright 2000 Daniel Robbins, Gentoo Technologies, Inc.
+** Author: Daniel Robbins
+** Date: 16 Jun 2000
+**
+** These routines provide an easy way to make any type of
+** data-structure thread-aware.  Simply associate a data_control
+** structure with the data structure (by creating a new struct, for
+** example).  Then, simply lock and unlock the mutex, or
+** wait/signal/broadcast on the condition variable in the data_control
+** structure as needed.
+**
+** data_control structs contain an int called "active".  This int is
+** intended to be used for a specific kind of multithreaded design,
+** where each thread checks the state of "active" every time it locks
+** the mutex.  If active is 0, the thread knows that instead of doing
+** its normal routine, it should stop itself.  If active is 1, it
+** should continue as normal.  So, by setting active to 0, a
+** controlling thread can easily inform a thread work crew to shut
+** down instead of processing new jobs.  Use the control_activate()
+** and control_deactivate() functions, which will also broadcast on
+** the data_control struct's condition variable, so that all threads
+** stuck in pthread_cond_wait() will wake up, have an opportunity to
+** notice the change, and then terminate.</comment>
+*/
+#include "control.h"
+int control_init(data_control *mycontrol) {
+  int mystatus;
+  if (pthread_mutex_init(&amp;(mycontrol->mutex),NULL))
+    return 1;
+  if (pthread_cond_init(&amp;(mycontrol->cond),NULL))
+    return 1;
+  mycontrol->active=0;
+  return 0;
+}
+int control_destroy(data_control *mycontrol) {
+  int mystatus;
+  if (pthread_cond_destroy(&amp;(mycontrol->cond)))
+    return 1;
+  if (pthread_mutex_destroy(&amp;(mycontrol->cond)))
+    return 1;
+  mycontrol->active=0;
+  return 0;
+}
+int control_activate(data_control *mycontrol) {
+  int mystatus;
+  if (pthread_mutex_lock(&amp;(mycontrol->mutex)))
+    return 0;
+  mycontrol->active=1;
+  pthread_mutex_unlock(&amp;(mycontrol->mutex));
+  pthread_cond_broadcast(&amp;(mycontrol->cond));
+  return 1;
+}
+int control_deactivate(data_control *mycontrol) {
+  int mystatus;
+  if (pthread_mutex_lock(&amp;(mycontrol->mutex)))
+    return 0;
+  mycontrol->active=0;
+  pthread_mutex_unlock(&amp;(mycontrol->mutex));
+  pthread_cond_broadcast(&amp;(mycontrol->cond));
+  return 1;
+}
+</pre>
+
+</body>
+</section>
+<section>
+<title>Debug time</title>
+<body>
+
+<p>
+One more miscellaneous file before we get to the biggie. Here's
+<path>dbug.h</path>:
+</p>
+
+<pre caption="dbug.h">
+#define dabort() \
+ {  printf("Aborting at line %d in source file %s\n",__LINE__,__FILE__);  abort(); }
+</pre>
+
+<p>
+We use this code to handle unrecoverable errors in our work crew code.
+</p>
+
+</body>
+</section>
+<section>
+<title>The work crew code</title>
+<body>
+
+<p>
+Speaking of the work crew code, here it is:
+</p>
+
+<pre caption="workcrew.c&gt;">
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include "control.h"
+#include "queue.h"
+#include "dbug.h"
+/* <comment>the work_queue holds tasks for the various threads to complete.</comment>*/
+struct work_queue {
+  data_control control;
+  queue work;
+} wq;
+/* <comment>I added a job number to the work node.  Normally, the work node
+   would contain additional data that needed to be processed. </comment>*/
+typedef struct work_node {
+  struct node *next;
+  int jobnum;
+} wnode;
+/* <comment>the cleanup queue holds stopped threads.  Before a thread
+   terminates, it adds itself to this list.  Since the main thread is
+   waiting for changes in this list, it will then wake up and clean up
+   the newly terminated thread. </comment>*/
+struct cleanup_queue {
+  data_control control;
+  queue cleanup;
+} cq;
+/* <comment>I added a thread number (for debugging/instructional purposes) and
+   a thread id to the cleanup node.  The cleanup node gets passed to
+   the new thread on startup, and just before the thread stops, it
+   attaches the cleanup node to the cleanup queue.  The main thread
+   monitors the cleanup queue and is the one that performs the
+   necessary cleanup.</comment> */
+typedef struct cleanup_node {
+  struct node *next;
+  int threadnum;
+  pthread_t tid;
+} cnode;
+void *threadfunc(void *myarg) {
+  wnode *mywork;
+  cnode *mynode;
+  mynode=(cnode *) myarg;
+  pthread_mutex_lock(&amp;wq.control.mutex);
+  while (wq.control.active) {
+    while (wq.work.head==NULL &amp;&amp; wq.control.active) {
+      pthread_cond_wait(&amp;wq.control.cond, &amp;wq.control.mutex);
+    }
+    if (!wq.control.active) 
+      break;
+    //we got something!
+    mywork=(wnode *) queue_get(&amp;wq.work);
+    pthread_mutex_unlock(&amp;wq.control.mutex);
+    //perform processing...
+    printf("Thread number %d processing job %d\n",mynode->threadnum,mywork->jobnum);
+    free(mywork);
+    pthread_mutex_lock(&amp;wq.control.mutex);
+  }
+  pthread_mutex_unlock(&amp;wq.control.mutex);
+  pthread_mutex_lock(&amp;cq.control.mutex);
+  queue_put(&amp;cq.cleanup,(node *) mynode);
+  pthread_mutex_unlock(&amp;cq.control.mutex);
+  pthread_cond_signal(&amp;cq.control.cond);
+  printf("thread %d shutting down...\n",mynode-&gt;threadnum);
+  return NULL;
+  
+}
+#define NUM_WORKERS 4
+int numthreads;
+void join_threads(void) {
+  cnode *curnode;
+  printf("joining threads...\n");
+  while (numthreads) {
+    pthread_mutex_lock(&amp;cq.control.mutex);
+    /* <comment>below, we sleep until there really is a new cleanup node. This
+       takes care of any false wakeups... even if we break out of
+       pthread_cond_wait(), we don't make any assumptions that the
+       condition we were waiting for is true.  </comment>*/
+    while (cq.cleanup.head==NULL) {
+      pthread_cond_wait(&amp;cq.control.cond,&amp;cq.control.mutex);
+    }
+    /* <comment>at this point, we hold the mutex and there is an item in the
+       list that we need to process.  First, we remove the node from
+       the queue.  Then, we call pthread_join() on the tid stored in
+       the node.  When pthread_join() returns, we have cleaned up
+       after a thread.  Only then do we free() the node, decrement the
+       number of additional threads we need to wait for and repeat the
+       entire process, if necessary</comment> */
+      curnode = (cnode *) queue_get(&amp;cq.cleanup);
+      pthread_mutex_unlock(&amp;cq.control.mutex);
+      pthread_join(curnode->tid,NULL);
+      printf("joined with thread %d\n",curnode->threadnum);
+      free(curnode);
+      numthreads--;
+  }
+}
+int create_threads(void) {
+  int x;
+  cnode *curnode;
+  for (x=0; x&lt;NUM_WORKERS; x++) {
+    curnode=malloc(sizeof(cnode));
+    if (!curnode)
+      return 1;
+    curnode->threadnum=x;
+    if (pthread_create(&amp;curnode->tid, NULL, threadfunc, (void *) curnode))
+      return 1;
+    printf("created thread %d\n",x);
+    numthreads++;
+  }
+  return 0;
+}
+void initialize_structs(void) {
+  numthreads=0;
+  if (control_init(&amp;wq.control))
+    dabort();
+  queue_init(&amp;wq.work);
+  if (control_init(&amp;cq.control)) {
+    control_destroy(&amp;wq.control);
+    dabort();
+  }
+  queue_init(&amp;wq.work);
+  control_activate(&amp;wq.control);
+}
+void cleanup_structs(void) {
+  control_destroy(&amp;cq.control);
+  control_destroy(&amp;wq.control);
+}
+int main(void) {
+  int x;
+  wnode *mywork;
+  initialize_structs();
+  /* CREATION */
+  
+  if (create_threads()) {
+    printf("Error starting threads... cleaning up.\n");
+    join_threads();
+    dabort();
+  }
+  pthread_mutex_lock(&amp;wq.control.mutex);
+  for (x=0; x&lt;16000; x++) {
+    mywork=malloc(sizeof(wnode));
+    if (!mywork) {
+      printf("ouch! can't malloc!\n");
+      break;
+    }
+    mywork->jobnum=x;
+    queue_put(&amp;wq.work,(node *) mywork);
+  }
+  pthread_mutex_unlock(&amp;wq.control.mutex);
+  pthread_cond_broadcast(&amp;wq.control.cond);
+  printf("sleeping...\n");
+  sleep(2);
+  printf("deactivating work queue...\n");
+  control_deactivate(&amp;wq.control);
+  /* CLEANUP  */
+  join_threads();
+  cleanup_structs();
+}
+</pre>
+
+</body>
+</section>
+<section>
+<title>Code walkthrough</title>
+<body>
+
+<p>
+Now it's time for a quick code walkthrough. The first struct defined is called
+"wq", and contains a data_control and a queue header. The data_control structure
+will be used to arbitrate access to the entire queue, including the nodes in the
+queue. Our next job is to define the actual work nodes. To keep the code lean to
+fit in this article, all that's contained here is a job number.
+</p>
+
+<p>
+Next, we create the cleanup queue. The comments explain how this works. OK, now
+let's skip the threadfunc(), join_threads(), create_threads() and
+initialize_structs() calls, and jump down to main(). The first thing we do is
+initialize our structures -- this includes initializing our data_controls and
+queues, as well as activating our work queue.
+</p>
+
+</body>
+</section>
+<section>
+<title>Cleanup special</title>
+<body>
+
+<p>
+Now it's time to initialize our threads. If you look at our create_threads()
+call, everything will look pretty normal -- except for one thing. Notice that we
+are allocating a cleanup node, and initializing its threadnum and TID
+components. We also pass a cleanup node to each new worker thread as an initial
+argument. Why do we do this?
+</p>
+
+<p>
+Because when a worker thread exits, it'll attach its cleanup node to the cleanup
+queue, and terminate. Then, our main thread will detect this addition to the
+cleanup queue (by use of a condition variable) and dequeue the node.  Because
+the TID (thread id) is stored in the cleanup node, our main thread will know
+exactly which thread terminated. Then, our main thread will call
+pthread_join(tid), and join with the appropriate worker thread. If we didn't
+perform such bookkeeping, our main thread would need to join with worker threads
+in an arbitrary order, possibly in the order that they were created.  Because
+the threads may not necessarily terminate in this order, our main thread could
+be waiting to join with one thread while it could have been joining with ten
+others. Can you see how this design decision can really speed up our shutdown
+code, especially if we were to use hundreds of worker threads?
+</p>
+
+</body>
+</section>
+<section>
+<title>Creating work</title>
+<body>
+
+<p>
+Now that we've started our worker threads (and they're off performing their
+threadfunc(), which we'll get to in a bit), our main thread begins inserting
+items into the work queue. First, it locks wq's control mutex, and then
+allocates 16000 work packets, inserting them into the queue one-by-one. After
+this is done, pthread_cond_broadcast() is called, so that any sleeping threads
+are woken up and able to do the work. Then, our main thread sleeps for two
+seconds, and then deactivates the work queue, telling our worker threads to
+terminate. Then, our main thread calls the join_threads() function to clean up
+all the worker threads.
+</p>
+
+</body>
+</section>
+<section>
+<title>threadfunc()</title>
+<body>
+
+<p>
+Time to look at threadfunc(), the code that each worker thread executes. When a
+worker thread starts, it immediately locks the work queue mutex, gets one work
+node (if available) and processes it. If no work is available,
+pthread_cond_wait() is called. You'll notice that it's called in a very tight
+while() loop, and this is very important. When you wake up from a
+pthread_cond_wait() call, you should never assume that your condition is
+definitely true -- it will probably be true, but it may not. The while loop will
+cause pthread_cond_wait() to be called again if it so happens that the thread
+was mistakenly woken up and the list is empty.
+</p>
+
+<p>
+If there's a work node, we simply print out its job number, free it, and exit.
+Real code would do something more substantial. At the end of the while() loop,
+we lock the mutex so we can check the active variable as well as checking for
+new work nodes at the top of the loop. If you follow the code through, you'll
+find that if wq.control.active is 0, the while loop will be terminated and the
+cleanup code at the end of threadfunc() will begin.
+</p>
+
+<p>
+The worker thread's part of the cleanup code is pretty interesting. First, it
+unlocks the work_queue, since pthread_cond_wait() returns with the mutex locked.
+Then, it gets a lock on the cleanup queue, adds our cleanup node (containing our
+TID, which the main thread will use for its pthread_join() call), and then it
+unlocks the cleanup queue. After that, it signals any cq waiters
+(pthread_cond_signal(&amp;cq.control.cond)) so that the main thread will know
+that there's a new node to process. We don't use pthread_cond_broadcast()
+because it's not necessary -- only one thread (the main thread) is waiting for
+new entries in the cleanup queue. Our worker thread prints a shutdown message,
+and then terminates, waiting to be pthread_joined() by the main thread when it
+calls join_threads().
+</p>
+
+</body>
+</section>
+<section>
+<title>join_threads()</title>
+<body>
+
+<p>
+If you want to see a simple example of how condition variables should be used,
+take a look at the join_threads() function. While we still have worker threads
+in existence, join_threads() loops, waiting for new cleanup nodes in our cleanup
+queue. If there is a new node, we dequeue the node, unlock the cleanup queue (so
+that other cleanup nodes can be added by our worker threads), join with our new
+thread (using the TID stored in the cleanup node), free the cleanup node,
+decrement the number of threads "out there", and continue.
+</p>
+
+</body>
+</section>
+<section>
+<title>Wrapping it up</title>
+<body>
+
+<p>
+We've reached the end of the "POSIX threads explained" series, and I hope that
+you're now ready to begin adding multithreaded code to your own applications.
+For more information, please see the <uri link="#resources">Resources</uri>
+section, which also contains a tarball of all the sources used in this article.
+I'll see you next series!
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="resources">
+<title>Resources</title>
+<section>
+<body>
+
+<ul>
+  <li>
+    A <uri link="/doc/en/files/l-posix-thread-3.tar.gz">tarball of the
+    sources</uri> used in this article is available.
+  </li>
+  <li>
+    Read Daniel's POSIX threads explained <uri link="l-posix1.xml">Part 1</uri>
+    and <uri link="l-posix2.xml">Part 2</uri>.
+  </li>
+  <li>
+    Your friendly Linux pthread man pages (<c>man -k pthread</c>) are an
+    excellent resource.
+  </li>
+  <li>
+    For a thorough treatment of POSIX threads, I recommend this book:
+    <uri
+    link="http://search.borders.com/fcgi-bin/db2www/search/search.d2w/Details?&amp;mediaType=Book&amp;prodID=2362607">Programming
+    with POSIX Threads</uri>, by David R. Butenhof (Addison-Wesley,
+    1997). This is arguably the best POSIX threads book available.
+  </li>
+  <li>
+    POSIX threads are also covered in this book: <uri
+    link="http://search.borders.com/fcgi-bin/db2www/search/search.d2w/Details?&amp;mediaType=Book&amp;prodID=2362607">UNIX
+    Network Programming - Networking APIs: Sockets and XTI</uri>, by W. Richard
+    Stevens (Prentice Hall, 1997). This is a classic book, but it doesn't cover
+    threads in as much detail as does Programming with POSIX Threads, above.
+  </li>
+  <li>
+    See documentation on <uri
+    link="http://metalab.unc.edu/pub/Linux/docs/faqs/Threads-FAQ/html/">Linux
+    threads</uri>, by Sean Walton, KB7rfa.
+  </li>
+  <li>
+    Take a POSIX threads <uri
+    link="http://www.math.arizona.edu/swig/pthreads/threads.html">tutorial</uri>
+    by Mark Hays at the University of Arizona.
+  </li>
+  <li>
+    In <uri link="http://hwaci.com/sw/pttcl/pttcl.html">An Introduction to
+    Pthreads-Tcl</uri>, see changes to Tcl that enable it to be used with POSIX
+    threads.
+  </li>
+  <li>
+    Take another tutorial, <uri
+    link="http://dis.cs.umass.edu/~wagner/threads_html/tutorial.html">Getting
+    Started with POSIX Threads</uri>, by Tom Wagner and Don Towsley of the
+    Computer Science Department at the University of Massachusetts, Amherst.
+  </li>
+  <li>
+    <uri link="http://moss.csc.ncsu.edu/~mueller/pthreads/">FSU PThreads</uri> is a
+    C library that implements POSIX threads for SunOS 4.1.x, Solaris 2.x, SCO
+    UNIX, FreeBSD, Linux, and DOS.
+  </li>
+  <li>
+    Refer to the home page for <uri
+    link="http://www.sai.msu.su/sal/C/2/PCTHREADS.html">POSIX and DCE threads</uri>
+    for Linux.
+  </li>
+  <li>
+    See <uri link="http://pauillac.inria.fr/~xleroy/linuxthreads/">The
+    LinuxThreads library</uri>.
+  </li>
+  <li>
+    <uri link="http://www.users.itl.net.ua/~prool/proolix.html">Proolix</uri> is
+    a simple POSIX-compliant operating system for i8086+ under permanent
+    development.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+</guide>
+
+
+
+
+
+
+
+

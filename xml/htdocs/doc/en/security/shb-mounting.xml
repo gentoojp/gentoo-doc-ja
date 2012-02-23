@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/security/shb-mounting.xml,v 1.4 2007/03/07 02:14:16 nightmorph Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.0</version>
+<date>2005-05-31</date>
+
+<section>
+<title>Mounting partitions</title>
+<body>
+
+<p>
+When mounting an <c>ext2</c>, <c>ext3</c>, or <c>reiserfs</c> partition, you
+have several options you can apply to the file <path>/etc/fstab</path>. The
+options are:
+</p>
+
+<ul>
+<li>
+  <c>nosuid</c> - Will ignore the SUID bit and make it just like an ordinary
+  file
+</li>
+<li>
+  <c>noexec</c> - Will prevent execution of files from this partition
+</li>
+<li>
+  <c>nodev</c> - Ignores devices
+</li>
+</ul>
+
+<p>
+Unfortunately, these settings can easily be circumvented by executing a
+non-direct path. However, setting <path>/tmp</path> to noexec will stop the
+majority of exploits designed to be executed directly from <path>/tmp</path>.
+</p>
+
+<pre caption="/etc/fstab">
+/dev/sda1 /boot ext2 noauto,noatime 1 1
+/dev/sda2 none swap sw 0 0
+/dev/sda3 / reiserfs notail,noatime 0 0
+/dev/sda4 /tmp reiserfs notail,noatime,nodev,nosuid,noexec 0 0
+/dev/sda5 /var reiserfs notail,noatime,nodev 0 0
+/dev/sda6 /home reiserfs notail,noatime,nodev,nosuid 0 0
+/dev/sda7 /usr reiserfs notail,noatime,nodev,ro 0 0
+/dev/cdroms/cdrom0 /mnt/cdrom iso9660 noauto,ro 0 0
+proc /proc proc defaults 0 0
+</pre>
+
+<warn>
+Placing <path>/tmp</path> in <c>noexec</c> mode can prevent certain scripts
+from executing properly.
+</warn>
+
+<note>
+For disk quotas see <uri link="?part=1&amp;chap=5#quotas">the Quotas section</uri>.
+</note>
+
+<note>
+I do not set <path>/var</path> to <c>noexec</c> or <c>nosuid</c>, even if files
+normally are never executed from this mount point. The reason for this is that
+netqmail is installed in <path>/var/qmail</path> and must be allowed to execute
+and access one SUID file. I setup <path>/usr</path> in read-only mode since I
+never write anything there unless I want to update Gentoo. Then I remount the
+file system in read-write mode, update and remount again.
+</note>
+
+<note>
+Even if you do not use netqmail, Gentoo still needs the executable bit set on
+<path>/var/tmp</path> since ebuilds are made here. But an alternative path can
+be setup if you insist on having <path>/var</path> mounted in <c>noexec</c>
+mode.
+</note>
+
+</body>
+</section>
+</sections>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-net-management.xml,v 1.4 2011/11/06 22:53:50 naota Exp $ -->
+
+<!-- Original revision: 1.13 -->
+<!-- Translator: igarashi -->
+
+<sections>
+
+<abstract>
+ラップトップユーザーやあちこちのネットワークの間でコンピューターを移動する人向けです。
+</abstract>
+
+<version>10</version>
+<date>2011-10-30</date>
+
+
+<section>
+<title>ネットワーク管理</title>
+<body>
+
+<p>
+コンピュータを持って常に移動する場合、いつもイーサネットケーブルがあるわけでも、ケーブルが繋がっているわけでも、アクセスポイントが利用可能なわけでもないかもしれません。
+さらにイーサネットケーブルが接続されたりアクセスポイントを発見したりしたときに、自動でネットワークが使えるようにしたほうがいいかもしれません。
+</p>
+
+<p>
+ここには、このようなネットワーク管理をしやすくするいくつかのツールがあります。
+</p>
+
+<note>
+この文書では<c>ifplugd</c>に関連したことだけ説明しますが、
+<c>netplug</c>のような代替もあります。
+<c>netplug</c>は<c>ifplugd</c>を代替する軽量版で、
+カーネル上のネットワークドライバが正しく動作していればうまく動きます。
+しかし、多くのドライバは正しくは動いていません。
+</note>
+
+</body>
+</section>
+<section>
+<title>ifplugd</title>
+<body>
+
+<p>
+<uri link="http://0pointer.de/lennart/projects/ifplugd/">ifplugd</uri>はイーサネットケーブルを抜き挿しした時にインターフェースを起動停止するデーモンです。
+アクセスポイントとの接続や新しいアクセスポイントの範囲内に入ったことの検知も扱います。
+</p>
+
+<pre caption="ifplugdのインストール">
+# <i>emerge sys-apps/ifplugd</i>
+</pre>
+
+<p>
+ifplugdの設定も難しいことはなにもありません。
+設定ファイルは<path>/etc/conf.d/net</path>にあります。
+設定可能な変数については<c>man ifplugd</c>を実行してください。
+また<path>/usr/share/doc/openrc-*/net.example.bz2</path>の例も参照してください。
+</p>
+
+<pre caption="ifplug設定例">
+<comment>（eth0を監視するインターフェースに置き換えてください）</comment>
+ifplugd_eth0="..."
+
+<comment>（無線インタフェースを監視する）</comment>
+ifplugd_eth0="--api-mode=wlan"
+</pre>
+
+<p>
+複数のネットワーク接続を管理する場合には、
+複数のDNSサーバーとの通信と設定が簡単になるツールを導入した方がいいでしょう。
+これは、DHCPからIPアドレスを取得する場合にはとても便利です。
+単純に<c>openresolv</c>をemergeするだけです。
+</p>
+
+<pre caption="openresolvのインストール">
+# <i>emerge openresolv</i>
+</pre>
+
+<p>
+この点について知りたい場合は、<c>man resolvconf</c> を見てください。
+</p>
+
+</body>
+</section>
+
+</sections>

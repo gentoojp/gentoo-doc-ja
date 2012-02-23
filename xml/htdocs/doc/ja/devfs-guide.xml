@@ -1,0 +1,370 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/devfs-guide.xml,v 1.5 2006/04/04 14:06:28 idani Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/devfs-guide.xml" lang="ja">
+<title>Device File System ガイド</title>
+<author title="Author">
+    <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Reviewer">
+    <mail link="seemant@gentoo.org">Seemant Kulleen</mail>
+</author>
+<author title="翻訳">
+    <mail link="dollyharu@ybb.ne.jp">小林 ハルキ</mail>
+</author>
+
+<abstract>
+このドキュメントは、devfsとは一体どういったものなのか、また、devfsがどのように動作するかについて紹介しています。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>0.6</version>
+<date>2005-07-21</date>
+<!-- Original revision: 1.12 -->
+<chapter>
+<title>devfsとは?</title>
+
+<section>
+<title>かつての（すばらしかった？）時代</title>
+<body>
+
+<warn>
+devfsは<e>廃止され</e>、2.6.13リリースにおいて安定版2.6系カーネルから削除されました。
+2.6系カーネルユーザは、これによってudevへ切り替えるように勧められます。
+udevのより詳しい情報については、<uri
+link="/doc/en/udev-guide.xml">Gentoo udev Guide</uri>(<uri
+link="/doc/ja/udev-guide.xml">日本語訳</uri>)を参照してください。
+</warn>
+
+<p>
+伝統的なLinuxの実装では、ユーザーに <path>/dev</path> と呼ばれる抽象的なデバイス・パスを提供しています。このパスの中に、システム内のデバイスを表すスペシャル・ファイルである、<e>デバイス・ノード</e>があります。例えば、 <path>/dev/hda</path> はシステム内の最初のIDEデバイスを表します。デバイス・ファイルの提供によって、ユーザーは特別なAPIを使わずに、まるでハードウェアが一般的なファイルであるかのようにハードウェアに作用するプログラムを作成することができます。
+</p>
+
+<p>
+デバイス・ファイルは、<e>キャラクター</e>・デバイスと<e>ブロック</e>・デバイスと呼ばれる2つのグループにわけることができます。最初のグループは、読み込み/書き込みでバッファされないハードウェアで構成されます。2つ目のグループは、もちろん、読み込み/書き込みでバッファされるグループです。両方のデバイスとも、一度にもしくはブロック内に１つのキャラクターとして読み込まれます。そのために、この名称は混乱しているように思えますし、そして、実際に良くありません。
+</p>
+
+<p>
+あるデバイス・ファイルに目を通してみると、このようなものに気付くでしょう:
+</p>
+
+<pre caption="デバイス・ファイルの情報の確認">
+# <i>ls -l /dev/hda</i>
+brw-rw----    1 root     disk       3,   0 Jul  5  2000 /dev/hda
+</pre>
+
+<p>
+上の例では、 <path>/dev/hda</path> がブロック・デバイスであることが分かります。しかし、もっと重要なことは、このデバイスが <b>3, 0</b> という割り当てられた2つの特別な番号を持っていることです。この組合せは、 <e>major-minor</e> ペアと呼ばれています。これは、デバイス・ファイルを実際のデバイスに割り振るために、カーネルによって用いられます。major（メジャー番号）はあるデバイスと対応し、minor（マイナー番号）はサブデバイスと対応します。混乱してきましたか？
+</p>
+
+<p>
+<path>/dev/hda4</path> と <path>/dev/tty5</path> という2の例を示します。最初のデバイス・ファイルは、第一IDEデバイスの4番目のパーティションに対応します。このmajor-minorペアは <b>3, 4</b> です。言い替えれば、minorはmajorが対応するデバイスにあるパーティションに対応します。2つ目の例では、major-minorペアとして <b>4, 5</b> を持っています。この場合には、majorはターミナルドライバーに対応します。一方、minorはターミナルの番号に対応します（この場合は、5番目のターミナル）。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>問題点</title>
+<body>
+
+<p>
+もし、 <path>/dev</path> について簡単な確認を行ったなら、あなたのすべてのデバイスだけでなく、あなたが想像できる<e>すべての</e>利用可能なデバイスを見つけることでしょう。言い替えるなら、あなたの持っていないデバイスに対するデバイス・ファイルを持っているということです。このようなデバイスグループを管理することは、控えめに言ったとしても厄介なことです。システム内に対応するデバイスのある、すべてのデバイス・ファイルのパーミッションを変更しなければならなず、そして、残りのデバイス・ファイルをそのままにして置く場合のことを想像してみてください。
+</p>
+
+<p>
+新しいハードウェアをシステムに追加し、このハードウェアがあらかじめデバイス・ファイルをもっていなかった場合には、デバイス・ファイルを作成しなければならないことになるでしょう。技術の高いユーザーは、この作業が <path>/dev</path> ツリー内にある <c>./MAKEDEV</c> を使えば終わることを知っていますが、あなたはどのデバイスを作成するべきか即座に分かりますか？
+</p>
+
+<p>
+read-writeでマウントする必要がない場合でも、デバイス・ファイルを用いるハードウェアに作用するプログラムがあると、rootパーティションをread onlyでマウントすることができません。また、別のパーティションに <path>/dev</path> を置くこともできません。これは、 <c>mount</c> がパーティションをマウントするために <path>/dev</path> を必要とするためです。
+</p>
+
+</body>
+</section>
+<section>
+<title>解決策</title>
+<body>
+
+<p>
+あなたの想像どおり、カーネルハッカーたちは前述の問題に対して極めて多くの解決策を見つけ出しました。しかし、それらの多くは <uri>http://www.atnf.csiro.au/people/rgooch/linux/docs/devfs.html#faq-why</uri> に記述されているように他の欠点を抱えていました。今は、これらの実装について話そうとしているのではなく、オフィシャルなカーネルソースで問題を解決させたひとつの実装である devfs について焦点をしぼろうとしています。
+</p>
+
+</body>
+</section>
+<section>
+<title>devfsはすべてにおける勝者なのか？</title>
+<body>
+
+<p>
+devfsは全ての報告された問題に取り組みました。それは、ユーザーに対して存在するデバイスを提供するに留まらず、新たなデバイスが見つかると新しいノードを加え、さらにrootファイルシステムをread onlyでマウントすることを可能にしました。そして、ユーザーにとって面白いものではないために、ここでは取り上げなかった他の問題にも解決をもたらしました。
+</p>
+
+<p>
+例えば、 devfsを使えば major/minorペアを気にする必要がありません。これは、まだ（下位互換として）サポートされているものの、必要ではありません。このことは、Linuxにさらに多くのデバイスのサポートを可能にさせました。なぜなら、これ以上に制限するものがないためです（数にはいつも限界がありますが :）
+</p>
+
+<p>
+まだ、devfsの使用は、それ自身が引き起こす問題を抱えています。利用者には、この問題は本当に目につきませんが、カーネルメンテナーには、この問題は大きく、devfsを<e>廃止にし</e>、 <uri link="udev-guide.xml">udev</uri>を支持しています。もちろんGentooもサポートし、2.6系カーネルを使用し始めた2005.0リリースから、ほとんどのアーキテクチャで標準で使用しています。
+</p>
+
+<p>
+devfsがなぜ廃止になったかという詳細な情報については、<uri link="http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev-FAQ">udev FAQ</uri>や<uri link="http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev_vs_devfs">udev versus devfs document</uri>をお読みください。
+</p>
+
+</body>
+</section>
+
+</chapter>
+<chapter>
+<title>デバイス・ツリーのご案内</title>
+
+<section>
+<title>ディレクトリ</title>
+<body>
+
+<p>
+注意しなければならない重要なことのひとつに、devfs がデバイスを一まとめにするためにディレクトリを用いていることがあります。このことは、判読性を向上させました。なぜなら、今では、すべての関連するデバイスが共通のディレクトリの中にあるからです。
+</p>
+
+<p>
+例えば、すべてのIDEに関連するデバイスが <path>/dev/ide/</path> デバイス・ディレクトリの中にあり、SCSIに関連するデバイスが <path>/dev/scsi/</path> 内にあります。SCSIとIDEディスクは同じように認識でき、これは両者が同じサブディレクトリ構造を持ったことを意味しています。
+</p>
+
+<p>
+IDEとSCSIディスクは、 <e>host</e> と呼ばれる（オンボード、もしくは、分離したカードの）アダプターによってコントロールされます。それぞれのアダプターは、数個のチャンネルを持つことができます。このチャンネルは、 <e>bus</e> と呼ばれています。それぞれのチャンネルでは、数個のIDを保持することができます。このようなひとつのIDは、ひとつのディスクを特定します。このIDは <e>target</e> と呼ばれます。いくつかのSCSIデバイスは、 複数の luns (<e>Logical Unit Numbers</e>) を持つことができます。例えば、同時に多様なメディアを処理するデバイス（ハイエンドのテープデバイス）などです。多くの場合は、単一の lun <path>lun0/</path> のみです。
+</p>
+
+<p>
+そうです、以前は <path>/dev/hda4</path> が使われていたのに対して、今は <path>/dev/ide/host0/bus0/target0/lun0/part4</path> を用いているのです。これは、はるかに簡単です。反論しないでください、、、とにかく簡単なのです！:)
+</p>
+
+<note>
+ハードディスクに対して <path>c0b0t0u0p2</path> のような、よりUnixライクなデバイス・ファイルの命名法を用いることも可能です。これらは、 <path>/dev/ide/hd</path> や <path>/dev/scsi/hd</path> などで見つけることができます。
+</note>
+
+<p>
+ディレクトリについての考え方をわかってもらうために、私のラップトップのディレクトリの一覧を示します：
+</p>
+
+<pre caption="/dev 内のディレクトリ">
+cdroms/     cpu/        discs/          floppy/
+ide/        input/      loop/           misc/
+netlink/    printers/   pts/            pty/
+scsi/       sg/         shm/            sound/
+sr/         usb/        vc/             vcc/
+</pre>
+
+</body>
+</section>
+<section>
+<title>devfsdを用いた下位互換</title>
+<body>
+
+<p>
+この新しい機構を使うことは楽しそうに思えます。しかし、いくつかのツールとプログラムは以前の古い機構を利用します。すべてのシステムが崩壊しないことを確実にするために、 <c>devfsd</c> が作成されました。このデーモンは、新しいデバイス・ファイルを示す、古い名前のsymlinkを作成します。
+</p>
+
+<pre caption="作成されたsymlink">
+$ <i>ls -l /dev/hda4</i>
+lr-xr-xr-x    1 root     root           33 Aug 25 12:08 /dev/hda4 -> ide/host0/bus0/target0/lun0/part4
+</pre>
+
+<p>
+<c>devfsd</c> を用いれば、さらに、パーミッションの設定、新しいデバデバイス・ファイルの作成、アクションの定義などをも行うことができます。これら全ては、次の章に書かれています。
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>デバイス・ツリーの管理</title>
+
+<section>
+<title>devfsdの再起動</title>
+<body>
+
+<p>
+
+<path>/etc/devfsd.conf</path> ファイルを変更した場合やシステムに強制的に変更を加えたい場合に、再起動を行う必要はありません。あなたのやりたい事に応じて、次の2つのシグナルのどちらかを用いることができます:
+</p>
+
+<p>
+<b>SIGHUP</b> は、 <c>devfsd</c> に、設定ファイルの再読み込みや共有オブジェクトの再ロード、そして、デバイス・ツリーの中のそれぞれのリーフノードに対するREGISTERイベントの生成をさせます。
+</p>
+
+<p>
+<b>SIGUSR1</b> は、同様に動作しますが、REGISTERイベントを生成しません。
+</p>
+
+<p>
+シグナルを送るためには、単に <c>kill</c> もしくは <c>killall</c> を用いてください:
+</p>
+
+<pre caption="devfsdにSIGHUPシグナルを送る">
+# <i>kill -s SIGHUP `pidof devfsd`</i>
+<comment>もしくは、</comment>
+# <i>killall -s SIGHUP devfsd</i>
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>互換symlinkの除去</title>
+<body>
+
+<warn>
+現在、Gentooは互換symlinkなしでは生きられません。
+</warn>
+
+<p>
+もし、 <path>/dev</path> を乱雑にする互換symlinkをGentooシステム（Gentooはデフォルトで動作させている）から除去したい場合は、 <path>/etc/devfsd.conf</path> を編集し、以下の2行を取り除いてください:
+</p>
+
+<pre caption="/etc/devfsd.confの下位互換">
+<comment># symlinkを除去するためには以下の2行をコメント化する</comment>
+REGISTER        .*  MKOLDCOMPAT
+UNREGISTER      .*  RMOLDCOMPAT
+</pre>
+
+<p>
+この変更を適用するためには、システムを再起動させる必要があります。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>自動ロード機能の除去</title>
+<body>
+
+<p>
+モジュールをロードした時、devfsは自動的にデバイス・ファイルを作成します。この動作を望まない場合には、 <path>/etc/devfsd.conf</path> から以下の行を除去してください:
+</p>
+
+<pre caption="/etc/devfsd.conf, 自動ロード機能">
+LOOKUP      .*  MODLOAD
+</pre>
+
+</body>
+</section>
+
+</chapter>
+<chapter>
+<title>アイテムに関連したパーミッション</title>
+<section>
+<title>devfsdによるパーミッションの設定と変更</title>
+<body>
+
+<note>
+これらの操作はpam_consoleが<path>/etc/pam.d/system-auth</path>の中で無効になっている限り有効です。pam_consoleを有効にしている場合、PAMがパーミション上最終的に保証するものになります。
+</note>
+
+<p>
+もし、<path>/etc/devfsd.conf</path> を用いてパーミッションの設定をしたいなら、次の例で用いられているシンタックスを利用してください: 
+</p>
+
+<pre caption="/etc/devfsd.conf でのパーミッション">
+REGISTER    ^cdroms/.*  PERMISSIONS root.cdrom 0660
+</pre>
+
+<p>
+2番目の欄は、 <path>/dev</path> から始まるデバイス・グループです。これは正規表現で、ひとつのルールでいくつかのデバイスを選択可能です。
+</p>
+
+<p>
+4番目の欄は、デバイス・ファイルの所有権です。
+そして5番目の欄は、デバイス・ファイルのパーミッションを記述しています。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>手動によるパーミッションの設定とdevfsdによるセーブ</title>
+<body>
+
+<p>
+これはGentooでは、デフォルトの動作です: もし、デバイス・ファイルを <c>chown</c> (CHange OWNer) や <c>chmod</c> (CHange MODe) した場合には、 <c>devfsd</c> は、再起動してもこの状態を維持するために、この情報をセーブします。この動作は、 <path>/etc/devfsd.conf</path> ファイルに以下の行が記述されているためです:
+</p>
+
+<pre caption="/etc/devfsd.conf のパーミッションのセーブ">
+REGISTER        ^pt[sy]/.*   IGNORE
+CHANGE          ^pt[sy]/.*   IGNORE
+CREATE          ^pt[sy]/.*   IGNORE
+DELETE          ^pt[sy]      IGNORE
+REGISTER        ^log         IGNORE
+CHANGE          ^log         IGNORE
+CREATE          ^log         IGNORE
+DELETE          ^log         IGNORE
+REGISTER        .*           COPY    /lib/dev-state/$devname $devpath
+CHANGE          .*           COPY    $devpath /lib/dev-state/$devname
+CREATE          .*           COPY    $devpath /lib/dev-state/$devname
+DELETE          .*           CFUNCTION GLOBAL unlink
+/lib/dev-state/$devname
+RESTORE         /lib/dev-state
+</pre>
+
+<p>
+言い替えれば、変更されたデバイス・ファイルは変更が行われたときに <path>/lib/dev-state</path> へコピーされ、そしてシステムがブートされるとき <path>/dev</path> ファイルにコピーされます。
+</p>
+
+<p>
+他の方法は、ブート時に <path>/dev</path> に <path>/lib/dev-state</path> をマウントすることです。これを行うためには、devfs が自動的にマウントされないことを確認しなければなりません（カーネルの再コンパイルをしなればならないことを意味します）。そして、 <path>/dev/console</path> が存在することも確認しなければなりません。そして、システムのブートスクリプトの最初のどこかに、以下を記述します:
+</p>
+
+<pre caption="/dev の上部への /lib/dev-state のマウント">
+mount --bind /dev /lib/dev-state
+mount -t devfs none /dev
+devfsd /dev
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>情報源</title>
+<section>
+<body>
+
+<p>
+devfsについてのこれ以上の情報は、以下の情報源を参照してください。
+</p>
+
+<p>
+devfsd.confのmanページは <path>/etc/devfsd.conf</path> ファイルのシンタックスを解説しています。この情報を見るためには、<c>man devfsd.conf</c> と入力してください。
+</p>
+
+<p>
+<uri link="http://www.atnf.csiro.au/people/rgooch/linux/docs/devfs.html">devfs FAQ</uri> 
+ は、devfsについてのすべてことを解説しています。内部のdevfs構造やどのようにドライバーがdevfsをサポート可能にしているのかについての情報も含まれています。
+</p>
+
+<p>
+<uri link="http://www.linuxjournal.com">LinuxJournal</uri> には、<uri link="http://www.linuxjournal.com/article.php?sid=6035">devfs for Management and Administration</uri> という興味深い記事があります。
+</p>
+
+<p>
+Daniel Robbinsは、IBMのDeveloperWorks向けにアドバンスト・ファイルシステムについての一連の記事を書いています。これらのうちの3つがdevfsについてのものです:
+</p>
+
+<ul>
+<li><uri
+link="http://www-6.ibm.com/jp/developerworks/linux/011214/j_l-fs4.html">devfs入門</uri></li>
+<li><uri
+link="http://www-6.ibm.com/jp/developerworks/linux/011221/j_l-fs5.html">devfsのセットアップ</uri></li>
+<li><uri
+link="http://www-6.ibm.com/jp/developerworks/linux/020111/j_l-fs6.html">initラッパーを使ってdevfsを導入する</uri></li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

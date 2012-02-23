@@ -1,0 +1,675 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!--
+ $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/gentoo-upgrading.xml,v 1.6 2012/02/03 09:13:39 naota Exp $ 
+-->
+<guide lang="ja">
+<title>Gentoo アップグレーディング ガイド</title>
+
+<author title="Author">
+  <mail link="g.guidi@gentoo.org">Gregorio Guidi</mail>
+</author>
+<author title="Editor">
+  <mail link="wolf31o2@gentoo.org">Chris Gianelloni</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+<author title="翻訳">
+   <mail link="kminoru@jaist.ac.jp">木ノ下 稔</mail>
+</author>
+<author title="翻訳">
+   <mail link="idani@gentoo.org">飴谷 茂寛</mail>
+</author>
+<author title="翻訳">
+   <mail link="shindo@gentoo.gr.jp">しんどうなおあき</mail>
+</author>
+<author title="翻訳">
+   <mail link="murakami.taku@gmail.com">Taku Murakami</mail>
+</author>
+
+
+<abstract>
+このドキュメントは、新しい Gentoo のリリースが既存のシステムに及ぼす影響についての説明です。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2.11</version>
+<date>2008-07-06</date>
+<!-- Original revision: 1.42 -->
+
+<chapter>
+<title>Gentoo と アップグレード</title>
+
+<section>
+<title>理念</title>
+
+
+<body>
+
+<p>
+ここはGentooの世界、アップグレードの考え方は他のLinuxの世界と比べてまったく違います。
+すでに御存じかもしれませんが、私達は、新しいリリースを待ち、
+リリース版をダウンロードして、焼いて、CD-ROMドライブにセットして、
+そしてアップグレード手順に従うような「伝統的」なソフトウェアアップグレードの方法を採用していません。
+</p>
+
+<p>
+常に最新の環境でいたいパワーユーザにとって、
+この手続きは非常にイライラするものだというのは
+(なんといってもGentooユーザーであれば)お分かりになると思います。
+
+素早くそして頻繁にアップデートができるaptやapt-rpmのような、
+評判があり普及しているツールを使っている他のディストリビューション出身のパワーユーザでも、たぶん同じ考えだと思います。
+
+しかし、こうした要望をもつユーザを満足させるディストリビューションはGenooのほかにはありません。
+なぜなら、はじめからGentooは差分を更新するという考え方で設計されたからです。
+</p>
+
+<p>
+理想としては、あなたは一度だけインストールし、そして各リリースによる苦労をしないことです。
+<uri link="/doc/en/handbook/handbook-x86.xml?part=2&amp;chap=1">A Portage
+Introduction</uri><uri link="/doc/ja/handbook/handbook-x86.xml?part=2&amp;chap=1">(日本語訳)</uri> や<uri link="/doc/en/handbook/">Gentoo Handbook</uri><uri link="/doc/ja/handbook/">(日本語訳)</uri>の指示に従うだけでよいのです。これらはあなたのシステムを最新に保つ方法を説明しています。
+普通はそれでうまくいくのですが、ときどきコアシステムへのアップデートがあり、これには手動で設定を行う必要があります。
+</p>
+
+</body>
+</section>
+<section>
+<title>リリースとプロファイル</title>
+<body>
+
+
+<p>
+Gentooのリリースプロセスについて
+"もし、ユーザにソフトウェアアップデートをさせることを目的としないなら、なぜ新しいリリースがたびたび提供されるのでしょうか？"
+という質問が繰り返しされます。
+それには、さまざまな理由があります。
+</p>
+
+<ul>
+  <li>
+    新しいリリースは、バグ修正と機能追加を施したインストールCDを意味します
+  </li>
+  <li>
+    新しいリリースではアップデートされたGRPパッケージが提供されるため、
+    ユーザはインストールの「近道」(stage3 + コンパイル済のパッケージ)を選択し、システムが古くならずにすむのです。
+  </li>
+  <li>
+  最後に、新しいリリースはときどき前リリースと互換性のないいくつかの機能を実装している場合があります。
+  </li>
+</ul>
+
+<p>
+リリースが新しい互換性のない機能、またはコアパッケージのセットの提供、システム動作の大きな修正を含むとき、
+私達は、新しい<e>プロファイル</e>を提供する、と言います。
+</p>
+
+
+<p>
+ここで言う<e>プロファイル</e>は設定ファイルの集まりで<path>/usr/portage/profiles</path>のサブディレクトリに保管され、
+そこには、例えばシステムパッケージとみなされるebuild、
+デフォルトのUSEフラグ、ヴァーチャルパッケージのためのデフォルトのマッピング、
+そして、稼働するシステムのアーキテクチャが記述されています。
+</p>
+
+<p>
+使用されるプロファイルは、プロファイルが保存される
+<path>/usr/portage/profiles</path>
+のサブディレクトリを指す
+<path>/etc/make.profile</path>
+のシンボリックリンクにより決定されます。
+例えば、デフォルトのx86 2008.0のプロファイルは
+<path>/usr/portage/profiles/default-linux/x86/2008.0</path>
+にあります。
+親ディレクトリにあるファイルはプロファイルの一部にもなっています
+(そのため、複数の異なるサブプロファイルから共有されます。)
+そのため、これらを<e>カスケードプロファイル</e>と呼んでいます。
+</p>
+
+<p>
+新しいプロファイルによって古くなったプロファイルは<path>/usr/portage/profiles</path>の中に現在のものと共に保管されていますが、
+非推奨としてマークされます。
+そうした場合、<path>depricated</path>と名前がつけられたファイルがプロファイルディレクトリに置かれます。
+このファイルの中身はアップグレードの必要があるプロファイル名になっています。
+この情報によりportageは新しいプロファイルに更新しなければいけないときに、自動的に警告を発します。
+</p>
+
+<p>
+新しいプロファイルが作られるのには様々な理由があります。
+その理由は、新コアパッケージ(例えば <c>baselayout</c>や<c>gcc</c>、
+<c>glibc</c>)に前バージョンとの互換性がない場合や
+デフォルトUSEフラグやバーチャルマッピングの変更、
+システム全体の設定の変更の場合もありえます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>最新リリースの状態に保つ</title>
+
+<section>
+<title>プロファイルを変更しないリリース</title>
+<body>
+
+<p>
+もし、新しいGentooリリースに新たなプロファイルが含まれないならば、
+それはなかったことにできます :)。
+</p>
+
+<p>
+もし、あなたが<uri link="/doc/en/handbook/handbook-x86.xml?part=2&amp;chap=1"> Gentoo Handbookの中で説明した通り</uri><uri link="/doc/ja/handbook/handbook-x86.xml?part=2&amp;chap=1">(日本語訳)</uri>、インストールしたパッケージを更新するなら、
+あなたのシステムは新しいリリースを使ってインストールされた状態とまったく同じになるでしょう。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>プロファイルの変更を含むリリース</title>
+<body>
+
+
+<p>
+もし、リリース(x86の2008.1のように)に新しいプロファイルが導入されたら、
+新しいプロファイルを選択して移行することもできます。
+</p>
+
+
+<p>
+もちろん、それを強制されることはなく、あなたは古いプロファイルを使い続けることもできますし、
+<uri link="/doc/en/handbook/handbook-x86.xml?part=2&amp;chap=1">Gentoo Handbookの説明のように</uri><uri link="/doc/ja/handbook/handbook-x86.xml?part=2&amp;chap=1">(日本語訳)</uri>、パッケージを更新することもできます。
+</p>
+
+<p>
+しかし、使用しているプロファイルが非推奨になるときは、Gentooはプロファイルの更新を強く推奨します。
+非推奨になった場合というのは、Gentoo開発者達がもはやそれをサポートする予定がない事を意味します。
+</p>
+
+<p>
+もし、新しいプロファイルに移行することを決めたならば、手動で更新を実行しなければいけません。
+更新の道のりはリリースによって著しく異なるかもしれません。
+それは、新しいプロファイルに取り入れられる変更の程度によります。
+</p>
+
+<p>
+もっとも単純な場合、<path>/etc/make.profile</path>のシンボリックリンクを変更するだけです。
+もっとも最悪な場合は、かっこいいvoodooダンスを踊りながら、
+システムを一から再コンパイルしなければいけないかもしれません。
+通常、移行についてはリリースノートに記載されています。
+あなたはこのガイドの最後の<uri link="#instructions">更新の手引</uri>にも見つけることができます。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>サポートされているプロファイル</title>
+<body>
+
+
+<p>
+使用しているアーキテクチャでGentooの開発者により公式にサポートされているプロファイルのリストは
+<c>emerge eselect</c>を実行し、次のコマンドを実行することでわかります。
+</p>
+
+<pre caption="サポートされたプロファイルの一覧">
+# <i>eselect profile list</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="instructions">
+<title>プロファイル更新の手引</title>
+<section id="general">
+<title>通常の方法</title>
+<body>
+
+<impo>
+プロファイルを変更するまには必ずPortageを更新してください。
+</impo>
+<p>
+まず、<c>emerge eselect</c>を実行をすると、<c>eselect</c>ユーティリティにより、
+プロファイルが表示され、手動でシンボリリックリンクを作成したり削除することなく、簡単にプロファイルを洗濯することができます。
+</p>
+
+<pre caption="eselectでのプロファイル変更">
+<comment>（利用可能なプロファイルの表示）</comment>
+# <i>eselet profile list</i>
+
+<comment>（お好きなプロファイルをリストから選んでください）</comment>
+# <i>eselect profile set &lt;番号&gt;</i>
+</pre>
+
+<p>
+もし、手動での変更を希望するならば、次の手順に従ってください。
+</p>
+
+<pre caption="手動での変更">
+# <i>rm /etc/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/make.profile</i>
+</pre>
+
+<note>
+<b>desktop</b>と<b>server</b>というサブプロファイルがほとんどのアーキテクチャで提供されています。
+これらは最低限のデフォルトプロファイルよりも目的に適している場合があるため、
+これらのプロファイルについてはしっかり検討してください。
+</note>
+
+<note>
+<c>developer</c>サブプロファイルはGentoo Linux開発者の作業用のものです。
+一般的な開発環境をセットアップするためのものでは<e>ありません。</e>
+</note>
+
+</body>
+</section>
+
+<section>
+<title>2008.0, 2007.0もしくは2006.1へのアップデート</title>
+<body>
+
+<p>
+もし、これらのプロファイルにアップデートしようとする場合、システムがデフォルトでユニコードロケールに設定されている必要があることに注意してください。具体的には<path>/etc/rc.conf</path>のなかでUNICODE=YESとなっていることです。
+これが有効になるためには、システムで使用するユニコードロケールを生成しなければいけません。
+<uri link="/doc/en/utf-8.xml">UTF-8 guide</uri>（翻訳 <uri link="/doc/ja/utf-8.xml">UTF-8 ガイド</uri> ）を読んで適切なロケールを生成する方法を確認してください。
+</p>
+
+<p>
+あるいは、ロケールをセットしたくない場合には、<path>/etc/rc.conf</path>でUNICODE="no"とし、
+<c>baselayout</c>を USEフラグ <c>-unicode</c> で再度emergeしてください（もしくは、次の<c>baselayout</c>アップデートまで待ってください）。 <c>-unicode</c> は <c>baselayout</c>にセットするだけもよいですし、<path>/etc/make.conf</path>のなかで、USE変数に付け加えて、すべてのパッケージに適用してもよいでしょう。
+</p>
+
+<pre caption="オプション： ユニコードサポートの削除">
+<comment>(baselayoutだけからユニコードサポートを削除する)</comment>
+# <i>echo "sys-apps/baselayout -unicode" >> /etc/portage/package.use</i>
+# <i>emerge -a baselayout</i>
+
+<comment>(ユニコードサポートをシステム全体から削除する)</comment>
+# <i>nano -w /etc/make.conf</i>
+USE="-unicode"
+# <i>emerge -a baselayout</i>
+</pre>
+
+<p>
+最後に、<uri link="#general">一般的な方法</uri>に従って、プロファイルをアップデートしてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>2006.0への更新</title>
+<body>
+
+<p>
+2006.0プロファイルに変更するためには、<path>/etc/make.profile</path>
+シンボリックリンクを新しい場所へ向けてください。また、
+プロファイルを変更する前にPortageがアップデートされていることを確認してください。
+</p>
+
+<pre caption="2006.0プロファイルへの変更">
+# <i>rm /etc/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/make.profile</i>
+</pre>
+
+<p>
+<b>alpha</b> - 2.4カーネルを使用している、
+またはNPTLを使用したくないユーザはdefault-linux/alpha/no-nptlプロファイルを使用して下さい。
+より詳細な情報は<uri link="/proj/en/releng/release/2006.0/alpha-release-notes.xml">the
+alpha release notes</uri>を参照して下さい。
+</p>
+
+<p>
+<b>ppc</b> - ppc32とppc64プロファイルの統合が進みました。ppc32プロファイルは変更され、
+あらゆる目的にかなう最小主義かつ一般的なプロファイルを提供できるようになりました。
+なお、それはdefault-linux/ppc/ppc32に配置されています。また、
+リリース依存のプロファイルはデスクトップ用途に最適化され、
+default-linux/ppc/ppc32/2006.0に配置されています。G3・G4プロセッサ用にサブプロファイルがいくつか、
+またPegasos Open Desktop Workstation用にG3/Pegasos・G4/Pegasosがそれぞれ利用可能です。
+2006.0プロファイルへ移行するときはシステムに対応する正しいサブプロファイルを確実に選んでください。
+</p>
+
+<p>
+<b>sparc</b> - <b>2.4</b>カーネルベースの2006.0/2.4プロファイルにアップグレードするには、
+<uri link="/doc/en/gcc-upgrading.xml">gccアップグレード</uri>(<uri link="/doc/ja/gcc-upgrading.xml">日本語訳</uri>)のため手動によるユーザの介入(java関連のunmerge)と<c>emerge
+-e world</c>が必要になります。
+stableとは考えられていない<b>2.6</b>カーネルベースの2006.0プロファイルにアップグレードするには、
+<c>gentoo-sources</c>の2.6バージョンをumaskするため<path>/etc/portage/package.unmask</path>へのエントリーと全てをリビルドする必要もあります。
+</p>
+
+<p>
+<b>他の全てのarch</b> - このプロファイルには基本的な変更はありません。
+特に行わなければいけないことはありません。
+</p>
+
+</body>
+</section>
+<section>
+
+<title>2005.1への更新</title>
+<body>
+
+<p>
+2005.1 プロファイルに変更するためには、<path>/etc/make.profile</path>
+シンボリックリンクを新しい場所へ向けてください。
+また、プロファイルを変更する前にPortageがアップデートされていることを確認してください。
+</p>
+
+<pre caption="2005.1プロファイルへの変更">
+# <i>rm /etc/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/make.profile</i>
+</pre>
+
+<p>
+<b>全てのarch</b> - このプロファイルには基本的な変更はありません。
+特に行わなければいけないことはありません。
+</p>
+
+<p>
+<b>ppc</b> - 2005.1リリースで、ppcとppc64プロファイルは統合され
+特定のサブアーキテクチャ向けのサブプロファイルが作成されました。
+2005.1プロファイルへ移行するときはシステムに対応する正しいサブプロファイルを確実に選んでください。
+</p>
+
+</body>
+</section>
+<section>
+<title>2005.0への更新</title>
+<body>
+
+<p>
+2005.0の手引きでは、いくつかのアーキテクチャで追加のプロファイル定義が決定されています。
+移行を決定する前にプロファイルの説明を確認してください。
+ほとんどのアーキテクチャは、以前2.4が選択されていましたが、現在では
+2.6カーネルツリーもデフォルトになっています。
+</p>
+
+<p>
+あるアーキテクチャでは別なプロファイルに完全に切替えるためには、やや作業が必要です。
+そういった場合の段階的な手順が次の表にあります。
+</p>
+
+<table>
+<tr>
+  <th>プロファイル</th>
+  <th>説明</th>
+  <th>特定のアップグレードガイド</th>
+</tr>
+<tr>
+  <ti>default-linux/alpha/2005.0</ti>
+  <ti>カーネル2.6用デフォルト Alpha 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/alpha/2005.0/2.4</ti>
+  <ti>カーネル2.4用Alpha 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/amd64/2005.0</ti>
+  <ti>カーネル2.6用デフォルト AMD64 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/amd64/2005.0/no-multilib</ti>
+  <ti>multilibが無効になっているシステム導入用AMD64 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/arm/2005.0</ti>
+  <ti>カーネル2.6用デフォルト ARM 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/hppa/2005.0</ti>
+  <ti>カーネル2.6用デフォルト HPPA 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/hppa/2005.0/2.4</ti>
+  <ti>カーネル2.4用HPPA 2005.0プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/mips/2005.0</ti>
+  <ti>デフォルト MIPS 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/mips/cobalt/2005.0</ti>
+  <ti>Cobalt 専用MIPS 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/mips/mips64/n32/2005.0</ti>
+  <ti>n32-サポート MIPSプラットフォーム用 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/mips/mips64/ip28/2005.0</ti>
+  <ti>Indigo2 Impact 専用64bit 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/mips/mips64/2005.0</ti>
+  <ti>64-bit MIPS 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/ppc/2005.0</ti>
+  <ti>カーネル2.6用デフォルト PPC 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/ppc64/2005.0</ti>
+  <ti>カーネル2.6用デフォルト PPC64 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/s390/2005.0</ti>
+  <ti>デフォルト S390 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/sparc/sparc32/2005.0</ti>
+  <ti>デフォルト Sparc 32ビット 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<!-- http://dev.gentoo.org/~dsd/kernel-2.6.htm 
+     No subprofiles for sparc
+<tr>
+  <ti>default-linux/sparc/sparc32/2005.0/2.6</ti>
+  <ti>カーネル2.6 用Sparc 32ビット 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+-->
+<tr>
+  <ti>default-linux/sparc/sparc64/2005.0</ti>
+  <ti>Default Sparc 64ビット 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<!-- http://dev.gentoo.org/~dsd/kernel-2.6.htm
+     No subprofiles for sparc
+<tr>
+  <ti>default-linux/sparc/sparc64/2005.0/2.6</ti>
+  <ti>カーネル2.6用 Sparc 64ビット 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+-->
+<tr>
+  <ti>default-linux/x86/2005.0</ti>
+  <ti>カーネル2.6用デフォルト x86 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>default-linux/x86/2005.0/2.4</ti>
+  <ti>カーネル2.4用 x86 2005.0 プロファイル</ti>
+  <ti></ti>
+</tr>
+</table>
+
+<p>
+選択されたプロファイルに変えるには、<path>/etc/make.profile</path>シンボリックリンクを新しい場所に向けてください。
+また、プロファイルを変更する前に確実にPortageをアップデートしてください!
+</p>
+
+<pre caption="2005.0への変更">
+# <i>rm /etc/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/make.profile</i>
+</pre>
+
+<p>
+もし、Linux2.4ベースシステムで稼働しているシステムを2.6ベースに移行したい場合は
+<uri link="/doc/en/migration-to-2.6.xml">Gentoo Linux 2.6 Migration Guide</uri>
+(<uri link="/doc/ja/migration-to-2.6.xml">日本語訳</uri>)を確認してください。
+</p>
+</body>
+</section>
+
+<section>
+<title>2004.3への更新</title>
+<body>
+
+
+<p>
+2004.3のプロファイルの導入の手引において、ユーザは膨大な修正をすることはないでしょう(詳細は以下を参照してください)。
+しかし、Gentoo開発者達は<e>stacked profiles</e>の普及を促進させるために、
+新しいプロファイルを推奨し、かなり多くの古いプロファイルを除くことを決めました。
+このプロファイルは、<path>/usr/portage/profiles</path>ディレクトリに新しく配置され追従します。
+例えば、(Portage 2.0.51か、それ以降でサポートされている)<path>/usr/portage/profiles/default-linux/x86/2004.3</path>のような配置です。
+</p>
+
+<p>
+2004.3のプロファイルへの変更のため、<path>/etc/make.profile</path>シンボリックリンクを新しい場所へ向けてください
+</p>
+
+<warn>
+プロファイルを変更する<e>前に</e>Portageをアップグレードすることを忘れないでください!!!
+</warn>
+
+<pre caption="/etc/make.profile のシンボリックリンクの更新">
+<comment>&lt;arch&gt; をあなたのアーキテクチャに合わせて置き換えてください。</comment>
+# <i>rm /etc/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/default-linux/&lt;arch&gt;/2004.3 /etc/make.profile</i>
+</pre>
+
+<p>
+<b>すべてのアーキテクチャ</b> - 上記の通り、今回のプロファイル中に大きな変更はありません。
+しかし、<c>sys-apps/slocate</c> と <c>net-misc/dhcpcd</c>はシステムパッケージと見なされていないということを憶えておきましょう
+これはあなたが<c>emerge --depclean</c>を実行した時、
+Portageはあなたのシステムからこれらを削除しようすることを意味します。
+もし、あなたがこれらパッケージのどれかが必要なら、
+プロファイルを切替えた後<path>/var/lib/portage/world</path>に加えるか、手動でそれらをemergeを実行します。
+</p>
+
+<p>
+<b>ppc</b> - ppcでは、新しくインストールされたマシンから<c>sys-fs/udev</c> は <c>sys-fs/devfs</c>の代わりのデフォルトになります。
+これは既にインストールされているマシンには影響しないでしょう。そのため、自分で切替える必要があります。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>カスケードプロファイルをサポートするようPortageをアップデートする</title>
+<body>
+
+<p>
+このアップグレードガイドのなかでは、当セクションは流れにそぐわないよう見えるかもしれませんが、非常に重要です。
+上にあげたプロファイルではPortageはカスケードプロファイルをサポートする必要があります。
+しかし、古いプロファイルやPortageが更新できないことがあったり、
+もはや通用しないプロファイルをずっと使っているユーザーではどのようにやってもPortageの更新に失敗してしまいます。
+</p>
+
+<p>
+この問題を回避するためには、ユーザーは一時的に<e>古くなった</e>プロファイルにシンボリックリンクをはり、
+このガイドにかかれたアップグレード手順を続行できるPortageにアップグレードすることができます。
+<c>&lt;arch&gt;</c>をそれぞれのアーキテクチャにかえてください。
+</p>
+
+<pre caption="古いプロファイルを通してのPortage更新">
+# <i>rm /etc/make.profile</i>
+# <i>cd /etc</i>
+# <i>ln -sf ../usr/portage/profiles/obsolete/&lt;arch&gt; make.profile</i>
+# <i>emerge -n '>=sys-apps/portage-2.0.51'</i>
+</pre>
+</body>
+</section>
+
+<section>
+<title>2004.2への更新</title>
+<body>
+
+<p>
+2004.2のプロファイルへの変更のため、<path>/etc/make.profile</path>のシンボリックリンクを新しい場所へ指すように修正しましょう。
+</p>
+
+<warn>
+ あなたのプロファイルを変更する<e>前に</e>Portageをアップグレードすることを忘れないでください!!!
+</warn>
+
+<pre caption="/etc/make.profileのシンボリックリンクの更新">
+<comment> &lt;arch&gt; をあなたのアーキテクチャに合わせて置き換えてください。</comment>
+# <i>rm /etc/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/default-linux/&lt;arch&gt;/2004.2 /etc/make.profile</i>
+</pre>
+
+<p>
+<b>x86</b> - x86では、このプロファイルのデフォルトのx11は<c>x11-base/xfree</c> から <c>x11-base/xorg-x11</c>に変更になりました。
+この変更は<e>default</e>の値のみで、
+まだX 関連をインストールしていない場合のみ関係しています。
+もし、既にインストールしてるなら、影響はないでしょう、
+つまり、従来のように、あるX サーバから他のサーバへと自由に切替えられます。
+</p>
+
+
+<p>
+<b>amd64</b> - 前のプロファイルからの基本的な変更はありません。そのため、特別な作業を行う必要はありません。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>2004.0への更新</title>
+<body>
+
+<p>
+2004.0 のプロファイルへの変更のため、<path>/etc/make.profile</path>シンボリックリンクを新しい場所へ指すように修正しましょう。
+</p>
+
+<pre caption="/etc/make.profile シンボリックリンクの更新">
+<comment> &lt;arch&gt; をあなたのアーキテクチャに合わせて置き換えてください。</comment>
+# <i>rm /etc/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/default-&lt;arch&gt;-2004.0 /etc/make.profile</i>
+</pre>
+
+<p>
+<b>すべてのアーキテクチャ</b> - 前のプロファイルからの基本的な変更はありません。そのため、特別な作業を行う必要はありません。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>1.4より古いプロファイルから1.4への更新</title>
+<body>
+
+<p>
+このアップグレードの説明はかなり複雑です。
+あなたは<uri link="/doc/en/new-upgrade-to-gentoo-1.4.xml">ここに
+</uri><uri link="/doc/ja/new-upgrade-to-gentoo-1.4.xml">(日本語訳)</uri>アップグレードの手順があります。
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>
+

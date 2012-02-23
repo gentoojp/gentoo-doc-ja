@@ -1,0 +1,501 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:53+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/articles/partitioning-p2.xml:6
+#, no-wrap
+msgid "Partitioning in action, Part 2"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/articles/partitioning-p2.xml:16
+#, no-wrap
+msgid ""
+"In this second tip on changing partition layout on a running system, Daniel\n"
+"Robbins shows you how to move /tmp and /var to their own shared partition. He\n"
+"also covers several tricks of the trade to minimize downtime and avoid making\n"
+"costly mistakes.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/partitioning-p2.xml:31
+#, no-wrap
+msgid "Consolidating data"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/partitioning-p2.xml:33
+#, no-wrap
+msgid "Introduction"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:37
+#, no-wrap
+msgid ""
+"In my <uri link=\"/doc/en/articles/partitioning-p1.xml\">last tip</uri>, we\n"
+"successfully moved <path>/home</path> to a new partition. Now, it's time to\n"
+"learn how to consolidate often-modified files onto a new partition. Why would\n"
+"we want to do this? Here's an example. Often-modified files contribute heavily\n"
+"to fragmentation. One of the best ways to contain fragmentation is to store\n"
+"often-modified files on their own partition. That way, the other partitions are\n"
+"unaffected by the fragmentation caused by the heavily modified files. In\n"
+"concept, this is easy to understand, but how do you actually go about doing it?\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:48
+#, no-wrap
+msgid ""
+"First, you must create a new partition for the specific purpose of storing\n"
+"frequently modified files. You might want to locate this partition on a\n"
+"separate disk to enhance performance. Then, I'll walk you through the steps\n"
+"required to move both <path>/tmp</path> and <path>/var</path> to this new\n"
+"partition.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><warn>
+#: en/articles/partitioning-p2.xml:56
+#, no-wrap
+msgid ""
+"The following technique describes how to move a partition(s). Although this\n"
+"technique is designed so that you can \"back out\" of a failed partition move, it\n"
+"doesn't protect against user error. In other words, any time that you format\n"
+"partitions or copy large numbers of files, there's a possibility that you will\n"
+"type the wrong thing, causing lots of data to be destroyed. For this reason,\n"
+"it's highly recommended that you <e>take appropriate steps to back up all\n"
+"critical files before proceeding</e>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/partitioning-p2.xml:68
+#, no-wrap
+msgid "Create a filesystem on the new partition"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:72
+#, no-wrap
+msgid ""
+"The first step of this process is to create a new partition that's big enough\n"
+"to hold <path>/var</path> and <path>/tmp</path>, with a little extra space left\n"
+"over. You'll need either an additional drive, or a spare (unused) partition\n"
+"that will house the often-modified files. If you do need to use <c>fdisk</c> or\n"
+"<c>cfdisk</c> to create the partition, you'll need to reboot once. Then, it's\n"
+"time to format the new partition as follows (it's OK to be in multiuser mode\n"
+"while you do this; I'll let you know when to switch to single-user):\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:81
+#, no-wrap
+msgid "Creating the filesystem"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:82
+#, no-wrap
+msgid "# <i>mkfs.ext2 /dev/???</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/partitioning-p2.xml:90
+#, no-wrap
+msgid "Mount it to /mnt/rwstorage"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:95
+#, no-wrap
+msgid ""
+"As in my previous tip, <path>???</path> should be replaced with the device name\n"
+"for the new, empty partition that you are creating. Accidentally typing the\n"
+"wrong name will destroy data on an existing partition, so be careful! After\n"
+"typing this command, you'll have a brand-new ext2 filesystem on the new\n"
+"partition. We're almost ready to mount it, but first, let's make a new mount\n"
+"point.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:103
+#, no-wrap
+msgid "Creating the mount point"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:104
+#, no-wrap
+msgid "# <i>mkdir /mnt/rwstorage</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:108
+#, no-wrap
+msgid ""
+"I chose the name <path>rwstorage</path> to remind us that this particular\n"
+"partition is going to be specifically used to house files that are read from\n"
+"and written to frequently. To mount the partition, type:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:113
+#, no-wrap
+msgid "Mounting the partition"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:114
+#, no-wrap
+msgid "# <i>mount /dev/??? /mnt/rwstorage</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/partitioning-p2.xml:122
+#, no-wrap
+msgid "Creating a new /tmp"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:127
+#, no-wrap
+msgid ""
+"The partition is now mounted and we're ready to create our new\n"
+"<path>/tmp</path> directory:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:131
+#, no-wrap
+msgid "Creating the new /tmp"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:132
+#, no-wrap
+msgid ""
+"# <i>cd /mnt/rwstorage</i>\n"
+"# <i>mkdir tmp</i>\n"
+"# <i>chmod 1777 tmp</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/partitioning-p2.xml:142
+#, no-wrap
+msgid "Drop to single-user mode"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:147
+#, no-wrap
+msgid ""
+"Our new directory at <path>/mnt/rwstorage/tmp</path> has the right permissions\n"
+"for a temporary directory. Now, drop to single-user mode, since we must copy\n"
+"over <path>/var</path>. As usual, we've delayed our drop to single-user mode to\n"
+"the last possible moment. Right now, we don't want any programs reading or\n"
+"writing files in <path>/var</path>, so we have to stop all daemons, disconnect\n"
+"all users, and do some quick maintenance by typing:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:155
+#, no-wrap
+msgid "Entering single-user mode"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:156
+#, no-wrap
+msgid "# <i>init 1</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:160
+#, no-wrap
+msgid ""
+"If you're prompted to enter a password to perform system maintenance, do so.\n"
+"You should now have a root shell, and all unnecessary daemons will be stopped.\n"
+"Create a new location for our <path>/var</path> files by typing:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:165
+#, no-wrap
+msgid "Creating the new directory"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:166
+#, no-wrap
+msgid ""
+"# <i>cd /mnt/rwstorage</i>\n"
+"# <i>mkdir var</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/partitioning-p2.xml:175
+#, no-wrap
+msgid "Copy /var"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:180
+#, no-wrap
+msgid ""
+"Default permissions on our new <path>/mnt/newstorage/var</path> directory\n"
+"should be correct, so now we're ready to copy all of our original\n"
+"<path>/var</path> data over to the new partition:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:185
+#, no-wrap
+msgid "Copying the data"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:186
+#, no-wrap
+msgid ""
+"# <i>cd /var </i>\n"
+"# <i>cp -ax * /mnt/rwstorage/var</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/partitioning-p2.xml:195
+#, no-wrap
+msgid "Back up and create symlinks"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:200
+#, no-wrap
+msgid ""
+"After this command completes, you'll have an exact copy of <path>/var</path> at\n"
+"<path>/mnt/rwstorage/var</path>. Now, you may be asking how exactly we get\n"
+"Linux to use <path>/mnt/rwstorage/var</path> and\n"
+"<path>/mnt/rwstorage/tmp</path> instead of the defaults in the root directory.\n"
+"This is easily done by the use of symbolic links -- we'll create the new\n"
+"symbolic links, <path>/tmp</path> and <path>/var</path>, which point to the\n"
+"correct directories in <path>/mnt/rwstorage</path>. First, let's back up the\n"
+"original directories:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:210
+#, no-wrap
+msgid "Backing up the directories"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:211
+#, no-wrap
+msgid ""
+"# <i>cd /</i>\n"
+"# <i>mv var var.old</i>\n"
+"# <i>mv tmp tmp.old</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:217
+#, no-wrap
+msgid ""
+"The last line probably isn't necessary, since it's very likely that you don't\n"
+"have anything important in <path>/tmp</path>, but we're playing it safe. Now,\n"
+"let's create the symlinks:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:222
+#, no-wrap
+msgid "Creating the symlinks"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:223
+#, no-wrap
+msgid ""
+"# <i>cd /</i>\n"
+"# <i>ln -s /mnt/rwstorage/var /var</i>\n"
+"# <i>ln -s /mnt/rwstorage/tmp /tmp</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/partitioning-p2.xml:233
+#, no-wrap
+msgid "Finishing touches to /etc/fstab"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:238
+#, no-wrap
+msgid ""
+"Now, when any user or program uses <path>/var</path>, they'll automatically be\n"
+"transported to <path>/mnt/rwstorage/var</path>! Likewise for <path>/tmp</path>.\n"
+"We have one step left; however, it can be safely performed in multiuser mode.\n"
+"It's time to get Apache running again, and to allow all your users to log back\n"
+"in. Exit from runlevel 1 by pressing <c>CTRL-D</c>. The system should start up\n"
+"normally. Log in as root.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:247
+#, no-wrap
+msgid ""
+"The final thing we must do is configure <path>/etc/fstab</path> so that\n"
+"<path>/dev/???</path> is mounted at <path>/mnt/rwstorage</path>. You must add a\n"
+"line like the following to your <path>/etc/fstab</path>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:252
+#, no-wrap
+msgid "Configuring fstab"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:253
+#, no-wrap
+msgid "/dev/???   /mnt/rwstorage   ext2   defaults   1   2\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/articles/partitioning-p2.xml:257
+#, no-wrap
+msgid ""
+"If you are using a kernel version in the 2.3+ range, it's very likely that you\n"
+"have a line in your <path>/etc/fstab</path> that looks like this:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:261
+#, no-wrap
+msgid "Shared memory"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:262
+#, no-wrap
+msgid "none   /var/shm   shm   defaults   0   0\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:266
+#, no-wrap
+msgid ""
+"This line enables shared memory on your system, and by default it gets mounted\n"
+"in <path>/var</path>. In order for this line to work properly, it must appear\n"
+"after the line you just added. That way, when Linux starts up,\n"
+"<path>/mnt/rwstorage</path> will get mounted first (enabling /var). Then, and\n"
+"only then, will the shm device get mounted at <path>/var/shm</path>, which is\n"
+"really <path>/mnt/rwstorage/var/shm</path>. Make sure the lines are in this\n"
+"order:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:275
+#, no-wrap
+msgid "Enabling shared memory"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/partitioning-p2.xml:276
+#, no-wrap
+msgid ""
+"/dev/???        /mnt/rwstorage  ext2    defaults       1     2\n"
+"none            /var/shm        shm     defaults       0     0\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:281
+#, no-wrap
+msgid ""
+"After saving the changes to <path>/etc/fstab</path>, your system has been\n"
+"successfully upgraded! After verifying that everything is working properly,\n"
+"you'll want to remove the <path>/tmp.old</path> and <path>/var.old</path>\n"
+"backup directories. Congratulations -- you've successfully reconfigured your\n"
+"system's partitions for optimum performance.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/partitioning-p2.xml:291
+#, no-wrap
+msgid "Resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/partitioning-p2.xml:296
+#, no-wrap
+msgid ""
+"    In <uri link=\"/doc/en/articles/partitioning-p1.xml\">Partitioning in action:\n"
+"    Moving /home</uri>, I show you step-by-step how to move <path>/home</path>\n"
+"    to a new partition.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/partitioning-p2.xml:301
+#, no-wrap
+msgid ""
+"    In <uri link=\"/doc/en/articles/maximum-swappage.xml\">Maximum\n"
+"    swappage</uri>, I show how to dramatically increase swap performance under\n"
+"    Linux.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/partitioning-p2.xml:306
+#, no-wrap
+msgid ""
+"    In <uri link=\"/doc/en/articles/partition-planning-tips.xml\">Partition planning\n"
+"    tips</uri>, I share several ways of effectively organizing your partition\n"
+"    layout.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/partitioning-p2.xml:311
+#, no-wrap
+msgid ""
+"    I always recommend checking out the <uri\n"
+"    link=\"http://tldp.org/docs.html#howto\">howtos</uri> at <uri\n"
+"    link=\"http://tldp.org/\">The Linux Documentation Project</uri> -- they're a\n"
+"    valuable resource.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/partitioning-p2.xml:321
+#, no-wrap
+msgid "About the author"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/partitioning-p2.xml:325
+#, no-wrap
+msgid ""
+"Daniel Robbins lives in Albuquerque, New Mexico. He was the President/CEO of\n"
+"Gentoo Technologies Inc., the Chief Architect of the Gentoo Project and is a\n"
+"contributing author of several books published by MacMillan: Caldera OpenLinux\n"
+"Unleashed, SuSE Linux Unleashed, and Samba Unleashed. Daniel has been involved\n"
+"with computers in some fashion since the second grade when he was first exposed\n"
+"to the Logo programming language and a potentially lethal dose of Pac Man. This\n"
+"probably explains why he has since served as a Lead Graphic Artist at SONY\n"
+"Electronic Publishing/Psygnosis. Daniel enjoys spending time with his wife Mary\n"
+"and his new baby daughter, Hadassah. You can contact Daniel at\n"
+"<mail>drobbins@gentoo.org</mail>.\n"
+msgstr ""

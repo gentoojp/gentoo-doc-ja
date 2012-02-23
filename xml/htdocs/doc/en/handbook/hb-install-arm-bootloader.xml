@@ -1,0 +1,260 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-arm-bootloader.xml,v 1.6 2011/05/09 19:47:22 nightmorph Exp $ -->
+
+<sections>
+
+<version>10</version>
+<date>2011-05-09</date>
+
+<section>
+<title>Making your Choice</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Now that your kernel is configured and compiled and the necessary system
+configuration files are filled in correctly, it is time to install a
+program that will fire up your kernel when you start the system. Such a
+program is called a <e>bootloader</e>. 
+</p>
+
+<p>
+Several bootloaders exist for Linux/ARM. You must choose one of the supported
+bootloaders, not all. Depending on the machine, you may have no choice at all!
+</p>
+
+<table>
+ <tr>
+  <th>Machine</th>
+  <th>Supported Bootloaders</th>
+ </tr>
+ <tr>
+  <ti><uri link="http://www.netwinder.org/about.html">NetWinder</uri></ti>
+  <ti><uri link="#nettrom">NeTTrom</uri></ti>
+ </tr>
+ <tr>
+  <ti><uri link="http://en.wikipedia.org/wiki/NSLU2">NSLU2 (aka SLUG)</uri></ti>
+  <ti><uri link="#redboot">RedBoot</uri></ti>
+ </tr>
+ <tr>
+  <ti><uri link="http://www.giantshoulderinc.com/hardware.html">Loft</uri></ti>
+  <ti><uri link="#redboot">RedBoot</uri></ti>
+ </tr>
+</table>
+
+</body>
+</subsection>
+</section>
+<section id="nettrom">
+<title>NeTTrom</title>
+<subsection>
+<title>Upgrading NeTTrom</title>
+<body>
+
+<p>
+The NeTTrom bootloader is a specialized firmware developed specifically for the
+NetWinder machines. No other board uses this and due to its history, the source
+code is no longer available. However, there are firmware images of the last
+release still floating around, so the first thing you want to do is update to
+the last release of 2.3.3. This section is meant as a quickstart, not as a
+replacement for the full <uri
+link="http://www.netwinder.org/howto/Firmware-HOWTO-3.html">Firmware Upgrade
+HOWTO</uri>.
+</p>
+
+<p>
+In order to flash your firmware, you need the latest release, the flashing
+utilities, and proper support in your kernel. The NetWinder flash driver is
+called <c>NetWinder flash support</c> and it is under <c>Character devices</c>
+in the kernel.
+</p>
+
+<pre caption="Install NeTTrom and NetWinder utilities">
+# <i>emerge sys-boot/nettrom sys-block/nwutil</i>
+</pre>
+
+<warn>
+If the flashing of your firmware goes wrong, then you will be unable to recover
+via software means. Make sure you've taken all precautions against power
+failure and you read the <c>flashwrite(8)</c> man page.
+</warn>
+
+<p>
+Now that you have the latest firmware, you've installed the flash utilities,
+your kernel has flash write support, and you've read the <c>flashwrite(8)</c>
+man page, let's flash that sucker!
+</p>
+
+<pre caption="Flashing the NetWinder firmware">
+<comment>(First back up your existing firmware)</comment>
+# <i>dd if=/dev/nwflash of=/boot/nettrom.old bs=1</i>
+
+<comment>(Then write the new firmware)</comment>
+# <i>flashwrite /boot/nettrom</i>
+
+<comment>(Finally, verify that the write worked (replace BYTESIZE with the actual byte size of nettrom))</comment>
+# <i>dd if=/dev/nwflash of=/boot/nettrom.new bs=1 count=BYTESIZE</i>
+# <i>cmp /boot/nettrom /boot/nettrom.new</i>
+</pre>
+
+<p>
+If all goes well, you should be able to reboot and not be left with a brick.
+Let's move on to actually booting a kernel.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Using NeTTrom</title>
+<body>
+
+<p>
+NeTTrom can boot a kernel many different ways so we will go over the two most
+common: embedded in the flash and loading off the ext2 boot partition.
+</p>
+
+<p>
+Embedding the kernel into flash is pretty easy with the <c>nwlilo</c> utility.
+Simply specify the path to the kernel you wish to embed as well as the kernel
+commandline (note that the <c>root=</c> value is important), and you're done!
+</p>
+
+<pre caption="Installing the kernel into flash">
+# <i>nwlilo /boot/zImage "root=/dev/sda2 video=cyber2000fb"</i>
+</pre>
+
+<p>
+The other method is copying the vmlinuz ELF to your ext2 boot partition and
+configuring NeTTrom to load that. Once you've copied your kernel over, reboot
+the machine as the only way to configure NeTTrom is from inside NeTTrom itself.
+Halt the autoboot process by pressing <c>*</c> twice followed by the return
+key. In the example below, we will assume your ext2 boot partition is at
+<path>/dev/sda1</path> while your root partition is at <path>/dev/sda3</path>.
+</p>
+
+<pre caption="Configuring NeTTrom">
+NeTTrom> <i>load-defaults</i>
+NeTTrom> <i>setenv kernconfig fs</i>
+NeTTrom> <i>setenv kerndev /dev/sda1</i>
+NeTTrom> <i>setenv rootdev /dev/sda3</i>
+NeTTrom> <i>setenv kernfile /boot/vmlinux</i>
+NeTTrom> <i>setenv cmdappend [custom kernel cmdline settings]</i>
+NeTTrom> <i>save-all</i>
+NeTTrom> <i>boot</i>
+</pre>
+
+<p>
+It isn't uncommon for NetWinders to have broken DMA hardware, so if your disks
+are giving you troubles when DMA is enabled, simply add <c>ide=nodma</c> to the
+<c>cmdappend</c> line above.
+</p>
+
+<p>
+For a full NeTTrom command guide/reference, please see the <uri
+link="http://www.netwinder.org/howto/Firmware-HOWTO.html">NetWinder
+Firmware-HOWTO</uri>.
+</p>
+
+<p>
+Now continue with <uri link="#reboot">Rebooting the System</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="redboot">
+<title>RedBoot</title>
+<subsection>
+<title>Upgrading RedBoot</title>
+<body>
+
+<p>
+The <uri link="http://www.cygwin.com/redboot/">RedBoot</uri> firmware tends to
+be pretty popular due to its ease of use. We won't go over the process of
+updating your firmware as there's just too many ways you could get it wrong :).
+If you really want to update, please visit the <uri
+link="http://www.cygwin.com/redboot/">RedBoot homepage</uri>.
+</p>
+
+<p>
+Now continue with <uri link="#reboot">Rebooting the System</uri>.
+</p>
+
+</body>
+</subsection>
+<!-- TODO: write this
+<subsection>
+<title>Using RedBoot</title>
+<body>
+
+</body>
+</subsection>
+-->
+</section>
+<section id="uboot">
+<title>Das U-Boot</title>
+<subsection>
+<title>Upgrading Das U-Boot</title>
+<body>
+
+<p>
+<uri link="http://u-boot.sourceforge.net/">Das U-Boot</uri> tends to its power
+and portability. We won't go over the process of updating your version as
+there's just too many ways you could get it wrong :). If you really want to
+update, please visit the <uri link="http://u-boot.sourceforge.net/">U-Boot
+homepage</uri>.
+</p>
+
+<p>
+Now continue with <uri link="#reboot">Rebooting the System</uri>.
+</p>
+
+</body>
+</subsection>
+<!-- TODO: write this
+<subsection>
+<title>Using Das U-Boot</title>
+<body>
+
+</body>
+</subsection>
+-->
+</section>
+<section id="reboot">
+<title>Rebooting the System</title>
+<subsection>
+<body>
+
+<p>
+Exit the chrooted environment and unmount all mounted partitions. Then type in 
+that one magical command you have been waiting for: <c>reboot</c>.
+</p>
+
+<pre caption="Exiting the chroot, unmounting all partitions and rebooting">
+# <i>exit</i>
+cdimage ~# <i>cd</i>
+cdimage ~# <i>umount -l /mnt/gentoo/dev{/shm,/pts,}</i>
+cdimage ~# <i>umount -l /mnt/gentoo{/boot,/proc,}</i>
+cdimage ~# <i>reboot</i>
+</pre>
+
+<p>
+Of course, don't forget to remove the bootable CD, otherwise the CD will be
+booted again instead of your new Gentoo system.
+</p>
+
+<p>
+Once rebooted in your Gentoo installation, finish up with <uri
+link="?part=1&amp;chap=11">Finalizing your Gentoo Installation</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

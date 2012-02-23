@@ -1,0 +1,307 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-mips-kernel.xml,v 1.33 2012/02/22 21:27:45 swift Exp $ -->
+<sections>
+
+<abstract>
+The Linux kernel is the core of every distribution. This chapter
+explains how to configure your kernel.
+</abstract>
+
+<version>11</version>
+<date>2012-02-22</date>
+
+<section>
+<title>Timezone</title>
+<body>
+
+<p>
+You first need to select your timezone so that your system knows where it is
+located. Look for your timezone in <path>/usr/share/zoneinfo</path>, then copy
+it to <path>/etc/localtime</path>. Please avoid the
+<path>/usr/share/zoneinfo/Etc/GMT*</path> timezones as their names do not
+indicate the expected zones. For instance, <path>GMT-8</path> is in fact
+GMT+8.
+</p>
+
+<pre caption="Setting the timezone information">
+# <i>ls /usr/share/zoneinfo</i>
+<comment>(Suppose you want to use Europe/Brussels)</comment>
+# <i>cp /usr/share/zoneinfo/Europe/Brussels /etc/localtime</i>
+<comment>(Next set the timezone)</comment>
+# <i>echo "Europe/Brussels" &gt; /etc/timezone</i>
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>Installing the Sources</title>
+<subsection>
+<title>Choosing a Kernel</title>
+<body>
+
+<p>
+The core around which all distributions are built is the Linux kernel. It is
+the layer between the user programs and your system hardware. Gentoo provides
+its users several possible kernel sources. A full listing with description is
+available at the <uri link="/doc/en/gentoo-kernel.xml">Gentoo Kernel
+Guide</uri>.
+</p>
+
+<p>
+MIPS-based systems have just the one kernel tree to choose from,
+<c>mips-sources</c>. This patchset differs from the ones available for other
+architectures, in that it has lots of patches specific to the MIPS
+architecture.
+</p>
+
+<pre caption="Merging kernel sources...">
+# <i>emerge mips-sources</i>
+</pre>
+
+<impo>
+On the Origin 200/2000, Indigo2 Impact (R10000), Octane/Octane2 and O2, a 64-bit
+kernel is required to boot these systems. For these machines, you should
+<c>emerge kgcc64</c> to create a cross-compiler for building 64-bit kernels.
+</impo>
+
+<pre caption="Installing kgcc64">
+# <i>emerge kgcc64</i>
+</pre>
+
+<p>
+When you take a look in <path>/usr/src</path> you should see a symlink called
+<path>linux</path> pointing to your kernel source. In this case, the installed
+kernel source points to <c>mips-sources-<keyval id="kernel-version"/></c>. Your
+version may be different, so keep this in mind.
+</p>
+
+<pre caption="Viewing the kernel source symlink">
+# <i>ls -l /usr/src/linux</i>
+lrwxrwxrwx    1 root     root           12 Oct 13 11:04 /usr/src/linux -&gt; linux-<keyval id="kernel-version"/>
+</pre>
+
+<p>
+Now it is time to configure and compile your kernel source.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Kernel Compilation &amp; Installation</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Previously, we went through the manual configuration of how to set up the
+kernel sources. This has become impractical with the number of systems we now
+support. This section details various sources for sample kernel configurations.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Using sample configurations in the kernel source</title>
+<body>
+
+<p>
+Many of the systems supported have sample .configs hiding in amongst the kernel
+source. Not all systems have configs distributed in this way. Those that do,
+can be configured using the commands mentioned in the table below.
+</p>
+
+<table>
+<tr>
+  <th>System</th>
+  <th>Configure command</th>
+</tr>
+<tr>
+  <ti>Cobalt Servers</ti>
+  <ti><c>make cobalt_defconfig</c></ti>
+</tr>
+<tr>
+  <ti>Indy, Indigo2 (R4k), Challenge S</ti>
+  <ti><c>make ip22_defconfig</c></ti>
+</tr>
+<tr>
+  <ti>Origin 200/2000</ti>
+  <ti><c>make ip27_defconfig</c></ti>
+</tr>
+<tr>
+  <ti>Indigo2 Impact (R10k)</ti>
+  <ti>
+    <c>make ip28_defconfig</c>
+  </ti>
+</tr>
+<tr>
+  <ti>O2</ti>
+  <ti><c>make ip32_defconfig</c></ti>
+</tr>
+</table>
+
+</body>
+</subsection>
+
+<subsection>
+<title>Using the running kernel config from the installation media</title>
+<body>
+
+<p>
+All of the Gentoo installation images provide a kernel config option as part of
+the image itself, accessible as <path>/proc/config.gz</path>. This may be used
+in many cases. It is best though if your kernel source matches closely, the
+kernel that is currently running. To extract it, simply run it through
+<c>zcat</c> as shown below.
+</p>
+
+<pre caption="Extracting .config from /proc/config.gz">
+# <i>zcat /proc/config.gz > .config</i>
+</pre>
+
+<impo>
+This kernel config is set up for a netboot image. That is, it will expect to
+find a root filesystem image somewhere nearby, either as a directory for
+initramfs, or a loopback device for initrd. When you run <c>make menuconfig</c>
+below, don't forget to go into General Setup and disable the options for
+initramfs.
+</impo>
+
+</body>
+</subsection>
+
+<subsection>
+<title>The Hardware Compatability Database</title>
+<body>
+
+<p>
+As an aid to users in finding working settings, a hardware compatability
+database was set up. This database lists the support for various MIPS devices,
+and allows users to contribute kernel configurations that are known to work.
+The address for this site is
+<uri>http://stuartl.longlandclan.hopto.org/gentoo/mips</uri>.
+</p>
+
+<p>
+If you find this service useful, you're welcome to contribute your notes and
+.config files so that others may benefit from your experience. It should be
+noted however that there is no guarantee that any of the configuration files
+downloaded from this site will work.
+</p>
+
+</body>
+</subsection>
+
+<subsection>
+<title>Customising the configuration for your needs</title>
+<body>
+
+<p>
+Once you have found a configuration, download it into your kernel source
+directory, and rename it to <path>.config</path>. From there, you can run
+<c>make oldconfig</c> to bring everything up to date, and allow you to
+customise the configuration before compiling.
+</p>
+
+<pre caption="Configuring the kernel">
+# <i>cd /usr/src/linux</i>
+# <i>cp /path/to/example-config .config</i>
+# <i>make oldconfig</i>
+<comment>(Just press ENTER at each prompt to accept the defaults... we'll customise later)</comment>
+# <i>make menuconfig</i>
+</pre>
+
+<impo>
+In the Kernel Hacking section, there is an option named "Are You Using A Cross
+Compiler?". This tells the kernel Makefiles to prepend "<c>mips-linux-</c>" (or
+<c>mipsel-linux</c> ... etc) to <c>gcc</c> and <c>as</c> commands when
+compiling the kernel. This should be turned off, even if cross-compiling.
+Instead, if you do need to call a cross-compiler, specify the prefix using the
+<c>CROSS_COMPILE</c> variable as shown in the next section.
+</impo>
+
+<impo>
+There is a known issue with JFS and ALSA on Octane systems where the ALSA fails
+to work.  Given the experimental nature of JFS on MIPS, it is recommended that
+people avoid using JFS for the time being.
+</impo>
+
+</body>
+</subsection>
+<subsection id="compiling">
+<title>Compiling and Installing</title>
+<body>
+
+<p>
+Now that your kernel is configured, it is time to compile and install it. Exit
+the configuration and start the compilation process:
+</p>
+
+<note>
+On 64-bit machines, you need to specify
+<c>CROSS_COMPILE=mips64-unknown-linux-gnu-</c> (or <c>mips64el-...</c> if on a
+little-endian system) to use the 64-bit compiler.
+</note>
+
+<pre caption="Compiling the kernel">
+<comment>(Compiling natively)</comment>
+# <i>make vmlinux modules modules_install</i>
+
+<comment>(Cross-compiling on target machine)</comment>
+<comment>(Adjust the mips64-unknown-linux-gnu- accordingly)</comment>
+# <i>make vmlinux modules modules_install CROSS_COMPILE=mips64-unknown-linux-gnu-</i>
+
+<comment>(When compiling on another machine, such as an x86 box, use the)</comment>
+<comment>(following commands to compile the kernel &amp; install modules into)</comment>
+<comment>(a specific directory to be transferred to the target machine.)</comment>
+# <i>make vmlinux modules CROSS_COMPILE=mips64-unknown-linux-gnu-</i>
+# <i>make modules_install INSTALL_MOD_PATH=/somewhere</i>
+</pre>
+
+<impo>
+When compiling a 64-bit kernel for the Indy, Indigo2 (R4k), Challenge S and O2,
+use the <c>vmlinux.32</c> target instead of <c>vmlinux</c>. Otherwise, your
+machine will not be able to boot. This is to work around the PROM not
+understanding the ELF64 format.
+</impo>
+
+<pre caption="Using the vmlinux.32 target">
+# <i>make vmlinux.32</i>
+<comment>(This will create vmlinux.32 -- which is your final kernel)</comment>
+</pre>
+
+<p>
+When the kernel has finished compiling, copy the kernel image to
+<path>/boot</path>. 
+</p>
+
+<note>
+On Cobalt servers, the bootloader will expect to see a compressed kernel image.
+Remember to <c>gzip -9</c> the file once it is in <path>/boot</path>.
+</note>
+
+<pre caption="Installing the kernel">
+# <i>cp vmlinux /boot/kernel-<keyval id="kernel-version"/></i>
+
+<comment>(Cobalt Servers -- Compressing the kernel image)</comment>
+# <i>gzip -9v /boot/kernel-<keyval id="kernel-version"/></i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section id="kernel_modules">
+<title>Kernel Modules</title>
+
+<subsection>
+<include href="hb-install-kernelmodules.xml"/>
+</subsection>
+
+</section>
+</sections>

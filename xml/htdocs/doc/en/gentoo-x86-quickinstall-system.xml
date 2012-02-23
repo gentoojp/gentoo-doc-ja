@@ -1,0 +1,248 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-x86-quickinstall-system.xml,v 1.6 2011/09/23 18:37:22 swift Exp $ -->
+<!DOCTYPE included SYSTEM "/dtd/guide.dtd">
+
+<included>
+
+<version>6</version>
+<date>2011-09-23</date>
+
+<section>
+<title>Configure the system</title>
+
+<body test="func:keyval('raid+lvm')='no'">
+
+<p>
+Edit your <path>/etc/fstab</path> and replace <c>BOOT</c>, <c>ROOT</c> and
+<c>SWAP</c> with the actual partition names. Don't forget to check that the
+file systems match your installation.
+</p>
+
+<pre caption="Example fstab">
+livecd linux # <i>cd /etc</i>
+livecd etc # <i>nano -w fstab</i>
+/dev/<i>sda1</i>   /boot     ext2    noauto,noatime     1 2
+/dev/<i>sda3</i>   /         ext3    noatime            0 1
+/dev/<i>sda2</i>   none      swap    sw                 0 0
+</pre>
+
+</body>
+<body test="func:keyval('raid+lvm')='yes'">
+
+<p>
+Edit your <path>/etc/fstab</path> and replace <c>BOOT</c>, <c>ROOT</c> and
+<c>SWAP</c> with the actual partition names and add your logical volumes. Don't
+forget to check that the file systems match your installation.
+</p>
+
+<pre caption="Example fstab">
+livecd linux # <i>cd /etc</i>
+livecd etc # <i>nano -w fstab</i>
+/dev/<i>md1</i>          /boot                   ext2  noauto,noatime  1 2
+/dev/<i>md3</i>          /                       ext3  noatime         0 1
+/dev/<i>sda2</i>         none                    swap  sw,pri=1        0 0
+/dev/<i>sdb2</i>         none                    swap  sw,pri=1        0 0
+/dev/vg/usr       /usr                    ext3  noatime         1 2
+/dev/vg/portage   /usr/portage            ext2  noatime         1 2
+/dev/vg/distfiles /usr/portage/distfiles  ext2  noatime         1 2
+/dev/vg/home      /home                   ext3  noatime         1 2
+/dev/vg/opt       /opt                    ext3  noatime         1 2
+/dev/vg/tmp       /tmp                    ext2  noatime         1 2
+/dev/vg/var       /var                    ext3  noatime         1 2
+/dev/vg/vartmp    /var/tmp                ext2  noatime         1 2
+</pre>
+
+</body>
+<body>
+
+<p>
+Configure your network in <path>/etc/conf.d/net</path>. Add the <c>net.eth0</c>
+init script to the default run level. If you have multiple NICs, symlink them
+to the <c>net.eth0</c> init script and add them to the default run level as
+well. Don't forget to set your hostname too. Either edit
+<path>/etc/conf.d/net</path> and <path>/etc/conf.d/hostname</path> with
+<c>nano</c> or use the following commands:
+</p>
+
+<pre caption="Configure networking">
+livecd etc # <i>cd init.d</i>
+livecd init.d # <i>ln -s net.lo net.eth0</i>
+livecd init.d # <i>cd ../conf.d</i>
+livecd conf.d # <i>echo 'config_eth0="192.168.1.10 netmask 255.255.255.0 brd 192.168.1.255"' >> net</i>
+livecd conf.d # <i>echo 'routes_eth0="default via 192.168.1.1"' >> net</i>
+livecd conf.d # <i>echo 'hostname="myhostname"' > hostname</i>
+livecd conf.d # <i>rc-update add net.eth0 default</i>
+<comment>(If you compiled your network card driver as a module, add it to /etc/conf.d/modules</comment>
+livecd conf.d # <i>echo 'modules="r8169"' >> /etc/conf.d/modules</i>
+<comment>(If you want to reconnect via ssh after you have rebooted your new box)</comment>
+livecd conf.d # <i>rc-update add sshd default</i>
+</pre>
+
+<note>
+Emerge <c>pcmciautils</c> if you need support for PCMCIA cards.
+</note>
+
+<p>
+Set the root password using <c>passwd</c>.
+</p>
+
+<pre caption="Set the root password">
+livecd conf.d # <i>passwd</i>
+New UNIX password: <comment>type_the_password</comment>
+Retype new UNIX password: <comment>type_the_password_again</comment>
+passwd: password updated successfully
+</pre>
+
+<p>
+Edit <path>/etc/timezone</path> to define the time zone you used
+previously.
+</p>
+
+<pre caption="Edit /etc/timezone">
+Europe/Brussels
+</pre>
+
+<p>
+Check the system configuration in <path>/etc/rc.conf</path> and
+<path>/etc/conf.d/keymaps</path> and edit any of those files if required.
+</p>
+
+<pre caption="Optional: edit some config files">
+livecd conf.d # <i>nano -w /etc/rc.conf</i>
+livecd conf.d # <i>nano -w /etc/conf.d/keymaps</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Installing System Tools</title>
+
+<body test="func:keyval('raid+lvm')='yes'">
+
+<p>
+Install RAID and LVM2 utilities.
+</p>
+
+<pre caption="Install RAID &amp; LVM2 tools">
+livecd conf.d # <i>emerge mdadm lvm2</i>
+livecd conf.d # <i>rc-update add mdraid boot</i>
+livecd conf.d # <i>rc-update add lvm boot</i>
+</pre>
+
+</body>
+<body>
+
+<p>
+Install a system logger like <c>syslog-ng</c> and a cron daemon like
+<c>vixie-cron</c>, and add them to the default run level.
+</p>
+
+<note>
+Cron daemons depend on an MTA. <c>mail-mta/ssmtp</c> will be pulled in as a
+dependency. If you want to use a more advanced MTA, you might want to install
+it now. If you are in a hurry, let ssmtp be installed and remove it later when
+you install the MTA of your choice.
+</note>
+
+<pre caption="Install a syslogger and a cron daemon">
+livecd conf.d # <i>time emerge syslog-ng vixie-cron</i>
+
+real  1m54.099s
+user  1m2.630s
+sys   0m34.620s
+livecd conf.d # <i>rc-update add syslog-ng default</i>
+livecd conf.d # <i>rc-update add vixie-cron default</i>
+</pre>
+
+<p>
+Install the necessary file system tools (<c>xfsprogs</c>, <c>reiserfsprogs</c>
+or <c>jfsutils</c>) and networking tools (<c>dhcpcd</c> or <c>ppp</c>) if you
+need any.
+</p>
+
+<pre caption="Install extra tools if required">
+livecd conf.d # <i>emerge xfsprogs</i>       <comment>(If you use the XFS file system)</comment>
+livecd conf.d # <i>emerge jfsutils</i>       <comment>(If you use the JFS file system)</comment>
+livecd conf.d # <i>emerge reiserfsprogs</i>  <comment>(If you use the Reiser file system)</comment>
+livecd conf.d # <i>emerge dhcpcd</i>         <comment>(If you need a DHCP client)</comment>
+livecd conf.d # <i>emerge ppp</i>            <comment>(If you need PPPoE ADSL connectivity)</comment>
+</pre>
+
+</body>
+</section>
+
+<section id="grub">
+<title>Configuring the Bootloader</title>
+
+<body>
+<p>
+Emerge <c>grub</c> and configure it. Do not forget to update the necessary boot
+parameters if you are using an initramfs.
+</p>
+
+<pre caption="Emerge grub and edit its configuration file">
+livecd conf.d # <i>time emerge grub</i>
+
+real  1m4.634s
+user  0m39.460s
+sys   0m15.280s
+livecd conf.d # <i>nano -w /boot/grub/grub.conf</i>
+</pre>
+
+<pre caption="Example grub.conf">
+default 0
+timeout 10
+
+title Gentoo
+root (hd0,0)
+kernel /boot/kernel root=<keyval id="root"/>
+</pre>
+
+<pre caption="Install grub" test="not(contains(func:keyval('root'),'md'))">
+livecd conf.d # <i>grub</i>
+Probing devices to guess BIOS drives. This may take a long time.
+
+grub> <i>root (hd0,0)</i>
+ Filesystem type is ext2fs, partition type 0xfd
+
+grub> <i>setup (hd0)</i>
+ Checking if "/boot/grub/stage1" exists... yes
+ Checking if "/boot/grub/stage2" exists... yes
+ Checking if "/boot/grub/e2fs_stage1_5" exists... yes
+ Running "embed /boot/grub/e2fs_stage1_5 (hd0)"...  16 sectors are embedded.
+succeeded
+ Running "install /boot/grub/stage1 (hd0) (hd0)1+16 p (hd0,0)/boot/grub/stage2 /boot/
+grub/menu.lst"... succeeded
+Done.
+
+grub> <i>quit</i>
+</pre>
+
+<pre caption="Install grub on both disks" test="contains(func:keyval('root'),'md')">
+livecd conf.d # <i>grub</i>
+Probing devices to guess BIOS drives. This may take a long time.
+
+grub> <i>root (hd0,0)</i>
+ Filesystem type is ext2fs, partition type 0xfd
+
+grub> <i>setup (hd0)</i>
+ Checking if "/boot/grub/stage1" exists... yes
+ Checking if "/boot/grub/stage2" exists... yes
+ Checking if "/boot/grub/e2fs_stage1_5" exists... yes
+ Running "embed /boot/grub/e2fs_stage1_5 (hd0)"...  16 sectors are embedded.
+succeeded
+ Running "install /boot/grub/stage1 (hd0) (hd0)1+16 p (hd0,0)/boot/grub/stage2 /boot/
+grub/menu.lst"... succeeded
+Done.
+
+grub> <i>root (hd1,0)</i>
+ Filesystem type is ext2fs, partition type 0xfd
+
+grub> <i>setup (hd1)</i>
+
+grub> <i>quit</i>
+</pre>
+
+</body>
+</section>
+</included>

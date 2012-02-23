@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-net-advanced.xml,v 1.18 2011/08/19 16:07:30 swift Exp $ -->
+
+<sections>
+
+<abstract>
+Here we learn about how the configuration works - you need to know this
+before we learn about modular networking.
+</abstract>
+
+<version>11</version>
+<date>2011-08-19</date>
+
+<section>
+<title>Advanced Configuration</title>
+<body>
+
+<p>
+The <c>config_eth0</c> variable is the heart of an interface configuration. It's
+a high level instruction list for configuring the interface (<c>eth0</c> in this
+case). Each command in the instruction list is performed sequentially. The
+interface is deemed OK if at least one command works.
+</p>
+
+<p>
+Here's a list of built-in instructions.
+</p>
+
+<table>
+<tr>
+  <th>Command</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><c>null</c></ti>
+  <ti>Do nothing</ti>
+</tr>
+<tr>
+  <ti><c>noop</c></ti>
+  <ti>
+    If the interface is up and there is an address then abort configuration
+    successfully
+  </ti>
+</tr>
+<tr>
+  <ti>an IPv4 or IPv6 address</ti>
+  <ti>Add the address to the interface</ti>
+</tr>
+<tr>
+  <ti>
+    <c>dhcp</c>, <c>adsl</c> or <c>apipa</c> (or a custom command from a 3rd
+    party module)
+  </ti>
+  <ti>
+    Run the module which provides the command. For example <c>dhcp</c> will run
+    a module that provides DHCP which can be one of either <c>dhcpcd</c>,
+    <c>dhclient</c> or <c>pump</c>.
+  </ti>
+</tr>
+</table>
+
+<p>
+If a command fails, you can specify a fallback command. The fallback has to
+match the config structure exactly.
+</p>
+
+<p>
+You can chain these commands together. Here are some real world examples.
+</p>
+
+<pre caption="Configuration examples">
+<comment># Adding three IPv4 addresses</comment>
+config_eth0="192.168.0.2/24
+192.168.0.3/24
+192.168.0.4/24"
+
+<comment># Adding an IPv4 address and two IPv6 addresses</comment>
+config_eth0="192.168.0.2/24
+4321:0:1:2:3:4:567:89ab
+4321:0:1:2:3:4:567:89ac"
+
+<comment># Keep our kernel assigned address, unless the interface goes
+# down so assign another via DHCP. If DHCP fails then add a
+# static address determined by APIPA</comment>
+config_eth0="noop
+dhcp"
+fallback_eth0="null
+apipa"
+</pre>
+
+<note>
+When using the <c>ifconfig</c> module and adding more than one address,
+interface aliases are created for each extra address. So with the above two
+examples you will get interfaces <c>eth0</c>, <c>eth0:1</c> and <c>eth0:2</c>.
+You cannot do anything special with these interfaces as the kernel and other
+programs will just treat <c>eth0:1</c> and <c>eth0:2</c> as <c>eth0</c>.
+</note>
+
+<impo>
+The fallback order is important! If we did not specify the <c>null</c> option
+then the <c>apipa</c> command would only be run if the <c>noop</c> command
+failed.
+</impo>
+
+<note>
+<uri link="?part=4&amp;chap=3#apipa">APIPA</uri> and <uri
+link="?part=4&amp;chap=3#dhcp">DHCP</uri> are discussed later.
+</note>
+
+</body>
+</section>
+<section>
+<title>Network Dependencies</title>
+<body>
+
+<p>
+Init scripts in <path>/etc/init.d</path> can depend on a specific network
+interface or just net. All network interfaces in Gentoo's init system provide
+what is called <e>net</e>.
+</p>
+
+<p>
+If, in <path>/etc/rc.conf</path>, <c>rc_depend_strict="YES"</c> is set, then all
+network interfaces that provide net must be active before a dependency on "net"
+is assumed to be met. In other words, if you have a <path>net.eth0</path> and
+<path>net.eth1</path> and an init script depends on "net", then both must be
+enabled.
+</p>
+
+<p>
+On the other hand, if <c>rc_depend_strict="NO"</c> is set, then the "net"
+dependency is marked as resolved the moment at least one network interface is
+brought up.
+</p>
+
+<p>
+But what about <path>net.br0</path> depending on <path>net.eth0</path> and
+<path>net.eth1</path>? <path>net.eth1</path> may be a wireless or PPP device
+that needs configuration before it can be added to the bridge. This cannot be
+done in <path>/etc/init.d/net.br0</path> as that's a symbolic link to
+<path>net.lo</path>.
+</p>
+
+<p>
+The answer is defining an <c>rc_need_</c> setting in
+<path>/etc/conf.d/net</path>.
+</p>
+
+<pre caption="net.br0 dependency in /etc/conf.d/net">
+rc_need_br0="net.eth0 net.eth1"
+</pre>
+
+<p>
+That alone, however, is not sufficient. Gentoo's networking init scripts use a
+virtual dependency called <e>net</e> to inform the system when networking is
+available. Clearly, in the above case, networking should only be marked as
+available when <path>net.br0</path> is up, not when the others are. So we need
+to tell that in <path>/etc/conf.d/net</path> as well:
+</p>
+
+<pre caption="Updating virtual dependencies and provisions for networking">
+rc_net_lo_provide="!net"
+rc_net_eth0_provide="!net"
+rc_net_eth1_provide="!net"
+</pre>
+
+<p>
+For a more detailed discussion about dependency, consult the section <uri
+link="?part=2&amp;chap=4#doc_chap4">Writing Init Scripts</uri> in the Gentoo
+Handbook. More information about <path>/etc/rc.conf</path> is available as
+comments within that file.
+</p>
+
+</body>
+</section>
+
+<section id="variable_name">
+<title>Variable names and values</title>
+<body>
+
+<p>
+Variable names are dynamic. They normally follow the structure of
+<c>variable_${interface|mac|essid|apmac}</c>. For example, the variable
+<c>dhcpcd_eth0</c> holds the value for dhcpcd options for eth0 and
+<c>dhcpcd_essid</c> holds the value for dhcpcd options when any interface
+connects to the ESSID "essid".
+</p>
+
+<p>
+However, there is no hard and fast rule that states interface names must be
+ethx. In fact, many wireless interfaces have names like wlanx, rax as well as 
+ethx. Also, some user defined interfaces such as bridges can be given any name,
+such as foo. To make life more interesting, wireless Access Points can have 
+names with non alpha-numeric characters in them - this is important because 
+you can configure networking parameters per ESSID.
+</p>
+
+<p>
+The downside of all this is that Gentoo uses bash variables for networking -
+and bash cannot use anything outside of English alpha-numerics. To get around
+this limitation we change every character that is not an English alpha-numeric
+into a <c>_</c> character.
+</p>
+
+<p>
+Another downside of bash is the content of variables - some characters need to
+be escaped. This can be achived by placing the <c>\</c> character in front of
+the character that needs to be escaped. The following list of characters needs
+to be escaped in this way: <c>"</c>, <c>'</c> and  <c>\</c>.
+</p>
+
+<p>
+In this example we use wireless ESSID as they can contain the widest scope
+of characters. We shall use the ESSID <c>My "\ NET</c>:
+</p>
+
+<pre caption="variable name example">
+<comment>(This does work, but the domain is invalid)</comment>
+dns_domain_My____NET="My \"\\ NET"
+
+<comment>(The above sets the dns domain to My "\ NET when a wireless card
+connects to an AP whose ESSID is My "\ NET)</comment>
+</pre>
+
+</body>
+</section>
+</sections>

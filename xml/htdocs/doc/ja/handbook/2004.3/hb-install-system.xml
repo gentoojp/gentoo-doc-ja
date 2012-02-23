@@ -1,0 +1,402 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-install-system.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+
+<!-- Original revision: 1.67 -->
+
+<sections>
+
+<version>1.62</version>
+<date>2004-12-22</date>
+
+<section>
+<title>chrootする</title>
+<subsection>
+<title>自由選択: ミラーサイトの選択</title>
+<body>
+
+<p>
+Gentoo LiveCDからブートしているなら、<c>mirrorselect</c>を使って
+最寄りのミラーサイトの指定を<path>/etc/make.conf</path>に定義すること
+ができます。このミラーサイトはPortageツリーとソースコード
+の両方で利用されます。
+(もちろんネットワークに接続できることが前提です。)
+</p>
+
+<pre caption="高速なミラーの選択">
+# <i>mirrorselect -a -s4 -o |grep 'GENTOO_MIRRORS=' &gt;&gt; /mnt/gentoo/etc/make.conf</i>
+</pre>
+
+<p>
+もし何かしらの理由で<c>mirrorselect</c>が失敗したとしても、
+パニックに陥らないでください。このステップはまったくもって自由選択なので、
+もし<c>mirrorselect</c>が失敗しても、デフォルトの値を使えば良いのです。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>DNS情報をコピーする</title>
+<body>
+
+<p>
+新しい環境に入る前にしなければならないことが、まだ一つ残っています。
+それは、新しい環境でもネットワーク環境が確実に動くようにするために、
+<path>/etc/resolv.conf</path>にあるDNS情報を、新しい環境にコピーすることです。
+<path>/etc/resolv.conf</path>にはあなたのネットワーク環境における
+ネームサーバーの情報が含まれています。
+</p>
+
+<pre caption="DNS情報をコピーする">
+<comment>("-L"オプションは、シンボリックリンクをコピーしないようにするために必要です)</comment>
+# <i>cp -L /etc/resolv.conf /mnt/gentoo/etc/resolv.conf</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>procファイルシステムのマウント</title>
+<body>
+
+<p>
+chroot後の環境でもカーネルが提供する情報を参照できるようにするために、<path>/mnt/gentoo/proc</path>に<path>/proc</path>ファイルシステムをマウントしてください。
+</p>
+
+<pre caption="/procのマウント">
+# <i>mount -t proc none /mnt/gentoo/proc</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>新しい環境に入る</title>
+<body>
+
+<p>
+さて、全てのパーティションは初期化され、ベース環境はインストールされました。
+ついに、あなたは<e>chroot</e>により新たにインストールされた環境に入ります。
+これは、現在のインストーラの環境(LiveCDやその他のインストールメディア)から、
+あなたのインストールした環境(すなわち初期化されたパーティション)に移行することを意味します。
+</p>
+
+<p>
+このchrootの過程は3段階のステップからなります。
+まず最初に、<c>chroot</c>によって、ルートディレクトリを(インストールメディア上の)<path>/</path> から、(あなたのパーティション上にある)<path>/mnt/gentoo</path>に変更します。次に、システムファイルの環境変数を更新するコマンドenv-updateを使って、新しい環境をつくります。最後に、<c>source</c>コマンドでこれらの変数をメモリ上に読み込みます。
+</p>
+
+<pre caption = "新しい環境にchrootする">
+# <i>chroot /mnt/gentoo /bin/bash</i>
+# <i>env-update</i>
+ * Caching service dependencies...
+# <i>source /etc/profile</i>
+</pre>
+
+<p>
+おめでとうございます!あなたは自分のGentoo Linux環境に入ることができました。
+もちろん、まだいくつかのセクションが残っており、完了までは程遠いのですが:-)
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Portageツリーの更新</title>
+<body>
+
+<p>
+もしあなたに実用的なインターネット接続があり、用意された構築済みパッケージ(GRPパッケージ)を後でインストールしたくないなら、Portageツリーを最新状態に更新すべきです。<c>emerge --sync</c>が、これを行います。
+これを行わないユーザは、通常はPortageが<c>emerge --sync</c>の後で作成するキャッシュデータベースを生成するために、<c>emerge --metadata</c><e>だけ</e>を実行すべきです。
+</p>
+
+<pre caption="Portageツリーの更新">
+<comment>(インターネット接続があり、GRPパッケージを使用するつもりがないユーザ向け)</comment>
+# <i>emerge --sync</i>
+
+<comment>(上記以外のすべてのユーザ向け)</comment>
+# <i>emerge --metadata</i>
+</pre>
+
+<p>
+Portageの新しいバージョンが利用可能で、新しいものに更新すべきであることを警告されても、無視してください。Portageは、後々のインストール作業中にアップデートされます。
+</p>
+
+</body>
+</subsection>
+<subsection id="configure_USE">
+<title>USE変数の設定</title>
+<body>
+
+<warn>
+stage3をGRPを用いてインストールしている場合には、どのような変更もUSE変数にしてはいけません。
+インストールしたいパッケージをすべてインストールした後に、USE変数を変更できます。この警告を無視すると、厄介な問題がシステムに発生することが分かっています!
+</warn>
+
+<p>
+<c>USE</c>はGentooがユーザに提供する最もパワフルな変数の一つです。
+プログラムの中には、特定のフラグを設定することによって、副次的なサポートを有効にしたり無効にしたりできるものがあります。
+たとえばGTKサポートもしくはQtサポートを有効にしてコンパイルすることができるプログラムがあります。他には、SSLサポートを有効にするか無効にするか、
+X11サポート(X-server)の替わりにフレームバッファサポート(svgalib)
+を有効にするか、などがあります。
+</p>
+
+<p>
+多くのディストリビューションは、パッケージをありったけのサポートを有効にしてコンパイルしているため、依存関係が膨大になってしまっていることは言うまでもなく、
+プログラムのサイズや起動時間までも増大させてしまっています。
+Gentooならば、パッケージをコンパイルするときにつけるべきオプションを
+自分で定義することができます。これには<c>USE</c>フラグが一役買っています。
+</p>
+
+<p>
+<c>USE</c>変数には、コンパイルオプションに対応するキーワードを定義します。
+たとえば、<e>ssl</e>はプログラムに備わるSSLサポートをコンパイルします。
+<e>-X</e>はXサーバのサポートを削除します。(キーワードの前にマイナス記号をつけます。)<e>gnome gtk -kde -qt</e>は、GNOME(とGTK)サポートを有効にし、KDE(とQt)サポートを無効にしてプログラムをコンパイルします。システムを完全にGNOME向けに調整します。
+</p>
+
+<p>
+デフォルトの<c>USE</c>の設定は、<path>/etc/make.profile/make.defaults</path>にあります。<path>/etc/make.conf</path>にあなたが記述した内容は、これらのデフォルトの設定に反映されます。
+もしあなたが<c>USE</c>に何か追加したら、それはデフォルトリストに追加されます。
+もしあなたが何かを(マイナス記号を頭につけることで)USEから取り除いたならば、
+それは(リストにあれば)デフォルトリストから取り除かれます。
+<e>決して</e>、<path>/etc/make.profile</path>ディレクトリ以下の内容を変更しないでください。Portageをアップデートするときに、上書きされてしまいます!
+</p>
+
+<p>
+Gentooハンドブックの第二部にある<uri link="?part=2&amp;chap=2">USEフラグ</uri>に、<c>USE</c>についての詳細な解説があります。また、システムにある<path>/usr/portage/profiles/use.desc</path>に、使用可能なUSEフラグについての詳細な解説があります。
+</p>
+
+<pre caption="使用可能なUSEフラグの参照">
+# <i>less /usr/portage/profiles/use.desc</i>
+<comment>(矢印キーを使用してスクロールし、'q'キーで終了します)</comment>
+</pre>
+
+<p>
+DVD、ALSA、CD-Rサポートを含むKDEベースのシステムのための<c>USE</c>フラグの例を以下に示します。
+</p>
+
+<pre caption="/etc/make.confを開く">
+# <i>nano -w /etc/make.conf</i>
+</pre>
+
+<pre caption="USEフラグの設定">
+USE="-gtk -gnome qt kde dvd alsa cdr"
+</pre>
+
+<p>
+あなたは、おそらくシステムで一つないし二つのロケールだけしか使用しないでしょう。これまでは<c>glibc</c>のコンパイルの後で、全ての使用可能なロケールのフルセットが生成されていました。現在は、<c>userlocales</c> USEフラグを有効にして、<path>/etc/locales.build</path>に必要とするロケールだけを指定できます。これは、どのロケールを選択すべきかが分かっている場合にだけ、行ってください。
+</p>
+
+<pre caption="glibc用のuserlocales USEフラグを有効にする">
+# <i>mkdir /etc/portage</i>
+# <i>echo "sys-libs/glibc userlocales" >> /etc/portage/package.use</i>
+</pre>
+
+<p>
+それでは、以下のように使用したいロケールを指定してください。
+</p>
+
+<pre caption="/etc/locales.buildを開く">
+# <i>nano -w /etc/locales.build</i>
+</pre>
+
+<p>
+以下のロケール指定は、関連する文字符号(UTF-8のような)を含む、英語(アメリカ)とドイツ語(ドイツ)ロケールを生成する例です。(訳注: 日本語訳には日本語に関するロケールも追加しています。)
+</p>
+
+<pre caption="ロケールの指定">
+en_US/ISO-8859-1
+en_US.UTF-8/UTF-8
+de_DE/ISO-8859-1
+de_DE@euro/ISO-8859-15
+ja_JP.EUC-JP/EUC-JP
+ja_JP.UTF-8/UTF-8
+ja_JP/EUC-JP
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>自由選択: 分散コンパイルの使用</title>
+<body>
+
+<p>
+複数台のマシンを使って高速にシステムをコンパイルすることに興味があるなら、<uri
+link="/doc/en/distcc.xml">DistCC Guide</uri><uri
+link="/doc/ja/distcc.xml">(日本語訳)</uri>を見てみてください。
+<c>distcc</c>を使うことで、複数台のマシンパワーを借りてインストール作業が行えます。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>stage1、stage2、stage3の違い</title>
+<body>
+
+<p>
+さて、腰を落ち着けて、これまでのインストール工程について思い出してみてください。
+私たちは、あなたに<e>stage1</e>、<e>stage2</e>、<e>stage3</e>から一つ選ぶようにといいました。そしてそれは、後々のインストール工程にとって、とても重要な選択だと警告しました。そう。今ここが、あなたの選択によって、後に続くインストール工程を決定する最初の場面です。
+</p>
+
+<ul>
+<li>
+<e>stage1</e>を選択したなら、この章の<e>両方の</e>ステップに従ってください。
+(<uri link="#doc_chap3">stage1からstage2に進む</uri>から始めます。)
+</li>
+<li>
+<e>stage2</e>を選択したなら、最初のステップを飛ばして、すぐに2番目のステップ
+(<uri link="#doc_chap4">stage2からstage3へ進む</uri>)から始められます。
+</li>
+<li>
+<e>stage3</e>(GRPの有無に関わらず)を選んだのなら、両方のステップを飛ばして、<uri link="?part=1&amp;chap=7">カーネルの設定</uri>に進んでください。
+</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>stage1からstage2に進む</title>
+<subsection>
+<title>ブートストラップ概説</title>
+<body>
+
+<p>
+このステップに進んできたあなたは、何もかもスクラッチからコンパイルしたいことでしょう。わかりました。:-)
+</p>
+
+<p>
+このステップではあなたのGentooシステムを<e>ブートストラップ</e>します。
+これは非常に長い時間がかかります。しかしその結果、システムはあなたのマシンに特化し、あなたの要求を満たした根底からの最適化がなされます。
+</p>
+
+<p>
+<e>ブートストラップ</e>とは、GNU Cライブラリや、GNUコンパイラコレクションや、
+いくつかの重要なシステムプログラムをビルドすることを意味します。
+</p>
+
+<p>
+ブートストラップを開始する前に、まず全ての必要なソースコードをダウンロードしたいかもしれません。もししたくなければ、<uri link="#bootstrap">システムのブートストラップ</uri>に進んでください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>自由選択: 最初にソースコードをダウンロードする</title>
+<body>
+
+<p>
+以前にすべてのソースコードを取得していない場合、bootstrapスクリプトが必要なファイルすべてをダウンロードしてくれます。ただし、ネットワーク接続を持つ場合のみであることは言うまでもありません。:-) 最初にソースコードをダウンロードして、その後システムをブートストラップしたいなら(例えば、コンパイル中にインターネットに接続しっぱなしにしたくないという理由で)、bootstrapスクリプトの<e>-f</e>オプションを使用してください。このオプションは、全てのソースコードを取ってきます(fetchしてきます:<e>f</e>オプションの由来)。
+</p>
+
+<pre caption = "必要なソースコードを最初にダウンロード">
+# <i>cd /usr/portage</i>
+# <i>scripts/bootstrap.sh -f</i>
+</pre>
+
+</body>
+</subsection>
+<subsection id="bootstrap">
+<title>システムをブートストラップする</title>
+<body>
+
+<p>
+OKです。では、キーボードから次のコマンドを打ち、ブートストラップを始めてください。このステップは終了まで非常に長い時間がかかるので、何か他のことをして楽しんでいてください。
+</p>
+
+<pre caption = "システムをブートストラップする">
+# <i>cd /usr/portage</i>
+# <i>scripts/bootstrap.sh</i>
+</pre>
+
+<p>
+<c>nptl</c> USEフラグを設定したときには、<c>linux-headers</c>が<c>linux26-headers</c>をブロックするというメッセージとともに、<c>bootstrap.sh</c>の再実行が失敗するかもしれません。
+このエラーに遭遇した場合、以下のようにして<c>linux-headers</c>を削除して、再度試してください。
+</p>
+
+<pre caption="linux-headersの削除">
+# <i>emerge -C linux-headers</i>
+# <i>emerge --oneshot --nodeps linux26-headers</i>
+# <i>scripts/bootstrap.sh</i>
+</pre>
+
+<p>
+さあ、次のステップ、<uri link="#doc_chap4">stage2からstage3へ進む</uri>に進みましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>stage2からstage3へ進む</title>
+<subsection>
+<title>概説</title>
+<body>
+
+<p>
+あなたがこの章を読んでいるということは、すでにブートストラップが完了したシステム(事前にブートストラップを行ったか、もしくは<e>stage2</e>を使った)ができあがっているのだと思います。では、いよいよすべてのシステムのパッケージをビルドします。
+</p>
+
+<p>
+本当に<e>全部の</e>システムパッケージをビルドしなければいけないのですか?
+いいえ。正確にはその必要はありません。このステップでは、選択肢が他にないシステムパッケージをビルドします。システムパッケージの中には、いくつか選択の幅があるパッケージ(例えばシステムロガー)がありますが、選択あってのGentooですから、あなたにどのパッケージをインストールしろというような強制はしたくありません。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>自由選択: あらかじめ何が行われるのかを見てみる</title>
+<body>
+
+<p>
+どんなパッケージがインストールされるのかを知りたければ、<c>emerge --pretend system</c>を実行します。これは、これからビルドされるすべてのパッケージのリストを表示します。このリストは非常に大きいので、上下にスライドさせて見るために<c>less</c>や<c>more</c>などのページャーも使用すべきです。
+</p>
+
+<pre caption = "'emerge system'が何をするかを見てみる">
+# <i>emerge --pretend system | less</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>自由選択: ソースコードのダウンロード</title>
+<body>
+
+<p>
+このまま続ける前に、ソースコードをダウンロードするために<c>emerge</c>したいなら((例えば、すべてのパッケージをビルドしている間中、インターネットに接続しっぱなしにしたくないという理由で)、<c>emerge</c>の<e>--fetchonly</e>を使用できます。このオプションは、全てのソースコードを取ってきます(fetchしてきます)。
+</p>
+
+<pre caption = "ソースコードを取ってくる">
+# <i>emerge --fetchonly system</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>システムのビルド</title>
+<body>
+
+<p>
+システムのビルドを開始するには<c>emerge system</c>を実行してください。このステップは終了するまで大変時間がかかるので、なにか退屈しのぎでもしていてください。
+</p>
+
+<pre caption = "システムのビルド">
+# <i>emerge system</i>
+</pre>
+
+<p>
+更新された設定ファイル(と<c>etc-update</c>の実行)に関するすべての警告は、今のところ無視してもかまいません。ただし、Gentooシステムが完全にインストールされたら、必ず<uri
+link="?part=3&amp;chap=2#doc_chap3">ファイルの保護設定</uri>を読んでください。
+</p>
+
+<p>
+ビルドが完了したら、<uri
+link="?part=1&amp;chap=7">カーネルの設定</uri>へ進んでください。
+</p>
+
+</body>
+</subsection>
+</section>
+
+</sections>

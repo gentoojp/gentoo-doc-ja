@@ -1,0 +1,269 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-portage-ebuild.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+
+<!-- Original revision: 1.6 -->
+
+<sections>
+
+<version>1.3</version>
+<date>2004-10-24</date>
+
+<section>
+<title>EmergeとEbuild</title>
+<body>
+
+<p>
+<c>ebuild</c>アプリケーションはPortageシステムの下層レベルインターフェースです。
+このアプリケーションを使うと、与えられたebuildに反して特定の行動を実行することができます。
+例えば、あなた自身によって個々のマージステップを実行することができます。
+</p>
+
+<p>
+<c>ebuild</c>の利用はより開発目的です。
+その為<c>ebuild</c>に関するより多くの情報は<uri link="/proj/en/devrel/handbook/handbook.xml">Developers Handbook</uri>にあります。
+しかし、ここでは、あるソフトウェアをマージしているときにどんなebuildインスタンスがPortageによって呼び出されているのか、
+そして実行を許可したいくつかのebuildを設定後の過程でどのようにして呼びだすのかについて説明します。
+</p>
+
+</body>
+</section>
+<section>
+<title>ソフトウェアの手動インストール</title>
+<subsection>
+<title>ソースの取得とチェックサム</title>
+<body>
+
+<p>
+与えられたebuildファイルと共に<c>ebuild</c>が呼び出されたときはいつでも、全てのファイルのチェックサムが付属する<path>Manifest</path>か<path>files/digest-&lt;name&gt;-&lt;version&gt;</path>から提供される値と一致しているか確認します。
+これはソースが取得された後も行われます。
+</p>
+
+<p>
+<c>ebuild</c>を使ってソースを取得するには、次のように実行します。
+</p>
+
+<pre caption="ソースの取得">
+# <i>ebuild path/to/ebuild fetch</i>
+</pre>
+
+<p>
+ebuildのmd5sumが<path>Manifest</path>ファイルのものと一致しなかったり、ダウンロードされたソースが<path>files/digest-&lt;package&gt;</path>ファイルのものと一致しないときには、このようなエラーが表示されます。
+</p>
+
+<pre caption="ebuildのチェックサム失敗">
+!!! File is corrupt or incomplete. (Digests do not match)
+>>> our recorded digest: db20421ce35e8e54346e3ef19e60e4ee
+>>>  your file's digest: f10392b7c0b2bbc463ad09642606a7d6
+</pre>
+
+<p>
+この後にエラーが起きたファイルが表示されます。
+</p>
+
+<p>
+もし取得したソースとebuild自身が正しいことが確実ならば、<c>ebuild</c>のダイジェスト機能を使って<path>Manifest</path>と<path>digest-&lt;package&gt;</path>を再生成することができます。
+</p>
+
+<pre caption="Manifestとdigestの再生成">
+# <i>ebuild path/to/ebuild digest</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>ソースの解凍</title>
+<body>
+
+<p>
+ソースを<path>/var/tmp/portage</path> (もしくは<path>/etc/make.conf</path>で定義したその他のディレクトリ)に解凍するには、<c>ebuild</c>の解凍機能を実行します。
+</p>
+
+<pre caption="ソースの解凍">
+# <i>ebuild path/to/ebuild unpack</i>
+</pre>
+
+<p>
+これはebuildのsrc_unpack()機能(src_unpack()機能が何も定義されていないときには単に抽出するだけ)によって実行されます。
+このステップでは必要なパッチも適用されます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>ソースのコンパイル</title>
+<body>
+
+<p>
+マージ行程の次のステップはソースのコンパイルです。
+<c>ebuild</c>のコンパイル機能はebuildのsrc_compile()機能を実行することによってこのステップを引き受けます。
+これは適当であれば設定ステップも含みます。
+</p>
+
+<pre caption="ソースのコンパイル">
+# <i>ebuild path/to/ebuild compile</i>
+</pre>
+
+<p>
+コンパイルの命令を変更したいのならebuildのsrc_compile()機能を編集すると良いでしょう。
+しかし、<c>ebuild</c>アプリケーションがコンパイルステップを完了したとPortageをだまして信じ込ませることもできます。
+全ての必要なコマンドを実行して作業ディレクトリに<path>.compiled</path>という空のファイルを作成します。
+</p>
+
+<pre caption="コンパイルジョブが完了したとPortageに通達する">
+# <i>touch .compiled</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>ファイルを一時的な場所にインストール</title>
+<body>
+
+<p>
+次のステップでは、Portageは全ての必要なファイルを一時的な場所にインストールします。
+このディレクトリは現在のファイルシステムにマージするべき全てのファイルを含みます。
+src_install()機能を実行する<c>ebuild</c>のインストール機能を実行することでこれを行うことができます。
+</p>
+
+<pre caption="ファイルのインストール">
+# <i>ebuild path/to/ebuild install</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>現在のファイルシステムにファイルをマージ</title>
+<body>
+
+<p>
+最終ステップでは全てのファイルを現在のファイルシステムにマージし、Portageに登録します。
+<c>ebuild</c>はこのステップを"qmerge"と呼び、以下のステップによって呼び出されます。
+</p>
+
+<ul>
+  <li>指定されているならpkg_preinst()機能を実行</li>
+  <li>全てのファイルを現在のファイルシステムに上書き</li>
+  <li>Portageにファイルを登録</li>
+  <li>指定されているならpkg_postinst()機能を実行</li>
+</ul>
+
+<p>
+<c>ebuild</c>のqmergeを実行してこれらのステップを実行します。
+</p>
+
+<pre caption="現在のファイルシステムにファイルをマージ">
+# <i>ebuild path/to/ebuild qmerge</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>一時的なディレクトリの削除</title>
+<body>
+
+<p>
+最後に<c>ebuild</c>のclean機能を使って一時ディレクトリを掃除します。
+</p>
+
+<pre caption="一時的なディレクトリの削除">
+# <i>ebuild path/to/ebuild clean</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>追加のEbuild機能</title>
+<subsection>
+<title>全てのマージ関連のコマンドを実行する</title>
+<body>
+
+<p>
+<c>ebuild</c>のmerge機能を使うと取得、解凍、コンパイル、インストール、そしてqmergeコマンドを一度に実行できます。
+</p>
+
+<pre caption="ソフトウェアのインストール">
+# <i>ebuild path/to/ebuild merge</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>設定動作を実行</title>
+<body>
+
+<p>
+いくらかのパッケージにはシステムにより適合させるためにパッケージを設定する指示が含まれています。
+これらの指示は対話方式なので自動的には実行されません。
+ebuildのconfig()機能を利用して設定ステップを実行するには、<c>ebuild</c>の設定機能を使います。
+</p>
+
+<pre caption="パッケージの設定">
+# <i>ebuild path/to/ebuild config</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>(RPM)パッケージのビルド</title>
+<body>
+
+<p>
+ebuildのバイナリパッケージや、RPMファイルでさえもPortageに作成するよう指示することができます。
+<c>ebuild</c>のpackageかrpm機能を使ってこれらアーカイブを作成します。
+これら２つの機能の間には少し違いがあります。
+</p>
+
+<ul>
+  <li>
+    package機能は、パッケージを作成する前に全ての必要なステップ(取得、解凍、コンパイル、インストール)を実行するというmerge機能にとても良く似たものです
+  </li>
+  <li>
+    rpm機能は<c>ebuild</c>のインストール機能を実行し、ファイルが作成された<e>後に</e>PRMパッケージがビルドされます
+  </li>
+</ul>
+
+<pre caption="パッケージの作成">
+<comment>(Portage互換のバイナリパッケージ)</comment>
+# <i>ebuild path/to/ebuild package</i>
+
+<comment>(RPMパッケージ)</comment>
+# <i>ebuild path/to/ebuild rpm</i>
+</pre>
+
+<p>
+作成されたRPMファイルにはebuildの依存関係情報は含まれていません。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>より詳しい情報</title>
+<subsection>
+<body>
+
+<p>
+Portageやebuildアプリケーション、そしてebuildファイルについてのより詳しい情報については以下のmanページを調べてください。
+</p>
+
+<pre caption="manページ">
+$ <i>man portage</i>    <comment>(Portage自身)</comment>
+$ <i>man emerge</i>     <comment>(emergeコマンド)</comment>
+$ <i>man ebuild</i>     <comment>(ebuildコマンド)</comment>
+$ <i>man 5 ebuild</i>   <comment>(ebuildファイル構文)</comment>
+</pre>
+
+<p>
+開発者関連の情報が<uri link="/proj/en/devrel/handbook/handbook.xml">Developers Handbook</uri>で取得できます。
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

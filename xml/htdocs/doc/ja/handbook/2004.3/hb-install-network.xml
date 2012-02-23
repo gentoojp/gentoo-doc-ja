@@ -1,0 +1,705 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-install-network.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+
+<!-- Original revision: 1.39 -->
+<sections>
+
+<version>1.36</version>
+<date>2004-10-23</date>
+
+<section>
+<title>それ「無し」でもできるが…</title>
+<subsection>
+<title>誰がそれを「無し」でできますか？</title>
+<body>
+
+<p>
+Gentooをインストールするメディアとして何を選択したかによって、
+ネットワーク(とインターネット)無しで済むか済まないかが変わってきます。
+あなたを混乱させるつもりはないです。=)
+</p>
+
+<p>
+一般的に、ネットワーク(そしてインターネット)をセットアップする必要があるでしょう。
+しかし、Gentooはネットワーク接続なしでのインストールも提供しています。
+この例外的なインストール方法はGentoo Universal LiveCDを使用することで可能になります。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>どうしてネットワークを必要としますか？</title>
+<body>
+
+<p>
+インターネットからGentooをインストールすることで、完全に更新されたGentooのインストールが完了します。
+つまり最新のPortageツリー(これは、Gentooが提供しているソフトウェアを管理するツールと、パッケージのコレクションを合わせたもののことです。)をもとにインストールを行なうことになります。
+これもまたネットワークインストールが優れている理由です。
+しかし、人によってはインターネット接続をした状態でインストールができない、
+またはしたくない、ということがあります。
+</p>
+
+<p>
+もし、あなたがこの状況だとしたらGentoo Universal LiveCDを使用する必要があります。
+このLiveCDはソースコードやPortageツリーのスナップショット、
+またGentooのベースシステムなどをインストールするためのツールが入っています。
+この方法は欠点もあります。
+最新のソフトウェアを手に入れられないことです。
+でも、なるべく最新との差は少なくなるようにしています。
+</p>
+
+<p>
+もしこのネットワークなしのインストールをしたいのならば、
+この章の残りの部分を飛ばして、<uri 
+link="?part=1&amp;chap=4">ハードディスクの準備</uri>から
+Universal LiveCDを使ってインストールを続けてください。
+そうでなければ、この下に続くネットワーク設定を続けてください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>自由選択:proxyの設定</title>
+<body>
+
+<p>
+インターネット接続にproxyを使用しているならば、
+インストール中にproxy情報について設定する必要があるかもしれません。
+proxyの設定をするのはとても簡単です。
+proxyサーバーの情報を含むように値を設定するだけです。
+</p>
+
+<p>
+多くの場合、proxyサーバーのホスト名を変数として定義するだけです。
+例として、<e>proxy.gentoo.org</e>というサーバーにport 8080で接続するとしましょう。
+</p>
+
+<pre caption="proxyサーバーの定義">
+<comment>(proxyがHTTPの通信をフィルタする場合)</comment>
+# <i>export http_proxy="http://proxy.gentoo.org:8080"</i>
+<comment>(proxyがFTPの通信をフィルタする場合)</comment>
+# <i>export ftp_proxy="ftp://proxy.gentoo.org:8080"</i>
+<comment>(proxyがRSYNCの通信をフィルタする場合)</comment>
+# <i>export RSYNC_PROXY="proxy.gentoo.org:8080"</i>
+</pre>
+
+<p>
+proxyがユーザ名やパスワードを必要とするなら、次の文法で値を定義する必要があります。
+</p>
+
+<pre caption="proxy変数にユーザ名/パスワードを追加">
+http://username:password@server
+</pre>
+
+<p>
+例えば、HTTP proxyでユーザ名が"john"、パスワードが"f00b_r"だった場合には、
+以下のようになります。
+</p>
+
+<pre caption="認証されたproxy">
+# <i>export http_proxy="http://john:f00b_r@proxy.gentoo.org:8080"</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>自動的なネットワークの検知</title>
+<subsection>
+<title>動いているかも？</title>
+<body>
+
+<p>
+もしあなたのシステムがDHCPサーバを備えたEthernetネットワークに接続されているなら、おそらく、既にネットワークの設定は自動的に完了しているでしょう。
+もしそうなら、LiveCDに入っているネットーワークが必要な<c>ssh</c>、<c>scp</c>、
+<c>ping</c>、<c>irssi</c>、<c>wget</c>、
+<c>links</c>などのコマンドを使うことができるでしょう。
+</p>
+
+<p>
+ネットワークが設定されていたら、<c>/sbin/ifconfig</c>コマンドで、
+loインターフェースと並んで、たとえばeth0のようにリストされるはずです。
+</p>
+
+<pre caption="動作中のネットワークのための/sbin/ifconfigコマンド">
+# <i>/sbin/ifconfig</i>
+<comment>(...)</comment>
+eth0      Link encap:Ethernet  HWaddr 00:50:BA:8F:61:7A
+          inet addr:192.168.0.2  Bcast:192.168.0.255  Mask:255.255.255.0
+          inet6 addr: fe80::50:ba8f:617a/10 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:1498792 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:1284980 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:1984 txqueuelen:100
+          RX bytes:485691215 (463.1 Mb)  TX bytes:123951388 (118.2 Mb)
+          Interrupt:11 Base address:0xe800 
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>ネットワークのテスト</title>
+<body>
+
+<p>
+パケットがインターネットに届いているか、
+DNSで名前が正しく解決できるか確認するために、
+プロバイダのDNSサーバー(<path>/etc/resolv.conf</path>に書かれている)
+やWebサイトにpingをしましょう。
+</p>
+
+<pre caption="さらにネットワークのテスト">
+# <i>ping -c 3 www.yahoo.com</i>
+</pre>
+
+<p>
+ネットワークは使えていますか？
+もしそうなら、残りのセクションを飛ばして<uri link="?part=1&amp;chap=4">Preparing the
+Disks</uri>から続けてください。
+もし接続していないなら、運が悪いです。もう少し設定が必要なようです。:)
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>自動でのネットワーク設定</title>
+<subsection>
+<body>
+
+<p>
+ネットワークが動いていない場合には、
+いくつかのインストールメディアでは<c>net-setup</c>(通常のネットワーク用)や、
+<c>adsl-setup</c>(ADSLユーザー用)、<c>pptp</c> (PPTPユーザー用 x86環境のみ)が使用できます。
+</p>
+
+<p>
+もしインストールメディアにそのツールが含まれていなかったり、
+ネットワークがそれでも動かなかったら、
+<uri link="#doc_chap4">手動でのネットワークの設定</uri>
+から続けてください。
+</p>
+
+<ul>
+  <li>
+    通常のEthernetユーザーは<uri
+    link="#net-setup">一般的な選択: net-setupの使用</uri>へ
+  </li>
+  <li>
+    ADSLユーザーは<uri link="#rp-pppoe">もう一つの選択: RP-PPPoEの使用</uri>へ
+  </li>
+  <li>
+    PPTPユーザーは<uri link="#pptp">もう一つの選択: PPTPの使用</uri>へ
+  </li>
+</ul>
+
+</body>
+</subsection>
+<subsection id="net-setup">
+<title>一般的な選択: net-setupの使用</title>
+<body>
+
+<p>
+もし自動でネットワークが設定されなかった場合に、
+一番単純に設定を行なう方法は<c>net-setup</c>スクリプトを実行することです。
+</p>
+
+<pre caption="net-setupスクリプトの起動">
+# <i>net-setup eth0</i>
+</pre>
+
+<p>
+<c>net-setup</c>はネットワーク環境に対するいくつかの質問をします。
+すべての質問が終わったときに、ネットワーク接続ができているはずです。
+確認のために上に書いたネットワークのテストを行なってください。
+もしそのテストがいい結果なら、おめでとう！
+Gentooをインストールする準備ができました。
+残りのセクションを飛ばして
+<uri 
+link="?part=1&amp;chap=4">ハードディスクの準備</uri>
+へ行ってください。
+</p>
+
+<p>
+まだネットワークが接続されていないのなら、<uri link="#doc_chap4">手動でのネットワークの設定</uri>から続けてください。
+</p>
+
+
+</body>
+</subsection>
+<subsection id="rp-pppoe">
+<title>もう一つの選択: RP-PPPoEの使用</title>
+<body>
+
+<p>
+インターネットに接続するためにPPPoEが必要な場合のために、
+LiveCD(どのバージョンでも)にはその接続を簡単にするための<c>rp-pppoe</c>
+が含まれています。
+その接続を設定する<c>adsl-setup</c>スクリプトを使用してください。
+そして、
+ADSLモデムに接続されたEthernetデバイス用に、ユーザ名、パスワード、
+DNSサーバーのIPアドレス、基本的なファイアウォールが必要か否かを入力します。
+</p>
+
+<pre caption="rp-pppoeを使用する">
+# <i>adsl-setup</i>
+# <i>adsl-start</i>
+</pre>
+
+<p>
+もし何かがうまくいかなかったら、
+ユーザ名とパスワードを正しく入力したかどうかを、
+<path>/etc/ppp/pap-secrets</path>または
+<path>/etc/ppp/chap-secrets</path>を見て再確認してください。
+また、正しいEthernetデバイスを使用していることも確認しください。
+もし、Ethernetデバイスが存在しない場合には、
+適切なネットワークモジュールを読み込む必要があります。
+この場合には、適切なモジュールを読み込む方法を説明している
+<uri link="#doc_chap4">手動でのネットワークの設定</uri>
+から続けてください。
+</p>
+
+<p>
+ネットワークが動いたら、<uri link="?part=1&amp;chap=4">Preparing the
+Disks</uri>へ行ってください。
+</p>
+
+</body>
+</subsection>
+<subsection id="pptp">
+<title>もう一つの選択: PPTPの使用</title>
+<body>
+
+<p>
+PPTPサポートが必要なら、<c>pptpclient</c>というLiveCDに入っているツールを使用することができます。
+しかし、その前に設定が正しいか確認する必要があります。
+<path>/etc/ppp/pap-secrets</path>または<path>/etc/ppp/chap-secrets</path>を正しいusername/passwordになるように記述します。
+</p>
+
+<pre caption="/etc/ppp/chap-secretsの編集">
+# <i>nano -w /etc/ppp/chap-secrets</i>
+</pre>
+
+<p>
+それから<path>/etc/ppp/options.pptp</path>を必要なら編集します。
+</p>
+
+<pre caption="/etc/ppp/options.pptpの編集">
+# <i>nano -w /etc/ppp/options.pptp</i>
+</pre>
+
+<p>
+これらが全部済んだら、ただ<c>pptp</c>を実行し(コマンドラインオプションと<path>options.pptp</path>の両方は設定できません)サーバーへ接続します。
+</p>
+
+<pre caption="dial-inサーバーへ接続">
+# <i>pptp &lt;server ip&gt;</i>
+</pre>
+
+<p>
+次は、<uri link="?part=1&amp;chap=4">ハードディスクの準備</uri>へ行ってください。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>手動でのネットワークの設定</title>
+<subsection>
+<title>適切なネットワークモジュールを読み込む</title>
+<body>
+
+<p>
+LiveCDは、ブートしたときにすべてのハードウェアデバイスを検出、
+ハードウェアをサポートするための適切なカーネルモジュール(ドライバー)を
+読み込もうとします。
+大部分のケースでは、これはとても良く機能します。
+ただ、いくつかのケースでは、必要なカーネルモジュールが自動的に読み込まれません。
+</p>
+
+<p>
+<c>net-setup</c>や<c>adsl-setup</c>が失敗するというのは、
+ネットワークカードが見つからなかった可能性があります。
+この場合には、手動で適切なカーネルモジュールを読み込まないといけません。
+</p>
+
+<p>
+ネットワーク用に提供しているカーネルモジュールを見るには<c>ls</c>
+を使用します。
+</p>
+
+<pre caption="提供されているモジュールの検索">
+# <i>ls /lib/modules/`uname -r`/kernel/drivers/net</i>
+</pre>
+
+<p>
+使用しているネットワークカードが見つかったら、
+<c>modprobe</c>を使ってそのカーネルモジュールを読み込みます。
+</p>
+
+<pre caption="modprobeを使用してカーネルモジュールを読み込む">
+<comment>(この例では、pcnet32モジュールを読み込みます)</comment>
+# <i>modprobe pcnet32</i>
+</pre>
+
+<p>
+今ネットワークカードが検出されたかどうかチェックするために、
+<c>ifconfig</c>を使用してください。
+検出されたネットワークカードは次のように表示されるでしょう。
+</p>
+
+<pre caption="ネットワークが機能しているかテスト 成功した場合">
+# <i>ifconfig eth0</i>
+eth0      Link encap:Ethernet  HWaddr FE:FD:00:00:00:00  
+          BROADCAST NOARP MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:0 (0.0 b)  TX bytes:0 (0.0 b)
+</pre>
+
+<p>
+しかし、次のようなエラーメッセージが出たなら、
+そのネットワークカードは検出されていません。
+</p>
+
+<pre caption="ネットワークが機能しているかテスト 失敗した場合">
+# <i>ifconfig eth0</i>
+eth0: error fetching interface information: Device not found
+</pre>
+
+<p>
+もし、あなたのシステムに複数のネットワークカードが存在する場合には、
+その名前は<e>eth0</e>、<e>eth1</e>など、となります。
+動かしたいネットワークカードを確認してください。
+そして、このドキュメントを通してその名前を使用してください。
+このドキュメントでは、ネットワークカードは<e>eth0</e>を想定しています。
+</p>
+
+<p>
+ネットワークが検出された場合には、
+<c>net-setup</c>または<c>adsl-setup</c>をやり直してください(今は動くはずです)。
+また、パワーユーザーの方々のために、
+マニュアルでのネットワークの設定の方法を説明します。
+</p>
+
+<p>
+ネットワークセットアップのベースになる次のセクションを一つ選択してください。
+</p>
+
+<ul>
+  <li><uri link="#dhcp">DHCPを使用する</uri>は、自動的なIPの割り当て方法です。</li>
+  <li>
+    <uri link="#wireless">無線LANアクセスの準備</uri>は、無線LANカードを持っている場合の説明です。
+  </li>
+  <li>
+    <uri link="#network_term">ネットワーク用語を理解する</uri>は、
+ネットワークについて知っておくべき情報を説明しています。
+  </li>
+  <li>
+    <uri link="#ifconfig_route">ifconfigとrouteの設定</uri>は、ネットワークを手動で設定する方法の説明です。
+  </li>
+</ul>
+
+</body>
+</subsection>
+<subsection id="dhcp">
+<title>DHCPを使用する</title>
+<body>
+
+<p>
+DHCP (Dynamic Host Configuration Protocol)を使用すると、
+自動的にネットワーク情報
+(IPアドレス、ネットマスク、ブロードキャストアドレス、ゲートウェイ、
+ネームサーバーなど)を受けとることが可能になります。
+これはDHCPサーバーがネットワーク内に存在する場合にのみ動きます
+(または、プロバイダがDHCPサービスを提供している場合)。
+自動的にこのネットワークインタフェース情報を受け取るためには、
+<c>dhcpcd</c>を使用します。
+</p>
+
+<pre caption="dhcpcdを使用する">
+# <i>dhcpcd eth0</i>
+<comment>ネットワーク管理者によっては、hostnameとdomainnameは</comment>
+<comment>DHCPサーバーが提供するものを使うように、と要求するかもしれません。</comment>
+<comment>このような場合には、下のコマンドを使ってください。</comment>
+# <i>dhcpcd -HD eth0</i>
+</pre>
+
+<p>
+もしこれが動いたら(<uri
+link="http://www.google.com">Google</uri>のように、
+いくつかのインターネットサーバーにpingしてみてくてください)、
+先に進む用意ができたことになります。
+残りのセクションを飛ばして、<uri
+link="?part=1&amp;chap=4">ハードディスクの準備</uri>から続けてください。
+</p>
+
+</body>
+</subsection>
+<subsection id="wireless">
+<title>無線LANアクセスの準備</title>
+<body>
+
+<note>
+すべてのLiveCDに<c>iwconfig</c>コマンドが入っているわけではありません。
+もし使用したLiveCDに入っていなければ、<uri
+link="ftp://ftp.linux-wlan.org/pub/linux-wlan-ng/README">linux-wlan-ng
+project</uri>の指示に従って動かすことができます。
+</note>
+
+<p>
+もし無線LAN(802.11)用のカードを使用しているのなら、
+他のことをする前に、まず無線LANの設定をする必要があります。
+現在の無線LANの設定を見るために、<c>iwconfig</c>を使います。
+<c>iwconfig</c>を実行すると、次のような表示されるかもしれません。
+</p>
+
+<pre caption="現在の無線LAN設定の表示">
+# <i>iwconfig eth0</i>
+eth0      IEEE 802.11-DS  ESSID:"GentooNode"                                   
+          Mode:Managed  Frequency:2.442GHz  Access Point: 00:09:5B:11:CC:F2    
+          Bit Rate:11Mb/s   Tx-Power=20 dBm   Sensitivity=0/65535               
+          Retry limit:16   RTS thr:off   Fragment thr:off                       
+          Power Management:off                                                  
+          Link Quality:25/10  Signal level:-51 dBm  Noise level:-102 dBm        
+          Rx invalid nwid:5901 Rx invalid crypt:0 Rx invalid frag:0 Tx          
+          excessive retries:237 Invalid misc:350282 Missed beacon:84            
+</pre>
+
+<note>
+いくつかの無線LANカードは<c>eth0</c>のかわりに<c>wlan0</c>
+というデバイス名を使用します。
+</note>
+
+<p>
+大部分のユーザーにとって、重要な設定の変更はESSID(無線LANネットワーク名と呼ばれている)またはWEPキーの2つだけです。
+上記リストに載っているESSIDとアクセスポイントアドレスがあなたのアクセスポイントになっていて、WEPを使っていない場合には、すでに無線LANは動いています。
+もし、ESSIDを変更したい場合や、WEPキーを加えたい場合には、次のコマンドを実行します。
+</p>
+
+<pre caption="ESSID/WEPキーの変更">
+<comment>(ネットワーク名を"GentooNode"とセットしています)</comment>
+# <i>iwconfig eth0 essid GentooNode</i>
+
+<comment>(１６進数でWEPキーを設定します)</comment>
+# <i>iwconfig eth0 key 1234123412341234abcd</i>
+
+<comment>(プレフィクスとして"s:"を付け、ASCII文字を設定します)</comment>
+# <i>iwconfig eth0 key s:some-password</i>
+</pre>
+
+<p>
+<c>iwconfig</c>を使用して、再度ネットワークの設定を確認します。
+一度無線LANが動いてしまえば、次章(<uri
+link="#network_term">ネットワーク用語を理解する</uri>)
+で記述されているIPレベルのネットワーク設定をすることができます。
+また、前述した<c>net-setup</c>を使用することもできます。
+</p>
+
+</body>
+</subsection>
+<subsection id="network_term">
+<title>ネットワーク用語を理解する</title>
+<body>
+
+<note>
+もし、IPアドレス、ブロードキャストアドレス、ネットマスク、
+ネームサーバーといったものを知っているのならば、
+このサブセクションを飛ばし、<uri
+link="#ifconfig_route">ifconfigとrouteの設定</uri>
+から続けてください。
+</note>
+
+<p>
+上述したすべての方法が失敗する場合には、ネットワークを手動で設定する必要があります。
+恐れないでください。全然難しくありません。
+しかし、あなたが満足のいくネットワーク設定ができるために、ある程度のネットワークの説明をします。
+
+これを読み終わったときには、<e>ゲートウェイ</e>とは何か、
+<e>ネットマスク</e>は何のためにあるのか、
+<e>ブロードキャスト</e>アドレスはどうやって作るのか、
+なぜ<e>ネームサーバー</e>が必要なのかがわかります。
+</p>
+
+<p>
+ネットワークの中では、各ホストは<e>IPアドレス</e>(Internet
+Protocolアドレス)で識別されます。
+アドレスは0から255までの4つの数字の組合せです。
+これはわかりやすくするためで、
+実際には、IPアドレスは32ビット(0と1の列)です。
+この例を見てください。
+</p>
+
+<pre caption="IPアドレスの例">
+IP Address (numbers):   192.168.0.2
+IP Address (bits):      11000000 10101000 00000000 00000010
+                        -------- -------- -------- --------
+                           192      168       0        2
+</pre>
+
+<p>
+IPアドレスはアクセス可能なネットワークすべての中でユニークです。
+(つまり、接続可能なすべてのマシンはユニークなIPアドレスが必要です。)
+内部のホストと外部のホストを区別できるように、IPアドレスは2つの部分、
+<e>ネットワーク</e>部と、<e>ホスト</e>部に分割されています。
+</p>
+
+<p>
+その分割は、先頭が1の連続で、それに続いて0の連続になる値を持つ<e>netmask</e>によって行なわれます。
+IPアドレスの1の部分をネットワーク部、0の部分をホスト部とします。
+通常に、ネットマスクはIPアドレスと同じように記述されます。
+</p>
+
+<pre caption="ネットワーク部/ホスト部の分割例">
+IP-address:    192      168      0         2
+            11000000 10101000 00000000 00000010
+Netmask:    11111111 11111111 11111111 00000000
+               255      255     255        0
+           +--------------------------+--------+
+                    Network              Host
+</pre>
+
+<p>
+言い換えると、192.168.0.14はこのサンプルネットワーク内に存在するホストですが、192.168.1.2は違います。
+</p>
+
+<p>
+<e>ブロードキャスト</e>アドレスはネットワーク部は同じネットワークアドレスを使用し、
+ホスト部はすべて1のIPアドレスです。
+ネットワーク上のすべてのホストがこのIPアドレスに反応します。
+これはブロードキャストパケットのためのものです。
+</p>
+
+<pre caption="ブロードキャストアドレス">
+IP-address:    192      168      0         2
+            11000000 10101000 00000000 00000010
+Broadcast:  11000000 10101000 00000000 11111111
+               192      168      0        255
+           +--------------------------+--------+
+                     Network             Host
+</pre>
+
+<p>
+インターネットに接続するためには、
+どのホストでインターネット接続を行なうのか知っている必要があります。
+このホストは<e>ゲートウェイ</e>と呼ばれています。
+このホストは普通のホストなので、普通のIPアドレスを持っています。
+(例えば192.168.0.1)
+</p>
+
+<p>
+すべてのホストがそのホスト自身のIPアドレスを持っていると前述しました。
+各ホストに名前で(IPアドレスの代わりに)アクセスすることができるように、
+名前(たとえば<e>dev.gentoo.gr.jp</e>)からIPアドレス(たとえば
+<e>64.5.62.82</e>)に変換するサービスが必要です。
+そういったサービスをネームサーバーと呼んでいます。そのようなサービスを使用するためには、<e>ネームサーバー</e>を<path>/etc/resolv.conf</path>、定義する必要があります。
+</p>
+
+<p>
+場合によっては、ゲートウェイがネームサーバーを兼ねていることがあります。
+そうでなければ、プロバイダから提供されているネームサーバーを入力する必要があります。
+</p>
+
+<p>
+まとめると、この先を続ける前に次の情報が必要となるでしょう。
+</p>
+
+<table>
+<tr>
+  <th>ネットワークアイテム</th>
+  <th>例</th>
+</tr>
+<tr>
+  <ti>IPアドレス</ti>
+  <ti>192.168.0.2</ti>
+</tr>
+<tr>
+  <ti>ネットマスク</ti>
+  <ti>255.255.255.0</ti>
+</tr>
+<tr>
+  <ti>ブロードキャスト</ti>
+  <ti>192.168.0.255</ti>
+</tr>
+<tr>
+  <ti>ゲートウェイ</ti>
+  <ti>192.168.0.1</ti>
+</tr>
+<tr>
+  <ti>ネームサーバー</ti>
+  <ti>195.130.130.5, 195.130.130.133</ti>
+</tr>
+</table>
+
+</body>
+</subsection>
+<subsection id="ifconfig_route">
+<title>ifconfigとrouteの設定</title>
+<body>
+
+<p>
+ネットワークの設定は3段階から成ります。
+最初に、<c>ifconfig</c>を使用して自分自身のIPアドレスを割当てます。
+次に、<c>route</c>を使用しゲートウェイへのルーティングを設定します。
+そして最後に、<path>/etc/resolv.conf</path>にネームサーバーのIPアドレスを記述します。
+</p>
+
+<p>
+IPアドレスを設定するために、IPアドレス、ブロードキャストアドレス、
+ネットマスクが必要です。
+そして、<c>${IP_ADDR}</c>をIPアドレスに、
+<c>${BROADCAST}</c>をブロードキャストアドレスに、
+<c>${NETMASK}</c>をネットマスクに置換して、次のコマンドを実行します。
+</p>
+
+<pre caption="ifconfigの使用">
+# <i>ifconfig eth0 ${IP_ADDR} broadcast ${BROADCAST} netmask ${NETMASK} up</i>
+</pre>
+
+<p>
+さて、<c>route</c>を使用してルーティングの設定です。
+<c>${GATEWAY}</c>をゲートウェイアドレスに置換します。
+</p>
+
+<pre caption="routeの使用">
+# <i>route add default gw ${GATEWAY}</i>
+</pre>
+
+<p>
+そして、好きなエディタで(この例ではnanoを使います)
+<path>/etc/resolv.conf</path>を開きます。
+</p>
+
+<pre caption="/etc/resolv.confの作成">
+# <i>nano -w /etc/resolv.conf</i>
+</pre>
+
+<p>
+次のテンプレートを使ってネームサーバーを記述します。
+<c>${NAMESERVER1}</c>と<c>${NAMESERVER2}</c>を適切なネームサーバーアドレスに置換するのを忘れないでください。
+</p>
+
+<pre caption="/etc/resolv.confテンプレート">
+nameserver ${NAMESERVER1}
+nameserver ${NAMESERVER2}
+</pre>
+
+<p>
+これですべてです。
+インターネットサーバーのホスト(例えば<uri link="http://www.google.com">Google</uri>)へpingをして、ネットワークのテストをしてください。
+もしそれがうまくいったら、おめでとう。
+Gentooをインストールする準備ができました。
+<uri
+link="?part=1&amp;chap=4">ハードディスクの準備</uri>へ進んでください。
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

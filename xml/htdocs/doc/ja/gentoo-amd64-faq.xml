@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/gentoo-amd64-faq.xml,v 1.2 2011/08/01 21:44:00 shindo Exp $ -->
+
+<guide>
+<title>Gentoo Linux/AMD64  よくある質問とその回答(FAQ)</title>
+
+<author title="Editor">
+  <mail link="blubb@gentoo.org">Simon Stelling</mail>
+</author>
+<author title="Editor">
+  <mail link="metalgod@gentoo.org">Luis Medinas</mail>
+</author>
+<author title="Editor">
+  <mail link="gerrynjr@gentoo.org">Gerald J. Normandin Jr.</mail>
+</author>
+<author title="Editor">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+<author title="翻訳">
+  <mail link="naota@elisp.net">青田直大</mail>
+</author>
+
+<abstract>
+この文書は、Gentoo Linux/AMD64に関するFAQです。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>3</version>
+<date>2011-03-02</date>
+<!-- Original revision: 1.38 -->
+
+<faqindex>
+<title>質問</title>
+<section>
+<title>はじめに</title>
+<body>
+
+<p>
+この文書はGentoo/AMD64についてよく聞かれる質問を集めたものです。
+Gentoo/AMD64についての有用な情報を提供することがこの文書の目的です。
+これらの質問には、フォーラム、IRC、メーリングリストで見つけられるものもあります。
+このFAQについてなにか提案や質問があれば、
+ご遠慮なく<mail>amd64@gentoo.org</mail>にメールしてください。
+</p>
+
+</body>
+</section>
+</faqindex>
+
+<chapter>
+<title>インストール</title>
+<section id="difference">
+<title>AMD64とEM64Tの違いはなんですか?</title>
+<body>
+
+<p>
+両方ともAMD(AMD64)とIntel(EM64T)が出している64ビットCPUをさしています。
+AMDの64ビットCPUにはAthlon 64、Turion、Neo、Phenom、Opteronシリーズがあります。
+Intelの64ビットCPUにはCore2、Core i<e>X</e>、Celeron、Xeon、Pentiumがあります。
+(全てCore2のアーキテクチャをもとにしています)
+Pentium4とXeonの<uri link="http://en.wikipedia.org/wiki/Em64t#Intel_64">最近のいくつかのバージョン</uri>もEM64Tをサポートしています。
+</p>
+
+<p>
+AMDの64ビットCPUはIntelよりも前にリリースされました。
+したがって、歴史的経緯でx86-64と互換のあるシステムでのアーキテクチャキーワードはamd64になっています。
+<e>AMD64</e>はAMDかIntelかに関係なく64ビットのCPUを指すのに使われます。
+</p>
+
+</body>
+</section>
+<section id="cflags">
+<title>AMD64/EM64TではどのようなCFLAGSを使うべきですか?</title>
+<body>
+
+<p>
+あなたのシステムにおこりうる問題を避けるためシンプルな<c>CFLAGS</c>を使うべきです。
+サポートされる<c>CFLAGS</c>は、AMDでは<c>-O2 -march=k8 -pipe</c>、
+IntelのCore2ベースのシステム(EM64T)では<c>-O2 -march=core2 -pipe</c>です。
+EM64Tをサポートする古いIntel Pentium4のCPUを使っているなら、<c>-O2 -march=nocona -pipe</c>を使うべきです。
+</p>
+
+</body>
+</section>
+<section id="kernel">
+<title>AMD64ではどのカーネルを使うべきですか?</title>
+<body>
+
+<p>
+Portageにあるほとんどすべてのカーネルを使うことができます。
+Gentoo Linuxのために特別にデザインされている<c>gentoo-sources</c>を使うことをおすすめします。
+<c>gentoo-sources</c>は、多くのAMD64固有のパッチを含んでおり、
+Gentoo/AMD64により公式にサポートされている唯一のカーネルです。
+</p>
+
+<warn>
+<c>PREEMPT</c>のようなあまりテストされていないカーネルの機能を使う時はよく注意してください。
+</warn>
+
+<p>
+カーネルの<c>IA32_EMULATION</c>オプションを必ず有効にしてください。
+</p>
+
+<pre caption="カーネルのIA32 Emulationオプションを有効にする">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+
+Executable file formats / Emulations  ---&gt;
+  [*] IA32 Emulation
+</pre>
+
+<warn>
+このオプションが無効になっていると、multilibシステムではパッケージのビルドが失敗するでしょう。
+</warn>
+
+</body>
+</section>
+<section id="perfup">
+<title>64ビットのシステムを使うと32ビットのシステムに比べてパフォーマンスが向上しますか?</title>
+<body>
+
+<p>
+これは答えにくい質問です。パフォーマンスが向上するものもありますし、
+向上しないものもあります。日常の用途においては、
+64ビットと32ビットにはほとんどなにも違いはありません。
+マルチメディアアプリケーションや3Dレンダリングのように、
+浮動小数点を扱うものに関しては64ビットのほうが一般的に高速になります。
+この<uri link="http://www.linux.com/articles/114024?tid=121">記事</uri>
+(と、<uri link="http://www.linux.com/feature/43873">関連の記事</uri>)が参考になるでしょう。
+Gentooの<uri link="http://forums.gentoo.org">フォーラム</uri>にも、
+良い<uri link="http://forums.gentoo.org/viewtopic-t-349691.html">スレッド</uri>があります。
+</p>
+
+</body>
+</section>
+<section id="multilib">
+<title>multilibとはなんですか? どうやって使えばいいのですか?</title>
+<body>
+
+<p>
+すべてのAMD64のCPUは64ビットだけでなく32ビットのコードも実行することができます。
+しかし、32ビットのアプリケーションを64ビットのライブラリと一緒に使うことはできませんし、
+逆に64ビットのアプリケーションを32ビットのライブラリと一緒に使うこともできません。しかしながら、
+そのアプリケーションが必要とするすべての共有ライブラリが32ビットオブジェクトでも存在すれば、
+ネイティブに32ビットのアプリケーションを実行することができます。
+multilibサポートを有効にするかどうかはそれに応じたプロファイルを選択することで、
+設定することができます。デフォルトではmultilibが有効なプロファイルになっています。
+</p>
+
+<warn>
+今のところ、multilibなしのプロファイルからmultilibが有効なプロファイルへの移行はできないので、
+multilibなしのプロファイルを使う前にもう一度よく考えてみてください。
+</warn>
+
+</body>
+</section>
+<section id="chroot32">
+<title>どうすれば32ビットのchroot環境を作れますか?</title>
+<body>
+
+<p>
+<uri link="/proj/en/base/amd64/howtos/chroot.xml">32bit chroot guide</uri>
+<uri link="/proj/ja/base/amd64/howtos/chroot.xml">(日本語訳)</uri>をご覧ください。
+</p>
+
+</body>
+</section>
+<section id="upgradex86">
+<title>emerge -e worldでx86のシステムをamd64のシステムにアップグレードできますか?</title>
+<body>
+
+<p>
+<c>x86</c>と<c>amd64</c>とではインストールのプロセスにいくつかの違いがあります。
+そのためアップグレードすることはできません。クリーンインストールを行なってください。
+インストールの方法はx86のものと少し異なるので、
+<uri link="/doc/en/handbook/handbook-amd64.xml">AMD64 Handbook</uri>
+<uri link="/doc/ja/handbook/handbook-amd64.xml">(日本語訳)</uri>をご覧ください。
+</p>
+
+
+<p>
+また、x86システムで作られたバイナリファイルは多くの場合、amd64システムのパッケージでは読むことができません。
+特に、MySQL、innoDB、Berkeley DB、SQlite、OpenLDAPなどのデータベースはそのままのコピーでは動きません。
+テキストファイルのようなアーキテクチャに依存しない形式にダンプしてから、
+amd64のシステムにデータを復元する必要があります。
+</p>
+
+</body>
+</section>
+<section id="reiser4">
+<title>Reiser4は使えますか?</title>
+<body>
+
+<p>
+Reiser4は、Gentooカーネルプロジェクトから提供されているどのカーネルでもサポートされていません。
+したがって、AMD64チームもサポートしません。答えは、使えません、です。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Hardware</title>
+<section id="videobindrivers">
+<title>NVIDIAやATIのバイナリドライバは動きますか?</title>
+<body>
+
+<p>
+はい、NVIDIAとATIはAMD64で動くドライバを提供しています。
+<c>emerge nvidia-drivers</c>や<c>emerge ati-drivers</c>とすることで、
+そのドライバをインストールすることができます。
+これらのドライバについてまだ疑問があれば、
+<uri link="/doc/en/nvidia-guide.xml">Nvidia guide</uri>
+<uri link="/doc/ja/nvidia-guide.xml">(日本語訳)</uri>や
+<uri link="/doc/en/ati-faq.xml">ATI FAQ</uri>
+<uri link="/doc/ja/ati-faq.xml">(日本語訳)</uri>をご覧ください。
+</p>
+
+</body>
+</section>
+<section id="coolnquiet">
+<title>どうすればCool'n'QuietやPowerNowやSpeedStepの機能を使えますか?</title>
+<body>
+
+<p>
+カーネルをこれらの機能が有効になるようにしてコンパイルしてください。
+以下の項目を有効にしてください。
+</p>
+
+<pre caption="Cool'n'Quiet、PowerNow、SpeedStepを有効にするためのカーネルオプション">
+Power management options ---&gt;
+  [*] Power Management support
+CPU Frequency scaling ---&gt;
+  [*] CPU Frequency scaling
+  [*] CPU frequency table helpers
+  [*] AMD Opteron/Athlon64 PowerNow!
+</pre>
+
+<p>
+そして<c>emerge cpufrequtils</c>してお好みのエディタで<path>/etc/conf.d/cpufrequtils</path>を編集してください。
+</p>
+
+<pre caption="/etc/conf.d/cpufrequtilsの例">
+# Options when starting cpufreq (given to the 'cpufreq-set' program)
+START_OPTS="--governor ondemand"
+
+# Options when stopping cpufreq (given to the 'cpufreq-set' program)
+STOP_OPTS="--governor performance"
+</pre>
+
+<p>
+あとは<c>rc-update add cpufrequtils boot</c>として起動時にcpufrequtilsが動くようにするだけです。
+</p>
+
+<note>
+<uri link="/doc/en/power-management-guide.xml#doc_chap3">Power Management Guide</uri>
+<uri link="/doc/ja/power-management-guide.xml#doc_chap3">(日本語訳)</uri>にも、
+CPUの電力管理に関する情報が載っています。
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Applications</title>
+<section id="flash">
+<title>Adobe Flashは動きますか?</title>
+<body>
+
+<p>
+動きます。 <c>emerge adobe-flash</c> するだです。
+emergeされた後に表示されるメッセージをしっかり読むようにしてください。
+<!-- Adobe killed 10.0 for security reasons, and 10.1 is only 32-bit -->
+<!--
+Adobe has provided a 64-bit Flash plugin starting with version 10.0.22.87. If
+you don't need the 32-bit plugin, then run <c>echo "www-plugins/adobe-flash
+-32bit" >> /etc/portage/package.use</c>. This will install only the 64-bit Flash
+plugin.
+-->
+</p>
+
+</body>
+</section>
+<section id="OOo">
+<title>OpenOffice.orgは動きますか?</title>
+<body>
+
+<p>
+動きます。 <c>emerge openoffice</c>してください。
+このemergeは長時間かかり、システスのリソースのほとんどがemergeに費やされると思います。
+自分のマシンがこの長時間のemergeに適していないと思うなら、
+コンパイル済みの<c>openoffice-bin</c>のパッケージを使うこともできます。
+</p>
+
+</body>
+</section>
+<section id="masked">
+<title>fooパッケージをインストールしようとするとemergeが(masked by: ~amd64 keyword)とエラーを出します</title>
+<body>
+
+<p>
+これはそのパッケージがまだ'テスト中'であるということです。
+詳しくは<c>man portage</c>または
+<uri link="/doc/en/handbook/handbook-amd64.xml">AMD64 Handbook</uri>
+<uri link="/doc/ja/handbook/handbook-amd64.xml">(日本語訳)</uri>の
+<uri link="/doc/en/handbook/handbook-amd64.xml?part=3&amp;chap=3">
+Mixing Software Branches</uri>
+<uri link="/doc/en/handbook/handbook-amd64.xml?part=3&amp;chap=3">
+(日本語訳)</uri>の章を見てください。
+</p>
+
+</body>
+</section>
+<section id="keyword">
+<title>fooパッケージをインストールしようとするとemergeが(masked by: missing keyword)とエラーを出します</title>
+<body>
+
+<p>
+これはそのパッケージがまだテストされていないということです。
+しかし、パッケージが<e>動かないというわけではありません</e>。
+他のアーキテクチャを受け入れることでマスクを外すことができます。
+以下のように、あるパッケージをどんなキーワードでも受けつけるようにPortageを設定できます。
+</p>
+
+<pre caption="パッケージにキーワードを追加する例">
+# <i>echo "category/packagename **" >> /etc/portage/package.accept_keywords</i>
+# <i>emerge packagename</i>
+</pre>
+
+<p>
+もしパッケージがうまく動けば、
+<uri link="http://bugs.gentoo.org/">Gentoo's Bugzilla</uri>に報告してわたしたちに知らせてください。
+AMD64チームがパッケージにキーワードを追加し、あなたのテストのおかげで他のユーザがパッケージを使えるようになります。
+</p>
+
+<warn>
+<c>ACCEPT_KEYWORDS="~x86" emerge packagename</c>のようなコマンドは実行しないでください。
+システムを破壊することにつながりかねません。
+</warn>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Gentoo/AMD64プロジェクトを手伝うにはどうすればいいですか?</title>
+<section id="project">
+<title>どんなことで手伝えますか?</title>
+<body>
+
+<p>
+amd64のアーキテクチャがどんどん広まっているので、amd64チームにはより多くの助けが必要です。
+Gentoo/AMD64の質を向上するためにできることがまだまだ多くあります。
+平均的なユーザは以下のような手助けができることでしょう。
+</p>
+
+<ul>
+  <li>一般的なバグを報告する</li>
+  <li><c>~amd64</c>キーワードがついてないパッケージをテストする</li>
+  <li>
+    <uri link="/proj/en/base/amd64/at/">Arch Testers project</uri>に参加する
+  </li>
+  <li>
+    メーリングリスト・フォーラム・IRCで質問に答える
+  </li>
+  <li>パッチを送る</li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>その他の情報</title>
+<section id="other">
+<title>Gentoo/AMD64について他にヘルプや情報を得られる場所はありますか?</title>
+<body>
+
+<p>
+ここに載ってない疑問があれば、<uri link="/proj/en/base/amd64/">プロジェクトのホームページ</uri>に載っている資料を探してみてください。
+<c>irc.freenode.net</c>の<c>#gentoo-amd64</c>や<uri
+link="http://forums.gentoo.org/viewforum-f-46.html">Gentoo/AMD64 Forums</uri>や
+<c>gentoo-amd64@lists.gentoo.org</c>のメーリングリストで質問してもかまいません。
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

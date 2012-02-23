@@ -1,0 +1,599 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2008.0/hb-install-ppc-disk.xml,v 1.5 2008/05/02 08:04:24 nightmorph Exp $ -->
+
+<sections>
+
+<version>9.1</version>
+<date>2008-05-02</date>
+
+<section>
+<title>Introduction to Block Devices</title>
+
+<subsection>
+<include href="../hb-install-blockdevices.xml"/>
+</subsection>
+
+<subsection>
+<title>Partitions</title>
+<body>
+
+<p>
+Although it is theoretically possible to use a full disk to house your Linux
+system, this is almost never done in practice. Instead, full disk block devices
+are split up in smaller, more manageable block devices. On most systems,
+these are called <e>partitions</e>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Designing a Partitioning Scheme</title>
+<subsection>
+<title>Default Partitioning Scheme</title>
+<body>
+
+<p>
+If you are not interested in drawing up a partitioning scheme for your system,
+you can use the partitioning scheme we use throughout this book.  Choose the
+filesystem layout that best matches the type of PowerPC system you are 
+installing on.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Apple New World</title>
+<body>
+
+<p>
+Apple New World machines are fairly straightforward to configure.  The first
+partition is always an <e>Apple Partition Map</e>.  This partition keeps track
+of the layout of the disk.  You cannot remove this partition.  The next
+partition should always be a bootstrap partition.  This partition contains a
+small (800k) HFS filesystem that holds a copy of the bootloader Yaboot and its
+configuration file.  This partition is <e>not</e> the same as a 
+<path>/boot</path> partition as found on other architectures.  After the boot
+partition, the usual Linux filesystems are placed, according to the scheme
+below.  The swap partition is a temporary storage place for when your system
+runs out of physical memory.  The root partition will contain the filesystem
+that Gentoo is installed on.  If you wish to dual boot, the OSX partition 
+can go anywhere after the bootstrap partition to insure that yaboot starts 
+first.
+</p>
+
+<note>
+There may be "Disk Driver" partitions on your disk such as
+<path>Apple_Driver63</path>, <path>Apple_Driver_ATA</path>,
+<path>Apple_FWDriver</path>, <path>Apple_Driver_IOKit</path>, and
+<path>Apple_Patches</path>.  These are used to boot MacOS, so if you have no
+need for this, you can remove them by initializing the disk with mac-fdisk's
+<c>i</c> option.  This will completely erase the disk!  If you are in doubt,
+just let them be.
+</note>
+
+<note>
+If you partitioned this disk with Apple's Disk Utility, there may be
+128Mb spaces between partitions which Apple reserves for "future use".  You
+can safely remove these.
+</note>
+
+<table>
+<tr>
+  <th>Partition</th>
+  <th>Size</th>
+  <th>Filesystem</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>32k</ti>
+  <ti>None</ti>
+  <ti>Apple Partition Map</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>800k</ti>
+  <ti>HFS</ti>
+  <ti>Apple Bootstrap</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>512Mb</ti>
+  <ti>Swap</ti>
+  <ti>Linux Swap</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda4</path></ti>
+  <ti>Rest of Disk</ti>
+  <ti>ext3, reiserfs, xfs</ti>
+  <ti>Linux Root</ti>
+</tr>
+</table>
+
+</body>
+</subsection>
+<subsection>
+<title>Apple Old World</title>
+<body>
+
+<p>
+Apple Old World machines are a bit more complicated to configure. The first
+partition is always an <e>Apple Partition Map</e>.  This partition keeps track
+of the layout of the disk.  You cannot remove this partition.  If you are using
+BootX, the configuration below assumes that MacOS is installed on a seperate
+disk.  If this is not the case, there will be additional partitions for "Apple
+Disk Drivers" such as <path>Apple_Driver63, Apple_Driver_ATA, Apple_FWDriver,
+Apple_Driver_IOKit, Apple_Patches</path> and the MacOS install.  If you are 
+using Quik, you will need to create a boot partition to hold the kernel, unlike
+other Apple boot methods. After the boot partition, the usual Linux filesystems
+are placed, according to the scheme below.  The swap partition is a temporary
+storage place for when your system runs out of physical memory.  The root 
+partition will contain the filesystem that Gentoo is installed on.
+</p>
+
+<note>
+If you are using an OldWorld machine, you will need to keep MacOS available.
+The layout here assumes MacOS is installed on a separate drive.
+</note>
+
+<table>
+<tr>
+  <th>Partition</th>
+  <th>Size</th>
+  <th>Filesystem</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>32k</ti>
+  <ti>None</ti>
+  <ti>Apple Partition Map</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>32Mb</ti>
+  <ti>ext2</ti>
+  <ti>Quik Boot Partition (quik only)</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>512Mb</ti>
+  <ti>Swap</ti>
+  <ti>Linux Swap</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda4</path></ti>
+  <ti>Rest of Disk</ti>
+  <ti>ext3, reiserfs, xfs</ti>
+  <ti>Linux Root</ti>
+</tr>
+</table>
+
+</body>
+</subsection>
+<subsection>
+<title>Pegasos</title>
+<body>
+
+<p>
+The Pegasos partition layout is quite simple compared to the Apple layouts.
+The first partition is a Boot Partition, which contains kernels to be booted,
+along with an Open Firmware script that presents a menu on boot.  After the boot
+partition, the usual Linux filesystems are placed, according to the scheme
+below.  The swap partition is a temporary storage place for when your system
+runs out of physical memory.  The root partition will contain the filesystem
+that Gentoo is installed on.  
+</p>
+
+<table>
+<tr>
+  <th>Partition</th>
+  <th>Size</th>
+  <th>Filesystem</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>32Mb</ti>
+  <ti>affs1 or ext2</ti>
+  <ti>Boot Partition</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>512Mb</ti>
+  <ti>Swap</ti>
+  <ti>Linux Swap</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>Rest of Disk</ti>
+  <ti>ext3, reiserfs, xfs</ti>
+  <ti>Linux Root</ti>
+</tr>
+</table>
+
+</body>
+</subsection>
+<subsection>
+<title>IBM PReP (RS/6000)</title>
+<body>
+
+<p>
+The IBM PowerPC Reference Platform (PReP) requires a small PReP boot partition
+on the disk's first partition, followed by the swap and root partitions.
+</p>
+
+<table>
+<tr>
+  <th>Partition</th>
+  <th>Size</th>
+  <th>Filesystem</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>800k</ti>
+  <ti>None</ti>
+  <ti>PReP Boot Partition (Type 0x41)</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>512Mb</ti>
+  <ti>Swap</ti>
+  <ti>Linux Swap (Type 0x82)</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>Rest of Disk</ti>
+  <ti>ext3, reiserfs, xfs</ti>
+  <ti>Linux Root (Type 0x83)</ti>
+</tr>
+</table>
+
+<warn>
+<c>parted</c> is able to resize partitions including HFS+. Unfortunately there
+may be issues with resizing HFS+ journaled filesystems, so, for the best 
+results, switch off journaling in Mac OS X before resizing. Remember that any
+resizing operation is dangerous, so attempt at your own risk! Be sure to always
+have a backup of your data before resizing!
+</warn>
+
+<p>
+If you are interested in knowing how big a partition should be, or even how many
+partitions you need, read on. Otherwise continue now with 
+<uri link="#mac-fdisk"> Default: Using mac-fdisk (Apple) to Partition your Disk
+</uri> or <uri link="#parted">Alternative: Using parted (IBM/Pegasos) to 
+Partition your Disk</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>How Many and How Big?</title>
+<body>
+
+<p>
+The number of partitions is highly dependent on your environment. For instance,
+if you have lots of users, you will most likely want to have your
+<path>/home</path> separate as it increases security and makes backups easier.
+If you are installing Gentoo to perform as a mailserver, your <path>/var</path>
+should be separate as all received mail is stored in <path>/var</path>. A good
+choice of filesystem will then maximise your performance. Game servers should
+have a separate <path>/opt</path> as most game servers are installed there. The
+reason is similar for <path>/home</path>: security and backups. Whatever layout
+you chose, you will definitely want to keep <path>/usr</path> large: not only 
+will it contain the majority of applications, the Portage tree alone takes 
+more than 500Mb excluding the various sources that are stored in it.
+</p>
+
+<p>
+As you can see, it very much depends on what you want to achieve. Separate
+partitions or volumes have the following advantages:
+</p>
+
+<ul>
+<li>
+  You can choose the best performing filesystem for each partition or volume
+</li>
+<li>
+  Your entire system cannot run out of free space if one defunct tool is
+  continuously writing files to a partition or volume
+</li>
+<li>
+  If necessary, file system checks are reduced in time, as multiple checks can
+  be done in parallel (although this advantage is more with multiple disks than
+  it is with multiple partitions)
+</li>
+<li>
+  Security can be enhanced by mounting some partitions or volumes read-only,
+  nosuid (setuid bits are ignored), noexec (executable bits are ignored) etc.
+</li>
+</ul>
+
+<p>
+However, multiple partitions have one big disadvantage: if not configured
+properly, you might result in having a system with lots of free space on one
+partition and none on another. There is also a 15-partition limit for SCSI and
+SATA.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="mac-fdisk">
+<title>Default: Using mac-fdisk (Apple) Partition your Disk</title>
+<body>
+
+<p>
+At this point, create your partitions using <c>mac-fdisk</c>:
+</p>
+
+<pre caption="Starting mac-fdisk">
+# <i>mac-fdisk /dev/sda</i>
+</pre>
+
+<p>
+If you used Apple's Disk Utility to leave space for Linux, first delete the
+partitions you have created previously to make room for your new install.  Use
+<c>d</c> in <c>mac-fdisk</c> to delete those partition(s).  It will ask for the
+partition number to delete.  Usually the first partition on NewWorld machines
+(Apple_partition_map) could not be deleted. If you would like to start with a 
+clean disk, you can simply initialize the disk by pressing  <c>i</c>.  This 
+will completely erase the disk, so use this with caution.
+</p>
+
+<p>
+Second, create an <e>Apple_Bootstrap</e> partition by using <c>b</c>. It will
+ask for what block you want to start. Enter the number of your first free
+partition, followed by a <c>p</c>. For instance this is <c>2p</c>.
+</p>
+
+<note>
+This partition is <e>not</e> a <path>/boot</path> partition. It is not used by
+Linux at all; you don't have to place any filesystem on it and you should never
+mount it. Apple users don't need an extra partition for <path>/boot</path>.
+</note>
+
+<p>
+Now create a swap partition by pressing <c>c</c>. Again <c>mac-fdisk</c> will
+ask for what block you want to start this partition from. As we used <c>2</c>
+before to create the Apple_Bootstrap partition, you now have to enter
+<c>3p</c>. When you're asked for the size, enter <c>512M</c> (or whatever size
+you want -- a minimum of 512MB is recommended, but 2 times your physical memory
+is the generally accepted size). When asked for a name, enter <c>swap</c>.
+</p>
+
+<p>
+To create the root partition, enter <c>c</c>, followed by <c>4p</c> to select
+from what block the root partition should start. When asked for the size, enter
+<c>4p</c> again. <c>mac-fdisk</c> will interpret this as "Use all available
+space". When asked for the name, enter <c>root</c>.
+</p>
+
+<p>
+To finish up, write the partition to the disk using <c>w</c> and <c>q</c> to
+quit <c>mac-fdisk</c>.
+</p>
+
+<note>
+To make sure everything is ok, you should run <c>mac-fdisk -l</c> and check
+whether all the partitions are there. If you don't see any of the partitions
+you created, or the changes you made, you should reinitialize your partitions
+by pressing "i" in mac-fdisk. Note that this will recreate the partition map
+and thus remove all your partitions.
+</note>
+
+<p>
+Now that your partitions are created, you can continue with 
+<uri link="#filesystems">Creating Filesystems</uri>.
+</p>
+
+</body>
+</section>
+<section id="parted">
+<title>Using parted to Partition your Disk (Pegasos and RS/6000)</title>
+<body>
+
+<p>
+<c>parted</c>, the Partition Editor, can now handle HFS+ partitions used by
+Mac OS and Mac OS X.  With this tool you can resize your Mac-partitions and
+create space for your Linux partitions.  Nevertheless, the example below
+describes partitioning for Pegasos machines only.
+</p>
+
+<p>
+To begin let's fire up <c>parted</c>:
+</p>
+
+<pre caption="Starting parted">
+# <i>parted /dev/sda</i>
+</pre>
+
+<p>
+If the drive is unpartitioned, run <c>mklabel amiga</c> to create a new 
+disklabel for the drive.
+</p>
+
+<p>
+You can type <c>print</c> at any time in parted to display the current partition
+table. If at any time you change your mind or made a mistake you can press
+<c>Ctrl-c</c> to abort parted.
+</p>
+
+<p>
+If you intend to also install MorphOS on your Pegasos create an affs1 filesystem
+at the start of the drive. 32MB should be more than enough to store the MorphOS
+kernel. If you have a Pegasos I or intend to use any filesystem besides ext2 or
+ext3, you will also have to store your Linux kernel on this partition (the
+Pegasos II can only boot from ext2/ext3 or affs1 partitions). To create the
+partition run <c>mkpart primary affs1 START END</c> where <c>START</c> and
+<c>END</c> should be replaced with the megabyte range (e.g. <c>0 32</c>) which
+creates a 32 MB partition starting at 0MB and ending at 32MB.  If you chose to
+create an ext2 or ext3 partition instead, substitute ext2 or ext3 for affs1 in
+the mkpart command.
+</p>
+
+<p>
+You will need to create two partitions for Linux, one root filesystem and one 
+swap partition. Run <c>mkpart primary START END</c> to create each partition,
+replacing <c>START</c> and <c>END</c> with the desired megabyte boundries.
+</p>
+
+<p>
+It is generally recommended that you create a swap partition that is two times
+bigger than the amount of RAM in your computer, but at least 512Mb is 
+recommended. To create the swap partition, run 
+<c>mkpart primary linux-swap START END</c> with START and END again denoting
+the partition boundries.
+</p>
+
+<p>
+When you are done in parted simply type <c>quit</c>.
+</p>
+
+</body>
+</section>
+<section id="filesystems">
+<title>Creating Filesystems</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Now that your partitions are created, it is time to place a filesystem on them.
+If you're not sure which filesystems to choose and are happy with our defaults,
+continue with 
+<uri link="#filesystems-apply">Applying a Filesystem to a Partition</uri>.
+Otherwise, read on to learn about the available filesystems.
+</p>
+
+</body>
+</subsection>
+
+<subsection>
+<include href="../hb-install-filesystems.xml"/>
+</subsection>
+
+<subsection>
+<title>Activating the Swap Partition</title>
+<body>
+
+<p>
+<c>mkswap</c> is the command that is used to initialize swap partitions:
+</p>
+
+<pre caption="Creating a swap signature">
+# <i>mkswap /dev/sda3</i>
+</pre>
+
+<p>
+To activate the swap partition, use <c>swapon</c>:
+</p>
+
+<pre caption="Activating the swap partition">
+# <i>swapon /dev/sda3</i>
+</pre>
+
+<p>
+Create and activate the swap now before creating other filesystems.
+</p>
+
+</body>
+</subsection>
+<subsection id="filesystems-apply">
+<title>Applying a Filesystem to a Partition</title>
+<body>
+
+<p>
+To create a filesystem on a partition or volume, there are tools available for 
+each possible filesystem:
+</p>
+
+<table>
+<tr>
+  <th>Filesystem</th>
+  <th>Creation Command</th>
+</tr>
+<tr>
+  <ti>ext2</ti>
+  <ti><c>mke2fs</c></ti>
+</tr>
+<tr>
+  <ti>ext3</ti>
+  <ti><c>mke2fs -j</c></ti>
+</tr>
+<tr>
+  <ti>reiserfs</ti>
+  <ti><c>mkreiserfs</c></ti>
+</tr>
+<tr>
+  <ti>xfs</ti>
+  <ti><c>mkfs.xfs</c></ti>
+</tr>
+</table>
+
+<p>
+For instance, to make an ext3 filesystem on the root partition 
+(<path>/dev/sda4</path> in our example), you would use:
+</p>
+
+<pre caption="Applying a filesystem on a partition">
+# <i>mke2fs -j /dev/sda4</i>
+</pre>
+
+<p>
+Now create the filesystems on your newly created partitions (or logical
+volumes).
+</p>
+
+<impo>
+If you choose to use ReiserFS for <path>/</path>, do not change its default
+block size if you will also be using <c>yaboot</c> as your bootloader, as
+explained in <uri link="?part=1&amp;chap=10">Configuring the Bootloader</uri>.
+</impo>
+
+<note>
+On the PegasosII your partition which holds the kernel must be ext2, ext3 or
+affs1.  NewWorld machines can boot from any of ext2, ext3, XFS, ReiserFS or
+even HFS/HFS+ filesystems.  On OldWorld machines booting with BootX, the kernel
+must be placed on an HFS partition, but this will be completed when you
+configure your bootloader.
+</note>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Mounting</title>
+<body>
+
+<p>
+Now that your partitions are initialized and are housing a filesystem, it is
+time to mount those partitions. Use the <c>mount</c> command. As an example we
+mount the root partition:
+</p>
+
+<pre caption="Mounting partitions">
+# <i>mount /dev/sda4 /mnt/gentoo</i>
+</pre>
+
+<note>
+If you want your <path>/tmp</path> to reside on a separate partition, be sure to
+change its permissions after mounting and unpacking with
+<c>chmod 1777 /mnt/gentoo/tmp</c>. This is also true for <path>/var/tmp</path>.
+</note>
+
+<p>
+Continue with <uri link="?part=1&amp;chap=5">Installing the Gentoo
+Installation Files</uri>.
+</p>
+
+</body>
+</section>
+</sections>

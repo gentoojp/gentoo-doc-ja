@@ -1,0 +1,566 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:53+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/multipath.xml:6
+#, no-wrap
+msgid "Multipathing for Gentoo"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/multipath.xml:25
+#, no-wrap
+msgid "This document teaches you how to set up multipathing services for data storage.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/multipath.xml:36
+#, no-wrap
+msgid "Introduction"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:41
+#, no-wrap
+msgid ""
+"Multipathing services, generally deployed in enterprise environments, provide a\n"
+"means for high performance, load-balanced, and fault-tolerant data storage\n"
+"either locally or via a storage area network (SAN). Multipathing facilitates a\n"
+"single storage device to be transparently accessed across one or more paths.\n"
+"For example, if there are two connections from a server Host Bus Adapter (HBA)\n"
+"to two Fibre Channel switches and then to a SAN, when the HBA module loads and\n"
+"scans the bus, it will read four paths to the SAN: the paths from the server HBA\n"
+"to and from each Fibre Channel switch and at the storage device. Taking\n"
+"advantage of this situation, Multipath allows you to make use of each path\n"
+"simultaneously or independently to ensure a constant and reliable connection to\n"
+"the data in storage. Multipath serves as a failover for all connections points\n"
+"in the event of losing one path making critical data always available due to\n"
+"redundancy in the design and implementation.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:57
+#, no-wrap
+msgid ""
+"In the most basic sense, multipathing is made of two distinct parts:\n"
+"<c>device-mapper</c> and <c>multipath-tools</c>. <b>Device Mapper</b> is the\n"
+"first key element of this application. Administrators are probably familiar with\n"
+"Device Mapper from LVM, EVMS, dm-crypt, or in this case, Multipath. In short,\n"
+"working within the kernel space Device Mapper takes one block device such as\n"
+"<path>/dev/sda</path> (as all SAN based targets will be some type of SCSI\n"
+"device) and maps it to another device.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:67
+#, no-wrap
+msgid ""
+"On a lower level, Device Mapper creates a virtual block device accepting all of\n"
+"the commands of a regular block device, but passes on the actual data to the\n"
+"real block device. As previously stated, the mapping process is all handled in\n"
+"the kernel space and not in user space.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:74
+#, no-wrap
+msgid ""
+"<b>Multipath Tools</b> is a set of userspace tools that interacts with the\n"
+"Device Mapper tools and creates structures for device handling, implementing I/O\n"
+"multipathing at the OS level. In a typical SAN environment, you will have\n"
+"multiple paths to the same storage device: a fiber card (or two) on your server\n"
+"that connects to a switch which then connects to the actual storage itself (as\n"
+"in the scenario discussed above). So administrators could possibly see the same\n"
+"device one to four times in such a situation (each card will see the LUN twice,\n"
+"once for each path it has available to it). Thus, a single drive could be\n"
+"recognized as <path>sda</path>, <path>sdb</path>, <path>sdc</path>, and\n"
+"<path>sdd</path>. If you were to mount <path>/dev/sda</path> to\n"
+"<path>/san1</path>, for instance, you would be going over the singular path from\n"
+"one fiber card to a switch and then to a port on the same storage device. If any\n"
+"of those points were to fail, you would lose your storage device suddenly and\n"
+"have to unmount and remount with another device (<path>sdb</path>).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:91
+#, no-wrap
+msgid ""
+"Consequently, this scenario is not ideal as you are only using one out of the\n"
+"four possible paths. This is where the combination of Multipath tools and Device\n"
+"Mapper are beneficial. As already explained, Device Mapper creates virtual block\n"
+"devices and then passes information to the real block devices.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/multipath.xml:102
+#, no-wrap
+msgid "Installation and Configuration"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/multipath.xml:104
+#, no-wrap
+msgid "Installation and Tools"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:108
+#, no-wrap
+msgid ""
+"You need to emerge <c>multipath-tools</c> and <c>sg3_utils</c>. On the disk, you\n"
+"want to find the <c>wwid</c>. You can use <c>sg_vpd</c> (provided by\n"
+"<c>sg3_utils</c>) to do this.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/multipath.xml:113
+#, no-wrap
+msgid "Installing multipath-tools and initial configuration"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/multipath.xml:114
+#, no-wrap
+msgid ""
+"# <i>emerge multipath-tools sg3_utils</i>\n"
+"<comment>(Replace /dev/DEVICE with your disk to find its wwid)</comment>\n"
+"# <i>/usr/bin/sg_vpd --page=di /dev/DEVICE</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:120
+#, no-wrap
+msgid ""
+"Where DEVICE is the sd device, the ID will come back with a <c>0x6</c>. Replace\n"
+"<c>0x</c> with <c>3</c>, and you will have the proper ID that you'll put into\n"
+"the multipath <c>wwid</c> in <path>/etc/multipath.conf</path>. More on this in\n"
+"the next chapter.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/multipath.xml:129
+#, no-wrap
+msgid "Configuring Gentoo for multipathing"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:133
+#, no-wrap
+msgid "To configure Gentoo for multipath, your kernel needs the following settings:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/multipath.xml:136
+#, no-wrap
+msgid "Adding multipath support"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/multipath.xml:137
+#, no-wrap
+msgid ""
+"Device Drivers  --->\n"
+"  SCSI device support  --->\n"
+"    &lt;*&gt; SCSI target support\n"
+"    &lt;*&gt; SCSI disk support\n"
+"    [*] Probe all LUNs on each SCSI device\n"
+"  [*] Multiple devices driver support (RAID and LVM)  --->\n"
+"    &lt;*&gt;  Multipath I/O support\n"
+"    &lt;*&gt;  Device mapper support\n"
+"    &lt;*&gt;    Multipath target\n"
+"        <comment>(Select your device from the list)</comment>)\n"
+"    &lt;*&gt;      EMC CX/AX multipath support  \n"
+"    &lt;*&gt;      LSI/Engenio RDAC multipath support  \n"
+"    &lt;*&gt;      HP MSA multipath support\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/multipath.xml:153
+#, no-wrap
+msgid ""
+"<c>scsi_id</c> is done by targets. IDE drives have two spots to which you can\n"
+"connect. An administrator has the ability to set a drive as a master and another\n"
+"drive as a slave or set to autoselect by changing the dip switches. scsi_id is\n"
+"similar. Each drive or Logical Unit Number (LUN) has a unique ID, which ranges\n"
+"from 0 to 254. A device that has ID 0 will be discovered before a device that\n"
+"has, for example, ID 120, because it performs a LIP (a scan of the SCSI bus for\n"
+"devices that respond) that starts from 0 and works its way upwards.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:163
+#, no-wrap
+msgid ""
+"In the kernel menu config, make sure CONFIG_SCSI_MULTI_LUN=y is set to ensure\n"
+"the SCSI subsystem is able to probe all Logical Unit Numbers (LUNs) (This is\n"
+"recommended as you'll stop scanning after ID 0 if you have a device on an ID of\n"
+"<c>0</c> but not <c>1</c> and then on an ID of <c>2</c>. Simply, you'll get your\n"
+"device for ID <c>0</c> but not <c>2</c>.) or whichever device you need for SCSI,\n"
+"such as a QLogic 2400 card, which is in the SCSI low-level drivers area.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:172
+#, no-wrap
+msgid "For a better understanding, consider the following scenarios:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:176
+#, no-wrap
+msgid ""
+"There are three drives with IDs of 0,1,2. Without the \"probe all LUNs\" setting,\n"
+"you will see IDs 0,1,2 as sda,sdb,sdc - all devices are seen. If you delete the\n"
+"ID 1 drive.  IDs 0,2 will still be seen. It might seem to make sense that you\n"
+"would see sda and sdb now (sdc would move to sdb as there is no device to fill\n"
+"it up).  However, if you don't probe all LUNs, it will perform in the following\n"
+"manner:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:185
+#, no-wrap
+msgid ""
+"Scenario 1: Without \"probe all LUNs\", the scan will start and ID 0 will be seen.\n"
+"ID 0 will be set to sda and then move to find ID 1. If ID 1 is not detected,\n"
+"scanning will stop and be considered complete having perceived to have scanned\n"
+"all devices even if there is a device on ID 2 or any other subsequent ID. Reboot\n"
+"for scenario two.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:193
+#, no-wrap
+msgid ""
+"Scenario 2: If you have \"probe all LUNs\", the scan will start and detect ID 0.\n"
+"This ID will be assigned sda and will continue to detect the next device. If ID\n"
+"1 is not detected, scanning will continue to find more devices. ID 2 will be\n"
+"located and assigned to be sdb. If no devices (IDs) are detected beyond that,\n"
+"scanning will be considered complete.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/multipath.xml:201
+#, no-wrap
+msgid ""
+"Although it seems that it is unfeasible or even unnecessary to have devices\n"
+"spaced many LUNs apart, to account for all options it is necessary to still\n"
+"probe all LUNs. An administrator will encounter many reasons (business or\n"
+"personal) for such a setup. Therefore, the second scenario would be optimal to\n"
+"ensure that all devices are recognized and assigned an ID in the multipath setup\n"
+"process.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:210
+#, no-wrap
+msgid ""
+"So, once you probe all LUNs, all devices will be recognized and assigned an ID\n"
+"in Multipath.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/multipath.xml:219
+#, no-wrap
+msgid "Architectural Overview"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:224
+#, no-wrap
+msgid ""
+"As part of Multipath Tools, there are priority groups filled with the devices\n"
+"mentioned earlier. After you have configured <c>multipath-tools</c> and started\n"
+"it with <c>/etc/init.d/multipath start</c>, you can list the groups via\n"
+"<c>multipath -l</c>. The output will look like the following:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/multipath.xml:230
+#, no-wrap
+msgid "multipath -l output"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/multipath.xml:231
+#, no-wrap
+msgid ""
+"EVA_SAN (3600508b4001044ee00013000031e0000)\n"
+"[size=300 GB][features=\"1 queue_if_no_path\"][hwhandler=\"0\"]\n"
+"\\_ round-robin 0 [active]\n"
+"\\_ 0:0:0:1 sda 8:0  [active]\n"
+"\\_ round-robin 0 [enabled]\n"
+"\\_ 0:0:1:1 sdb 8:16 [active]\n"
+"\n"
+"EVA_SAN2 (3600508b4001044ee0001300003880000)\n"
+"[size=300 GB][features=\"1 queue_if_no_path\"][hwhandler=\"0\"]\n"
+"\\_ round-robin 0 [active]\n"
+"\\_ 0:0:0:2 sdc 8:32 [active]\n"
+"\\_ round-robin 0 [enabled]\n"
+"\\_ 0:0:1:2 sdd 8:48 [active]\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:247
+#, no-wrap
+msgid ""
+"By default, it will pick the first priority group (the first top round-robin for\n"
+"the EVA_SAN2, for instance, being <path>sdc</path>). In this instance, due to\n"
+"round robin it will bounce back and forth. But if one path was to fail, it would\n"
+"push all information to the other path and continue. Only if all the devices in\n"
+"a path fail will it actually fail and go to the secondary priority group.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/multipath.xml:257
+#, no-wrap
+msgid "Typical Configuration"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:261
+#, no-wrap
+msgid "A typical Multipath configuration looks like the following:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/multipath.xml:264
+#, no-wrap
+msgid "A typical /etc/multipath.conf file"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/multipath.xml:265
+#, no-wrap
+msgid ""
+"defaults {\n"
+"udev_dir                /dev\n"
+"polling_interval        15\n"
+"selector                \"round-robin 0\"\n"
+"path_grouping_policy    group_by_prio\n"
+"failback                5\n"
+"path_checker            tur\n"
+"prio_callout            \"/sbin/mpath_prio_tpc /dev/%n\"\n"
+"rr_min_io               100\n"
+"rr_weight               uniform\n"
+"no_path_retry           queue\n"
+"user_friendly_names     yes\n"
+"}\n"
+"blacklist {\n"
+"devnode cciss\n"
+"devnode fd\n"
+"devnode hd\n"
+"devnode md\n"
+"devnode sr\n"
+"devnode scd\n"
+"devnode st\n"
+"devnode ram\n"
+"devnode raw\n"
+"devnode loop\n"
+"devnode sda\n"
+"}\n"
+"\n"
+"multipaths {\n"
+"multipath {\n"
+"wwid\n"
+"<comment>(To find your wwid, please use /usr/bin/sg_vpd --page=di /dev/DEVICE.\n"
+"The address will be a 0x6. Remove the 0x and replace it with 3.)</comment>\n"
+"alias DB_SAN\n"
+"}\n"
+"devices {\n"
+"device {\n"
+"<comment>(White spacing is important on these two items to match the vendor specifications.)</comment>\n"
+"\"IBM     \"\n"
+"\"1815      FAStT \"\n"
+"}\n"
+"}\n"
+"}\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/multipath.xml:310
+#, no-wrap
+msgid ""
+"On your devices, it is best to <c>cat</c>\n"
+"<path>/sys/block/sd(device)/device/model</path> and <c>cat</c>\n"
+"<path>/sys/block/device/sd(device)/device/vendor</path>, placing both directly\n"
+"into your devices section in <path>/etc/multipath.conf</path>. You might not\n"
+"always see the white spacing, and it's part of the name in this case. One reason\n"
+"for the device section is that not every vendor's string is in the kernel\n"
+"convention and naming, and the string, as such, is not always detected as\n"
+"required.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:321
+#, no-wrap
+msgid ""
+"A typical multipath configuration utilizing an EVA_SAN where the device\n"
+"information is in the kernel information regarding SAN hardware detection would\n"
+"look like:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/multipath.xml:326
+#, no-wrap
+msgid "EVA_SAN configuration"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/multipath.xml:327
+#, no-wrap
+msgid ""
+"multipaths {\n"
+"multipath {\n"
+"wwid  3600508b4001044ee00013000031e0000\n"
+"alias EVA_SAN\n"
+"}\n"
+"multipath {\n"
+"wwid    3600508b4001044ee0001300003880000\n"
+"alias   EVA_SAN2\n"
+"}\n"
+"}\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/multipath.xml:344
+#, no-wrap
+msgid "Setting Up Your Own Configuration"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:349
+#, no-wrap
+msgid ""
+"The multipath configuration is fairly simple to accomplish because the only file\n"
+"that needs modification is <path>/etc/multipath.conf</path>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:354
+#, no-wrap
+msgid ""
+"To begin, set the <b>polling interview</b> to how often (in seconds) path checks\n"
+"will be performed to ensure that the path is alive and healthy.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:359
+#, no-wrap
+msgid "<b>selector</b> will be set at <c>\"round-robin 0\"</c>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/multipath.xml:363
+#, no-wrap
+msgid ""
+"This round-robin value is the only selector value that will be used in this\n"
+"configuration.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:368
+#, no-wrap
+msgid ""
+"<b>prio_callout</b>: This one can be quite important, and there are a number of\n"
+"different priorities for different devices, such as:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/multipath.xml:373
+#, no-wrap
+msgid "mpath_prio_alua"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/multipath.xml:374
+#, no-wrap
+msgid "mpath_prio_emc"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/multipath.xml:375
+#, no-wrap
+msgid "mpath_prio_hds_modular"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/multipath.xml:376
+#, no-wrap
+msgid "mpath_prio_netapp"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/multipath.xml:377
+#, no-wrap
+msgid "mpath_prio_tpc"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/multipath.xml:381
+#, no-wrap
+msgid ""
+"For most people, <c>mpath_prio_tpc</c> will suffice as it's a conservative\n"
+"checker. Other devices like <c>mpath_prio_netapp</c> have special functionality\n"
+"for priority grouping, such as netapps.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:387
+#, no-wrap
+msgid ""
+"<b>path_grouping_policy</b> has a few different options: failover, multibus,\n"
+"group_by_prio. <c>Failover</c> will only have one disk per priority group.\n"
+"<c>Multibus</c> will put all devices into one priority group.\n"
+"<c>Group_by_prio</c> is done by a \"priority value.\" So routes that have the same\n"
+"priority value will be grouped together, the priority values being determined by\n"
+"the callout.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:396
+#, no-wrap
+msgid ""
+"<b>no_path_retry</b> is set to <c>queue</c> as most people don't want data to\n"
+"fail to send at all. So, if all paths fail, for instance, the I/Os will queue up\n"
+"until the device returns and then sends everything again. Depending on your\n"
+"transfer, this can cause load issues.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:403
+#, no-wrap
+msgid ""
+"<b>rr_min_io</b> are the number of I/Os to do per path before switching to the\n"
+"next I/Os in the same group. If <path>sda</path> and <path>sdb</path> were in\n"
+"the same group, rr_min_io would do 100 I/Os to <path>sda</path> then do 100 to\n"
+"<path>sdb</path>, bouncing back and forth. This is a setting to tweak for each\n"
+"instance to maximize performance because the data load and size of\n"
+"transfers/request vary by company. The default in the case is <c>1000</c>, but\n"
+"some may prefer a smaller number in order to switch ports more often, when\n"
+"possible.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/multipath.xml:414
+#, no-wrap
+msgid ""
+"<b>user_friendly_names</b> make it easier to see which device you are working\n"
+"with. For example, if you set user_friendly_names to <c>no</c>, then you'll see\n"
+"WWID instead of EVA_SAN for your device.\n"
+msgstr ""

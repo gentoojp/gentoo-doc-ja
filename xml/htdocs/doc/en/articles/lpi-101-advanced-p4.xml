@@ -1,0 +1,2938 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/lpi-101-advanced-p4.xml,v 1.3 2011/09/04 17:53:41 swift Exp $ -->
+
+<guide disclaimer="articles">
+<title>LPI certification 101 (release 2) exam prep, Part 4</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<author title="Author">
+  <mail link="chouser@gentoo.org">Chris Houser</mail>
+</author>
+<author title="Author">
+  <mail link="agriffis@gentoo.org">Aron Griffis</mail>
+</author>
+
+<abstract>
+In this tutorial, we'll introduce all popular filesystem on Linux. We'll teach
+you how to mount and unmount devices. In next chapter you'll know how to boot
+the system and how to work with runlevels. In next section of this tutorial,
+we'll introduce filesystem quotas, we will teach you how to set them and how to
+configure them. By the end of this tutorial you'll know a system logs.
+</abstract>
+
+<!-- The original version of this article was first published on IBM
+developerWorks, and is property of Westtech Information Services. This
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>1.0</version>
+<date>2005-12-17</date>
+
+<chapter>
+<title>Before you start</title>
+<section>
+<title>About this tutorial</title>
+<body>
+
+<p>
+Welcome to "Advanced administration," the last of four tutorials designed to
+prepare you for the Linux Professional Institute's 101 (release 2) exam. In
+this tutorial (Part 4), we'll bolster your knowledge of advanced Linux
+administration skills by covering a variety of topics including Linux
+filesystems, the Linux boot process, runlevels, filesystem quotas, and system
+logs.
+</p>
+
+<p>
+This tutorial is particularly appropriate for someone who may be serving as the
+primary sysadmin for the first time, since we cover a lot of low-level issues
+that all system administrators should know. If you are new to Linux, we
+recommend that you start with <uri
+link="/doc/en/articles/lpi-101-fundamentals-p1.xml">Part 1</uri> and work
+through the series from there. For some, much of this material will be new, but
+more experienced Linux users may find this tutorial to be a great way of
+"rounding out" their foundational Linux system administration skills and
+preparing for the next LPI certification level.
+</p>
+
+<p>
+By the end of this series of tutorials (eight in all covering the LPI 101 and
+102 exams), you will have the knowledge you need to become a Linux Systems
+Administrator and will be ready to attain an LPIC Level 1 certification from
+the Linux Professional Institute if you so choose.
+</p>
+
+<p>
+For those who have taken the <uri
+link="http://www-106.ibm.com/developerworks/edu/l-dw-linuxlpi4-i.html">release
+1 version</uri> of this tutorial for reasons other than LPI exam preparation,
+you probably don't need to take this one. However, if you do plan to take the
+exams, you should strongly consider reading this revised tutorial.
+</p>
+
+<p>
+The LPI logo is a trademark of Linux Professional Institute.
+</p>
+
+</body>
+</section>
+<section>
+<title>About the authors</title>
+<body>
+
+<p>
+For technical questions about the content of this tutorial, contact the
+authors:
+</p>
+
+<ul>
+  <li>Daniel Robbins, at <mail>drobbins@gentoo.org</mail></li>
+  <li>Chris Houser, at <mail>chouser@gentoo.org</mail></li>
+  <li>Aron Griffis, at <mail>agriffis@gentoo.org</mail>.</li>
+</ul>
+
+<p>
+Daniel Robbins lives in Albuquerque, New Mexico, and is the Chief Architect of
+<uri link="http://www.gentoo.org">Gentoo Technologies, Inc.</uri>, the creator
+of Gentoo Linux, an advanced Linux for the PC, and the Portage system, a
+next-generation ports system for Linux. He has also served as a contributing
+author for the Macmillan books Caldera OpenLinux Unleashed, SuSE Linux
+Unleashed, and Samba Unleashed. Daniel has been involved with computers in some
+fashion since the second grade, when he was first exposed to the Logo
+programming language as well as a potentially dangerous dose of Pac Man. This
+probably explains why he has since served as a Lead Graphic Artist at SONY
+Electronic Publishing/Psygnosis. Daniel enjoys spending time with his wife,
+Mary, and their daughter, Hadassah.
+</p>
+
+<p>
+Chris Houser, known to his friends as "Chouser," has been a UNIX proponent
+since 1994 when joined the administration team for the computer science network
+at Taylor University in Indiana, where he earned his Bachelor's degree in
+Computer Science and Mathematics. Since then, he has gone on to work in Web
+application programming, user interface design, professional video software
+support, and now Tru64 UNIX device driver programming at <uri
+link="http://www.compaq.com/">Compaq</uri>. He has also contributed to various
+free software projects, most recently to <uri
+link="http://www.gentoo.org">Gentoo Linux</uri>. He lives with his wife and two
+cats in New Hampshire.
+</p>
+
+<p>
+Aron Griffis graduated from Taylor University with a degree in Computer Science
+and an award that proclaimed him the "Future Founder of a Utopian UNIX
+Commune". Working towards that goal, Aron is employed by <uri
+link="http://www.compaq.com/">Compaq</uri> writing network drivers for Tru64
+UNIX, and spending his spare time plunking out tunes on the piano or developing
+<uri link="http://www.gentoo.org">Gentoo Linux</uri>. He lives with his wife
+Amy (also a UNIX engineer) in Nashua, NH.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Filesystems, partitions, and block devices</title>
+<section>
+<title>Introduction to block devices</title>
+<body>
+
+<p>
+In this section, we'll take a good look at disk-oriented aspects of Linux,
+including Linux filesystems, partitions, and block devices. Once you're familar
+with the ins and outs of disks and filesystems, we'll guide you through the
+process of setting up partitions and filesystems on Linux.
+</p>
+
+<p>
+To begin, I'll introduce "block devices". The most famous block device is
+probably the one that represents the first IDE drive in a Linux system:
+</p>
+
+<pre caption="First IDE drive in Linux">
+/dev/hda
+</pre>
+
+<p>
+If your system uses SCSI drives, then your first hard drive will be:
+</p>
+
+<pre caption="First SCSI drive in Linux">
+/dev/sda
+</pre>
+
+</body>
+</section>
+<section>
+<title>Layers of abstraction</title>
+<body>
+
+<p>
+The block devices above represent an abstract interface to the disk. User
+programs can use these block devices to interact with your disk without
+worrying about whether your drivers are IDE, SCSI, or something else. The
+program can simply address the storage on the disk as a bunch of contiguous,
+randomly-accessible 512-byte blocks. 
+</p>
+
+</body>
+</section>
+<section>
+<title>Partitions</title>
+<body>
+
+<p>
+Under Linux, we create filesystems by using a special command called
+<c>mkfs</c> (or <c>mke2fs</c>, <c>mkreiserfs</c>, etc.), specifying a
+particular block device as a command-line argument.
+</p>
+
+<p>
+However, although it is theoretically possible to use a "whole disk" block
+device (one that represents the entire disk) like <path>/dev/hda</path> or
+<path>/dev/sda</path> to house a single filesystem, this is almost never done
+in practice. Instead, full disk block devices are split up into smaller, more
+manageable block devices called partititons. Partitions are created using a
+tool called <c>fdisk</c>, which is used to create and edit the partition table
+that's stored on each disk. The partition table defines exactly how to split up
+the full disk.
+</p>
+
+</body>
+</section>
+<section>
+<title>Introducing fdisk</title>
+<body>
+
+<p>
+We can take a look at a disk's partition table by running <c>fdisk</c>,
+specifying a block device that represents a full disk as an argument.
+</p>
+
+<note>
+Alternate interfaces to the disk's partition table include <c>cfdisk</c>,
+<c>parted</c>, and <c>partimage</c>. I recommend that you avoid using
+<c>cfdisk</c> (despite what the fdisk manual page may say) because it sometimes
+calculates disk geometry incorrectly.
+</note>
+
+<pre caption="Using fdisk on IDE drive">
+# <i>fdisk /dev/hda</i>
+</pre>
+
+<pre caption="Using fidks on SCSI drive">
+# <i>fdisk /dev/sda</i>
+</pre>
+
+<impo>
+You should <e>not</e> save or make any changes to a disk's partition table if
+any of its partitions contain filesystems that are in use or contain important
+data. Doing so will generally cause data on the disk to be lost.
+</impo>
+
+</body>
+</section>
+<section>
+<title>Inside fdisk</title>
+<body>
+
+<p>
+Once in <c>fdisk</c>, you'll be greeted with a prompt that looks like this:
+</p>
+
+<pre caption="fidsk greeting prompt">
+Command (m for help):
+</pre>
+
+<p>
+Type <c>p</c> to display your disk's current partition configuration:
+</p>
+
+<pre caption="Displaying current parition configuration">
+Command (m for help): p
+
+Disk /dev/hda: 240 heads, 63 sectors, 2184 cylinders
+Units = cylinders of 15120 * 512 bytes
+
+   Device Boot    Start       End    Blocks   Id  System
+/dev/hda1             1        14    105808+  83  Linux
+/dev/hda2            15        49    264600   82  Linux swap
+/dev/hda3            50        70    158760   83  Linux
+/dev/hda4            71      2184  15981840    5  Extended
+/dev/hda5            71       209   1050808+  83  Linux
+/dev/hda6           210       348   1050808+  83  Linux
+/dev/hda7           349       626   2101648+  83  Linux
+/dev/hda8           627       904   2101648+  83  Linux
+/dev/hda9           905      2184   9676768+  83  Linux
+
+Command (m for help):
+</pre>
+
+<p>
+This particular disk is configured to house seven Linux filesystems (each with
+a corresponding partition listed as "Linux") as well as a swap partition
+(listed as "Linux swap").
+</p>
+
+</body>
+</section>
+<section>
+<title>Block device and partitioning overview</title>
+<body>
+
+<p>
+Notice the name of the corresponding partition block devices on the left side,
+starting with <path>/dev/hda1</path> and going up to <path>/dev/hda9</path>. In
+the early days of the PC, partitioning software only allowed a maximum of four
+partitions (called primary partitions). This was too limiting, so a workaround
+called extended partitioning was created. An extended partition is very similar
+to a primary partition, and counts towards the primary partition limit of four.
+However, extended partitions can hold any number of so-called logical
+partitions inside them, providing an effective means of working around the four
+partition limit.
+</p>
+
+</body>
+</section>
+<section>
+<title>Partitioning overview, continued</title>
+<body>
+
+<p>
+All partitions hda5 and higher are logical partitions. The numbers 1 through 4
+are reserved for primary or extended partitions.
+</p>
+
+<p>
+In our example, hda1 through hda3 are primary partitions. hda4 is an extended
+partition that contains logical partitions hda5 through hda9. You would never
+actually use <path>/dev/hda4</path> for storing any filesystems directly -- it
+simply acts as a container for partitions hda5 through hda9.
+</p>
+
+</body>
+</section>
+<section>
+<title>Partition types</title>
+<body>
+
+<p>
+Also, notice that each partition has an "Id," also called a partition type.
+Whenever you create a new partition, you should ensure that the partition type
+is set correctly. 83 is the correct partition type for partitions that will be
+housing Linux filesystems, and 82 is the correct partition type for Linux swap
+partitions. You set the partition type using the t option in <c>fdisk</c>. The
+Linux kernel uses the partition type setting to auto-detect fileystems and swap
+devices on the disk at boot-time.
+</p>
+
+</body>
+</section>
+<section>
+<title>Using fdisk to set up partitions</title>
+<body>
+
+<p>
+Now that you've had your introduction to the way disk partitioning is done
+under Linux, it's time to walk through the process of setting up disk
+partitions and filesystems for a new Linux installation. In this process, we
+will configure a disk with new partitions and then create filesystems on them.
+These steps will provide us with a completely clean disk with no data on it
+that can then be used as a basis for a new Linux installation.
+</p>
+
+<impo>
+To follow these steps, you need to have a hard drive that does not contain any
+important data, since these steps will <e>erase</e> the data on your disk. If
+this is all new to you, you may want to consider just reading the steps, or
+using a Linux boot disk on a test system so that no data will be at risk.
+</impo>
+
+</body>
+</section>
+<section>
+<title>What the partitioned disk will look like</title>
+<body>
+
+<p>
+After we walk through the process of creating partitions on your disk, your
+partition configuration will look like this:
+</p>
+
+<pre caption="Look of our disk after creating partitions">
+Disk /dev/hda: 30.0 GB, 30005821440 bytes
+240 heads, 63 sectors/track, 3876 cylinders
+Units = cylinders of 15120 * 512 = 7741440 bytes
+
+   Device Boot    Start       End    Blocks   Id  System
+/dev/hda1    *        1        14    105808+  83  Linux
+/dev/hda2            15        81    506520   82  Linux swap
+/dev/hda3            82      3876  28690200   83  Linux
+
+Command (m for help):
+</pre>
+
+</body>
+</section>
+<section>
+<title>Sample partition commentary</title>
+<body>
+
+<p>
+In our suggested "newbie" partition configuration, we have three partitions.
+The first one (<path>/dev/hda1</path>) at the beginning of the disk is a small
+partition called a boot partition. The boot partition's purpose is to hold all
+the critical data related to booting -- GRUB boot loader information (if you
+will be using GRUB) as well as your Linux kernel(s). The boot partition gives
+us a safe place to store everything related to booting Linux. During normal
+day-to-day Linux use, your boot partition should remain unmounted for safety.
+If you are setting up a SCSI system, your boot partition will likely end up
+being <path>/dev/sda1</path>.
+</p>
+
+<p>
+It's recommended to have boot partitions (containing everything necessary for
+the boot loader to work) at the beginning of the disk. While not necessarily
+required anymore, it is a useful tradition from the days when the LILO boot
+loader wasn't able to load kernels from filesystems that extended beyond disk
+cylinder 1024.
+</p>
+
+<p>
+The second partition (<path>/dev/hda2</path>) s used for swap space. The kernel
+uses swap space as virtual memory when RAM becomes low. This partition,
+relatively speaking, isn't very big either, typically somewhere around 512 MB.
+If you're setting up a SCSI system, this partition will likely end up being
+called <path>/dev/hda2</path>.
+</p>
+
+<p>
+The third partition (<path>/dev/hda3</path>) is quite large and takes up the
+rest of the disk. This partition is called our root partition and will be used
+to store your main filesystem that houses the main Linux filesystem. On a SCSI
+system, this partition would likely end up being <path>/dev/hda3</path>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Getting started</title>
+<body>
+
+<p>
+Okay, now to create the partitions as in the example and table above. First,
+enter fdisk by typing <c>fdisk /dev/hda</c> or <c>fdisk /dev/sda</c>, depending
+on whether you're using IDE or SCSI. Then, type <c>p</c> to view your
+current partition configuration. Is there anything on the disk that you need to
+keep? If so, stop now. If you continue with these directions, all existing data
+on your disk will be erased.
+</p>
+
+<impo>
+Following the instructions below will cause all prior data on your disk to be
+erased! If there is anything on your drive, please be sure that it is
+non-critical information that you don't mind losing. Also make sure that you
+have selected the correct drive so that you don't mistakenly wipe data from the
+wrong drive.
+</impo>
+
+</body>
+</section>
+<section>
+<title>Zapping existing partitions</title>
+<body>
+
+<p>
+Now, it's time to delete any existing partitions. To do this, type d and hit
+enter. You will then be prompted for the partition number you would like to
+delete. To delete a pre-existing <path>/dev/hda1</path>, you would type:
+</p>
+
+<pre caption="Deleting pre-existing partition">
+Command (m for help): <i>d</i>
+Partition number (1-4): <i>1</i>
+</pre>
+
+<p>
+The partition has been scheduled for deletion. It will no longer show up if you
+type <c>p</c>, but it will not be erased until your changes have been saved. If
+you made a mistake and want to abort without saving your changes, type <c>q</c>
+immediately and hit enter and your partition will not be deleted.
+</p>
+
+<p>
+Now, assuming that you do indeed want to wipe out all the partitions on your
+system, repeatedly type <c>p</c> to print out a partition listing and then type
+<c>d</c> and the number of the partition to delete it. Eventually, you'll end
+up with a partition table with nothing in it:
+</p>
+
+<pre caption="Drives look after cleaning it">
+
+Disk /dev/hda: 30.0 GB, 30005821440 bytes
+240 heads, 63 sectors/track, 3876 cylinders
+Units = cylinders of 15120 * 512 = 7741440 bytes
+
+Device Boot    Start       End    Blocks   Id  System
+
+Command (m for help):
+</pre>
+
+</body>
+</section>
+<section>
+<title>Creating a boot partition</title>
+<body>
+
+<p>
+Now that the in-memory partition table is empty, we're ready to create a boot
+partition. To do this, type <c>n</c> to create a new partition, then <c>p</c>
+to tell fdisk you want a primary partition. Then type <c>1</c> to create the
+first primary partition. When prompted for the first cylinder, hit enter. When
+prompted for the last cylinder, type <c>+100M</c> to create a partition 100MB
+in size. Here's the output from these steps:
+</p>
+
+<pre caption="Creating a boot partition">
+Command (m for help): <i>n</i>
+Command action
+e   extended
+p   primary partition (1-4)
+<i>p</i>
+Partition number (1-4): <i>1</i>
+First cylinder (1-3876, default 1):
+Using default value 1
+Last cylinder or +size or +sizeM or +sizeK (1-3876, default 3876): <i>+100M</i>
+</pre>
+
+<p>
+Now, when you type <c>p</c>, you should see the following partition printout:
+</p>
+
+<pre caption="Partition printout">
+Command (m for help): <i>p</i>
+
+Disk /dev/hda: 30.0 GB, 30005821440 bytes
+240 heads, 63 sectors/track, 3876 cylinders
+Units = cylinders of 15120 * 512 = 7741440 bytes
+
+   Device Boot    Start       End    Blocks   Id  System
+/dev/hda1             1        14    105808+  83  Linux
+</pre>
+
+</body>
+</section>
+<section>
+<title>Creating the swap partition</title>
+<body>
+
+<p>
+Next, let's create the swap partition. To do this, type <c>n</c> to create a
+new partition, then <c>p</c> to tell fdisk that you want a primary partition.
+Then type <c>2</c> to create the second primary partition,
+<path>/dev/hda2</path> in our case. When prompted for the first cylinder, hit
+enter. When prompted for the last cylinder, type <c>+512M</c> to create a
+partition 512MB in size. After you've done this, type <c>t</c> to set the
+partition type, and then type <c>82</c> to set the partition type to "Linux
+Swap." After completing these steps, typing <c>p</c> should display a partition
+table that looks similar to this:
+</p>
+
+<pre caption="Partition table">
+Command (m for help): <i>p</i>
+
+Disk /dev/hda: 30.0 GB, 30005821440 bytes
+240 heads, 63 sectors/track, 3876 cylinders
+Units = cylinders of 15120 * 512 = 7741440 bytes
+
+   Device Boot    Start       End    Blocks   Id  System
+/dev/hda1             1        14    105808+  83  Linux
+/dev/hda2            15        81    506520   82  Linux swap
+</pre>
+
+</body>
+</section>
+<section>
+<title>Making it bootable</title>
+<body>
+
+<p>
+Finally, we need to set the "bootable" flag on our boot partition and then
+write our changes to disk. To tag <path>/dev/hda1</path> as a "bootable"
+partition, type <c>a</c> at the menu and then type 1 for the partition number.
+If you type <c>p</c> now, you'll now see that <path>/dev/hda1</path> has an "*"
+in the "Boot" column. Now, let's write our changes to disk. To do this, type
+<c>w</c> and hit enter. Your disk partitions are now properly configured for
+the installation of Linux.
+</p>
+
+<note>
+If fdisk instructs you to do so, please reboot to allow your system to detect
+the new partition configuration.
+</note>
+
+</body>
+</section>
+<section>
+<title>Extended and logical partitioning</title>
+<body>
+
+<p>
+In the above example, we created a single primary partition that will contain a
+filesystem used to store all our data. This means that after installing Linux,
+this main filesystem will get mounted at "<path>/</path>" and will contain a
+tree of directories that contain all our files.
+</p>
+
+<p>
+While this is a common way to set up a Linux system, there is another approach
+that you should be familiar with. This approach uses multiple partitions that
+house multiple filesystems and are then "linked" together to form a cohesive
+filesystem tree. For example, it is common to put <path>/home</path> and
+<path>/var</path> on their own filesystems.
+</p>
+
+<p>
+We could have made hda2 into an extended rather than a primary partition. Then,
+we could have created the hda5, hda6, and hda7 logical partitions (which would
+technically be contained "inside" hda2), which would house the <path>/</path>,
+<path>/home</path>, and <path>/var</path> filesystems respectively.
+</p>
+
+<p>
+You can learn more about these types of multi-filesystem configurations by
+studying the resources listed on the next page.
+</p>
+
+</body>
+</section>
+<section>
+<title>Partitioning resources</title>
+<body>
+
+<p>
+For more information on partitioning, take a look at the following partitioning
+tips:
+</p>
+
+<ul>
+  <li>
+    <uri link="/doc/en/articles/partition-planning-tips.xml">Partition planning
+    tips</uri>
+  </li>
+  <li>
+    <uri link="/doc/en/articles/partitioning-p2.xml">Partitioning in action:
+    consolidating data</uri>
+  </li>
+  <li>
+    <uri link="/doc/en/articles/partitioning-p1.xml">Partitioning in action:
+    moving /home</uri>.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Creating filesystems</title>
+<body>
+
+<p>
+Now that the partitions have been created, it's time to set up filesystems on
+the boot and root partitions so that they can be mounted and used to store
+data. We will also configure the swap partition to serve as swap storage.
+</p>
+
+<p>
+Linux supports a variety of different types of filesystems; each type has its
+strengths and weaknesses and its own set of performance characteristics. We
+will cover the creation of ext2, ext3, XFS, JFS, and ReiserFS filesystems in
+this tutorial. Before we create filesystems on our example system, let's
+briefly review the various filesystems available under Linux. We'll go into
+more detail on the filesystems later in the tutorial.
+</p>
+
+</body>
+</section>
+<section>
+<title>The ext2 filesystem</title>
+<body>
+
+<p>
+ext2 is the tried-and-true Linux filesystem, but it doesn't have metadata
+journaling, which means that routine ext2 filesystem checks at startup time can
+be quite time-consuming. There is now quite a selection of newer-generation
+journaled filesystems that can be checked for consistency very quickly and are
+thus generally preferred over their non-journaled counterparts. Journaled
+filesystems prevent long delays when you boot your system and your filesystem
+happens to be in an inconsistent state.
+</p>
+
+</body>
+</section>
+<section>
+<title>The ext3 filesystem</title>
+<body>
+
+<p>
+ext3 is the journaled version of the ext2 filesystem, providing metadata
+journaling for fast recovery in addition to other enhanced journaling modes,
+such as full data and ordered data journaling. ext3 is a very good and reliable
+filesystem. It offers generally decent performance under most conditions.
+Because it does not extensively employ the use of "trees" in its internal
+design, it doesn't scale very well, meaning that it is not an ideal choice for
+very large filesystems or situations where you will be handling very large
+files or large quantities of files in a single directory. But when used within
+its design parameters, ext3 is an excellent filesystem.
+</p>
+
+<p>
+One of the nice things about ext3 is that an existing ext2 filesystem can be
+upgraded "in-place" to ext3 quite easily. This allows for a seamless upgrade
+path for existing Linux systems that are already using ext2.
+</p>
+
+</body>
+</section>
+<section>
+<title>The ReiserFS filesystem</title>
+<body>
+
+<p>
+ReiserFS is a B-tree-based filesystem that has very good overall performance
+and greatly outperforms both ext2 and ext3 when dealing with small files (files
+less than 4k), often by a factor of 10x-15x. ReiserFS also scales extremely
+well and has metadata journaling. As of kernel 2.4.18+, ReiserFS is now
+rock-solid and highly recommended for use both as a general-purpose filesystem
+and for extreme cases such as the creation of large filesystems, the use of
+many small files, very large files, and directories containing tens of
+thousands of files. ReiserFS is the filesystem we recommend by default for all
+non-boot partitions.
+</p>
+
+</body>
+</section>
+<section>
+<title>The XFS filesystem</title>
+<body>
+
+<p>
+XFS is a filesystem with metadata journaling. It comes with a robust
+feature-set and is optimized for scalability. We only recommend using this
+filesystem on Linux systems with high-end SCSI and/or fibre channel storage and
+a uninterruptible power supply. Because XFS aggressively caches in-transit data
+in RAM, improperly designed programs (those that don't take proper precautions
+when writing files to disk (and there are quite a few of them) can lose a good
+deal of data if the system goes down unexpectedly.
+</p>
+
+</body>
+</section>
+<section>
+<title>The JFS filesystem</title>
+<body>
+
+<p>
+JFS is IBM's own high performance journaling filesystem. It has recently become
+production-ready, and we would like to see a longer track record before
+commenting either positively nor negatively on its general stability at this
+point.
+</p>
+
+</body>
+</section>
+<section>
+<title>Filesystem recommendations</title>
+<body>
+
+<p>
+If you're looking for the most rugged journaling filesystem, use ext3. If
+you're looking for a good general-purpose high-performance filesystem with
+journaling support, use ReiserFS; both ext3 and ReiserFS are mature, refined
+and recommended for general use.
+</p>
+
+<p>
+Based on our example above, we will use the following commands to initialize
+all our partitions for use:
+</p>
+
+<pre caption="Initlizing partitions">
+# <i>mke2fs -j /dev/hda1</i>
+# <i>mkswap /dev/hda2</i>
+# <i>mkreiserfs /dev/hda3</i>
+</pre>
+
+<p>
+We choose ext3 for our <path>/dev/hda1</path> boot partition because it is a
+robust journaling filesystem supported by all major boot loaders. We used
+<c>mkswap</c> for our <path>/dev/hda2</path> swap partition -- the choice is
+obvious here. And for our main root filesystem on <path>/dev/hda3</path> we
+choose ReiserFS, since it is a solid journaling filesystem offering excellent
+performance. Now, go ahead and initialize your partitions.
+</p>
+
+</body>
+</section>
+<section>
+<title>Making swap</title>
+<body>
+
+<p>
+<c>mkswap</c> is the command that used to initialize swap partitions:
+</p>
+
+<pre caption="Initalizing swap partition">
+# <i>mkswap /dev/hda2</i>
+</pre>
+
+<p>
+Unlike regular filesystems, swap partitions aren't mounted. Instead, they are
+enabled using the <c>swapon</c> command:
+</p>
+
+<pre caption="Enabling swap partition">
+# <i>swapon /dev/hdc6</i>
+</pre>
+
+<p>
+Your Linux system's startup scripts will take care of automatically enabling
+your swap partitions. Therefore, the <c>swapon</c> command is generally only
+needed when you need to immediately add some swap that you just created. To
+view the swap devices currently enabled, type <c>cat /proc/swaps</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Creating ext2, ext3, and ReiserFS filesystems</title>
+<body>
+
+<p>
+You can use the <c>mke2fs</c> command to create ext2 filesystems:
+</p>
+
+<pre caption="Creating ext2 filesystem">
+# <i>mke2fs /dev/hda1</i>
+</pre>
+
+<p>
+If you would like to use ext3, you can create ext3 filesystems using <c>mke2fs
+-j</c>:
+</p>
+
+<pre caption="Creating ext3 filesystem">
+# <i>mke2fs /dev/hda3</i>
+</pre>
+
+<note>
+You can find out more about using ext3 under Linux 2.4 on <uri
+link="http://www.zip.com.au/~akpm/linux/ext3/ext3-usage.html">this site</uri>
+maintained by Andrew Morton.
+</note>
+
+<p>
+To create ReiserFS filesystems, use the <c>mkreiserfs</c> command:
+</p>
+
+<pre caption="Creating ReiserFS filesystem">
+# <i>mkreiserfs /dev/hda3</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Creating XFS and JFS filesystems</title>
+<body>
+
+<p>
+To create an XFS filesystem, use the <c>mkfs.xfs</c> command:
+</p>
+
+<pre caption="Creating XFS filesystem">
+# <i>mkfs.xfs /dev/hda3</i>
+</pre>
+
+<note>
+You may want to add a couple of additional flags to the mkfs.xfs command: <c>-d
+agcount=3 -l size=32m</c>. The <c>-d agcount=3</c> command will lower the
+number of allocation groups. XFS will insist on using at least one
+allocation group per 4GB of your partition, so, for example, if you have a 20GB
+partition you will need a minimum agcount of 5. The <c>l size=32m</c> command
+increases the journal size to 32MB, increasing performance.
+</note>
+
+<p>
+To create JFS filesystems, use the <c>mkfs.jfs</c> command:
+</p>
+
+<pre caption="Creating JFS filesystem">
+# <i>mkfs.jfs /dev/hda3</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Mounting filesystems</title>
+<body>
+
+<p>
+Once the filesystem is created, we can mount it using the <c>mount</c> command:
+</p>
+
+<pre caption="Mounting filesystem">
+# <i>mount /dev/hda3 /mnt</i>
+</pre>
+
+<p>
+To mount a filesystem, specify the partition block device as a first argument
+and a "mountpoint" as a second argument. The new filesystem will be "grafted
+in" at the mountpoint. This also has the effect of "hiding" any files that were
+in the <path>/mnt</path> directory on the parent filesystem. Later, when the
+filesystem is unmounted, these files will reappear. After executing the mount
+command, any files created or copied inside <path>/mnt</path> will be stored on
+the new ReiserFS filesystem you mounted.
+</p>
+
+<p>
+Let's say we wanted to mount our boot partition inside <path>/mnt</path>. We
+could do this by performing the following steps:
+</p>
+
+<pre caption="Mounting boot partition in /mnt">
+# <i>mkdir /mnt/boot</i>
+# <i>mount /dev/hda1 /mnt/boot</i>
+</pre>
+
+<p>
+Now, our boot filesystem is available inside /mnt/boot. If we create files
+inside <path>/mnt/boot</path>, they will be stored on our ext3 filesystem that
+physically resides on <path>/dev/hda1</path>. If we create file inside
+<path>/mnt</path> but not <path>/mnt/boot</path>, then they will be stored on
+our ReiserFS filesystem that resides on <path>/dev/hda3</path>. And if we
+create files outside of <path>/mnt</path>, they will not be stored on either
+filesystem but on the filesystem of our current Linux system or boot disk.
+</p>
+
+<p>
+To see what filesystems are mounted, type <c>mount</c> by itself. Here is the
+output of <c>mount</c> on one of our currently-running Linux system, which has
+partitions configured identically to those in the example above:
+</p>
+
+<pre caption="Output of mount command">
+/dev/root on / type reiserfs (rw,noatime)
+none on /dev type devfs (rw)
+proc on /proc type proc (rw)
+tmpfs on /dev/shm type tmpfs (rw)
+usbdevfs on /proc/bus/usb type usbdevfs (rw)
+/dev/hde1 on /boot type ext3 (rw,noatime)
+</pre>
+
+<p>
+You can also view similar information by typing cat <path>/proc/mounts</path>.
+The "root" filesystem, <path>/dev/hda3</path> gets mounted automatically by the
+kernel at boot-time, and gets the symbolic name <path>/dev/hda3</path>. On our
+system, both <path>/dev/hda3</path> and <path>/dev/root</path> point to the
+same underlying block device using a symbolic link:
+</p>
+
+<pre caption="Symbolic links">
+# <i>ls -l /dev/root</i>
+lr-xr-xr-x   1 root   root   33 Mar 26 20:39 /dev/root -> ide/host0/bus0/target0/lun0/part3
+
+# <i>ls -l /dev/hda3</i>
+lr-xr-xr-x   1 root   root   33 Mar 26 20:39 /dev/hde3 -> ide/host0/bus0/target0/lun0/part3
+</pre>
+
+</body>
+</section>
+<section>
+<title>Even more mounting stuff</title>
+<body>
+
+<p>
+So, what is this "<path>/dev/ide/host0</path>...." file? Systems like mine that
+use the devfs device-management filesystem for <path>/dev</path> have longer
+official names for the partition and disk block devices than Linux used to have
+in the past. For example, <path>/dev/ide/host0/bus1/target0/lun0/part7</path>
+is the official name for <path>/dev/hdc7</path>, and <path>/dev/hdc7</path>
+itself is just a symlink pointing to the official block device. You can
+determine if your system is using devfs by checking to see if the
+<path>/dev/.devfsd</path> file exists; if so, then devfs is active.
+</p>
+
+<p>
+When using the mount command to mount filesystems, it attempts to auto-detect
+the filesystem type. Sometimes, this may not work and you will need to specify
+the to-be-mounted filesystem type manually using the -t option, as follows:
+</p>
+
+<pre caption="Mounting ext3 filesystem manually with -t option">
+# <i>mount /dev/hda1 /mnt/boot -t ext3</i>
+</pre>
+
+<p>or</p>
+
+<pre caption="Mouting reiserfs filesystem manually with -t option">
+# <i>mount /dev/hda3 /mnt -t reiserfs</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Mount options</title>
+<body>
+
+<p>
+It's also possible to customize various attributes of the to-be-mounted
+filesystem by specifying mount options. For example, you can mount a filesystem
+as "read-only" by using the "ro" option:
+</p>
+
+<pre caption="Mouting filesystem as read-only">
+# <i>mount /dev/hdc6 /mnt -o ro</i>
+</pre>
+
+<p>
+With <path>/dev/hdc6</path> mounted read-only, no files can be modified in
+<path>/mnt</path> -- only read. If your filesystem is already mounted
+"read/write" and you want to switch it to read-only mode, you can use the
+"remount" option to avoid having to unmount and remount the filesystem again:
+</p>
+
+<pre caption="Using remount option">
+# <i>mount /mnt -o remount,ro</i>
+</pre>
+
+<p>
+Notice that we didn't need to specify the partition block device because the
+filesystem is already mounted and <c>mount</c> knows that <path>/mnt</path> is
+associated with <path>/dev/hdc6</path>. To make the filesystem writeable again,
+we can remount it as read-write:
+</p>
+
+<pre caption="Remounting filesystem as read-write">
+# <i>mount /mnt -o remount,rw</i>
+</pre>
+
+<p>
+Note that these remount commands will not complete successfully if any process
+has opened any files or directories in <path>/mnt</path>. To familiarize
+yourself with all the mount options available under Linux, type <c>man
+mount</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Introducing fstab</title>
+<body>
+
+<p>
+So far, we've seen how partition an example disk and mount filesystems manually
+from a boot disk. But once we get a Linux system installed, how do we configure
+that Linux system to mount the right filesystems at the right time?  For
+example, Let's say that we installed Gentoo Linux on our current example
+filesystem configuration. How would our system know how to to find the root
+filesystem on <path>/dev/hda3</path>? And if any other filesystems -- like swap
+-- needed to be mounted at boot time, how would it know which ones?
+</p>
+
+<p>
+Well, the Linux kernel is told what root filesystem to use by the boot loader,
+and we'll take a look at the linux boot loaders later in this tutorial. But for
+everything else, your Linux system has a file called <path>/etc/fstab</path>
+that tells it about what filesystems are available for mounting. Let's take a
+look at it.
+</p>
+
+</body>
+</section>
+<section>
+<title>A sample fstab</title>
+<body>
+
+<p>
+Let's take a look at a sample <path>/etc/fstab</path> file:
+</p>
+
+<pre caption="Sample /etc/fstab file">
+  &lt;fs&gt; &lt;mountpoint&gt; &lt;type&gt;    &lt;opts&gt;            &lt;dump/pass&gt;
+
+/dev/hda1       /boot           ext3            noauto,noatime          1 1
+/dev/hda3       /               reiserfs        noatime                 0 0
+/dev/hda2       none            swap            sw                      0 0
+/dev/cdrom      /mnt/cdrom      iso9660         noauto,ro,user          0 0
+# /proc should always be enabled
+proc            /proc           proc            defaults                0 0
+</pre>
+
+<p>
+Above, each non-commented line in <path>/etc/fstab</path> specifies a partition
+block device, a mountpoint, a filesystem type, the filesystem options to use
+when mounting the filesystem, and two numeric fields. The first numeric field
+is used to tell the <c>dump</c> backup command the filesystems that should be
+backed up. Of course, if you are not planning to use <c>dump</c> on your
+system, then you can safely ignore this field. The last field is used by the
+<c>fsck</c> filesystem integrity checking program, and tells it the order in
+which your filesystems should be checked at boot. We'll touch on <c>fsck</c>
+again in a few panels.
+</p>
+
+<p>
+Look at the <path>/dev/hda1</path> line; you'll see that <path>/dev/hda1</path>
+is an ext3 filesystem that should be mounted at the <path>/boot</path>
+mountpoint. Now, look at <path>/dev/hda1</path>'s mount options in the opts
+column. The noauto option tells the system to not mount <path>/dev/hda1</path>
+automatically at boot time; without this option, <path>/dev/hda1</path> would
+be automatically mounted to <path>/boot</path> at system boot time.
+</p>
+
+<p>
+Also note the noatime option, which turns off the recording of atime (last
+access time) information on the disk. This information is generally not needed,
+and turning off atime updates has a positive effect on filesystem performance.
+</p>
+
+<p>
+Now, take a look at the <path>/proc</path> line and notice the defaults option.
+Use defaults whenever you want a filesystem to be mounted with just the
+standard mount options. Since <path>/etc/fstab</path> has multiple fields, we
+can't simply leave the option field blank.
+</p>
+
+<p>
+Also notice the <path>/etc/fstab</path> line for <path>/dev/hda2</path>. This
+line defines <path>/dev/hda2</path> as a swap device. Since swap devices aren't
+mounted like filesystems, none is specified in the mountpoint field. Thanks to
+this <path>/etc/fstab</path> entry, our <path>/dev/hda2</path> swap device will
+be enabled automatically when the system starts up.
+</p>
+
+<p>
+With an <path>/etc/fstab</path> entry for <path>/dev/cdrom</path> like the one
+above, mounting the CD-ROM drive becomes easier. Instead of typing:
+</p>
+
+<pre caption="Mounting CD-ROM without entry in fstab">
+# <i>mount -t iso9660 /dev/cdrom /mnt/cdrom -o ro</i>
+</pre>
+
+<p>
+We can now type:
+</p>
+
+<pre caption="Mounting CD-ROM with entry in fstab">
+# <i>mount /dev/cdrom</i>
+</pre>
+
+<p>
+In fact, using <path>/etc/fstab</path> allows us to take advantage of the user
+option. The user mount option tells the system to allow this particular
+filesystem to be mounted by any user. This comes in handy for removable media
+devices like CD-ROM drives. Without this fstab mount option, only the root user
+would be able to use the CD-ROM drive.
+</p>
+
+</body>
+</section>
+<section>
+<title>Unmounting filesystems</title>
+<body>
+
+<p>
+Generally, all mounted filesystems are unmounted automatically by the system
+when it is rebooted or shut down. When a filesystem is unmounted, any cached
+filesystem data in memory is flushed to the disk.
+</p>
+
+<p>
+However, it's also possible to unmount filesystems manually. Before a
+filesystem can be unmounted, you first need to ensure that there are no
+processes running that have open files on the filesystem in question. Then, use
+the <c>umount</c> command, specifying either the device name or mount point as
+an argument:
+</p>
+
+<pre caption="Using umount command">
+# <i>umount /mnt</i>
+</pre>
+
+<p>
+or
+</p>
+
+<pre caption="Using umount command">
+# <i>umount /dev/hda3</i>
+</pre>
+
+<p>
+Once unmounted, any files in <path>/mnt</path> that were "covered" by the
+previously-mounted filesystem will now reappear.
+</p>
+
+</body>
+</section>
+<section>
+<title>Introducing fsck</title>
+<body>
+
+<p>
+If your system crashes or locks up for some reason, the system won't have an
+opportunity to cleanly unmount your filesystems. When this happens, the
+filesystems are left in an inconsistent (unpredictable) state. When the system
+reboots, the <c>fsck</c> program will detect that the filesystems were not
+cleanly unmounted and will want to perform a consistency check of filesystems
+listed in <path>/etc/fstab</path>.
+</p>
+
+<impo>
+For a filesystem to be checked by <c>fsck</c> it must have a non-zero number in
+the "pass" field (the last field) in <path>/etc/fstab</path>. Typically, the
+root filesystem is set to a passno of 1, specifying that it should be checked
+first. All other filesystems that should be checked at startup time should have
+a passno of 2 or higher. For some journaling filesystems like ReiserFS, it is
+safe to have a passno of 0 since the journaling code (and not an external
+<c>fsck</c>) takes care of making the filesystem consistent again.
+</impo>
+
+<p>
+Sometimes, you may find that after a reboot <c>fsck</c> is unable to fully
+repair a partially damaged filesystem. In these instances, all you need to do
+is to bring your system down to single-user mode and run <c>fsck</c> manually,
+supplying the partition block device as an argument. As <c>fsck</c> performs
+its filesystem repairs, it may ask you whether to fix particular filesystem
+defects. In general, you should say <c>y</c> (yes) to all these questions and
+allow <c>fsck</c> to do its thing.
+</p>
+
+</body>
+</section>
+<section>
+<title>Problems with fsck</title>
+<body>
+
+<p>
+One of the problems with <c>fsck</c> scans is that they can take quite a while
+to complete, since the entirety of a filesystem's metadata (internal data
+structure) needs to be scanned in order to ensure that it's consistent. With
+extremely large filesystems, it is not unusual for an exhaustive fsck to take
+more than an hour.
+</p>
+
+<p>
+In order to solve this problem, a new type of filesystem was designed, called a
+journaling filesystem. Journaling filesystems record an on-disk log of recent
+changes to the filesystem metadata. In the event of a crash, the filesystem
+driver inspects the log. Because the log contains an accurate account of recent
+changes on disk, only these parts of the filesystem metadata need to be checked
+for errors. Thanks to this important design difference, checking a journalled
+filesystem for consistency typically takes just a matter of seconds, regardless
+of filesystem size. For this reason, journaling filesystems are gaining
+popularity in the Linux community. For more information on journaling
+filesystems, see the <uri
+link="http://www-106.ibm.com/developerworks/library/l-fs.html">Advanced
+filesystem implementor's guide, part 1: Journaling and ReiserFS</uri>.
+</p>
+
+<p>
+Let's cover the major filesystems available for Linux, along with their
+associated commands and options.
+</p>
+
+</body>
+</section>
+<section>
+<title>The ext2 filesystem</title>
+<body>
+
+<p>
+The ext2 filesystem has been the standard Linux filesystem for many years. It
+has generally good performance for most applications, but it does not offer any
+journaling capability. This makes it unsuitable for very large filesystems,
+since <c>fsck</c> can take an extremely long time. In addition, ext2 has some
+built-in limitations due to the fact that every ext2 filesystem has a fixed
+number of inodes that it can hold. That being said, ext2 is generally
+considered to be an extremely robust and efficient non-journalled filesystem.
+</p>
+
+<ul>
+  <li>In kernels: 2.0+</li>
+  <li>journaling: no</li>
+  <li>mkfs command: mke2fs</li>
+  <li>mkfs example: mke2fs /dev/hdc7</li>
+  <li>related commands: debugfs, tune2fs, chattr</li>
+  <li>performance-related mount options: noatime.</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>The ext3 filesystem</title>
+<body>
+
+<p>
+The ext3 filesystem uses the same on-disk format as ext2, but adds journaling
+capabilities. In fact, of all the Linux filesystems, ext3 has the most
+extensive journaling support, supporting not only metadata journaling but also
+ordered journaling (the default) and full metadata+data journaling. These
+"special" journaling modes help to ensure data integrity, not just short fscks
+like other journaling implementations. For this reason, ext3 is the best
+filesystem to use if data integrity is an absolute first priority. However,
+these data integrity features do impact performance somewhat. In addition,
+because ext3 uses the same on-disk format as ext2, it still suffers from the
+same scalability limitations as its non-journalled cousin. Ext3 is a good
+choice if you're looking for a good general-purpose journalled filesystem that
+is also very robust.
+</p>
+
+<ul>
+  <li>In kernels: 2.4.16+</li>
+  <li>journaling: metadata, ordered data writes, full metadata+data</li>
+  <li>mkfs command: mke2fs -j</li>
+  <li>mkfs example: mke2fs -j /dev/hdc7</li>
+  <li>related commands: debugfs, tune2fs, chattr</li>
+  <li>performance-related mount options: noatime</li>
+  <li>
+    other mount options:
+  <ul>
+    <li>data=writeback (disable journaling)</li>
+    <li>
+    data=ordered (the default, metadata journaling and data is written out
+    to disk with metadata)
+    </li>
+    <li>
+    data=journal (full data journaling for data and metadata integrity. Halves
+    write performance.)
+    </li>
+  </ul>
+  </li>
+  <li>
+  ext3 resources:
+  <ul>  
+    <li>
+    <uri
+    link="http://www.zip.com.au/~akpm/linux/ext3/">Andrew Morton's ext3
+    page</uri>
+    </li>
+    <li>
+    <uri
+    link="http://www.zip.com.au/~akpm/linux/ext3/ext3-usage.html">Andrew
+    Morton's excellent ext3 usage documentation (recommended)</uri>
+    </li>
+    <li>
+    <uri
+    link="http://www-106.ibm.com/developerworks/linux/library/l-fs7/">#
+    Advanced filesystem implementor's guide, part 7: Introducing ext3</uri>
+    </li>
+    <li>
+    <uri
+    link="http://www.gentoo.org/doc/en/articles/l-afig-p8.xml">Advanced
+    filesystem implementor's guide, part 8: Surprises in ext3.</uri>
+    </li>
+  </ul>
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>The ReiserFS filesystem</title>
+<body>
+
+<p>
+ReiserFS is a relatively new filesystem that has been designed with the goal of
+providing very good small file performance, very good general performance and
+being very scalable. In general, ReiserFS offers very good performance in most
+all situations. ReiserFS is preferred by many for its speed and scalability.
+</p>
+
+<ul>
+  <li>In kernels: 2.4.0+ (2.4.18+ strongly recommended)</li>
+  <li>journaling: metadata</li>
+  <li>mkfs command: mkreiserfs</li>
+  <li>mkfs example: mkreiserfs /dev/hdc7</li>
+  <li>performance-related mount options: noatime, notail</li>
+  <li>
+  ReiserFS Resources:
+  <ul>
+    <li><uri link="http://www.namesys.com/">The home of ReiserFS</uri></li>
+    <li>
+    <uri
+    link="http://www-106.ibm.com/developerworks/library/l-fs.html">Advanced
+    filesystem implementor's guide, part 1: Journaling and ReiserFS</uri>
+    </li>
+    <li>
+    <uri
+    link="http://www-106.ibm.com/developerworks/library/l-fs2.html">Advanced
+    filesystem implementor's guide, part 2: Using ReiserFS and Linux
+    2.4.</uri>
+    </li>
+  </ul>
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>The XFS filesystem</title>
+<body>
+
+<p>
+The XFS filesystem is an enterprise-class journaling filesystem being ported to
+Linux by SGI. XFS is a full-featured, scalable, journaled file-system that is a
+good match for high-end, reliable hardware (since it relies heavily on caching
+data in RAM.) but not a good match for low-end hardware.
+</p>
+
+<ul>
+  <li>In kernels: 2.5.34+ only, requires patch for 2.4 series</li>
+  <li>journaling: metadata</li>
+  <li>mkfs command: mkfs.xfs</li>
+  <li>mkfs example: mkfs.xfs /dev/hdc7</li>
+  <li>performance-related mount options: noatime</li>
+  <li>
+  XFS Resources:
+  <ul>
+    <li>
+    <uri
+    link="http://oss.sgi.com/projects/xfs/">The home of XFS (sgi.com)</uri>
+    </li>
+    <li>
+    <uri
+    link="http://www-106.ibm.com/developerworks/library/l-fs9.html">Advanced
+    filesystem implementor's guide, part 9: Introducing XFS</uri>
+    </li>
+    <li>
+    <uri
+    link="http://www-106.ibm.com/developerworks/library/l-fs10.html">Advanced
+    filesystem implementor's guide, part 10: Deploying XFS.</uri>
+    </li>
+  </ul>
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>The JFS filesystem</title>
+<body>
+
+<p>
+JFS is a high-performance journaling filesystem ported to Linux by IBM. JFS is
+used by IBM enterprise servers and is designed for high-performance
+applications. You can learn more about JFS at <uri
+link="http://www-124.ibm.com/developerworks/oss/jfs/index.html">the JFS project
+Web site</uri>.
+</p>
+
+<ul>
+  <li>In kernels: 2.4.20+</li>
+  <li>journaling: metadata</li>
+  <li>mkfs command: mkfs.jfs</li>
+  <li>mkfs example: mkfs.jfs /dev/hdc7</li>
+  <li>performance-related mount options: noatime</li>
+  <li>
+  JFS Resources: <uri
+  link="http://www-124.ibm.com/developerworks/oss/jfs/index.html">the JFS
+  project Web site (IBM).</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>VFAT</title>
+<body>
+
+<p>
+The VFAT filesystem isn't really a filesystem that you would choose for storing
+Linux files. Instead, it's a DOS-compatible filesystem driver that allows you
+to mount and exchange data with DOS and Windows FAT-based filesystems. The VFAT
+filesystem driver is present in the standard Linux kernel.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Booting the system</title>
+<section>
+<title>About this section</title>
+<body>
+
+<p>
+This section introduces the Linux boot procedure. We'll cover the concept of a
+boot loader, how to set kernel options at boot, and how to examine the boot log
+for errors. 
+</p>
+
+</body>
+</section>
+<section>
+<title>The MBR</title>
+<body>
+
+<p>
+The boot process is similar for all machines, regardless of which distribution
+is installed. Consider the following example hard disk:
+</p>
+
+<pre caption="Structure of a hard disk">
++----------------+
+|      MBR       |
++----------------+
+|  Partition 1:  |
+| Linux root (/) |
+|   containing   |
+|   kernel and   |
+|     system.    |
++----------------+
+|  Partition 2:  |
+|   Linux swap   |
++----------------+
+|  Partition 3:  |
+|   Windows 3.0  |
+|  (last booted  |
+|    in 1992)    |
++----------------+
+</pre>
+
+<p>
+First, the computer's BIOS reads the first few sectors of your hard disk. These
+sectors contain a very small program, called the "Master Boot Record," or
+"MBR." The MBR has stored the location of the Linux kernel on the hard disk
+(partition 1 in the example above), so it loads the kernel into memory and
+starts it.
+</p>
+
+</body>
+</section>
+<section>
+<title>The kernel boot process</title>
+<body>
+
+<p>
+The next thing you see (although it probably flashes by quickly) is a line
+similar to the following:
+</p>
+
+<pre caption="Boot process line">
+Linux version 2.4.16 (root@time.flatmonk.org) (gcc version 2.95.3 20010315 (release)) #1 Sat Jan 12 19:23:04 EST 2002
+</pre>
+
+<p>
+This is the first line printed by the kernel when it starts running. The first
+part is the kernel version, followed by the identification of the user that
+built the kernel (usually root), the compiler that built it, and the timestamp
+when it was built.
+</p>
+
+<p>
+Following that line is a whole slew of output from the kernel regarding the
+hardware in your system: the processor, PCI bus, disk controller, disks, serial
+ports, floppy drive, USB devices, network adapters, sound cards, and possibly
+others will each in turn report their status.
+</p>
+
+</body>
+</section>
+<section>
+<title>/sbin/init</title>
+<body>
+
+<p>
+When the kernel finishes loading, it starts a program called <c>init</c>. This
+program remains running until the system is shut down. It is always assigned
+process ID 1, as you can see:
+</p>
+
+<pre caption="init process ID">
+$ <i>ps --pid 1</i>
+PID TTY          TIME CMD
+  1 ?        00:00:04 init.system
+</pre>
+
+<p>
+The <c>init</c> program boots the rest of your distribution by running a series
+of scripts. These scripts typically live in <path>/etc/rc.d/init.d</path> or
+<path>/etc/init.d</path>, and they perform services such as setting the
+system's hostname, checking the filesystem for errors, mounting additional
+filesystems, enabling networking, starting print services, etc. When the
+scripts complete, <c>init</c> starts a program called <c>getty</c> which
+displays the login prompt, and you're good to go!
+</p>
+
+</body>
+</section>
+<section>
+<title>Digging in: LILO</title>
+<body>
+
+<p>
+Now that we've taken a quick tour through the booting process, let's look more
+closely at the first part: the MBR and loading the kernel. The maintenance of
+the MBR is the responsibility of the "boot loader." The two most popular boot
+loaders for x86-based Linux are "LILO" (LInux LOader) and "GRUB" (GRand Unified
+Bootloader).
+</p>
+
+<p>
+Of the two, LILO is the older and more common boot loader. LILO's presence on
+your system is reported at boot, with the short "LILO boot:" prompt. Note that
+you may need to hold down the shift key during boot to get the prompt, since
+often a system is configured to whiz straight through without stopping.
+</p>
+
+<p>
+There's not much fanfare at the LILO prompt, but if you press the &lt;tab&gt;
+key, you'll be presented with a list of potential kernels (or other operating
+systems) to boot. Often there's only one in the list. You can boot one of them
+by typing it and pressing &lt;enter&gt;. Alternatively you can simply press
+&lt;enter&gt; and the first item on the list will boot by default.
+</p>
+
+</body>
+</section>
+<section>
+<title>Using LILO</title>
+<body>
+
+<p>
+Occasionally you may want to pass an option to the kernel at boot time. Some of
+the more common options are <c>root=</c> to specify an alternative root
+filesystem, <c>init=</c> to specify an alternative init program (such as
+<c>init=/bin/sh</c> to rescue a misconfigured system), and <c>mem=</c> to
+specify the amount of memory in the system (for example <c>mem=512M</c> in the
+case that Linux only autodetects 128M). You could pass these to the kernel at
+the LILO boot prompt:
+</p>
+
+<pre caption="LILO boot prompt">
+LILO boot: linux root=/dev/hdb2 init=/bin/sh mem=512M
+</pre>
+
+<p>
+If you need to regularly specify command-line options, you might consider
+adding them to <path>/etc/lilo.conf</path>. The format of that file is
+described in the <path>lilo.conf</path>(5) man-page.
+</p>
+
+</body>
+</section>
+<section>
+<title>An important LILO gotcha</title>
+<body>
+
+<p>
+Before moving on to GRUB, there is an important gotcha to LILO. Whenever you
+make changes to <path>/etc/lilo.conf</path>, or whenever you install a new
+kernel, you must run <c>lilo</c>. The <c>lilo</c> program rewrites the MBR to
+reflect the changes you made, including recording the absolute disk location of
+the kernel. The example here makes use of the -v flag for verboseness:
+</p>
+
+<pre caption="Using lilo command with -v flag">
+# <i>lilo -v</i>
+LILO version 21.4-4, Copyright (C) 1992-1998 Werner Almesberger
+'lba32' extensions Copyright (C) 1999,2000 John Coffman
+
+Reading boot sector from /dev/hda
+Merging with /boot/boot.b
+Mapping message file /boot/message
+Boot image: /boot/vmlinuz-2.2.16-22
+Added linux *
+/boot/boot.0300 exists - no backup copy made.
+Writing boot sector.
+</pre>
+
+</body>
+</section>
+<section>
+<title>Digging in: GRUB</title>
+<body>
+
+<p>
+The GRUB boot loader could be considered the next generation of boot loader,
+following LILO. Most visibly to users, it provides a menu interface instead of
+LILO's primitive prompt. For system administrators, the changes are more
+significant. GRUB supports more operating systems than LILO, provides some
+password-based security in the boot menu, and is easier to administer.
+</p>
+
+<p>
+GRUB is usually installed with the <c>grub-install</c> command. Once installed,
+GRUB's menu is administrated by editing the file
+<path>/boot/grub/grub.conf</path>. Both of these tasks are beyond the scope of
+this document; you should read the GRUB info pages before attempting to install
+or administrate GRUB.
+</p>
+
+</body>
+</section>
+<section>
+<title>Using GRUB</title>
+<body>
+
+<p>
+To give parameters to the kernel, you can press <c>e</c> at the boot menu. This
+provides you with the opportunity to edit (by again pressing <c>e</c>) either
+the name of the kernel to load or the parameters passed to it. When you're
+finished editing, press &lt;enter&gt; then <c>b</c> to boot with your changes.
+</p>
+
+</body>
+</section>
+<section>
+<title>dmesg</title>
+<body>
+
+<p>
+The boot messages from the kernel and init scripts typically scroll by quickly.
+You might notice an error, but it's gone before you can properly read it. In
+that case, there are two places you can look after the system boots to see what
+went wrong (and hopefully get an idea how to fix it).
+</p>
+
+<p>
+If the error occurred while the kernel was loading or probing hardware devices,
+you can retrieve a copy of the kernel's log using the <c>dmesg</c> command:
+</p>
+
+<pre caption="Retrieving kernel's log using dmesg command">
+Linux version 2.4.16 (root@time.flatmonk.org) (gcc version 2.95.3 20010315 (release)) #1 Sat Jan 12 19:23:04 EST 2002
+</pre>
+
+<p>
+Hey, we recognize that line! It's the first line the kernel prints when it
+loads. Indeed, if you pipe the output of <c>dmesg</c> into a pager, you can
+view all of the messages the kernel printed on boot, plus any messages the
+kernel has printed to the console in the meantime. 
+</p>
+
+</body>
+</section>
+<section>
+<title>/var/log/messages</title>
+<body>
+
+<p>
+The second place to look for information is in the
+<path>/var/log/messages</path> file. This file is recorded by the syslog
+daemon, which accepts input from libraries, daemons, and the kernel. Each line
+in the messages file is timestamped. This file is a good place to look for
+errors that occurred during the init scripts stage of booting. For example, to
+see the last few messages from the nameserver:
+</p>
+
+<pre caption="greping /var/log/messages file">
+# <i>grep named /var/log/messages | tail -3</i>
+Jan 12 20:17:41 time /usr/sbin/named[350]: listening on IPv4 interface lo, 127.0.0.1#53
+Jan 12 20:17:41 time /usr/sbin/named[350]: listening on IPv4 interface eth0, 10.0.0.1#53
+Jan 12 20:17:41 time /usr/sbin/named[350]: running
+</pre>
+
+</body>
+</section>
+<section>
+<title>Additional information</title>
+<body>
+
+<p>
+Additional information related to this section can be found here:
+</p>
+
+<ul>
+  <li>
+    Tutorial: <uri
+    link="http://www-106.ibm.com/developerworks/edu/l-dw-linuxgrub-i.html">Getting
+    to know GRUB</uri>
+  </li>
+  <li><uri link="http://en.tldp.org/HOWTO/LILO.html">LILO Mini-HOWTO</uri></li>
+  <li><uri link="http://www.gnu.org/software/grub/">GRUB home</uri></li>
+  <li>
+    Kernel command-line options in
+    <path>/usr/src/linux/Documentation/kernel-parameters.txt</path>.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Runlevels</title>
+<section>
+<title>Single-user mode</title>
+<body>
+
+<p>
+Recall from the section regarding boot loaders that it's possible to pass
+parameters to the kernel when it boots. One of the most often used parameters
+is <c>s</c>, which causes the system to start in "single-user" mode. This mode
+usually mounts only the root filesystem, starts a minimal subset of the init
+scripts, and starts a shell rather than providing a login prompt.
+Additionally, networking is not configured, so there is no chance of external
+factors affecting your work.
+</p>
+
+</body>
+</section>
+<section>
+<title>Understanding single-user mode</title>
+<body>
+
+<p>
+So what "work" can be done with the system in such a state? To answer this
+question, we have to realize a vast difference between Linux and Windows.
+Windows is designed to normally be used by one person at a time, sitting at the
+console. It is effectively always in "single-user" mode. Linux, on the other
+hand, is used more often to serve network applications, or provide shell or X
+sessions to remote users on the network. These additional variables are not
+desirable when you want to perform maintenance operations such as restoring
+from backup, creating or modifying filesystems, upgrading the system from CD,
+etc. In these cases you should use single-user mode. 
+</p>
+
+</body>
+</section>
+<section>
+<title>Runlevels</title>
+<body>
+
+<p>
+In fact, it's not actually necessary to reboot in order to reach single-user
+mode. The <c>init</c> program manages the current mode, or "runlevel," for the
+system. The standard runlevels for a Linux system are defined as follows:
+</p>
+
+<ul>
+  <li>0: Halt the computer</li>
+  <li>1 or s: Single-user mode</li>
+  <li>2: Multi-user, no network</li>
+  <li>3: Multi-user, text console</li>
+  <li>4: Multi-user, graphical console</li>
+  <li>5: same as 4</li>
+  <li>6: Reboot the computer.</li>
+</ul>
+
+<p>
+These runlevels vary between distributions, so be sure to consult your distro's
+documentation.
+</p>
+
+</body>
+</section>
+<section>
+<title>telinit</title>
+<body>
+
+<p>
+To change to single-user mode, use the <c>telinit</c> command, which instructs
+<c>init</c> to change runlevels:
+</p>
+
+<pre caption="Using telinit command">
+# <i>telinit 1</i>
+</pre>
+
+<p>
+You can see from the table above that you can also shutdown or reboot the
+system in this manner. <c>telinit 0</c> will halt the computer; <c>telinit
+6</c> will reboot the computer. When you issue the <c>telinit</c> command to
+change runlevels, a subset of the <c>init</c> scripts will run to either shut
+down or start up system services.
+</p>
+
+</body>
+</section>
+<section>
+<title>Runlevel etiquette</title>
+<body>
+
+<p>
+However, note that this is rather rude if there are users on the system at the
+time (who may be quite angry with you). The <c>shutdown</c> command provides a
+method for changing runlevels in a way that treats users reasonably. Similarly
+to the <c>kill</c> command's ability to send a variety of signals to a process,
+<c>shutdown</c> can be used to halt, reboot, or change to single-user mode. For
+example, to change to single-user mode in 5 minutes:
+</p>
+
+<pre caption="Changing to single-user mode with 5 minutes delay">
+# <i>shutdown 5</i>
+Broadcast message from root (pts/2) (Tue Jan 15 19:40:02 2002):
+The system is going DOWN to maintenance mode in 5 minutes!
+</pre>
+
+<p>
+If you press &lt;control-c&gt; at this point, you can cancel the pending switch
+to single-user mode. The message above would appear on all terminals on the
+system, so users have a reasonable amount of time to save their work and log
+off. (Some might argue whether or not 5 minutes is "reasonable")
+</p>
+
+</body>
+</section>
+<section>
+<title>"Now" and halt</title>
+<body>
+
+<p>
+If you're the only person on the system, you can use "now" instead of an
+argument in minutes. For example, to reboot the system right now:
+</p>
+
+<pre caption="Using shutdown command with now option">
+# <i>shutdown -r now</i>
+</pre>
+
+<p>
+No chance to hit &lt;control-c&gt; in this case; the system is already on its
+way down. Finally, the -h option halts the system:
+</p>
+
+<pre caption="Halting the system">
+# <i>shutdown -h 1</i>
+Broadcast message from root (pts/2) (Tue Jan 15 19:50:58 2002):
+The system is going DOWN for system halt in 1 minute!
+</pre>
+
+</body>
+</section>
+<section>
+<title>The default runlevel</title>
+<body>
+
+<p>
+You've probably gathered at this point that the <c>init</c> program is quite
+important on a Linux system. You can configure <c>init</c> by editing the file
+<path>/etc/initttab</path>, which is described in the inittab(5) man-page.
+We'll just touch on one key line in this file:
+</p>
+
+<pre caption="Editing init configuration file">
+# <i>grep ^id: /etc/inittab</i>
+id:3:initdefault:
+</pre>
+
+<p>
+On my system, runlevel 3 is the default runlevel. It can be useful to change
+this value if you prefer your system to boot immediately into a graphical login
+(usually runlevel 4 or 5). To do so, simply edit the file and change the value
+on that line. But be careful! If you change it to something invalid, you'll
+probably have to employ the <c>init=/bin/sh</c> trick we mentioned earlier.
+</p>
+
+</body>
+</section>
+<section>
+<title>Additional information</title>
+<body>
+
+<p>
+Additional information related to this section can be found at:
+</p>
+
+<ul>
+  <li>
+    <uri
+    link="http://www.redhat.com/docs/manuals/linux/RHL-7.2-Manual/ref-guide/s1-init-boot-shutdown-init.html">
+    Sysvinit docs at Red Hat</uri>
+  </li>
+  <li>
+    <uri link="http://www.linuxdoc.org/LDP/sag/init.html">Linux System
+    Administrator's Guide section on init</uri>.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Filesystem quotas</title>
+<section>
+<title>Introducing quotas</title>
+<body>
+
+<p>
+Quotas are a feature of Linux that let you track disk usage by user or by
+group. They're useful for preventing any single user or group from using an
+unfair portion of a filesystem, or from filling it up altogether. Quotas can
+only be enabled and managed by the root user. In this section, I'll describe
+how to set up quotas on your Linux system and manage them effectively.
+</p>
+
+</body>
+</section>
+<section>
+<title>Kernel support</title>
+<body>
+
+<p>
+Quotas are a feature of the filesystem; therefore, they require kernel support.
+The first thing you'll need to do is verify that you have quota support in your
+kernel. You can do this using grep:
+</p>
+
+<pre caption="Checking kernel configuration for quota support">
+# <i>cd /usr/src/linux</i>
+# <i>grep -i quota .config</i>
+CONFIG_QUOTA=y
+CONFIG_XFS_QUOTA=y
+</pre>
+
+<p>
+If this command returns something less conclusive (such as CONFIG_QUOTA is not
+set) then you should rebuild your kernel to include quota support. This is not
+a difficult process, but is outside of the scope of this section of the
+tutorial. If you're unfamiliar with the steps to build and install a new
+kernel, you might consider referencing this <uri
+link="/doc/en/articles/linux-kernel-compiling.xml">tutorial</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Filesystem support</title>
+<body>
+
+<p>
+Before diving into the administration of quotas, please note that quota support
+on Linux as of the 2.4.x kernel series is not complete. There are currently
+problems with quotas in the ext2 and ext3 filesystems, and ReiserFS does not
+appear to support quotas at all. This tutorial bases its examples on XFS, which
+seems to properly <uri
+link="http://oss.sgi.com/projects/xfs/faq.html#quotaswork">support
+quotas</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring quotas</title>
+<body>
+
+<p>
+To begin configuring quotas on your system, you should edit
+<path>/etc/fstab</path> to mount the affected filesystems with quotas enabled.
+For our example, we use an XFS filesystem mounted with user and group quotas
+enabled:
+</p>
+
+<pre caption="Configuring quotas">
+# <i>grep quota /etc/fstab</i>
+/usr/users   /mnt/hdc1    xfs    usrquota,grpquota,noauto   0 0
+# <i>mount /usr/users</i>
+</pre>
+
+<p>
+Note that the usrquota and grpquota options don't necessarily enable quotas on
+a filesystem. You can make sure quotas are enabled using the <c>quotaon</c>
+command:
+</p>
+
+<pre caption="Enabling quotas">
+# <i>quotaon /usr/users</i>
+</pre>
+
+<p>
+There is a corresponding <c>quotaoff</c> command should you desire to disable
+quotas in the future:
+</p>
+
+<pre caption="Disabling quotas">
+# <i>quotaoff /usr/users</i>
+</pre>
+
+<p>
+But for the moment, if you're trying some of the examples in this tutorial, be
+sure to have quotas enabled.
+</p>
+
+</body>
+</section>
+<section>
+<title>The quota command</title>
+<body>
+
+<p>
+The <c>quota</c> command displays a user's disk usage and limits for all of the
+filesystems currently mounted. The -v option includes in the list filesystems
+where quotas are enabled, but no storage is currently allocated to the user.
+</p>
+
+<pre caption="Using quota command">
+# <i>quota -v</i>
+
+Disk quotas for user root (uid 0): 
+Filesystem  blocks   quota   limit   grace   files   quota   limit   grace
+ /dev/hdc1       0       0       0               3       0       0        
+</pre>
+
+<p>
+The first column, blocks, shows how much disk space the root user is currently
+using on each filesystem listed. The following columns, quota and limit, refer
+to the limits currently in place for disk space. We will explain the difference
+between quota and limit, and the meaning of the grace column later on. The
+files column shows how many files the root user owns on the particular
+filesystem. The following quota and limit columns refer to the limits for
+files.
+</p>
+
+</body>
+</section>
+<section>
+<title>Viewing quota</title>
+<body>
+
+<p>
+Any user can use the <c>quota</c> command to view their own quota report as
+shown in the previous example. However only the root user can look at the
+quotas for other users and groups. For example, say we have a filesystem,
+<path>/dev/hdc1</path> mounted on <path>/usr/users</path>, with two users: jane
+and john. First, let's look at jane's disk usage and limits.
+</p>
+
+<pre caption="Viewing quota for user">
+# <i>quota -v jane</i>
+
+Disk quotas for user jane (uid 1003): 
+Filesystem  blocks   quota   limit   grace   files   quota   limit   grace
+ /dev/hdc1    4100       0       0               6       0       0
+</pre>
+
+<p>
+In this example, we see that jane's quotas are set to zero, which indicates no
+limit.
+</p>
+
+</body>
+</section>
+<section>
+<title>edquota</title>
+<body>
+
+<p>
+Now let's say we want to give the user jane a quota. We do this with the
+<c>edquota</c> command. Before we start editing quotas, let's see how much
+space we have available on <path>/usr/users</path>:
+</p>
+
+<pre caption="Checking available space on /usr/users">
+# <i>df /usr/users</i>
+
+Filesystem           1k-blocks      Used Available Use% Mounted on
+/dev/hdc1               610048      4276    605772   1% /usr/users
+</pre>
+
+<p>
+This isn't a particularly large filesystem, only 600MB or so. It seems prudent
+to give jane a quota so that she can't use more than her fair share. When you
+run <c>edquota</c>, a temporary file is created for each user or group you
+specify on the command line.
+</p>
+
+<p>
+The <c>edquota</c> command puts you in an editor, which enables you to add
+and/or modify quotas via this temporary file.
+</p>
+
+<pre caption="Modifying quota">
+# <i>edquota jane</i>
+
+Disk quotas for user jane (uid 1003):
+Filesystem         blocks       soft       hard     inodes     soft     hard
+ /dev/hdc1           4100          0          0          6        0        0
+</pre>
+
+<p>
+Similar to the output from the <c>quota</c> command above, the blocks and
+inodes columns in this temporary file refer to the disk space and number of
+files jane is currently using. You cannot modify the number of blocks or
+inodes; any attempt to do so will be summarily discarded by the system. The
+soft and hard columns show jane's quota, which we can see is currently
+unlimited (again, zero indicates no quota).
+</p>
+
+</body>
+</section>
+<section>
+<title>Understanding edquota</title>
+<body>
+
+<p>
+The soft limit is the maximum amount of disk usage that jane has allocated to
+her on the filesystem (in other words, her quota). If jane uses more disk
+space than is allocated in her soft limit, she will be issued warnings about
+her quota violation via e-mail. The hard limit indicates the absolute limit on
+disk usage, which a user can't exceed. If jane tries to use more disk space
+than is specified in the hard limit, she will get a "Disk quota exceeded"
+error and will not be able to complete the operation.
+</p>
+
+</body>
+</section>
+<section>
+<title>Making changes</title>
+<body>
+
+<p>
+So here we change jane's soft and hard limits and save the file:
+</p>
+
+<pre caption="Changed soft and hard limits">
+
+Disk quotas for user jane (uid 1003):
+Filesystem         blocks       soft       hard     inodes     soft     hard
+ /dev/hdc1           4100      10000      11500          6     2000     2500
+</pre>
+
+<p>
+Running the <c>quota</c> command, we can inspect our modifications:
+</p>
+
+<pre caption="Checking quota for user jane">
+# <i>quota jane</i>
+
+Disk quotas for user jane (uid 1003): 
+Filesystem  blocks   quota   limit   grace   files   quota   limit   grace
+ /dev/hdc1    4100   10000   11500               6    2000    2500
+</pre>
+
+</body>
+</section>
+<section>
+<title>Copying quotas</title>
+<body>
+
+<p>
+You'll remember that we also have another user, john, on this filesystem. If
+we want to give john the same quota as jane, we can use the -p option to
+<c>edquota</c>, which uses jane's quotas as a prototype for all following users
+on the command line. This is an easy way to set up quotas for groups of users.
+</p>
+
+<pre caption="Coping quotas">
+# <i>edquota -p jane john</i>
+# <i>quota john</i>
+
+Disk quotas for user john (uid 1003): 
+Filesystem  blocks   quota   limit   grace   files   quota   limit   grace
+ /dev/hdc1       0   10000   11500               1    2000    2500        
+</pre>
+
+</body>
+</section>
+<section>
+<title>Group restrictions</title>
+<body>
+
+<p>
+We can also use <c>edquota</c> to restrict the allocation of disk space based
+on the group ownership of files. For example, to edit the quotas for the users
+group:
+</p>
+
+<pre caption="Editing quotas for the users group">
+# <i>edquota -g users</i>
+Disk quotas for group users (gid 100): Filesystem blocks soft hard inodes soft hard /dev/hdc1 4100 500000 510000 7 100000 125000
+</pre>
+
+<p>
+Then to view the modified quotas for the users group:
+</p>
+
+<pre caption="Viewing modified quotas">
+# <i>quota -g users</i>
+Disk quotas for group users (gid 100): Filesystem blocks quota limit grace files quota limit grace /dev/hdc1 4100 500000 510000 7 100000 125000
+</pre>
+
+</body>
+</section>
+<section>
+<title>The repquota command</title>
+<body>
+
+<p>
+Looking at each users' quotas using the <c>quota</c> command can be tedious if
+you have many users on a filesytem. The <c>repquota</c> command summarizes the
+quotas for a filesystem into a nice report. For example, to see the quotas for
+all users and groups on <path>/usr/users</path>:
+</p>
+
+<pre caption="Summarizing quotas">
+# <i>repquota -ug /usr/users</i>
+*** Report for user quotas on device /dev/hdc1
+Block grace time: 7days; Inode grace time: 7days
+                        Block limits                File limits
+User            used    soft    hard  grace    used  soft  hard  grace
+----------------------------------------------------------------------
+root      --       0       0       0              3     0     0       
+john      --       0   10000   11500              1  2000  2500       
+jane      --    4100   10000   11500              6  2000  2500       
+
+*** Report for group quotas on device /dev/hdc1
+Block grace time: 7days; Inode grace time: 7days
+                        Block limits             File limits
+Group           used    soft    hard  grace    used  soft  hard  grace
+----------------------------------------------------------------------
+root      --       0       0      0               3     0     0       
+users     --    4100  500000 510000               7 100000 125000  
+</pre>
+
+</body>
+</section>
+<section>
+<title>Repquota options</title>
+<body>
+
+<p>
+There are a couple of other options to repquota that are worth mentioning.
+<c>repquota -a</c> will report on all currently mounted read-write filesystems
+that have quotas enabled. <c>repquota -n</c> will not resolve uids and gids to
+names. This can speed up the output for large lists.
+</p>
+
+</body>
+</section>
+<section>
+<title>Monitoring quotas</title>
+<body>
+
+<p>
+If you are a system administrator, you will want to have a way to monitor
+quotas to ensure that they are not being exceeded. An easy way to do this is
+to use <c>warnquota</c>. The <c>warnquota</c> command sends e-mail to users who
+have exceeded their soft limit. Typically <c>warnquota</c> is run as a
+cron-job.
+</p>
+
+<p>
+When a user exceeds his or her soft limit, the grace column in the output from
+the <c>quota</c> command will indicate the grace period -- how long before the
+soft limit is enforced for that filesystem.
+</p>
+
+<pre caption="Checking grace period">
+Disk quotas for user jane (uid 1003): 
+    Filesystem  blocks   quota   limit   grace   files   quota   limit   grace
+    /dev/hdc1   10800*  10000   11500    7days      7     2000    2500
+</pre>
+
+<p>
+By default, the grace period for blocks and inodes is seven days.
+</p>
+
+</body>
+</section>
+<section>
+<title>Modifying the grace period</title>
+<body>
+
+<p>
+You can modify the grace period for filesystems using <c>equota</c>:
+</p>
+
+<pre caption="Modyfing grace period">
+# <i>edquota -t</i>
+</pre>
+
+<p>
+This puts you in an editor of a temporary file that looks like this:
+</p>
+
+<pre caption="Looks of a grace editor">
+Grace period before enforcing soft limits for users:
+Time units may be: days, hours, minutes, or seconds
+Filesystem             Block grace period     Inode grace period
+/dev/hdc1                    7days                  7days
+</pre>
+
+<p>
+The text in the file is nicely explanatory. Be sure to leave your users enough
+time to receive their warning e-mail and find some files to delete!
+</p>
+
+</body>
+</section>
+<section>
+<title>Checking quotas on boot</title>
+<body>
+
+<p>
+You may also want to check quotas on boot. You can do this using a script to
+run the <c>quotacheck</c> command; there is an example script in the <uri
+link="http://en.tldp.org/HOWTO/Quota.html">Quota Mini HOWTO</uri>. The
+<c>quotacheck</c> command also has the ability to repair damaged quota files;
+familiarize yourself with it by reading the quotacheck(8) man-page.
+</p>
+
+<p>
+Also remember what we mentioned previously regarding <c>quotaon</c> and
+<c>quotaoff</c>. You should incorporate <c>quotaon</c> into your boot script so
+that quotas are enabled. To enable quotas on all filesystems where quotas are
+supported, use the -a option:
+</p>
+
+<pre caption="Using -a option">
+# <i>quotaon -a</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>System logs</title>
+<section>
+<title>Introducing syslogd</title>
+<body>
+
+<p>
+The syslog daemon provides a mature client-server mechanism for logging
+messages from programs running on the system. Syslog receives a message from a
+daemon or program, categorizes the message by priority and type, then logs it
+according to administrator-configurable rules. The result is a robust and
+unified approach to managing logs.
+</p>
+
+</body>
+</section>
+<section>
+<title>Reading logs</title>
+<body>
+
+<p>
+Let's jump right in and look at the contents of a syslog-recorded log file.
+Afterward, we can come back to syslog configuration. The FHS (see <uri
+link="/doc/en/articles/lpi-101-administration-p2.xml">Part 2</uri> of this
+tutorial series) mandates that log files be placed in <path>/var/log</path>.
+Here we use the <c>tail</c> command to display the last 10 lines in the
+"messages" file:
+</p>
+
+<pre caption="Reading logs">
+# <i>cd /var/log</i>
+# <i>tail messages</i>
+Jan 12 20:17:39 bilbo init: Entering runlevel: 3
+Jan 12 20:17:40 bilbo /usr/sbin/named[337]: starting BIND 9.1.3
+Jan 12 20:17:40 bilbo /usr/sbin/named[337]: using 1 CPU
+Jan 12 20:17:41 bilbo /usr/sbin/named[350]: loading configuration from '/etc/bind/named.conf'
+Jan 12 20:17:41 bilbo /usr/sbin/named[350]: no IPv6 interfaces found
+Jan 12 20:17:41 bilbo /usr/sbin/named[350]: listening on IPv4 interface lo, 127.0.0.1#53
+Jan 12 20:17:41 bilbo /usr/sbin/named[350]: listening on IPv4 interface eth0, 10.0.0.1#53
+Jan 12 20:17:41 bilbo /usr/sbin/named[350]: running
+Jan 12 20:41:58 bilbo gnome-name-server[11288]: starting
+Jan 12 20:41:58 bilbo gnome-name-server[11288]: name server starting
+</pre>
+
+<p>
+You may remember from the text-processing whirlwind that the <c>tail</c>
+command displays the last lines in a file. In this case, we can see that the
+nameserver named was recently started on this system, which is named bilbo. If
+we were deploying IPv6, we might notice that named found no IPv6 interfaces,
+indicating a potential problem. Additionally, we can see that a user may have
+recently started GNOME, indicated by the presence of gnome-name-server.
+</p>
+
+</body>
+</section>
+<section>
+<title>Tailing log files</title>
+<body>
+
+<p>
+An experienced system administrator might use <c>tail -f</c> to follow the
+output to a log file as it occurs:
+</p>
+
+<pre caption="Using tail -f command">
+# <i>tail -f /var/log/messages</i>
+</pre>
+
+<p>
+For example, in the case of debugging our theoretical IPv6 problem, running the
+above command in one terminal while stopping and starting named would
+immediately display the messages from that daemon. This can be a useful
+technique when debugging. Some administrators even like to keep a constantly
+running <c>tail -f</c> messages in a terminal where they can keep an eye on
+system events.
+</p>
+
+</body>
+</section>
+<section>
+<title>Grepping logs</title>
+<body>
+
+<p>
+Another useful technique is to search a log file using the <c>grep</c> utility,
+described in <uri link="/doc/en/articles/lpi-101-administration-p2.xml">Part
+2</uri> of this tutorial series. In the above case, we might use grep to find
+where "named" behavior has changed:
+</p>
+
+<pre caption="Grepping logs">
+# <i>grep named /var/log/messages</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Log overview</title>
+<body>
+
+<p>
+The following summarizes the log files typically found in <path>/var/log</path>
+and maintained by syslog:
+</p>
+
+<ul>
+  <li>
+    <path>messages</path>: Informational and error messages from general system
+    programs and daemons
+  </li>
+  <li>
+    <path>secure</path>: Authentication messages and errors, kept separate from
+    <path>messages</path> for extra security
+  </li>
+  <li><path>maillog</path>: Mail-related messages and errors</li>
+  <li><path>cron</path>: Cron-related messages and errors</li>
+  <li><path>spooler</path>: UUCP and news-related messages and errors.</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>syslog.conf</title>
+<body>
+
+<p>
+As a matter of fact, now would be a good time to investigate the syslog
+configuration file, <path>/etc/syslog.conf</path>. (Note: If you don't have
+<path>syslog.conf</path>, keep reading for the sake of information, but you may
+be using an alternative syslog daemon.) Browsing that file, we see there are
+entries for each of the common log files mentioned above, plus possibly some
+other entries. The file has the format facility.priority action, where those
+fields are defined as follows:
+</p>
+
+<p>
+facility: Specifies the subsystem that produced the message. The valid keywords
+for facility are auth, authpriv, cron, daemon, kern, lpr, mail, news, syslog,
+user, uucp and local0 through local7.
+</p>
+
+<p>
+priority: Specifies the minimum severity of the message, meaning that messages
+of this priority and higher will be matched by this rule. The valid keywords
+for priority are debug, info, notice, warning, err, crit, alert, and emerg.
+</p>
+
+<p>
+action: The action field should be either a filename, tty (such as
+<path>/dev/console</path>), remote machine prefixed by @ , comma-separated list
+of users, or to send the message to everybody logged on. The most common action
+is a simple filename.
+</p>
+
+</body>
+</section>
+<section>
+<title>Reloading and additional information</title>
+<body>
+
+<p>
+Hopefully this overview of the configuration file helps you to get a feel for
+the strength of the syslog system. You should read the syslog.conf(5) man-page
+for more information prior to making changes. Additionally the syslogd(8)
+man-page supplies lots more detailed information.
+</p>
+
+<p>
+Note that you need to inform the syslog daemon of changes to the configuration
+file before they are put into effect. Sending it a SIGHUP is the right method,
+and you can use the <c>killall</c> command to do this easily:
+</p>
+
+<pre caption="Using killall command">
+# <i>killall -HUP syslogd</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>A security note</title>
+<body>
+
+<p>
+You should beware that the log files written to by syslogd will be created by
+the program if they don't exist. Regardless of your current umask setting, the
+files will be created world-readable. If you're concerned about the security,
+you should chmod the files to be read-write by root only. Additionally, the
+<c>logrotate</c> program (described below) can be configured to create new log
+files with the appropriate permissions. The syslog daemon always preserves the
+current attributes of an existing log file, so you don't need to worry about it
+once the file is created.
+</p>
+
+</body>
+</section>
+<section>
+<title>logrotate</title>
+<body>
+
+<p>
+The log files in <path>/var/log</path> will grow over time, and potentially
+could fill the filesystem. It is advisable to employ a program such as
+<c>logrotate</c> to manage the automatic archiving of the logs. The
+<c>logrotate</c> program usually runs as a daily cron job, and can be
+configured to rotate, compress, remove, or mail the log files.
+</p>
+
+<p>
+For example, a default configuration of logrotate might rotate the logs weekly,
+keeping 4 weeks worth of backlogs (by appending a sequence number to the
+filename), and compress the backlogs to save space. Additionally, the program
+can be configured to deliver a SIGHUP to syslogd so that the daemon will notice
+the now-empty log files and append to them appropriately.
+</p>
+
+<p>
+For more information on <c>logrotate</c>, see the logrotate(8) man page, which
+contains a description of the program and the syntax of the configuration file.
+</p>
+
+</body>
+</section>
+<section>
+<title>Advanced topic -- klogd</title>
+<body>
+
+<p>
+Before moving away from syslog, I'd like to note a couple of advanced topics
+for ambitious readers. These tips may save you some grief when trying to
+understand syslog-related topics.
+</p>
+
+<p>
+First, the syslog daemon is actually part of the sysklogd package, which
+contains a second daemon called klogd. It's klogd's job to receive information
+and error messages from the kernel, and pass them on to syslogd for
+categorization and logging. The messages received by klogd are exactly the same
+as those you can retrieve using the <c>dmesg</c> command. The difference is
+that <c>dmesg</c> prints the current contents of a ring buffer in the kernel,
+whereas klogd is passing the messages to syslogd so that they won't be lost
+when the ring wraps around.
+</p>
+
+</body>
+</section>
+<section>
+<title>Advanced topic -- alternate loggers</title>
+<body>
+
+<p>
+Second, there are alternatives to the standard sysklogd package. The
+alternatives attempt to be more efficient, easier to configure, and possibly
+more featureful than sysklogd. <uri
+link="http://www.balabit.hu/en/downloads/syslog-ng/">Syslog-ng</uri> and <uri
+link="http://metalog.sourceforge.net/">Metalog</uri> seem to be some of the
+more popular alternatives; you might investigate them if you find sysklogd
+doesn't provide the level of power you need.
+</p>
+
+<p>
+Third, you can log messages in your scripts using the logger command. See the
+logger(1) man page for more information.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Summary and resources</title>
+<section>
+<title>Summary</title>
+<body>
+
+<p>
+Congratulations, you've reached the end of this tutorial! Well, almost. There
+were a couple of topics that we were unable to include in our first four
+tutorials due to space limitations. Fortunately, we have a couple of good
+resources that will help you get up to speed on these topics in no time. Be
+sure to cover these particular tutorials if you are planning to get your LPIC
+level 1 certification.
+</p>
+
+<p>
+We didn't have quite enough room to cover the important topic of system backups
+in this tutorial. Fortunately, IBM developerWorks already has a tutorial on
+this subject, called <uri
+link="http://www-106.ibm.com/developerworks/edu/l-dw-linuxbu-i.html">Backing up
+your Linux machines</uri>. In this tutorial, you'll learn how to back up Linux
+systems using a <c>tar</c> variant called star. You'll also learn how to use
+the <c>mt</c> command to control tape functions. 
+</p>
+
+<p>
+The second topic that we weren't quite able to fit in was periodic scheduling.
+Fortunately, there's some good <uri
+link="http://www.ussg.iu.edu/usail/automation/cron.html">cron
+documentation</uri> available at Indiana University. <c>cron</c> is used to
+schedule jobs to be executed at a specific time, and is an important tool for
+any system administrator.
+</p>
+
+<p>
+On the next page, you'll find a number of resources that you will find helpful
+in learning more about the subjects presented in this tutorial.
+</p>
+
+</body>
+</section>
+<section>
+<title>Resources</title>
+<body>
+
+<p>
+To find out more about quota support under Linux, be sure to check out the <uri
+link="http://en.tldp.org/HOWTO/Quota.html">Linux Quota mini-HOWTO</uri>.  Also
+be sure to consult the quota(1), edquota(8), repquota(8), quotacheck(8), and
+quotaon(8) man pages on your system.
+</p>
+
+<p>
+Additional information to the system boot process and boot loaders can be found
+at:
+</p>
+
+<ul>
+  <li>
+    IBM developerWorks' <uri
+    link="http://www-106.ibm.com/developerworks/edu/l-dw-linuxgrub-i.html">Getting
+    to know GRUB</uri> tutorial
+  </li>
+  <li><uri link="http://en.tldp.org/HOWTO/LILO.html">LILO Mini-HOWTO</uri></li>
+  <li><uri link="http://www.gnu.org/software/grub/">GRUB home</uri></li>
+  <li>
+    Kernel command-line options in
+    <path>/usr/src/linux/Documentation/kernel-parameters.txt</path>
+  </li>
+  <li>
+    <uri
+    link="http://www.redhat.com/docs/manuals/linux/RHL-7.2-Manual/ref-guide/s1-init-boot-shutdown-init.html">Sysvinit
+    docs at Redhat</uri>.
+  </li>
+</ul>
+
+<p>
+To learn more about Linux filesystems, read the multi-part advanced filesystem
+implementor's guide on the IBM developerWorks Linux zone, covering:
+</p>
+
+<ul>
+  <li>
+    <uri link="http://www-106.ibm.com/developerworks/library/l-fs.html">The
+    benefits of journalling and ReiserFS (Part 1)</uri>
+  </li>
+  <li>
+    <uri
+    link="http://www-106.ibm.com/developerworks/library/l-fs2.html">Setting up
+    a ReiserFS system (Part 2)</uri>
+  </li>
+  <li>
+    <uri link="http://www-106.ibm.com/developerworks/library/l-fs3.html">Using
+    the tmpfs virtual memory filesystem and bind mounts (Part 3)</uri>
+  </li>
+  <li>
+    <uri link="http://www-106.ibm.com/developerworks/library/l-fs4.html">The
+    benefits of devfs, the device management filesystem (Part 4)</uri>
+  </li>
+  <li>
+    <uri
+    link="http://www-106.ibm.com/developerworks/library/l-fs5.html">Beginning
+    the conversion to devfs (Part 5)</uri>
+  </li>
+  <li>
+    <uri
+    link="http://www-106.ibm.com/developerworks/linux/library/l-fs6/">Completing
+    the conversion to devfs using an init wrapper (Part 6)</uri>
+  </li>
+  <li>
+    <uri
+    link="/doc/en/articles/afig-ct-ext3-intro.xml">The
+    benefits of the ext3 filesystem (Part 7)</uri>
+  </li>
+  <li>
+    <uri link="/doc/en/articles/l-afig-p8.xml">An in-depth
+    look at ext3 and the latest kernel updates (Part 8)</uri>
+  </li>
+  <li>
+    <uri
+    link="http://www-106.ibm.com/developerworks/linux/library/l-fs9.html">An
+    introduction to XFS (Part 9)</uri>.
+  </li>
+</ul>
+
+<p>
+For more information on partitioning, take a look at the following partitioning
+tips on the IBM developerWorks Linux zone:
+</p>
+
+<ul>
+  <li>
+    <uri link="/doc/en/articles/partition-planning-tips.xml">Partition planning
+    tips</uri>
+  </li>
+  <li>
+    <uri link="/doc/en/articles/partitioning-p1.xml">Partitioning in action,
+    Part 1</uri>
+  </li>
+  <li>
+    <uri link="/doc/en/articles/partitioning-p2.xml">Partitioning in action,
+    Part 2</uri>.
+  </li>
+</ul>
+
+<p>
+ReiserFS Resources:
+</p>
+
+<ul>
+  <li><uri link="http://www.namesys.com/">The home of ReiserFS</uri></li>
+  <li>
+    <uri
+    link="http://www-106.ibm.com/developerworks/library/l-fs.html">Advanced
+    filesystem implementor's guide, Part 1: Journalling and ReiserFS on
+    developerWorks</uri>
+  </li>
+  <li>
+    <uri
+    link="http://www-106.ibm.com/developerworks/library/l-fs2.html">Advanced
+    filesystem implementor's guide, Part 2: Using ReiserFS and Linux 2.4 on
+    developerWorks</uri>.
+  </li>
+</ul>
+
+<p>
+ext3 resources:
+</p>
+
+<ul>
+  <li>
+    <uri link="http://www.zip.com.au/~akpm/linux/ext3/">Andrew Morton's ext3
+    page</uri>
+  </li>
+  <li>
+    <uri link="http://www.zip.com.au/~akpm/linux/ext3/ext3-usage.html">Andrew
+    Morton's excellent ext3 usage documentation (recommended).</uri>
+  </li>
+</ul>
+
+<p>
+XFS and JFS resources:
+</p>
+
+<ul>
+  <li>
+    <uri link="http://oss.sgi.com/projects/xfs">SGI XFS projects page</uri>
+  </li>
+  <li>
+    The IBM <uri
+    link="http://www-124.ibm.com/developerworks/oss/jfs/index.html">JFS project
+    Web site</uri>.
+  </li>
+</ul>
+
+<p>
+Don't forget <uri link="http://en.tldp.org/">linuxdoc.org</uri>. You'll find
+linuxdoc's collection of guides, HOWTOs, FAQs, and man pages to be invaluable.
+Be sure to check out <uri link="http://en.tldp.org/LDP/LG/current/">Linux
+Gazette</uri> and <uri
+link="http://en.tldp.org/linuxfocus/index.html">LinuxFocus</uri> as well.
+</p>
+
+<p>
+The Linux System Administrators guide, available from <uri
+link="http://en.tldp.org/guides.html">Linuxdoc.org's "Guides" section</uri>, is
+a good complement to this series of tutorials -- give it a read! You may also
+find Eric S. Raymond's <uri
+link="http://en.tldp.org/HOWTO/Unix-and-Internet-Fundamentals-HOWTO/">Unix and
+Internet Fundamentals HOWTO</uri> to be helpful.
+</p>
+
+<p>
+In the Bash by example article series on developerWorks, Daniel shows you how
+to use bash programming constructs to write your own bash scripts. This bash
+series (particularly Parts 1 and 2) will be excellent additional preparation
+for the LPIC Level 1 exam:
+</p>
+
+<ul>
+  <li>
+    <uri
+    link="http://www.gentoo.org/doc/en/articles/bash-by-example-p1.xml">Bash by
+    example, part 1: Fundamental programming in the Bourne-again shell</uri>
+  </li>
+  <li>
+    <uri
+    link="http://www.gentoo.org/doc/en/articles/bash-by-example-p2.xml">Bash by
+    example, part 2: More bash programming fundamentals</uri>
+  </li>
+  <li>
+    <uri
+    link="http://www.gentoo.org/doc/en/articles/bash-by-example-p3.xml">Bash by
+    example, part 3: Exploring the ebuild system.</uri>
+  </li>
+</ul>
+
+<p>
+We highly recommend the <uri
+link="http://www-106.ibm.com/developerworks/linux/library/l-faq/">Technical FAQ
+by Linux Users</uri> by Mark Chapman, a 50-page in-depth list of
+frequently-asked Linux questions, along with detailed answers. The FAQ itself
+is in PDF (Adobe Acrobat) format. If you're a beginning or intermediate Linux
+user, you really owe it to yourself to check this FAQ out. We also recommend
+the <uri
+link="http://www-106.ibm.com/developerworks/linux/library/l-gloss/index.html">Linux
+glossary for Linux users</uri>, also from Mark.
+</p>
+
+<p>
+If you're not familiar with the vi editor, we strongly recommend that you check
+out Daniel's <uri
+link="http://www-106.ibm.com/developerworks/edu/l-dw-linuxvi-i.html">Vi intro
+-- the cheat sheet method tutorial</uri>. This tutorial will give you a gentle
+yet fast-paced introduction to this powerful text editor. Consider this
+must-read material if you don't know how to use vi.
+</p>
+
+</body>
+</section>
+<section>
+<title>Feedback</title>
+<body>
+
+<p>
+Please send any tutorial feedback you may have to the authors:
+</p>
+
+<ul>
+  <li>Daniel Robbins, at <mail>drobbins@gentoo.org</mail></li>
+  <li>Chris Houser, at <mail>chouser@gentoo.org</mail></li>
+  <li>Aron Griffis, at <mail>agriffis@gentoo.org</mail>.</li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

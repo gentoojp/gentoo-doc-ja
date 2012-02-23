@@ -1,0 +1,567 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/ltsp.xml,v 1.23 2011/09/04 17:53:40 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoo - LTSP Guide</title>
+<author title="Author">
+  <mail link="lanius@gentoo.org">Heinrich Wendel</mail>
+</author>
+<author title="Author">
+  <mail link="josiah@ritchietribe.net">Josiah Ritchie</mail>
+</author>
+<author title="Editor">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+
+<abstract>
+This guide shows you how to setup a LTSP Server with Gentoo.
+</abstract>
+
+<license/>
+
+<version>1.14</version>
+<date>2008-09-28</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>What is LTSP?</title>
+<body>
+
+<p>
+LTSP is an abbreviation for "Linux Terminal Server Project". Installed
+on a server it can supply many workstations (so called thin-clients)
+with identical environments. All applications run on the server and
+therefore you can use old PCs and convert them into XTerminals. This
+reduces costs and maintenance especially in an environment where you
+need to have an uniform workspace on each computer you login, e.g. in
+schools or firms.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Installation</title>
+<section>
+<title>Preliminaries</title>
+<body>
+
+<p>
+All of the examples in this document presume that your server's IP is
+192.168.0.254, your domain is named yourdomain.com and your network is
+192.168.0.0/24.
+</p>
+
+</body>
+</section>
+<section>
+<title>Installation</title>
+<body>
+
+<p>
+First of all, you must have a working Gentoo system. Please read the
+Gentoo Installation Manual for your architecture on <uri
+link="http://www.gentoo.org/doc">Gentoo's Documentation Website</uri>.
+</p>
+
+<p>
+Then lets begin with the easiest step, installing the ltsp package:
+</p>
+
+<pre caption="Emerge LTSP">
+# <i>emerge ltsp</i>
+</pre>
+
+<p>
+This will install the following packages as dependencies:
+</p>
+
+<ul>
+  <li><b>XFree</b>: They are called XTerminals, guess why :)</li>
+  <li>
+    <b>DHCP</b>: DHCP is a protocol for automating the configuration of
+    computers that use TCP/IP, used by ltsp to distribute IPs to the
+    workstations.
+  </li>
+  <li>
+    <b>NFS</b>: NFS is a protocol to allow access to harddisks through
+    the network, used by ltsp to mount a base system for the
+    workstations.
+  </li>
+  <li>
+    <b>TFTP</b>: TFTP is a simple file transfer protocol, used by ltsp
+    to transfer the kernel to the workstations.
+  </li>
+  <li>
+    <b>XINETD</b>: Xinetd is a powerful replacement for inetd, with
+    advanced features, used by ltsp to start tftp.
+  </li>
+</ul>
+
+<note>
+If you have the kde/gnome useflag set, it will also install a complete kde/gnome
+system.
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuration</title>
+<section>
+<body>
+
+<p>
+After the emerge process has finished all services must be configured:
+</p>
+
+</body>
+</section>
+<section>
+<title>System Logger</title>
+<body>
+
+<p>
+To analyze problems easier, the system logger must be configured to
+accept remote connections. Please read the documentation of your
+system logger on how to achieve this. If, for example, you are using
+sysklogd, all you need to do is edit <path>/etc/conf.d/sysklogd</path> and add
+"-r" to the SYSLOGD line:
+</p>
+
+<pre caption="/etc/conf.d/sysklogd">
+SYSLOGD="-m 0 -r"
+KLOGD="-c 3 -2"
+</pre>
+
+</body>
+</section>
+<section>
+<title>NFS</title>
+<body>
+
+<p>
+Next step is to edit your <path>/etc/exports</path> file, in order to
+allow the workstations to mount the root filesystem. There should be at
+least two lines in it:
+</p>
+
+<pre caption="/etc/exports">
+/opt/ltsp-4.1/i386         192.168.0.0/255.255.255.0(ro,no_root_squash,async)
+/var/opt/ltsp/swapfiles    192.168.0.0/255.255.255.0(rw,no_root_squash,async)
+</pre>
+
+<note>
+You have to alter the network/netmask to match your network/netmask
+settings.
+</note>
+
+<p>
+Now start NFS.
+</p>
+
+<pre caption="Starting nfs">
+# <i>rc-update add nfs default</i>
+# <i>/etc/init.d/nfs start</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>xinetd/tftp</title>
+<body>
+<p>
+TFTP requires a bit of configuring to get it to work properly. First, edit
+<path>/etc/conf.d/in.tftpd</path> to set tftpd's options and path correctly:
+</p>
+
+<pre caption="/etc/conf.d/in.tftpd">
+INTFTPD_PATH="/tftpboot"
+INTFTPD_OPTS="-s ${INTFTPD_PATH}"
+</pre>
+
+<p>
+The -s flag specifies that TFTP is to run in secure chrooted mode
+(recommended). This means that you don't need to include the
+<path>/tftpboot</path> path for example in the DHCP configuration.
+</p>
+
+<p>
+Next, configure xinetd to run TFTP and allow remote connections. By default
+TFTP won't be started by xinetd, so edit <path>/etc/xinetd.d/tftp</path> and
+replace <c>disable=yes</c> with <c>disable=no</c>. If the file is missing just
+go ahead and create <path>/etc/xinetd.d/tftp</path> with the contents below.
+</p>
+
+<pre caption="/etc/xinetd.d/tftp">
+service tftp
+{
+        disable = no
+        socket_type = dgram
+        protocol = udp
+        wait = yes
+        user = root
+        server = /usr/sbin/in.tftpd
+        server_args = -s /tftpboot
+}
+</pre>
+
+<p>
+Now edit <path>/etc/xinetd.conf</path> and comment out the line <c>only_from =
+localhost</c> by prefacing it with a <c>#</c>. Finally, start xinetd.
+</p>
+
+<pre caption="Starting xinetd">
+# <i>rc-update add xinetd default</i>
+# <i>/etc/init.d/xinetd start</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Name resolving</title>
+<body>
+
+<p>
+In order for the workstation to reach all resources, a correct name
+resolving must be available. There are several ways to achieve this. One
+is to configure a DNS server for the local network, the other (and more
+simple) is to have almost identical <path>/etc/hosts</path> files on all
+systems. We are going to use the latter.
+</p>
+
+<p>
+All workstations must be listed in <path>/etc/hosts</path>. Take a look
+at the example:
+</p>
+
+<pre caption="/etc/hosts">
+127.0.0.1        localhost
+192.168.0.254    server      server.yourdomain.com
+192.168.0.1      ws001       ws001.yourdomain.com
+</pre>
+
+</body>
+</section>
+<section>
+<title>DHCP Config</title>
+<body>
+
+<p>
+This is the most complicated step in my opinion, you have to create a
+valid DHCP Config (<path>/etc/dhcp/dhcpd.conf</path>). Here is an
+example:
+</p>
+
+<pre caption = "dhcpd.conf">
+<comment>(Some general options)</comment>
+default-lease-time            21600;
+max-lease-time                21600;
+use-host-decl-names           on;
+ddns-update-style             ad-hoc;
+
+<comment>(Bootp options)</comment>
+allow booting;
+allow bootp;
+
+<comment>(Network Options)</comment>
+option subnet-mask            255.255.255.0;
+option broadcast-address      192.168.0.255;
+option routers                192.168.0.254;
+option domain-name-servers    192.168.0.254;
+option log-servers            192.168.0.254;
+option domain-name            "yourdomain.com";
+
+<comment>(LTSP Path Options)</comment>
+option root-path              "192.168.0.254:/opt/ltsp-4.1/i386";
+filename                      "/lts/vmlinuz-2.4.26-ltsp-2";
+<comment>(Address of the tftp server to download the ltsp file from)</comment>
+next-server                   192.168.0.254;
+
+<comment>(If your workstations have ISA NICs uncomment the following)</comment>
+<comment>(lines and alter the driver and IO)</comment>
+#option option-128 code 128 = string;
+#option option-129 code 129 = text;
+#option option-128 e4:45:74:68:00:00;
+#option option-129 "NIC=ne IO=0x300";
+
+shared-network WORKSTATIONS {
+  subnet 192.168.0.0 netmask 255.255.255.0 {
+    <comment>(Distribute dynamic IPs to the workstations)</comment>
+    range dynamic-bootp 192.168.0.1 192.168.0.16;
+    <comment>(Workstation specific configuration for PXE booting)</comment>
+    #host ws001 {
+    #  hardware ethernet     00:E0:06:E8:00:84;
+    #  fixed-address         192.168.0.1;
+    #}
+  }
+}
+</pre>
+
+<p>
+If your workstations support PXE, you should list each one of them as we
+have done with <e>host ws001</e> (don't forget to uncomment it). Don't
+give them an adress in the dynamic range, otherwise it would be possible
+that more workstations have the same IP (which is troublesome). Remember,
+if you cut-n-paste the above example, replace any "//" comments with "##",
+or else dhcp will fail to start.
+</p>
+
+<p>
+For more documentation on this item read the official dhcp handbook:
+<uri>http://www.dhcp-handbook.com/</uri>
+</p>
+
+<p>
+Now start DHCP as you did with NFS and xinetd:
+</p>
+
+<pre caption="start dhcp">
+# <i>rc-update add dhcp default</i>
+# <i>/etc/init.d/dhcp start</i>
+</pre>
+
+<note>
+DHCPD needs CONFIG_PACKET and CONFIG_FILTER activated in the kernel to work.
+</note>
+
+</body>
+</section>
+<section>
+<title>LTSP Configuration</title>
+<body>
+
+<p>
+There are many options to configure your workstations, visit
+<uri>http://ltsp.mirrors.tds.net/pub/ltsp/docs/ltsp-4.1-en.html#AEN1190</uri>
+for a full description of <path>/opt/ltsp/i386/etc/lts.conf</path>.
+</p>
+
+<p>
+As a few suggestions to get started, you will want to first copy
+<path>/opt/ltsp/i386/etc/lts.conf.example</path> to
+<path>/opt/ltsp/i386/etc/lts.conf</path> and edit it from there. You may want
+to try changing the <c>SCREEN_01</c> option to read <c>SCREEN_01 = startx</c>.
+To use a USB mouse on the remote client, add the following MODULE lines, and
+change the X_MOUSE_* lines as follows:
+</p>
+
+<pre caption="/opt/ltsp/i386/etc/lts.conf">
+MODULE_01          = usb-uhci
+MODULE_02          = mousedev
+MODULE_03          = usbmouse
+X_MOUSE_PROTOCOL   = "IMPS/2"
+X_MOUSE_DEVICE     = "/dev/input/mice"
+</pre>
+
+</body>
+</section>
+<section>
+<title>Displaymanager</title>
+<body>
+
+<p>
+Now you have to change your displaymanager's configuration to
+also accept remote connections.
+</p>
+
+<p>
+First change your <path>/etc/X11/xdm/Xaccess</path> file,
+uncomment the following line:
+</p>
+
+<pre caption="/etc/X11/xdm/Xaccess">
+#*                   #any host can get a login window
+</pre>
+
+<p>
+Now change the configuration of the displaymanager you use:
+</p>
+
+<p>
+<b>XDM</b>: In <path>/etc/X11/xdm/xdm-config</path> comment out
+<c>DisplayManager.requestPort: 0</c>
+</p>
+
+<p>
+<b>KDM</b>: In <path>/usr/kde/3.1/share/config/kdm/kdmrc</path> look
+for the <c>[Xdmcp]</c> section and change <c>Enable = false</c> to
+<c>Enable = true</c>.
+</p>
+
+<p>
+<b>GDM</b>: In <path>/etc/X11/gdm/gdm.conf</path> look for the
+<c>[xdmcp]</c> section and change <c>Enable = false</c> to
+<c>Enable = True</c>.
+</p>
+
+<p>
+Then start the displaymanager:
+</p>
+
+<pre caption="Starting xdm">
+# <i>rc-update add xdm default</i>
+# <i>/etc/init.d/xdm start</i>
+</pre>
+
+<warn>
+There seem to be problems currently with XDM and GDM. The author used
+KDM to resolve these issues.
+</warn>
+
+<p>
+Remember, if your display manager is already running, restarting the X server
+via CTRL-ALT-BACKSPACE doesn't restart the display manager.
+</p>
+
+</body>
+</section>
+<section>
+<title>Creating a bootfloppy</title>
+<body>
+
+<p>
+If your workstations don't support PXE booting, you can create a boot-floppy
+which is used to start your workstations and connect to the terminal server.
+Go to <uri>http://www.rom-o-matic.net</uri>, select the latest version, select
+your NIC, press <e>Get ROM</e> and write the image to a floppy:
+</p>
+
+<pre caption="Write floppy image">
+# <i>cat nicfile.zdsk > /dev/fd0</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Troubleshooting</title>
+<section>
+<body>
+
+<p>
+There are a lot of things that can be the source of trouble, but there
+are also several resources around which help you solve your problems:
+</p>
+
+<ul>
+  <li>
+    The official documentation:
+    <uri>http://wiki.ltsp.org/twiki/bin/view/Ltsp/Documentation</uri>,
+    especially the
+    <uri link="http://wiki.ltsp.org/twiki/bin/view/Ltsp/TroubleShooting">
+    Troubleshooting section</uri>.
+  </li>
+  <li>
+    The gentoo IRC channel: <uri
+    link="irc://irc.gentoo.org/gentoo">#gentoo</uri>
+  </li>
+  <li>The ltsp irc channel: irc.freenode.org #ltsp</li>
+  <li>
+    The ltsp mailinglists <uri>http://marc.info/?l=ltsp-discuss</uri> are full
+    of some real good knowledge.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>FAQ</title>
+<section>
+<body>
+
+<p>
+<b>Q:</b> My workstations have Pentium II CPUs, but my server is compiled
+with <c>march=athlon-xp</c>, does this work?
+</p>
+
+<p>
+<b>A:</b> This is no problem, because all applications run on the server.
+</p>
+
+<p>
+<b>Q:</b> Which CPU and how much RAM should the server have?
+</p>
+
+<p>
+<b>A:</b> There is a good document with suggestions at
+<uri>http://wiki.ltsp.org/twiki/bin/view/Ltsp/ServerSizing</uri>.
+</p>
+
+<p>
+<b>Q:</b> Do you have more information about this PXE stuff?
+</p>
+
+<p>
+<b>A:</b> Yes, take a look at
+<uri>http://wiki.ltsp.org/twiki/bin/view/Ltsp/PXE</uri>.
+</p>
+
+<p>
+<b>Q:</b> Is it possibly to use 3D-Accelerated software on the workstations?
+</p>
+
+<p>
+<b>A:</b> If you are using NVidia cards take a look at
+<uri>http://wiki.ltsp.org/twiki/bin/view/Ltsp/NvidiaLtsp411</uri>.
+</p>
+
+<p>
+<b>Q:</b> In some applications the fonts look crappy, what to do?
+</p>
+
+<p>
+<b>A:</b> You have to setup the XFontServer, add <c>USE_XFS=Y</c> to your
+<path>lts.conf</path>, edit <path>/etc/X11/fs/config</path> and comment
+<c>no-listen: tcp</c> out, replace <c>XFS_PORT="-1"</c> with
+<c>XFS_PORT="7100"</c> in <path>/etc/conf.d/xfs</path> and start xfs:
+<c>/etc/init.d/xfs start</c>. Also doublecheck that
+<path>/etc/X11/XF86Config</path> (or <path>/etc/X11/xorg.conf</path>) contains
+<c>FontPath "unix/:7100"</c> in the Files-section.
+</p>
+
+<p>
+<b>Q: </b> How can I use the soundcard of my workstation?
+</p>
+
+<p>
+<b>A: </b> There is a ltsp-sound package in gentoo, for more instructions read
+the included <path>README</path> file.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Glossary</title>
+<section>
+<body>
+
+<p>
+<b><uri link="http://www.ltsp.org">LTSP</uri></b>
+"The LTSP provides a simple way to utilize low cost workstations as either
+graphical or character based terminals on a GNU/Linux server."
+</p>
+
+<p>
+<b><uri link="http://www.webopedia.com/TERM/P/PXE.html">PXE</uri></b>
+"Short for Pre-Boot Execution Environment. Pronounced pixie, PXE is one of the
+components of Intel's WfM specification. It allows a workstation to boot from
+a server on a network prior to booting the operating system on the local hard
+drive. A PXE-enabled workstation connects its NIC to the LAN via a jumper,
+which keeps the workstation connected to the network even when the power is
+off."
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

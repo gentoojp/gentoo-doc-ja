@@ -1,0 +1,824 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/xen-guide.xml:6
+#, no-wrap
+msgid "Configuring Gentoo with Xen"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/xen-guide.xml:16
+#, no-wrap
+msgid "This guide describes how to start using Xen on your Gentoo system\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/xen-guide.xml:27 en/xen-guide.xml:57 en/xen-guide.xml:383
+#, no-wrap
+msgid "Introduction"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:32
+#, no-wrap
+msgid ""
+"The <uri link=\"http://www.xen.org/\">Xen</uri> technology allows you to run\n"
+"multiple operating systems on a single physical system, govern resource\n"
+"consumption and even migrate domains (which are the virtual environments in\n"
+"which a guest operating system runs) from one Xen-powered system to another. Xen\n"
+"requires the host operating system to support Xen (which, in this case, will be\n"
+"a Linux kernel) but guest operating systems can run unmodified <e>if</e> your\n"
+"hardware supports Intel Virtualization Technology (VT-x) or AMD Virtualization\n"
+"Technology (SVM). Otherwise your guest operating systems must also support Xen.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:43
+#, no-wrap
+msgid ""
+"This guide will talk you through the configuration steps necessary to get Xen up\n"
+"and running on Gentoo Linux. We will not discuss Xen itself (the Xen project has\n"
+"<uri link=\"http://xen.org/support/documentation.html\">decent documentation</uri>\n"
+"available) nor will we talk about specialized setups that might be very\n"
+"interesting for Xen setups but are not Xen-related (like exporting Portage\n"
+"through NFS, booting Linux using PXE, etc.)\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/xen-guide.xml:55
+#, no-wrap
+msgid "Preparing Domain0"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:61
+#, no-wrap
+msgid ""
+"<e>Domain0</e> is the primary domain under Xen, hosting the host operating\n"
+"system which governs all other domains. In this chapter we will prepare an\n"
+"existing Gentoo installation to become the host operating system in this domain\n"
+"and build the Xen-powered kernel so that Gentoo is ready to host other Xen\n"
+"domains.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/xen-guide.xml:71
+#, no-wrap
+msgid "Rebuilding the Gentoo Installation?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:75
+#, no-wrap
+msgid ""
+"A dramatic change that might be necessary is to rebuild the entire Gentoo\n"
+"installation with a different <c>CFLAGS</c> setting. Guest operating systems\n"
+"running under Xen might otherwise see major performance degradation. If you,\n"
+"however, are planning on checking out Xen rather than installing it for\n"
+"production use and are not terribly fond of rebuilding all programs, you can\n"
+"skip this step. In this case you will notice performance degradation but you\n"
+"will still be able to use Xen.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/xen-guide.xml:85
+#, no-wrap
+msgid ""
+"It is advised that, if you change your <c>CFLAGS</c> and build your system with\n"
+"a gcc lower than version 4, you do not have <c>-Os</c> set as it has been\n"
+"reported to produce broken code.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:90
+#, no-wrap
+msgid "Editing the CFLAGS and rebuild the Gentoo installation"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:91
+#, no-wrap
+msgid ""
+"~# <i>nano -w /etc/make.conf</i>\n"
+"<comment>(Add -mno-tls-direct-seg-refs ONLY if you have a 32-bit dom0)</comment>\n"
+"<comment>(You don't need this flag if you have a 64-bit dom0)</comment>\n"
+"CFLAGS=\"-O2 -march=pentium4 -pipe <i>-mno-tls-direct-seg-refs</i>\"\n"
+"\n"
+"~# <i>emerge -e world</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:100
+#, no-wrap
+msgid ""
+"If you boot your system using an initial ramdisk (initrd) you need to\n"
+"rebuild the initrd as well (which is best done by running all steps you would do\n"
+"when you rebuild your kernel).\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:108 en/xen-guide.xml:116
+#, no-wrap
+msgid "Installing Xen"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:112
+#, no-wrap
+msgid ""
+"Xen actually contains many components, so you'll need to install a few\n"
+"packages.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:117
+#, no-wrap
+msgid "~# <i>emerge xen xen-tools xen-sources</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/xen-guide.xml:123 en/xen-guide.xml:205 en/xen-guide.xml:258
+#, no-wrap
+msgid "Building the Kernel"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:127
+#, no-wrap
+msgid ""
+"Next we'll build the Linux kernel with Xen support. This kernel, whose sources\n"
+"are available at <path>/usr/src/linux-2.6.x.z-xen</path>, will be our main\n"
+"running kernel (i.e. the one running domain 0). In the <c>XEN</c> section you'll\n"
+"find drivers for all kinds of input/output, each driver having a <e>backend</e>\n"
+"and <e>frontend</e> implementation available. For the domain 0 kernel you need\n"
+"to select the <e>backend</e> implementation: these are used by the other\n"
+"domains (who use the <e>frontend</e> drivers) to communicate directly with\n"
+"the hardware.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:138
+#, no-wrap
+msgid ""
+"Of course, don't forget to select <c>Xen-compatible</c> at <c>Processor type and\n"
+"features</c>. If you're wondering about networking: each interface in a domain\n"
+"has a point-to-point link to an interface on domain 0 (called\n"
+"<path>vifX.Y</path> where X is the domain number and Y the Yth interface of that\n"
+"domain), so you can configure your network the way you want (bridging, NAT,\n"
+"etc.)\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:146
+#, no-wrap
+msgid "Enabling Xen Support for i386 Kernels"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:147
+#, no-wrap
+msgid ""
+"Processor type and features  ---&gt;\n"
+"      Subarchitecture Type (Xen-compatible)\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:151
+#, no-wrap
+msgid "Enabling Xen Support for x86_64 Kernels"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:152
+#, no-wrap
+msgid ""
+"Processor type and features  ---&gt;\n"
+"      Subarchitecture Type (PC-compatible)\n"
+"  [*] Enable Xen compatible kernel\n"
+"  [*] Support for hot-pluggable CPUs\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:158
+#, no-wrap
+msgid "Domain-0 Kernel Config"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:159
+#, no-wrap
+msgid ""
+"Bus options (PCI etc.)  ---&gt;\n"
+"  [*] PCI support\n"
+"  [ ]   Xen PCI Frontend Debugging\n"
+"\n"
+"Networking  ---&gt;\n"
+"  Networking options  ---&gt;\n"
+"    &lt;*&gt; 802.1d Ethernet Bridging\n"
+"    <comment>Only required by bridged networking.</comment>\n"
+"\n"
+"XEN  ---&gt;\n"
+"  [*] Privileged Guest (domain 0)\n"
+"  &lt;*&gt; Backend driver support\n"
+"  &lt;*&gt;   Block-device backend driver\n"
+"  &lt;*&gt;   Network-device backend driver\n"
+"  &lt;*&gt;   PCI-device backend driver\n"
+"           PCI Backend Mode (Virtual PCI) ---&gt;\n"
+"  [*] Scrub memory before freeing it to Xen\n"
+"  [*] Disable serial port drivers\n"
+"      Xen version compatibility (3.0.4 and later)\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:180
+#, no-wrap
+msgid "Domain-U Kernel Config"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:181
+#, no-wrap
+msgid ""
+"Bus options (PCI etc.)  ---&gt;\n"
+"  [ ] PCI support\n"
+"\n"
+"Device Drivers  ---&gt;\n"
+"  SCSI device support  ---&gt;\n"
+"    &lt; &gt; SCSI device support\n"
+"    <comment>Disabling SCSI support frees up the /dev/sd* device names\n"
+"    for use as Xen virtual block devices.</comment>\n"
+"\n"
+"XEN  ---&gt;\n"
+"  [ ] Privileged Guest (domain 0)\n"
+"  &lt;*&gt; Block-device frontend driver\n"
+"  &lt;*&gt; Network-device frontend driver\n"
+"  [*] Scrub memory before freeing it to Xen\n"
+"  [*] Disable serial port drivers\n"
+"      Xen version compatibility (3.0.4 and later)\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:200
+#, no-wrap
+msgid ""
+"A nice hint is to have the kernel make process store its intermediate object\n"
+"files elsewhere so that you can reuse the same kernel tree to build different\n"
+"configurations:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:206
+#, no-wrap
+msgid ""
+"~# <i>mkdir -p ~/build/dom0 ~/build/domU</i>\n"
+"~# <i>make O=~/build/dom0 menuconfig</i>\n"
+"<comment>(Configure the kernel)</comment>\n"
+"~# <i>make O=~/build/dom0 &amp;&amp; make O=~/build/dom0 modules_install</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:213
+#, no-wrap
+msgid ""
+"Once the kernel is built you'll find the kernel image immediately in the\n"
+"build directory (not inside <path>arch/</path> or any other directory) called\n"
+"<path>vmlinuz</path>. Copy it to <path>/boot</path> and then configure your\n"
+"bootloader to use the Xen hypervisor (one of the components installed\n"
+"previously) which is stored as <path>/boot/xen.gz</path>. In the bootloader\n"
+"configuration, add your newly built kernel as the kernel that Xen should\n"
+"boot. For instance, for GRUB:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:222
+#, no-wrap
+msgid "GRUB Configuration for Xen"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:223
+#, no-wrap
+msgid ""
+"title Xen 3.0 / Gentoo Linux 2.6.x.y\n"
+"root (hd0,0)\n"
+"kernel /boot/xen.gz\n"
+"module /boot/kernel-2.6.x.y-xen0 root=/dev/sda3\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:230
+#, no-wrap
+msgid ""
+"Now reboot your system into Xen. Once you are booted, you need to load the Xen\n"
+"daemon:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:234
+#, no-wrap
+msgid "Loading the Xen daemon"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:235
+#, no-wrap
+msgid "~# <i>/etc/init.d/xend start</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:239
+#, no-wrap
+msgid ""
+"Now check if you can do whatever you normally do on your system. If this is the\n"
+"case, you can edit your bootloader configuration to always boot into Xen and add\n"
+"the Xen deamon to the default runlevel so that it is started automatically\n"
+"next time you boot.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/xen-guide.xml:246
+#, no-wrap
+msgid ""
+"If you wish to start guest domains automatically on boot add <c>xendomains</c>\n"
+"to the default runlevel as well and create a symlink in\n"
+"<path>/etc/xen/auto/</path> to the Xen configuration files for the domains\n"
+"you wish to start.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/xen-guide.xml:256
+#, no-wrap
+msgid "Creating an Unpriviledged Domain"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:262
+#, no-wrap
+msgid ""
+"Go to the Xen-powered Linux kernel source and update the configuration. It is\n"
+"wise to keep as many topics as possible similar to the main kernel except the\n"
+"<c>XEN</c> settings where drivers should now have their <e>frontend</e>\n"
+"implementation selected instead of the <e>backend</e>. Then build the kernel\n"
+"and place the resulting <path>vmlinuz</path> file where you want (we assume this\n"
+"is <path>/mnt/data/xen/kernel</path>):\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:270
+#, no-wrap
+msgid "Building the guest kernel"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:271
+#, no-wrap
+msgid ""
+"~# <i>make O=~/build/domU</i>\n"
+"~# <i>cp ~/build/domU/vmlinuz /mnt/data/xen/kernel/kernel-2.6.x.y-xen</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:276
+#, no-wrap
+msgid ""
+"It is also possible to create a single kernel image for both the administrative\n"
+"domain and the unpriviledged domain. More information about this can be found\n"
+"in the Xen user manual.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/xen-guide.xml:284
+#, no-wrap
+msgid "Creating the Domain Disks"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:288
+#, no-wrap
+msgid ""
+"For best performance, it is best to dedicate a partition (or logical volume) to\n"
+"a domain rather than a file based filesystem. However, if you are going to use\n"
+"Xen primarily for tests using a file based filesystem does have its advantages\n"
+"(especially regarding maintenance).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:295
+#, no-wrap
+msgid ""
+"You can create a file based filesystem using <c>dd</c> and <c>mke2fs</c> (or\n"
+"any other file system creation tool). For instance, to create a 2Gbyte ext3\n"
+"filesystem:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:300
+#, no-wrap
+msgid "Creating a file based filesystem"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:301
+#, no-wrap
+msgid ""
+"~# <i>dd if=/dev/zero of=/mnt/data/xen/disks/ext3root.img bs=1M count=2048</i>\n"
+"~# <i>mke2fs -j /mnt/data/xen/disks/ext3root.img</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/xen-guide.xml:308
+#, no-wrap
+msgid "Configuring a Domain"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:312
+#, no-wrap
+msgid ""
+"Next we create a Xen configuration file for a domain. You can store these\n"
+"configuration files where you want, for instance at\n"
+"<path>/mnt/data/xen/configs</path>. As an example, we create a configuration\n"
+"file for a small Gentoo environment which uses the disk image we created\n"
+"previously:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:319
+#, no-wrap
+msgid "Creating a domain configuration file"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:320
+#, no-wrap
+msgid ""
+"~# <i>nano -w /mnt/data/xen/configs/gentoo</i>\n"
+"\n"
+"kernel = \"/mnt/data/xen/kernel/kernel-2.6.x.y-xen\"\n"
+"memory = 512\n"
+"name   = \"gentoo\"\n"
+"<comment>(Map the disk image to the virtual /dev/sda1)</comment>\n"
+"disk   = ['file:/mnt/data/xen/disks/ext3root.img,sda1,w']\n"
+"root   = \"/dev/sda1 ro\"\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:331
+#, no-wrap
+msgid ""
+"If you are using a block device (such as an lvm volume or partition) for\n"
+"the disk use 'phy:' instead of 'file:' and leave off /dev. For example:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:335
+#, no-wrap
+msgid "Using a block device"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:336
+#, no-wrap
+msgid ""
+"<comment>(LVM Volume)</comment>\n"
+"disk = [ 'phy:lvm/xen-guest-root,sda1,w' ]\n"
+"\n"
+"<comment>(Physical Partition)</comment>\n"
+"disk = [ 'phy:sdb6,sda1,w' ]\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:344
+#, no-wrap
+msgid "You can find example configuration files in <path>/etc/xen</path>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/xen-guide.xml:350
+#, no-wrap
+msgid "Launching the New Domain"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:354
+#, no-wrap
+msgid ""
+"Now we're all set and we can launch the new domain. If the disk image contained\n"
+"an operating system, we could just create and attach the domain using the\n"
+"<c>xm</c> command (Xen manager):\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:359
+#, no-wrap
+msgid "Creating and starting a new domain"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:360
+#, no-wrap
+msgid "~# <i>xm create /mnt/data/xen/configs/gentoo -c</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:364
+#, no-wrap
+msgid ""
+"The domain would be booted inside the terminal in which you executed the\n"
+"command. However, in our case, the disk image is empty so the domain won't boot\n"
+"up in anything useful. To fix this, you can loop-mount the image and install\n"
+"Gentoo as you're used to.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:371
+#, no-wrap
+msgid ""
+"If you want to disconnect from the domain, press <path>Ctrl+]</path>. You can\n"
+"always reconnect to the domains' console using <c>xm console gentoo</c>.\n"
+"However, there is only one console per domain, so only use it when you can't\n"
+"access the domain otherwise (for instance, through SSH).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/xen-guide.xml:381
+#, no-wrap
+msgid "Networking on Unpriviledged Domains"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:387
+#, no-wrap
+msgid ""
+"Xen supports at least two ways of configuring your (virtual) network:\n"
+"<e>routed</e> and <e>bridged</e>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:392
+#, no-wrap
+msgid ""
+"When selecting the <e>routed</e> approach, the interface inside your\n"
+"unpriviledged domain is connected to the virtual interface on your\n"
+"administrative domain. On your administrative domain (domain 0), the virtual\n"
+"interface is linked together with <path>eth0</path>. The\n"
+"interface inside your unpriviledged domain should have an IP address on the same\n"
+"network as the interface on the administrative domain. Any communication to\n"
+"that IP address can only occur from the administrative domain, unless you set\n"
+"up specific routing rules.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:403
+#, no-wrap
+msgid ""
+"When selecting the <e>bridged</e> approach, your default network interface on\n"
+"the administrative domain becomes a bridge which accepts connections to the\n"
+"virtual domains as well as to the IP address your administrative domain has.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/xen-guide.xml:411
+#, no-wrap
+msgid "Regular Routed Interfaces"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:415
+#, no-wrap
+msgid ""
+"Before you set up the interface on your unpriviledged domain, make sure that\n"
+"Xen's <path>netloop</path> and <path>netbk</path> drivers are loaded. A quick\n"
+"hint: if you have <path>netloop</path> as a module, load it with\n"
+"<c>nloopbacks=0</c> so that it doesn't create pointless interfaces to the\n"
+"loopback device. Then, edit your domain configuration file and add a <c>vif</c>\n"
+"instruction to it.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:423 en/xen-guide.xml:479
+#, no-wrap
+msgid "Configuring a virtual interface"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:424
+#, no-wrap
+msgid ""
+"~# <i>nano -w /mnt/data/xen/configs/gentoo</i>\n"
+"\n"
+"<comment>(Add the vif instruction)</comment>\n"
+"vif    = [ 'ip=192.168.1.101, vifname=veth1' ]\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:431
+#, no-wrap
+msgid ""
+"In the above example, the interface will be created for the unpriviledged domain\n"
+"(in which it will be called <path>eth0</path>) and Xen will ensure that address\n"
+"192.168.1.101 will be reachable from the administrative domain through interface\n"
+"<path>veth1</path>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:438
+#, no-wrap
+msgid ""
+"This doesn't mean that the virtual <path>eth0</path> interface will\n"
+"automatically have IP 192.168.1.101 assigned to it, but rather that, if you\n"
+"don't give it that IP, it will not be connected with the administrative domain\n"
+"and thus cannot be reached.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:445
+#, no-wrap
+msgid ""
+"Now edit <path>/etc/xen/xend-config.sxp</path> as follows to select routed\n"
+"network configuration:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:449 en/xen-guide.xml:491
+#, no-wrap
+msgid "Editing xend-config.sxp"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:450
+#, no-wrap
+msgid ""
+"~# <i>nano -w /etc/xen/xend-config.sxp</i>\n"
+"\n"
+"<comment>(Comment out the following lines)</comment>\n"
+"<i>#</i>(network-script network-bridge)\n"
+"<i>#</i>(vif-script vif-bridge)\n"
+"\n"
+"<comment>(Enable the following lines)</comment>\n"
+"(network-script network-route)\n"
+"(vif-script vif-route)\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/xen-guide.xml:464
+#, no-wrap
+msgid "Bridged Interfaces"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:468
+#, no-wrap
+msgid ""
+"Unlike the routed interfaces you now need to load the <path>netloop</path>\n"
+"driver with <c>nloopbacks=1</c> (or higher) as the additional loopback devices\n"
+"are used to create the bridge. For the other modules you still need the\n"
+"<path>netbk</path> module as well as briding functionality (<path>bridge</path>\n"
+"module if build as such).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:476
+#, no-wrap
+msgid "Now edit your virtual domain and add the <c>vif</c> construct:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:480
+#, no-wrap
+msgid ""
+"~# <i>nano -w /mnt/data/xen/configs/gentoo</i>\n"
+"\n"
+"<comment>(Add the vif instruction)</comment>\n"
+"vif    = [ 'ip=192.168.1.101, vifname=veth0' ]\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:487
+#, no-wrap
+msgid ""
+"Next edit <path>/etc/xen/xend-config.sxp</path> as follows to select bridged\n"
+"network configuration:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:492
+#, no-wrap
+msgid ""
+"~# <i>nano -w /etc/xen/xend-config.sxp</i>\n"
+"\n"
+"<comment>(Enable the following lines)</comment>\n"
+"(network-script network-bridge)\n"
+"(vif-script vif-bridge)\n"
+"\n"
+"<comment>(Comment out the following lines if not done already)</comment>\n"
+"<i>#</i> (network-script network-route)\n"
+"<i>#</i> (vif-script vif-route)\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:504
+#, no-wrap
+msgid ""
+"By default, the bridge will contain whatever interface is configured to be the\n"
+"default interface (the device that is listed under the default route through\n"
+"<c>ip route list</c>). If you want to alter this behavior, edit the\n"
+"<path>xend-config.sxp</path> as follows:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:510
+#, no-wrap
+msgid "Editing xend-config.sxp to change bridge configuration"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:511
+#, no-wrap
+msgid ""
+"~# <i>nano -w /etc/xen/xend-config.sxp</i>\n"
+"\n"
+"<comment>(Edit the network-script line)</comment>\n"
+"(network-script <i>'</i>network-bridge <i>netdev=eth0 bridge=xenbr0 vifnum=0'</i>)\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/xen-guide.xml:518
+#, no-wrap
+msgid ""
+"Once the configuration is done, restart the <c>xend</c> init script to have Xen\n"
+"build the bridge:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:522
+#, no-wrap
+msgid "Restarting the xend daemon"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/xen-guide.xml:523
+#, no-wrap
+msgid "~# <i>/etc/init.d/xend restart</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/xen-guide.xml:530
+#, no-wrap
+msgid "Further Resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/xen-guide.xml:532
+#, no-wrap
+msgid "Xen Documentation"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/xen-guide.xml:537
+#, no-wrap
+msgid ""
+"    <uri link=\"http://www.xen.org/support/documentation.html\">Official Xen\n"
+"    documentation</uri>\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/xen-guide.xml:541
+#, no-wrap
+msgid ""
+"    <uri link=\"http://wiki.xen.org/\">Xen Wiki</uri>\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/xen-guide.xml:548
+#, no-wrap
+msgid "Xen Tools"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/xen-guide.xml:553
+#, no-wrap
+msgid ""
+"    <uri\n"
+"    link=\"http://virt-manager.org/\">app-emulation/virt-manager</uri>\n"
+"    is a graphical tool for administering virtual machines\n"
+"  "
+msgstr ""

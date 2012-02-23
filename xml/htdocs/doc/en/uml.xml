@@ -1,0 +1,489 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/uml.xml,v 1.31 2011/09/04 17:53:40 swift Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoo Linux Developer's guide to system testing with User-Mode Linux</title>
+
+<author title="Editor">
+  <mail link="g2boojum@gentoo.org">Grant Goodyear</mail>
+</author>
+<author title="Editor"><!-- zhen@gentoo.org -->
+  John Davis
+</author>
+<author title="Editor">
+    <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Editor">
+  <mail link="bennyc@gentoo.org">Benny Chuang</mail>
+</author>
+
+<abstract>
+This guide shows Gentoo Linux developers how to set up and use
+user-mode linux for testing potentially system-breaking changes.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>0.16</version>
+<date>2008-03-01</date>
+
+<chapter>
+<title>Obtaining User-Mode Linux</title>
+<section>
+<body>
+
+<impo>
+Before you can use user-mode Linux, you <e>must</e> be using a non-NPTL
+profile, and you must be using &lt;<c>glibc</c>-2.4. Follow the instructions
+for <uri link="/doc/en/gentoo-upgrading.xml#instructions">changing
+profiles</uri>. You will need to run <c>emerge -e world</c> after switching to
+a non-NPTL profile.
+</impo>
+
+<p>
+As the user-mode Linux website 
+(<uri>http://user-mode-linux.sourceforge.net</uri>) states, user-modeL linux
+allows a user to "run Linux inside itself".  Specifically,
+user-mode linux provides a virtual machine on which a user can "[r]un buggy
+software, experiment with new Linux kernels or distributions, and poke around
+in the internals of Linux, all without risking your main Linux setup." 
+Experimental changes to Gentoo core packages such as <e>sys-apps/baselayout</e>
+or <e>sys-libs/glibc</e> have the potential to break the system and render it 
+unbootable; with user-mode Linux we can test these changes without having to
+worry about breaking the live system.
+</p>
+
+<p>
+Most 2.6 kernels have UML support. Although you can use your current kernel
+sources, it might be wiser to keep the UML kernel tree(s) separate. After all,
+you'll be building a new kernel with a different configuration and you might
+want to have heterogenous systems on your main Linux system (several different
+UML kernels).
+</p>
+
+<p>
+So download a nice kernel tree (like the vanilla one from <uri
+link="http://www.kernel.org">kernel.org</uri>) and extract it to some local
+development location.
+</p>
+
+<p>
+Next, configure this UML kernel as you would do for any other system, but append
+<e>ARCH=um</e> so that the kernel build software knows that the kernel
+is meant to run as a guest process on the main system.
+</p>
+
+<pre caption="Building the UML kernel">
+# <i>cd /srv/aegis/src/uml-linux</i>
+# <i>make menuconfig <comment>ARCH=um</comment></i>
+# <i>make linux <comment>ARCH=um</comment></i>
+# <i>cp linux /usr/local/bin/linux</i>
+</pre>
+
+<warn>
+The <e>ARCH=um</e> fragment is <e>extremely</e> important!
+</warn>
+
+<p>
+On a default Gentoo system, <path>/usr/local/bin</path> is in your <c>$PATH</c>.
+If it isn't, you should find a definition of <c>PATH</c> in the
+<path>/etc/profile</path> and fix it:
+</p>
+
+<pre caption="Verifying $PATH">
+$ <i>echo $PATH | grep /usr/local/bin</i>
+</pre>
+
+<pre caption="Sample definition of $PATH in /etc/profile">
+PATH="/usr/local/bin:/usr/bin:/bin:${PATH}"
+</pre>
+
+<p>
+Don't forget to run <c>source /etc/profile</c> for the change to take effect.
+</p>
+
+<p>
+For the user-mode Linux kernel to properly boot a Gentoo system the 
+kernel needs to be configured to <e>not</e> automatically mount 
+<path>/dev</path> (devfs) by default. Also, you will almost certainly
+want to make sure that you have <e>tmpfs</e> (the "Virtual Memory 
+Filesystem") compiled in, since by default the Gentoo Linux bootscripts
+store their information in a small tmpfs partition.
+(The binary kernels available from the user-mode website do automatically 
+mount <path>/dev</path>, and they don't have tmpfs compiled in; don't bother 
+with them).
+</p>
+
+<p>
+I highly recommend reading the user-mode linux documentation, but the
+basic idea is that running the <path>/usr/local/bin/linux</path> program
+boots the user-mode kernel and tries to bring up the system stored in 
+the file <path>root_fs</path> that should be located in the current working
+directory.
+</p>
+
+<p>
+It won't hurt to also install the user-mode Linux tools.
+</p>
+
+<pre caption="Installing UML tools">
+# <i>emerge sys-apps/usermode-utilities</i>
+</pre>
+
+<p>
+These tools facilitate networking (among other things) between the user-mode 
+Linux virtual system and the host Linux system.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Creating root_fs</title>
+<section>
+<title>Making the Gentoo chroot</title>
+<body>
+
+<p>
+The <path>root_fs</path> file needed for user-mode linux is 
+a single file that contains an entire Gentoo Linux filesystem.
+To generate this file you will need to have Loopback device
+support enabled in the host (non-user-mode) kernel.
+</p>
+
+<p>
+Generating the <path>root_fs</path> file itself will be
+our last step.  First we will generate a Gentoo filesystem in
+an ordinary chroot.  We need the stage tarball available, which 
+could be downloaded separately, extracted from an Installation CD, or 
+extracted from an Installation CD .iso.  
+</p>
+
+<pre caption="Mounting an Installation CD .iso">
+# <i>mkdir /mnt/loop</i>
+# <i>mount -o loop /path/to/install-&lt;TAB&gt;.iso /mnt/loop</i>
+</pre>
+
+<p>
+Setting up the chroot is essentially identical to an ordinary Gentoo 
+Linux build.
+</p>
+
+<pre caption="Creating the Gentoo chroot mount">
+# <i>mkdir /mnt/gentoo</i>
+# <i>cd /mnt/gentoo</i>
+# <i>tar xvjpf /path/to/stage&lt;TAB&gt;.tar.bz2</i>
+</pre>
+
+<p>
+Go ahead and unmount the .iso.  You don't need it anymore.
+</p>
+
+<p>
+Build the system in the usual fashion: chroot into <path>/mnt/gentoo</path> and
+follow the Gentoo installation instructions.
+</p>
+
+<p>
+Add any additional packages you desire.  Feel free to give your virtual
+Gentoo system a hostname, if you so desire.  In <path>/etc/fstab</path>
+you will want <path>/dev/ROOT</path> to be <path>/dev/ubda</path>, with
+a fs type of either ext2, ext3, or reiserfs.  Set <path>/dev/SWAP</path>
+to be <path>/dev/ubdb</path>, and comment out <path>/dev/BOOT</path>.
+</p>
+
+<p>
+At this point, remember to set your root password.
+</p>
+
+<pre caption="Setting root password">
+# <i>passwd</i>
+</pre>
+
+<p>
+Now we need to make some changes to the boot scripts. Remove consolefont and
+keymaps from the boot runlevel:
+</p>
+
+<pre caption="Removing unneeded initscripts">
+# <i>rc-update del consolefont boot</i>
+# <i>rc-update del keymaps boot</i>
+</pre>
+
+<p>
+Exit the chroot, unmount all of the bind mounts,
+tar up the new Gentoo distro, and clean up.
+</p>
+
+<pre caption="Finalising the installation">
+# <i>cd /mnt/gentoo</i>
+# <i>tar cvjpf ~/gentoo.tbz2 *</i>
+# <i>cd</i>
+# <i>rm -rf /mnt/gentoo</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Making root_fs</title>
+<body>
+
+<p>
+Our Gentoo chroot is nearly 300 MB in size, so 
+<path>root_fs</path> needs to be at least that size.
+We'll choose 0.5 GB as a reasonable size.
+</p>
+
+<pre caption="Creating UML files">
+# <i>dd if=/dev/zero of=root_fs seek=500 count=1 bs=1M</i>
+# <i>mke2fs -F root_fs</i>
+# <i>mount -o loop root_fs /mnt/loop</i>
+# <i>tar xvjpf gentoo.tbz2 -C /mnt/loop</i>
+# <i>umount /mnt/loop</i>
+</pre>
+
+<p>
+It would also be nice to have a 0.5 GB swap partition.
+</p>
+
+<pre caption="Create swap partition">
+# <i>dd if=/dev/zero of=swap_fs seek=500 count=1 bs=1M</i>
+# <i>mkswap -f swap_fs</i>
+</pre>
+
+<p>
+Now see if it works!
+</p>
+
+<pre caption="Start UML kernel thread">
+# <i>linux ubd0=root_fs ubd1=swap_fs</i>
+</pre>
+
+<p>
+User-mode Linux uses xterms for the virtual consoles that 
+are run at boot time, so you need to make sure that the
+terminal from which you run user-mode Linux has $DISPLAY
+properly set (along with proper xhost/xauth permissions).
+</p>
+
+<p>
+With any luck you should be able to log into your user-mode Linux
+Gentoo system.  The only thing keeping this user-mode Linux version
+of Gentoo from being fully functional is networking from the virtual
+machine to the host.  
+</p>
+
+<note>
+If you receive "No space left on device" errors, you may need to allocate more
+memory to your user mode system by appending <c>mem=xxxMB</c> to the end of the
+kernel thread line. For example: <c>linux ubd0=root_fs ubd1=swap_fs
+mem=128MB</c>.
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Networking</title>
+<section>
+<title>Using an Existing Network</title>
+<body>
+
+<p>
+Make sure that the host kernel has the following settings compiled as modules:
+</p>
+
+<pre caption="Host kernel configuration">
+Networking --&gt;
+  IP: Netfilter Configuration --&gt;
+    IP tables support --&gt;
+      Full NAT --&gt;
+        &lt;M&gt; MASQUERADE target support 
+    
+    Network Device Support --&gt; 
+      &lt;M&gt; TUN/TAP Support
+</pre>
+
+<p>
+Run the following commands on the <e>host</e> machine:
+</p>
+
+<pre caption="Setup networking">
+# <i>modprobe tun</i>
+<comment>(If you receive a FATAL error here, try deleting /dev/net/tun and retry)</comment>
+# <i>modprobe iptable_nat</i>
+# <i>iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE</i>
+# <i>echo 1 &gt; /proc/sys/net/ipv4/ip_forward</i>
+</pre>
+
+<p>
+The iptables line sets up IP Masquerading between the private
+network that our user-mode system will be on and the internet
+(reachable via <c>eth0</c> in our case).  The echo line then
+turns on packet forwarding between the private network and the
+interface that the default gateway is on (eth0 for us).
+</p>
+
+<p>
+Now we bring up the user-mode system and see if networking
+is functional.
+</p>
+
+<pre caption="Get UML up and running">
+# <i>linux ubd0=root_fs ubd1=swap_fs eth0=tuntap,,,192.168.0.254</i>
+<comment>(login to user-mode system)</comment>
+# <i>ifconfig eth0 192.168.0.1 up</i>
+# <i>ping -c 2 192.168.0.254</i>
+PING 192.168.0.254 (192.168.0.254): 56 octets data
+64 octets from 192.168.0.254: icmp_seq=0 ttl=255 time=0.8 ms
+64 octets from 192.168.0.254: icmp_seq=1 ttl=255 time=0.6 ms
+
+--- 192.168.0.254 ping statistics ---
+2 packets transmitted, 2 packets received, 0% packet loss
+round-trip min/avg/max = 0.6/0.7/0.8 ms
+# <i>route add default gw 192.168.0.254</i>
+# <i>netstat -rn</i>
+Kernel IP routing table
+Destination  Gateway        Genmask        Flags MSS Window irtt Iface
+192.168.0.0  0.0.0.0        255.255.255.0  U      40 0         0 eth0
+0.0.0.0      192.168.0.254  0.0.0.0        UG     40 0         0 eth0
+# <i>scp user@192.168.0.254:/etc/resolv.conf /etc/resolv.conf</i> <comment>(if needed)</comment>
+# <i>ping -c 2 www.gentoo.org</i>
+PING www.gentoo.org (207.170.82.202): 56 octets data
+64 octets from 207.170.82.202: icmp_seq=0 ttl=240 time=119.6 ms
+64 octets from 207.170.82.202: icmp_seq=1 ttl=240 time=92.0 ms
+
+--- www.gentoo.org ping statistics ---
+2 packets transmitted, 2 packets received, 0% packet loss
+round-trip min/avg/max = 92.0/105.8/119.6 ms
+</pre>
+
+<p>
+On the user-mode system we assign the user-mode eth0 interface 
+the private IP address 192.168.0.1 and bring up the interface.  The
+host has private IP address 192.168.0.254, and we ping it to make sure
+that our networking is, indeed, up.  The route line adds a default 
+gateway, namely our host, we use scp to retrieve a working 
+<path>/etc/resolv.conf</path> (if necessary), and we ping www.gentoo.org
+to make sure that name resolution (and general access to the internet)
+is working from our user-mode system.  Now the user-mode system can
+<c>emerge</c> at will!
+</p>
+
+</body>
+</section>
+<section>
+<title>Using a Virtual Network</title>
+<body>
+
+<p>
+Before you get all too excited, this is not a virtual private network. It is a
+network that is only accessible by the UML instances. The
+<c>usermode-utilities</c> package provides a tool called <c>uml_switch</c> which
+defines the end points of the switch.
+</p>
+
+<pre caption="Activating end points of a UML switch">
+<comment>(If the switch information should stay in the foreground:)</comment>
+$ <i>uml_switch -unix ~/tmp/switch.sock</i>
+
+<comment>(If it should be backgrounded:)</comment>
+$ <i>uml_switch -unix ~/tmp/switch.sock &amp;&gt; ~/tmp/switch.log &amp;</i>
+</pre>
+
+<p>
+To start the UML instances on the switch, run the next command. Your
+(virtual) network interface will be connected to the <c>uml_switch</c> process
+and will be using the given MAC address. 
+</p>
+
+<pre caption="Running first UML instance">
+$ <i>linux ubd0=first_rootfs ubd1=first_swapfs eth0=daemon,10:00:01:02:00:00,,~/tmp/switch.sock</i>
+</pre>
+
+<p>
+You can still connect the system to the existing network, or have a second
+process attached to both the virtual one and the existing one:
+</p>
+
+<pre caption="Running second UML instance">
+$ <i>linux ubd0=second_rootfs ubd1=second_swapfs eth0=daemon,10:00:01:02:00:01,,~/tmp/switch.sock \
+  eth1=tuntap,,,192.168.1.43</i>
+</pre>
+
+<p>
+More information about the tuntap setting can be found in the previous section.
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>Testing the .iso</title>
+<section>
+<body>
+
+<p>
+Perhaps the true ideal of Gentoo Linux testing would be
+to boot the .iso with user-mode Linux and do the complete
+Gentoo install from within the user-mode Linux virtual system.
+</p>
+
+<p>
+Booting the .iso, or actually the initrd from the .iso, is pretty
+straightforward.
+</p>
+
+<pre caption="Booting the ISO">
+# <i>mount -o loop /path/to/install-&lt;TAB&gt;.iso /mnt/loop</i>
+# <i>cp /mnt/loop/isolinux/gentoo.igz .</i>
+# <i>linux load_ramdisk=1 prompt_ramdisk=0 ramdisk_size=22000 \</i>
+&gt; <i>initrd=rescue.gz root=/dev/ram0 ubd0=root_fs ubd1=swap_fs \</i>
+&gt; <i>ubd2=/dev/cdroms/cdrom0 eth0=tuntap,,,192.168.0.254</i>
+</pre>
+
+<p>
+Now you can follow the Gentoo install doc essentially verbatim,
+although you'll need to know that the root filesystem will be
+<path>/dev/ubd/0</path>, the swap "partition" 
+will be <path>/dev/ubd/1</path>, and the CD rom 
+will be <path>/dev/ubd/2</path>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Resources</title>
+<section>
+<body>
+
+<ul>
+  <li>
+    <uri link="http://edeca.net/articles/bridging/index.html">Bridging with
+    UML</uri>
+  </li>
+  <li>
+    <uri link="http://user-mode-linux.sourceforge.net/">UML Homepage</uri>
+  </li>
+  <li>
+    <uri link="http://www.theshore.net/~caker/uml/">Caker's UML Notes</uri>
+  </li>
+  <li>
+    <uri link="http://sourceforge.net/mailarchive/forum.php?forum_id=3647">UML
+    Mailinglist archives</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+</guide>

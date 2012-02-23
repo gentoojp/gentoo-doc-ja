@@ -1,0 +1,651 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/bluetooth-guide.xml,v 1.17 2010/06/21 19:03:09 nightmorph Exp $ -->
+
+<guide disclaimer="draft">
+<title>Gentoo Linux Bluetooth Guide</title>
+
+<author title="Author">
+  <mail link="deathwing00@gentoo.org">Ioannis Aslanidis</mail>
+</author>
+<author title="Contributor">
+  <mail link="puggy@gentoo.org">Douglas Russell</mail>
+</author>
+<author title="Contributor">
+  <mail link="marcel@holtmann.org">Marcel Holtmann</mail>
+</author>
+<author title="Author">
+  <mail link="fox2mike@gentoo.org">Shyam Mani</mail>
+</author>
+<author title="Editor">
+  <mail link="rane@gentoo.org">Łukasz Damentko</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This guide will explain how to successfully install a host Bluetooth device,
+configure the kernel properly, explain all the possibilities that the Bluetooth
+interconnection offers and how to have some fun with Bluetooth.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.11</version>
+<date>2009-07-16</date>
+
+<chapter id="introduction">
+<title>Introduction</title>
+<section>
+<title>What is Bluetooth?</title>
+<body>
+
+<p>
+Bluetooth is an industrial specification that provides users a way to connect
+and exchange information between devices like personal computers, PDAs or
+mobile phones. Using the Bluetooth technology, users can achieve wireless voice
+and data transmission between devices at a low cost. Bluetooth also offers the
+possibility to create small wireless LANs and to synchronize devices.
+</p>
+
+</body>
+</section>
+<section>
+<title>About the content of this guide</title>
+<body>
+
+<p>
+The first part of this guide explains how to configure the system kernel,
+identify the Bluetooth devices installed on the system and detected by the
+kernel and install the necessary basic Bluetooth tools.
+</p>
+
+<p>
+The second part covers how to detect remote devices and how to establish a
+connection from or to them by either setting up radio frequency communication
+(RFCOMM)<!-- or by setting up a personal area network (PAN)-->.
+</p>
+
+<p>
+The last part of the guide lists in detail applications that can take
+advantage of all the possibilities offered by the Bluetooth technology.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="kernel">
+<title>Configuring the system</title>
+<section>
+<title>Kernel Configuration</title>
+<body>
+
+<p>
+As the latest Linux stable kernel is 2.6, the configuration will be done for
+these series of the kernel. Most Bluetooth devices are connected to a USB port,
+so USB will be enabled too. Please refer to the <uri
+link="/doc/en/usb-guide.xml">Gentoo Linux USB Guide</uri>.
+</p>
+
+<pre caption="Configuration for 2.6 kernels">
+Networking ---&gt;
+
+&lt;*&gt; Bluetooth subsystem support  ---&gt;
+
+--- Bluetooth subsystem support
+&lt;M&gt;   L2CAP protocol support
+&lt;M&gt;   SCO links support
+&lt;M&gt;   RFCOMM protocol support
+[*]     RFCOMM TTY support
+&lt;M&gt;   BNEP protocol support
+[*]     Multicast filter support
+[*]     Protocol filter support
+&lt;M&gt;   HIDP protocol support
+
+Bluetooth device drivers  ---&gt;
+&lt;M&gt; HCI USB driver
+[*]   SCO (voice) support
+&lt;M&gt; HCI UART driver
+[*]   UART (H4) protocol support
+[*]   BCSP protocol support
+[*]   Transmit CRC with every BCSP packet
+&lt;M&gt; HCI BCM203x USB driver
+&lt;M&gt; HCI BPA10x USB driver
+&lt;M&gt; HCI BlueFRITZ! USB driver
+<comment>(The four drivers below are for PCMCIA Bluetooth devices and will only
+show up if you have also selected PCMCIA support in your kernel.)</comment>
+&lt;M&gt; HCI DTL1 (PC Card) driver
+&lt;M&gt; HCI BT3C (PC Card) driver
+&lt;M&gt; HCI BlueCard (PC Card) driver
+&lt;M&gt; HCI UART (PC Card) device driver
+<comment>(The driver below is intended for HCI Emulation software.)</comment>
+&lt;M&gt; HCI VHCI (Virtual HCI device) driver
+
+<comment>(Move back three levels to Device Drives and then check if USB is
+enabled. This is required if you use a Bluetooth dongle, which are mostly USB
+based.)</comment>
+USB support  ---&gt;
+
+&lt;*&gt; Support for Host-side USB
+--- USB Host Controller Drivers
+&lt;M&gt; EHCI HCD (USB 2.0) support
+[ ]   Full speed ISO transactions (EXPERIMENTAL)
+[ ]   Root Hub Transaction Translators (EXPERIMENTAL)
+&lt;*&gt; OHCI HCD support
+&lt;*&gt; UHCI HCD (most Intel and VIA) support
+&lt; &gt; SL811HS HCD support
+</pre>
+
+<p>
+Now we'll reboot with our new kernel. If everything went fine, we will have a
+system that is Bluetooth ready.
+</p>
+
+<impo>
+Your USB device may have two modes the default of which may not be HCI, but HID.
+If this is your case, use <c>hid2hci</c> to switch to HCI mode. Your system
+will not remember this change when you next reboot.
+</impo>
+
+<pre caption="Checking the Bluetooth devices">
+<comment>(One way to check for the device)</comment>
+# <i>cat /proc/bus/usb/devices | grep -e^[TPD] | grep -e Cls=e0 -B1 -A1</i>
+<comment>(The Cls=e0(unk. ) identifies the Bluetooth adapter.)</comment>
+T:  Bus=02 Lev=02 Prnt=03 Port=00 Cnt=01 Dev#=  4 Spd=12  MxCh= 0
+D:  Ver= 1.10 Cls=e0(unk. ) Sub=01 Prot=01 MxPS=64 #Cfgs=  1
+P:  Vendor=0a12 ProdID=0001 Rev= 5.25
+<comment>(Some might show up on lsusb from sys-apps/usbutils)</comment>
+# <i>lsusb</i>
+Bus 003 Device 002: ID 046d:c00e Logitech, Inc. Optical Mouse
+Bus 003 Device 001: ID 0000:0000
+Bus 002 Device 002: ID 0db0:1967 Micro Star International Bluetooth Dongle
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="bluez">
+<title>BlueZ - The Bluetooth Stack</title>
+<section>
+<title>Installing BlueZ</title>
+<body>
+
+<p>
+Now that the device is detected by the kernel, we need a layer that lets
+applications communicate with the Bluetooth device. BlueZ provides the official
+Linux Bluetooth stack. The ebuilds that provide what we need are
+<c>bluez-libs</c> and <c>bluez-utils</c>. Devices that need Broadcom firmware
+files or the like may need <c>bluez-firmware</c>.
+</p>
+
+<pre caption="Installing bluez-libs and bluez-utils">
+# <i>emerge net-wireless/bluez-libs net-wireless/bluez-utils</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>BlueZ configuration and PIN pairing</title>
+<body>
+
+<p>
+Now it's time to see if the Bluetooth device is being picked up correctly by the
+system. We start up the required Bluetooth services first.
+</p>
+
+<pre caption="Running hciconfig">
+<comment>(Start up Bluetooth)</comment>
+# <i>/etc/init.d/bluetooth start</i>
+* Starting Bluetooth ...
+*     Starting hcid ...                                                 [ ok ]
+*     Starting sdpd ...                                                 [ ok ]
+*     Starting rfcomm ...                                               [ ok ]
+
+# <i>hciconfig</i>
+hci0:   Type: USB
+        BD Address: 00:01:02:03:04:05 ACL MTU: 192:8  SCO MTU: 64:8
+        DOWN
+        RX bytes:131 acl:0 sco:0 events:18 errors:0
+        TX bytes:565 acl:0 sco:0 commands:17 errors:0
+</pre>
+
+<p>
+This shows that the Bluetooth device has been recognised. As you might have
+noticed the device is <e>DOWN</e>. Let's configure it so that we can bring it
+up. The configuration file is at <path>/etc/bluetooth/hcid.conf</path>. The
+required changes to the config file are shown below. For additional details
+please refer to <c>man hcid.conf</c>.
+</p>
+
+<pre caption="Editing /etc/bluetooth/hcid.conf">
+<comment>(Recommended changes to be made to the file are shown)</comment>
+
+# HCId options
+options {
+        # Automatically initialize new devices
+        autoinit yes;
+
+<comment>(Change security to "auto")</comment>
+        # Security Manager mode
+        #   none - Security manager disabled
+        #   auto - Use local PIN for incoming connections
+        #   user - Always ask user for a PIN
+        #
+        security auto;
+
+        # Pairing mode
+        pairing multi;
+
+<comment>(You only need a pin helper if you are using &lt;=bluez-libs-2.x and &lt;=bluez-utils-2.x)
+(Change pin_helper to use /etc/bluetooth/pin-helper)</comment>
+        # PIN helper
+        pin_helper /etc/bluetooth/pin-helper;
+}
+
+# Default settings for HCI devices
+device {
+<comment>(Set your device name here, you can call it anything you want)</comment>
+        # Local device name
+        #   %d - device id
+        #   %h - host name
+        name "BlueZ at %h (%d)";
+
+        # Local device class
+        class 0x3e0100;
+
+        # Inquiry and Page scan
+        iscan enable; pscan enable;
+
+        # Default link mode
+        lm accept;
+
+        # Default link policy
+        lp rswitch,hold,sniff,park;
+
+<comment>(Leave as is, if you don't know what exactly these do)</comment>
+        # Authentication and Encryption (Security Mode 3)
+        #auth enable;
+        #encrypt enable;
+}
+</pre>
+
+<p>
+After that, we have to configure the Bluetooth device PIN. That will help in
+pairing this device with another one.
+</p>
+
+<pre caption="Editing /etc/bluetooth/pin">
+<comment>(Replace 123456 with your desired pin number.)</comment>
+123456
+</pre>
+
+<impo>
+This number (of your choice) must be the same in all your hosts with Bluetooth
+devices so they can be paired. This number must also be kept secret since anyone
+with knowledge of this number can essentially establish connections with your
+devices.
+</impo>
+
+<note>
+Beginning with <c>>=bluez-libs-3.x</c> and <c>>=bluez-utils-3.x</c>, pin helpers
+have been replaced by passkey agents. There are a few different graphical
+passkey agents available to help manage your PIN, such as <c>bluez-gnome</c> and
+<c>kdebluetooth</c>. You can also use <c>passkey-agent</c> (found in
+<c>bluez-utils</c>) from the command line.
+</note>
+
+</body>
+</section>
+<section>
+<title>Services configuration</title>
+<body>
+
+<p>
+Now that we have concluded with the configuration of BlueZ, it's time to restart
+the necessary services.
+</p>
+
+<pre caption="Starting the Bluetooth daemons">
+# <i>/etc/init.d/bluetooth restart</i>
+<comment>(We can also add it to the default runlevel.)</comment>
+# <i>rc-update add bluetooth default</i>
+ * bluetooth added to runlevel default
+ * rc-update complete.
+</pre>
+
+<p>
+Let's be sure that the Bluetooth daemons started correctly. If we can see that
+both <c>hcid</c> and <c>sdpd</c> are running, then we configured Bluetooth the
+right way. After that, we can see if the devices are now up and running with
+the configured options.
+</p>
+
+<pre caption="Checking whether Bluetooth daemons started correctly">
+<comment>(Check to see if the services are running)</comment>
+# <i>ps -ae | grep hcid</i>
+26050 ?        00:00:00 hcid
+# <i>ps -ae | grep sdpd</i>
+26054 ?        00:00:00 sdpd
+
+# <i>hciconfig -a</i>
+hci0:   Type: USB
+        BD Address: 00:0A:0B:0C:0D:0E ACL MTU: 192:8 SCO MTU: 64:8
+        UP RUNNING PSCAN ISCAN
+        RX bytes:125 acl:0 sco:0 events:17 errors:0
+        TX bytes:565 acl:0 sco:0 commands:17 errors:0
+        Features: 0xff 0xff 0x0f 0x00 0x00 0x00 0x00 0x00
+        Packet type: DM1 DM3 DM5 DH1 DH3 DH5 HV1 HV2 HV3
+        Link policy: RSWITCH HOLD SNIFF PARK
+        Link mode: SLAVE ACCEPT
+        Name: 'BlueZ at bluehat (0)'
+        Class: 0x3e0100
+        Service Classes: Networking, Rendering, Capturing, Object Transfer,
+        Audio
+        Device Class: Computer, Uncategorized
+        HCI Ver: 1.1 (0x1) HCI Rev: 0x1e7 LMP Ver: 1.1 (0x1) LMP Subver: 0x1e7
+        Manufacturer: Cambridge Silicon Radio (10)
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="detect">
+<title>Detecting and Connecting to Remote Devices</title>
+<section>
+<title>Detecting Bluetooth devices in other hosts</title>
+<body>
+
+<p>
+At this point we are now ready to detect Bluetooth devices installed in other
+machines. This is independent of the host Operating System. We will make use of
+the <c>hcitool</c> command for the same.
+</p>
+
+<pre caption="Checking for local devices">
+# <i>hcitool dev</i>
+Devices:
+        hci0    00:01:02:03:04:05
+</pre>
+
+<pre caption="Scanning for remote devices">
+# <i>hcitool scan</i>
+Scanning ...
+        00:0A:0B:0C:0D:0E       Grayhat
+</pre>
+
+<pre caption="Inquiring remote devices">
+# <i>hcitool inq</i>
+Inquiring ...
+        00:0A:0B:0C:0D:0E       clock offset: 0x5579    class: 0x72010c
+</pre>
+
+<p>
+Now that we know the MAC address of the remote Bluetooth devices, we can check
+if we paired them correctly.
+</p>
+
+<pre caption="Running l2ping">
+# <i>l2ping 00:0A:0B:0C:0D:0E</i>
+Ping: 00:0A:0B:0C:0D:0E from 00:01:02:03:04:05 (data size 20) ...
+20 bytes from 00:0A:0B:0C:0D:0E id 200 time 69.85ms
+20 bytes from 00:0A:0B:0C:0D:0E id 201 time 9.97ms
+20 bytes from 00:0A:0B:0C:0D:0E id 202 time 56.86ms
+20 bytes from 00:0A:0B:0C:0D:0E id 203 time 39.92ms
+4 sent, 4 received, 0% loss
+</pre>
+
+</body>
+</section>
+<section>
+<title>Setting up Radio Frequency Communication (RFCOMM)</title>
+<body>
+
+<note>
+Please note that setting up radio frequency communication is optional.
+</note>
+
+<p>
+We can establish a radio frequency connection to another Bluetooth device using
+the <c>rfcomm</c> command. To make things a little easier especially for users
+with multiple devices that support Bluetooth, it is advisable to make a few
+changes to the default rfcomm config at <path>/etc/bluetooth/rfcomm.conf</path>.
+</p>
+
+<p>
+The whole segment of the config starting from <c>rfcomm0 {</c> and ending with
+<c>}</c> is the config for the device that will establish a connection at
+<path>/dev/rfcomm0</path>. In this case, we will only show one example, rfcomm0.
+You can add more devices as you see fit.
+</p>
+
+<pre caption="Editing /etc/bluetooth/rfcomm.conf">
+<comment>(Only changes that might be needed are shown)</comment>
+rfcomm0 {
+        # Automatically bind the device at startup
+        <comment>(Creates the device node, /dev/rfcomm0 at start up)</comment>
+        bind yes;
+
+        # Bluetooth address of the device
+        <comment>(Enter the address of the device you want to connect to)</comment>
+        device 00:0A:0B:0C:0D:0E;
+
+}
+</pre>
+
+<p>
+After configuring RFCOMM, we can connect to any device. Since we've made the
+required settings to the <path>/etc/bluetooth/rfcomm.conf</path> file, we just
+issue the command shown below. In case you've not made changes to the config
+file, an alternative method is also shown in the code listing that follows
+</p>
+
+<pre caption="Establishing an RFCOMM connection">
+<comment>(The 0 refers to the rfcomm0 in the config file)</comment>
+# <i>rfcomm connect 0 </i>
+Connected /dev/rfcomm0 to 00:0A:0B:0C:0D:0E on channel 1
+Press CTRL-C for hangup
+
+<comment>(If you did not edit /etc/bluetooth/rfcomm.conf)</comment>
+# <i>rfcomm connect 0 00:0A:0B:0C:0D:0E 1</i>
+Connected /dev/rfcomm0 to 00:0F:DE:69:50:24 on channel 1
+Press CTRL-C for hangup
+</pre>
+
+<p>
+The first parameter after the connect command is the RFCOMM TTY device node
+that will be used (usually 0). The second parameter is the MAC address of the
+remote device. The third parameter is optional and specifies the channel to be
+used. Please, note that in order to connect to a device, that device must be
+listening for incoming connections. To do that, we have to explicitly tell it
+to listen. We can cancel the communication at any moment by just hitting
+CTRL+C.
+</p>
+
+<pre caption="Listening for incoming RFCOMM connections">
+# <i>rfcomm listen 0 1</i>
+Waiting for connection on channel 1
+</pre>
+
+<p>
+In a similar way to the connect command, the listen command can receive two
+parameters. The first one explicits the RFCOMM TTY device node (usually 0) that
+will be used to accept a connection, while the second is the channel that will
+be used.
+</p>
+
+<p>
+Each time you call the <c>rfcomm</c> command, you can also specify the physical
+device you want to use. Below you can see a small example specifiying the
+physical device on the above two commands.
+</p>
+
+<pre caption="RFCOMM connections specifying physical device">
+# <i>rfcomm -i hci0 listen 0 1</i>
+Waiting for connection on channel 1
+<comment>(To listen to a determined device) </comment>
+# <i>rfcomm -i hci0 connect 0 00:0A:0B:0C:0D:0E 1</i>
+<comment>(To use a determined device when connecting to another one)</comment>
+</pre>
+
+</body>
+</section>
+<!-- Deleting pan chapter, bug 266690, until we know how the hell to do this -->
+</chapter>
+
+<chapter id="apps">
+<title>Desktop Applications for Bluetooth</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+We have quite a few Bluetooth applications that run on the desktop and this
+chapter has been divided into 3 parts, one each for Gnome, KDE and Miscellaneous
+applications.
+</p>
+
+</body>
+</section>
+<section>
+<title>For Gnome</title>
+<body>
+
+<p>
+If you are a gnome user, you will most probably go with <c>gnome-bluetooth</c>.
+It provides the most basic yet most used functionalities, as you can see below.
+</p>
+
+<ul>
+  <li><c>gnome-bluetooth-manager</c>: To manage Bluetooth remote devices.</li>
+  <li><c>gnome-obex-send</c>: To send files to other devices.</li>
+  <li><c>gnome-obex-server</c>: To receive files.</li>
+</ul>
+
+<pre caption="Installing gnome-bluetooth">
+# <i>emerge gnome-bluetooth</i>
+</pre>
+
+<p>
+This adds menu entries under Applications &gt; System Tools from where you can
+easily start up the manager or File sharing to transfer files between devices.
+</p>
+
+<p>
+To transfer files (the easy way):
+</p>
+
+<ul>
+  <li>
+    From the Phone to the Computer - Send the file from the phone via Bluetooth
+    and it will be picked up and saved to your <path>/home</path> always.
+  </li>
+<!--FIXME : Doesn't work on Nautilus 2.10.x. Bug #103464 for details -->
+<!--
+  <li>
+    From the Computer to the Phone - Fire up <c>nautilus</c> and select the
+    file you want to send and right click on it. Select the Send via Bluetooth
+    option and ask your phone to accept the file.
+  </li>
+-->
+</ul>
+
+<p>
+<c>gnome-phone-manager</c> is a nifty app that you can use to send and receive
+messages to and from your phone, using only your system. You do not have to
+touch your phone to read or send messages since all that happens through the
+application. You are also notified of a new message on your screen if the option
+is enabled under Preferences. Installation is a breeze as always.
+</p>
+
+<pre caption="Installing gnome-phone-manager">
+# <i>emerge gnome-phone-manager</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>For KDE</title>
+<body>
+
+<p>
+KDE makes use of <c>kdebluetooth</c> and provides more utilities than its Gnome
+counterpart as seen below.
+</p>
+
+<ul>
+  <li><c>kbluetoothd</c>: Bluetooth Meta Server.</li>
+  <li><c>kbtsearch</c>: Bluetooth device/service search utility.</li>
+  <li><c>khciconfig</c>: KDE Bluetooth Monitor.</li>
+  <li><c>kioclient</c>: KIO command line client.</li>
+  <li><c>qobexclient</c>: Swiss army knife for obex testing/development.</li>
+  <li><c>kbtobexclient</c>: A KDE Bluetooth Framework Application.</li>
+  <li><c>kioobex_start</c></li>
+  <li><c>kbtserialchat</c></li>
+  <li><c>kbemusedsrv</c>: KDE Bemused Server.</li>
+  <li><c>kbtobexsrv</c>: KDE OBEX Push Server for Bluetooth.</li>
+  <li><c>kbluepin</c>: A KDE KPart Application.</li>
+  <li>
+    <c>auth-helper</c>: A helper program for kbtobexsrv that sends an
+    authentication request for a given ACL link.
+  </li>
+</ul>
+
+<pre caption="Installing kdebluetooth">
+# <i>emerge kdebluetooth</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Other Interesting Applications</title>
+<body>
+
+<ul>
+  <li>
+    <c>app-mobilephone/obexftp</c>: File transfer over OBEX for mobile phones
+  </li>
+  <li>
+    <c>app-mobilephone/bemused</c>: Bemused is a system which allows you to
+    control your music collection from your phone, using Bluetooth.
+  </li>
+  <li>
+    <c>app-pda/multisync</c>: Multisync allows you to sync contacts, calendar
+    entries and notes from your mobile phone with your computer, over a
+    Bluetooth connection (amongst other things). It includes such features as
+    backing up this information and restoring it later, and syncing with the
+    Evolution e-mail client. You will need the <c>irmc</c> USE flag set to
+    ensure that <c>multisync</c> has Bluetooth support.
+  </li>
+  <li>
+    <c>net-wireless/opd</c> and <c>net-wireless/ussp-push</c> are command line
+    tools (server and client) that can be used to send files to your mobile
+    phone.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Acknowledgements</title>
+<section>
+<body>
+
+<p>
+Special thanks to <mail link="marcel@holtmann.org">Marcel Holtmann</mail>
+for his time and dedication to the Bluetooth development and for reviewing this
+guide. And big thanks to <mail link="puggy@gentoo.org">Douglas Russell</mail>
+for performing additional hardware tests and improving this guide.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

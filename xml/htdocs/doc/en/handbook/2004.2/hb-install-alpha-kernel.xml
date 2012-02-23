@@ -1,0 +1,524 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-install-alpha-kernel.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.10</version>
+<date>October 20, 2004</date>
+
+<section>
+<title>Timezone</title>
+<body>
+
+<p>
+You first need to select your timezone so that your system knows where it is
+located. Look for your timezone in <path>/usr/share/zoneinfo</path>, then make a
+symlink to <path>/etc/localtime</path> using <c>ln</c>:
+</p>
+
+<pre caption="Setting the timezone information">
+# <i>ls /usr/share/zoneinfo</i>
+<comment>(Suppose you want to use GMT)</comment>
+# <i>ln -sf /usr/share/zoneinfo/GMT /etc/localtime</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Installing the Sources</title>
+<subsection>
+<title>Choosing a Kernel</title>
+<body>
+
+<p>
+The core around which all distributions are built is the Linux kernel. It is the
+layer between the user programs and your system hardware. Gentoo provides its
+users several possible kernel sources. A full listing with description is
+available at the <uri link="/doc/en/gentoo-kernel.xml">Gentoo Kernel
+Guide</uri>. 
+</p>
+
+<p>
+For alpha-based systems we have <c>vanilla-sources</c> (the default kernel
+source as developed by the linux-kernel developers), <c>alpha-sources</c>
+(kernel source optimized for alpha users) and <c>compaq-sources</c> (kernel
+source as used by RedHat for Alpha, maintained by Compaq).
+</p>
+
+<p>
+Choose your kernel source and install it using <c>emerge</c>. 
+</p>
+
+<p>
+In the next example we install the <c>vanilla-sources</c>.
+Of course substitute with your choice of sources, this is merely an example:
+</p>
+
+<pre caption="Installing a kernel source">
+# <i>emerge vanilla-sources</i>
+</pre>
+
+<p>
+When you take a look in <path>/usr/src</path> you should see a symlink called
+<path>linux</path> pointing to your kernel source:
+</p>
+
+<pre caption="Viewing the kernel source symlink">
+# <i>ls -l /usr/src/linux</i>
+lrwxrwxrwx    1 root     root           12 Oct 13 11:04 /usr/src/linux -&gt; linux-2.4.24
+</pre>
+
+<p>
+If this isn't the case (i.e. the symlink points to a different kernel source) 
+change the symlink before you continue:
+</p>
+
+<pre caption="Changing the kernel source symlink">
+# <i>rm /usr/src/linux</i>
+# <i>cd /usr/src</i>
+# <i>ln -s linux-2.4.24 linux</i>
+</pre>
+
+<p>
+Now it is time to configure and compile your kernel source. You 
+can use <c>genkernel</c> for this, which will build a generic kernel as used 
+by the LiveCD. We explain the "manual" configuration first though, as it is 
+the best way to optimize your environment.
+</p>
+
+<p>
+If you want to manually configure your kernel, continue now with <uri
+link="#manual">Default: Manual Configuration</uri>. If you want to use 
+<c>genkernel</c> you should read <uri link="#genkernel">Alternative: Using 
+genkernel</uri> instead.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="manual">
+<title>Default: Manual Configuration</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Manually configuring a kernel is often seen as the most difficult procedure a
+Linux user ever has to perform. Nothing is less true -- after configuring a
+couple of kernels you don't even remember that it was difficult ;)
+</p>
+
+<p>
+However, one thing <e>is</e> true: you must know your system when you start
+configuring a kernel manually. Most information can be gathered by viewing the
+contents of <path>/proc/pci</path> (or by using <c>lspci</c> if available). You
+can also run <c>lsmod</c> to see what kernel modules the LiveCD uses (it might
+provide you with a nice hint on what to enable).
+</p>
+
+<p>
+Now go to your kernel source directory and execute <c>make menuconfig</c>. This
+will fire up an ncurses-based configuration menu.
+</p>
+
+<pre caption="Invoking menuconfig">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+You will be greeted with several configuration sections. We'll first list some
+options you must activate (otherwise Gentoo will not function, or not function
+properly without additional tweaks).
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating Required Options</title>
+<body>
+
+<p>
+First of all, activate the use of development and experimental code/drivers.
+You need this, otherwise some very important code/drivers won't show up:
+</p>
+
+<pre caption="Selecting experimental code/drivers">
+Code maturity level options ---&gt;
+  [*] Prompt for development and/or incomplete code/drivers
+</pre>
+
+<p>
+Now go to <c>File Systems</c> and select support for the filesystems you use.
+<e>Don't</e> compile them as modules, otherwise your Gentoo system will not be
+able to mount your partitions. Also select <c>Virtual memory</c>, <c>/proc
+file system</c>, <c>/dev file system</c> + <c>Automatically mount at boot</c>:
+</p>
+
+<pre caption="Selecting necessary file systems">
+<comment>(With a 2.4.x kernel)</comment>
+File systems ---&gt;
+  [*] Virtual memory file system support (former shm fs)
+  [*] /proc file system support
+  [*] /dev file system support (EXPERIMENTAL)
+  [*]   Automatically mount at boot
+  [ ] /dev/pts file system for Unix98 PTYs
+
+<comment>(With a 2.6.x kernel)</comment>
+File systems ---&gt;
+  Pseudo Filesystems ---&gt;
+    [*] /proc file system support
+    [*] /dev file system support (OBSOLETE)
+    [*]   Automatically mount at boot
+    [*] Virtual memory file system support (former shm fs)
+
+<comment>(Select one or more of the following options as needed by your system)</comment>
+  &lt;*&gt; Reiserfs support
+  &lt;*&gt; Ext3 journalling file system support
+  &lt;*&gt; JFS filesystem support
+  &lt;*&gt; Second extended fs support
+  &lt;*&gt; XFS filesystem support
+</pre>
+
+<p>
+If you are using PPPoE to connect to the Internet or you are using a dial-up
+modem, you will need the following options in the kernel:
+</p>
+
+<pre caption="Selecting PPPoE necessary drivers">
+<comment>(With a 2.4.x kernel)</comment>
+Network device support ---&gt;
+  &lt;*&gt; PPP (point-to-point protocol) support
+  &lt;*&gt;   PPP support for async serial ports
+  &lt;*&gt;   PPP support for sync tty ports
+
+<comment>(With a 2.6.x kernel)</comment>
+Device Drivers ---&gt;
+  Networking support ---&gt;
+    &lt;*&gt; PPP (point-to-point protocol) support
+    &lt;*&gt;   PPP support for async serial ports
+    &lt;*&gt;   PPP support for sync tty ports
+</pre>
+
+<p>
+The two compression options won't harm but are not definitely needed, neither
+does the <c>PPP over Ethernet</c> option, that might only be used by 
+<c>rp-pppoe</c> when configured to do kernel mode PPPoE.
+</p>
+
+<p>
+If you require it, don't forget to include support in the kernel for your
+ethernet card.
+</p>
+
+<p>
+The following options are recommended as well:
+</p>
+
+<pre caption="Recommended Alpha options">
+General setup ---&gt;
+  &lt;*&gt; SRM environment through procfs
+  &lt;*&gt; Configure uac policy via sysctl
+
+Plug and Play configuration ---&gt;
+  &lt;*&gt; Plug and Play support
+  &lt;M&gt;   ISA Plug and Play support
+
+SCSI support ---&gt;
+  SCSI low-level drivers ---&gt;
+    &lt;*&gt; SYM53C8XX Version 2 SCSI support (NEW)
+    &lt;*&gt; Qlogic ISP SCSI support
+
+Network device support ---&gt;
+  Ethernet (10 or 100 Mbit) ---&gt;
+    &lt;M&gt; DECchip Tulip (dc21x4x) PCI support
+    &lt;M&gt; Generic DECchip &amp; DIGITAL EtherWORKS PCI/EISA
+    &lt;M&gt; EtherExpressPro/100 support (eepro100)
+    &lt;M&gt; EtherExpressPro/100 support (e100)
+  Ethernet (1000 Mbit) ---&gt;
+    &lt;M&gt; Alteon AceNIC
+      [*] Omit support for old Tigon I
+    &lt;M&gt; Broadcom Tigon3
+  [*] FDDI driver support
+  &lt;M&gt; Digital DEFEA and DEFPA
+  &lt;*&gt; PPP support
+    &lt;*&gt; PPP Deflate compression
+
+Character devices ---&gt;
+  [*] Support for console on serial port
+  [*] Direct Rendering Manager
+
+File systems ---&gt;
+  &lt;*&gt; Kernel automounter version 4 support
+  Network File Systems ---&gt;
+    &lt;*&gt; NFS
+      [*] NFSv3 client
+      &lt;*&gt; NFS server
+      [*] NFSv3 server
+  Partition Types ---&gt;
+    [*] Advanced partition selection
+    [*] Alpha OSF partition support
+  Native Language Support
+    &lt;*&gt; NLS ISO 8859-1
+
+Sound ---&gt;
+  &lt;M&gt; Sound card support
+    &lt;M&gt; OSS sound modules
+      [*] Verbose initialisation
+      [*] Persistent DMA buffers
+      &lt;M&gt; 100% Sound Blaster compatibles
+</pre>
+
+<p>
+When you've finished configuring the kernel, continue with <uri
+link="#compiling">Compiling and Installing</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection id="compiling">
+<title>Compiling and Installing</title>
+<body>
+
+<p>
+Now that your kernel is configured, it is time to compile and install it. Exit 
+the configuration and run <c>make dep &amp;&amp; make vmlinux modules 
+modules_install</c>:
+</p>
+
+<pre caption="Compiling the kernel">
+<comment>(For 2.4 kernel)</comment>
+# <i>make dep &amp;&amp; make vmlinux modules modules_install</i>
+
+<comment>(For 2.6 kernel)</comment>
+# <i>make &amp;&amp; make modules_install</i>
+
+<comment>(For all kernels)</comment>
+# <i>make boot</i>
+</pre>
+
+<p>
+When the kernel has finished compiling, copy the kernel image to
+<path>/boot</path>. In the next example we assume you have configured and
+compiled <c>vanilla-sources-2.4.24</c>; recent kernels might create
+<path>vmlinux</path> instead of <path>vmlinux.gz</path>.
+</p>
+
+<pre caption="Installing the kernel">
+# <i>cp arch/alpha/boot/vmlinux.gz /boot/</i>
+# <i>cp System.map /boot/System.map-2.4.24</i>
+</pre>
+
+<p>
+It is also wise to copy over your kernel configuration file to
+<path>/boot</path>, just in case :)
+</p>
+
+<pre caption="Backing up your kernel configuration">
+# <i>cp .config /boot/config-2.4.24</i>
+</pre>
+
+<p>
+Now continue with <uri link="#kernel_modules">Installing Separate Kernel
+Modules</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="genkernel">
+<title>Alternative: Using genkernel</title>
+<body>
+
+<p>
+If you are reading this section, you have chosen to use our <c>genkernel</c>
+script to configure your kernel for you.
+</p>
+
+<p>
+Now that your kernel source tree is installed, it's now time to compile your 
+kernel by using our <c>genkernel</c> script to automatically build a kernel for 
+you. <c>genkernel</c> works by configuring a kernel nearly identically to the 
+way our LiveCD kernel is configured. This means that when you use 
+<c>genkernel</c> to build your kernel, your system will generally detect all 
+your hardware at boot-time, just like our Live CD does. Because genkernel 
+doesn't require any manual kernel configuration, it is an ideal solution for 
+those users who may not be comfortable compiling their own kernels.
+</p>
+
+<p>
+Now, let's see how to use genkernel. First, emerge the genkernel ebuild:
+</p>
+
+<pre caption="Emerging genkernel">
+# <i>emerge genkernel</i>
+</pre>
+
+<p>
+Now, compile your kernel sources by running <c>genkernel all</c>.
+Be aware though, as <c>genkernel</c> compiles a kernel that supports almost all 
+hardware, this compilation will take quite a while to finish!
+</p>
+
+<p>
+Note that, if your boot partition doesn't use ext2 or ext3 as filesystem you
+need to manually configure your kernel using <c>genkernel --menuconfig all</c>
+and add support for your filesystem <e>in</e> the kernel (i.e. <e>not</e> as a
+module).
+</p>
+
+<pre caption="Running genkernel">
+# <i>genkernel all</i>
+GenKernel v3.0.1_beta10
+* ARCH: Alpha 
+* KERNEL VER: 2.4.24
+* kernel: configuring source
+* kernel: running mrproper
+<comment>(Output removed to increase readability)</comment>
+* Kernel compiled successfully!
+* Required Kernel Params:
+*   : root=/dev/ram0 init=/linuxrc real_root=/dev/$ROOT
+*     where $ROOT is the devicenode for your root partition as
+*     you should have specified in /etc/fstab
+*              
+* You MUST tell your bootloader to use the generated initrd
+*              
+* Recommended Kernel Params:
+*   : vga=0x317 splash=verbose
+*              
+* Do NOT report kernel bugs (configs included) as genkernel bugs.
+* Make sure you have the latest genkernel before reporting bugs
+*              
+* For more info see /usr/share/genkernel/README
+</pre>
+
+<p>
+Once <c>genkernel</c> completes, a kernel, full set of modules and 
+<e>initial root disk</e> (initrd) will be created. We will use the kernel 
+and initrd when configuring a boot loader later in this document. Write
+down the names of the kernel and initrd as you will need it when writing
+the bootloader configuration file. The initrd will be started immediately after 
+booting to perform hardware autodetection (just like on the Live CD) before 
+your "real" system starts up.
+</p>
+
+<pre caption="Checking the created kernel image name and initrd">
+# <i>ls /boot/kernel* /boot/initrd*</i>
+</pre>
+
+<p>
+Now, let's perform one more step to get our system to be more like the Live 
+CD -- let's emerge <c>hotplug</c>. While the initrd autodetects hardware that 
+is needed to boot your system, <c>hotplug</c> autodetects everything else.
+To emerge and enable <c>hotplug</c>, type the following:
+</p>
+
+<pre caption="Emerging and enabling hotplug">
+# <i>emerge hotplug</i>
+# <i>rc-update add hotplug default</i>
+</pre>
+
+</body>
+</section>
+<section id="kernel_modules">
+<title>Installing Separate Kernel Modules</title>
+<subsection>
+<title>Installing Extra Modules</title>
+<body>
+
+<p>
+If appropriate, you should emerge ebuilds for any additional hardware that is 
+on your system. Here is a list of kernel-related ebuilds that you could emerge:
+</p>
+
+<table>
+<tcolumn width="1in"/>
+<tcolumn width="4in"/>
+<tcolumn width="2in"/>
+<tr>
+  <th>Ebuild</th>
+  <th>Purpose</th>
+  <th>Command</th>
+</tr>
+<tr>
+  <ti>xfree-drm</ti>
+  <ti>
+    Accelerated graphics for ATI Radeon up to 9200, Rage128, Matrox, Voodoo and
+    other cards for XFree86. Please check the <c>IUSE_VIDEO_CARDS</c> variable
+    in the <path>/usr/portage/x11-base/xfree-drm</path> ebuilds to see what you
+    need to fill in as <c>yourcard</c>.
+  </ti>
+  <ti><c>VIDEO_CARDS="yourcard" emerge xfree-drm</c></ti>
+</tr>
+</table>
+
+<p>
+Beware though, some of these ebuilds might deal with big dependencies. To verify
+what packages will be installed by emerging an ebuild, use <c>emerge 
+--pretend</c>. For instance, for the <c>xfree-drm</c> package:
+</p>
+
+<pre caption="View full installation package listing">
+# <i>emerge --pretend xfree-drm</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Configuring the Modules</title>
+<body>
+
+<p>
+You should list the modules you want automatically loaded in 
+<path>/etc/modules.autoload.d/kernel-2.4</path> (or <path>kernel-2.6</path>). 
+You can add extra options to the modules too if you want.
+</p>
+
+<p>
+To view all available modules, run the following <c>find</c> command. Don't
+forget to substitute "&lt;kernel version&gt;" with the version of the kernel you
+just compiled:
+</p>
+
+<pre caption="Viewing all available modules">
+# <i>find /lib/modules/&lt;kernel version&gt;/ -type f -iname '*.o' -or -iname '*.ko'</i>
+</pre>
+
+<p>
+For instance, to automatically load the <c>3c59x.o</c> module, edit the
+<path>kernel-2.4</path> or <path>kernel-2.6</path> file and enter the module
+name in it.
+</p>
+
+<pre caption="Editing /etc/modules.autoload.d/kernel-2.4">
+<comment>(Example for 2.4 kernels)</comment>
+# <i>nano -w /etc/modules.autoload.d/kernel-2.4</i>
+</pre>
+
+<pre caption="/etc/modules.autoload.d/kernel-2.4 or kernel-2.6">
+3c59x
+</pre>
+
+<p>
+Now run <c>modules-update</c> to commit your changes to the
+<path>/etc/modules.conf</path> file:
+</p>
+
+<pre caption="Running modules-update">
+# <i>modules-update</i>
+</pre>
+
+<p>
+Continue the installation with <uri link="?part=1&amp;chap=8">Configuring 
+your System</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

@@ -1,0 +1,493 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-install-stage.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+<!-- Original revision: 1.70 -->
+
+<sections>
+
+<version>1.67</version>
+<date>2004-11-09</date>
+
+<section>
+<title>stage tarballのインストール</title>
+<subsection>
+<title>日時を正確に設定する</title>
+<body>
+
+<p>
+先に進める前に、日時をチェックして、更新しておく必要があります。
+狂った時計は後でおかしな結果が起きる元になります。
+</p>
+
+<p>
+現在の日時を確認するには、<c>date</c>を実行してください。
+</p>
+
+<pre caption="日時を確認する">
+# <i>date</i>
+Fri Oct 29 16:21:18 CEST 2004
+</pre>
+
+<p>
+もし表示された日時が間違っていたら、<c>date MMDDhhmmYYYY</c>を使って更新してください。
+構文としては、(<b>M</b>onth(月)、<b>D</b>ay(日)、<b>h</b>our(時)、<b>m</b>inute(分)、<b>Y</b>ear(年)を表しています)。例えば、2004年10月29日 16:21を設定したい場合には以下のように実行します。
+</p>
+
+<pre caption="日時の設定">
+# <i>date 102916212004</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>stageの選択</title>
+<body>
+
+<p>
+次のステップとして、あなたが選択した<e>stage</e>tarballをシステムにインストールする必要があります。
+必要なtarballをインターネットからダウンロードするか、一般的なGentoo LiveCDから起動しているなら、CDからコピーすることができます。もしUniversal CDを持っていて使用したいstageがCDにあるのなら、インターネットからダウンロースするのは全くネットワーク帯域の浪費でしかありません。それらのstageは全く同一なのですから。
+</p>
+
+<ul>
+<li><uri link="#doc_chap2">一般的な選択: インターネットからダウンロードしたstageを使う</uri></li>
+<li><uri link="#doc_chap3">もう一つの選択: LiveCDのstageを使う</uri></li>
+</ul>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>一般的な選択: インターネットからダウンロードしたstageを使う</title>
+<subsection>
+<title>stagetarballのダウンロード</title>
+<body>
+
+<p>
+Gentooをインストールしようとしているファイルシステムのマウントポイントに移動してください。
+(大概は、次の場所です。<path>/mnt/gentoo</path>)
+</p>
+
+<pre caption="インストール先のマウントポイントに移動">
+# <i>cd /mnt/gentoo</i>
+</pre>
+
+<p>
+インストールに使用している媒体によって、stageをダウンロードする為に使えるツールは何種類か考えられます。
+もし<c>links2</c>が使用可能なら、すぐにでも<uri link="/main/en/mirrors.xml">the Gentoo mirrorlist</uri>にアクセスして、最寄のミラーを選択することができます。
+<c>links2</c>が使用できない場合、<c>lynx</c>が一時的に使用できるでしょう。この場合、インストール手順の以降に出てくるすべての<c>links2</c>を<c>lynx</c>で読み替えてください。
+</p>
+<p><path>releases/</path>ディレクトリにアクセスし、あなたの装置のアーキテクチャ(たとえば<path>x86/</path>)とGentooのバージョン(<path>2004.3</path>)、
+そして最後に<path>stages/</path>ディレクトリをたどってください。
+あなたのアーキテクチャで入手可能なstageファイルがそこにあるはずです(もしかしたら、それらは個別のサブアーキテクチャ名のディレクトリ配下に置かれているかもしれません)。
+ひとつを選択し、<c>D</c>を押してダウンロードしましょう。ダウンロードが完了したら、<c>Q</c>を押してブラウザを終了させます。
+</p>
+
+<pre caption="links2でミラーリストを見る">
+<comment>(proxyなしの場合)</comment> # <i>links2 http://www.gentoo.org/main/en/mirrors.xml</i>
+<comment>(proxyありの場合)</comment> # <i>links2 -http-proxy proxy.server.com:8080 http://www.gentoo.org/main/en/mirrors.xml</i>
+</pre>
+
+<p>
+ダウンロードしたstage tarballの正当性を評価したいなら、
+<c>md5sum</c>を使って、その出力とミラーで配布されているMD5チェックサムを比較してください。
+例えば、x86のstagetarballをチェックするには、
+</p>
+
+<pre caption="stage tarballの正当性のチェックの例">
+# <i>md5sum -c stage1-x86-2004.3.tar.bz2.md5</i>
+stage1-x86-2004.3.tar.bz2: OK
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>stage tarballの展開</title>
+<body>
+
+<p>
+さぁ、それではダウンロードしたstageをシステムに展開しましょう。
+もっとも簡単な方法として、GNUの<c>tar</c>を使います。
+</p>
+
+<pre caption="stageの展開">
+# <i>tar -xvjpf stage?-*.tar.bz2</i>
+</pre>
+
+<p>
+同じオプション(<c>-xvjpf</c>)を必ず使うようにしてください。<c>x</c>は<e>アーカイブの展開</e>、
+<c>v</c>は<e>詳細な表示</e>(これは、任意です)、<c>j</c>は<e>bzip2の解凍</e>、
+<c>p</c>は<e>パーミッションの保存</e>、そして<c>f</c>は、標準入力からではなく、ファイルから展開することを表しています。
+</p>
+
+<p>
+これでstageはインストールされました。<uri
+link="#installing_portage">Portageのインストール</uri>へ進みましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>もう一つの選択: LiveCDのstageを使う</title>
+<subsection>
+<title>stage tarballの展開</title>
+<body>
+
+<p>
+stageは、CD内の<path>/mnt/cdrom/stages</path>ディレクトリにあります。
+どんなstageがあるかは、<c>ls</c>コマンドを使って見ることができます。
+</p>
+
+<pre caption="どんなstageがあるか調べる">
+# <i>ls /mnt/cdrom/stages</i>
+</pre>
+
+<p>
+もし、システムがエラーを返してきたら、CD-ROMを先にマウントする必要があるかもしれません。
+</p>
+
+<pre caption="CD-ROMをマウントする">
+# <i>ls /mnt/cdrom/stages</i>
+ls: /mnt/cdrom/stages: No such file or directory
+# <i>mount /dev/cdroms/cdrom0 /mnt/cdrom</i>
+# <i>ls /mnt/cdrom/stages</i>
+</pre>
+
+<p>
+それでは、Gentooのマウントポイントに移動しましょう(通常は<path>/mnt/gentoo</path>です)。
+</p>
+
+<pre caption="/mnt/gentooにディレクトリを移動する">
+# <i>cd /mnt/gentoo</i>
+</pre>
+
+<p>
+あなたが選択したstage tarballを展開します。
+これにはGNU <c>tar</c>を使います。例と同じオプション(<c>-xvjpf</c>)を必ず使うようにしてください!
+次の例では、stage taballとして<path>stage3-&lt;subarch&gt;-2004.3.tar.bz2</path>を展開しています。
+あなたが選んだstage tarballのファイル名に適宜読み替えてください。
+</p>
+
+<pre caption="stage tarballの展開">
+# <i>tar -xvjpf /mnt/cdrom/stages/stage3-$lt;subarch&gt;-2004.3.tar.bz2</i>
+</pre>
+
+<p>
+これでstageがインストールされました。<uri
+link="#installing_portage">Portageのインストール</uri>へ進みましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="installing_portage">
+<title>Portageのインストール</title>
+<subsection>
+<title>ネットワークが使えますか？</title>
+<body>
+
+<p>
+もしネットワークに接続されていないなら、LiveCDで提供されているPortageスナップショットをインストールする必要があります。
+ということは必然的に<e>stage3</e> tarballからインストールすることになるかと思います(ネットワークに接続されていない状態でのインストールをサポートする唯一のtarballであるため)。
+この後の手順でコンパイル済みのパッケージを使うつもりなら、
+LiveCDのPortageスナップショットを<e>使わなければなりません</e>。
+その他のユーザは、次の章で<c>emerge</c>を使って、最新のPortageツリーをダウンロードします。
+</p>
+
+<p>
+あなたの環境にあった部分を読み進めてください。
+</p>
+
+<ul>
+  <li>
+    <uri link="#installing_from_LiveCD">LiveCDのPortageスナップショットおよびソースコードを使ってインストールする</uri> (ネットワーク接続なしのインストール、またはGRPインストールの場合)
+  </li>
+  <li>
+    <uri link="#compile_options">コンパイルオプションを設定する</uri> (その他のインストール方法)
+  </li>
+</ul>
+
+</body>
+</subsection>
+<subsection id="installing_from_LiveCD">
+<title>LiveCDのPortageスナップショットおよびソースコードを使ってインストールする</title>
+<body>
+
+<p>
+Universal LiveCDには、Portageスナップショットが収録されています。
+この文章を読んでいるということは、そのようなLiveCDを使用していることと思います。
+このスナップショットをインストールするために、どのようなスナップショットがあるか
+<path>/mnt/cdrom/snapshots/</path>を覗いてみてください。
+</p>
+
+<pre caption="/mnt/cdrom/snapshotsの中を確認する">
+# <i>ls /mnt/cdrom/snapshots</i>
+</pre>
+
+<p>
+次の手順でスナップショットを展開してください。
+繰り返しになりますが、<c>tar</c>へのオプションが適切であることを確認してください。
+そして、<c>-C</c>オプションは大文字の<c>C</c>であって、<c>c</c>ではありません。
+次の例では、<path>portage-20041022.tar.bz2</path>をスナップショットのファイル名として使用しています。
+実際にはあなたのスナップショットの名前に読み替えてください。
+</p>
+
+<pre caption="Portageスナップショットの展開">
+# <i>tar -xvjf /mnt/cdrom/snapshots/portage-20041022.tar.bz2 -C /mnt/gentoo/usr</i>
+</pre>
+
+<p>
+ソースコードもCDからコピーする必要があります。
+</p>
+
+<pre caption="ソースコードのコピー">
+# <i>mkdir /mnt/gentoo/usr/portage/distfiles</i>
+# <i>cp /mnt/cdrom/distfiles/* /mnt/gentoo/usr/portage/distfiles/</i>
+</pre>
+
+<p>
+これでPortageスナップショットはインストールされました。
+<uri link="#compile_options">コンパイルオプションの設定</uri>に進んでください。
+</p>
+
+</body>
+</subsection>
+</section>
+
+<section id="compile_options">
+<title>コンパイルオプションの設定</title>
+<subsection>
+<title>はじめに</title>
+<body>
+
+<p>
+Gentooを最適化するために、Portageの振る舞いに影響を与えるいくつかの変数を設定することができます。
+これらの変数は、すべて(<c>export</c>を使用して)環境変数として設定することも可能ですが、
+環境変数は永続的なものではありません。設定を保存しておくために、Portageの設定ファイル<path>/etc/make.conf</path>があります。
+これが今から編集するファイルです。
+</p>
+
+<note>
+設定可能なすべての変数は、<path>/mnt/gentoo/etc/make.conf.example</path>にコメント付きで列挙されています。
+Gentooのインストールを成功させるには、次に挙げられている変数を設定するだけでよいです。
+</note>
+
+<p>
+あとで話題にする最適化のための変数を編集するために、
+好みのエディタを立ち上げてください(このガイドでは<c>nano</c>を使います)。
+</p>
+
+<pre caption="/etc/make.confを開く">
+# <i>nano -w /mnt/gentoo/etc/make.conf</i>
+</pre>
+
+<p>
+おそらく気づいていると思いますが、<path>make.conf.example</path>ファイルは、
+他の設定ファイル同様の構造をしています(訳注:bashスクリプトと同じ作法です)。
+"#"で始まる行はコメントで、その他の行には、<c>VARIABLE="content"</c>という構文で変数を定義します。
+いくつかの変数については、次の節で話題にします。
+</p>
+
+<warn>
+もし、stage3でGRPインストールを行っているなら、USE変数に変更を加えないでください。
+パッケージをインストールし終えたら、USE変数を変更することができます。
+この警告を無視すると不具合が起こることが知られています。
+</warn>
+
+</body>
+</subsection>
+<subsection>
+<title>CHOST</title>
+<body>
+
+<warn>
+stage1から始めていないユーザは、<path>make.conf</path>内の<c>CHOST</c>の設定を<e>変更してはいけません</e>。
+そんなことをしてしまったら、そのシステムは使いものにならなくなってしまいます。
+もう一度言いますが、この変数を変更してよいのは、<e>stage1</e>からインストールを始めた場合だけです。
+</warn>
+
+<p>
+<c>CHOST</c>変数は、<c>gcc</c>がどのアーキテクチャでプログラムをコンパイルすべきかを定義します。
+次のようなものが設定できます。
+</p>
+
+<table>
+<tr>
+  <th>アーキテクチャ</th>
+  <th>サブアーキテクチャ</th>
+  <th>CHOSTの設定</th>
+</tr>
+<tr>
+  <ti>x86</ti>
+  <ti>i386</ti>
+  <ti>i386-pc-linux-gnu</ti>
+</tr>
+<tr>
+  <ti>x86</ti>
+  <ti>i486</ti>
+  <ti>i486-pc-linux-gnu</ti>
+</tr>
+<tr>
+  <ti>x86</ti>
+  <ti>i586</ti>
+  <ti>i586-pc-linux-gnu</ti>
+</tr>
+<tr>
+  <ti>x86</ti>
+  <ti>i686以降(athlonを含む)</ti>
+  <ti>i686-pc-linux-gnu</ti>
+</tr>
+<tr>
+  <ti>alpha</ti>
+  <ti></ti>
+  <ti>alpha-unknown-linux-gnu</ti>
+</tr>
+<tr>
+  <ti>ppc</ti>
+  <ti></ti>
+  <ti>powerpc-unknown-linux-gnu</ti>
+</tr>
+<tr>
+  <ti>ppc64</ti>
+  <ti></ti>
+  <ti>powerpc64-unknown-linux-gnu</ti>
+</tr>
+<tr>
+  <ti>sparc</ti>
+  <ti></ti>
+  <ti>sparc-unknown-linux-gnu</ti>
+</tr>
+<tr>
+  <ti>hppa</ti>
+  <ti>一般的なhppa</ti>
+  <ti>hppa-unknown-linux-gnu</ti>
+</tr>
+<tr>
+  <ti>hppa</ti>
+  <ti>pa7000</ti>
+  <ti>hppa1.1-unknown-linux-gnu</ti>
+</tr>
+<tr>
+  <ti>hppa</ti>
+  <ti>pa8000以降</ti>
+  <ti>hppa2.0-unknown-linux-gnu</ti>
+</tr>
+<tr>
+  <ti>mips</ti>
+  <ti></ti>
+  <ti>mips-unknown-linux-gnu</ti>
+</tr>
+<tr>
+  <ti>amd64</ti>
+  <ti></ti>
+  <ti>x86_64-pc-linux-gnu</ti>
+</tr>
+</table>
+
+</body>
+</subsection>
+<subsection>
+<title>CFLAGSとCXXFLAGS</title>
+<body>
+
+<p>
+<c>CFLAGS</c>と<c>CXXFLAGS</c>変数には、それぞれ、CおよびC++コンパイラである<c>gcc</c>に対する最適化のためのフラグを定義します。
+ここでは、一般的なものを定義しますが、それぞれのプログラムごとに最適なフラグを使うことで、
+最高のパフォーマンスを出すことが可能となります。
+これは、それぞれのプログラムが異なっていることによります(訳注:プログラムごと、
+アーキテクチャごとにパフォーマンスへの考慮や設計が異なり、フラグによってどれだけ最適化されるかということは、プログラムによって異なると言うこと。)
+</p>
+
+<p>
+<path>make.conf</path>には、<e>一般的には</e>システム全体の動作を損なわない範囲で最善の最適化フラグを定義すべきです。
+この変数に、実験的な設定をしないでください。
+過剰な最適化はプログラムの動作をおかしくします(クラッシュや誤動作の元です)。
+</p>
+
+<p>
+すべての最適化オプションを説明はしません。
+そのすべてを知りたいなら、<uri link="http://gcc.gnu.org/onlinedocs/">GNU
+Online Manual(s)</uri>や<c>gcc</c>のinfo(<c>info gcc</c> -- このコマンドは既に稼動しているLinuxシステムでのみ動作します)を読んでください。
+<path>make.conf.example</path>ファイルにもたくさんの例や情報が含まれています。
+こちらも忘れずに読んでください。
+</p>
+
+<p>
+始めに<c>-march=</c>フラグを設定してください。
+これには、ターゲットとするアーキテクチャの名前を指定します。
+どんなオプションを設定できるかは、<path>make.conf.example</path>ファイルに(コメントとして)書かれています。
+例えば、x86、Athlon XPアーキテクチャの場合には以下のように指定します。
+</p>
+
+<pre caption="GCC、marchオプションの設定">
+<comment># ネイティブ64ビットシステムを使用したいAMD64ユーザはathlon-xpを使用すべきではありません</comment>
+-march=athlon-xp
+</pre>
+
+<p>
+次に、<c>-O</c>フラグ(これは、大文字のOで、ゼロではありません)を設定します。
+これは、<c>gcc</c>の最適化クラスのフラグです。
+<c>s</c>(サイズの最適化)、<c>0</c>(最適化なし)、そして、スピードの最適化フラグ<c>1</c>、<c>2</c>、<c>3</c>
+が指定できます(各クラスは、この順番により強い最適化を行います。より強い最適化をするクラスは、弱い最適化クラスと同様の効果を持ちつつ、追加の最適化を行います)。
+例えば、クラス2の最適化には以下のフラグをつけます。
+</p>
+
+<pre caption="GCC、Oオプションの設定">
+-O2
+</pre>
+
+<p>
+他の人気がある最適化フラグとして<c>-pipe</c>(コンパイル時の様々な段階間の情報のやり取りに、テンポラリファイルではなくパイプを使うようにします)があります。
+</p>
+
+<p>
+<c>-fomit-frame-pointer</c>(必要ない関数に対するレジスタ内のフレームポインタを保持しません)を使うと、
+アプリケーションのデバッグが非常に困難になるということを覚えておいてください。
+</p>
+
+<p>
+<c>CFLAGS</c>と<c>CXXFLAGS</c>を定義するときに、
+複数の最適化オプションを次の例のように繋げることができます。
+</p>
+
+<pre caption="CFLAGS変数とCXXFLAGS変数の定義">
+CFLAGS="-march=athlon-xp -pipe -O2"   <comment># AMD64ユーザはathlon-xpを使うべきではない</comment>
+CXXFLAGS="${CFLAGS}"                  <comment># 両方の変数に同じ設定を使う場合</comment>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>MAKEOPTS</title>
+<body>
+
+<p>
+<c>MAKEOPTS</c>には、パッケージをインストールするときに、
+いくつ平行してコンパイルを走らせるかを定義します。
+あなたのシステムのCPU数に1を加えた数を指定するのが賢明ですが、これは目安であり常にそれが最善であるというわけではありません。
+</p>
+
+<pre caption="一般的な、CPUが1個のシステムに対するMAKEOPTSの設定">
+MAKEOPTS="-j2"
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>さぁ準備ができました。次へ進みましょう!</title>
+<body>
+
+<p>
+<path>/mnt/gentoo/etc/make.conf</path>をあなたの好みに応じて編集し、保存してください。
+(<c>nano</c>ユーザは、<c>Ctrl-X</c>を押します)
+それでは、<uri link="?part=1&amp;chap=6">Gentooベースシステムのインストール</uri>へ進んでください。
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

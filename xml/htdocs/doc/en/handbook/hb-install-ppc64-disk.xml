@@ -1,0 +1,703 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-ppc64-disk.xml,v 1.36 2011/10/17 19:51:45 swift Exp $ -->
+
+<sections>
+
+<abstract>
+To be able to install Gentoo, you must create the necessary partitions.
+This chapter describes how to partition a disk for future usage.
+</abstract>
+
+<version>11</version>
+<date>2011-10-17</date>
+
+<section>
+<title>Introduction to Block Devices</title>
+
+<subsection>
+<include href="hb-install-blockdevices.xml"/>
+</subsection>
+
+<subsection>
+<title>Partitions and Slices</title>
+<body>
+
+<p>
+Although it is theoretically possible to use a full disk to house your Linux
+system, this is almost never done in practice. Instead, full disk block devices
+are split up in smaller, more manageable block devices. On most systems,
+these are called <e>partitions</e>. Other architectures use a similar technique,
+called <e>slices</e>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Designing a Partitioning Scheme</title>
+<subsection>
+<title>Default Partitioning Scheme</title>
+<body>
+
+<p>
+If you are not interested in drawing up a partitioning scheme for your system,
+you can use the partitioning scheme we use throughout this book:
+</p>
+
+<table>
+<tr>
+  <th>Partition</th>
+  <th>Filesystem</th>
+  <th>Size</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>Partition map</ti>
+  <ti>31.5k</ti>
+  <ti>Partition map</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>(bootstrap)</ti>
+  <ti>800k</ti>
+  <ti>Apple_Bootstrap</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>(swap)</ti>
+  <ti>512M</ti>
+  <ti>Swap partition</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda4</path></ti>
+  <ti>ext3</ti>
+  <ti>Rest of the disk</ti>
+  <ti>Root partition</ti>
+</tr>
+</table>
+
+<note>
+There are some partitions named like this: <path>Apple_Driver43</path>,
+<path>Apple_Driver_ATA</path>, <path>Apple_FWDriver</path>,
+<path>Apple_Driver_IOKit</path>, and <path>Apple_Patches</path>. If you are not
+planning to use MacOS 9 you can delete them, because MacOS X and Linux don't
+need them.  You might have to use parted in order to delete them, as mac-fdisk
+can't delete them yet.
+</note>
+
+<p>
+If you are interested in knowing how big a partition should be, or even how 
+many partitions you need, read on. Otherwise continue now with
+<uri link="#mac-fdisk">Apple G5: Using mac-fdisk to Partition your
+Disk</uri> or <uri link="#fdisk">IBM pSeries: using fdisk to Partition
+your Disk</uri>
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>How Many and How Big?</title>
+<body>
+
+<p>
+The number of partitions is highly dependent on your environment. For instance,
+if you have lots of users, you will most likely want to have your
+<path>/home</path> separate as it increases security and makes backups easier.
+If you are installing Gentoo to perform as a mailserver, your <path>/var</path>
+should be separate as all mails are stored inside <path>/var</path>. A good
+choice of filesystem will then maximise your performance. Gameservers will have
+a separate <path>/opt</path> as most gaming servers are installed there. The
+reason is similar for <path>/home</path>: security and backups. You will
+definitely want to keep <path>/usr</path> big: not only will it contain the
+majority of applications, the Portage tree alone takes around 500 Mbyte
+excluding the various sources that are stored in it.
+</p>
+
+<p>
+As you can see, it very much depends on what you want to achieve. Separate
+partitions or volumes have the following advantages:
+</p>
+
+<ul>
+<li>
+  You can choose the best performing filesystem for each partition or volume
+</li>
+<li>
+  Your entire system cannot run out of free space if one defunct tool is
+  continuously writing files to a partition or volume
+</li>
+<li>
+  If necessary, file system checks are reduced in time, as multiple checks can
+  be done in parallel (although this advantage is more with multiple disks than
+  it is with multiple partitions)
+</li>
+<li>
+  Security can be enhanced by mounting some partitions or volumes read-only, 
+  nosuid (setuid bits are ignored), noexec (executable bits are ignored) etc.
+</li>
+</ul>
+
+<p>
+However, multiple partitions have disadvantages as well. If not configured
+properly, you will have a system with lots of free space on one partition and
+none on another. Another nuisance is that separate partitions - especially
+for important mountpoints like <path>/usr</path> or <path>/var</path> - often
+require the administrator to boot with an initramfs to mount the partition
+before other boot scripts start. This isn't always the case though, so YMMV.
+</p>
+
+<p>
+There is also a 15-partition limit for SCSI and SATA.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="mac-fdisk">
+<title>Default: Using mac-fdisk (Apple G5) to Partition your Disk</title>
+<body>
+
+<p>
+At this point, create your partitions using <c>mac-fdisk</c>:
+</p>
+
+<pre caption="Starting mac-fdisk">
+# <i>mac-fdisk /dev/sda</i>
+</pre>
+
+<p>
+First delete the partitions you have cleared previously to make room for your
+Linux partitions. Use <c>d</c> in <c>mac-fdisk</c> to delete those partition(s).
+It will ask for the partition number to delete.
+</p>
+
+<p>
+Second, create an <e>Apple_Bootstrap</e> partition by using <c>b</c>. It will
+ask for what block you want to start. Enter the number of your first free
+partition, followed by a <c>p</c>. For instance this is <c>2p</c>.
+</p>
+
+<note>
+This partition is <e>not</e> a "boot" partition. It is not used by Linux at all;
+you don't have to place any filesystem on it and you should never mount it. PPC
+users don't need an extra partition for <path>/boot</path>.
+</note>
+
+<p>
+Now create a swap partition by pressing <c>c</c>. Again <c>mac-fdisk</c> will
+ask for what block you want to start this partition from. As we used <c>2</c>
+before to create the Apple_Bootstrap partition, you now have to enter
+<c>3p</c>. When you're asked for the size, enter <c>512M</c> (or whatever size
+you want). When asked for a name, enter <c>swap</c> (mandatory).
+</p>
+
+<p>
+To create the root partition, enter <c>c</c>, followed by <c>4p</c> to select
+from what block the root partition should start. When asked for the size, enter
+<c>4p</c> again. <c>mac-fdisk</c> will interpret this as "Use all available
+space". When asked for the name, enter <c>root</c> (mandatory).
+</p>
+
+<p>
+To finish up, write the partition to the disk using <c>w</c> and <c>q</c> to
+quit <c>mac-fdisk</c>.
+</p>
+
+<note>
+To make sure everything is ok, you should run mac-fdisk once more and check
+whether all the partitions are there. If you don't see any of the partitions you
+created, or the changes you made, you should reinitialize your partitions by
+pressing <c>i</c> in mac-fdisk. Note that this will recreate the partition map
+and thus remove all your partitions. 
+</note>
+    
+<p>
+Now that your partitions are created, you can continue with <uri
+link="#filesystems">Creating Filesystems</uri>.
+</p>
+
+</body>
+</section>
+<section id="fdisk">
+<title>IBM pSeries, iSeries and OpenPower: using fdisk to Partition your Disk</title>
+<subsection>
+<body>
+
+<note>
+If you are planning to use a RAID disk array for your Gentoo installation and 
+you are using POWER5-based hardware, you should now run <c>iprconfig</c> to 
+format the disks to Advanced Function format and create the disk array. You
+should emerge <c>iprutils</c> after your install is complete.
+</note>
+
+<p>
+If you have an ipr-based SCSI adapter, you should start the ipr utilities now.
+</p>
+
+<pre caption="Starting ipr utilities">
+# <i>/etc/init.d/iprinit start</i>
+</pre>
+
+<p>
+The following parts explain how to create the example partition layout
+described previously, namely:
+</p>
+
+<table>
+<tr>
+  <th>Partition</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>PPC PReP Boot partition</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>Swap partition</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>Root partition</ti>
+</tr>
+</table>
+
+<p>
+Change your partition layout according to your own preference.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Viewing the Current Partition Layout</title>
+<body>
+
+<p>
+<c>fdisk</c> is a popular and powerful tool to split your disk into
+partitions.  Fire up <c>fdisk</c> on your disk (in our example, we
+use <path>/dev/sda</path>):
+</p>
+
+<pre caption="Starting fdisk">
+# <i>fdisk /dev/sda</i>
+</pre>
+
+<p>
+Once in <c>fdisk</c>, you'll be greeted with a prompt that looks like
+this:
+</p>
+
+<pre caption="fdisk prompt">
+Command (m for help):
+</pre>
+
+<p>
+If you still have an AIX partition layout on your system, you will get the
+following error message:
+</p>
+
+<pre caption="Error message from fdisk">
+  There is a valid AIX label on this disk.
+  Unfortunately Linux cannot handle these
+  disks at the moment.  Nevertheless some
+  advice:
+  1. fdisk will destroy its contents on write.
+  2. Be sure that this disk is NOT a still vital
+     part of a volume group. (Otherwise you may
+     erase the other disks as well, if unmirrored.)
+  3. Before deleting this physical volume be sure
+     to remove the disk logically from your AIX
+     machine.  (Otherwise you become an AIXpert).
+
+Command (m for help):
+</pre>
+
+<p>
+Don't worry, you can create a new empty DOS partition table by pressing
+<c>o</c>.
+</p>
+
+<warn>
+This will destroy any installed AIX version!
+</warn>
+
+<p>
+Type <c>p</c> to display your disk current partition configuration:
+</p>
+
+<pre caption="An example partition configuration">
+Command (m for help): <i>p</i>
+
+Disk /dev/sda: 30.7 GB, 30750031872 bytes
+141 heads, 63 sectors/track, 6761 cylinders
+Units = cylinders of 8883 * 512 = 4548096 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1               1          12       53266+  83  Linux
+/dev/sda2              13         233      981571+  82  Linux swap
+/dev/sda3             234         674     1958701+  83  Linux
+/dev/sda4             675        6761    27035410+   5  Extended
+/dev/sda5             675        2874     9771268+  83  Linux
+/dev/sda6            2875        2919      199836   83  Linux
+/dev/sda7            2920        3008      395262   83  Linux
+/dev/sda8            3009        6761    16668918   83  Linux
+
+Command (m for help):
+</pre>
+
+<p>
+This particular disk is configured to house six Linux filesystems
+(each with a corresponding partition listed as "Linux") as well as a
+swap partition (listed as "Linux swap").
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Removing all Partitions</title>
+<body>
+
+<p>
+We will first remove all existing partitions from the disk. Type
+<c>d</c> to delete a partition. For instance, to delete an existing
+<path>/dev/sda1</path>:
+</p>
+
+<note>
+If you don't want to delete all partitions just delete those you want to delete.
+At this point you should create a backup of your data to avoid losing it.
+</note>
+
+<pre caption="Deleting a partition">
+Command (m for help): <i>d</i>
+Partition number (1-4): <i>1</i>
+</pre>
+
+<p>
+The partition has been scheduled for deletion. It will no longer show up
+if you type <c>p</c>, but it will not be erased until your changes have
+been saved. If you made a mistake and want to abort without saving your
+changes, type <c>q</c> immediately and hit Enter and your partition will
+not be deleted.
+</p>
+
+<p>
+Now, assuming that you do indeed want to wipe out all the partitions on
+your system, repeatedly type <c>p</c> to print out a partition listing
+and then type <c>d</c> and the number of the partition to delete it.
+Eventually, you'll end up with a partition table with nothing in it:
+</p>
+
+<pre caption="An empty partition table">
+Disk /dev/sda: 30.7 GB, 30750031872 bytes
+141 heads, 63 sectors/track, 6761 cylinders
+Units = cylinders of 8883 * 512 = 4548096 bytes
+
+Device Boot    Start       End    Blocks   Id  System
+
+Command (m for help):
+</pre>
+
+<p>
+Now that the in-memory partition table is empty, we're ready to create
+the partitions. We will use a default partitioning scheme as discussed
+previously. Of course, don't follow these instructions to the letter if
+you don't want the same partitioning scheme!
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Creating the PPC PReP boot partition</title>
+<body>
+
+<p>
+We first create a small PReP boot partition. Type <c>n</c> to create a new
+partition, then <c>p</c> to select a primary partition, followed by
+<c>1</c> to select the first primary partition. When prompted for the
+first cylinder, hit enter. When prompted for the last cylinder, type
+<c>+7M</c> to create a partition 7 MB in size. After you've done
+this, type <c>t</c> to set the partition type, <c>1</c> to select the
+partition you just created and then type in <c>41</c> to set the
+partition type to "PPC PReP Boot".  Finally, you'll need to mark the PReP
+partition as bootable.
+</p>
+
+<note>
+The PReP partition has to be smaller than 8 MB!
+</note>
+
+<pre caption="Creating the PReP boot partition">
+Command (m for help): <i>p</i>
+
+Disk /dev/sda: 30.7 GB, 30750031872 bytes
+141 heads, 63 sectors/track, 6761 cylinders
+Units = cylinders of 8883 * 512 = 4548096 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+
+Command (m for help): <i>n</i>
+Command action
+      e   extended
+      p   primary partition (1-4)
+<i>p</i>
+Partition number (1-4): <i>1</i>
+First cylinder (1-6761, default 1): 
+Using default value 1
+Last cylinder or +size or +sizeM or +sizeK (1-6761, default
+6761): <i>+8M</i>
+
+Command (m for help): <i>t</i>
+Selected partition 1
+Hex code (type L to list codes): <i>41</i>
+Changed system type of partition 1 to 41 (PPC PReP Boot)
+
+Command (m for help): <i>a</i>
+Partition number (1-4): <i>1</i>
+Command (m for help):
+</pre>
+
+<p>
+Now, when you type <c>p</c>, you should see the following partition information:
+</p>
+
+<pre caption="Created boot partition">
+Command (m for help): <i>p</i>
+
+Disk /dev/sda: 30.7 GB, 30750031872 bytes
+141 heads, 63 sectors/track, 6761 cylinders
+Units = cylinders of 8883 * 512 = 4548096 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1  *            1           3       13293   41  PPC PReP Boot
+
+Command (m for help):
+</pre>
+</body>
+</subsection>
+<subsection>
+<title>Creating the Swap Partition</title>
+<body>
+
+<p>
+Let's now create the swap partition. To do this, type <c>n</c> to create
+a new partition, then <c>p</c> to tell fdisk that you want a primary
+partition. Then type <c>2</c> to create the second primary partition,
+<path>/dev/sda2</path> in our case. When prompted for the first
+cylinder, hit enter. When prompted for the last cylinder, type
+<c>+512M</c> to create a partition 512MB in size. After you've done
+this, type <c>t</c> to set the partition type, <c>2</c> to select the
+partition you just created and then type in <c>82</c> to set the
+partition type to "Linux Swap". After completing these steps, typing
+<c>p</c> should display a partition table that looks similar to this:
+</p>
+
+<pre caption="Partition listing after creating a swap partition">
+Command (m for help): <i>p</i>
+
+Disk /dev/sda: 30.7 GB, 30750031872 bytes
+141 heads, 63 sectors/track, 6761 cylinders
+Units = cylinders of 8883 * 512 = 4548096 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1               1           3       13293   41  PPC PReP Boot
+/dev/sda2               4         117      506331   82  Linux swap
+
+Command (m for help):
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Creating the Root Partition</title>
+<body>
+
+<p>
+Finally, let's create the root partition. To do this, type <c>n</c> to
+create a new partition, then <c>p</c> to tell fdisk that you want a
+primary partition. Then type <c>3</c> to create the third primary
+partition, <path>/dev/sda3</path> in our case. When prompted for the
+first cylinder, hit enter. When prompted for the last cylinder, hit
+enter to create a partition that takes up the rest of the remaining
+space on your disk. After completing these steps, typing <c>p</c> should
+display a partition table that looks similar to this:
+</p>
+
+<pre caption="Partition listing after creating the root partition">
+Command (m for help): <i>p</i>
+
+Disk /dev/sda: 30.7 GB, 30750031872 bytes
+141 heads, 63 sectors/track, 6761 cylinders
+Units = cylinders of 8883 * 512 = 4548096 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1               1           3       13293   41  PPC PReP Boot
+/dev/sda2               4         117      506331   82  Linux swap
+/dev/sda3             118        6761    29509326   83  Linux
+
+Command (m for help):
+</pre>
+</body>
+</subsection>
+<subsection>
+<title>Saving the Partition Layout</title>
+<body>
+
+<p>
+To save the partition layout and exit <c>fdisk</c>, type <c>w</c>.
+</p>
+
+<pre caption="Save and exit fdisk">
+Command (m for help): <i>w</i>
+</pre>
+
+<p>
+Now that your partitions are created, you can continue with <uri
+link="#filesystems">Creating Filesystems</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="filesystems">
+<title>Creating Filesystems</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Now that your partitions are created, it is time to place a filesystem on them. 
+If you don't care about what filesystem to choose and are happy with what we use
+as default in this handbook, continue with <uri 
+link="#filesystems-apply">Applying a Filesystem to a Partition</uri>.
+Otherwise read on to learn about the available filesystems...
+</p>
+
+</body>
+</subsection>
+
+<subsection>
+<include href="hb-install-filesystems.xml"/>
+</subsection>
+
+<subsection id="filesystems-apply">
+<title>Applying a Filesystem to a Partition</title>
+<body>
+
+<p>
+To create a filesystem on a partition or volume, there are tools available for 
+each possible filesystem:
+</p>
+
+<table>
+<tr>
+  <th>Filesystem</th>
+  <th>Creation Command</th>
+</tr>
+<tr>
+  <ti>ext2</ti>
+  <ti><c>mke2fs</c></ti>
+</tr>
+<tr>
+  <ti>ext3</ti>
+  <ti><c>mke2fs -j</c></ti>
+</tr>
+<tr>
+  <ti>reiserfs</ti>
+  <ti><c>mkreiserfs</c></ti>
+</tr>
+<tr>
+  <ti>xfs</ti>
+  <ti><c>mkfs.xfs</c></ti>
+</tr>
+<tr>
+  <ti>jfs</ti>
+  <ti><c>mkfs.jfs</c></ti>
+</tr>
+</table>
+
+<p>
+For instance, to have the root partition (<path>/dev/sda4</path> in our example)
+in ext3 (as in our example), you would use:
+</p>
+
+<pre caption="Applying a filesystem on a partition">
+# <i>mke2fs -j /dev/sda4</i>
+</pre>
+
+<p>
+Now create the filesystems on your newly created partitions (or logical
+volumes).
+</p>
+
+<impo>
+If you choose to use ReiserFS for <path>/</path>, do not change its default
+block size if you will also be using <c>yaboot</c> as your bootloader, as
+explained in <uri link="?part=1&amp;chap=10">Configuring the Bootloader</uri>.
+</impo>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating the Swap Partition</title>
+<body>
+
+<p>
+<c>mkswap</c> is the command that is used to initialize swap partitions:
+</p>
+
+<pre caption="Creating a Swap signature">
+# <i>mkswap /dev/sda3</i>
+</pre>
+
+<p>
+To activate the swap partition, use <c>swapon</c>:
+</p>
+
+<pre caption="Activating the swap partition">
+# <i>swapon /dev/sda3</i>
+</pre>
+
+<p>
+Create and activate the swap with the commands mentioned above.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Mounting</title>
+<body>
+
+<p>
+Now that your partitions are initialized and are housing a filesystem, it is
+time to mount those partitions. Use the <c>mount</c> command. Don't forget to
+create the necessary mount directories for every partition you created. As an
+example we create a mount point and mount the root partition:
+</p>
+
+<pre caption="Mounting partitions">
+# <i>mkdir /mnt/gentoo</i>
+# <i>mount /dev/sda4 /mnt/gentoo</i> 
+</pre>
+
+<note>
+If you want your <path>/tmp</path> to reside on a separate partition, be sure to
+change its permissions after mounting: <c>chmod 1777 /mnt/gentoo/tmp</c>. This
+also holds for <path>/var/tmp</path>.
+</note>
+
+<p>
+Continue with <uri link="?part=1&amp;chap=5">Installing the Gentoo
+Installation Files</uri>.
+</p>
+
+</body>
+</section>
+</sections>

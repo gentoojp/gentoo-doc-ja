@@ -1,0 +1,256 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gcc-upgrading.xml,v 1.32 2011/10/15 18:47:44 swift Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoo GCC Upgrade Guide</title>
+
+<author title="Author">
+  <mail link="swift"/>
+</author>
+
+<abstract>
+This document will guide the user through the process of upgrading GCC.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>25</version>
+<date>2011-10-15</date>
+
+<chapter id="quickstart">
+<title>Quickstart</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+This is about <e>upgrading</e> GCC. Downgrading GCC might have unwanted side
+effects. Please refer to <uri link="#troubleshooting">Troubleshooting</uri> for
+some commonly reported issues.
+</p>
+
+<p>
+The next section gives a quick primer into GCC upgrades (and how easy they are).
+If you want to read the lengthy reasoning behind GCC upgrades, please continue
+with <uri link="#explanation">GCC Upgrading Explained</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Short Version</title>
+<body>
+
+<p>
+If you are upgrading GCC then you do not need to do anything except switch
+compiler version and rebuild libtool:
+</p>
+
+<pre caption="Switching GCC version">
+# <i>emerge -u gcc</i>
+# <i>gcc-config -l</i>
+[1] i686-pc-linux-gnu-4.4.5 *
+[2] i686-pc-linux-gnu-4.5.3
+
+# <i>gcc-config 2</i>
+# <i>env-update &amp;&amp; source /etc/profile</i>
+# <i>emerge --oneshot libtool</i>
+</pre>
+
+<p>
+If you upgrade GCC from a version earlier than 3.4.0 (for the 3.x series) or
+4.1, you will need to run <c>revdep-rebuild</c> as well:
+</p>
+
+<pre caption="Upgrading from a non-forward compatible GCC version">
+# <i>revdep-rebuild --library libstdc++.so.5</i>
+</pre>
+
+<p>
+There you go. Enjoy the new compiler!
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="explanation">
+<title>GCC Upgrading Explained</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+GCC upgrading has always been mystified, with suggestions ranging from "You do
+not need to do anything" up to "You will need to rebuild your entire system
+twice". Most of this FUD comes from the confusion surrounding ABI
+incompatibility. But first a quick pointer towards <c>libtool</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>libtool and fix_libtool_files.sh</title>
+<body>
+
+<p>
+Earlier installments of GCC on Gentoo required you to run a specific command
+called <c>fix_libtool_files.sh</c>. Some time ago, the execution of this
+command has been integrated in the package deployments itself (through the
+toolchain eclass) so there is no need for users to call this themselves anymore.
+</p>
+
+<p>
+The reason we need to rebuild libtool after the upgrade of gcc
+versions is because of its main purpose: <e>libtool</e> is a toolset that
+aggregates platform-specific code in a generic interface, allowing applications
+to build against shared libraries without needing to deal with the platform
+specific aspects of shared libraries. To fulfill its function properly, the 
+<c>libtool</c> script uses various library locations that have hardcoded GCC
+version information in them.
+</p>
+
+</body>
+</section>
+<section>
+<title>ABI Changes</title>
+<body>
+
+<p>
+An ABI, or <e>Application Binary Interface</e>, is a set of conventions used by
+all tools that deal with binary representation of programs, including compilers,
+assemblers, linkers and language runtime support (source: <uri
+link="http://gcc.gnu.org/onlinedocs/gcc/Compatibility.html">GCC Binary
+Compatibility</uri>). When the ABI used for binary applications and libraries is
+changed, you will risk getting linker errors or malfunctioning programs unless
+you rebuild all libraries that use C++ code. Yes, C++, since most
+incompatibilities occur within the C++ ABI. This is also why we use the
+<c>revdep-rebuild</c> command against the <path>libstdc++.so.5</path> library.
+</p>
+
+<pre caption="Rebuilding applications linked against libstdc++.so.5">
+# <i>revdep-rebuild --library libstdc++.so.5</i>
+</pre>
+
+<p>
+So why is this only needed up to GCC 3.4.0/4.1 ? That's because from that
+version onwards, GCC uses a forward compatible ABI, which removes the need for
+rebuilding applications and libraries. Of course, guarantees can never be given
+indefinitely, but when an incompatibility occurs again, we'll definitely
+document it here ;-) In that case, the version of the <path>libstdc++.so</path>
+library will probably be increased.
+</p>
+
+</body>
+</section>
+<section>
+<title>Rebuilding Everything</title>
+<body>
+
+<p>
+Some people swear that they need to rebuild every single package on their system
+when a new GCC version is made available. Of course, that doesn't make sense,
+since there are many applications that are not using GCC for their build and
+install process anyhow, so they would never be affected by such changes.
+</p>
+
+<p>
+That however doesn't mean they are completely incorrect: newer GCC versions
+often include better support for the processors' instruction set, which might
+influence the performance of some applications in a positive way. Although it is
+expected that this improvement is generally only marginally, in some cases
+(especially CPU intensive applications) this might yield notable improvements.
+</p>
+
+<p>
+There are also known cases where packages need to be built with the same
+compiler. Although these packages are usually bumped by Gentoo simultaneously
+(so that they are always built with the same GCC version) cherry-picking
+reinstalls on these packages might prove to be troublesome. The various
+<path>qt-*</path> packages are a nice example on this matter.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="troubleshooting">
+<title>Troubleshooting</title>
+<section>
+<title>libstdc++.so.6: version `GLIBCXX_3.4.15' not found</title>
+<body>
+
+<p>
+During updates, you might encounter an error like the following:
+</p>
+
+<pre caption="GLIBCXX_x.y.z not found">
+cmake_bootstrap_28021_test: /usr/lib/gcc/i486-pc-linux-gnu/4.1.2/libstdc++.so.6:
+version `GLIBCXX_3.4.11' not found 
+</pre>
+
+<p>
+This means that you are trying to build a package with an <e>older</e> GCC
+version than with which some depending libraries were built. Remember when we
+told that the C++ ABI if forward-compatible? That is true, but it ensures only
+that <e>higher</e> (or same) GCC versions can be used when building applications
+and linking libraries (compared to the GCC version used to build those
+libraries).
+</p>
+
+</body>
+</section>
+<section>
+<title>Which packages are known to need a rebuild?</title>
+<body>
+
+<p>
+The following table gives the packages that, <e>if installed</e>, need to be
+rebuild and why.
+</p>
+
+<table>
+<tr>
+  <th>Package</th>
+  <th>Rebuild needed because ...</th>
+</tr>
+<tr>
+  <ti>sys-devel/libtool</ti>
+  <ti>
+    libtool application has hardcoded paths towards GCC internal
+    libraries
+  </ti>
+</tr>
+<tr>
+  <ti>dev-lang/ghc</ti>
+  <ti>
+    ghc application has hardcoded paths towards GCC internal libraries
+  </ti>
+</tr>
+</table>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Resources</title>
+<section>
+<title>Gentoo Guides and Resources</title>
+<body>
+
+<ul>
+  <li>
+    <uri link="gcc-upgrading-upto-4.1.xml">GCC Upgrading up to 4.1</uri>,
+    the previous version of this document
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

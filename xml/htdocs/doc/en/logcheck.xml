@@ -1,0 +1,224 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/logcheck.xml,v 1.2 2010/10/12 17:39:24 nightmorph Exp $ -->
+
+<guide>
+<title>Logcheck Guide</title>
+
+<author title="Author">
+  <mail link="phajdan.jr"/>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This guide shows you how to analyze system logs with logcheck.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2</version>
+<date>2010-10-12</date>
+
+<chapter>
+<title>Getting Started With logcheck</title>
+<section>
+<title>Background</title>
+<body>
+
+<p>
+<c>logcheck</c> is an updated version of <c>logsentry</c> (from the
+<c>sentrytools</c> package), which is a tool to analyze the system logs.
+Additionally, <c>logcheck</c> comes with a built-in database of common,
+not-interesting log messages to filter out the noise. The general idea of the
+tool is that all messages are interesting, except the ones explicitly marked as
+noise. <c>logcheck</c> periodically sends you an e-mail with a summary of
+interesting messages.
+</p>
+
+</body>
+</section>
+<section>
+<title>Installing logcheck</title>
+<body>
+
+<impo>
+It is strongly recommended to remove logsentry if you have it installed on
+your system. Additionally, you should remove /etc/logcheck to avoid permission
+and file collision problem.
+</impo>
+
+<pre caption="Removing logsentry">
+<comment>(Uninstall the logsentry package)</comment>
+# <i>emerge -C logsentry</i>
+<comment>(Remove leftover files)</comment>
+# <i>rm -rf /etc/logcheck</i>
+</pre>
+
+<p>
+Now you can proceed with the installation of logcheck.
+</p>
+
+<pre caption="Installing logcheck">
+# <i>emerge -av app-admin/logcheck</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Basic configuration</title>
+<body>
+
+<p>
+<c>logcheck</c> creates a separate user "logcheck" to avoid running as root.
+Actually, it will refuse to run as root. To allow it to analyze the logs,
+you need to make sure they are readable by logcheck. Here is an example
+for <c>syslog-ng</c>:
+</p>
+
+<pre caption="/etc/syslog-ng/syslog-ng.conf snippet">
+options {
+        owner(root);
+
+        <comment>(Make log files group-readable by logcheck)</comment>
+        group(logcheck);
+        perm(0640);
+};
+</pre>
+
+<p>
+Now reload the configuration and make sure the changes work as expected.
+</p>
+
+<pre caption="Reload syslog-ng configuration">
+# <i>/etc/init.d/syslog-ng reload</i>
+<comment>(Make sure /var/log/messages has correct permissions)</comment>
+# <i>ls -l /var/log/messages</i>
+-rw-r----- 1 root logcheck 1694438 Feb 12 12:18 /var/log/messages
+</pre>
+
+<p>
+You should now adjust some basic <c>logcheck</c> settings in
+<path>/etc/logcheck/logcheck.conf</path>.
+</p>
+
+<pre caption="Basic /etc/logcheck/logcheck.conf setup">
+# Controls the level of filtering:
+# Can be Set to "workstation", "server" or "paranoid" for different
+# levels of filtering. Defaults to server if not set.
+<comment>(The workstation level includes server, and server includes paranoid.
+The paranoid level filters almost no messages)</comment>
+REPORTLEVEL="server"
+
+# Controls the address mail goes to:
+# *NOTE* the script does not set a default value for this variable!
+# Should be set to an offsite "emailaddress@some.domain.tld"
+<comment>(Make sure you can receive the logcheck e-mails. Testing is strongly
+recommended)</comment>
+SENDMAILTO="root"
+
+# Controls if syslog-summary is run over each section.
+# Alternatively, set to "1" to enable extra summary.
+# HINT: syslog-summary needs to be installed.
+<comment>(If you get a lot of similar messages in the logs, you
+may want to install app-admin/syslog-summary and enable
+this setting)</comment>
+SYSLOGSUMMARY=0
+</pre>
+
+<p>
+You also have to tell <c>logcheck</c> which log files to scan
+(<path>/etc/logcheck/logcheck.logfiles</path>).
+</p>
+
+<pre caption="Basic /etc/logcheck/logcheck.logfiles setup">
+<comment>(This is an example for syslog-ng)</comment>
+/var/log/messages
+</pre>
+
+<p>
+Finally, enable the logcheck cron job.
+</p>
+
+<pre caption="Enable logcheck cron job">
+<comment>(Edit the cron file and follow the instructions inside)</comment>
+# <i>nano -w /etc/cron.hourly/logcheck.cron</i>
+</pre>
+
+<note>
+For more information about cron read the <uri link="/doc/en/cron-guide.xml">Cron
+Guide</uri>.
+</note>
+
+<p>
+Congratulations! Now you will be regularly getting important log messages by
+email. An example message looks like this:
+</p>
+
+<pre caption="Example logcheck message">
+System Events
+=-=-=-=-=-=-=
+Feb 10 17:13:53 localhost kernel: [30233.238342] conftest[25838]: segfault at 40 ip 40061403 sp bfc443c4 error 4
+in libc-2.10.1.so[4003e000+142000]
+Feb 11 12:31:21 localhost postfix/pickup[18704]: fatal: could not find any active network interfaces
+Feb 11 12:31:22 localhost postfix/master[3776]: warning: process //usr/lib/postfix/pickup pid 18704 exit status 1
+Feb 11 12:31:22 localhost postfix/master[3776]: warning: //usr/lib/postfix/pickup: bad command startup -- throttling
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Troubleshooting</title>
+<section>
+<title>General tips</title>
+<body>
+
+<p>
+You can use the logcheck's <c>-d</c> switch to display more debugging
+information. Example:
+</p>
+
+<pre caption="Debugging logcheck">
+# <i>su -s /bin/bash -c '/usr/sbin/logcheck -d' logcheck</i>
+D: [1281318818] Turning debug mode on
+D: [1281318818] Sourcing - /etc/logcheck/logcheck.conf
+D: [1281318818] Finished getopts c:dhH:l:L:m:opr:RsS:tTuvw
+D: [1281318818] Trying to get lockfile: /var/lock/logcheck/logcheck.lock
+D: [1281318818] Running lockfile-touch /var/lock/logcheck/logcheck.lock
+D: [1281318818] cleanrules: /etc/logcheck/cracking.d/kernel
+...
+D: [1281318818] cleanrules: /etc/logcheck/violations.d/su
+D: [1281318818] cleanrules: /etc/logcheck/violations.d/sudo
+...
+D: [1281318825] logoutput called with file: /var/log/messages
+D: [1281318825] Running /usr/sbin/logtail2 on /var/log/messages
+D: [1281318825] Sorting logs
+D: [1281318825] Setting the Intro
+D: [1281318825] Checking for security alerts
+D: [1281318825] greplogoutput: kernel
+...
+D: [1281318825] greplogoutput: returning 1
+D: [1281318825] Checking for security events
+...
+D: [1281318825] greplogoutput: su
+D: [1281318825] greplogoutput: Entries in checked
+D: [1281318825] cleanchecked - file: /tmp/logcheck.uIFLqU/violations-ignore/logcheck-su
+D: [1281318825] report: cat'ing - Security Events for su
+...
+D: [1281318835] report: cat'ing - System Events
+D: [1281318835] Setting the footer text
+D: [1281318835] Sending report: 'localhost 2010-08-09 03:53 Security Events' to root
+D: [1281318835] cleanup: Killing lockfile-touch - 17979
+D: [1281318835] cleanup: Removing lockfile: /var/lock/logcheck/logcheck.lock
+D: [1281318835] cleanup: Removing - /tmp/logcheck.uIFLqU
+</pre>
+
+</body>
+</section>
+</chapter>
+</guide>

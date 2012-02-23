@@ -1,0 +1,151 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-install-finalise.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+
+<sections>
+
+<version>1.34</version>
+<date>2004-12-07</date>
+<!-- Original revision: 1.38 -->
+
+<section>
+<title>ユーザ管理</title>
+<subsection>
+<title>通常使用のためのユーザを追加</title>
+<body>
+
+<p>
+Unix/Linux システム上で root として動くのは<e>危険</e>であり、できるだけ避けるべきです。
+したがって、通常使用のためのユーザを追加することが<e>強く</e>推奨されます。
+</p>
+
+<p>
+グループはユーザがどのような行動を取ることができるかを定義したメンバーのことです。
+以下のテーブルリストはあなたが使いたいと思うであろう重要なグループです。
+</p>
+
+<table>
+<tr>
+  <th>グループ</th>
+  <th>詳細</th>
+</tr>
+<tr>
+  <ti>audio</ti>
+  <ti>オーディオデバイスへのアクセスが可能</ti>
+</tr>
+<tr>
+  <ti>cdrom</ti>
+  <ti>cdromデバイスへの直接アクセスが可能</ti>
+</tr>
+<tr>
+  <ti>floppy</ti>
+  <ti>floppyデバイスへの直接アクセスが可能</ti>
+</tr>
+<tr>
+  <ti>games</ti>
+  <ti>ゲームで遊ぶことが可能</ti>
+</tr>
+<tr>
+  <ti>usb</ti>
+  <ti>USBデバイスへのアクセスが可能</ti>
+</tr>
+<tr>
+  <ti>video</ti>
+  <ti>
+    ビデオキャプチャーデバイスへのアクセスとハードウェアアクセラレーションが可能
+  </ti>
+</tr>
+<tr>
+  <ti>wheel</ti>
+  <ti><c>su</c>の使用が可能</ti>
+</tr>
+</table>
+
+<p>
+例えば、<c>wheel</c>、 <c>users</c> そして <c>audio</c>グループに所属する<c>john</c>というユーザを作るときには、まずrootでログインして(rootだけがユーザを作ることができます)<c>useradd</c>を実行します。
+</p>
+
+<pre caption="通常使用のためのユーザを作成">
+Login: <i>root</i>
+Password: <comment>(rootのパスワード)</comment>
+
+# <i>useradd -m -G users,wheel,audio -s /bin/bash john</i>
+# <i>passwd john</i>
+Password: <comment>(johnのパスワードを入力)</comment>
+Re-enter password: <comment>(確認のため再度パスワードを入力)</comment>
+</pre>
+
+<p>
+もしこのユーザがrootとして作業する必要があれば、一時的にroot権限を持つために<c>su -</c>を使うことができます。
+また、<c>sudo</c>パッケージを使うこともできます。これは正しく設定されていればとても安全な方法です。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>自由選択: GRPパッケージのインストール</title>
+<body>
+
+<impo>
+この部分の対象はGRPユーザのみです。他のユーザはこの部分を飛ばして、<uri link="?part=1&amp;chap=12">これからどうすればいいの？</uri>に進んでください。
+</impo>
+
+<p>
+あなたのシステムが立ち上がったら、あなたが作成したユーザ(例えば<c>john</c>)としてログオンし、<c>su -</c>でroot権限を取得してください。
+</p>
+
+<pre caption="root権限を取得">
+$ <i>su -</i>
+Password: <comment>(rootパスワードを入力)</comment>
+</pre>
+
+<p>
+2枚目のCD (Gentoo Packages CD) からビルド済バイナリを探すように、Portageの設定を変更する必要があります。
+まずこのCDをマウントします。
+</p>
+
+<pre caption="Packages CDをマウント">
+<comment>(CDトレーにPackages CD を乗せます)</comment>
+# <i>mount /mnt/cdrom</i>
+</pre>
+
+<p>
+ビルド済パッケージを見つけるために<path>/mnt/cdrom</path>を使うように、Portageを設定します。
+</p>
+
+<pre caption="/mnt/cdrom を使うように、Portageを設定">
+# <i>ls /mnt/cdrom</i>
+
+<comment>(/mnt/cdrom/packages ディレクトリが存在する場合:)</comment>
+# <i>export PKGDIR="/mnt/cdrom/packages"</i>
+
+<comment>(その他の場合:)</comment>
+# <i>export PKGDIR="/mnt/cdrom"</i>
+</pre>
+
+<p>
+これで好きなパッケージをインストールすることができます。Packages CDにはビルド済バイナリが収録されています。
+例えばKDEをインストールするには、以下のコマンドを実行します。
+</p>
+
+<pre caption="KDEをインストールする">
+# <i>emerge --usepkg kde</i>
+</pre>
+
+<p>
+バイナリを今インストールするようにしてください。<c>emerge sync</c>してPortageをアップデートしてしまうと(具体的な手順は後で出てきます)、アップデートされたPortageの中のebuildとビルド済バイナリとが合わなくなる可能性があります。<c>emerge --usepkg</c>のかわりに<c>emerge --usepkgonly</c>を使えば、この問題を回避できるかもしれません。
+</p>
+
+<p>
+おめでとうございます。あなたのシステムは完成です！
+Gentooについてさらに知るためには、<uri link="?part=1&amp;chap=12">これからどうすればいいの？</uri>を読んでください。
+</p>
+
+</body>
+</section>
+</sections>

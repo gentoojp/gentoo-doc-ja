@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-amd64-faq.xml,v 1.38 2011/03/02 09:25:49 nightmorph Exp $ -->
+
+<guide>
+<title>Gentoo Linux/AMD64 Frequently Asked Questions</title>
+
+<author title="Editor">
+  <mail link="blubb@gentoo.org">Simon Stelling</mail>
+</author>
+<author title="Editor">
+  <mail link="metalgod@gentoo.org">Luis Medinas</mail>
+</author>
+<author title="Editor">
+  <mail link="gerrynjr@gentoo.org">Gerald J. Normandin Jr.</mail>
+</author>
+<author title="Editor">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This is the Gentoo Linux/AMD64 Frequently Asked Questions
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>3</version>
+<date>2011-03-02</date>
+
+<faqindex>
+<title>Questions</title>
+<section>
+<title>Introduction to Gentoo/AMD64 FAQ</title>
+<body>
+
+<p>
+This document contains the most commonly asked questions about Gentoo/AMD64. We
+intend to help and provide useful information about Gentoo/AMD64. Some of these
+questions can be found in forums, IRC, or mailing lists. If you have
+suggestions or questions about this FAQ, you are welcome to send an e-mail to
+<mail>amd64@gentoo.org</mail>.
+</p>
+
+</body>
+</section>
+</faqindex>
+
+<chapter>
+<title>Installation</title>
+<section id="difference">
+<title>What's the difference between AMD64 and EM64T?</title>
+<body>
+
+<p>
+Both refer to 64-bit processors from AMD (AMD64) and Intel (EM64T). AMD's 64-bit
+processors include the Athlon 64, Turion, Neo, Phenom, and Opteron families.
+Intel's 64-bit processors include the Core2, Core i<e>X</e>, Celeron, Xeon, and
+Pentium (all based on the Core2 architecture). The <uri
+link="http://en.wikipedia.org/wiki/Em64t#Intel_64">last few versions</uri> of
+the old Pentium 4 and Xeon chips also support EM64T.
+</p>
+
+<p>
+The AMD line of 64-bit processors were released well ahead of Intel's offering.
+Therefore, for historical reasons the arch keyword for all x86-64 compatible
+architectures is amd64. As such, <e>AMD64</e> is a generic reference to 64-bit
+chips, whether AMD or Intel.
+</p>
+
+</body>
+</section>
+<section id="cflags">
+<title>What CFLAGS should I use for AMD64/EM64T?</title>
+<body>
+
+<p>
+You should use simple <c>CFLAGS</c> to avoid future problems with your system.
+Supported <c>CFLAGS</c> are <c>-O2 -march=k8 -pipe</c> for AMD systems.  Intel
+Core2-based systems (EM64T) should use <c>-O2 -march=core2 -pipe</c>. If you're
+on an old Intel Pentium 4 that supports EM64T, then use <c>-O2 -march=nocona
+-pipe</c>.
+</p>
+
+</body>
+</section>
+<section id="kernel">
+<title>What kernel should I use for AMD64?</title>
+<body>
+
+<p>
+You can use almost all kernel sources available in Portage. We recommend using
+<c>gentoo-sources</c> because it is a special kernel designed for Gentoo Linux.
+It contains lots of AMD64-specific patches and therefore is the only kernel
+officially supported by Gentoo/AMD64.
+</p>
+
+<warn>
+You should watch out for some kernel features which are not well tested, such
+as <c>PREEMPT</c>.
+</warn>
+
+<p>
+Make sure you have the <c>IA32_EMULATION</c> option activated in the kernel.
+</p>
+
+<pre caption="Activating IA32 Emulation in Kernel source">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+
+Executable file formats / Emulations  ---&gt;
+  [*] IA32 Emulation
+</pre>
+
+<warn>
+You may experience build failures on multilib-systems if you deactivate this
+option.
+</warn>
+
+</body>
+</section>
+<section id="perfup">
+<title>Will I have a performance upgrade if I use a 64bit system instead of 32bit?</title>
+<body>
+
+<p>
+That is a difficult question to answer. In some cases, you will experience a
+performance improvement, in other cases you will not. For everyday use, there is
+nearly no difference between 64bit and 32bit. 64bit is generally faster when it
+comes to floating point computing which is normally the case in multimedia
+applications and 3D rendering. This <uri
+link="http://www.linux.com/articles/114024?tid=121">article</uri> (and a <uri
+link="http://www.linux.com/feature/43873">related</uri> article) may interest
+you. There's also a nice <uri
+link="http://forums.gentoo.org/viewtopic-t-349691.html">thread</uri> in our <uri
+link="http://forums.gentoo.org">forums</uri>.
+</p>
+
+</body>
+</section>
+<section id="multilib">
+<title>What is multilib and how can I use it?</title>
+<body>
+
+<p>
+Every AMD64 processor is able to run 32bit code as well as 64bit code.
+However, when you have a 32bit application, you are unable to mix it with
+64bit libraries or vice versa. You can, however, natively run 32bit
+applications if all shared libraries it needs are available as 32bit objects.
+You can choose whether you want multilib support or not by selecting the
+according profile. The default is a multilib-enabled profile.
+</p>
+
+<warn>
+Currently you cannot switch from a no-multilib to a multilib-enabled profile,
+so think over your decision twice before you use the no-multilib profile.
+</warn>
+
+</body>
+</section>
+<section id="chroot32">
+<title>How do I create a 32bit chroot?</title>
+<body>
+
+<p>
+Please read the <uri link="/proj/en/base/amd64/howtos/chroot.xml">32bit chroot
+guide</uri>.
+</p>
+
+</body>
+</section>
+<section id="upgradex86">
+<title>Can I upgrade from my x86 system to amd64 by doing emerge -e world?</title>
+<body>
+
+<p>
+Due to several differences between an <c>x86</c> and an <c>amd64</c>
+installation, it is impossible to upgrade. Please perform a fresh install. The
+installation is slightly different than an x86 one, so please use the
+<uri link="/doc/en/handbook/handbook-amd64.xml">AMD64 Handbook</uri>.
+</p>
+
+<p>
+Also, binary files created on an x86 system most likely cannot be read by
+packages on an amd64 system. In particular, databases such as MySQL, innoDB,
+Berkeley DB, SQLite, OpenLDAP, etc. cannot simply be copied as-is. You will need
+to dump the database into an architecture-independent format, such as a text
+file, before attempting to restore it on an amd64 system.
+</p>
+
+</body>
+</section>
+<section id="reiser4">
+<title>Can I use Reiser4?</title>
+<body>
+
+<p>
+Reiser4 is not available from any kernel offered by the Gentoo Kernel project,
+thus the AMD64 team doesn't support it. The answer is no.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Hardware</title>
+<section id="videobindrivers">
+<title>Will my binary NVIDIA/ATI drivers work?</title>
+<body>
+
+<p>
+Yes, NVIDIA and ATI provide drivers that work on AMD64. You can install them by
+executing <c>emerge nvidia-drivers</c> or <c>emerge ati-drivers</c>. If you have
+more questions about these drivers, you should read the <uri
+link="/doc/en/nvidia-guide.xml">Nvidia guide</uri> or the <uri
+link="/doc/en/ati-faq.xml">ATI FAQ</uri>.
+</p>
+
+</body>
+</section>
+<section id="coolnquiet">
+<title>How do I use Cool'n'Quiet/PowerNow/SpeedStep features?</title>
+<body>
+
+<p>
+You have to compile your kernel with support for these features. You just need
+to enable the features below:
+</p>
+
+<pre caption="Kernel options for Cool'n'Quiet/PowerNow/SpeedStep">
+Power management options ---&gt;
+  [*] Power Management support
+  [*] ACPI (Advanced Configuration and Power Interface) Support ---&gt;
+    &lt;*&gt;   Processor
+    &lt;*&gt;     Thermal Zone
+  CPU Frequency scaling ---&gt;
+  [*] CPU Frequency scaling
+         Default CPUFreq governor (ondemand) ---&gt;
+  -*-   'performance' governor
+  &lt;*&gt;   'userspace' governor for userspace frequency scaling
+  -*-   'ondemand' cpufreq policy governor
+  &lt;*&gt;   ACPI Processor P-States driver
+  &lt;*&gt;   AMD Opteron/Athlon64 PowerNow!
+-*- CPU idle PM support
+</pre>
+
+<p>
+Then <c>emerge cpufrequtils</c> and edit <path>/etc/conf.d/cpufrequtils</path>
+with your favorite editor.
+</p>
+
+<pre caption="Example of /etc/conf.d/cpufrequtils">
+# Options when starting cpufreq (given to the 'cpufreq-set' program)
+START_OPTS="--governor ondemand"
+
+# Options when stopping cpufreq (given to the 'cpufreq-set' program)
+STOP_OPTS="--governor performance"
+</pre>
+
+<p>
+Now you only have to run <c>rc-update add cpufrequtils boot</c> to make sure it is
+started every time you boot.
+</p>
+
+<note>
+You may want to read the <uri
+link="/doc/en/power-management-guide.xml#doc_chap3">Power Management Guide</uri>
+for more tips on CPU power management.
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Applications</title>
+<section id="flash">
+<title>Can I get Adobe Flash working?</title>
+<body>
+
+<p>
+Yes. Just <c>emerge adobe-flash</c>. Be sure to read any messages displayed by
+the ebuild once it has been emerged.
+<!-- Adobe killed 10.0 for security reasons, and 10.1 is only 32-bit -->
+<!--
+Adobe has provided a 64-bit Flash plugin starting with version 10.0.22.87. If
+you don't need the 32-bit plugin, then run <c>echo "www-plugins/adobe-flash
+-32bit" >> /etc/portage/package.use</c>. This will install only the 64-bit Flash
+plugin.
+-->
+</p>
+
+</body>
+</section>
+<section id="OOo">
+<title>Can I get OpenOffice.org working?</title>
+<body>
+
+<p>
+Yes. Run <c>emerge openoffice</c>. It may take several hours and use most of
+your system resources. If you don't think your machine is up to it, you can try
+installing the precompiled binary, <c>openoffice-bin</c>.
+</p>
+
+</body>
+</section>
+<section id="masked">
+<title>I want to install package foo, but emerge says: (masked by: ~amd64 keyword)</title>
+<body>
+
+<p>
+This means that the package is still in the 'testing' tree. Please read <c>man
+portage</c> or the <uri
+link="/doc/en/handbook/handbook-amd64.xml?part=3&amp;chap=3">Mixing Software
+Branches</uri> chapter of the <uri
+link="/doc/en/handbook/handbook-amd64.xml">AMD64 Handbook</uri> for more
+information.
+</p>
+
+</body>
+</section>
+<section id="keyword">
+<title>I want to install package foo, but emerge says: (masked by: missing keyword)</title>
+<body>
+
+<p>
+This means that the package has not been tested yet. It does <e>not
+necessarily</e> mean that the package does not work. You can unmask it by
+accepting another architecture for the package. The following example shows you
+can tell Portage to accept any keyword for a given package.
+</p>
+
+<pre caption="Example of adding package keywords">
+# <i>echo "category/packagename **" >> /etc/portage/package.accept_keywords</i>
+# <i>emerge packagename</i>
+</pre>
+
+<p>
+If it works fine for you, please let us know and file a bug on <uri
+link="http://bugs.gentoo.org/">Gentoo's Bugzilla</uri>, so that the AMD64 team
+can keyword the package and other users can benefit from your test.
+</p>
+
+<warn>
+Do not try commands like <c>ACCEPT_KEYWORDS="~x86" emerge packagename</c>. It
+will most certainly break your tree.
+</warn>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>How can I help the Gentoo/AMD64 project?</title>
+<section id="project">
+<title>How can I help?</title>
+<body>
+
+<p>
+With a growing popularity of the amd64 architecture, we also increasingly need
+more help. There's still much work to be done to improve the quality of
+Gentoo/AMD64. An average user can help us by:
+</p>
+
+<ul>
+  <li>Filing general bug reports</li>
+  <li>Testing software that does not yet have the <c>~amd64</c> keyword</li>
+  <li>
+    Participating in the <uri link="/proj/en/base/amd64/at/">Arch Testers
+    project</uri>
+  </li>
+  <li>
+    Help answering questions on the mailing lists, forums and IRC channels
+  </li>
+  <li>Sending patches</li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Other Resources</title>
+<section id="other">
+<title>Where can I get more help or information about Gentoo/AMD64?</title>
+<body>
+
+<p>
+If any of your questions wasn't answered here, you can try other resources
+listed on <uri link="/proj/en/base/amd64/">our project homepage</uri>. You can
+also ask us at <c>#gentoo-amd64</c> on <c>irc.freenode.net</c>, <uri
+link="http://forums.gentoo.org/viewforum-f-46.html">Gentoo/AMD64 Forums</uri>,
+or on the <c>gentoo-amd64@lists.gentoo.org</c> mailing list.
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

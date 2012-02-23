@@ -1,0 +1,667 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/samba-p3.xml,v 1.3 2011/09/04 17:53:41 swift Exp $ -->
+
+<guide disclaimer="articles">
+<title>Introduction to Samba, Part 3</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<!-- <author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author> -->
+
+<abstract>
+In his previous article, Daniel Robbins guided you through the process of
+setting up Samba for the first time. Now it's time to configure Samba so that it
+does everything that you want it to do.
+</abstract>
+
+<!-- The original version of this article was first published on IBM
+developerWorks, and is property of Westtech Information Services. This document
+is an updated version of the original article, and contains various improvements
+made by the Gentoo Linux Documentation team -->
+
+<version>1.0</version>
+<date>2005-10-08</date>
+
+<chapter>
+<title>Getting Samba to samba: The configuration stage</title>
+<section>
+<title>A brief review</title>
+<body>
+
+<p>
+Here's a listing of the <path>smb.conf</path> that we've been working with:
+</p>
+
+<pre caption="/etc/smb.conf">
+[global]
+
+<comment># set YOURWORKGROUP to the name of your workgroup</comment>
+ 
+workgroup = YOURWORKGROUP 
+security = user 
+encrypt passwords = yes 
+guest account = guest 
+
+<comment># enable *one* of the following two lines</comment>
+<comment># enable the first line if you want to use an existing</comment>
+<comment># WINS server on your subnet, otherwise, enable the</comment>
+<comment># second.</comment>
+
+# wins server = IP address of WINS server 
+# wins support = yes 
+
+local master = yes 
+os level = 99 
+domain master = yes 
+preferred master = yes 
+
+<comment># optional security options.  Customize for your site.</comment>
+
+# hosts allow = 192.168.1. 127. 
+# interfaces = eth1 
+
+[tmp] 
+path=/tmp 
+writeable=yes
+</pre>
+
+</body>
+</section>
+<section>
+<title>Adding some shares</title>
+<body>
+
+<p>
+While this <path>smb.conf</path> file is functional, all it does is share the
+<path>/tmp</path> directory with Windows by creating a share with the name of
+"tmp". Not too exciting. Let's create another share that could be more useful.
+Add the following lines to your <path>smb.conf</path> and restart Samba.
+</p>
+
+<pre caption="Adding an FTP share">
+[ftp] 
+path=/path/to/ftp/root 
+writeable=no
+</pre>
+
+<p>
+If you have an ftp site or some kind of file archive on your Samba server, you
+can use something like this to share the data over the network. The
+<b>writeable=no</b> parameter tells Samba that no one should be allowed to
+create or modify files on this share. Anyone who has a valid Samba account set
+up will be able to access this share.
+</p>
+
+</body>
+</section>
+<section>
+<title>An exciting share</title>
+<body>
+
+<p>
+OK, I know what you're thinking. This still isn't too exciting. How about
+sharing a home directory? Here's how:
+</p>
+
+<pre caption="Sharing a home directory">
+[drobbins] 
+comment=Home directory for drobbins 
+path = /home/drobbins 
+force user = drobbins 
+read only = no 
+valid users = drobbins administrator
+</pre>
+
+<p>
+This one is a lot more interesting. Adding something like this to your
+<path>smb.conf</path> will allow you to share a home directory. In this example,
+a "drobbins" share is created. This shares the contents of
+<path>/home/drobbins</path> over the network. Fortunately, however, thanks to
+the <b>valid users</b> line, not just anyone can access this hare. This line
+causes Samba to reject access by anyone other than the "drobbins" or
+"administrator" account. Since I'm using Windows NT, I'm often logged in as
+administrator. In such situations, it's nice to still be able to access the
+"drobbins" share. Such a valid users line allows this to happen.
+</p>
+
+<p>
+You'll also notice the use of the <b>read only</b> parameter. As you might
+guess, <b>read only</b> is the opposite of the <b>writeable</b> parameter. We
+could have just as easily replaced this line with <b>writeable=yes</b>. This
+means that Samba will permit writing to this particular share, as long as you
+have the proper permissions to do so.  Since the Samba "drobbins" user maps
+directly to the Unix "drobbins" user, and drobbins happens to be the owner of
+the <path>/home/drobbins</path> directory and its contents, writing and
+modifying files will be permitted.
+</p>
+
+<p>
+Have you ever created a file in your home directory as root, and then tried to
+modify it when you're logged in as a normal user only to be denied write access?
+This seems to happen all the time to me. To fix the problem, I need to
+<c>su</c>, <c>chown drobbins.drobbins filename</c> and then <c>exit</c> from
+root. Finally, I'm allowed to modify the file.
+</p>
+
+<p>
+I bring this up because a similar problem can occur when you share out home
+directories and access them using different Samba users. Consider the following
+situation. I access a share as administrator and created a file. Normally, this
+file would be owned by administrator and it would not be modifiable by the
+drobbins user. If drobbins tried to modify it, access would be denied.
+Fortunately, Samba has the <b>force user</b> option that works around this
+situation. The <b>force user</b> option will cause all actions performed on
+files (on a particular Samba SMB/CIFS share) to be performed using a single Unix
+account. In my "drobbins" share example, this means that any files that
+administrator creates will actually be owned by drobbins, preventing any
+ownership conflicts. Since the "drobbins" share contains the contents of my home
+directory, I like to keep everything in it owned by the drobbins account.
+</p>
+
+<p>
+Before we head on to the next topic, I should mention the <b>comment</b>
+parameter. This allows you to complement your share with a descriptive comment
+visible from Windows.
+</p>
+
+</body>
+</section>
+<section>
+<title>Sharing lots of home directories</title>
+<body>
+
+<p>
+So, we've covered how to share a single home directory. But what do you do if
+you happen to administrate a server that contains hundreds of users, all of whom
+want to be able to access their home directories from Windows? Fortunately,
+Samba has a special share just for this purpose called "homes". Here's how it
+works:
+</p>
+
+<pre caption="Sharing multiple homes">
+[homes] 
+comment=Home directory for %S 
+path=/home/%u 
+valid users = %u administrator 
+force user=%u 
+writeable = yes 
+browseable = no
+</pre>
+
+<p>
+As I mentioned, this is a "special" share. It doesn't work like ordinary shares.
+Samba recognizes the special identifier <b>[homes]</b> and treats this share
+differently.
+</p>
+
+<p>
+One of the most unusual things about this share is the use of the
+<b>browseable=no</b> parameter. This particular option causes a share to be
+invisible under the Network Neighborhood, and it's normally used to deter those
+malicious users who may be tempted to "explore" any share they can see. But why
+use it here?
+</p>
+
+<p>
+The answer is a bit tricky. You see, the "homes" share does create a share
+called "homes". But that particular share is of no use to us. It doesn't do
+anything, so we hide it. What the "homes" share does do for us is quite
+tremendous. It tells Samba to automatically create home directories on the fly
+for each individual user. For example, let's say our "drobbins" share wasn't
+defined in <path>smb.conf</path> and we explored the Network Neighborhood as NT
+user "drobbins". We would find a share called "drobbins" that would behave
+identically to our original "drobbins" share. If we accessed Samba using the NT
+user "jimmy", we'd find a perfectly configured "jimmy" share. This is the beauty
+of homes.  Adding one special share causes all home shares to be properly
+created.
+</p>
+
+<p>
+Now, how does it work? When the "homes" share is set up, Samba will detect which
+NT user is accessing Samba. Then it will create a home share that's been
+customized for this particular user. This share will show up in the Network
+Neighborhood as if it's a normal, non-dynamic share. The NT user will have no
+idea that this particular share was created on the fly. Let's look at what each
+particular option does.
+</p>
+
+<p>
+The comment parameter uses the <b>%S</b> wildcard, which expands to the actual
+name of the share. This will cause the "drobbins" share to have the comment
+"Home directory for drobbins", the "jimmy" share to have the comment "Home
+directory for jimmy", etc. The path parameter also contains the wildcard
+<b>%u</b>. <b>%u</b> expands to the name of the user accessing the share. In
+this particular case, %u is equivalent <b>%S</b>, so we could have used
+<b>path=/home/%S</b> instead. This allows Samba to dynamically map the share to
+the proper location on disk.
+</p>
+
+<p>
+Again, we use macros in the <b>valid users=</b> line so that only the owner of
+the share and administrator are allowed to access it. <b>force user</b> uses a
+macro too, so that all file access will be performed by a single account. And of
+course we make the share writeable for any authenticated users. While we use the
+<b>browseable=no</b> parameter, the dynamically-created shares will be
+browseable when they are created.  Again, this just hides the non-functional
+"homes" share.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Share parameters</title>
+<section>
+<body>
+
+<p>
+We've seen a couple of handy techniques to use when creating shares.  In this
+section I'll cover several popular options that allow you to customize Samba
+functionality on a per-share basis. All share-related options can also be placed
+in the <b>[globals]</b> section to set a default value for all shares.
+</p>
+
+</body>
+</section>
+<section>
+<title>comment=</title>
+<body>
+
+<p>
+The <b>comment=</b> parameter is a very handy option to make your Samba system
+look more professional from the Windows side. It allows you to specify a comment
+that accompanies a particular share intended to describe its contents. When
+specifying comments (especially when using "homes"), I often use the <b>%S</b>
+macro, which expands to the name of the share.
+</p>
+
+</body>
+</section>
+<section>
+<title>path=</title>
+<body>
+
+<p>
+<b>path=</b> is one of the most fundamental Samba share parameters. It allows
+you to set the path to the directory to be exported. Note that by default any
+symlinks in this directory tree can be followed. So it is possible for users to
+"jump out" of the directory tree. From the Windows side, they will have no
+indication that they are following a symlink. It will just appear as a regular
+file or directory. We'll look at several parameters that can change this
+behavior to make Samba more secure.
+</p>
+
+</body>
+</section>
+<section>
+<title>force user=</title>
+<body>
+
+<p>
+<b>force user=</b> is one of my favorite parameters. It forces all file
+modifications to be performed by the account of a single user. You'll want to
+use the <b>valid users=</b> option often with this one so that you can limit
+access to select users. Since all file operations are performed using a single
+user account, one of the side effects of <b>force-user=</b> is that you can't
+look at the Unix file permissions to figure out who did what. Thus for writeable
+shares, the <b>force user=</b> option should be accompanied by reasonable
+security defaults. Without this option, all file operations will be performed by
+the Samba user who is accessing the share.
+</p>
+
+<pre caption="force user example">
+force user=drobbins
+</pre>
+
+</body>
+</section>
+<section>
+<title>browseable=</title>
+<body>
+
+<p>
+One simple way to enhance your security is to make certain shares invisible.
+Shares are browseable by default under the Network Neighborhood.  Making them
+invisible can help to deter unwanted hacking attempts. But this should not be
+used as the only means of security. Just because a share isn't listed in the
+browse list does not prevent it from being accessed from Windows. It just
+decreases the amount of information you may potentially be providing to a
+malicious user. To access a hidden share, you can type its UNC name into the
+<c>Run...</c> dialog box. For example, the hidden share on myserver called
+'test' can be accessed by typing <c>\\myserver\test</c> from Windows.
+</p>
+
+<pre caption="browseable example">
+browseable=no
+</pre>
+
+</body>
+</section>
+<section>
+<title>available=</title>
+<body>
+
+<p>
+The <b>available=</b> option, which is 'yes' by default, is just a handy way of
+disabling a share without commenting it out or erasing it from the
+<path>smb.conf</path> entirely. <b>available=no</b> will make the share inactive
+after Samba is restarted.
+</p>
+
+<pre caption="available example">
+available=no
+</pre>
+
+</body>
+</section>
+<section>
+<title>valid users=</title>
+<body>
+
+<p>
+Definitely take advantage of the <b>valid users=</b> option to restrict access
+to certain shares. By default, any authenticated user will be allowed to access
+a Samba share. You can refer to a valid NIS netgroup or Unix group by appending
+an "@" to the group name.
+</p>
+
+<pre caption="valid users example">
+<comment>To allow drobbins and the members of the wheel group access to the shares:</comment>
+
+valid users = drobbins @wheel
+</pre>
+
+</body>
+</section>
+<section>
+<title>dont descend=</title>
+<body>
+
+<p>
+<b>dont descend=</b> specifies directories in the share that Samba should not
+enter. This can be handy to prevent Samba from entering a directory that
+contains recursive symlinks, or to restrict access to irrelevant directories
+like <path>/proc</path> and <path>/dev</path>. Be sure to test out your <b>dont
+descend=</b> settings to make sure they are working. You may need to switch
+<b>dont descend= /dev</b> to <b>dont descend= ./dev</b>, for example.
+</p>
+
+</body>
+</section>
+<section>
+<title>follow symlinks=</title>
+<body>
+
+<p>
+<b>follow symlinks=</b> normally defaults to 'yes' and will cause Samba to
+follow all symlinks, even if they redirect Samba to files or directories outside
+of the exported directory tree. Setting follow symlinks to 'no' will turn off
+this functionality, and prevent symlinks from being followed at all. Turning off
+follow symlinks does eliminate a potential security hole and should be done when
+symlinks are not needed or required.
+</p>
+
+<pre caption="follow symlinks example">
+follow symlinks=no
+</pre>
+
+</body>
+</section>
+<section>
+<title>volume=</title>
+<body>
+
+<p>
+The <b>volume=</b> option can cause Samba to associate a "volume name" with the
+particular share. This is especially useful if you are using a Samba share to
+export the contents of a CD-ROM. Many installation programs will expect to find
+an exact volume name on the CD, without which they won't work.
+</p>
+
+<pre caption="volume example">
+volume=My Favorite CD
+</pre>
+
+</body>
+</section>
+<section>
+<title>create mask=</title>
+<body>
+
+<p>
+Samba uses the <b>create mask</b> to set the proper permissions on newly
+created files. The <b>create mask</b> defines which permissions newly created
+files will allow. The supplied octal number will be combined with the desired
+permissions using a binary <c>and</c> operation. This causes any permissions
+not in the mask to be dropped from the new file's permissions.
+</p>
+
+<pre caption="create mask example">
+create mask= 0755
+</pre>
+
+</body>
+</section>
+<section>
+<title>directory mask=</title>
+<body>
+
+<p>
+<b>directory mask=</b> works in a manner similar to <b>create mask=</b>.  It
+specifies an octal number that defines those permissions allowed for the new
+directory.
+</p>
+
+</body>
+</section>
+<section>
+<title>The many options of smb.conf</title>
+<body>
+
+<p>
+In this section, we've covered only those <path>smb.conf</path> options that
+are the most essential in configuring a useful and secure Samba system. Samba
+itself has many additional configuration options that you may find useful. To
+find out more about them, check out the smb.conf main page, where they are
+listed and described in detail. (See <uri link="#resources">Resources</uri>.)
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Printing from Samba</title>
+<section>
+<body>
+
+<p>
+Samba's printer-sharing abilities come in handy and work well. To refresh your
+memory, Samba allows you to export existing lpd-based printers so that Windows
+clients can connect and print to them. One of the wonderful things about this
+arrangement is that all printer-specific code is generated on the Windows side.
+This means that your Unix system does not need to have explicit support for a
+particular printer. As long as your Unix system is able to dump raw data to the
+printer, it will work and work well. This even allows you to share and use
+printers that are not fully functional in a pure Unix environment, such as my
+Adobe PrintGear-based NEC SuperScript 870.
+</p>
+
+</body>
+</section>
+<section>
+<title>How Samba printing works</title>
+<body>
+
+<p>
+To get printing to work, you first need to get <c>lpd</c> working. While
+<c>lpd</c> configuration is beyond the scope of this article, it's not too hard
+and is described in detail in the Printing FAQ available at tldp.org.  (See
+<uri link="#resources">Resources</uri>.) You'll want to configure your printers
+to be "raw" printers by default, so that any data sent to the printer using an
+<c>lpr</c> command is copied verbatim without any filtering or massaging. It's
+easy to test <c>lpd</c> to make sure that it is configured in "raw" mode. On
+the Windows side, install a printer driver for that particular printer that
+prints to <b>FILE:</b>. Print a page from your favorite Windows word processor
+and save it to file. Then copy it to your Unix machine and print it using
+<c>lpr</c>. If you get correct output, you're all set to configure Samba to use
+the printer automatically.
+</p>
+
+</body>
+</section>
+<section>
+<title>Samba print globals</title>
+<body>
+
+<p>
+To get Samba working properly for printing under a Linux system, you'll want to
+add the following parameters to your <b>[global]</b> section:
+</p>
+
+<pre caption="Edit smb.conf to allow printing">
+printcap name=/etc/printcap 
+printing=bsd
+</pre>
+
+<p>
+If your printcap is located somewhere else, adjust the <b>printcap name=</b>
+parameter accordingly. If you use a printing system other than standard BSD
+<c>lpd</c>, consult the <b>rinting=</b> option on the <path>smb.conf</path> main
+page for more information on how to get Samba to work with your printing system.
+</p>
+
+<p>
+Now, setting up the printer share. This is what I have in <path>smb.conf</path>
+for my printer. We'll use it as a model:
+</p>
+
+<pre caption="Example printer share">
+[nec] 
+<comment>#my NEC SuperScript 870</comment>
+path=/var/spool/smb 
+print command=/usr/bin/lpr %s 
+lprm command=/usr/bin/lprm -P%p %j 
+printer=lp 
+public=yes 
+printable=yes
+</pre>
+
+<p>
+It is important to first understand the path parameter. When Samba accepts a
+print job from Windows, it needs to store it somewhere on disk before Samba can
+submit the job using <c>lpr</c>. The directory referred to by the <b>path=</b>
+parameter should have Unix permissions 1777 so that anyone can write to this
+directory. The <b>print command=</b> and <b>lprm=</b> lines are not usually
+needed. Include them if you want to specify the exact path for your print
+commands or if you need to pass any command-line parameters to <c>lpr</c>. Use
+the above macros as an example.  <b>%s</b> expands to the temporary file name,
+<b>%p</b> expands to the printer name, and <b>%j</b> expands to the job number.
+</p>
+
+<p>
+The <b>printer=</b> option, as you may guess, tells Samba which Unix printer to
+print to. Make sure this printer is set up in raw mode.  <b>public=yes</b>
+allows even users with no password to connect to this printer. Eliminate this
+option later if you want to tighten up security (you may want to replace this
+line with a valid <b>users=</b> line to really tighten up security).
+<b>printable=yes</b> tells Samba both that this share should be configured as a
+printer, and to allow this share to accept print jobs.
+</p>
+
+<p>
+After restarting Samba, you should be able to see the new printer from Windows.
+At this point you should be able to install this printer on the Windows side
+and fire off a test-page to your new, shared resource.  (Windows will tell you
+that you are installing a driver for the NULL printer. Don't worry. Just select
+the correct printer driver from the list.) If for some reason printing doesn't
+work, be sure to check <path>/var/log/log.smb</path> for any error messages. I
+should also mention that there are tons of printer-related
+<path>smb.conf</path> configuration options that you may find useful. I've just
+touched on the most popular ones. Be sure to check out the
+<path>smb.conf</path> main page to get familiar with all of them. 
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Finishing up</title>
+<section>
+<body>
+
+<p>
+In this article we've covered the key elements of Samba functionality,
+including sharing home directories and printing. I've also tried to highlight
+several security-related parameters. But don't get the idea that this is all
+there is to Samba. Samba is not only very powerful, but also very configurable.
+It's designed to let you, the administrator, decide how and to what extent it
+will be used in your organization. While quite a bit of manual
+<path>smb.conf</path> configuration is involved in a Samba setup, the results
+are well worth it because you can get everything working exactly how you want.
+</p>
+
+<p>
+Samba has additional functionality that we haven't even touched on, including
+the ability to become part of (or even control!) an entire Windows NT domain. I
+encourage you to fully explore the potential of this extremely powerful tool.
+</p>
+
+</body>
+</section>
+<section id="resources">
+<title>Resources</title>
+<body>
+
+<ul>
+  <li>
+    Download Samba at the main <uri link="http://www.samba.org">Samba</uri> web
+    site
+  </li>
+  <li>
+    <uri
+    link="http://www.theknuddel.de/english/enfrgpasswd.html">frgpasswrd</uri> is
+    a password synchronization utility to set Samba and shadow passwords
+    concomitantly
+  </li>
+  <li>
+    <uri link="http://www.spanware.com/">SambaLink/Q</uri> is a
+    version-independent editor for the <path>smb.conf</path> file.
+  </li>
+  <li>
+    See the Printing FAQ at <uri link="http://tldp.org">tldp.org</uri>.
+  </li>
+  <li>
+    Read <uri link="http://linuxguy.net/samba.htm">Samba</uri> by Ed Weinberg.
+  </li>
+  <li>
+    <e><uri link="http://www.oreilly.com/catalog/samba/">Using Samba</uri></e>
+    (O'Reilly Publishing; 1999) is a comprehensive guide to Samba
+    administration, including such recent additions as integration with Windows
+    NT domains and the SWAT graphic configuration tool.
+  </li>
+  <li>
+    Visit the <uri link="http://fi.samba.org/docs/swat_ssl.html">SWAT</uri> main
+    page.
+  </li>
+  <li>
+    Check out <uri link="http://jazz.external.hp.com/src/samba/">Samba/iX</uri>,
+    a suite of programs that allow an HP e3000 running MPE/iX operating system
+    to provide service using Microsoft's Message Block (SMB).
+  </li>
+  <li>
+    Read <e><uri link="http://www.amazon.com/exec/obidos/ASIN/0672318628/">Samba
+    Unleashed</uri></e>, by Steve Litt, with contributions from Daniel Robbins.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

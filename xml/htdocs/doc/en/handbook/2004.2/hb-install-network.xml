@@ -1,0 +1,692 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-install-network.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.36</version>
+<date>October 23, 2004</date>
+
+<section>
+<title>You can do without, but...</title>
+<subsection>
+<title>Who can do without?</title>
+<body>
+
+<p>
+Depending on the medium you chose to install Gentoo from, you may or
+may not continue without networking (and Internet). No, we are not
+playing with your mind =) 
+</p>
+
+<p>
+Generally you will need to set up networking (and Internet). 
+However, Gentoo also provides the possibility to install without a network
+connection. This exception is only possible with the Gentoo Universal LiveCDs.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Why do I need networking?</title>
+<body>
+
+<p>
+Installing Gentoo from the Internet results in a fully updated Gentoo
+Installation. You'll have an installation based on the most recent
+Portage tree (which is the collection of packages we provide together with
+the tools to manage your software). This is also the reason why a
+network-installation is preferred. However, some people cannot or do not want 
+to install Gentoo on a system with a running Internet connection.
+</p>
+
+<p>
+If you are in this situation you will need to use a Gentoo Universal LiveCD. 
+This LiveCD includes the source code, a snapshot of the Portage tree and the 
+tools to install a Gentoo base-system and beyond. This method comes at a price:
+You won't have the very latest software, although differences will be
+minimal.
+</p>
+
+<p>
+If you want to follow this networkless installation you have to use such a
+Universal LiveCD, skip the rest of this chapter and continue with <uri 
+link="?part=1&amp;chap=4">Preparing the Disks</uri>.
+Otherwise, continue with the networking configuration sections below.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Optional: Configure Proxy</title>
+<body>
+
+<p>
+If you access the Internet through a proxy, you might need to set up proxy
+information during the installation. It is very easy to define a proxy: you just
+need to define a variable which contains the proxy server information. 
+</p>
+
+<p>
+In most cases, you can just define the variables using the server hostname. As
+an example, we assume the proxy is called <e>proxy.gentoo.org</e> and the port
+is 8080.
+</p>
+
+<pre caption="Defining proxy servers">
+<comment>(If the proxy filters HTTP traffic)</comment>
+# <i>export http_proxy="http://proxy.gentoo.org:8080"</i>
+<comment>(If the proxy filters FTP traffic)</comment>
+# <i>export ftp_proxy="ftp://proxy.gentoo.org:8080"</i>
+<comment>(If the proxy filters RSYNC traffic)</comment>
+# <i>export RSYNC_PROXY="proxy.gentoo.org:8080"</i>
+</pre>
+
+<p>
+If your proxy requires a username and password, you should use the following
+syntax for the variable:
+</p>
+
+<pre caption="Adding username/password to the proxy variable">
+http://username:password@server
+</pre>
+
+<p>
+For instance, for HTTP proxying with our previous proxy server and a username 
+of "john" with a password of "f00b_r" one would use:
+</p>
+
+<pre caption="Authenticated Proxy">
+# <i>export http_proxy="http://john:f00b_r@proxy.gentoo.org:8080"</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Automatic Network Detection</title>
+<subsection>
+<title>Maybe it just works?</title>
+<body>
+
+<p>
+If your system is plugged into an Ethernet network with a DHCP server, it is 
+very likely that your networking configuration has already been set up 
+automatically for you. If so, you should be able to take advantage of the many
+included network-aware commands on the LiveCD such as <c>ssh</c>, <c>scp</c>, 
+<c>ping</c>, <c>irssi</c>, <c>wget</c> and <c>links</c>, among others.
+</p>
+
+<p>
+If networking has been configured for you, the <c>/sbin/ifconfig</c> command
+should list some network interfaces besides lo, such as eth0:
+</p>
+
+<pre caption="/sbin/ifconfig for a working network configuration">
+# <i>/sbin/ifconfig</i>
+eth0      Link encap:Ethernet  HWaddr 00:50:BA:8F:61:7A
+          inet addr:192.168.0.2  Bcast:192.168.0.255  Mask:255.255.255.0
+          inet6 addr: fe80::50:ba8f:617a/10 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:1498792 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:1284980 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:1984 txqueuelen:100
+          RX bytes:485691215 (463.1 Mb)  TX bytes:123951388 (118.2 Mb)
+          Interrupt:11 Base address:0xe800 
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Testing the Network</title>
+<body>
+
+<p>
+You may want to try pinging your ISP's DNS server (found in
+<path>/etc/resolv.conf</path>) and a Web site of choice, just to make sure 
+that your packets are reaching the net, DNS name resolution is working 
+correctly, etc..
+</p>
+
+<pre caption="Further network testing">
+# <i>ping -c 3 www.yahoo.com</i>
+</pre>
+
+<p>
+Are you able to use your network? If so, you can skip the rest of this
+section and continue with <uri link="?part=1&amp;chap=4">Preparing the
+Disks</uri>. If not, bad luck, you'll have to work on it a bit more.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Automatic Network Configuration</title>
+<subsection>
+<body>
+
+<p>
+If the network doesn't work immediately, some installation media allow you to 
+use <c>net-setup</c> (for regular networks) or <c>adsl-setup</c> (for 
+ADSL-users) or <c>pptp</c> (for PPTP-users - only available on x86).
+</p>
+
+<p>
+If your installation medium does not contain any of these tools or your network
+doesn't function yet, continue with <uri link="#doc_chap4">Manual Network 
+Configuration</uri>.
+</p>
+
+<ul>
+  <li>
+    Regular Ethernet users should continue with <uri
+    link="#net-setup">Default: Using net-setup</uri>
+  </li>
+  <li>
+    ADSL users should continue with <uri link="#rp-pppoe">Alternative:
+    Using RP-PPPoE</uri>
+  </li>
+  <li>
+    PPTP users should continue with <uri link="#pptp">Alternative:
+    Using PPTP</uri>
+  </li>
+</ul>
+
+</body>
+</subsection>
+<subsection id="net-setup">
+<title>Default: Using net-setup</title>
+<body>
+
+<p>
+The simplest way to set up networking if it didn't get configured
+automatically is to run the <c>net-setup</c> script:
+</p>
+
+<pre caption="Running the net-setup script">
+# <i>net-setup eth0</i>
+</pre>
+
+<p>
+<c>net-setup</c> will ask you some questions about your network
+environment. When all is done, you should have a working network
+connection. Test your network connection as stated before. If the tests
+are positive, congratulations! You are now ready to install Gentoo. Skip
+the rest of this section and continue with <uri 
+link="?part=1&amp;chap=4">Preparing the Disks</uri>.
+</p>
+
+<p>
+If your network still doesn't work, continue with <uri link="#doc_chap4">Manual
+Network Configuration</uri>.
+</p>
+
+
+</body>
+</subsection>
+<subsection id="rp-pppoe">
+<title>Alternative: Using RP-PPPoE</title>
+<body>
+
+<p>
+Assuming you need PPPoE to connect to the internet, the LiveCD (any version) has
+made things easy for you by including <c>rp-pppoe</c>. Use the provided 
+<c>adsl-setup</c> script to configure your connection. You will be prompted for
+the ethernet device that is connected to your adsl modem, your username and 
+password, the IPs of your DNS servers and if you need a basic firewall or not.
+</p>
+
+<pre caption="Using rp-pppoe">
+# <i>adsl-setup</i>
+# <i>adsl-start</i>
+</pre>
+
+<p>
+If something goes wrong, double-check that you correctly typed your username and
+password by looking at <path>/etc/ppp/pap-secrets</path> or 
+<path>/etc/ppp/chap-secrets</path> and make sure you are using the right 
+ethernet device. If your ethernet device doesn't exist, you will have to load
+the appropriate network modules. In that case you should continue with 
+<uri link="#doc_chap4">Manual Network Configuration</uri> as we explain how to
+load the appropriate network modules there.
+</p>
+
+<p>
+If everything worked, continue with <uri link="?part=1&amp;chap=4">Preparing the
+Disks</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection id="pptp">
+<title>Alternative: Using PPTP</title>
+<body>
+
+<p>
+If you need PPTP support, you can use <c>pptpclient</c> which is provided by our
+LiveCDs. But first you need to make sure that your configuration is correct.
+Edit <path>/etc/ppp/pap-secrets</path> or <path>/etc/ppp/chap-secrets</path> so
+it contains the correct username/password combination:
+</p>
+
+<pre caption="Editing /etc/ppp/chap-secrets">
+# <i>nano -w /etc/ppp/chap-secrets</i>
+</pre>
+
+<p>
+Then adjust <path>/etc/ppp/options.pptp</path> if necessary:
+</p>
+
+<pre caption="Editing /etc/ppp/options.pptp">
+# <i>nano -w /etc/ppp/options.pptp</i>
+</pre>
+
+<p>
+When all that is done, just run <c>pptp</c> (along with the options you couldn't
+set in <path>options.pptp</path>) to connect the server:
+</p>
+
+<pre caption="Connection to a dial-in server">
+# <i>pptp &lt;server ip&gt;</i>
+</pre>
+
+<p>
+Now continue with <uri link="?part=1&amp;chap=4">Preparing the Disks</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Manual Network Configuration</title>
+<subsection>
+<title>Loading the Appropriate Network Modules</title>
+<body>
+
+<p>
+When the Live CD boots, it tries to detect all your hardware devices and
+loads the appropriate kernel modules (drivers) to support your hardware. In the
+vast majority of cases, it does a very good job. However, in some cases,
+it may not auto-load the kernel modules you need.
+</p>
+
+<p>
+If <c>net-setup</c> or <c>adsl-setup</c> failed, then it is possible that
+your networkcard wasn't found immediately. This means you may have to load
+the appropriate kernel modules manually.
+</p>
+
+<p>
+To find out what kernel modules we provide for networking, use
+<c>ls</c>:
+</p>
+
+<pre caption="Searching for provided modules">
+# <i>ls /lib/modules/`uname -r`/kernel/drivers/net</i>
+</pre>
+
+<p>
+If you find a driver for your network card, use <c>modprobe</c> to load
+the kernel module:
+</p>
+
+<pre caption="Using modprobe to load a kernel module">
+<comment>(As an example, we load the pcnet32 module)</comment>
+# <i>modprobe pcnet32</i>
+</pre>
+
+<p>
+To check if your network card is now detected, use <c>ifconfig</c>. A
+detected network card would result in something like this:
+</p>
+
+<pre caption="Testing availability of your network card, successful">
+# <i>ifconfig eth0</i>
+eth0      Link encap:Ethernet  HWaddr FE:FD:00:00:00:00  
+          BROADCAST NOARP MULTICAST  MTU:1500  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:0 (0.0 b)  TX bytes:0 (0.0 b)
+</pre>
+
+<p>
+If however you receive the following error, the network card is not
+detected:
+</p>
+
+<pre caption="Testing availability of your network card, failed">
+# <i>ifconfig eth0</i>
+eth0: error fetching interface information: Device not found
+</pre>
+
+<p>
+If you have multiple network cards in your system they are named <e>eth0</e>,
+<e>eth1</e>, etc. Make sure that the network card you want to use works well and
+remember to use the correct naming throughout this document. We will assume that
+the network card <e>eth0</e> is used.
+</p>
+
+<p>
+Assuming that you now have a detected network card, you can 
+retry <c>net-setup</c> or <c>adsl-setup</c> again (which should work 
+now), but for the hardcore people amongst you we explain how to configure your 
+network manually.
+</p>
+
+<p>
+Select one of the following sections based on your network setup:
+</p>
+
+<ul>
+  <li><uri link="#dhcp">Using DHCP</uri> for automatic IP retrieval</li>
+  <li>
+    <uri link="#wireless">Preparing for Wireless Access</uri> if you have a
+    wireless card
+  </li>
+  <li>
+    <uri link="#network_term">Understanding Network Terminology</uri> explains
+    what you need to know about networking
+  </li>
+  <li>
+    <uri link="#ifconfig_route">Using ifconfig and route</uri> explains how to
+    set up your networking manually
+  </li>
+</ul>
+
+</body>
+</subsection>
+<subsection id="dhcp">
+<title>Using DHCP</title>
+<body>
+
+<p>
+DHCP (Dynamic Host Configuration Protocol) makes it possible to
+automatically receive networking information (IP address, netmask,
+broadcast address, gateway, nameservers etc.). This only works if you
+have a DHCP server in your network (or if your provider provides a DHCP
+service). To have a network interface receive this information automatically, 
+use <c>dhcpcd</c>:
+</p>
+
+<pre caption="Using dhcpcd">
+# <i>dhcpcd eth0</i>
+<comment>Some network admins require that you use the</comment>
+<comment>hostname and domainname provided by the DHCP server.</comment>
+<comment>In that case, use</comment>
+# <i>dhcpcd -HD eth0</i>
+</pre>
+
+<p>
+If this works (try pinging some internet server, like <uri
+link="http://www.google.com">Google</uri>), then you are all set and
+ready to continue. Skip the rest of this section and continue with <uri
+link="?part=1&amp;chap=4">Preparing the Disks</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection id="wireless">
+<title>Preparing for Wireless Access</title>
+<body>
+
+<note>
+Not all LiveCDs have the <c>iwconfig</c> command. If yours doesn't, you can
+still get the extensions working by following the instructions of the <uri
+link="ftp://ftp.linux-wlan.org/pub/linux-wlan-ng/README">linux-wlan-ng
+project</uri>.
+</note>
+
+<p>
+If you are using a wireless (802.11) card, you may need to configure your
+wireless settings before going any further. To see the current wireless settings
+on your card, you can use <c>iwconfig</c>. Running <c>iwconfig</c> might show
+something like:
+</p>
+
+<pre caption="Showing the current wireless settings">
+# <i>iwconfig eth0</i>
+eth0      IEEE 802.11-DS  ESSID:"GentooNode"                                   
+          Mode:Managed  Frequency:2.442GHz  Access Point: 00:09:5B:11:CC:F2    
+          Bit Rate:11Mb/s   Tx-Power=20 dBm   Sensitivity=0/65535               
+          Retry limit:16   RTS thr:off   Fragment thr:off                       
+          Power Management:off                                                  
+          Link Quality:25/10  Signal level:-51 dBm  Noise level:-102 dBm        
+          Rx invalid nwid:5901 Rx invalid crypt:0 Rx invalid frag:0 Tx          
+          excessive retries:237 Invalid misc:350282 Missed beacon:84            
+</pre>
+
+<note>
+Some wireless cards may have a device name of <c>wlan0</c> instead of
+<c>eth0</c>.
+</note>
+
+<p>
+For most users, there are only two settings that might be important to change,
+the ESSID (aka wireless network name) or the WEP key. If the ESSID and Access
+Point address listed are already that of your access point and you are not using
+WEP, then your wireless is working. If you need to change your ESSID, or add a
+WEP key, you can issue the following commands:
+</p>
+
+<pre caption="Changing ESSID and/or adding WEP key">
+<comment>(This sets the network name to "GentooNode")</comment>
+# <i>iwconfig eth0 essid GentooNode</i>
+
+<comment>(This sets a hex WEP key)</comment>
+# <i>iwconfig eth0 key 1234123412341234abcd</i>
+
+<comment>(This sets an ASCII key - prefix it with "s:")</comment>
+# <i>iwconfig eth0 key s:some-password</i>
+</pre>
+
+<p>
+You can then confirm your wireless settings again by using <c>iwconfig</c>. 
+Once you have wireless working, you can continue configuring the IP level
+networking options as described in the next section (<uri
+link="#network_term">Understanding Network Terminology</uri>) or use the
+<c>net-setup</c> tool as described previously.
+</p>
+
+</body>
+</subsection>
+<subsection id="network_term">
+<title>Understanding Network Terminology</title>
+<body>
+
+<note>
+If you know your IP address, broadcast address, netmask and nameservers,
+then you can skip this subsection and continue with <uri
+link="#ifconfig_route">Using ifconfig and route</uri>.
+</note>
+
+<p>
+If all above fails, you will have to configure your network manually.
+Have no fear, it is far from difficult. But we are going to explain a
+certain amount of networking to you as you will need it to be able to
+configure your network to your satisfaction. When you're done reading this, you
+will know what a <e>gateway</e> is, what a <e>netmask</e> serves for,
+how a <e>broadcast</e> address is formed and why you need
+<e>nameservers</e>.
+</p>
+
+<p>
+In a network, hosts are identified by their <e>IP address</e> (Internet
+Protocol address). Such an address is a combination of four numbers
+between 0 and 255. Well, at least that is how we perceive it. In
+reality, such an IP address consists of 32 bits (ones and zeros). Let's
+view an example:
+</p>
+
+<pre caption="Example of an IP address">
+IP Address (numbers):   192.168.0.2
+IP Address (bits):      11000000 10101000 00000000 00000010
+                        -------- -------- -------- --------
+                           192      168       0        2
+</pre>
+
+<p>
+Such an IP address is unique to a host as far as all accessible networks are
+concerned (i.e. all hosts that you are able to reach must have unique IP
+addresses). To be able to make a distinction between hosts inside a network, 
+and hosts outside a network, the IP address is divided in two parts: the 
+<e>network</e> part and the <e>host</e> part. 
+</p>
+
+<p>
+The separation is written down with the <e>netmask</e>, a collection of
+ones followed by a collection of zeros. The part of the IP that can be
+mapped on the ones is the network-part, the other one is the host-part.
+As usual, the netmask can be written down as an IP-address.
+</p>
+
+<pre caption="Example of network/host separation">
+IP-address:    192      168      0         2
+            11000000 10101000 00000000 00000010
+Netmask:    11111111 11111111 11111111 00000000
+               255      255     255        0
+           +--------------------------+--------+
+                    Network              Host
+</pre>
+
+<p>
+In other words, 192.168.0.14 is still part of our example network, but
+192.168.1.2 is not.
+</p>
+
+<p>
+The <e>broadcast</e> address is an IP-address with the same network-part
+as your network, but with only ones as host-part. Every host on your
+network listens to this IP address. It is truly meant for broadcasting
+packets.
+</p>
+
+<pre caption="Broadcast address">
+IP-address:    192      168      0         2
+            11000000 10101000 00000000 00000010
+Broadcast:  11000000 10101000 00000000 11111111
+               192      168      0        255
+           +--------------------------+--------+
+                     Network             Host
+</pre>
+
+<p>
+To be able to surf on the internet, you must know which host shares the
+Internet connection. This host is called the <e>gateway</e>. Since it is
+a regular host, it has a regular IP address (for instance 192.168.0.1).
+</p>
+
+<p>
+We previously stated that every host has its own IP address. To be able
+to reach this host by a name (instead of an IP address) you need a
+service that translates a name (such as <e>dev.gentoo.org</e>) to an IP
+address (such as <e>64.5.62.82</e>). Such a service is called a name
+service. To use such a service, you must define the necessary <e>name
+servers</e> in <path>/etc/resolv.conf</path>.
+</p>
+
+<p>
+In some cases, your gateway also serves as nameserver. Otherwise you
+will have to enter the nameservers provided by your ISP.
+</p>
+
+<p>
+To summarise, you will need the following information before continuing:
+</p>
+
+<table>
+<tr>
+  <th>Network Item</th>
+  <th>Example</th>
+</tr>
+<tr>
+  <ti>Your IP address</ti>
+  <ti>192.168.0.2</ti>
+</tr>
+<tr>
+  <ti>Netmask</ti>
+  <ti>255.255.255.0</ti>
+</tr>
+<tr>
+  <ti>Broadcast</ti>
+  <ti>192.168.0.255</ti>
+</tr>
+<tr>
+  <ti>Gateway</ti>
+  <ti>192.168.0.1</ti>
+</tr>
+<tr>
+  <ti>Nameserver(s)</ti>
+  <ti>195.130.130.5, 195.130.130.133</ti>
+</tr>
+</table>
+
+</body>
+</subsection>
+<subsection id="ifconfig_route">
+<title>Using ifconfig and route</title>
+<body>
+
+<p>
+Setting up your network consists of three steps. First we assign
+ourselves an IP address using <c>ifconfig</c>. Then we set up routing to
+the gateway using <c>route</c>. Then we finish up by placing the
+nameserver IPs in <path>/etc/resolv.conf</path>.
+</p>
+
+<p>
+To assign an IP address, you will need your IP address, broadcast
+address and netmask. Then execute the following command, substituting
+<c>${IP_ADDR}</c> with your IP address, <c>${BROADCAST}</c> with your
+broadcast address and <c>${NETMASK}</c> with your netmask:
+</p>
+
+<pre caption="Using ifconfig">
+# <i>ifconfig eth0 ${IP_ADDR} broadcast ${BROADCAST} netmask ${NETMASK} up</i>
+</pre>
+
+<p>
+Now set up routing using <c>route</c>. Substitute <c>${GATEWAY}</c> with
+your gateway IP address:
+</p>
+
+<pre caption="Using route">
+# <i>route add default gw ${GATEWAY}</i>
+</pre>
+
+<p>
+Now open <path>/etc/resolv.conf</path> with your favorite editor (in our
+example, we use <c>nano</c>):
+</p>
+
+<pre caption="Creating /etc/resolv.conf">
+# <i>nano -w /etc/resolv.conf</i>
+</pre>
+
+<p>
+Now fill in your nameserver(s) using the following as a template. Make
+sure you substitute <c>${NAMESERVER1}</c> and <c>${NAMESERVER2}</c> with
+the appropriate nameserver addresses:
+</p>
+
+<pre caption="/etc/resolv.conf template">
+nameserver ${NAMESERVER1}
+nameserver ${NAMESERVER2}
+</pre>
+
+<p>
+That's it. Now test your network by pinging some Internet server (like
+<uri link="http://www.google.com">Google</uri>). If this works,
+congratulations then. You are now ready to install Gentoo. Continue with <uri
+link="?part=1&amp;chap=4">Preparing the Disks</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

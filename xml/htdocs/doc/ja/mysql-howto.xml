@@ -1,0 +1,805 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/mysql-howto.xml,v 1.2 2009/09/14 14:10:43 shindo Exp $ -->
+
+<guide link="/doc/ja/mysql-howto.xml" lang="ja">
+
+<title>MySQL スタートアップ・ガイド</title>
+
+<author title="Author">
+  <mail link="chriswhite@gentoo.org">Chris White</mail>
+</author>
+<author title="Editor">
+  <mail link="fox2mike@gentoo.org">Shyam Mani</mail>
+</author>
+<author title="Editor">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+<author title="翻訳"><mail link="wsheep.chase@gmail.com">平櫛賢二</mail>
+</author>
+
+<abstract>
+このドキュメントでは、MySQLのセットアップと利用について解説します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.5</version>
+<date>2006-08-08</date>
+<!-- Original revision: 1.9 -->
+
+<chapter>
+<title>MySQL はじめの一歩</title>
+<section>
+<title>背景</title>
+<body>
+
+<p>
+MySQLは様々なアプリケーションで利用されている、著名なデータベースサーバです。SQLは(S)tructured (Q)uery (L)anguage(構造化問い合わせ言語)を表し、MySQLはこのSQLを使用して他のプログラムと通信します。加えて、MySQLには独自の拡張SQL関数が用意されおり、ユーザに追加機能を提供しています。このドキュメントでは、初期インストール、データベースとテーブルのセットアップ、新規ユーザの作成方法について見ていきます。
+それではインストールから始めましょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>MySQLのインストール</title>
+<body>
+
+<p>
+まず最初に、あなたのシステムにMySQLをインストールします。MySQLの特定の機能が必要な場合は、それ用のUSEフラグを有効にしてください。インストールが最適なものとなります。
+</p>
+
+<pre caption="MySQLをインストールする">
+<comment>(利用可能なUSEフラグを確認する)</comment>
+# <i>emerge --pretend --verbose mysql</i>
+<comment>(MySQLをインストール)</comment>
+# <i>emerge mysql</i>
+</pre>
+
+<p>
+インストールが完了すると、次のメッセージが表示されます。
+</p>
+
+<pre caption="MySQLのeinfoメッセージ">
+You might want to run:
+"emerge --config =dev-db/mysql-[version]"
+if this is a new install.
+</pre>
+
+<p>
+新規インストールですので、表示されたこのコマンドを実行し、MySQLを設定します。設定中にプロンプトが表示された場合は、<c>ENTER</c>キーを押して下さい。
+この構成ではMySQLのメインデータベースmysqlがセットアップされ、メインデータベースには管理情報(データベース、テーブル、ユーザ、権限など)が格納されます。
+また、設定ではできる限り早くrootパスワードを変更するよう推奨されます。もちろんこの推奨に従いましょう。さもなければ、通りすがりの誰かにデフォルト設定のMySQLサーバをハックされかねません。
+</p>
+
+<pre caption="MySQLの設定">
+<comment>([version] をインストールしたバージョンに置き換えて下さい。)</comment>
+# <i>emerge --config =dev-db/mysql-[version]</i>
+ * MySQL DATADIR is /var/lib/mysql
+ * Press ENTER to create the mysql database and set proper
+ * permissions on it, or Control-C to abort now...
+
+   Preparing db table
+   Preparing host table
+   Preparing user table
+   Preparing func table
+   Preparing tables_priv table
+   Preparing columns_priv table
+   Installing all prepared tables
+
+   To start mysqld at boot time you have to copy support-files/mysql.server
+   to the right place for your system
+
+   PLEASE REMEMBER TO SET A PASSWORD FOR THE MySQL root USER !
+   To do so, issue the following commands to start the server
+   and change the applicable passwords:
+<comment>(次の3行をメモして下さい。)</comment>
+   /etc/init.d/mysql start
+   /usr/bin/mysqladmin -u root -h pegasos password 'new-password'
+   /usr/bin/mysqladmin -u root password 'new-password'
+   Depending on your configuration, a -p option may be needed
+   in the last command. See the manual for more details.
+
+<comment>(このドキュメントの一貫性を維持するため、ebuildでない特定の情報をここから削除しています。</comment>
+
+   * For security reasons you should set your MySQL root
+   * password as soon as possible.
+</pre>
+
+<impo>
+mysql-4.0.24-r2以降では、rootパスワードをより安全にするため、この設定中にパスワードを入力するようになっています。
+</impo>
+
+<p>
+パスワード設定のために必要なコマンドは、既に上の設定中に表示されています。それではそれらコマンドを実行しましょう。
+</p>
+
+<pre caption="MySQLのrootパスワードを設定する">
+# <i>/etc/init.d/mysql start</i>
+ * Re-caching dependency info (mtimes differ)...
+ * Starting mysqld (/etc/mysql/my.cnf) ...        [ ok ]
+<comment>(new-password を希望するパスワードと置き換えて下さい。)</comment>
+# <i>/usr/bin/mysqladmin -u root -h localhost password 'new-password'</i>
+</pre>
+
+<p>
+rootパスワードが正常に設定されているか確認するには、MySQLサーバにログインしてみます。
+</p>
+
+<pre caption="mysqlコマンドを使用してログインする">
+$ <i>mysql -u root -h localhost -p</i>
+Enter password:
+Welcome to the MySQL monitor. Commands end with ; or \g.
+Your MySQL connection id is 4 to server version: 4.0.25
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt;
+</pre>
+
+<p>
+引数 <c>-u</c> でログインするユーザを設定します。
+<c>-h</c>でホストを設定します。リモートサーバを設定している場合を除いて、通常は<c>localhost</c>になります。
+最後に、<c>-p</c> で接続用パスワードを入力することをmysqlクライアントに伝えます。
+<c>mysql&gt;</c>というプロンプトを見て下さい。ここに全てのコマンドを入力します。
+これでrootユーザとしてmysqlプロンプトに入れましたので、データベースのセットアップへ進みましょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>データベースのセットアップ</title>
+<section>
+<title>データベースの作成</title>
+<body>
+
+<p>
+ログインは済んでおり、mysqlプロンプトが表示されている状態です。まずは既に作成されているデータベースを見てみましょう。<c>SHOW DATABASES</c>コマンドを使用して、作成済みのデータベースを見ることができます。
+</p>
+
+<pre caption="データベースを表示する">
+mysql&gt; <i>SHOW DATABASES;</i>
++----------+
+| Database |
++----------+
+| mysql    |
+| test     |
++----------+
+2 rows in set (0.09 sec)
+</pre>
+
+<impo>
+MySQLのコマンドはセミコロン(<c>;</c>)で終わることに注意して下さい。
+</impo>
+
+<p>
+既にテスト用データベースが構築されていますが、自前のデータベースを作成します。データベースの作成には<c>CREATE DATABASE</c>コマンドを使用します。「gentoo」という名前のデータベースを作成しましょう。
+</p>
+
+<pre caption="データベースgentooを作成する">
+mysql&gt; <i>CREATE DATABASE gentoo;</i>
+Query OK, 1 row affected (0.08 sec)
+</pre>
+
+<p>
+応答メッセージによって、エラー無しでコマンドが実行されたことが分かります。
+またここでは1行が変更されています。これは、全データベースのリストが格納されている、メインデータベースmysqlへの参照です。しかし裏側の細かいことについてあまり考える必要はありません。
+最後の数値はクエリの実行速度です。
+もう一度<c>SHOW DATABASES</c>コマンドを実行すると、データベースが作成されたことを確認できます。
+</p>
+
+<pre caption="データベースが作成されたことを確認する">
+mysql&gt; <i>SHOW DATABASES;</i>
++----------+
+| Database |
++----------+
+| gentoo   |
+| mysql    |
+| test     |
++----------+
+3 rows in set (0.00 sec)
+</pre>
+
+<p>
+確かにデータベースが作成されていました。
+この新しいデータベースgentooにテーブルを作成するには、gentooを現在の接続先データベースとして選択する必要があります。そのためには<c>USE</c>コマンドを使用します。<c>USE</c>コマンドは、接続先としたいデータベースの名前を引数にします。他には、mysqlコマンドの<c>-D</c>オプションの後にデータベースの名前を指定する方法があります。それでは接続先をデータベースgentooに変更しましょう。
+</p>
+
+<pre caption="接続先データベースを変更する">
+mysql&gt; <i>USE gentoo;</i>
+Database changed
+</pre>
+
+<p>
+上で作成したデータベースgentooに接続できました。これでデータベースgentooを使用可能になりましたので、テーブルを作成しデータを格納していきましょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>MySQLのテーブルを操作する</title>
+<section>
+<title>テーブルの作成</title>
+<body>
+
+<p>
+MySQLの構成には、データベース、テーブル、レコード、フィールドがあります。
+データベースにはテーブルが格納され、そのテーブルにはレコードが格納され、レコードにはフィールドが格納されます。そしてフィールドには実際のデータが格納されます。この構成により、ユーザはどのようにデータにアクセスするかを選択することができます。
+これまではデータベースに取り組んできましたので、ここからはテーブルを操作しましょう。
+まず始めに、データベースと同様テーブルも<c>SHOW TABLES</c>コマンドを使用して一覧表示することができます。現在のところデータベースgentooにはテーブルがありませんので、コマンドの実行結果は以下のようになります。
+</p>
+
+<pre caption="空っぽのデータベースgentoo">
+mysql&gt; <i>SHOW TABLES;</i>
+Empty set (0.00 sec)
+</pre>
+
+<p>
+つまりはテーブルを作成する必要があるということです。そのためには、<c>CREATE TABLE</c>コマンドを使用します。しかしながらこのコマンドは、シンプルな<c>CREATE DATABASE</c>コマンドとは全く違います。このコマンドには一連の引数が必要です。以下のようなフォーマットです。
+</p>
+
+<pre caption="CREATE TABLE の構文">
+CREATE TABLE [table_name] ([field_name] [field_data_type]([size]));
+</pre>
+
+<p>
+<b>table_name</b>は作成したいテーブルの名前です。今回は<c>developers</c>という名前で作成しましょう。このテーブルには開発者(developer)の名前、メールアドレス、仕事を格納します。
+<b>field_name</b>にはフィールドの名前を指定します。今回はフィールドが3つ必要です。name(名前)、email(メールアドレス)、job(職業)です。
+<b>field_data_type</b>は格納されるデータの型です。利用可能な個々の型については<uri link="http://dev.mysql.com/doc/mysql/en/column-types.html">MySQL Column Types Page</uri>で確認できます。今回の用途では、全てのフィールドに<c>VARCHAR</c>型を使用します。<c>VARCHAR</c>型は文字列を扱う場合にもっともシンプルなデータ型です。
+<b>size</b>には格納される１フィールドのデータ長を指定します。ここでは128とします。
+つまりこのフィールドには128バイトの<c>VARCHAR</c>型データを格納できるということです。これは、とりあえずは128文字という意味と考えておいて大丈夫ですが、上のサイトに掲載されているようにより技術的な説明もあります。
+これでテーブルの作成方法が分かりましたので、実際に作成してみましょう。
+</p>
+
+<pre caption="テーブルを作成する">
+mysql&gt; <i>CREATE TABLE developers ( name VARCHAR(128), email VARCHAR(128), job VARCHAR(128));</i>
+Query OK, 0 rows affected (0.11 sec)
+</pre>
+
+<p>
+テーブルをうまく作成できたようです。<c>SHOW TABLES</c>コマンドでチェックしてみましょう。
+</p>
+
+<pre caption="テーブルを確認する">
+mysql&gt; <i>SHOW TABLES;</i>
++------------------+
+| Tables_in_gentoo |
++------------------+
+| developers       |
++------------------+
+1 row in set (0.00 sec)
+</pre>
+
+<p>
+はい、テーブルが出来ていました。しかしながら、フィールドに設定した型に関する情報が見当たりません。そのためには、<c>DESCRIBE</c>コマンド(もしくは省略して<c>DESC</c>コマンド)を使用します。このコマンドの引数にはテーブル名を指定します。
+このコマンドでテーブルdevelopersの情報を見てみましょう。
+</p>
+
+<pre caption="テーブルdevelopersの情報を表示する">
+mysql&gt; <i>DESCRIBE developers;</i>
++-------+--------------+------+-----+---------+-------+
+| Field | Type         | Null | Key | Default | Extra |
++-------+--------------+------+-----+---------+-------+
+| name  | varchar(128) | YES  |     | NULL    |       |
+| email | varchar(128) | YES  |     | NULL    |       |
+| job   | varchar(128) | YES  |     | NULL    |       |
++-------+--------------+------+-----+---------+-------+
+3 rows in set (0.00 sec)
+</pre>
+
+<p>
+個々のフィールドとその型が表示されました。また、このドキュメントでは解説しない情報がいくつか表示されています。さらなる情報は<uri link="http://dev.mysql.com/doc/mysql/en/">MySQL Reference Manual</uri>で確認して下さい。
+これでテーブルが利用可能になりましたので、さらに先に進んでデータを登録していきましょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>MySQLにデータを登録する</title>
+<body>
+
+<p>
+データを登録する(もしくは追加する)には、<c>INSERT</c>コマンドを使用します。<c>CREATE TABLE</c>コマンドと同様、<c>INSERT</c>コマンドにも特定のフォーマットがあります。
+</p>
+
+<pre caption="INSERT の構文">
+INSERT INTO table (col1, col2, ...) VALUES('value1', 'value2', ...);
+</pre>
+
+<p>
+このコマンドでテーブルにレコードを挿入します。
+tableにはデータを登録したいテーブルを指定します。
+テーブル名の後には、データを挿入する列名のリストが続き、<c>VALUES()</c>にはテーブルに挿入したい値を指定します。全ての列にデータを挿入し、かつ列の定義順通りに値を記述する場合には、列名のリストを省略することができます。
+今回はテーブルdevelopersにデータを挿入します。サンプルデータを挿入してみましょう。
+</p>
+
+<pre caption="テーブルdevelopersにデータを挿入する">
+mysql&gt; <i>INSERT INTO developers VALUES('Joe Smith', 'joesmith@gentoo.org', 'toolchain');</i>
+Query OK, 1 row affected (0.06 sec)
+<comment>(列の定義順が分からない、もしくは歯抜けのデータを登録したい場合)</comment>
+mysql&gt; <i>INSERT INTO developers (job, name) VALUES('outsourced', 'Jane Doe');</i>
+Query OK, 1 row affected (0.01 sec)
+</pre>
+
+<p>
+表示されたメッセージによると、データは正常に挿入されたようです。もし複数のデータを挿入したい場合はどうでしょう？ここで<c>LOAD DATA</c>コマンドの登場です。このコマンドはタブ区切りのファイルからデータを読み込みます。試しにデータの入ったファイルをホームディレクトリに作成して読み込んでみましょう。ファイルを<path>records.txt</path>とします。
+以下はサンプルです。
+</p>
+
+<pre caption="~/records.txt">
+John Doe	johndoe@gentoo.org	portage
+Chris White	chriswhite@gentoo.org	documentation
+Sam Smith	samsmith@gentoo.org	amd64
+</pre>
+
+<impo>
+扱っているデータをよく確かめるようにして下さい。ファイルの中身がよく分からないのに<c>LOAD DATA</c>コマンドを使用するのは非常に危険です。
+</impo>
+
+<p>
+<c>LOAD DATA</c>コマンドの記述はいくぶん長たらしいものですが、ここでは最もシンプルなフォーマットを使ってみましょう。
+</p>
+
+<pre caption="LOAD DATA の構文">
+LOAD DATA LOCAL INFILE '/path/to/filename' INTO TABLE table;
+</pre>
+
+<p>
+<path>/path/to/filename</path>には使用するファイルのパスとファイル名を指定します。tableにはテーブル名を指定します。この場合、ファイルは<path>~/records.txt</path>でテーブルはdevelopersです。
+</p>
+
+<pre caption="データを読み込む">
+mysql&gt; <i>LOAD DATA LOCAL INFILE '~/records.txt' INTO TABLE developers;</i>
+Query OK, 3 rows affected (0.00 sec)
+Records: 3  Deleted: 0  Skipped: 0  Warnings: 0
+</pre>
+
+<impo>
+おかしな挙動が見られた場合は、フィールドがタブで区切られていることを確認して下さい。もし他の場所からデータを貼り付けた場合は、タブがスペースに変換されてしまっているかもしれません。
+</impo>
+
+<p>
+うまくいきました。しかし、この例は単純にレコードを挿入しただけで、MySQLを制御したとは言えません。
+MySQLを素早く簡単に設定するために、多くのウェブアプリケーションではsqlスクリプトが利用されています。sqlスクリプトを利用したい場合、mysqlコマンドをバッチモードで実行するか、sourceコマンドでスクリプトファイルから読み込みます。
+以下はmysqlコマンドをバッチモードで実行する例です。
+</p>
+
+<pre caption="バッチモード">
+$ <i>mysql -u root -h localhost -p &lt; sqlfile</i>
+</pre>
+
+<p>
+<c>LOAD DATA</c>コマンドと同様、<path>sqlfile</path>が何を行っているのかよく理解しておいて下さい。<e>理解しておかないと、データベースに障害が起きかねません！</e>
+もう一つの方法として<c>source</c>コマンドを使用する方法があります。このコマンドは、インタラクティブモードでsqlファイルからスクリプトを読み込みます。
+以下のようにsoureコマンドでsqlファイルから読み込みます。
+</p>
+
+<pre caption="sqlファイルから読み込む">
+mysql&gt; <i>source sqlfile;</i>
+</pre>
+
+<p>
+もしウェブアプリケーションにおいてsqlファイルを実行する必要がある場合、上記2つの方法が利用できます。
+これでテーブルの用意ができましたが、どうやってフィールドを確認しましょう？フィールドの確認にはクエリを使用してテーブルを検索します。
+</p>
+
+</body>
+</section>
+<section>
+<title>クエリを使用してMySQLのテーブルを閲覧する</title>
+<body>
+
+<p>
+クエリはどんなSQLデータベースにも当てはまる主な特徴の一つです。クエリを使えばテーブルの中のデータを有効なものにすることができます。ほとんどのクエリが<c>SELECT</c>コマンドを使用します。<c>SELECT</c>コマンドはかなり複雑ですから、このドキュメントでは主だった3つの形式を見てみます。
+</p>
+
+<pre caption="SELECT の形式">
+<comment>(テーブルの全てのデータを選択する)</comment>
+SELECT * FROM table;
+<comment>(テーブルの特定のデータを選択する)</comment>
+SELECT * FROM table WHERE field=value;
+<comment>(特定のフィールドを選択する)</comment>
+SELECT field1,field2,field3 FROM table [WHERE field=value];
+</pre>
+
+<p>
+最初の形式を簡単に見てみましょう。比較的シンプルで、テーブル全体を確認することができます。それではここまででどんなデータが入っているか<c>SELECT</c>コマンドで確認してみましょう。
+</p>
+
+<pre caption="テーブルの内容">
+mysql&gt; <i>SELECT * FROM developers;</i>
++-------------+-----------------------+----------------+
+| name        | email                 | job            |
++-------------+-----------------------+----------------+
+| Joe Smith   | joesmith@gentoo.org   | toolchain      |
+| John Doe    | johndoe@gentoo.org    | portage        |
+| Chris White | chriswhite@gentoo.org | documentation  |
+| Sam Smith   | samsmith@gentoo.org   | amd64          |
+| Jane Doe    | NULL                  | Outsourced job |
++-------------+-----------------------+----------------+
+5 rows in set (0.00 sec)
+</pre>
+
+<p>
+<c>INSERT</c>コマンドで挿入したデータと、<c>LOAD DATA</c>コマンドで挿入したデータが両方存在しています。では、Chris Whiteのデータだけ見たいとしましょう。以下に示したように、これにはselectの2番目の形式を使用します。
+</p>
+
+<pre caption="SELECTコマンドで特定のデータを選択する">
+mysql&gt; <i>SELECT * FROM developers WHERE name = 'Chris White';</i>
++-------------+-----------------------+---------------+
+| name        | email                 | job           |
++-------------+-----------------------+---------------+
+| Chris White | chriswhite@gentoo.org | documentation |
++-------------+-----------------------+---------------+
+1 row in set (0.08 sec)
+</pre>
+
+<p>
+期待通り、探していたデータだけが選択されました。では、名前(name)を除いた職業(job)とメールアドレス(email)だけを知りたいとしましょう。下に示したように、<c>SELECT</c>の3番目の形式を使用すれば可能です。
+</p>
+
+<pre caption="SELECTを使用して特定のデータとフィールドを選択する">
+mysql> <i>SELECT email,job FROM developers WHERE name = 'Chris White';</i>
++-----------------------+---------------+
+| email                 | job           |
++-----------------------+---------------+
+| chriswhite@gentoo.org | documentation |
++-----------------------+---------------+
+1 row in set (0.04 sec)
+</pre>
+
+<p>
+この選択の方法は他の2つの形式に比べて扱い易く、後でみるように特に大きなデータの場合に有効です。
+今現在我々はrootユーザですから、MySQLサーバに対して望んだとおり何でもできる無制限の許可を持っています。サーバ環境においては、そのような権限を持ったユーザには極めて問題があります。データベースに対して誰が何をするのか制御するために、権限を設定しましょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>MySQLの権限</title>
+<section>
+<title>GRANTコマンドで権限を付与する</title>
+<body>
+
+<p>
+権限とは、データベース、テーブルなどあらゆるものに対して、ユーザがどのようなアクセス権を持っているかを表すものです。データベースgentooでは今のところ、MySQLのrootユーザだけが、許可を与えられアクセス可能なアカウントです。それでは、データベースgentooにアクセスしてデータを利用するのに、もう少し一般的なユーザ、guestとadminを作成してみましょう。guestは制限付のアカウントです。データベースからデータを取り出すことのみ可能であり、他には何もできません。adminはrootアカウントと同様の権限を持ちますが、ただしデータベースgentooに対してのみです(メインデータベースmysqlに対しては持たない)。ユーザ作成の前に、<c>GRANT</c>コマンドの簡易な形式について詳しく見てみましょう。
+</p>
+
+<pre caption="GRANT 構文">
+GRANT [privileges] ON database.* TO '[user]'@'[host]' IDENTIFIED BY '[password]';
+</pre>
+
+<note>
+<c>GRANT</c>コマンドはユーザを作成する方法として用いられています。後のバージョンには<c>CREATE_USER</c>関数が導入されてはいますが、<c>GRANT</c>が依然好まれています。
+</note>
+
+<p>
+まず与えたい権限を挙げます。ここまで学んできたことから、いくつか設定できる権限を挙げます。
+</p>
+
+<ul>
+  <li><c>ALL</c> - データベースに対する全ての権限を与える</li>
+  <li><c>CREATE</c> - テーブル作成を許可する</li>
+  <li><c>SELECT</c> - テーブルへの問い合わせを許可する</li>
+  <li><c>INSERT</c> - テーブルへのデータ挿入を許可する</li>
+  <li><c>SHOW DATABASES</c> - データベースの一覧を閲覧することを許可する</li>
+  <li><c>USAGE</c> - 権限なし</li>
+  <li><c>GRANT OPTION</c> - 権限を与えることを許可する</li>
+</ul>
+
+<note>
+ウェブアプリケーションとのやり取りのためにMySQLを使用しているなら、必要なのは<c>CREATE</c>、<c>SELECT</c>、<c>INSERT</c>（この文書で解説しています)、<c>DELETE</c> と <c>UPDATE</c>(<uri link="http://dev.mysql.com/doc/mysql/en/grant.html"> MySQL Reference Manual - GRANT and REVOKE Syntax</uri>を参照)くらいでしょう。多くの人が、必要もないのに全ての権限を与えてしまいますが、それは間違いです。そのような権限では通常の業務に支障があるか、アプリケーション開発者と確認してみて下さい。
+</note>
+
+<p>
+adminユーザとしては、全ての権限が必要です。guestユーザとしては参照のみのアクセスですから<c>SELECT</c>権限で十分です。
+databaseはユーザに権限を与えたいデータベースを指定します。この例ではgentooになります。.* は全てのテーブルを意味しています。もしそうしたいなら、テーブル毎に適用することも可能です。userにはユーザ名を、hostにはそのユーザがアクセスしてくるホスト名を指定します。ほとんどの場合がloalhostになります。最後にpasswordにはユーザのパスワードを指定します。これらの情報を設定して、ユーザを作成しましょう。
+</p>
+
+<pre caption="adminユーザとguestユーザを作成する">
+<comment>(admin)</comment>
+mysql&gt; <i>GRANT ALL ON gentoo.* TO 'admin'@'localhost' IDENTIFIED BY 'password';</i>
+<comment>(guest)</comment>
+mysql&gt; <i>GRANT SELECT ON gentoo.* TO 'guest'@'localhost' IDENTIFIED BY 'password';</i>
+</pre>
+
+<p>
+ユーザの設定ができましたので、テストしてみましょう。まずプロンプトに<c>quit</c>と入力してmysqlクライアントを終了させます。
+</p>
+
+<pre caption="MySQLクライアントを終了する">
+mysql&gt; <i>quit</i>
+</pre>
+
+<p>
+これでコンソールに戻りました。ユーザの設定はできていますので、ユーザにどんなことが可能か見てみましょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>ユーザの権限をテストする</title>
+<body>
+
+<p>
+guestユーザとしてログインしてみます。今のところ、guestユーザには<c>SELECT</c>権限しかありません。基本的には検索のみで他には何もできないということです。それではguestユーザでログインしてみましょう。
+</p>
+
+<pre caption="guestユーザでログインする">
+$ <i>mysql -u guest -h localhost -p</i>
+Enter password:
+Welcome to the MySQL monitor. Commands end with ; or \g.
+Your MySQL connection id is 6 to server version: 4.0.25
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt;
+</pre>
+
+<p>
+制限が効いているかテストします。データベースgentooに接続しましょう。
+</p>
+
+<pre caption="データベースgentooに接続する">
+mysql&gt; <i>USE gentoo;</i>
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+</pre>
+
+<p>
+許可されていないことをしてみましょう。テーブルを作成してみます。
+</p>
+
+<pre caption="guestユーザでテーブル作成を試みる">
+mysql&gt; <i>CREATE TABLE test (test VARCHAR(20), foobar VARCHAR(2));</i>
+ERROR 1044: Access denied for user: 'guest@localhost' to database 'gentoo'
+</pre>
+
+<p>
+ご覧のように、適切なアクセス権を持っていないので失敗しました。しかしながら、許可した権限は<c>SELECT</c>です。これを試してみましょう。
+</p>
+
+<pre caption="SELECTを試みる">
+mysql&gt; <i>SELECT * FROM developers;</i>
++-------------+-----------------------+----------------+
+| name        | email                 | job            |
++-------------+-----------------------+----------------+
+| Joe Smith   | joesmith@gentoo.org   | toolchain      |
+| John Doe    | johndoe@gentoo.org    | portage        |
+| Chris White | chriswhite@gentoo.org | documentation  |
+| Sam Smith   | samsmith@gentoo.org   | amd64          |
+| Jane Doe    | NULL                  | Outsourced job |
++-------------+-----------------------+----------------+
+5 rows in set (0.00 sec)
+</pre>
+
+<p>
+このコマンドはうまくいきました。これでユーザ権限でどのようなことができるのか少し分かりました。私たちはadminユーザも作成しています。このユーザで、全ての権限を与えられたユーザでさえも制限があることをお見せします。mysqlクライアントを終了して、adminユーザとしてログインしてみましょう。
+</p>
+
+<pre caption="adminとしてログインする">
+mysql&gt; <i>quit</i>
+Bye
+$ <i>mysql -u admin -h localhost -p</i>
+Enter password:
+Welcome to the MySQL monitor. Commands end with ; or \g.
+Your MySQL connection id is 7 to server version: 4.0.25
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt;
+</pre>
+
+<p>
+手始めに、adminユーザでデータベースを作成してみます。このadminユーザはrootアカウントと同様の権限を持っており、データベースgentooに対してどんな変更も可能です。以下ではメインデータベースmysqlに対する権限を確認します。特定のデータベースに対してだけ権限を設定したことを思い出して下さい。
+</p>
+
+<pre caption="新しいデータベースの作成を試みる">
+mysql&gt; <i>CREATE DATABASE gentoo2;</i>
+ERROR 1044: Access denied for user: 'admin@localhost' to database 'gentoo2'
+</pre>
+
+<p>
+データベースgentooに対して全ての権限を持つにも関わらず、adminユーザではメインデータベースにデータベースを作成することができませんでした。それでもadminユーザでデータベースgentooを変更することはできます。以下にデータ挿入の例を示します。
+</p>
+
+<pre caption="データベースgentooでのadminの権限">
+mysql&gt; <i>USE gentoo;</i>
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt; <i>INSERT INTO developers VALUES('Bob Simmons', 'bobsimmons@gentoo.org', 'python');</i>
+Query OK, 1 row affected (0.08 sec)
+</pre>
+
+<p>
+adminユーザは好きなようにデータベースgentooにアクセスできます。また時にはユーザから権限を剥奪する必要があります。問題のあるユーザから退職した社員まで、色々な場合がありえます。では<c>REVOKE</c>コマンドでユーザ権限を無効にする方法を見てみましょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>REVOKEコマンドでユーザ権限を削除する</title>
+<body>
+
+<p>
+<c>REVOKE</c>コマンドを使用すると、ユーザに対してアクセスを拒否することができます。全てのアクセスを拒否することもできますし、特定のアクセスを拒否することもできます。実際のところ、構文は<c>GRANT</c>コマンドに非常に似ています。
+</p>
+
+<pre caption="REVOKE の構文">
+REVOKE [privileges] ON database.* FROM '[user]'@'[host]';
+</pre>
+
+<p>
+オプションについては<c>GRANT</c>コマンドの項で説明しています。このセクションでは、ユーザに対して全てのアクセスを拒否します。guestユーザがセキュリティの点で問題を引き起こすと分かったとしましょう。全ての権限を剥奪することにします。rootとしてログインし、必要な処置を行います。
+</p>
+
+<pre caption="ユーザ権限を剥奪する">
+mysql&gt; <i>REVOKE ALL ON gentoo.* FROM 'guest'@'localhost';</i>
+Query OK, 0 rows affected (0.00 sec)
+</pre>
+
+<note>
+今回はユーザ権限がシンプルであり、データベース毎の剥奪で問題になりませんでした。しかしながら、より大規模なケースで全てのデータベースへのアクセス権削除するには、「gentoo.*」よりも「*.*」を使用するのがよいでしょう。
+</note>
+
+<p>
+それでは一旦mysqlクライアントを終了させてから、ユーザguestとしてログインしてみましょう。
+</p>
+
+<pre caption="ユーザguestとしてログインを試みる">
+$ <i>mysql -u guest -h localhost -p</i>
+Enter password:
+Welcome to the MySQL monitor. Commands end with ; or \g.
+Your MySQL connection id is 9 to server version: 4.0.25
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt;
+</pre>
+
+<p>
+ログインはできましたが、データベースgentooへのアクセス権はありません。
+</p>
+
+<pre caption="ユーザguestのアクセスが拒否される">
+mysql&gt; <i>USE gentoo;</i>
+ERROR 1044: Access denied for user: 'guest@localhost' to database 'gentoo'
+</pre>
+
+<p>
+これで問題のあるユーザがデータベースgentooにアクセスすることはできなくなりました。しかしログインはできたことに注意して下さい。これはメインデータベースmysqlにユーザが残っているためです。<c>DELETE</c>コマンドとユーザ情報テーブルを使用してユーザを完全に削除する方法を見てみましょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>DELETEコマンドでユーザを削除する</title>
+<body>
+
+<p>
+ユーザ情報テーブルには全てのユーザとそのユーザに関する情報の一覧があります。rootユーザでログインしていることを確認して、メインデータベースmysqlを利用してみましょう。
+</p>
+
+<pre caption="メインデータベースmysqlを利用する">
+mysql&gt; <i>USE mysql;</i>
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt;
+</pre>
+
+<p>
+ではメインデータベースmysqlがどんなテーブルを持っているか見てみましょう。
+</p>
+
+<pre caption="mysqlのテーブル一覧">
+mysql&gt; <i>SHOW TABLES;</i>
++-----------------+
+| Tables_in_mysql |
++-----------------+
+| columns_priv    |
+| db              |
+| func            |
+| host            |
+| tables_priv     |
+| user            |
++-----------------+
+6 rows in set (0.00 sec)
+</pre>
+
+<p>
+探していたのはテーブルuserです。しかしテーブルuserには30ものフィールドがあり、照会するのは大変です。そこで照会を楽にするために、<c>SELECT</c>コマンドの3番目の形式を使いましょう。必要なフィールドはHostとUserです。
+</p>
+
+<pre caption="テーブルuserからユーザguestを探す">
+mysql&gt; <i>SELECT Host,User FROM user WHERE User = 'guest';</i>
++-----------+-------+
+| Host      | User  |
++-----------+-------+
+| localhost | guest |
++-----------+-------+
+1 row in set (0.00 sec)
+</pre>
+
+<p>
+必要な情報は揃いましたので、ユーザguestを削除できます。<c>DELETE</c>コマンドを使用して可能ですので、下に構文を示します。
+</p>
+
+<pre caption="DELETE の構文">
+DELETE FROM table WHERE field='value';
+</pre>
+
+<p>
+<c>DELETE</c>の構文は<c>SELECT</c>にどこか似ていることに気づくかもしれません。今回のケースではfieldがUserで、valueがguestになります。これでUserがguestであるレコードがテーブルuserから削除され、ユーザguestを完全に消すことができます。それではやってみましょう。
+</p>
+
+<pre caption="ユーザguestを削除する">
+mysql&gt; <i>DELETE FROM user WHERE User='guest';</i>
+Query OK, 1 row affected (0.07 sec)
+<comment>(ユーザ権限を更新するために、FLUSH PRIVILEGESコマンドを実行する必要があります)</comment>
+mysql&gt; <i>FLUSH PRIVILEGES;</i>
+Query OK, 0 rows affected (0.00 sec)
+</pre>
+
+<p>
+うまくいったようです。確認のためログアウトしてからユーザguestでログインしてみましょう。
+</p>
+
+<pre caption="ユーザguestでログインを試みる">
+mysql&gt; <i>quit</i>
+Bye
+$ <i>mysql -u guest -h localhost -p</i>
+Enter password:
+ERROR 1045: Access denied for user: 'guest@localhost' (Using password: YES)
+</pre>
+
+<p>
+ユーザがみごと削除されました！
+</p>
+
+</body>
+</section>
+<section>
+<title>結論</title>
+<body>
+
+<p>
+このガイドでは主にコマンドラインでのMySQLのセットアップを解説しましたが、別の方法としてGUIでのセットアップもいくつか提供されています。
+</p>
+
+<ul>
+  <li>
+    <uri link="http://www.phpmyadmin.net/home_page/">phpMyAdmin</uri> - 有名なphpベースのMySQL管理ツール
+  </li>
+  <li>
+    <uri
+    link="http://sourceforge.net/projects/mysqlnavigator/">mysqlnavigator</uri>
+    - Qt-ベースのMySQLフロントエンド
+  </li>
+  <li>
+    <uri link="http://gmyclient.sourceforge.net/">gmyclient</uri> - GNOMEベースのMySQLクライアント
+  </li>
+  <li><uri link="http://www.knoda.org/">knoda</uri> - KDEのMySQLクライアント</li>
+</ul>
+
+<p>
+これでMySQL入門チュートリアルは終了です。このチュートリアルがMySQLの基礎の理解と、データベースのセットアップに関する理解の助けになれば幸いです。何かコメントがあれば<mail>chriswhite@gentoo.org</mail>までメールして下さい。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,832 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/faq.xml,v 1.121 2011/12/26 15:22:40 swift Exp $ -->
+
+<guide>
+<title>Gentoo Linux Frequently Asked Questions</title>
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<author title="Reviewer">
+  Colin Morey
+</author>
+<author title="Editor"><!-- zhen@gentoo.org -->
+  John P. Davis
+</author>
+<author title="Editor">
+  <mail link="stocke2@gentoo.org">Eric Stockbridge</mail>
+</author>
+<author title="Editor">
+  <mail link="zhware@gentoo.org">Stoyan Zhekov</mail>
+</author>
+<author title="Editor">
+  <mail link="carl@gentoo.org">Carl Anderson</mail>
+</author>
+<author title="Editor">
+  <mail link="peesh@gentoo.org">Jorge Paulo</mail>
+</author>
+<author title="Editor">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Editor">
+  <mail link="bennyc@gentoo.org">Benny Chuang</mail>
+</author>
+<author title="Editor">
+  <mail link="smithj@gentoo.org">Jonathan Smith</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This FAQ is a collection of questions and answers collected from the gentoo-dev 
+mailing list and from IRC.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>8</version>
+<date>2011-12-26</date>
+
+<faqindex>
+<title>Questions</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+Please note that many of these questions are answered within the official
+Gentoo documents and guides. This is simply a list of common questions. Please
+read the documentation and/or man pages to gain a greater understanding of how
+Gentoo and GNU/Linux works, and for answers to questions which may not be
+answered here.
+</p>
+
+</body>
+</section>
+</faqindex>
+
+<chapter>
+<title>Getting Started</title>
+
+<section id="pronunciation">
+<title>How is Gentoo pronounced, and what does it mean?</title>
+<body>
+
+<p>
+<e>Gentoo</e> is pronounced "gen-too" (the "g" in "Gentoo" is a soft "g", as in
+"gentle"). The scientific name of the <uri
+link="http://en.wikipedia.org/wiki/Gentoo_penguin">Gentoo penguin</uri> is
+<e>Pygoscelis papua</e>. The name <e>Gentoo</e> has been given to the penguin
+by the inhabitants of the <uri
+link="http://en.wikipedia.org/wiki/Falkland_Islands">Falkland Islands</uri>.
+</p>
+
+</body>
+</section>
+<section id="differences">
+<title>What makes Gentoo different?</title>
+<body>
+
+<p>
+Gentoo uses a BSD ports-like system called <uri 
+link="/proj/en/portage">Portage</uri>. Portage is a package management system
+that allows great flexibility while installing and maintaining software on a
+Gentoo system. It provides compile-time option support (through <uri
+link="/doc/en/handbook/handbook-x86.xml?part=2&amp;chap=2">USE flags</uri>),
+conditional dependencies, pre-package installation summary, safe installation 
+(through sandboxing) and uninstallation of software, system profiles, <uri 
+link="/doc/en/handbook/handbook-x86.xml?part=3&amp;chap=2#doc_chap3">configuration 
+file protection</uri> amongst several other <uri 
+link="/doc/en/handbook/handbook-x86.xml?part=2&amp;chap=1">features</uri>.
+</p>
+
+<p>
+With Gentoo you can build your entire system from source, using your choice of
+optimizations. You have complete control over what packages are or aren't
+installed. Gentoo provides you with numerous choices, so you can install Gentoo
+to your own preferences, which is why Gentoo is called a <e>meta-distribution</e>.
+</p>
+
+<p>
+Gentoo is actively developed. The entire distribution uses a rapid pace
+development style: patches to the packages are quickly integrated in the
+mainline tree, documentation is updated on daily basis, Portage features are
+added frequently, and official releases occur twice per year.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Installation</title>
+<section id="optimizations">
+<title>
+  Things are really unstable and I'm using -O9 -ffast-math
+  -fomit-frame-pointer optimizations. What gives?
+</title>
+<body>
+
+<p>
+Don't bother using anything higher than <c>-O3</c> since it isn't supported by 
+current versions of gcc.  Very aggressive optimizations sometimes cause the 
+compiler to streamline the assembly code to the point where it doesn't quite 
+do the same thing anymore. 
+</p>
+
+<p>
+Please try to compile with CFLAGS <c>-O2 -march=&lt;your_arch&gt;</c> before
+reporting a bug.
+</p>
+
+</body>
+</section>
+<section id="password">
+<title>How do I change the root (or any other user's) password?</title>
+<body>
+
+<p>
+You can use <c>passwd</c> to change the password for the user you are logged 
+into. As root, you can change any user password by issuing the command
+<c>passwd username</c> For extra options and setting, please <c>man passwd</c>.
+</p>
+
+</body>
+</section>
+<section id="useradd">
+<title>How do I add a normal user?</title>
+<body>
+
+<p>
+The command <c>useradd username</c> will add a user called "username". However,
+this method does not give the user many of the rights you might want to grant
+him, so the following command is preferred:
+</p>
+
+<pre caption="Using useradd">
+# <i>useradd -m -G users,audio,wheel username</i>
+</pre>
+
+<p>
+This will add a user named "username". The option <c>audio</c> adds them to the
+<c>audio</c> group and allows the user to access sound devices. The option
+<c>wheel</c> adds the user to the <c>wheel</c> group, which allows the user to
+execute the command <c>su</c>, which in turn allows them to gain the
+privileges of the <c>root</c> user.
+</p>
+
+</body>
+</section>
+<section id="su">
+<title>Why can't a user su to root?</title>
+<body>
+
+<p>
+For security reasons, users may only <c>su</c> to root if they belong to the 
+wheel group. To add a username to the wheel group, issue the following command
+as root:
+</p>
+
+<pre caption="Adding a user to the wheel group">
+# <i>gpasswd -a username wheel</i>
+</pre>
+
+</body>
+</section>
+<section id="upgrade">
+<title>
+  Can I upgrade Gentoo from one release to another without reinstalling?
+</title>
+<body>
+
+<p>
+In fact, there is no difference between the various releases after they have
+been installed. Gentoo 1.4 and later are <c>glibc-2.3.x</c> (or higher) based.
+As such, running <c>emerge --sync &amp;&amp; emerge -uDN world</c> will bring your
+entire system up to speed with the "latest Gentoo". The differences between
+individual releases lie in the installation medium and pre-compiled packages.
+See the <uri link="/doc/en/gentoo-upgrading.xml">Gentoo Upgrading Guide</uri>
+for more information about profiles and their role in upgrading.
+</p>
+
+<p>
+Also note that the <c>emerge -uDN world</c> command updates the packages you
+have installed as well as its dependencies, but not the build-time dependencies
+(packages needed during builds but not when the software is installed). To
+update those as well, add the <c>--with-bdeps=y</c> option.
+</p>
+
+</body>
+</section>
+<section id="bootrescue">
+<title>My kernel doesn't boot, what should I do now?</title>
+<body>
+
+<p>
+You don't need to redo every step of the installation, but investigating the
+kernel and all associated steps is necessary. Suppose you have installed Gentoo
+on <path>/dev/sda1</path> (/boot) and <path>/dev/sda3</path> (/) with
+<path>/dev/sda2</path> being the swap space:
+</p>
+
+<pre caption = "Reconfiguring the kernel">
+<comment>Boot from the Install CD and wait until you receive a prompt</comment>
+<comment>We first mount all partitions:</comment>
+# <i>mount /dev/sda3 /mnt/gentoo</i>
+# <i>mount /dev/sda1 /mnt/gentoo/boot</i>
+# <i>swapon /dev/sda2</i>
+# <i>mount -t proc none /mnt/gentoo/proc</i>
+<comment>Then we chroot into our Gentoo environment and configure the kernel:</comment>
+# <i>chroot /mnt/gentoo /bin/bash</i>
+# <i>env-update &amp;&amp; source /etc/profile</i>
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+<comment>Now (de)select anything you have (de)selected wrongly at your</comment>
+<comment>previous attempt. Then quit and compile your kernel:</comment>
+# <i>make &amp;&amp; make modules_install</i>
+<comment>Now copy over your bzImage file, overwriting your previous one:</comment>
+# <i>cp arch/i386/boot/bzImage /boot/&lt;kernel_name&gt;</i>
+<comment>If you use LILO, rerun lilo -- GRUB users should skip this:</comment>
+# <i>/sbin/lilo</i>
+<comment>Now exit the chroot and reboot.</comment>
+# <i>exit</i>
+# <i>umount /mnt/gentoo/proc /mnt/gentoo/boot /mnt/gentoo</i>
+# <i>reboot</i>
+</pre>
+
+<p>
+If, on the other hand, the problem lies with your bootloader configuration,
+follow the same steps, but instead of configuring/compiling your kernel, you
+should reconfigure your bootloader (recompilation isn't necessary).
+</p>
+
+</body>
+</section>
+<section id="proxy">
+<title>My proxy requires authentication, what do I have to do?</title>
+<body>
+
+<p>
+To have Portage automatically use this scheme, define it in 
+<path>/etc/make.conf</path>:
+</p>
+
+<pre caption = "/etc/make.conf">
+http_proxy="http://username:password@yourproxybox.org:portnumber"
+ftp_proxy="ftp://username:password@yourproxybox.org:portnumber"
+RSYNC_PROXY="rsync://username:password@yourproxybox.server:portnumber"
+</pre>
+
+</body>
+</section>
+<section id="isoburning">
+<title>How do I burn an ISO file?</title>
+<body>
+
+<p>
+You need to burn the file in raw mode. This means that you should <e>not</e>
+just place the file on the CD, but interpret the file as an entire CD.
+</p>
+
+<p>
+There are lots of CD burning tools available; covering them all would be a
+Sisyphean problem. However, describing a few popular tools never hurts:
+</p>
+
+<ul>
+  <li>
+    With EasyCD Creator you select <c>File</c>, <c>Record CD
+    from CD image</c>. Then you change the <c>Files of type</c> to <c>ISO image
+    file</c>. Then locate the ISO file and click <c>Open</c>. When you click on
+    <c>Start recording</c> the ISO image will be burned correctly onto the CD-R.
+  </li>
+  <li>
+    With Nero Burning ROM, cancel the wizard which automatically pops up and
+    select <c>Burn Image</c> from the <c>File</c> menu. Select the image you
+    want to burn and click <c>Open</c>. Now hit the <c>Burn</c> button and watch
+    your brand new CD being burnt.
+  </li>
+  <li>
+    With cdrecord, you simply type <c>cdrecord dev=/dev/sdc</c> (replace
+    <path>/dev/sdc</path> with your CD-RW drive's device path) followed
+    by the path to the ISO file :)
+  </li>
+  <li>
+    With K3B, select <c>Tools</c> &gt; <c>CD</c> &gt; <c>Burn CD Image</c>.
+    Then you can locate your ISO file within the 'Image to Burn' area. Finally
+    click <c>Start</c>.
+  </li>
+  <li>
+    With Mac OS X Panther, launch <c>Disk Utility</c> from
+    <path>Applications/Utilities</path>, select <c>Open</c> from the
+    <c>Images</c> menu, select the mounted disk image in the main window and
+    select <c>Burn</c> in the <c>Images</c> menu.
+  </li>
+  <li>
+    With Mac OS X Jaguar, launch <c>Disk Copy</c> from
+    <path>Applications/Utilities</path>, select <c>Burn Image</c> from the
+    <c>File</c> menu, select the ISO and click the <c>Burn</c> button.
+  </li>
+</ul>
+
+
+</body>
+</section>
+<section id="cpus">
+<title>What CD/stage should I use for my CPU?</title>
+<body>
+
+<p>
+First you need to find out what CPU you use. Suppose it's a Pentium-M. Then you
+need to find out what CPU it is, instruction-wise, compatible with. You may
+need to consult the CPU's vendor website for this, although <uri
+link="http://www.google.com">Google</uri> is at least as efficient :-).
+</p>
+
+<p>
+If you are uncertain, take a "lower" CD/stage file, for instance a i686 or even
+generic x86 (or the equivalent in your arch). This will ensure that your system
+will work, but may not be as fast as further optimizations.
+</p>
+
+<p>
+Please note that many more options exist than those for which Gentoo builds 
+binary stages. Please see the <uri
+link="http://gcc.gnu.org/onlinedocs/gcc-4.4.3/gcc/i386-and-x86_002d64-Options.html#i386-and-x86_002d64-Options">gcc
+guide</uri> for setting <c>-march</c>.
+</p>
+
+</body>
+</section>
+<section id="dhcp">
+<title>I can't get online after rebooting. What is wrong?</title>
+<body>
+
+<p>
+First you need to check if your network card is discovered properly by the
+kernel. Run <c>ifconfig&nbsp;-a</c> and look for eth0 or wlan0 (in case of
+certain wireless network cards). You might need to load specific kernel modules
+for the kernel to properly detect the network card. If that is the case, make
+sure that these kernel modules are listed in
+<path>/etc/conf.d/modules</path>.
+</p>
+
+<p>
+If you have forgotten to include support for your network card in your kernel,
+you will need to reconfigure your kernel. 
+</p>
+
+<p>
+If your network card is found by your kernel, but you have set your networking
+configuration to use DHCP, you might have forgotten to
+<c>emerge&nbsp;dhcpcd</c>. You will need to reboot with your installation CD to
+install <c>dhcpcd</c>.
+</p>
+
+<p>
+Information on how to rescue your system using the installation CD is <uri
+link="#bootrescue">available</uri> as well.
+</p>
+
+</body>
+</section>
+<section id="dualboot">
+<title>
+I want to boot Windows from grub or lilo but it shows only black screen. What
+should I do? 
+</title>
+<body>
+
+<p>
+This is a known problem. Windows refuses to boot when it isn't installed on the
+first hard drive and shows a black/blank screen. To handle this, you will have
+to "fool" Windows into believing that it is installed on the first hard drive
+with a little tweak in your boot loader configuration. Please note that in the
+below example, Gentoo is installed on <path>sda</path> (first disk) and Windows
+on <path>sdb</path> (second one). Adjust your config as needed.
+</p>
+
+<pre caption="Example dual boot entry for Windows in grub.conf">
+title Windows XP
+     map (hd1) (hd0)
+     map (hd0) (hd1)
+     rootnoverify (hd1,0)
+     chainloader +1
+</pre>
+
+<pre caption="Example dual boot entry for Windows in lilo.conf">
+other=/dev/sdb1
+     label=WindowsXP
+     table=/dev/sdb
+     map-drive = 0x80
+     to = 0x81
+     map-drive = 0x81
+     to = 0x80
+</pre>
+
+<p>
+This will make Windows believe it is installed on the first hard drive and boot
+without problems. More information can be found in the <uri
+link="http://www.gnu.org/software/grub/">GRUB documentation</uri> and in <c>man
+lilo.conf</c>, depending on the boot loader you're using.
+</p>
+
+</body>
+</section>
+<section id="stage12">
+<title>How do I Install Gentoo Using a Stage1 or Stage2 Tarball?</title>
+<body>
+
+<p>
+The Gentoo Handbook only describes a Gentoo installation using a stage3 tarball.
+However, Gentoo still provides stage1 and stage2 tarballs. This is for
+development purposes (the Release Engineering team starts from a stage1 tarball
+to obtain a stage3) but shouldn't be used by users: a stage3 tarball can very
+well be used to bootstrap the system. You do need a working Internet connection.
+</p>
+
+<p>
+Bootstrapping means building the toolchain (the C library and compiler) for 
+your system after which you install all core system packages. To bootstrap the
+system, perform a stage3 installation. Before you start the chapter on 
+<e>Configuring the Kernel</e>, modify the <path>bootstrap.sh</path> script to
+suit your needs and then run it:
+</p>
+
+<pre caption="Bootstrapping the system">
+# <i>cd /usr/portage/scripts</i>
+# <i>vi bootstrap.sh</i>
+
+# <i>./bootstrap.sh</i>
+</pre>
+
+<p>
+Next, rebuild all core system packages with the newly built toolchain. We need
+to rebuild them since the stage3 tarball already offers them:
+</p>
+
+<pre caption="Rebuilding the core system packages">
+# <i>emerge -e system</i>
+</pre>
+
+<p>
+Now you can continue with <e>Configuring the Kernel</e>. You can not use the
+prebuilt GRP packages anymore though.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Package Management</title>
+<section id="ebuilds">
+<title>In what form are the packages stored?</title>
+<body>
+
+<p>
+Packages aren't "stored" per se. Instead, Gentoo provides a set of scripts
+which can resolve dependencies, fetch source code, and compile a version of the
+package specifically for your needs. We generally only build binaries for
+releases and snapshots. The <uri
+link="/proj/en/devrel/handbook/handbook.xml?part=2&amp;chap=1">Gentoo Ebuild
+HOWTO</uri> covers the contents of an ebuild script in detail.
+</p>
+
+<p>
+For full ISO releases, we create a full suite of binary packages in an enhanced
+<c>.tbz2</c> format, which is <c>.tar.bz2</c> compatible with meta-information
+attached to the end of the file. These can be used to install a working (though
+not fully optimized) version of the package quickly and efficiently.
+</p>
+
+<p>
+It is possible to create RPMs (Redhat package manager files) using Gentoo's
+Portage, but it is not currently possible to use already existing RPMs to
+install packages.
+</p>
+
+</body>
+</section>
+<section id="configure">
+<title>I want to perform the ./configure step myself. Can I?</title>
+<body>
+
+<p>
+Yes, but it is not trivial, nor is it recommended. Since the method to do this
+requires a good understanding of Portage internals and commands, it is instead
+recommended that you patch the ebuild to do whatever it is that you want and
+place it in a Portage overlay (that's why overlays exist). This is <e>much</e>
+better for maintainability, and usually easier. See the <uri
+link="/proj/en/devrel/handbook/handbook.xml?part=2&amp;chap=1">Ebuild
+HOWTO</uri> for more information.
+</p>
+
+</body>
+</section>
+<section id="firewall">
+<title>How do I use emerge from behind a firewall?</title>
+<body>
+
+<p>
+See the questions on <uri link="#proxy">proxies</uri>, <uri
+link="#norsync">rsync</uri>, and <uri link="#manualdownload">downloading source
+files manually</uri>.
+</p>
+
+</body>
+</section>
+<section id="norsync">
+<title>What if rsync doesn't work for me?</title>
+<body>
+
+<p>
+If you're behind a firewall that doesn't permit rsync traffic, then you can use 
+<c>emerge-webrsync</c> which will fetch and install a Portage snapshot for you 
+through regular HTTP. See the <uri link="#proxy">proxy section</uri> of this
+document for information on downloading source files and Portage snapshots via
+a proxy.
+</p>
+
+</body>
+</section>
+<section id="manualdownload">
+<title>
+  I have only slow modem connection at home. Can I download sources somewhere 
+  else and add them to my system?
+</title>
+<body>
+
+<p>
+Definitely. You can run <c>emerge --pretend package</c> to see what programs
+are going to be installed. To find out the sources for those packages and where 
+to download the sources from, you can run <c>emerge -fp package</c>. Download 
+sources and bring them on any media home. Put the sources into 
+<path>/usr/portage/distfiles/</path> and then simply run <c>emerge package</c>.
+Be warned, however, that this is a tedious process.
+</p>
+
+</body>
+</section>
+<section id="distfiles">
+<title>
+  Source tarballs are collecting in /usr/portage/distfiles/. Is it safe to
+  delete these files?
+</title>
+<body>
+
+<p>
+Deleting these files will have no negative impact on day-to-day performance.
+However, it might be wise to keep the most recent version of the files; often
+several ebuilds will be released for the same version of a specific piece of
+software. If you have deleted the archive and you upgrade the software it will
+be necessary to download them from the internet again.
+</p>
+
+<p>
+You can use the <c>eclean</c> script from <c>app-portage/gentoolkit</c> to
+manage the contents of <path>/usr/portage/distfiles/</path> and a few other
+locations. Please read <c>man eclean</c> to learn more about its usage, as well
+as the <uri link="/doc/en/gentoolkit.xml">Gentoolkit Guide</uri>.
+</p>
+
+</body>
+</section>
+<section id="tmpportage">
+<title>
+  What's in /var/tmp/portage? Is it safe to delete the files and 
+  directories in /var/tmp/portage?
+</title>
+<body>
+
+<p>
+During compilation, Gentoo saves the sources of the package in 
+<path>/var/tmp/portage</path>. These files and folder are usually deleted upon
+a successful merge, but this sometimes fails. It is safe to clean out all
+contents of this directory <e>if</e> emerge is not running. Just to be sure,
+always <c>pgrep emerge</c> before cleaning out this directory.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Usage</title>
+<section id="intkeyboard">
+<title>How do I set up an International Keyboard Layout?</title>
+<body>
+
+<p>
+Edit the <c>KEYMAP</c> variable in <path>/etc/conf.d/keymaps</path>. To have
+console working correctly with extended characters in your keymap you might
+also need to set up variables <c>CONSOLETRANSLATION</c> and <c>CONSOLEFONT</c>
+in your <path>/etc/conf.d/consolefont</path> (for further information on
+localising your environment, refer to <uri 
+link="/doc/en/guide-localization.xml">our localisation guide</uri>).
+Then, either <c>reboot</c>, or restart the keymaps and consolefont scripts:
+</p>
+
+<pre caption="Restarting keymaps">
+# <i>/etc/init.d/keymaps restart</i>
+# <i>/etc/init.d/consolefont restart</i>
+</pre>
+
+</body>
+</section>
+<section id="rootdns">
+<title>DNS name resolution works for root only</title>
+<body>
+
+<p>
+<path>/etc/resolv.conf</path> has the wrong permissions; <c>chmod</c> it as 
+follows:
+</p>
+
+<pre caption="Changing permissions on /etc/resolv.conf">
+# <i>chmod 0644 /etc/resolv.conf</i>
+</pre>
+
+</body>
+</section>
+<section id="crontab">
+<title>Why can't my user use their own crontab?</title>
+<body>
+
+<p>
+You need to add that user to the <c>cron</c> group.
+</p>
+
+</body>
+</section>
+<section id="numlock">
+<title>How do I get numlock to start on boot?</title>
+<body>
+
+<p>
+If you work in command line, you only need to <c>rc-update add 
+numlock default &amp;&amp;/etc/init.d/numlock start</c>.
+</p>
+
+<p>
+Each GUI provides different tools for this sort of thing; please check the help
+section or online manuals for assistance.
+</p>
+
+</body>
+</section>
+<section id="clear">
+<title>How do I have my terminal cleared when I log out?</title>
+<body>
+
+<p>
+To have your terminal cleared, add <c>clear</c> to your
+<path>~/.bash_logout</path> script:
+</p>
+
+<pre caption = "Clearing the terminal during logout">
+$ <i>echo clear &gt;&gt; ~/.bash_logout</i>
+</pre>
+
+<p>
+If you want this to happen automatically when you add a new
+user, do the same for the <path>/etc/skel/.bash_logout</path>:
+</p>
+
+<pre caption = "Making new users their terminal clear on logout">
+# <i>echo clear &gt;&gt; /etc/skel/.bash_logout</i></pre>
+</body>
+
+</section>
+</chapter>
+
+<chapter>
+<title>Maintenance</title>
+<section id="filecorruption">
+<title>ReiserFS and filesystem corruption issues -- how to fix them, etc</title>
+<body>
+
+<p>
+If your ReiserFS partition is corrupt, try booting the Gentoo Install CD and
+run <c>reiserfsck --rebuild-tree</c> on the corrupted filesystem.  This should
+make the filesystem consistent again, although you may have lost some files or
+directories due to the corruption.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Development</title>
+<section id="reportbugs">
+<title>Where can I report bugs?</title>
+<body>
+
+<p>
+Use our <uri link="https://bugs.gentoo.org">Bugzilla</uri>. If you are unsure if
+your problem is an actual bug, you can visit <uri
+link="irc://irc.gentoo.org/gentoo">#gentoo</uri> on IRC.
+</p>
+
+</body>
+</section>
+<section id="releases">
+<title>How often are new releases made?</title>
+<body>
+
+<p>
+Gentoo's packages are usually updated shortly after the main authors release
+new code. As for when Gentoo itself makes new stage/profile/ISO releases, check
+our <uri link="/proj/en/releng">Release Engineering Project</uri> page. New
+releases are announced on the <uri
+link="/main/en/lists.xml">gentoo-announce</uri> mailing list. See the question
+on <uri link="#upgrade">upgrading</uri> for more information.
+</p>
+
+</body>
+</section>
+<section id="beeping">
+<title>
+  My speaker beeps like crazy. How do I disable console beeps?
+</title>
+<body>
+
+<p>
+Console beeps can be turned off using setterm, like this:
+</p>
+
+<pre caption="Using setterm">
+# <i>setterm -blength 0</i>
+</pre>
+
+<p>
+If you would like to turn off the console beeps on boot, you need to put this
+command in <path>/etc/conf.d/local.start</path>. However, this only disables
+beeps for the current terminal. To disable beeps for other terminals, pipe the
+command output to the target terminal, like this: </p>
+
+<pre caption="Using setterm (bis)">
+# <i>setterm -blength 0 >/dev/vc/1</i>
+</pre>
+
+<p>
+You need to replace /dev/vc/1 with the terminal you would like to disable 
+console beeps for.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Resources</title>
+<section id="resources">
+<title>Where can I find more information about Gentoo Linux?</title>
+<body>
+
+<p>
+The official Gentoo documentation can be found at
+<uri>http://www.gentoo.org/doc/en/</uri>.
+</p>
+
+</body>
+</section>
+<section id="buycd">
+<title>Can I buy a CD of Gentoo Linux?</title>
+<body>
+
+<p>
+Install CDs for all supported architectures are available on our <uri
+link="http://www.cafepress.com/officialgentoo/">Gentoo Store</uri>. When you
+purchase a CD from our store, you are also supporting our development. So,
+please consider buying from our store if possible.
+</p>
+
+<p>
+You can also find fresh CDs from various resellers listed on our <uri
+link="/main/en/where.xml">Get Gentoo!</uri> page.
+</p>
+
+</body>
+</section>
+<section id="help">
+<title>This FAQ hasn't answered my question.  What do I do now?</title>
+<body>
+
+<p>
+A good first step is to browse through the relevant <uri
+link="/doc/en/index.xml">documentation</uri>, failing that, the various Gentoo
+Linux mailing lists listed on <uri link="http://www.google.com">Google</uri>.
+To search through the Gentoo mailing lists, just enter "lists.gentoo.org foo" to
+search for "foo".  If all else fails, or you just want to hang out with Gentoo
+folks, visit us on irc: <uri link="irc://irc.gentoo.org/gentoo">#gentoo</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

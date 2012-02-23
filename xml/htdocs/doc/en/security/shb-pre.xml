@@ -1,0 +1,254 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/security/shb-pre.xml,v 1.3 2006/09/18 09:22:48 neysx Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.0</version>
+<date>2005-05-31</date>
+
+<section>
+<title>Physical Security</title>
+<body>
+
+<p>
+No matter how many safeguards you implement, they can all be easily
+circumvented by an attacker with physical access to your computer. Despite
+this, there are at least some measures that can be taken to provide a degree of
+security against an attacker with physical access to your machine. Putting your
+hardware in a locked closet prevents an attacker from simply unplugging it and
+carting it off. Locking your computer's case is also a good idea, to make sure
+that an attacker cannot simply walk away with your hard drive. To prevent an
+attacker from booting from another disk, nicely circumventing your permissions
+and login restrictions, try setting the hard drive as the first boot device in
+your BIOS, and setting a BIOS password. It is also important to set a LILO or
+GRUB boot password, to prevent a malicious user from booting into single-user
+mode and gaining complete access to your system. This is covered in more detail
+in Chapter 3, under <uri link="?part=1&amp;chap=2#passwording_GRUB">Setting a
+GRUB password</uri> and <uri link="?part=1&amp;chap=2#passwording_LILO">Setting
+a LILO password</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Daemon/Service Planning</title>
+<body>
+<p>
+Start by documenting what services this machine should run. This will help you
+compose a better partition scheme for your system, and allow you to better plan
+your security measures. Of course, this is unnecessary if the machine serves a
+single simple purpose, such as a desktop, or a dedicated firewall. In those
+cases, you should not be running <e>any</e> services, except perhaps sshd.
+</p>
+<p>
+This list can also be used to aid system administration. By keeping a current
+list of version information, you will find it much easier to keep everything up
+to date if a remote vulnerability is discovered in one of your daemons.
+</p>
+
+</body>
+</section>
+<section>
+<title>Partitioning Schemes</title>
+<body>
+
+<p>
+Partitioning rules:
+</p>
+
+<ul>
+<li>
+  Any directory tree a user should be able to write to (e.g. <path>/home</path>,
+  <path>/tmp</path>) should be on a separate partition and use disk quotas. This
+  reduces the risk of a user filling up your whole filesystem. Portage
+  uses <path>/var/tmp</path> to compile files, so that partition should be large.
+</li>
+<li>
+  Any directory tree where you plan to install non-distribution software on should
+  be on a separate partition. According to the <uri link="http://www.pathname.com/fhs/">
+File Hierarchy Standard</uri>, this
+  is <path>/opt</path> or <path>/usr/local</path>.  If these are separate
+  partitions, they will not be erased if you have to reinstall the system.
+</li>
+<li>
+  For extra security, static data can be put on a separate partition that is
+  mounted read-only. For the truly paranoid, try using read-only media like
+  CD-ROM.
+</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>The root user</title>
+<body>
+
+<p>
+The user 'root' is the most vital user on the system and should not be
+used for anything except when absolutely necessary. If an attacker gains root
+access, the only way to ever trust your system again is to reinstall.
+</p>
+
+<p>
+Golden rules about 'root'
+</p>
+
+<ul>
+<li>
+  Always create a user for everyday use and if this user needs to have root
+  access, add the user to the group 'wheel'. This makes it possible for a normal
+  user to <c>su</c> to root.
+</li>
+<li>
+  Never run X or any other user application as root. root should only be used when
+  absolutely necessary; if a vulnerability exists in an application running as a
+  user, an attacker can gain user level access. But if that application is running
+  as root, the attacker gains root access.
+</li>
+<li>
+  Always use absolute paths when logged in as root (or always use <c>su -</c>,
+  which replaces the environmental variables of the user with those of root,
+  while being sure root's <c>PATH</c> only includes protected directories
+  like <path>/bin</path> and <path>/sbin</path>). It's possible to trick
+  root into running a different application rather than the one meant to be
+  run. If root's <c>PATH</c> is protected or root only uses absolute paths, we can
+  be sure this won't happen.
+</li>
+<li>
+  If a user only needs to run a few commands as root, instead of everything that
+  root normally can do, consider using <c>sudo</c> instead. Just be careful who
+  you give this access to, as well!
+</li>
+<li>
+  Never leave the terminal when you are logged in as root.
+</li>
+</ul>
+
+<p>
+Gentoo has some default protection against normal users trying to <c>su</c> to
+root. The default PAM setting requires that a user be a member of the group
+"wheel" in order to be able to <c>su</c>.
+</p>
+
+</body>
+</section>
+<section id = "security_policies">
+<title>Security policies</title>
+<body>
+
+<p>
+There are several reasons to draft a security policy for your system(s) and
+network.
+</p>
+
+<ul>
+<li>
+  A good security policy allows you to outline security as a "system", rather
+  than simply a jumble of different features. For example, without a policy an
+  administrator might decide to turn off telnet, because it transmits
+  unencrypted passwords, but leave on FTP access, which has the same weakness. A
+  good security policy allows you to identify which security measures are
+  worthwhile, and which are not.
+</li>
+<li>
+  In order to diagnose problems, conduct audits, or track down intruders, it may
+  be necessary to intercept network traffic, inspect the login and command
+  history of users, and look in home directories. Without outlining this in
+  print, and making users aware of this, such actions may actually be illegal
+  and put <e>you</e> in legal jeopardy.
+</li>
+<li>
+  Hijacked user accounts pose one of the most common threats to system
+  security. Without explaining to users why security is important, and how to
+  practice good security (such as not writing passwords on a Post-It note on
+  their desks), it is unlikely you will have any hope of secure user accounts.
+</li>
+<li>
+  A well-documented network and system layout will aid you, as well as law
+  enforcement forensics examiners, if need be, in tracing an intrusion and
+  identifying weaknesses after the fact. A security policy "issue" banner,
+  stating that your system is a private network and all unauthorized access is
+  prohibited, will also help ensure your ability to properly prosecute an
+  intruder, once he is caught.
+</li>
+</ul>
+
+<p>
+The need for a good security policy is hopefully now more than clear.
+</p>
+
+<p>
+The policy itself is a document, or several documents, that outlines the network
+and system features (such as what services are provided), acceptable use and
+forbidden use, security "best practices", and so forth. All users should be made
+aware of your security policy, as well as changes you make to keep it up to
+date. It is important that you take the time to help users understand your
+policy and why that policy needs to be signed or what will happens if they act
+directly against the policy (the policy should also state this). This should be
+repeated at least once a year, since the policy can change (but also as a
+reminder to the user of the policy itself).
+</p>
+
+<note>
+Create policies that are easy to read and be very precise on every subject.
+</note>
+
+<p>
+A security policy should at least contain the following subjects:
+</p>
+
+<ul>
+<li>Acceptable use
+  <ul>
+  <li>Screen savers</li>
+  <li>Password handling</li>
+  <li>Software download and installation</li>
+  <li>Information stating if the users are being monitored</li>
+  <li>Use of anti-virus software</li>
+  </ul>
+</li>
+<li>Handling of sensitive information (any written form, paper or digital)
+  <ul>
+  <li>Clean desk and locked up classified information</li>
+  <li>PC shutdown before leaving</li>
+  <li>Use of encryption</li>
+  <li>Handling of keys to trusted co-workers</li>
+  <li>Handling of confidential material when traveling</li>
+  </ul>
+</li>
+<li>Handling of computer equipment when traveling
+  <ul>
+  <li>Laptop handling during travels and hotel stays</li>
+  </ul>
+</li>
+</ul>
+
+<p>
+Different users may require different levels or types of access, and as such
+your policy may vary to accommodate them all.
+</p>
+
+<p>
+The security policy can become huge, and vital information can easily be
+forgotten. The IT-staff's policy could contain information that is confidential
+for the ordinary user, so it is wise to split it up into smaller policies;
+e.g. Acceptable Use Policy, Password policy, Email policy and Remote Access
+policy.
+</p>
+
+<p>
+You can find example policies at <uri
+link="http://www.sans.org/resources/policies/">The SANS Security Policy
+Project</uri>. If you have a small network and think these policies are too much
+you should look at the <uri
+link="ftp://ftp.isi.edu/in-notes/rfc2196.txt">Site Security
+Handbook</uri>.
+</p>
+
+</body>
+</section>
+</sections>

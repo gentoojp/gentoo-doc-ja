@@ -1,0 +1,679 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/java.xml,v 1.53 2011/11/15 19:03:31 swift Exp $ -->
+
+<guide>
+<title>Gentoo Java Guide</title>
+
+<author title="Author">
+ <mail link="nichoj@gentoo.org">Joshua Nichols</mail>
+</author>
+<author title="Author">
+ <mail link="karltk@gentoo.org">Karl Trygve Kalleberg</mail>
+</author>
+<author title="Editor">
+ <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+
+<abstract>
+This guide will introduce you to Java and explain how to use Java with Gentoo
+Linux.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>4</version>
+<date>2011-11-15</date>
+
+<chapter>
+<title>What is Java?</title>
+<section>
+<title>Overview</title>
+<body>
+
+<p>
+Java is a programming language developed by engineers of Sun Microsystems. The
+language is object-oriented and designed to run on multiple platforms without
+the need of recompiling code for each platform. Although Java can be compiled
+as a native program, much of Java's popularity can be attributed to its
+portability, along with other features such as garbage collection. To make
+platform independence possible the Java compiler compiles the Java code to an
+intermediate representation called "Java bytecode" that runs on a JRE (Java
+Runtime Environment) and not directly on the operating system.
+</p>
+
+<p>
+In order to run Java bytecode, one needs to have a JRE (Java Runtime
+Environment) installed. A JRE provides core libraries, a platform dependent
+Java Virtual Machine, plugins for browsers, among other things. A JDK (Java
+Development Kit) adds programming tools, such as a bytecode compiler and a
+debugger.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Installing a Virtual Machine</title>
+<section>
+<title>The choices</title>
+<body>
+
+<p>
+Gentoo provides numerous Runtime Environments (JREs) and Development Kits
+(JDKs). Among the current choices, we have:
+</p>
+
+<table>
+<tr>
+  <th>Vendor</th>
+  <th>JDK</th>
+  <th>JRE</th>
+</tr>
+<tr>
+  <ti>The IcedTea Open Java SE (formerly icedtea6-bin)</ti>
+  <ti>dev-java/icedtea-bin</ti>
+  <ti />
+</tr>
+<tr>
+  <ti>Oracle's Java 7 SE</ti>
+  <ti>dev-java/oracle-jdk-bin</ti>
+  <ti>dev-java/oracle-jre-bin</ti>
+</tr>
+<tr>
+  <ti>Sun's Java 6 SE</ti>
+  <ti>dev-java/sun-jdk</ti>
+  <ti>dev-java/sun-jre-bin</ti>
+</tr>
+<tr>
+  <ti>The IBM Java SE</ti>
+  <ti>dev-java/ibm-jdk-bin</ti>
+  <ti>dev-java/ibm-jre-bin</ti>
+</tr>
+</table>
+
+<!--
+TODO: list free implementations?
+note about not drop-in replacements
+kaffe/sablevm/gcj/jamvm
+-->
+</body>
+</section>
+<section>
+<title>Installing a JRE/JDKs</title>
+<body>
+
+<p>
+To install your profile's default JDK, you can run <c>emerge virtual/jdk</c>.
+Or to install your profile's default JRE, you can <c>emerge virtual/jre</c>.
+</p>
+
+<p>
+Some JDKs and JREs, including the Sun packages, require accepting an End User
+License Agreement, or EULA. If its license (such as dlj-1.1) is not listed in
+ACCEPT_LICENSE in <path>/etc/make.conf</path>, then you won't be able to install
+the JDK/JRE. For more information on how to add acceptable licenses to
+<path>make.conf</path>, please read the <uri
+link="/doc/en/handbook/handbook-x86.xml?part=2&amp;chap=1#doc_chap4">Portage
+Handbook</uri>.
+</p>
+
+<p>
+To avoid any restrictive license hassle, consider installing
+<c>icedtea-bin</c>, which is an open Java implementation from the OpenJDK
+project.
+</p>
+
+<note>
+A JDK also includes a JRE, so if you install a JDK you shouldn't have to also
+have to install a JRE.
+</note>
+
+</body>
+</section>
+<section>
+<title>Installing fetch-restricted virtual machines</title>
+<body>
+
+<p>
+Some of the JDKs and JREs require you to jump through a few hoops before
+installing. Simply emerge the packages as you normally would.  The ebuilds will
+then instruct you where to go and what to download.
+</p>
+
+<p>
+You should download the indicated file(s) into
+<path>/usr/portage/distfiles</path>. Once there, you can rerun the emerge
+command, at which point the JRE/JDK will be begin to install.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring your virtual machine</title>
+<section>
+<title>Overview</title>
+<body>
+
+<p>
+Gentoo has the ability to have multiple JDKs and JREs installed without causing
+conflicts.
+</p>
+
+<p>
+Using the <c>java-config</c> tool, you can set the system-wide default
+(provided you have root access). Users can also use <c>java-config</c> to set
+up their own personal default.
+</p>
+
+<note>
+You can also use <e>eselect</e> to change the system and user vm.  See
+<c>eselect java-vm help</c>.
+</note>
+
+</body>
+</section>
+<section>
+<title>Setting a default virtual machine</title>
+<body>
+
+<p>
+Running the command <c>java-config --list-available-vms</c> will give you a
+list of all JREs and JDKs installed on your system. Here is an example of
+output:
+</p>
+
+<pre caption="Listing available VMs">
+# <i>java-config --list-available-vms</i>
+The following VMs are available for generation-2:
+1)      IcedTea-bin 1.10.4 [icedtea-bin]
+2)      Sun JDK 1.5.0.20 [sun-jdk-1.5] <comment>(Build Only)</comment>
+*)      Sun JDK 1.6.0.16 [sun-jdk-1.6]
+</pre>
+
+<note>
+VMs marked as Build Only may contain security vulnerabilities and/or be EOL.
+Gentoo recommends not setting these VMs as either your system or user VM.
+Please see <uri link="java.xml#build-only">Build Only VM</uri> for more
+information.
+</note>
+
+<p>
+The <e>*</e> indicates this is the current active vm (system-vm or user-vm when
+set). The name in the brackets (<e>[]</e>) is the handle or ID for that
+particular VM. You use the handle or the number to <c>java-config
+--set-system-vm</c>. Here is an example of how to set the system VM.
+</p>
+
+<pre caption="Setting the System VM">
+<comment>(By handle (preferred))</comment>
+# <i>java-config --set-system-vm sun-jdk-1.6</i>
+Now using sun-jdk-1.6 as your generation-2 system JVM
+<comment>(By number)</comment>
+# <i>java-config --set-system-vm 3</i>
+Now using sun-jdk-1.6 as your generation-2 system JVM
+</pre>
+
+<p>
+As a regular user, you can use <c>java-config --set-user-vm</c>.
+</p>
+
+<note>
+You no longer have to <c>source</c> the profile for updates to the user/system
+VM take place.
+</note>
+
+</body>
+</section>
+<section id="build-only">
+<title>Build Only VM</title>
+<body>
+
+<p>
+Some virtual machines are flagged as build-only due to being EOL and/or
+containing security vulnerabilities. These virtual machines will not
+automatically be used by Gentoo for the running of applications using Gentoo
+launchers but will still be available for use by Gentoo's build environment as
+some packages may require them for building. The setting of these virtual
+machines as either your system or user VM is strongly discouraged as these VMs
+will then be used when running the <path>/usr/bin/{java,javac,..}</path>
+executables and will also be used by any packages not using Gentoo's launcher
+scripts.
+</p>
+
+</body>
+</section>
+<section id="preferred-vm">
+<title>Preferred Build VM</title>
+<body>
+
+<p>
+While merging Java packages, the VM used for building can sometimes be different
+from the one currently set as the system VM.
+</p>
+
+<p>
+This merge time VM switching is needed when, for example, your system-vm is
+set to a 1.6 VM and the package you are merging requires a 1.5 VM. While merging
+it will select and use a 1.5 VM, leaving your system-vm choice intact.
+</p>
+
+<p>
+To define which VM is selected when a switch is needed, we have created a list of <e>default/supported
+VMs</e> per arch. You can find them in
+<path>/usr/share/java-config-2/config/jdk-defaults.conf</path>. 
+</p>
+
+<p>
+You can override these defaults (and even your selected system VM) in
+<path>/etc/java-config-2/build/jdk.conf</path> and have complete control over
+which VM will get used for merging. Some examples:
+</p>
+
+<pre caption="Example /etc/java-config-2/build/jdk.conf">
+<comment>(I always want it to use a sun-jdk, ie sun-jdk-1.4 for 1.4, sun-jdk-1.5 for 1.5, etc)</comment>
+*=sun-jdk
+</pre>
+
+<pre caption="Example /etc/java-config-2/build/jdk.conf">
+<comment>(Always use sun-jdk-1.5 wherever possible, except for when a 1.4 or 1.3 VM is explicitly required)</comment>
+*=sun-jdk-1.5
+</pre>
+
+<pre caption="Example /etc/java-config-2/build/jdk.conf">
+<comment># For 1.3 I prefer sun-jdk 1.4 but when it is not available, use ibm-jdk-bin,
+# For 1.5, use sun-jdk </comment>
+1.3=sun-jdk-1.4 ibm-jdk-bin
+1.5=sun-jdk
+</pre>
+
+<warn>
+You do not <e>have</e> to edit this file. If you change these options to use a
+unsupported VM, things could possibly break. Because of the wide variety of
+available VMs, we do not have the resources to test and verify every package
+works on all of them.  Bugs reported with a unsupported VM won't be prioritized
+as much as bugs present within supported VMs.
+</warn>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Compilers</title>
+<section>
+<body>
+
+<p>
+The standard Java compiler used for building is <c>javac</c>, which comes with
+each JDK. In addition to configuring the VM used at build time, it is also
+possible configure which compiler is used. Essentially, you define a list your
+preference for which compiler to use in
+<path>/etc/java-config-2/build/compilers.conf</path>.
+</p>
+
+<pre caption="/etc/java-config-2/build/compilers.conf">
+# If the ebuild supports it
+# it will check the COMPILERS var front to back and
+# use the first compiler that is installed
+
+COMPILERS="ecj-X.Y jikes javac"
+</pre>
+
+<p>
+Some compilers don't support all possible -target and -source arguments.
+Therefore, each compiler in the list is checked to see if it can support the
+desired -source/-target. javac will work in all cases, so if no other suitable
+compiler is found, it will be used instead.
+</p>
+
+<p>
+More details about each compiler are provided below:
+</p>
+
+<table>
+<tr>
+  <th>Name</th>
+  <th>Handle</th>
+  <th>Package</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti>javac</ti>
+  <ti>javac</ti>
+  <ti>N/A</ti>
+  <ti>
+    This is the default compiler that will be used, and comes with each JDK.
+  </ti>
+</tr>
+<tr>
+  <ti>jikes</ti>
+  <ti>jikes</ti>
+  <ti>dev-java/jikes</ti>
+  <ti>
+    Jikes was originally developed by IBM. Anecdotally, it is generally quicker
+    than javac. Note however, that it is more pedantic, and will fail under a
+    few circumstances where javac has no issue. It also does not support Java
+    1.5 syntax yet.
+  </ti>
+</tr>
+<tr>
+  <ti>Eclipse Compiler for Java</ti>
+  <ti>ecj</ti>
+  <ti>dev-java/eclipse-ecj</ti>
+  <ti>
+    ECJ is the compiler used by the Eclipse software development kit. It is
+    very full featured, and is pretty fast. It does support Java 1.5 syntax.
+  </ti>
+</tr>
+</table>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Setting a default CLASSPATH</title>
+<section>
+<body>
+
+<warn>
+The options explained in this section should be considered deprecated and will
+most likely be removed in the future. We strongly recommend against using
+these, because your Java projects or application should ideally manage their
+own classpaths. If you choose to specify a default CLASSPATH, some applications
+may behave unexpectedly, because classes they weren't expecting would be on the
+classpath.
+</warn>
+
+<p>
+<c>java-config</c> can also be used to set a system-wide default CLASSPATH, as
+well a user-specific default CLASSPATH.
+</p>
+
+<p>
+First, you will want to list available Java libraries installed on your system
+that might want to be put in your CLASSPATH. Here is an example of output:
+</p>
+
+<pre caption="Listing classes">
+# <i>java-config --list-available-packages</i>
+[xerces-2] The next generation of high performance, fully compliant XML parsers in the Apache Xerces family (/usr/share/xerces-2/package.env)
+[junit] Simple framework to write repeatable tests (/usr/share/junit/package.env)
+[bsh] BeanShell: A small embeddable Java source interpreter (/usr/share/bsh/package.env)
+[bcel] The Byte Code Engineering Library: analyze, create, manipulate Java class files (/usr/share/bcel/package.env)
+[log4j] A low-overhead robust logging package for Java (/usr/share/log4j/package.env)
+...
+</pre>
+
+<p>
+Again, the names in brackets (<e>[]</e>) are the IDs that you have to pass to
+<c>java-config --set-system-classpath</c>. Here is an example:
+</p>
+
+<pre caption="Setting classpaths">
+# <i>java-config --set-system-classpath log4j,xerces-2</i>
+</pre>
+
+<note>
+The current directory (<path>.</path>) will not be part of the system
+classpath, as that should be added in your system's login profile.
+</note>
+
+<p>
+You will have to update your environment by logging out, then in again or
+sourcing <path>/etc/profile</path>.
+</p>
+
+<p>
+For users, <c>java-config --set-user-classpath</c> will create
+<path>~/.gentoo/java-env-classpath</path>, which you should then source from
+your shell's profile.
+</p>
+
+<pre caption="Sourcing user specific classpath">
+<i>if [[ -f "${HOME}/.gentoo/java-env-classpath" ]]; then
+       source ${HOME}/.gentoo/java-env-classpath
+fi</i>
+</pre>
+
+<p>
+If you really want a system wide or user default classpath you can add
+something like the following to your shell's profile. But we would advise
+against it.
+</p>
+
+<pre caption="Setting classpath">
+# <i>export CLASSPATH="${CLASSPATH}:$(java-config --classpath log4j,xerces-2)"</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Java Browser Plugins</title>
+<section>
+<title>Installing a plugin</title>
+<body>
+
+<p>
+You can install a Java plugin for your web browser by emerging a Java VM with
+the <c>nsplugin</c> USE flag set.
+</p>
+
+<note>
+<c>nsplugin</c> is not available for all architectures. Check for available
+plugins on your arch before trying to install a VM by running <c>emerge -pv
+&lt;java-vm&gt;</c>.
+</note>
+
+<p>
+Portage will allow you to install multiple versions of Java plugins, though
+only one will be used by your browser. You can check the list of available
+plugins by running:
+</p>
+
+<pre caption="Viewing available plugins">
+# <i>eselect java-nsplugin list</i>
+   [1]   sun-jre-bin-1.6
+   [2]   icedtea-bin
+</pre>
+
+<p>
+In this example, <c>sun-jre-bin</c> is selected for the browser plugin.
+</p>
+
+<pre caption="Selecting a plugin">
+# <i>eselect java-nsplugin set sun-jre-bin-1.6</i>
+</pre>
+
+<p>
+Verify that the correct plugin was selected:
+</p>
+
+<pre caption="Verifying the correct plugin">
+# <i>eselect java-nsplugin list</i>
+   [1]   sun-jre-bin-1.6  current
+   [2]   icedtea-bin
+</pre>
+
+<p>
+Java.com also provides a link to <uri
+link="http://java.com/en/download/installed.jsp">verify your installed
+plugin</uri>. Additionally, if you are using a Mozilla-based browser, you can
+verify your Java plugin by typing <c>about:plugins</c> into the address bar.
+</p>
+
+</body>
+</section>
+<section>
+<title>Plugins on multilib systems</title>
+<body>
+
+<p>
+If you are running a mixed 64-bit and 32-bit multilib system (for example, on
+AMD64), you can use 64-bit and 32-bit Java plugins. Unless you have a pressing
+need to run 32-bit Java applications, we recommend using native 64-bit plugins
+on 64-bit web browsers.
+</p>
+
+<p>
+There are several native 64-bit browser plugins available. The default JDK/JRE
+pair, <c>sun-jdk</c> and <c>sun-jre-bin</c>, both include browser plugins. Just
+emerge one of them with the <c>nsplugin</c> USE flag enabled.
+</p>
+
+<pre caption="Installing a 64-bit plugin">
+# <i>echo "dev-java/sun-jre-bin nsplugin" >> /etc/portage/package.use</i>
+# <i>emerge sun-jre-bin</i>
+</pre>
+
+<p>
+To use a 32-bit plugin on a 32-bit browser, you will need to emerge
+<c>emul-linux-x86-java</c> with the <c>nsplugin</c> USE flag enabled.
+</p>
+
+<pre caption="Installing a 32-bit plugin">
+# <i>echo "app-emulation/emul-linux-x86-java nsplugin" >> /etc/portage/package.use</i>
+# <i>emerge emul-linux-x86-java</i>
+</pre>
+
+<p>
+Next, check which plugins are available:
+</p>
+
+<pre caption="Viewing available plugins">
+# <i>eselect java-nsplugin list</i>
+Available 32-bit Java browser plugins
+  [1]   emul-linux-x86-java-1.5
+  [2]   emul-linux-x86-java-1.6
+Available 64-bit Java browser plugins
+  [1]   icedtea-bin
+  [2]   sun-jre-bin-1.6
+</pre>
+
+<p>
+Now select the right plugin for your browsers:
+</p>
+
+<pre caption="Selecting plugins">
+<comment>(Choose the plugins for 32-bit and 64-bit browsers)</comment>
+# <i>eselect java-nsplugin set 32bit emul-linux-x86-java-1.6</i>
+# <i>eselect java-nsplugin set 64bit sun-jre-bin-1.6</i>
+</pre>
+
+<p>
+Verify the correct plugin was selected:
+</p>
+
+<pre caption="Verifying the correct plugin">
+# <i>eselect java-nsplugin list</i>
+Available 32-bit Java browser plugins
+  [1]   emul-linux-x86-java-1.5
+  [2]   emul-linux-x86-java-1.6  current
+Available 64-bit Java browser plugins
+  [1]   icedtea-bin
+  [2]   sun-jre-bin-1.6  current
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>USE flags for use with Java</title>
+<section>
+<title>Setting USE flags</title>
+<body>
+
+<p>
+For more information regarding USE flags, refer to the <uri
+link="/doc/en/handbook/handbook-x86.xml?part=2&amp;chap=2">USE flags</uri>
+chapter from the Gentoo Handbook.
+</p>
+
+</body>
+</section>
+<section>
+<title>The flags</title>
+<body>
+
+<ul>
+  <li>The <b>java</b> flag adds support for Java in a variety of programs</li>
+  <li>
+    The <b>nsplugin</b> flag adds support for Mozilla-like browsers (including
+    Firefox). You will need this for viewing Java applets in your Mozilla-like
+    browser.
+  </li>
+  <li>
+    The <b>source</b> flag installs a zip of the source code of a package.
+    This is traditionally used for IDEs to 'attach' source to the libraries you
+    are using.
+  </li>
+  <li>The <b>jce</b> flag adds support for the Java Cryptography Engine</li>
+  <li>
+    For Java packages, the <b>doc</b> flag will build API documentation using
+    javadoc.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Additional resources</title>
+<section>
+<title>Off-line resources</title>
+<body>
+
+<ul>
+  <li>java-config man page</li>
+  <li><c>java-config --help</c></li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Online resources</title>
+<body>
+
+<ul>
+  <li>
+    The <uri link="http://www.gentoo.org/proj/en/java/">Java Project
+    Page</uri>
+  </li>
+  <li>
+    The <uri
+    link="http://news.gmane.org/gmane.linux.gentoo.java">gentoo-java</uri>,
+    <uri
+    link="http://news.gmane.org/gmane.linux.gentoo.user">gentoo-user</uri>, and
+    <uri
+    link="http://news.gmane.org/gmane.linux.gentoo.devel">gentoo-dev</uri>
+    mailing list archives
+  </li>
+  <li>
+    <uri link="irc://irc.gentoo.org/gentoo">#gentoo</uri> and <uri
+    link="irc://irc.gentoo.org/gentoo-java">#gentoo-java</uri> on IRC
+  </li>
+  <li>
+    <uri
+    link="http://en.wikipedia.org/wiki/Java_programming_language">Wikipedia's
+    entry for Java</uri>
+  </li>
+  <li>
+    If you have suggestions or questions regarding this document, please email
+    the Gentoo Java team: <mail>java@gentoo.org</mail>
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

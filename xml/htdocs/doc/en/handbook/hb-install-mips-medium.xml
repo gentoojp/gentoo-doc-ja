@@ -1,0 +1,1015 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-mips-medium.xml,v 1.26 2010/07/27 22:54:33 nightmorph Exp $ -->
+
+<sections>
+
+<abstract>
+You can install Gentoo in many ways. In this chapter we explain how to install
+Gentoo using the MIPS Netboot images.
+</abstract>
+
+<version>10.0</version>
+<date>2010-07-27</date>
+
+<section>
+<title>Hardware Requirements</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Before we start, we first list what hardware requirements you need to
+successfully install Gentoo on your box. 
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Hardware Requirements</title>
+<body>
+
+<table>
+<tr>
+  <th>CPU <e>(Big Endian port)</e></th>
+  <ti>MIPS3, MIPS4, MIPS5 or MIPS64-class CPU</ti>
+</tr>
+<tr>
+  <th>CPU <e>(Little Endian port)</e></th>
+  <ti>MIPS4, MIPS5 or MIPS64-class CPU</ti>
+</tr>
+<tr>
+  <th>Memory</th>
+  <ti>128 MB</ti>
+</tr>
+<tr>
+  <th>Diskspace</th>
+  <ti>3.0 GB (excluding swap space)</ti>
+</tr>
+<tr>
+  <th>Swap space</th>
+  <ti>At least 256 MB</ti>
+</tr>
+</table>
+
+<p>
+You should also check the <uri link="/doc/en/mips-requirements.xml">MIPS
+Hardware Requirements</uri> document available from our website.
+</p>
+
+</body>
+</subsection>
+</section>
+
+<section>
+<title>Installation Notes</title>
+<subsection>
+<title>A note about Processor Architectures</title>
+<body>
+
+<p>
+On many architectures, the processor has gone through several generations, each
+newer generation builds on the foundation of the previous one. MIPS is no
+exception. There are several generations of CPU covered under the MIPS
+architecture. In order to choose your netboot image stage tarball and
+<c>CFLAGS</c> appropriately, you need to be aware of which family your system's
+CPU belongs in. These families are referred to as the <b>I</b>nstruction
+<b>S</b>et <b>A</b>rchitecture.
+</p>
+
+<table>
+  <tr>
+    <th>MIPS ISA</th>
+    <th>32/64-bit</th>
+    <th>CPUs Covered</th>
+  </tr>
+  <tr>
+    <ti>MIPS 1</ti>
+    <ti>32-bit</ti>
+    <ti>
+      <uri link="http://www.linux-mips.org/wiki/index.php/R2000">R2000</uri>, 
+      <uri link="http://www.linux-mips.org/wiki/index.php/R2000">R3000</uri>
+    </ti>
+  </tr>
+  <tr>
+    <ti>MIPS 2</ti>
+    <ti>32-bit</ti>
+    <ti>
+      <uri link="http://www.linux-mips.org/wiki/index.php/R6000">R6000</uri>
+    </ti>
+  </tr>
+  <tr>
+    <ti>MIPS 3</ti>
+    <ti>64-bit</ti>
+    <ti>
+      <uri link="http://www.linux-mips.org/wiki/index.php/R4000">R4000</uri>,
+      <uri link="http://www.linux-mips.org/wiki/index.php/R4000">R4400</uri>,
+      <uri link="http://www.linux-mips.org/wiki/index.php/R4000">R4600</uri>,
+      <uri link="http://www.linux-mips.org/wiki/index.php/R4000">R4700</uri>
+    </ti>
+  </tr>
+  <tr>
+    <ti>MIPS 4</ti>
+    <ti>64-bit</ti>
+    <ti>
+      <uri link="http://www.linux-mips.org/wiki/index.php/R5000">R5000</uri>,
+      <uri link="http://www.linux-mips.org/wiki/index.php/R5000">RM5000</uri>,
+      <uri link="http://www.linux-mips.org/wiki/index.php/RM7000">RM7000</uri>
+      <uri link="http://www.linux-mips.org/wiki/index.php/R8000">R8000</uri>,
+      R9000,
+      <uri link="http://www.linux-mips.org/wiki/index.php/R10000">R10000</uri>,
+      <uri link="http://www.linux-mips.org/wiki/index.php/R10000">R12000</uri>,
+      <uri link="http://www.linux-mips.org/wiki/index.php/R10000">R14000</uri>,
+      <uri link="http://www.linux-mips.org/wiki/index.php/R10000">R16000</uri>
+    </ti>
+  </tr>
+  <tr>
+    <ti>MIPS 5</ti>
+    <ti>64-bit</ti>
+    <ti>
+      None As Yet
+    </ti>
+  </tr>
+  <tr>
+    <ti>MIPS32</ti>
+    <ti>32-bit</ti>
+    <ti>
+      AMD Alchemy series, 4kc, 4km, many others... There are a few revisions in
+      the MIPS32 ISA.
+    </ti>
+  </tr>
+  <tr>
+    <ti>MIPS64</ti>
+    <ti>64-bit</ti>
+    <ti>
+      Broadcom SiByte SB1, 5kc ... etc... There are a few revisions in the
+      MIPS64 ISA.
+    </ti>
+  </tr>
+</table>
+
+<note>
+The <c>MIPS5</c> ISA level was designed by Silicon Graphics back in 1994, but
+never actually got used in a real life CPU. It lives on as part of the
+<c>MIPS64</c> ISA.
+</note>
+
+<note>
+The <c>MIPS32</c> and <c>MIPS64</c> ISAs are a common source of confusion. The
+<c>MIPS64</c> ISA level is actually a superset of the <c>MIPS5</c> ISA, so it
+includes all instructions from <c>MIPS5</c> and earlier ISAs. <c>MIPS32</c> is
+the 32-bit subset of <c>MIPS64</c>, it exists because most applications only
+require 32-bit processing.
+</note>
+
+<p>
+Also, another important concept to grasp is the concept of <b>endianness</b>.
+Endianness refers to the way that a CPU reads words from main memory. A word
+can be read as either <e>big</e> endian (most significant byte first), or
+<e>little</e> endian (least significant byte first). Intel x86 machines are
+generally Little endian, whilst Apple and Sparc machines are Big Endian. On
+MIPS, they can be either. To separate them apart, we append <c>el</c> to the
+architecture name to denote little endian.
+</p>
+
+<table>
+  <tr>
+    <th>Architecture</th>
+    <th>32/64-bit</th>
+    <th>Endianness</th>
+    <th>Machines covered</th>
+  </tr>
+  <tr>
+    <ti><c>mips</c></ti>
+    <ti>32-bit</ti>
+    <ti>Big Endian</ti>
+    <ti>Silicon Graphics</ti>
+  </tr>
+  <tr>
+    <ti><c>mipsel</c></ti>
+    <ti>32-bit</ti>
+    <ti>Little Endian</ti>
+    <ti>Cobalt Servers</ti>
+  </tr>
+  <tr>
+    <ti><c>mips64</c></ti>
+    <ti>64-bit</ti>
+    <ti>Big Endian</ti>
+    <ti>Silicon Graphics</ti>
+  </tr>
+  <tr>
+    <ti><c>mips64el</c></ti>
+    <ti>64-bit</ti>
+    <ti>Little Endian</ti>
+    <ti>Cobalt Servers</ti>
+  </tr>
+</table>
+
+<p>
+For those willing to learn more about ISAs, the following websites may be of
+assistance.
+</p>
+
+<ul>
+  <li>
+    <uri link="http://www.linux-mips.org/wiki/index.php/Instruction_Set_Architecture">
+      Linux/MIPS Website: MIPS ISA
+    </uri>
+  </li>
+  <li>
+    <uri link="http://www.linux-mips.org/wiki/index.php/Endianess">
+      Linux/MIPS Website: Endianness  
+    </uri>
+  </li>
+  <li>
+    <uri link="http://www.linux-mips.org/wiki/index.php/Processors">
+      Linux/MIPS Website: Processors
+    </uri>
+  </li>
+  <li>
+    <uri link="http://en.wikipedia.org/wiki/Instruction_set">
+      Wikipedia: Instruction Set
+    </uri>
+  </li>
+</ul>
+
+</body>
+</subsection>
+<subsection>
+<title>The Stage3 Tarball</title>
+<body>
+
+<p>
+A stage3 tarball is an archive containing a minimal Gentoo environment,
+suitable to continue the Gentoo installation using the instructions in this
+manual. Previously, the Gentoo Handbook described the installation using one of
+three stage tarballs. While Gentoo still offers stage1 and stage2 tarballs,
+the official installation method uses the stage3 tarball. If you are interested
+in performing a Gentoo installation using a stage1 or stage2 tarball, please
+read the Gentoo FAQ on <uri link="/doc/en/faq.xml#stage12">How do I Install
+Gentoo Using a Stage1 or Stage2 Tarball?</uri>
+</p>
+
+</body>
+</subsection>
+</section>
+
+<section>
+<title>Netbooting Overview</title>
+<subsection>
+<body>
+
+<p>
+In this section, we'll cover what you need in order to successfully network
+boot a Silicon Graphics workstation or Cobalt Server appliance. This is just a
+brief guide, it is not intended to be thorough, for more information, it is
+recommended that you read the <uri link="/doc/en/diskless-howto.xml">Diskless
+HOWTO</uri>.
+</p>
+
+<p>
+What You Need: Depending on the machine, there is a certain amount of hardware
+that you'll need in order to successfully netboot and install Linux.
+</p>
+
+<ul>
+  <li>
+    In General:
+    <ul>
+      <li>DHCP/BOAMD Alchemy series, 4kc, 4km, many others... There are a few revisions in
+      the MIPS32 ISA.OTP server (ISC DHCPd recommended)</li>
+      <li>Patience -- and lots of it</li>
+    </ul>
+  </li>
+  <li>
+    For Silicon Graphics workstations:
+    <ul>
+      <li>TFTP server (tftp-hpa recommended)</li>
+      <li>
+        If you want/need to use serial console:
+        <ul>
+          <li>
+            MiniDIN8 --&gt; RS-232 serial cable (only needed for IP22 and IP28
+            systems)
+         </li>
+          <li>Null-modem cable</li>
+          <li>VT100 or ANSI compatible terminal capable of 9600 baud</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>
+    For Cobalt Servers (NOT the original Qube):
+    <ul>
+      <li>NFS server</li>
+      <li>Null-modem cable</li>
+      <li>VT100 or ANSI compatible terminal capable of 115200 baud</li>
+    </ul>
+  </li>
+</ul>
+
+<note>
+SGI machines use a MiniDIN 8 connector for the serial ports. Apparently Apple
+modem cables work just fine as serial cables, but with Apple machines being
+equipped with USB &amp; internal modems, these are getting harder to find. One
+wiring diagram is available from the <uri
+link="http://www.linux-mips.org/wiki/Serial_Cable">Linux/MIPS Wiki</uri>, and
+most electronics stores should stock the plugs required.
+</note>
+
+<note>
+For the terminal, this could be a real VT100/ANSI terminal, or it could be a PC
+running terminal emulation software (such as HyperTerminal, Minicom, seyon,
+Telex, xc, screen -- whatever your preference). It doesn't matter what platform
+this machine runs -- just so long as it has one RS-232 serial port you can use,
+and appropriate software.
+</note>
+
+<note>
+Note that this guide does NOT cover the original Qube. The original Qube server
+appliance lacks a serial port in its default configuration, and therefore it is
+not possible to install Gentoo onto it without the aid of a screwdriver and a
+surrogate machine to do the installation. The following site has a guide for
+installing Gentoo on these machines.
+<uri link="http://www.metzner.org/projects/qube/">
+http://www.metzner.org/projects/qube/</uri>
+</note>
+</body>
+</subsection>
+<subsection>
+<title>Setting up TFTP and DHCP -- a brief guide</title>
+<body>
+
+<p>
+Okay, so you've got your bits and pieces together, now to set everything up. As
+mentioned earlier -- this is not a complete guide, this is a bare-bones config
+that will just get things rolling. You can either use this when starting a
+setup from scratch, or use the suggestions to amend your existing setup to
+support netbooting.
+</p>
+
+<p>
+It is worth noting that the servers used need not be running Gentoo Linux, you
+could quite reasonably use FreeBSD or any Unix-like platform. However, this
+guide will assume you are running Gentoo Linux. You also may run TFTP/NFS on a
+separate machine to the DHCP server if desired.
+</p>
+
+<warn>
+The Gentoo/MIPS Team cannot help you with setting up other operating systems as
+netboot servers. If you choose a different OS, it is assumed you know what
+you're doing.
+</warn>
+
+<p>
+First Step -- configuring DHCP. In order for the ISC DHCP daemon to respond to
+BOOTP requests (as required by the SGI &amp; Cobalt BOOTROM) you need to first
+enable dynamic BOOTP on the address range in use; then set up an entry for each
+client with pointers to the boot image.
+</p>
+
+<pre caption="Installing ISCs DHCP">
+# <i>emerge dhcp</i>
+</pre>
+
+<p>
+Once installed you need to create the <path>/etc/dhcp/dhcpd.conf</path>. Here's
+a bare-bones config to get you started.
+</p>
+
+<pre caption="Bare Bones dhcpd.conf">
+<comment># Tell dhcpd to disable dynamic DNS.</comment>
+<comment># dhcpd will refuse to start without this.</comment>
+ddns-update-style none;
+
+<comment># Create a subnet:</comment>
+subnet <i>192.168.10.0</i> netmask <i>255.255.255.0</i> {
+  <comment># Address pool for our booting clients. Don't forget the 'dynamic-bootp' bit!</comment>
+  pool {
+    range dynamic-bootp <i>192.168.10.1 192.168.10.254</i>;
+  }
+
+  <comment># DNS servers and default gateway -- substitute as appropriate</comment>
+  option domain-name-servers <i>203.1.72.96</i>, <i>202.47.56.17</i>;
+  option routers <i>192.168.10.1</i>;
+
+  <comment># Tell the DHCP server it's authoritative for this subnet.</comment>
+  authoritative;
+
+  <comment># Allow BOOTP to be used on this subnet.</comment>
+  allow bootp;
+}
+</pre>
+
+<p>
+With that setup, one can then add any number of clients within the subnet
+clause. We will cover what you need to put in later in this guide.
+</p>
+
+<p>
+Next Step -- Setting up TFTP server. It is recommended that you use
+<c>tftp-hpa</c> as it is the only TFTP daemon known to work correctly. Proceed
+by installing it as shown below.
+</p>
+
+<pre caption="Installing tftp-hpa">
+# <i>emerge net-ftp/tftp-hpa</i>
+</pre>
+
+<p>
+This will create <path>/tftproot</path> for you to store the netboot images.
+You may move this elsewhere if you wish. For the purposes of this guide, it is
+assumed that you have left it in the default location.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Netbooting on SGI Workstations</title>
+<subsection>
+<title>Downloading a Netboot image</title>
+<body>
+
+<p>
+Depending on the system you're installing for, there are several possible
+images available for download. These are all labelled according to the system
+type and CPU they are compiled for. The machine types are as follows:
+</p>
+
+<table>
+  <tr>
+    <th>Codename</th>
+    <th>Machines</th>
+  </tr>
+  <tr>
+    <ti>IP22</ti>
+    <ti>Indy, *Indigo 2, Challenge S</ti>
+  </tr>
+  <tr>
+    <ti>IP26</ti>
+    <ti>*Indigo 2 Power</ti>
+  </tr>
+  <tr>
+    <ti>IP27</ti>
+    <ti>Origin 200, Origin 2000</ti>
+  </tr>
+  <tr>
+    <ti>IP28</ti>
+    <ti>*Indigo 2 Impact</ti>
+  </tr>
+  <tr>
+    <ti>IP30</ti>
+    <ti>Octane</ti>
+  </tr>
+  <tr>
+    <ti>IP32</ti>
+    <ti>O2</ti>
+  </tr>
+</table>
+
+<note>
+* It is a common mistake to mix up the IRIS Indigo (IP12 w/ R3000 CPU or IP20
+w/ R4000 CPU, neither of which run Linux), the Indigo 2 (IP22, which runs Linux
+fine), the R8000-based Indigo 2 Power (which doesn't run Linux at all) and the
+R10000-based Indigo 2 Impact (IP28, which is highly experimental). Please bear
+in mind that these are different machines.
+</note>
+
+<p>
+Also in the filename, r4k refers to R4000-series processors, r5k for R5000, rm5k
+for the RM5200 and r10k for R10000. You will find the images available on the
+Gentoo <uri link="/main/en/mirrors.xml">mirrors</uri>.
+</p>
+
+</body>
+</subsection>
+
+<subsection>
+<title>DHCP Configuration for an SGI Client</title>
+<body>
+
+<p>
+Once you have downloaded the file, place the decompressed image file in your
+<path>/tftproot</path> directory. (Use <c>bzip2 -d</c> to decompress) Then edit
+your <path>/etc/dhcp/dhcpd.conf</path> and add the entry for your SGI client.
+</p>
+
+<pre caption="dhcpd.conf snippet for SGI Workstation">
+subnet xxx.xxx.xxx.xxx netmask xxx.xxx.xxx.xxx {
+  <comment># ... usual stuff here ...</comment>
+
+  <comment># SGI Workstation... change 'sgi' to your SGI machine's hostname.</comment>
+  host <i>sgi</i> {
+  
+    <comment># MAC Address of SGI Machine. Normally this is written on the back</comment>
+    <comment># or base of the machine.</comment>
+    hardware ethernet <i>08:00:69:08:db:77</i>;
+
+    <comment># TFTP Server to download from (by default, same as DHCP server)</comment>
+    next-server <i>192.168.10.1</i>;
+
+    <comment># IP address to give to the SGI machine</comment>
+    fixed-address <i>192.168.10.3</i>;
+
+    <comment># Filename for the PROM to download and boot</comment>
+    filename "<i>/gentoo-r4k.img</i>";
+  }
+}
+</pre>
+</body>
+</subsection>
+
+<subsection>
+<title>Kernel Options</title>
+<body>
+<p>
+We're almost done, but there's a couple of little tweaks still to be done. Pull
+up a console with root privileges, and enter the following commands.
+</p>
+
+<pre caption="Some fixes to SGI machines to have TFTP work properly">
+<comment>(Disable "Path Maximum Transfer Unit", otherwise SGI Prom won't find the kernel)</comment>
+# <i>echo 1 &gt; /proc/sys/net/ipv4/ip_no_pmtu_disc</i>
+
+<comment>(Set the port range usable by the SGI PROM)</comment>
+# <i>echo "2048 32767" &gt; /proc/sys/net/ipv4/ip_local_port_range</i>
+</pre>
+
+<p>
+This should be sufficient to allow the Linux server to play nice with SGI's
+PROM.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Start Your Daemons...</title>
+<body>
+<p>
+At this point, you should be ready to start the daemons. Enter the following:
+</p>
+
+<pre caption="Starting the DHCP and TFTP daemons">
+# <i>/etc/init.d/dhcp start</i>
+# <i>/etc/init.d/in.tftpd start</i>
+</pre>
+
+<p>
+If nothing went wrong in that last step you should be all set to power on the
+workstation and proceed with the guide. If the DHCP server isn't firing up for
+whatever reason, try running 'dhcpd' on the command line and see what it tells
+you -- if all is well, it should just fork into the background, otherwise
+you'll see 'exiting.' just below its complaint.
+</p>
+
+<p>
+An easy way to verify if the tftp daemon is running is to type the following
+command -- if you see something like the output mentioned below -- everything
+is fine.
+</p>
+
+<pre caption="Checking TFTPd is running">
+# <i>netstat -al | grep ^udp</i>
+udp        0      0 *:bootpc                *:*
+udp        0      0 *:631                   *:*
+udp        0      0 *:xdmcp                 *:*
+udp        0      0 *:tftp                  *:* <comment>&lt;-- (look for this line)</comment>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Netbooting the SGI machine</title>
+<body>
+
+<p>
+Okay, everything is set, DHCP is running as is TFTP. Now it is time to fire up
+the SGI machine. Power the unit on -- when you see "Running power-on
+diagnostics" on the screen, either click "Stop For Maintenance" or press
+ESCAPE. You'll be presented with a menu like the following. Enter the commands
+as shown below.
+</p>
+
+<pre caption="SGI PROM Maintenance Menu">
+        Running power-on diagnostics
+
+System Maintenance Menu
+
+1) Start System
+2) Install System Software
+3) Run Diagnostics
+4) Recover System
+5) Enter Command Monitor
+
+Option? <i>5</i>
+Command Monitor. Type "exit" to return to the menu.
+&gt;&gt; <i>bootp(): root=/dev/ram0</i>
+</pre>
+
+<p>
+From this point, the machine should start downloading the image, then, roughly
+20 seconds later, start booting Linux. If all is well, you should be dropped at
+the Busybox <c>ash</c> shell as shown below, where you can move on to <uri
+link="?part=1&amp;chap=3">Configuring Your Network</uri>.
+</p>
+
+<pre caption="When things are going right...">
+init started:  BusyBox v1.00-pre10 (2004.04.27-02:55+0000) multi-call binary
+
+Gentoo Linux; http://www.gentoo.org/
+ Copyright 2001-2004 Gentoo Technologies, Inc.; Distributed under the GPL
+
+ Gentoo/MIPS Netboot for Silicon Graphics Machines
+ Build Date: April 26th, 2004
+
+ * To configure networking, do the following:
+
+ * For Static IP:
+ * /bin/net-setup &lt;IP Address&gt; &lt;Gateway Address&gt; [telnet]
+
+ * For Dynamic IP:
+ * /bin/net-setup dhcp [telnet]
+
+ * If you would like a telnetd daemon loaded as well, pass "telnet"
+ * As the final argument to /bin/net-setup.
+
+Please press Enter to activate this console.
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Troubleshooting.</title>
+<body>
+
+<p>
+If the machine is being stubborn and refusing to download its image, it can be
+one of two things, (1) you've made a blunder somewhere, or (2) it needs a
+little gentle persuasion. (No, put that sledge hammer down!) Here's a list of
+things you can check:
+</p>
+
+<ul>
+  <li>
+    <c>dhcpd</c> is giving the SGI Machine an IP Address. You should see some
+    messages about a BOOTP request in the system logs. <c>tcpdump</c> is also
+    useful here.
+  </li>
+  <li>
+    Permissions are set properly in your tftp folder (typically
+    <path>/tftproot</path> -- should be world readable)
+  </li>
+  <li>
+    Check system logs to see what the tftp server is reporting (errors perhaps)
+  </li>
+</ul>
+
+<p>
+If you've checked everything on the server, and you're getting timeouts, etc on
+the SGI machine, try typing this into the console.
+</p>
+
+<pre caption="Coaxing the SGI PROM to work">
+&gt;&gt; <i>resetenv</i>
+&gt;&gt; <i>unsetenv netaddr</i>
+&gt;&gt; <i>unsetenv dlserver</i>
+&gt;&gt; <i>init</i>
+&gt;&gt; <i>bootp(): root=/dev/ram0</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+
+<section>
+<title>Alternative Method: Gentoo/MIPS SGI LiveCD</title>
+<subsection>
+<title>Overview</title>
+<body>
+
+<p>
+On Silicon Graphics machines, it is possible to boot from a CD in order to
+install operating systems. (This is how one installs IRIX for instance)
+Recently, images for such bootable CDs to install Gentoo have been made
+possible. These CDs are designed to work in the same way.
+</p>
+
+<p>
+At the moment the Gentoo/MIPS Live CD will only work on the SGI Indy, Indigo 2
+and O2 workstations equipped with R4000 and R5000-series CPUs, however other
+platforms may be possible in future.
+</p>
+
+<p>
+You can find the Live CD images for download on your favourite Gentoo Mirror
+under the <path>experimental/mips/livecd</path> directory.
+</p>
+
+<warn>
+These CDs are highly experimental at this time. They may or may not work at this
+time. You can report success or failures either on <uri
+link="http://bugs.gentoo.org">Bugzilla</uri>, <uri
+link="http://forums.gentoo.org/viewtopic.php?t=242518">this forum thread</uri>
+or in the <c>#gentoo-mips</c> <uri link="/main/en/irc.xml">IRC channel</uri>. We
+would love to hear from you.
+</warn>
+
+</body>
+
+</subsection>
+
+<subsection>
+<title>Burning a Live CD</title>
+<body>
+
+<p>
+An important thing to note, the SGI PROM does not understand the ISO9660
+format, nor does it know anything about the El Torito boot standard. These CD
+images are constructed as a SGI disklabel with the boot image in the volume
+header like a hard drive. Therefore, care must be taken when burning the CD
+image.
+</p>
+
+<p>
+Below is an example command that assumes 24x burning speed on an IDE burner. If
+you have a SCSI burner for instance, you may want to adjust the <c>dev</c>
+statement as appropriate. Likewise with the <c>speed</c> option - if you strike
+troubles, you might want to try dropping the speed.
+</p>
+
+<pre caption="Burning using cdrecord">
+# <i>bzip2 -d mips-livecd-prototype-rc2-20041027.img.bz2</i>
+# <i>cdrecord -vv -pad speed=24 dev=ATAPI:0,0,0 -tao mips-livecd-prototype-rc2-20041027.img</i>
+</pre>
+
+<note>
+It may be possible to burn these CDs under Windows, assuming your burning
+program just blindly burns the image as is. However, no one has succeeded in
+making a working CD this way to date.
+</note>
+
+<note>
+If you don't know what to put as your <c>dev</c> argument, run <c>cdrecord
+-scanbus</c> as root - this will tell you where your burner is located.
+</note>
+
+</body>
+</subsection>
+</section>
+
+<section>
+<title>Netbooting on Cobalt Servers</title>
+<subsection>
+<title>Overview of the netboot procedure</title>
+<body>
+
+<p>
+Unlike the SGI machines, Cobalt servers use NFS to transfer their kernel for
+booting. You boot the machine by holding down the left &amp; right arrow
+buttons whilst powering the unit on. The machine will then attempt to obtain an
+IP number via BOOTP, mount the <path>/nfsroot</path> directory from the server
+via NFS, then try to download and boot the file
+<path>vmlinux_raq-2800.gz</path> (depending on the model) which it assumes to
+be a standard ELF binary.
+</p>
+
+</body>
+</subsection>
+
+<subsection>
+<title>Downloading a Netboot image</title>
+<body>
+
+<p>
+Inside
+<uri link="http://dev.gentoo.org/~redhatter/mips/cobalt/netboots/">
+http://dev.gentoo.org/~redhatter/mips/cobalt/netboots/</uri>
+you'll find the necessary boot images for getting a Cobalt up and running. The
+files you need will have the name
+<path>nfsroot-KERNEL-COLO-DATE-cobalt.tar</path> -- select the most recent one
+and unpack it to <path>/</path> as shown below:
+</p>
+
+<pre caption="Unpacking the nfsroot image">
+# <i>tar -C / -xvf nfsroot-2.6.13.4-1.19-20051122-cobalt.tar</i>
+</pre>
+
+</body>
+</subsection>
+
+<subsection>
+<title>NFS Server configuration</title>
+<body>
+
+<p>
+Since this machine uses NFS to download its image, you need to export
+<path>/nfsroot</path> on your server. If you have not already done so, you'll
+need to install the net-fs/nfs-utils package.
+</p>
+<pre caption="Installing nfs-utils">
+# <i>emerge net-fs/nfs-utils</i>
+</pre>
+
+<p>
+Once that is done, place the following in your <path>/etc/exports</path> file.
+You may set tighter restrictions if you wish.
+</p>
+
+<pre caption="Exporting the /nfsroot directory">
+/nfsroot      *(ro,sync)
+</pre>
+
+<p>
+Now, once that is done, you may start the NFS server:
+</p>
+
+<pre caption="Starting the NFS server">
+# <i>/etc/init.d/nfs start</i>
+</pre>
+
+<p>
+If the NFS server was already running at the time, you can tell it to take
+another look at its <c>exports</c> file using <c>exportfs</c>.
+</p>
+
+<pre caption="Exporting a new filesystem">
+# <i>exportfs -av</i>
+</pre>
+
+</body>
+</subsection>
+
+<subsection>
+<title>DHCP Configuration for a Cobalt machine</title>
+<body>
+
+<p>
+Now, the DHCP side of things is relatively straightforward. Add the following
+to your <path>/etc/dhcp/dhcpd.conf</path> file.
+</p>
+
+<pre caption="dhcpd.conf snippet for Cobalt server">
+subnet xxx.xxx.xxx.xxx netmask xxx.xxx.xxx.xxx {
+  <comment># ... usual stuff here ...</comment>
+
+  <comment># Configuration for a Cobalt Server</comment>
+  <comment># Set the hostname here:</comment>
+  host <i>qube</i> {
+    <comment># Path to the nfsroot directory.</comment>
+    <comment># This is mainly for when using the TFTP boot option on CoLo</comment>
+    <comment># You shouldn't need to change this.</comment>
+    option root-path "/nfsroot";
+
+    <comment># Cobalt server's ethernet MAC address</comment>
+    hardware ethernet <i>00:10:e0:00:86:3d</i>;
+
+    <comment># Server to download image from</comment>
+    next-server <i>192.168.10.1</i>;
+
+    <comment># IP address of cobalt server</comment>
+    fixed-address <i>192.168.10.2</i>;
+
+    <comment># Location of the default.colo file relative to /nfsroot</comment>
+    <comment># You shouldn't need to change this.</comment>
+    filename "default.colo";
+  }
+}
+</pre>
+
+</body>
+</subsection>
+
+<subsection>
+<title>Start Your Daemons...</title>
+<body>
+
+<p>
+At this point, you should be ready to start the daemons. Enter the following:
+</p>
+
+<pre caption="Starting the DHCP and NFS daemons">
+# <i>/etc/init.d/dhcp start</i>
+# <i>/etc/init.d/nfs start</i>
+</pre>
+
+<p>
+If nothing went wrong in that last step you should be all set to power on the
+workstation and proceed with the guide. If the DHCP server isn't firing up for
+whatever reason, try running 'dhcpd' on the command line and see what it tells
+you -- if all is well, it should just fork into the background, otherwise
+you'll see 'exiting.' just below its complaint.
+</p>
+
+</body>
+</subsection>
+
+<subsection>
+<title>Netbooting the Cobalt machine</title>
+<body>
+
+<p>
+Okay, everything is set, DHCP is running as is NFS. Now it is time to fire up
+the Cobalt machine. Hook up your null modem cable, and set the serial terminal
+to use 115200 baud, 8 bits, no parity, 1 stop bit, VT100 emulation. Once that
+is done, hold down the left &amp; right arrow buttons whilst powering the unit
+on.
+</p>
+
+<p>
+If all is well, the back panel should display "Net Booting", you should see
+some network activity, closely followed by CoLo kicking in. On the rear panel,
+scroll down the menu until you see "Network (NFS)" then press ENTER. You should
+notice the machine starts booting on the serial console.
+</p>
+
+<pre caption="Booting the kernel">
+elf: 80080000 &lt;-- 00001000 6586368t + 192624t
+elf: entry 80328040
+net: interface down
+CPU revision is: 000028a0
+FPU revision is: 000028a0
+Primary instruction cache 32kB, physically tagged, 2-way, linesize 32 bytes.
+Primary data cache 32kB 2-way, linesize 32 bytes.
+Linux version 2.4.26-mipscvs-20040415 (root@khazad-dum) (gcc version 3.3.3...
+Determined physical RAM map:
+ memory: 08000000 @ 00000000 (usable)
+Initial ramdisk at: 0x80392000 (3366912 bytes)
+On node 0 totalpages: 32768
+zone(0): 32768 pages.
+zone(1): 0 pages.
+zone(2): 0 pages.
+Kernel command line: console=ttyS0,115200 root=/dev/ram0
+Calibrating delay loop... 249.85 BogoMIPS
+Memory: 122512k/131072k available (2708k kernel code, 8560k reserved, 3424k dat)
+</pre>
+
+<p>
+If all is well, you should be dropped at the Busybox <c>ash</c> shell as shown
+below, where you can go onto <uri link="?part=1&amp;chap=3">Configuring Your
+Network</uri>.
+</p>
+
+<pre caption="When things are going right...">
+VFS: Mounted root (ext2 filesystem) readonly.
+Freeing unused kernel memory: 280k freed
+init started:  BusyBox v1.00-pre10 (2004.04.27-02:55+0000) multi-call binary
+
+Gentoo Linux; http://www.gentoo.org/
+ Copyright 2001-2004 Gentoo Technologies, Inc.; Distributed under the GPL
+
+ Gentoo/MIPS Netboot for Cobalt Microserver Machines
+ Build Date: April 26th, 2004
+
+ * To configure networking, do the following:
+
+ * For Static IP:
+ * /bin/net-setup &lt;IP Address&gt; &lt;Gateway Address&gt; [telnet]
+
+ * For Dynamic IP:
+ * /bin/net-setup dhcp [telnet]
+
+ * If you would like a telnetd daemon loaded as well, pass "telnet"
+ * As the final argument to /bin/net-setup.
+
+Please press Enter to activate this console.
+</pre>
+
+</body>
+</subsection>
+
+<subsection>
+<title>Troubleshooting.</title>
+<body>
+
+<p>
+If the machine is being stubborn and refusing to download its image, it can be
+one of two things, (1) you've made a blunder somewhere, or (2) it needs a
+little gentle persuasion. (No, put that sledge hammer down!) Here's a list of
+things you can check:
+</p>
+
+<ul>
+  <li>
+    <c>dhcpd</c> is giving the Cobalt Machine an IP Address. You should see some
+    messages about a BOOTP request in the system logs. <c>tcpdump</c> is also
+    useful here.
+  </li>
+  <li>
+    Permissions are set properly in your <path>/nfsroot</path> folder. (should
+    be world readable)
+  </li>
+  <li>
+    Make sure the NFS server is running and exporting the <path>/nfsroot</path>
+    directory. Check this using <c>exportfs -v</c> on the server.
+  </li>
+</ul>
+</body>
+</subsection>
+</section>
+
+</sections>

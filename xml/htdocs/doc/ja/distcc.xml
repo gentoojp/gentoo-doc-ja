@@ -1,0 +1,389 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/distcc.xml,v 1.11 2009/09/14 13:51:40 shindo Exp $ -->
+
+<guide link="/doc/ja/distcc.xml" lang="ja">
+
+<title>Gentoo distcc ドキュメント</title>
+
+<author title="Author">
+  <mail link="lisa@gentoo.org">Lisa Seelye</mail>
+</author>
+<author title="Editor">
+  <mail link="vapier@gentoo.org">Mike Frysinger</mail>
+</author>
+<author title="Editor">
+  <mail link="erwin@gentoo.org">Erwin</mail>
+</author>
+<author title="Editor">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Editor">
+  <mail link="pylon@gentoo.org">Lars Weiler</mail>
+</author>
+<author title="Reviewer">
+  <mail link="blubber@gentoo.org">Tiemo Kieft</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+
+<abstract>
+このドキュメントではGentooでのdistccの使い方を説明します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.22</version>
+<date>2009-06-14</date>
+
+<!-- Original revision: 1.43 -->
+
+<chapter>
+<title>はじめに</title>
+<section>
+<title>distccとは？</title>
+<body>
+
+<p>
+distccとはコンパイル作業をネットワークに参加しているホストに分散させるプログラムです。
+それはサーバである <c>distccd</c>と、クライアントの<c>distcc</c>から成ります。distccは<uri link="http://ccache.samba.org">ccache</uri>、Portage、そしてAutomakeと透過的に動作することができます。
+</p>
+
+</body>
+</section>
+<section>
+<title>ditccをブートストラップに使う</title>
+<body>
+
+<p>
+もしあなたがdistccをGentooのインストールに使用しようと思っている場合は、このドキュメントの下にある<uri link="#bootstrapping">distccをブートストラップに使う</uri>を読んでください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>セットアップ</title>
+<section>
+<title>依存関係</title>
+<body>
+
+<p>
+distccを使うには、ネットワーク上の全てのコンピュータのGCCが同じバージョンで無ければなりません。
+例えば、3.3.xを混ぜるのは大丈夫ですが、3.3.xと3.2.xを混ぜると、あなたのプログラムは<b>コンパイルエラーやランタイムエラーを起こす</b>でしょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>distccのインストール</title>
+<body>
+
+<p>
+distccのインストールを始める前に意識しているべきオプションがいくつかあります。
+</p>
+
+<p>
+distccはコンピュータが送信したコンパイルタスクを監視するグラフィカルモニターを提供します。
+もしGnomeを使っているのならUSEフラグに'gnome'を追加してください。しかし、Gnomeを使っていないがモニターを利用したいときはUSEフラグに'gtk'を追加してください。
+</p>
+
+<pre caption="distccのインストール">
+# <i>emerge distcc</i>
+</pre>
+
+<impo>
+関係するマシン全てにdistccをインストールしなければならないことを忘れないでください。
+</impo>
+
+</body>
+</section>
+<section>
+<title>distccを使うようにPortageを設定する</title>
+<body>
+
+<p>
+Portageがdistccを使うように設定することは簡単です。
+分散コンパイルに参加するシステムごとに次のステップを実行します。
+</p>
+
+<pre caption="distccとPortageの統合">
+# <i>emerge distcc</i>
+# <i>nano -w /etc/make.conf</i>
+<comment>(Nにはここの設定に適した数値を入力してください)</comment>
+<comment>(一般的にはCPUの合計数+1の二倍をNに設定します)</comment>
+MAKEOPTS="-jN"
+<comment>(FEATURESにdistccを追加します)</comment>
+FEATURES="distcc"
+</pre>
+
+</body>
+</section>
+<section>
+<title>参加するホストを指定</title>
+<body>
+
+<p>
+<c>distcc-config</c>コマンドを使ってホストのリストを設定してください。
+これは、あなたのリストにあるかもしれないホストの例です。
+</p>
+
+<pre caption="ホスト定義の例">
+192.168.0.1          192.168.0.2                       192.168.0.3
+192.168.0.1/2        192.168.0.2                       192.168.0.3/10
+192.168.0.1:4000/2   192.168.0.2/1                     192.168.0.3:3632/4
+@192.168.0.1         @192.168.0.2:/usr/bin/distccd     192.168.0.3
+<comment>(ホストの設定にはいくつもの他の方法があります。詳しくはdistccのmanpageをご覧ください。)</comment>
+<comment>ローカルマシンでコンパイルしたいのなら、ホストリストに'localhost'を追加します。
+逆に、ローカルマシンでコンパイルを行いたくないのであれば(こちらが良くある場合です)、ホストリストから省きます。
+遅いマシンでlocalhostを使用するととても遅くなります。
+パフォーマンスのため、設定をテストするようにしてください。</comment>
+</pre>
+
+<p>
+それはすべて複雑に見えるかもしれませんが、ほとんどの場合、1行目または2行目を元に修正すれば動作するでしょう。
+</p>
+
+<p>
+ほとんどの人は3、4行目を使わないので、SSHを通してdistccを使う方法も含まれた、詳しい情報（man distcc)を<uri link="http://distcc.samba.org/man/distcc_1.html">紹介</uri>しておきます。
+</p>
+
+<p>
+例えば、上記例の最初の行を設定するには以下のようにします。
+</p>
+
+<pre caption="ホスト設定のコマンド例">
+# <i>/usr/bin/distcc-config --set-hosts "192.168.0.1 192.168.0.2 192.168.0.3"</i>
+</pre>
+
+<p>
+必要に応じて<path>/etc/conf.d/distccd</path>を編集し、あなたが信頼したホストのみを許可するために<c>--allow</c>指示を設定してください。
+(ルータ用)追加セキュリティのために、<c>--listen</c>指示を利用して、DistccデーモンにどのIPを受信待機するか指定するべきです。
+より多くの情報は<uri link="http://distcc.samba.org/security.html">Distcc Security Design</uri>を参照してください。
+</p>
+
+<impo>
+--allowと--listenを使うことが重要です。詳しくはdistccdのマニュアルか上記セキュリティドキュメントを参照してください。
+</impo>
+
+<p>
+では、全ての参加しているコンピュータでdistccデーモンを起動させましょう。
+</p>
+
+<pre caption="distccデーモンの起動">
+<comment>(distccdをデフォルト実行レベルに追加)</comment>
+# <i>rc-update add distccd default</i>
+<comment>(distccデーモンの起動)</comment>
+# <i>/etc/init.d/distccd start</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Automakeと共に実行するようにdistccを設定</title>
+<body>
+
+<p>
+これはPortageの設定よりも簡単です。
+あなたがすべきことは、<c>PATH</c>変数に<path>/usr/lib/distcc/bin</path>を<c>gcc</c>を含むディレクトリ(<path>/usr/bin</path>)の前に含むように更新します。
+しかし、警告があります。もしあなたがccacheを使用しているなら、ccacheの後にdistccを置いてください。
+</p>
+
+<pre caption="パスを設定する">
+# <i>export PATH="/usr/lib/ccache/bin:/usr/lib/distcc/bin:${PATH}"</i>
+<comment>（ログイン時にPATHが設定されるように、.bashrcかそれと同等のファイルにこれを記述することが出来ます。）</comment>
+</pre>
+
+<p>
+そして、通常<c>make</c>と入力するのと同様に、<c>make -jN</c>(Nは整数)と入力することになります。
+Nの数値はあなたのネットワークとコンパイルに使うコンピュータのタイプに左右されます。
+あなた自身の設定をテストして最高のパフォーマンスを得る数値を探してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>クロスコンパイリング</title>
+<section>
+<body>
+
+<p>
+クロスコンパイリングはあるアーキテクチャで他のアーキテクチャ用にプログラムをビルドするために使います。
+これは、例えばAthlon(i686)でK6-2(i586)用のプログラムをビルドしたり、Sparcでppc用のプログラムをビルドするために使います。これについては、<uri link="/doc/en/cross-compiling-distcc.xml">DistCC Cross-compiling Guide</uri><uri link="/doc/ja/cross-compiling-distcc.xml">(日本語訳)</uri>に記載されています。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="bootstrapping">
+<title>distccをブートストラップに使う</title>
+<section>
+<title>Step 1: Portageの設定 </title>
+<body>
+<!-- 
+Note that this will need to become a link to the old 2005.1 networked handbooks
+once the 2006.0 handbooks are released. Until then, the link can stay.
+-->
+<p>
+新しいコンピュータをGentoo Linux LiveCDで起動し、<uri link="/doc/en/handbook/handbook-x86.xml?part=1">installation instructions</uri><uri link="/doc/ja/handbook/handbook-x86.xml?part=1">(日本語訳)</uri>に従ってブートストラップの部分まで進めてください。
+(ブートストラップに関するより詳しい情報は<uri link="/doc/en/faq.xml#stage12">Gentoo FAQ</uri><uri link="/doc/ja/faq.xml">(日本語訳)</uri>を参照してください)
+その後distccを使うようにPortageを設定します。
+</p>
+
+<pre caption="予備設定">
+# <i>nano -w /etc/make.conf</i>
+<comment>(FEATURESにdistccを追加する)</comment>
+FEATURES="distcc"
+<comment>(-jN(NはCPUの合計数+1の二倍)を含むようにMAKEOPTSを修正する)</comment>
+MAKEOPTS="-jN"
+</pre>
+
+<pre caption="パスの設定">
+# <i>export PATH="/usr/lib/ccache/bin:/usr/lib/distcc/bin:${PATH}"</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Step 2: distccのインストール</title>
+<body>
+
+<p>
+distccをインストールします。
+</p>
+
+<pre caption="distccをコンピュータにインストール">
+# <i>USE='-*' emerge --nodeps sys-devel/distcc</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Step 3: distccの設定</title>
+<body>
+
+<p>
+<c>distcc-config --install</c>を起動してdistccを設定します。
+</p>
+
+<pre caption="distccの最終設定">
+<comment>(host1, host2, ...は参加しているホストのIPアドレスに置き換える)</comment>
+# <i>/usr/bin/distcc-config --set-hosts "localhost host1 host2 host3 ..."</i>
+<comment>例: <i>/usr/bin/distcc-config --set-hosts "localhost 192.168.0.4 192.168.0.6"</i></comment>
+</pre>	
+
+<p>
+これでdistccがブートストラップ用に設定されました！
+公式のインストールの説明に沿って続けてください。
+ただし、<c>emerge system</c>の後にもう一度distccをemergeすることを<e>忘れないでください</e>。
+これはあなたの望む依存関係を正しくインストールするためです。
+</p>
+
+<note>
+ブートストラップと<c>emerge system</c>の間distccが使われないかもしれません。
+これは恐らく、いくつかのebuildはdistccとはうまく動作しないため、意図的に使用しないようにしているためです。
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>トラブルシューティング</title>
+<section>
+<title>Distccを使ってはいけないいくつかのパッケージ</title>
+<body>
+
+<p>
+様々なパッケージをemergeしていると、いくつかが配布されない(そして並列ビルドが行われない)ことに気付くでしょう。
+これはパッケージのMakefileが並列ビルドをサポートしていなかったり、
+ebuild開発者が既知の問題のため意図的に使用しないようにしているためです
+</p>
+
+<p>
+時々distccがパッケージのコンパイルに失敗するかもしれません。
+もし起こった場合には、私たちに<uri link="http://bugs.gentoo.org">報告</uri>してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>GCCバージョンの混在</title>
+<body>
+
+<p>
+もしホストで異なったバージョンのGCCを使用していると、とても奇妙な問題を起こすでしょう。解決するには全てのホストが同じバージョンのGCCを使用するようにしなければなりません。
+</p>
+
+<p>
+最近のPortageの更新で、<c>gcc</c>の代わりに<c>${CHOST}-gcc</c>を使用するようになりました。
+これは、i686マシンとその他(i386、i586)を混在させると問題が起こると言うことを意味しています。
+この回避策は、たぶん<c>export CC='gcc' CXX='c++'</c>を実行するか、それを<path>/etc/make.conf</path>に追加することです。
+</p>
+
+<impo>
+これを行うとPortageの振る舞いのいくつかを再定義し、将来おかしな事が起こるかもしれません。
+CHOSTを混合させるときのみ行ってください。
+</impo>
+
+</body>
+</section>
+<section>
+<title>-march=native</title>
+<body>
+
+<p>
+GCC 4.3.0で始める場合、コンパイラは、GCCが動作するプロセッサ上で有効であるときに有益なCPU自動認識と最適化を実行する<c>--march=native</c>スイッチをサポートしています。。これは、（AMD AthronとIntel Peniumのような）ことなるプロセッサに対して最適化されたコードの混在がありえる場合、<c>distcc</c>では問題になります。<c>distcc</c>でコンパイルを行う場合、<c>CFLAGS</c>や<c>CXXFLAGS</c>のなかで<c>-march=native</c>または<c>-mtune=naative</c>を<e>使わない</e>でください。
+</p>
+
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>distccその他</title>
+<section>
+<title>distccモニター</title>
+<body>
+
+<p>
+distccは２つのモニターを提供します。テキストベースのものは常にビルドされ、<c>distccmon-text</c>と呼ばれています。初めてそれを実行する時は少し混乱するかもしれませんが、それを使用することは実際にはとても容易です。
+もし引数なしで実行すれば一度だけ起動します。しかし、数字を渡してやればあなたが与えた数字秒ごとに更新します。
+</p>
+
+<p>
+他のモニターは<c>USE</c>フラグで<c>gtk</c>か<c>gnome</c>を有効にしているときにのみ現れます。
+これはGTK+ベースで、X環境で実行されとてもすばらしいです。
+GentooではGUIモニタは混乱を避けるために<c>distccmon-gui</c>と呼ばれています。
+<c>distccmon-gnome</c>と言われているかもしれません。
+</p>
+
+<pre caption="モニターを起動させる">
+# <i>distccmon-text N</i>
+<comment>(もしくは)</comment>
+# <i>distccmon-gui</i>
+<comment>Portageのdistccの処理を監視するにはこうします:</comment>
+# <i>DISTCC_DIR="/var/tmp/portage/.distcc/" distccmon-text N</i>
+<comment>(もしくは)</comment>
+# <i>DISTCC_DIR="/var/tmp/portage/.distcc/" distccmon-gui</i>
+</pre>
+
+<impo>
+もしdistccのディレクトリが別の所にあるのなら、DISTCC_DIR変数を正しく修正してください。
+</impo>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,722 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/grub-error-guide.xml,v 1.5 2011/09/19 11:07:02 shindo Exp $ -->
+
+<guide link="/doc/ja/grub-error-guide.xml" lang="ja">
+<title>Gentoo GRUBエラー集</title>
+<author title="Thread Reviewer">Hartwig Brandl</author>
+<author title="Editor">
+<mail link="deathwing00@gentoo.org">Ioannis Aslanidis</mail>
+</author>
+	<author title="Editor">
+<mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="翻訳">
+  <mail link="ikeda@cs.comp.kyutech.ac.jp">池田 健吾</mail>
+</author>
+
+<abstract>
+このエラー集の目的は、人々が直面するGRUBの問題やエラーを一覧にすることです。
+これらの解決法はすべて、Gentoo Forumの多くの利用者の協力によって得られました。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.9</version>
+<date>2008-01-13</date>
+<!-- Original revision: 1.16 -->
+<chapter>
+<title>まえがき</title>
+
+<section>
+<title>謝辞</title>
+<body>
+
+<p>
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=18420">Earthwings</uri>、
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=39305">penetrode</uri>、
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=41638">loyaltonone</uri>、
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=4980">pilla</uri>、
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=3139">airhead</uri>、
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=13816">nephros</uri>、
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=25859">yamakawa</uri>
+，そして<uri link="http://forums.gentoo.org/viewtopic.php?t=122656">本スレッド</uri>で提案してくださった他のすべての方々に深く感謝いたします。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>免責</title>
+<body>
+
+<p>
+この文書に掲載している例は、あくまで例です。
+必ず、あなたのシステムの構成に合わせてパーティション番号を変えてください。
+この文書に掲載されている解決法をとる際は自己責任でお願いします。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GRUB loading, please wait...</title>
+<section>
+<title>状況</title>
+<body>
+
+<pre caption="GRUBの出力">
+GRUB loading stage 1.5
+GRUB loading, please wait...
+</pre>
+
+<p>
+このメッセージの後、システムが停止します。
+GRUBフロッピーを使ってシステムをブートした場合には、この問題は起こりません。
+</p>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=3134">The_Bell</uri>によると
+BIOSでのブート順を変えるとよいそうです。
+</p>
+
+<p>
+フロッピーを一番目にブートしないようにBIOSを設定します。
+</p>
+
+<p>
+また、<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=39305">penetrode</uri>は、
+CFLAGSの設定が悪い可能性もあると書きました。
+現在のGRUBのebuildでは、<c>-fstack-protector</c>を取り除いていますが、
+とにかく、不要なものが無いCFLAGSでgrubを再コンパイルすれば問題はありません。
+</p>
+
+<pre caption="適切なCFLAGSをGRUBの再構築に使用する">
+# <i>CFLAGS="-O2 -march=i686 -fomit-frame-pointer -pipe" emerge grub</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GRUB Error 12</title>
+<section>
+<title>状況</title>
+<body>
+
+<pre caption="GRUBの出力">
+12 : Invalid device requested.
+</pre>
+
+<p>
+デバイス文字列の構文は正しいけれども、
+正しくないことが原因としか思えないようなエラーが起こった場合にこのエラーが返されます。
+</p>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+対話型コマンドを使ってブートレコードへgrubをインストールした際に、
+grubプロンプトで以下の二行を実行したでしょうか？
+</p>
+
+<pre caption="対話型インストールコマンド">
+grub&gt; <i>root (hd0,0)</i>
+grub&gt; <i>setup (hd0)</i>
+</pre>
+
+<p>
+(hd0,0)をあなたのbootパーティションに置き換え、
+(hd0)をあなたの選んだHDDに置き換えなければいけません。
+(hd0)とすると、プライマリのマスタに接続している一番目のハードディスクのマスターブートレコードにブートローダをインストールすることをお忘れなく。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GRUB Error 15</title>
+<section>
+<title>状況</title>
+<body>
+
+<p>
+このエラーは、初期設定（マスターブートレコードへのGRUBのインストール）の段階、
+あるいはシステムをブートしてLinux（もしくは他のエントリ）を起動しようとした段階という、
+GRUB設定での異なる二つの段階で起こる可能性があります。
+</p>
+
+<pre caption="GRUBの出力 - 初期設定">
+grub&gt; <i>root (hd0,0)</i>
+ Filesystem type is xfs, partition type 0x83
+
+grub&gt; <i>setup (hd0)</i>
+ Checking if "/boot/grub/stage1" exists... no
+ Checking if "/grub/stage1" exists... no
+
+Error 15: File not found
+</pre>
+
+<pre caption="GRUB Output - エントリのブート">
+Booting 'gentoo Linux'
+
+root (hd0,0)
+Filesystem type is ext2fs, partition type 0x83
+kernel (hd0,0)/boot/kernel-2.4.20 root=/dev/hda3 vga=792
+
+Error 15: File not found
+Press any key to continue...
+</pre>
+
+</body>
+</section>
+<section>
+<title>解決法 - 初期設定</title>
+<body>
+
+<p>
+特定のファイル名は発見できないけども、
+（ディスクやパーティション情報のような）他のすべての情報はうまくいくときにこのエラーが返されます。
+</p>
+
+<p>
+このエラーは、カーネルのイメージファイルが見当たらないことを表していることがよくあります。
+参照しているファイルがbootパーティションにあるかを確認してください。
+</p>
+
+<p>
+カーネルの正確な名前を調べるためには、
+インストールCDからブートし、
+(もしあれば)bootパーティションあるいはルートパーティションをマウントしてください。
+そしてGentooシステムへchrootし、どんなカーネルイメージが利用できるかを見るために、利用可能なファイルを一覧表示してください。
+</p>
+
+<pre caption="カーネルイメージの存在を確認する">
+# <i>cd /boot</i>
+# <i>ls</i>
+</pre>
+
+<p>
+これで、bootパーティションに置いているすべてのカーネルが一覧表示されるでしょう。
+カーネルが見当たらないなら、(<c>genkernel</c>あるいは手動で)カーネルをコンパイルしたかを確認してください。
+</p>
+
+<pre caption="カーネルの再コンパイル">
+# <i>cd /usr/src/linux/</i>
+# <i>make menuconfig</i>
+# <i>make</i>
+</pre>
+
+<p>
+そして、できたカーネルをbootパーティションにコピーしてください。
+</p>
+
+<pre caption="カーネルのコピー">
+# <i>cp /usr/src/linux/arch/i386/boot/bzImage /boot</i>
+</pre>
+
+<p>
+カーネルの名前が、<path>grub.conf</path>ファイルに記述しているカーネルの名前と同じであることを確認してください。
+また、<path>grub.conf</path>ファイルの<c>kernel</c>の行が、
+カーネルイメージのあるパーティションを(明示的もしくは暗黙に)参照しているかも確認してください。
+</p>
+
+<p>
+他に、カーネルあるいはgrubが記録されているディスクをBIOSが無視しているというミスも報告されています。また、grubのステージファイルが保存されているパーティションを、ソフトウェアRAIDのRAID-5(またはストライピング技術)に設定すべきではありません。
+</p>
+
+</body>
+</section>
+<section>
+<title>解決法 - エントリのブート</title>
+<body>
+
+<p>
+まず、あなたが記述した<c>root</c>と<c>setup</c>の行が正しいことを確認しましょう。
+</p>
+
+<p>
+間違いなく正しいなら、あなたは不具合のあるバージョンのGRUB(0.93.20031222)を利用している<e>かもしれません</e>。 
+Portageツリーを更新するか、このバージョンのgrubをマスクしてください。
+</p>
+
+<pre caption="GRUBをマスクする">
+<comment>(chroot環境内でこれを実行してください)</comment>
+# <i>echo "=sys-boot/grub-0.93.20031222" &gt;&gt; /etc/portage/package.mask</i>
+# <i>emerge grub -p</i>
+</pre>
+
+<p>
+GRUBの作者が薦める<c>grub-install</c>を利用することもできます。
+</p>
+
+<pre caption="grub-installの使用">
+<comment>(bootパーティションを分割して使用している場合は--root-directoryが必要ですが、
+それ以外の場合は省略するべきです)</comment>
+# <i>grub-install --root-directory=/boot /dev/hda</i>
+</pre>
+
+<p>
+これら全てが失敗したときは、bootパーティションが壊れている可能性があります。
+パーティションのエラーを検査してください。
+</p>
+
+<pre caption="パーティションのエラー検査">
+<comment>(この場合、bootパーティションである/dev/hda1をアンマウントしてから検査してください)</comment>
+# <i>fsck -y /dev/hda1</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GRUB Error 17</title>
+<section>
+<title>状況</title>
+<body>
+
+<pre caption="GRUBの出力">
+root (hd0,0)
+filesystem type unknown partition type 0x7
+
+Error 17 : Cannot mount selected partition
+</pre>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+要求されたパーティションは存在していますが、
+ファイルシステムの種類をGRUBが理解できない場合にこのエラーが返されます。
+</p>
+
+<p>
+grub.conf内のroot(x,y)の設定を必ず確認してください。
+</p>
+
+<p>
+また、Windowsを起動しようとする場合、<path>grub.conf</path>ファイルに、
+<c>root (hdX,Y)</c>(あるいは<c>rootnoverify (hdX,Y)</c>)と<c>chainloader (hdX,Y)+1</c>が記述されているか確認してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GRUB Error 18</title>
+<section>
+<title>状況</title>
+<body>
+
+<pre caption="GRUBの出力">
+kernel (hd1,4)/bzImage root=/dev/hdb7
+
+Error 18: Selected cylinder exceeds max supported by BIOS
+</pre>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+BIOSの変換領域の限界まで線形ブロックアドレスで読もうとする際にこのエラーが返されます。
+BIOSが管理可能な容量（古い(E)IDEディスクでは512MB、一般的なものでは8GB以上の壁があります）よりディスク容量が大きい場合に起こるのが一般的です。
+</p>
+
+<p>
+BIOSを更新するか（もしくはそれとともに）、
+bootパーティションを先頭へ（あるいは少なくとも適切な範囲で）移動してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GRUB GRUB GRUB GRUB GRUB ...</title>
+<section>
+<title>状況</title>
+<body>
+
+<pre caption="GRUBの出力">
+GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB
+  GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB GRUB
+...
+</pre>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+<uri link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=3139">airhead</uri>によると、
+BIOSにディスクを自動検出させることで問題が起こるようです。
+BIOSの項目(訳注：Type項目)をUser Type HDDに設定してみましょう。
+</p>
+
+<p>
+また、GRUBをMBRにインストールしてあって、GRUBを再インストールしようとしたが(例えば、ハードディスクを換えるため)、<c>setup</c>や<c>root</c>コマンドを間違って使ったことが原因かもしれません。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Probing devices to guess BIOS drives. This may take a long time.</title>
+<section>
+<title>状況</title>
+<body>
+
+<p>
+grubをインストールしている際、次の行を表示した後にハングします。
+</p>
+
+<pre caption="GRUBの出力">
+# <i>grub</i>
+
+Probing devices to guess BIOS drives. This may take a long time.
+</pre>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+一本のケーブル上にUltra DMAディスクと非Ultra DMAディスクが接続されているといった、ディスクデバイスの特異な設定が原因だったという報告があります。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GRUBのインストールを開始するとすぐハングする</title>
+<section>
+<title>状況</title>
+<body>
+
+<p>
+grubのインストールを開始するとハングします。
+</p>
+
+<pre caption="GRUBの出力">
+# <i>grub</i>
+<comment>(この段階でインストールが停止します)</comment>
+</pre>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+フロッピードライブを持っていない場合に、--no-floppyスイッチを使っていますか？
+</p>
+
+<pre caption="--no-floppyスイッチを使ってgrubをインストール">
+# <i>grub --no-floppy</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Uncompressing Linux... Ok, booting the kernel.</title>
+<section>
+<title>状況</title>
+<body>
+
+<p>
+次の行を表示してシステムがハングします
+</p>
+
+<pre caption="Linuxの出力">
+Uncompressing Linux... Ok, booting the kernel.
+</pre>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+厳密に言うと、これはGRUBのエラーではありません。
+ACPIが、カーネルで有効になっているのに正常に動作していないことが一つの原因です。
+BIOSかカーネルでACPIを無効にしてみてください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GRUBがGRUBプロンプトをすぐ表示する</title>
+<section>
+<title>状況</title>
+<body>
+
+<p>
+システムをブートしているとき、
+<path>grub.conf</path>ファイルで定義したエントリのリストではなく、
+grubのプロンプトが表示されます。
+</p>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+bootパーティションをマウントし、<path>grub/grub.conf</path>ファイルが存在するかを確認してください。
+</p>
+
+<pre caption="bootパーティションのマウントとgrub.confの存在を確認する">
+# <i>mount /dev/hda1 /mnt/gentoo/boot</i>
+# <i>cat /mnt/gentoo/boot/grub/grub.conf</i>
+</pre>
+
+<p>
+また、<path>menu.lst</path>シンボリックリンクの存在も確認してください。
+</p>
+
+<pre caption="シンボリックリンクの確認">
+# <i>ls -l /mnt/gentoo/boot/grub/menu.lst</i>
+lrwxrwxrwx  1 root root 9 Mar  7 14:00 /mnt/gentoo/boot/grub/menu.lst -> grub.conf
+</pre>
+
+<p>
+これが原因でないなら、シンボリックリンクを再作成してください。
+</p>
+
+<pre caption="menu.lstのシンボリックリンクを再作成">
+# <i>cd /mnt/gentoo/boot/grub</i>
+# <i>ln -snf grub.conf menu.lst</i>
+</pre>
+
+<p>
+これも原因でなければ、grubを再インストールしてください。
+</p>
+
+<pre caption="GRUBの再インストール">
+<comment>(chroot環境内で実行してください)</comment>
+# <i>grub-install --root-directory=/boot /dev/hda</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Could not find device for /boot/boot: not found or not a block device</title>
+<section>
+<title>状況</title>
+<body>
+
+<p>
+<c>grub-install</c>を実行してGRUBをインストールしているときに、
+次のエラーを受け取ります。
+</p>
+
+<pre caption="GRUBの出力">
+# <i>grub-install --root-directory=/boot /dev/hda</i>
+Could not find device for /boot/boot: not found or not a block device
+</pre>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+mtabファイルを忘れずに更新してください。
+</p>
+
+<pre caption="mtabファイルの更新">
+# <i>grep -v rootfs /proc/mounts > /etc/mtab</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GRUBメニューでリターンを押した後、システムが再起動する</title>
+<section>
+<title>状況</title>
+<body>
+
+<p>
+システムのブート時にGRUBメニューでリターンキーを押した後、システムが再起動します。
+</p>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+カーネルで、フレームバッファのサポートを無効にしてください。
+これでも駄目なら、APMやACPIを無効にしてください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GRUBメニューでリターンを押した後、画面が真っ暗になる</title>
+<section>
+<title>状況</title>
+<body>
+
+<p>
+システムのブート時にGRUBメニューでリターンを押した後、画面が真っ暗になります。
+ただし、システムの反応はあります（例えば、numlockのLEDを切り替えることができます）。
+</p>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+フレームバッファを無効にして（通常、<path>grub.conf</path>から<c>vga=XYZ</c>を削除します）、
+カーネル設定のプロセッサ・アーキテクチャを確認します。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GRUBイメージが見つからない</title>
+<section>
+<title>状況</title>
+<body>
+
+<p>
+システムのブート時に、Gentooのカッコいいsplashscreenが見えません。
+</p>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+何よりもまず、
+<path>grub.conf</path>で参照しているsplashscreenファイルが本当に存在するのかを確認してください。
+存在した場合、grubのebuildを確認してください。
+おそらく、あなたが使っているバージョンで、splashイメージ用のパッチがコメントアウトされているでしょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>二番目のハードディスクドライブからのWindowsのブートに失敗する</title>
+<section>
+<title>状況</title>
+<body>
+
+<p>
+Windowsのエントリを選択した後、特にはっきりとした理由もなしにシステムがブートを拒否します。
+</p>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+<uri
+link="http://forums.gentoo.org/profile.php?mode=viewprofile&amp;u=14595">cyrillic</uri>は、
+<path>grub.conf</path>のWindowsのエントリを以下のように変えることで異なる順序でディスクを
+"map"できることを教えてくれました。
+</p>
+
+<pre caption="Mapping disks">
+title Windows XP
+  map (hd0) (hd1)
+  map (hd1) (hd0)
+  chainloader (hd1,0)+1
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GRUBのインストール時に、セグメンテーション違反が起こる</title>
+<section>
+<title>状況</title>
+<body>
+
+<p>
+下に記述されている状況は、grub-0.95.xでブートセクタにgrubをインストールする場合のみ関連します。
+</p>
+
+<pre caption="GRUBのインストール">
+grub&gt; root (hd0,0)
+
+grub&gt; setup (hd0)
+
+Segmentation fault
+</pre>
+
+</body>
+</section>
+<section>
+<title>解決法</title>
+<body>
+
+<p>
+この問題に関連したバグは発見され、grub 0.96で修正されました。
+また、grub 0.94 r1やgrub 0.94 r2では正常に動作することもわかっています。
+これを踏まえても動かなかった場合、
+現在のamd64のstableやx86のunstable(~x86)であるgrub-staticをemergeしてみることができます。
+バグ<uri link="http://bugs.gentoo.org/show_bug.cgi?id=79378">#79378</uri> へ追加情報をチェックアウトしてください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

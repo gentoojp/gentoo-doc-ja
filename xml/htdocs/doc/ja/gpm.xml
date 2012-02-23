@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/gpm.xml,v 1.2 2006/03/07 17:56:28 idani Exp $ -->
+
+<guide link="/doc/ja/gpm.xml" lang="ja">
+<title>コンソールでマウスを使おう</title>
+
+<author title="Author">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+
+<abstract>
+このガイドではコマンドラインインターフェースでGPM(the General Purpose Mouse server)をセットアップする方法を紹介します。これはGentooの新規インストールや、Xサーバを使用しないシステムにとても役立ちます。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.2</version>
+<date>2006-02-17</date>
+
+<!-- Original revision: 1.4 -->
+
+<chapter>
+<title>GPMの入手</title>
+<section>
+<body>
+
+<p>
+Gentooをインストールした直後なら、大部分のユーザはまだコマンドラインインターフェース(CLI)ではマウスは動作していないでしょう。
+それとも、Xサーバが使用できなかったり必要とはしていないけれども、マウスを使用したいかもしれません。
+これらの解決方法は非常に簡単で、<c>gpm</c>(General Purpose Mouse server)を使用することです。
+</p>
+
+<p>
+まず、GPMを入手する必要があります。
+</p>
+
+<pre caption="GPMを入手する">
+# <i>emerge gpm</i>
+</pre>
+
+<p>
+コンパイル中にサーバの設定に関する警告が表示されたことに気が付いたかもしれません。
+GPMを起動する前にこの設定を行わなければなりません。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GPMの設定</title>
+<section>
+<body>
+
+<p>
+GPMを使用する前に、マウスの接続場所とプロトコルに対応する行をコメント解除する必要があります。
+GPM設定ファイルを編集してこれを行います。
+</p>
+
+<pre caption="GPMの設定">
+# <i>nano /etc/conf.d/gpm</i>
+</pre>
+
+<p>
+私の場合では、USBマウスが<path>/dev/input/mouse0</path>に接続されています。
+そのため、システムの全てのマウスと適当なプロトコルの累積的なデバイスである<path>/dev/input/mice</path>をコメント解除します。
+<path>/dev/psaux</path>の前に<path>/dev/input/mice</path>を試してみてください。
+後者は廃れており、最近の2.6カーネルでは無効になっているかもしれません。
+<path>/dev/input/mice</path>が失敗したのなら、他のデバイスへと切り替えてください。
+以下に私の<path>/etc/conf.d/gpm</path>の例を示します。
+</p>
+
+<pre caption="GPM設定の例">
+<comment>(接続されているマウスのタイプと適切なMOUSEDEVエントリをコメント解除してください)</comment>
+
+#MOUSE=ps2
+MOUSE=imps2
+#MOUSEDEV=/dev/psaux
+MOUSEDEV=/dev/input/mice
+</pre>
+
+<p>
+ホイールマウスを使っているのなら、imps2プロトコルを使いたいでしょうから、該当する行をコメント解除します。
+imps2とps2の両方が動作しなければ、他のプロトコルを試すためにGPMの情報ページ(<c>info gpm</c>)を参照してください。
+また、ターミナル上でWebサイトへ誘導するハイパーリンクをクリックしたいのなら、<c>/etc/conf.d/gpm</c>ファイルの案に従うことはよい考えです。
+</p>
+
+<pre caption="その他のオプション">
+<comment>(GPMにURLやそこで使用される~や:などの文字記号を理解させたいのなら、この行をコメント解除してください。
+これを有効にすることは良い考えです。)</comment>
+
+APPEND="-l "a-zA-Z0-9_.:~/\300-\326\330-\366\370-\377""
+</pre>
+
+<p>
+残りのconf.dファイルにはマウスサーバに関する他の提案が含まれています。
+必要に応じて様々なオプションをコメント解除してください。
+詳しい情報は<c>man gpm</c>を参照してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GPMの実行</title>
+<section>
+<body>
+
+<p>
+これでマウスサーバのインストールと設定が完了しました。
+では起動しましょう。
+</p>
+
+<pre caption="GPM initスクリプト">
+# <i>/etc/init.d/gpm start</i>
+</pre>
+
+<p>
+ブロックカーソルが表示されるでしょう。
+rootのみがGPM initスクリプトを実行できると言うことを忘れないでください。
+ですが、新しいセッションを開始する度に<c>su</c>を行ってスクリプトを実行することを避けるために、コンピュータの起動時にGPMが起動するようにしましょう。
+</p>
+
+<pre caption="GPMをデフォルトランレベルに追加">
+# <i>rc-update add gpm default</i>
+</pre>
+
+<p>
+これで、コンピュータを起動するときにはいつでも、ログインプロンプトの時点でコンソールカーソルが表示されるでしょう。
+マウスサーバはrootとしてログインしなくても実行し続けます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GPMで作業を行う</title>
+<section>
+<title>コピーとペースト</title>
+<body>
+
+<p>
+マウスサーバを使って巨大なテキストの固まりをコピーしペーストすることはとても簡単です。
+単に左クリックを使ってテキストをハイライトさせ(ボタンを放してもハイライトされ続けるでしょう)、もし必要なら他のターミナルへ切替、カーソルをペースとしたいところに持って行き、真ん中のボタンをクリックするとカーソルの場所に適すとがペーストされます。
+ターミナル内でコピーとペーストを行うことが出来ると言うことに注意してください。
+これはエラーメッセージを<uri link="http://forums.gentoo.org">Gentoo Forums</uri>に投稿する作業をとても簡単にします。
+</p>
+
+</body>
+</section>
+<section>
+<title>テキストモードブラウザとGPM</title>
+<body>
+
+<p>
+一方の画面にメッセージが表示され、もう一方でテキストモードWebブラウザが起動しているのなら、エラーメッセージをハイライトさせてコピーし、ターミナルを変更して、左クリックで適当なテキストボックスを選択し、真ん中のボタンをクリックします。
+それだけ！
+これでエラーメッセージをフォーラムに投稿できます。
+</p>
+
+<p>
+テキストのみのブラウザについて議論することはこのガイドの範囲外ですが、必然的にユーザは互換性のあるコンソールブラウザを探す必要があるでしょう。
+<c>lynx</c>は最も古くて普及しているブラウザですが、そのインターフェースはマウスのサポートと認識に欠けています。
+その代わりに、素晴らしくマウスと統合されている<c>links</c>を試してみてください。
+</p>
+
+<pre caption="linksを入手する">
+# <i>emerge links</i>
+</pre>
+
+<p>
+これでこのガイドを終わります。マウスを楽しんでね!
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

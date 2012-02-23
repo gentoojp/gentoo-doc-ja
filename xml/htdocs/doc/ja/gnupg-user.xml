@@ -1,0 +1,438 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header -->
+<!-- Original revision: 1.7 -->
+<guide link = "/doc/ja/gnupg-user.xml">
+	<title>
+		GnuPG Gentoo ユーザーガイド
+	</title>
+	<author title="Author">
+		<mail link="gustavo@felisberto.net">
+			Gustavo Felisberto
+		</mail>
+	</author>
+	<author title="Editor">
+		<mail link="zhen@gentoo.org">
+			John P. Davis
+		</mail>
+	</author>
+	<author title="翻訳">
+		<mail link="so1@lorenz.scitec.kobe-u.ac.jp">
+			so1
+		</mail>
+	</author>
+
+	<abstract>このちょっとしたガイドは安全なコミュニケーションのためのツールであるGnuPGの使い方の基礎を解説します。	</abstract>
+	
+	<version>1.0</version>
+	
+	<date>26 April 2003</date>
+
+<chapter>
+	<title>はじめに</title>
+	<section>
+		<title>このガイドでわかること</title>
+		<body>
+			<p>
+				このガイドでは公開鍵暗号技術、暗号化そして電子署名について習熟しているものと仮定します。もしそうでないのならここを見てください。<uri link="http://www.gnupg.org/(en)/documentation/guides.html"> GnuPG ハンドブック</uri>　第2章
+			</p>
+			<p>
+				このガイドではGnuPGのインストール方法、鍵ペアの作成方法、鍵束への鍵の追加方法、鍵サーバーへの公開鍵の追加方法、そしてあなたが送信／受信したメッセージを（署名／暗号化）／（検証／復号）する方法を解説します。さらに他人に中身を見られないようにあなたのコンピューターの中のファイルを暗号化する方法も解説します。
+			</p>
+		</body>
+	</section>
+	<section>
+		<title>必要なソフトのインストール</title>
+		<body>								
+			<p>
+				まず基本的なことですが、<c>emerge gnupg</c>をしましょう。もしGnuPGを使えるE-mailクライアントが欲しければ、pine (<c>emerge pinepgp</c>)、mutt (<c>emerge mutt</c>)、Mozilla/Netscapr Mail、evolution (evolutionはGNOMEのMicrosoft Outlokクローンです）、そしてKDEのKMail（KMailはkdenetworkパッケージの一部です）があります。
+			</p>
+			<p>
+				もしKDEを使っているのならば、Kgpgを使うのがいいでしょう。この小さなプログラムは鍵ペアの生成、アスキーファイルから鍵をインポート、インポートした鍵への署名、鍵のエクスポート、そしてさらにいくつかの機能があります。（Kgpgは鍵サーバーから鍵をインポートする機能を持っていませんが、コマンドラインからそれを行う方法を解説します。）
+			</p>
+		</body>
+	</section>
+</chapter>
+<chapter>
+	<title>鍵の生成と公開鍵束への鍵の追加</title>
+	<section>
+		<title>鍵の生成</title>
+		<body>
+			<p>
+				鍵を生成するには、<c>gpg --gen-key</c>とします。はじめての時は、いくつかのディレクトリを作成します。鍵を生成するにはもう一度タイプしてください。
+			</p>
+<pre caption = "鍵の生成プロセス" >
+#<i>gpg --gen-key</i>
+gpg (GnuPG) 1.0.7; Copyright (C) 2002 Free Software Foundation, Inc.
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under certain conditions. See the file COPYING for details.
+
+Please select what kind of key you want:
+   (1) DSA and ElGamal (default)
+   (2) DSA (sign only)
+   (4) ElGamal (sign and encrypt)
+   (5) RSA (sign only)
+   Your selection?<i>1</i></pre>
+			<p>
+				ここでは使いたい鍵のタイプを選ぶことができます。多くのユーザーはデフォルトであるDSAとElGamaを選びます。次は鍵のサイズです。大きければ大きいほどよいですが、DSA/ElGamaの鍵を含めて2048ビット以上にはしないでください。。通常のE-mailには1024ビットあれば十分でしょう。
+			</p>
+			<p>
+			サイズの次は有効期限です。ここでは短いほど良いですが、多くのユーザーは無期限、または大体1年か2年間の間に設定します。
+			</p>
+				<pre caption = "鍵のサイズの選択" >
+DSA keypair will have 1024 bits.
+About to generate a new ELG-E keypair.
+              minimum keysize is  768 bits
+              default keysize is 1024 bits
+    highest suggested keysize is 2048 bits
+    What keysize do you want? (1024) <i>2048</i>
+Requested keysize is 2048 bits       
+Please specify how long the key should be valid.
+         0 = key does not expire
+	 &lt;n&gt;= key expires in n days
+	 &lt;n&gt;w = key expires in n weeks
+	 &lt;n&gt;m = key expires in n months
+	 &lt;n&gt;y = key expires in n years
+	 Key is valid for? (0) <i>0</i>
+Key does not expire at all
+</pre>
+			<p>
+			次はあなた自身に関する個人情報を入力します。公開鍵を他の人に送るつもりならば実際のアドレスをここで入力してください。
+			</p>
+	<pre caption = "ユーザー情報の入力" >
+					Is this correct (y/n)? <i>y</i>
+                        
+You need a User-ID to identify your key; the software constructs the user id
+from Real Name, Comment and Email Address in this form:
+"Heinrich Heine (Der Dichter) &lt;heinrichh@duesseldorf.de&gt;"
+
+Real name: <i>John Doe</i>
+Email address: <i>john@nowhere.someplace.flick</i>
+Comment: <i>The Real John Doe</i>                 
+You selected this USER-ID:
+"John Doe (The Real John Doe) &lt;john@nowhere.someplace.flick&gt;"
+
+Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? <i>O</i> 
+You need a Passphrase to protect your secret key.    
+
+Enter passphrase: 
+</pre>
+			<p>
+			次に鍵パスワードを２回入力してください。強いパスワードを使うのがいいでしょう。もし誰かがあなたの秘密鍵を手に入れて、あなたのパスワードをクラックしてしまえば、彼は"あなた"によって署名されたメッセージを送ることができるようになり、みんなはあなたから送られてきたのだと思ってしまいます。
+			</p>
+			<p>
+			さて、ここでGnuPGは鍵を生成します。ランダムなデータを作り出すため、マウスを動かしたり、バックグラウンドでmp3をかけたりすれば、処理のスピードアップの手助けになるでしょう。
+			</p>
+		</body>
+	</section>
+	<section>
+		<title>破棄証明書の発行</title>
+		<body>
+			<impo>ここは非常に大事な部分なので、必ず『今』行うようにしてください。</impo>
+			<p>
+				鍵を生成した後は破棄証明書を作るようにしてください。これをすることで、あなたの鍵が危険に晒された（誰かがあなたの鍵／パスフレーズを手に入れたなどの）場合、鍵を取り消すことができます
+			</p>
+				<pre caption = "破棄証明書の発行">
+#<i>gpg --list-keys</i>
+/home/humpback/.gnupg/pubring.gpg
+---------------------------------
+pub  1024D/75447B14 2002-12-08 John Doe (The Real John Doe) &lt;john@nowhere.someplace.flick&gt;
+sub  2048g/96D6CDAD 2002-12-08
+
+bash-2.05a$ gpg --output revoke.asc --gen-revoke <i>75447B14</i>
+
+sec  1024D/75447B14 2002-12-08   John Doe (The Real John Doe) &lt;john@nowhere.someplace.flick&gt;
+
+Create a revocation certificate for this key? <i>y</i>
+Please select the reason for the revocation:   
+  0 = No reason specified          #　特に理由なし
+  1 = Key has been compromised     #　鍵が危なくなってしまった
+  2 = Key is superseded            #　鍵を入れ替えた
+  3 = Key is no longer used        #　鍵をもう使っていない
+  Q = Cancel
+(Probably you want to select 1 here)
+Your decision?<i> 1 </i>
+Enter an optional description; end it with an empty line:
+> <i>Someone cracked me and got my key and passphrase</i>
+>                                                 
+Reason for revocation: Key has been compromised
+Someone cracked me and got my key and passphrase
+Is this okay? <i>y</i>
+               
+You need a passphrase to unlock the secret key for
+user: "John Doe (The Real John Doe) &lt;john@nowhere.someplace.flick&gt;"
+1024-bit DSA key, ID 75447B14, created 2002-12-08
+
+ASCII armored output forced.
+Revocation certificate created.
+
+Please move it to a medium which you can hide away; if Mallory gets
+access to this certificate he can use it to make your key unusable.
+It is smart to print this certificate and store it away, just in case
+your media become unreadable.  But have some caution:  The print system of
+your machine might store the data and make it available to others!
+</pre>
+			<p>
+				<c>gpg --list-keys</c>コマンドは公開鍵束の中にある鍵をリストアップしてくれます。これを使ってあなたの鍵のIDを見ることで取り消し証明書を作ることができます。ここで、.gnupgディレクトリを丸ごとコピーし、ASCII-armor形式の破棄証明書(revoke.asc)を安全なメディア（安全な場所に保管できる2枚のフロッピーまたはCD-R）に保存しておくとよいでしょう。くれぐれも、revoke.ascはあなたの鍵を無効化し、それ以降使えなくするために使うものだと言うことを忘れないでください。
+			</p>
+			<note>もし複数のE-mailアドレスでこの鍵を使いたいのならば、<c>gpg --edit-key YOUR_ID</c>としてから、 <c>adduid</c>とコマンドしてください。2つ目のIDの名前、E-mail、そしてコメントを聞いてきます。</note>	
+		</body>
+	</section>
+	<section>
+		<title>鍵をエクスポートする</title>
+		<body>
+			<p>
+			鍵をエクスポートするためには次のようにします。 <c>gpg --armor --output john.asc --export john@nowhere.someplace.flick</c>　これであなたはほぼいつでも鍵のIDまたはこの鍵を確認するための何か（ここではE-mailアドレスを使います）を使うことができます。また、john.ascというファイルを友達にメールで送ったり、ウェブページにおいたりすることで、他の人と安全に通信することもできます。
+			</p>
+		</body>
+	</section>
+	<section>
+		<title>鍵をインポートする</title>
+		<body>
+			<p>ファイルをあなたの公開鍵束に加えるために、まずはじめにファイルをインポートし、鍵指紋をチェックしてください。指紋を確認した後は、それを有効化しましょう。
+        </p>
+				<note>
+					鍵を確認する際は気をつけてください。これは公開鍵暗号法の弱点の一つでもあります。
+				</note>
+<p>
+				さて、Luis Pinto（私の友達です）の公開鍵を自分の公開鍵束へ追加します。彼に連絡をとって彼の鍵指紋をたずねたら、<c>fpr</c>コマンドの出力結果と鍵指紋を比べてみましょう。もしその鍵が信頼できるものであるならば、公開鍵束へ追加します。今回は、Luisの鍵が2003年12月1日で期限切れになるので、同時に自分の署名が期限切れになるようにするかどうかを尋ねてきます。
+</p>
+				<pre caption = "鍵のインポートと署名">
+#<i>gpg --import luis.asc</i>
+gpg: key 462405BB: public key imported
+gpg: Total number processed: 1
+gpg:               imported: 1
+humpback@sam humpback $ <i>gpg --list-keys </i>     
+/home/humpback/.gnupg/pubring.gpg
+---------------------------------
+pub  1024D/75447B14 2002-12-08 John Doe (The Real John Doe) &lt;john@nowhere.someplace.flick&gt;
+sub  2048g/96D6CDAD 2002-12-08
+
+pub  1024D/462405BB 2002-12-01 Luis Pinto &lt;lmpinto@student.dei.uc.pt&gt;
+	uid                            Luis Pinto &lt;lmpinto@dei.uc.pt&gt;
+sub  4096g/922175B3 2002-12-01 [expires: 2003-12-01]
+
+humpback@sam humpback $ <i>gpg --edit-key lmpinto@dei.uc.pt</i>
+gpg (GnuPG) 1.0.7; Copyright (C) 2002 Free Software Foundation, Inc.
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under certain conditions. See the file COPYING for details.
+
+
+gpg: checking the trustdb
+gpg: checking at depth 0 signed=0 ot(-/q/n/m/f/u)=0/0/0/0/0/1
+pub  1024D/462405BB  created: 2002-12-01 expires: 2003-12-01 trust: -/-
+sub  4096g/922175B3  created: 2002-12-01 expires: 2003-12-01
+(1)  Luis Pinto &lt;lmpinto@dei.uc.pt&gt;
+(2). Luis Pinto &lt;lmpinto@student.dei.uc.pt&gt;
+
+Command> <i>fpr</i>
+pub  1024D/462405BB 2002-12-01 Luis Pinto &lt;lmpinto@dei.uc.pt&gt;
+             Fingerprint: F056 3697 ADE3 CF98 B80B  8494 0AD3 E57B 4624 05BB
+	     
+Command> <i>sign</i>
+Really sign all user IDs? <i>y</i>
+                           
+pub  1024D/462405BB  created: 2002-12-01 expires: 2003-12-01 trust: -/-
+             Fingerprint: F056 3697 ADE3 CF98 B80B  8494 0AD3 E57B 4624 05BB
+
+	     Luis Pinto &lt;lmpinto@dei.uc.pt&gt;
+	     Luis Pinto &lt;lmpinto@student.dei.uc.pt&gt;
+
+This key is due to expire on 2003-12-01.
+Do you want your signature to expire at the same time? (Y/n) <i>Y</i>
+How carefully have you verified the key you are about to sign actually belongs
+to the person named above?  If you don't know what to answer, enter "0".
+
+   (0) I will not answer. (default)            #　無回答　
+   (1) I have not checked at all.              #　全くチェックしていません
+   (2) I have done casual checking.            #　軽くチェックしました。
+   (3) I have done very careful checking.      #　非常に注意深くチェックしました。
+
+   Your selection? <i>3</i>
+Are you really sure that you want to sign this key
+with your key: "John Doe (The Real John Doe) &lt;john@nowhere.someplace.flick&gt;"
+
+I have checked this key very carefully.
+
+Really sign? <i>y</i>
+              
+You need a passphrase to unlock the secret key for
+user: "John Doe (The Real John Doe) &lt;john@nowhere.someplace.flick&gt;"
+1024-bit DSA key, ID 75447B14, created 2002-12-08
+
+Command> <i>check</i>
+uid  Luis Pinto &lt;lmpinto@dei.uc.pt&gt;
+sig!3       462405BB 2002-12-01   [self-signature]
+sig!3       75447B14 2002-12-08   John Doe (The Real John Doe) &lt;john@nowhe
+uid  Luis Pinto &lt;lmpinto@student.dei.uc.pt&gt;
+sig!3       462405BB 2002-12-01   [self-signature]
+sig!3       75447B14 2002-12-08   John Doe (The Real John Doe) &lt;john@nowhe
+
+</pre>
+
+		</body>
+	</section>
+				
+</chapter>
+<chapter>
+	<title>鍵サーバーと鍵を交換する</title>
+	<section>
+		<title>鍵サーバーに鍵を送る</title>
+		<body>
+		<p>
+			今あなたは鍵を持っています。これを世界の鍵サーバーへと送りましょう。世界中にはたくさんの鍵サーバーがあり、それらの多くはおたがいサーバー同士で鍵を交換し同期をとり合っています。ここではLuisの鍵をpgp.mit.eduサーバーへと送ります。これはHTTPを使うので、HTTPトラフィックのためにプロキシが必要ならば忘れずに設定しておいてください(<c>export http_proxy=http://proxy_host:port/</c>)。鍵を送るためのコマンドは次のようにします。 <c>gpg --keyserver pgp.mit.edu --keyserver-options honor-http-proxy --send-key john@nowhere.someplace.flick</c>　HTTPプロキシを使わないのならば<e>--keyserver-options honor-http-proxy</e>は省いてもかまいません。		</p>
+		<p>
+			あなたが署名したほかの人の鍵も鍵サーバーへと送ることができます。私たちはLuis Pintoの鍵を鍵サーバーへと送りました。このようにして、あなたの鍵を信用している誰かが、あなたがサーバーに送った署名を使ってLuisの鍵を信用することができるようになります。
+		</p>
+		</body>
+	</section>
+	<section>
+		<title>鍵サーバーから鍵を取得する</title>
+		<body>
+		<p>
+				では次に、Gustavo Felisbertoの鍵を検索し、John Doeの鍵束にそれを追加するということをやってみましょう（念のため言っておきますが、Gustavo Felisbertoはこのガイドの作者ですよ :) )。
+      </p>
+			<pre caption = "鍵サーバーから鍵を検索する">
+#<i>gpg --keyserver pgp.mit.edu --keyserver-options honor-http-proxy \\
+	--search-keys humpback@felisberto.net</i>
+gpg: searching for "humpback@felisberto.net" from HKP server pgp.mit.edu
+Keys 1-5 of 5 for "humpback@felisberto.net"
+(1)	Gustavo Felisberto (apt-get install anarchy) &lt;humpback@felisberto.net&gt; 1024
+	  created 2002-12-06, key B9F2D52A
+(2)	Gustavo Felisberto &lt;humpback@altavista.net&gt; 1024
+	  created 1999-08-03, key E97E0B46
+(3)	Gustavo A.S.R. Felisberto &lt;humpback@altavista.net&gt; 1024
+	  created 1998-12-10, key B59AB043
+(4)	Gustavo Adolfo Silva Ribeiro Felisberto &lt;humpback@altavista.net&gt; 1024
+	  created 1998-08-26, key 39EB133D
+(5)	Gustavo Adolfo Silva Ribeiro Felisberto &lt;humpback@altavista.net&gt; 1024
+	  created 1998-06-14, key AE02AF87
+	  Enter number(s), N)ext, or Q)uit &gt;<i>1</i>
+gpg: requesting key B9F2D52A from HKP keyserver pgp.mit.edu
+gpg: key B9F2D52A: public key imported
+gpg: Total number processed: 1
+gpg:               imported: 1
+  </pre>
+  <p>
+　サーバーの応答からわかるでしょうが、私はいくつかの鍵を鍵サーバーに提出していますが現在はB9F2D52Aしか使っていません。John Doeはこれを手に入れ、もし信用するのならばこれに署名してくれるでしょう。
+  </p>
+  </body>
+  </section>
+</chapter>
+<chapter>
+	<title>文章と連携させる</title>
+	<section>
+		<title>暗号化と署名</title>
+		<body>
+			<p>
+			あなたは今Luisに送りたいファイルがあるとしましょう。あなたはこれを暗号化したり、署名したり、そして暗号化と署名の両方を行ったりできます。暗号化はLuisだけがこれを開けることができるようにする、ということを意味します。署名はこのファイルがまさにあなたによって作られたものだ、ということをLuisに教えます。
+			</p>
+			<p>
+			次の3つのコマンドで暗号化、署名、そして暗号化/署名を行います。
+			</p>
+			<pre caption = "ファイルの中の鍵をチェックし、復号する。">
+#<i>gpg --output doc.gpg --encrypt --recipient lmpinto@dei.uc.pt doc_to_encrypt</i>
+#<i>gpg --output doc.gpg --sign --recipient lmpinto@dei.uc.pt doc_to_sign</i>
+#<i>gpg --output doc.gpg --encrypt --sign --recipient \\
+		lmpinto@dei.uc.pt doc_to_encrypt_and_sign</i>
+</pre>
+			<p>これはバイナリー・ファイルを作ります。もしアスキー形式のファイルを作りたい時は、コマンドのはじめに<c>--clearsign</c>を加えてください。
+			</p>
+		</body>
+	</section>
+	<section>
+		<title>暗号解除と署名確認</title>
+		<body>
+			<p>
+			あなたが暗号化されたファイルを受け取ったとしましょう。暗号を解除するためのコマンドは、<c>gpg --output document --decrypt encrypted_doc.gpg</c>です。これで文書の暗号解除と署名の確認ができます（署名がある場合の話ですが）。
+			</p>
+		</body>
+	</section>
+
+
+</chapter>
+<chapter>
+	<title>GnuPG　インターフェース</title>
+	<section>
+		<title>kgpg</title>
+		<body>
+			<p>
+			kgpgはGnuPG用の良いGUIツールです。メインスクリーンに、署名または解読したいテキストを貼り付けたり、解読したいASCII-amor形式のテキストを貼り付けたり、ということもできます。
+			</p>
+				<figure link="http://www.ibiblio.org/pub/linux/distributions/gentoo/images/kgpg1.png" short="kgpg main window"/>
+			<p>
+				この画像では、kgpgメイン・ウィンドウにASCII-armor形式化され、そして解除されたテキストがペーストされているのがわかると思います。ここで解除したり（パスワードを入れる必要がありますが）、他のファイルを暗号化したり、署名する新しいテキストを貼り付けたりすることができます。
+			</p>
+				<figure link="http://www.ibiblio.org/pub/linux/distributions/gentoo/images/kgpg2.png" short="kgpg key manage window"/>
+			<p>
+				鍵管理ウィンドウです。ここにはJohn Doe用の鍵があるのがわかると思います。GustavoとLuis用の信頼できる2つの鍵があり、Daniel Robbins用のまだ信頼できない鍵があります（私はフィンガープリントをチェックするために彼とまだ連絡をとっていません :))
+			</p>
+				<figure link="http://www.ibiblio.org/pub/linux/distributions/gentoo/images/kmail_security.png" short="kmail security options OpenGPG"/>
+				<figure link="http://www.ibiblio.org/pub/linux/distributions/gentoo/images/kmail_identity.png" short="kmail identity options OpenGPG key"/>
+			
+	</body>
+</section>
+<section>
+	<title>Mozilla Enigmail</title>
+	<body>
+		<p>
+			Mozillaのバージョン1.0以降には、とても設定しやすいメールクライアント用プラグインであるEnigmailがついてきます。Preferences -&gt; Privacy &amp; Security -&gt; Enigmailにあります。そこで鍵・E-mailを入力するだけです。
+		</p>
+		<p>
+			信頼できないpgpまたはgpg署名をもったメールは破線で囲われています。信頼できるほかのメールは直線で囲われてます。Enigmailは鍵サーバーから鍵をとってくる機能もついていますが、もし何か問題があるときはメッセージが文字化けして表示されるでしょう（でもコマンドラインの使い方をまだ覚えていますよね？）
+		</p>
+	</body>
+</section>
+<section>
+	<title>KMail</title>
+	<body>
+		<p>
+			KMailはセットアップが非常に簡単です。どのように設定するかいくつか情報を書き込むだけです。基本的には、KMailにGPGを使うことと、どの鍵にサインするかを知らせててやります。
+		</p>
+	</body>
+</section>
+</chapter>
+<chapter>
+	<title>最後に思うこと、クレジットと著作権</title>
+	<section>
+		<title>いくつかの問題</title>
+		<body>
+			<p>
+				載せた画像にはいくつか問題があります。あなたが使っているバージョンをチェックしてください。もしGnuPG 1.2.1-r1 以降のものを使っているならおそらく大丈夫でしょうが、これより古いバージョンでは問題があるでしょう。それと、ほとんどの鍵サーバーでは写真付きの鍵の登録は好まれません。
+			</p>
+		</body>
+	</section>
+	<section>
+		<title>ここにないもの</title>
+		<body>
+			<p>
+				Gpgは非常に複雑なツールです。私がここでカバーしていないこともいろいろとできます。このドキュメントはGnuPGにはじめて触れるユーザーを対象としています。もっと知りたい時は、<uri link="http://www.gnupg.org">GnuPG ウェブサイト</uri>を見て下さい。
+			</p>
+			<p>
+				わたしはpgp4pine、gpgpine、evolutionなどのほかのツール、そしてWindows用のツールについては書いてはいませんが、いずれはこのドキュメントで取り上げたいと思います。
+			</p>
+		</body>
+	</section>
+	<section>
+		<title>クレジット</title>
+		<body>
+			<p>
+				John Michael Ashleyの<uri link="http://www.gnupg.org">GnuPG ハンドブック</uri>はシンプルでとても素晴らしく、初心者には非常にいい本です。 </p>
+			<p>
+				#gentoo-docチームにいるみんな、おまえら最高だよ。</p>
+			<p>Tiago Serraは私をプライバシー保護問題について再び考える機会を与えてくれました。</p>
+		</body>
+	</section>
+	<section>
+		<title>著作権</title>
+		<body>
+			<p>このドキュメントの著作権はGustavo Felisbertoに帰属します。Gentoo Foundationはこのドキュメントを出版することを承認されています。
+			</p>
+		</body>
+	</section>
+
+</chapter>
+
+</guide>

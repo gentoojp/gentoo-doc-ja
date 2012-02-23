@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/prompt-magic.xml,v 1.6 2011/09/04 17:53:41 swift Exp $ -->
+
+<guide disclaimer="articles">
+
+<title>Prompt magic</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<!--<author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>-->
+
+<abstract>
+Why stick with the standard boring shell prompt when you can easily make it
+colorful and more informative? In this tip, Daniel Robbins will show you how to
+get your shell prompt just the way you like it, as well as how to dynamically
+update your X terminal's title bar.
+</abstract>
+
+<!-- The original version of this article was first published on IBM 
+developerWorks, and is property of Westtech Information Services. This 
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>1.2</version>
+<date>2005-10-21</date>
+
+<chapter>
+<title>Enhancing the system prompt</title>
+<section>
+<body>
+
+<p>
+As Linux/UNIX people, we spend a lot of time working in the shell, and in many
+cases, this is what we have staring back at us:
+</p>
+
+<pre caption="The normal user prompt">
+bash-2.04$
+</pre>
+
+<p>
+If you happen to be root, you're entitled to the "prestige" version of this
+beautiful prompt:
+</p>
+
+<pre caption="The root prompt">
+bash-2.04#
+</pre>
+
+<p>
+These prompts are not exactly pretty. It's no wonder that several Linux
+distributions have upgraded their default prompts that add color and additional
+information to boot. However, even if you happen to have a modern distribution
+that comes with a nice, colorful prompt, it may not be perfect. Maybe you'd
+like to add or change some colors, or add (or remove) information from the
+prompt itself. It isn't hard to design your own colorized, tricked-out prompt
+from scratch.
+</p>
+
+</body>
+</section>
+<section>
+<title>Prompt basics</title>
+<body>
+
+<p>
+Under bash, you can set your prompt by changing the value of the <c>PS1</c>
+environment variable, as follows:
+</p>
+
+<pre caption="Altering the environment variable">
+$ <i>export PS1="> "</i>
+>
+</pre>
+
+<p>
+Changes take effect immediately, and can be made permanent by placing the
+<c>export</c> definition in your <path>~/.bashrc</path> file. <c>PS1</c> can
+contain any amount of plain text that you'd like:
+</p>
+
+<pre caption="A custom prompt">
+$ <i>export PS1="This is my super prompt > "</i>
+This is my super prompt >
+</pre>
+
+<p>
+While this is, um, interesting, it's not exactly useful to have a prompt that
+contains lots of static text. Most custom prompts contain information like the
+current username, working directory, or hostname.  These tidbits of information
+can help you to navigate in your shell universe. For example, the following
+prompt will display your username and hostname:
+</p>
+
+<pre caption="A more useful prompt">
+$ <i>export PS1="\u@\H > "</i>
+drobbins@freebox >
+</pre>
+
+<p>
+This prompt is especially handy for people who log in to various machines under
+various differently-named accounts, since it acts as a reminder of what machine
+you're actually on and what privileges you currently have.
+</p>
+
+<p>
+In the above example, we told bash to insert the username and hostname into the
+prompt by using special backslash-escaped character sequences that bash
+replaces with specific values when they appear in the <c>PS1</c> variable. We
+used the sequences <c>\u</c> (for username) and <c>\H</c> (for the first part
+of the hostname). Here's a complete list of all special sequences that bash
+recognizes (you can find this list in the bash man page, in the "PROMPTING"
+section):
+</p>
+
+<table>
+<tr>
+  <th>Sequence</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti>\a</ti>
+  <ti>The ASCII bell character (you can also type <c>\007</c>)</ti>
+</tr>
+<tr>
+  <ti>\d</ti>
+  <ti>Date in "Wed Sep 06" format</ti>
+</tr>
+<tr>
+  <ti>\e</ti>
+  <ti>ASCII escape character (you can also type <c>\033</c>)</ti>
+</tr>
+<tr>
+  <ti>\h</ti>
+  <ti>First part of hostname (such as "mybox")</ti>
+</tr>
+<tr>
+  <ti>\H</ti>
+  <ti>Full hostname (such as "mybox.mydomain.com")</ti>
+</tr>
+<tr>
+  <ti>\j</ti>
+  <ti>
+    The number of processes you've suspended in this shell by hitting <c>^Z</c>
+  </ti>
+</tr>
+<tr>
+  <ti>\l</ti>
+  <ti>The name of the shell's terminal device (such as "ttyp4")</ti>
+</tr>
+<tr>
+  <ti>\n</ti>
+  <ti>Newline</ti>
+</tr>
+<tr>
+  <ti>\r</ti>
+  <ti>Carriage return</ti>
+</tr>
+<tr>
+  <ti>\s</ti>
+  <ti>The name of the shell executable (such as "bash")</ti>
+</tr>
+<tr>
+  <ti>\t</ti>
+  <ti>Time in 24-hour format (such as "23:01:01")</ti>
+</tr>
+<tr>
+  <ti>\T</ti>
+  <ti>Time in 12-hour format (such as "11:01:01")</ti>
+</tr>
+<tr>
+  <ti>\@</ti>
+  <ti>Time in 12-hour format with am/pm</ti>
+</tr>
+<tr>
+  <ti>\u</ti>
+  <ti>Your username</ti>
+</tr>
+<tr>
+  <ti>\v</ti>
+  <ti>Version of bash (such as 2.04)</ti>
+</tr>
+<tr>
+  <ti>\V</ti>
+  <ti>Bash version, including patchlevel</ti>
+</tr>
+<tr>
+  <ti>\w</ti>
+  <ti>Current working directory (such as <path>/home/drobbins</path>)</ti>
+</tr>
+<tr>
+  <ti>\W</ti>
+  <ti>The "basename" of the current working directory (such as "drobbins")</ti>
+</tr>
+<tr>
+  <ti>\!</ti>
+  <ti>Current command's position in the history buffer</ti>
+</tr>
+<tr>
+  <ti>\#</ti>
+  <ti>
+    Command number (this will count up at each prompt, as long as you type
+    something)
+  </ti>
+</tr>
+<tr>
+  <ti>\\$</ti>
+  <ti>
+    If you are not root, inserts a <c>$</c>; if you are root, you get a
+    <c>#</c>. If you delimit your string with <c>'</c> instead of <c>"</c>, you
+    should use a single backslash instead.
+  </ti>
+</tr>
+<tr>
+  <ti>\xxx</ti>
+  <ti>
+    Inserts an ASCII character based on three-digit number xxx (replace unused
+    digits with zeros, such as <c>\007</c>)
+  </ti>
+</tr>
+<tr>
+  <ti>\\</ti>
+  <ti>A backslash</ti>
+</tr>
+<tr>
+  <ti>\[</ti>
+  <ti>
+    This sequence should appear before a sequence of characters that don't move
+    the cursor (like color escape sequences). This allows bash to calculate
+    word wrapping correctly.
+  </ti>
+</tr>
+<tr>
+  <ti>\]</ti>
+  <ti>
+    This sequence should appear after a sequence of non-printing characters.
+  </ti>
+</tr>
+</table>
+
+<p>
+So, there you have all of bash's special backslashed escape sequences. Play
+around with them for a bit to get a feel for how they work. After you've done a
+little testing, it's time to add some color.
+</p>
+
+</body>
+</section>
+<section>
+<title>Colorization</title>
+<body>
+
+<p>
+Adding color is quite easy; the first step is to design a prompt without color.
+Then, all we need to do is add special escape sequences that'll be recognized
+by the terminal (rather than bash) and cause it to display certain parts of the
+text in color.  Standard Linux terminals and X terminals allow you to set the
+foreground (text) color and the background color, and also enable "bold"
+characters if so desired. We get eight colors to choose from.
+</p>
+
+<p>
+Colors are selected by adding special sequences to <c>PS1</c> -- basically
+sandwiching numeric values between an <c>\e[</c> (escape open-bracket) and an
+<c>m</c>. If we specify more than one numeric code, we separate each code with
+a semicolon. Here's an example color code: 
+</p>
+
+<pre caption="Adding color">
+"\e[0m"
+</pre>
+
+<p>
+When we specify a zero as a numeric code, it tells the terminal to reset
+foreground, background, and boldness settings to their default values. You'll
+want to use this code at the end of your prompt, so that the text that you type
+in is not colorized. Now, let's take a look at the color codes. Check out this
+screenshot:
+</p>
+
+<figure link="/images/docs/prompt-magic-colortable.gif" caption="Color chart"/>
+
+<p>
+To use this chart, find the color you'd like to use, and find the corresponding
+foreground (30-37) and background (40-47) numbers.  For example, if you like
+green on a normal black background, the numbers are 32 and 40. Then, take your
+prompt definition and add the appropriate color codes. This:
+</p>
+
+<pre caption="A basic custom prompt">
+$ <i>export PS1="\w> "</i>
+</pre>
+
+<p>
+becomes:
+</p>
+
+<pre caption="The colorized prompt">
+$ <i>export PS1="\e[32;40m\w> "</i>
+</pre>
+
+<p>
+So far, so good, but it's not perfect yet. After bash prints the working
+directory, we need to set the color back to normal with an <c>\e[0m</c>
+sequence:
+</p>
+
+<pre caption="A better colorized prompt">
+$ <i>export PS1="\e[32;40m\w> \e[0m"</i>
+</pre>
+
+<p>
+This definition will give you a nice, green prompt, but we still need to add a
+few finishing touches. We don't need to include the background color setting of
+40, since that sets the background to black which is the default color anyway.
+Also, the green color is quite dim; we can fix this by adding a <c>1</c> color
+code, which enables brighter, bold text. In addition to this change, we need to
+surround all non-printing characters with special bash escape sequences,
+<c>\[</c> and <c>\]</c>. These sequences will tell bash that the enclosed
+characters don't take up any space on the line, which will allow word-wrapping
+to continue to work properly. Without them, you'll end up with a nice-looking
+prompt that will mess up the screen if you happen to type in a command that
+approaches the extreme right of the terminal. Here's our final prompt:
+</p>
+
+<pre caption="A nice colorful prompt">
+$ <i>export PS1="\[\e[32;1m\]\w> \[\e[0m\]"</i>
+</pre>
+
+<p>
+Don't be afraid to use several colors in the same prompt, like so:
+</p>
+
+<pre caption="Much more colorful">
+$ <i>export PS1="\[\e[36;1m\]\u@\[\e[32;1m\]\H> \[\e[0m\]"</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Xterm fun</title>
+<body>
+
+<p>
+I've shown you how to add information and color to your prompt, but you can do
+even more. It's possible to add special codes to your prompt that will cause
+the title bar of your X terminal (such as rxvt or aterm) to be dynamically
+updated. All you need to do is add the following sequence to your <c>PS1</c>
+prompt:
+</p>
+
+<pre caption="Updating the xterm title bar">
+"\e]2;titlebar\a"
+</pre>
+
+<p>
+Simply replace the substring <c>titlebar</c> with the text that you'd like to
+have appear in your xterm's title bar, and you're all set! You don't need to
+use static text; you can also insert bash escape sequences into your titlebar.
+Check out this example, which places the username, hostname, and current
+working directory in the titlebar, as well as defining a short, bright green
+prompt: 
+</p>
+
+<pre caption="An extremely useful xterm">
+$ <i>export PS1="\[\e]2;\u@\H \w\a\e[32;1m\]>\[\e[0m\] "</i>
+</pre>
+
+<p>
+This is the particular prompt that I'm using in the color chart screenshot,
+above. I love this prompt, because it puts all the information in the title bar
+rather than in the terminal where it limits how much can fit on a line. By the
+way, make sure you surround your titlebar sequence with <c>\[</c> and
+<c>\]</c>, since as far as the terminal is concerned, this sequence is
+non-printing. The problem with putting lots of information in the title bar is
+that you will not be able to see info if you are using a non-graphical
+terminal, such as the system console.  To fix this, you may want to add
+something like this to your <path>~/.bashrc</path>:
+</p>
+
+<pre caption="Adding usefulness to xterms and system consoles">
+if [ "$TERM" = "linux" ]
+then
+    <comment># We're on the system console or maybe telnetting in</comment>
+    export PS1="\[\e[32;1m\]\u@\H > \[\e[0m\]"
+else
+    <comment># We're not on the console, assume an xterm</comment>
+    export PS1="\[\e]2;\u@\H \w\a\e[32;1m\]>\[\e[0m\] " 
+fi
+</pre>
+
+<p>
+This bash conditional statement will dynamically set your prompt based on your
+current terminal settings. For consistency, you'll want to configure your
+<path>~/.bash_profile</path> so that it sources your <path>~/.bashrc</path> on
+startup. Make sure the following line is in your <path>~/.bash_profile</path>:
+</p>
+
+<pre caption="Editing bash_profile">
+source ~/.bashrc
+</pre>
+
+<p>
+This way, you'll get the same prompt setting whether you start a login or
+non-login shell.
+</p>
+
+<p>
+Well, there you have it. Now, have some fun and whip up some nifty colorized
+prompts!
+</p>
+
+</body>
+</section>
+<section>
+<title>Resources</title>
+<body>
+
+<ul>
+  <li>
+    <uri link="http://www.rxvt.org">rxvt</uri> is a great little xterm that
+    happens to have a good amount of documentation related to escape sequences
+    tucked in the <path>doc</path> directory included in the source tarball.
+  </li>
+  <li>
+    <uri link="http://aterm.sourceforge.net">aterm</uri> is another terminal
+    program, based on rxvt. It supports several nice visual features, like
+    transparency and tinting.
+  </li>
+  <li>
+    <uri
+    link="http://bashish.mine.nu/BashishWiki/index.php/Main_Page">bashish</uri>
+    is a theme engine for all different kinds of terminals. Check out some <uri
+    link="http://bashish.mine.nu/BashishWiki/index.php/Screenshots">great
+    screenshots</uri> of bashish in action!
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>About the author</title>
+<body>
+
+<p>
+Daniel Robbins lives in Albuquerque, New Mexico. He was the President/CEO of
+Gentoo Technologies Inc., the Chief Architect of the Gentoo Project and is a
+contributing author of several books published by MacMillan: Caldera OpenLinux
+Unleashed, SuSE Linux Unleashed, and Samba Unleashed. Daniel has been involved
+with computers in some fashion since the second grade when he was first exposed
+to the Logo programming language and a potentially lethal dose of Pac Man. This
+probably explains why he has since served as a Lead Graphic Artist at SONY
+Electronic Publishing/Psygnosis. Daniel enjoys spending time with his wife Mary
+and his new baby daughter, Hadassah. You can contact Daniel at
+<mail>drobbins@gentoo.org</mail>.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

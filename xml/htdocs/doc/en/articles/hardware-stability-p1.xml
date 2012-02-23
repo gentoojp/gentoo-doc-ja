@@ -1,0 +1,490 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/hardware-stability-p1.xml,v 1.5 2011/09/04 17:53:41 swift Exp $ -->
+
+<guide disclaimer="articles">
+<title>Linux hardware stability guide, Part 1</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<!-- xmlified by Joshua Saddler, nightmorph@gentoo.org -->
+
+<abstract>
+In this article, Daniel Robbins shows you how to diagnose and fix CPU
+flakiness, as well as how to test your RAM for defects. By the end of this
+article, you'll have the skills to ensure that your Linux system is as stable
+as it possibly can be.
+</abstract>
+
+<!-- The original version of this article was first published on IBM 
+developerWorks, and is property of Westtech Information Services. This 
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>1.2</version>
+<date>2005-10-09</date>
+
+<chapter>
+<title>CPU troubleshooting</title>
+<section>
+<body>
+
+<p>
+Many of us in the Linux world have been bitten by nasty hardware problems.  How
+many of us have set up a Linux box, installed our favorite distribution,
+compiled and installed some additional apps, and gotten everything working
+perfectly only to find that our new system has an (argh!) fatal hardware bug?
+Whether the symptoms are random segmentation faults, data corruption, hard
+locks, or lost data is irrelevant -- the hardware glitch effectively makes our
+normally reliable Linux operating system barely able to stay afloat. In this
+article, we'll take an in-depth look at how to detect flaky CPUs and RAM --
+allowing you to replace the defective parts before they do some serious 
+damage.
+</p>
+
+<p>
+If you're experiencing instability problems and suspect they are hardware
+related, I encourage you to test both your CPU and memory to ensure that
+they're working OK. However, even if you haven't experienced these problems,
+it's still a good idea to perform these CPU and memory tests. In doing so, you
+may detect a hardware problem that could have bitten you at an inopportune
+time, something that could have caused data loss or hours of frustration in a
+frantic search for the source of the problem. The proper, proactive application
+of these techniques can help you to avoid a lot of headaches, and if your
+system passes the tests, you'll have the peace of mind that your system is up
+to spec.
+</p>
+
+</body>
+</section>
+<section>
+<title>CPU issues</title>
+<body>
+
+<p>
+If you have a horribly defective CPU, your machine may be unable to boot Linux
+or may only run for a few minutes before locking up. CPUs in this ragged state
+are easy to diagnose as defective because the symptoms are so obvious. But
+there are more subtle CPU defects that aren't so easy to detect; generally, the
+less obvious errors are the ones that cause machines to either lock up every
+now and then for no apparent reason, or cause certain processes to die
+unexpectedly. Most CPU instabilities can be triggered by "exercising" the CPU
+-- giving it a bunch of work to do, causing it to heat up and possibly flake
+out.  Let's look at some ways to stress-test the CPU.
+</p>
+
+<p>
+You may be surprised to hear that one of the best tests of CPU stability is
+built in to Linux -- the kernel compile. The gcc compiler is a great tool for
+testing general CPU stability, and a kernel build uses gcc a whole lot. By
+creating and running the following script from your <path>/usr/src/linux</path>
+directory, you can give your machine an industrial-strength kernel compile
+stress test:
+</p>
+
+<pre caption="The cpubuild script">
+#!/bin/bash
+make dep
+while [ "foo" = "foo" ]
+do
+  make clean
+  make -j2 bzImage
+  if [ $? -ne 0 ]
+  then
+    echo OUCH OUCH OUCH OUCH
+    exit 1
+  fi
+done
+</pre>
+
+<p>
+You'll notice that this script <e>repeatedly</e> compiles the kernel.  The
+reason for this is simple -- some CPUs have intermittent glitches, allowing
+them to compile the kernel perfectly 95% of the time, but causing the kernel
+compile to bomb out every now and then. Normally, this is because it may take
+five or more kernel compiles before the processor heats up to the point where
+it becomes unstable.
+</p>
+
+<p>
+In the above script, make sure to adjust the <c>-j</c> option so that the
+number following it is one greater than the number of CPUs in your system; in
+other words, use "2" for uniprocessors, "3" for dual-processors, etc. The
+<c>-j</c> option tells <c>make</c> to build the kernel in parallel, ensuring
+that there's always at least one gcc process on deck after each source file is
+compiled -- ensuring that the stress on your CPU is maximized. If your Linux
+box is going to be unused for the afternoon, go ahead and run this script, and
+let the machine recompile the kernel for a few hours.
+</p>
+
+</body>
+</section>
+<section>
+<title>Possible CPU problems</title>
+<body>
+
+<p>
+If the script runs perfectly for several hours, congratulations! Your CPU has
+passed the first test. However, it's possible that the above script dies
+unexpectedly. How do you know you're having a CPU problem as opposed to
+something else? Well, if gcc spat out an error like this, then there's a very
+good possibility that your CPU is defective:
+</p>
+
+<pre caption="GCC error">
+gcc: Internal compiler error: program cc1 got fatal signal 11
+</pre>
+
+<p>
+At this point, you have about three possibilities as to the state of your CPU:
+</p>
+
+<ul>
+  <li>
+    If you type <c>make bzImage</c> to resume the kernel compilation, and the
+    compiler dies on the exact same file, keep typing <c>make bzImage</c> over
+    and over again. If after about ten tries the build process continues to die
+    on this particular file, then the problem is most likely caused by a (rare)
+    gcc compiler bug that's being triggered by this particular source file,
+    rather than a flaky CPU. However, these days, gcc is quite stable, so this
+    isn't likely to happen.
+  </li>
+  <li>
+    If you type <c>make bzImage</c> to resume kernel compilation, and you get
+    another signal 11 a little bit later, then your CPU is most likely on its
+    last legs.
+  </li>
+  <li>
+    If you type <c>make bzImage</c> to resume kernel compilation and the kernel
+    compiles successfully, this doesn't mean that your CPU is OK.  Normally,
+    this means that your CPU glitch only shows up every now and then, normally
+    only when the CPU rises above a certain temperature (a CPU will get hotter
+    when it is being used for an extended period of time, and may take several
+    kernel compiles to get to that critical point).
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Rescuing your CPU</title>
+<body>
+
+<p>
+If your CPU is experiencing random intermittent errors when placed under heavy
+load, it's possible that your CPU isn't defective at all -- maybe it simply
+isn't being cooled properly. Here are some things that you can check:
+</p>
+
+<ul>
+  <li>Is your CPU fan plugged in?</li>
+  <li>Is it relatively dust-free?</li>
+  <li>
+    Does the fan actually spin (and spin at the proper speed) when the power is
+    on?
+  </li>
+  <li>Is the heat sink seated properly on the CPU?</li>
+  <li>Is there thermal grease between the CPU and the heat sink?</li>
+  <li>Does your case have adequate ventilation?</li>
+</ul>
+
+<p>
+If everything seems fine, then you may want to rerun the kernel compile tests
+with an open case. Let the kernel compile go for about five minutes and then
+put your hand inside the running machine and touch the outside metal casing of
+the power supply to ground yourself. Then, carefully test the temperature of
+the heat sink with the tip of your finger. If it's unusually hot, then it's
+very possible that your heatsink/fan combo just isn't adequate for your
+particular CPU. In that case, upgrade your system's cooling hardware --
+hopefully, your CPU hasn't sustained any permanent damage and is still
+functional.
+</p>
+
+</body>
+</section>
+<section>
+<title>The ultimate CPU test</title>
+<body>
+
+<p>
+The kernel compile test is a great way to test for CPU stability, but there's
+an even more extreme CPU test available that you might want to use. I saved
+this one for last, because if your CPU is grossly undercooled, this particular
+test could really overheat it and could <e>theoretically</e> cause permanent
+damage to your CPU. This test is intended for systems that pass the kernel
+compile test with no problem -- systems that you want to ensure can handle even
+the most challenging CPU loads with ease. If your CPU is properly cooled, it
+will pass this test, and if it doesn't pass, you need more cooling.
+</p>
+
+<p>
+To perform my "ultimate" CPU test, the first thing I do is head over to the
+lm_sensors page (see <uri link="#resources">Resources</uri>) and download the
+lm_sensors package. This source tarball contains various kernel modules that
+interface with the health monitoring features that are built in to nearly all
+modern motherboards. Once this package is properly installed and the proper
+modules are loaded (use the prog/detect/sensors-detect script to figure out
+which ones), you'll see some new files and directories appear at
+<path>/proc/sys/dev/sensors</path>.  These files contain handy information like
+the speed of your CPU fans, CPU and mainboard temperature readings, and
+motherboard voltage readings, all updated in real time. I recommend you
+configure this package to compile as modules and use the sensors-detect script
+to figure out what modules to load at boot time, since I've had better results
+with this configuration.
+</p>
+
+<p>
+Once you have the lm_sensors modules loaded, I recommend that you install a
+graphical CPU/sensors monitor, which will allow you to watch your CPU load and
+temperatures in real time without having to repeatedly <c>cat</c> files in
+/proc/sys/dev/sensors. For this purpose, I use a great little program called
+gkrellm (see <uri link="#resources">Resources</uri>). Here's a snapshot of my
+gkrellm app, monitoring my CPU usage, motherboard temperature settings and a
+bunch of other things:
+</p>
+
+<figure link="/images/docs/hardware-stability-gkrellm.jpg" caption="gkrellm is up and 
+running"/>
+
+<p>
+There are other graphical monitoring packages available that are compatible
+with lm_sensors; you'll find a bunch of them listed over at the lm_sensors home
+page, under the "links" section.
+</p>
+
+<p>
+The last preparatory step is to download the cpuburn program (see <uri
+link="#resources">Resources</uri>). This handy little program uses hand-crafted
+combinations of machine instructions to put maximum stress on your particular
+CPU -- even a little bit more than a repetitive kernel compile. Included in the
+archive are various little programs customized to set P5- and P6-class
+processors, as well as a special version for the AMD K6. Once you've unpacked
+the cpuburn tarball, read the README file; it explains how to compile the
+included assembly source files. After you've done this, you'll have your own
+little cpuburn program.
+</p>
+
+<p>
+Now, for the test. I normally fire up my graphical sensors monitor, and then
+start the cpuburn program as root. Then, I watch the CPU temperature reading
+rise and stabilize, and then I leave cpuburn running for an hour or so. If you
+repeat these steps and your CPU temperature continues to rise to an unusually
+high temperature (160 degrees Farenheit or so would be considered "unusually
+high"), then your CPU cooling system needs major work. And, if your machine
+crashes or locks up, or the cpuburn process dies, your CPU cooling needs
+improvement -- or maybe your particular CPU simply isn't up to "spec". You can
+use the CPU temperature readings to make that judgment. But if all goes well,
+then your system should be able to tackle any challenge thrown at it. After an
+hour or so, you can go ahead and kill the cpuburn program and resume normal
+operations.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Memory troubleshooting</title>
+<section>
+<title>Memory testing</title>
+<body>
+
+<p>
+It's really important to have a completely reliable CPU, and it's just as
+important to have rock-solid RAM chips. Some people think that SIMMS and DIMMS
+never fail and never need to be tested. Unfortunately, this isn't true -- bad
+memory is very common, and is something that all of us need to watch out for.
+Other people believe that while there may be bad RAM out there, any RAM errors
+will be detected by the boot-time BIOS memory check. This is also false; the
+BIOS memory check won't detect the vast majority of bad RAM, so don't let the
+BIOS check give you a false sense of security.
+</p>
+
+</body>
+</section>
+<section id="badmem">
+<title>Bad memory symptoms</title>
+<body>
+
+<p>
+OK, so there's bad RAM out there, and some may be sitting in your machine right
+now. Here are some warning signs that may indicate that your computer contains
+bad RAM:
+</p>
+
+<ul>
+  <li>
+    When you load a bunch of programs at once, every now and then a particular
+    program will die for no apparent reason.
+  </li>
+  <li>
+    Every now and then, when you open a file, it appears corrupted. If you open
+    it later, it looks fine.
+  </li>
+  <li>
+    When you extract tarballs (<c>tar -xzvf</c>), tar frequently reports that
+    the tarball is corrupted. You try extracting the tarball again at a later
+    date and tar doesn't report any errors. Similar problems can occur with
+    gzip and bzip2.
+  </li>
+  <li>
+    If you're experiencing problems like these, it's likely that your system
+    RAM is defective. You'll definitely want to test your RAM using the
+    following method. And even if you haven't experienced any of these
+    problems, it's a good idea to give the RAM in your system a good workout to
+    help ensure that you won't be bitten by unexpected RAM quirks in the
+    future. Here's how.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>memtest86</title>
+<body>
+
+<p>
+Fortunately for us, there's an excellent Linux-based memory testing program
+that installs onto a bootable floppy disk. It's called memtest86 (see <uri
+link="#resources">Resources</uri> to get it). Creating a memtest floppy is
+simple.  First, download the tarball. Then, unpack the archive and build the
+binary disk image:
+</p>
+
+<pre caption="Building memtest86">
+# <i>tar -xzvf memtest86-2.5.tar.gz</i>
+# <i>cd memtest86-2.5</i>
+# <i>make</i>
+</pre>
+
+<p>
+Then, insert a blank 3.5" disk into your floppy drive, and type:
+</p>
+
+<pre caption="Installing memtest86">
+# <i>make install</i>
+</pre>
+
+<p>
+After just a few seconds, your 3.5" disk will have a wonderful little memory
+tester sitting on it, ready to be booted. The best way to perform this test is
+to find some time when your machine can sit idle for at least six hours --
+starting the test right before you go to bed (or leave work) is a good idea. To
+start the test, reboot your machine with the 3.5" disk in the drive. When your
+system boots, the memtest86 program will immediately start:
+</p>
+
+<figure link="/images/docs/hardware-stability-memtest86.gif" 
+caption="memtest86 testing the RAM on my development machine"/>
+
+<p>
+Major memory quirks (such as "dead" bits) will be detected within seconds.
+Failures triggered by specific bit patterns (which are unfortunately quite
+common) may not be detected for several hours, but should eventually be
+detected. As soon as memtest86 detects a defective bit, a message will appear
+at the bottom of the screen -- and the tests will continue. When you turn on
+your monitor in the morning, find that the tests have completed, and see no
+warnings on the screen, then in all probability your RAM is fine. However, if
+you continue to experience the problems listed in the <uri link="#badmem">Bad
+memory symptoms</uri> section, then it <e>is</e> possible that your RAM has an
+infrequently occurring quirk and may still need to be replaced.
+</p>
+
+</body>
+</section>
+<section>
+<title>Solving RAM problems</title>
+<body>
+
+<p>
+I hope that all your RAM is working just fine. However, if you're one of the
+unfortunate ones, all may not be lost -- there are still some things you can do
+to "fix" your bad RAM. The first thing I suggest doing is to visit your BIOS
+setup program and look at your memory settings. Some BIOS setup programs have a
+memory option called "Turbo Mode" -- obviously, if you have something like this
+enabled, then you should disable it. It's also possible that your BIOS memory
+timings are set incorrectly -- you can try adjusting them (increasing the
+refresh rate, lowering the CAS setting) and rerunning memtest86 to see if the
+problem goes away.
+</p>
+
+<p>
+If memtest still finds errors, then it's time to locate the faulty SIMM or DIMM
+and remove it from your machine. If you have more than one memory module
+installed, then you'll want to install only a single module (or two modules if
+you have SIMMS), and run memtest86. Cycle through all your modules and you'll
+be able to determine which ones are defective -- there's no need to throw a
+good memory module in the trash.
+</p>
+
+<p>
+That's all for now; in the second and final installment in this series, we'll
+take a look at how to fix problems related to hardware configuration, including
+IRQ and PCI latency issues. In the mean time, you may want to check out the
+following resources.
+</p>
+
+</body>
+</section>
+<section id="resources">
+<title>Resources</title>
+<body>
+
+<ul>
+  <li>
+    Download the <uri link="http://www.netroedge.com/~lm78">lm_sensors
+    package</uri>.
+  </li>
+  <li>Pick up a copy of <uri link="http://gkrellm.net/">gkrellm</uri>.</li>
+  <li>
+    Get the <uri link="http://users.ev1.net/~redelm/">cpuburn program</uri>.
+  </li>
+  <li>
+    Grab your own copy of <uri link="http://www.memtest86.com/">memtest86</uri>.
+  </li>
+  <li>
+    For more information on the "signal 11 problem", check out the <uri
+    link="http://www.bitwizard.nl/sig11/">Sig 11 FAQ</uri>.
+  </li>
+  <li>
+    You can find a bunch of Window-maker dockapps (some of which graph CPU and
+    sensors data) at <uri
+    link="http://www.windowmaker.org/links-general.html">Linuxpowered.com's
+    Window-maker links page</uri>.
+  </li>
+  <li>
+    If you're trying to diagnose a hardware problem related to your nVidia
+    graphics card, be sure to check out the <uri
+    link="http://www.technologyvault.co.uk/geforce/faq.php?list=categories&amp;prog=gef&amp;lang=en">GeForce FAQ</uri>. There's lots of great
+    Linux and Windows-related information there.
+  </li>
+  <li>
+    For additional nVidia troubleshooting information, check out Sven
+    Vermeulen's <uri link="/doc/en/nvidia-guide.xml">nVidia Guide</uri>.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>About the author</title>
+<body>
+
+<p>
+Daniel Robbins lives in Albuquerque, New Mexico. He was the President/CEO of
+Gentoo Technologies Inc., the Chief Architect of the Gentoo Project and is a
+contributing author of several books published by MacMillan: Caldera OpenLinux
+Unleashed, SuSE Linux Unleashed, and Samba Unleashed. Daniel has been involved
+with computers in some fashion since the second grade when he was first exposed
+to the Logo programming language and a potentially lethal dose of Pac Man. This
+probably explains why he has since served as a Lead Graphic Artist at SONY
+Electronic Publishing/Psygnosis. Daniel enjoys spending time with his wife Mary
+and his new baby daughter, Hadassah. You can contact Daniel at
+<mail>drobbins@gentoo.org</mail>.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

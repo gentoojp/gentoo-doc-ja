@@ -1,0 +1,187 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/security/shb-perms.xml,v 1.4 2008/06/20 01:06:26 shindo Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.1</version>
+<date>2006-09-16</date>
+
+<!-- Original revision: 1.4 -->
+        
+<section>
+<title>誰でも読めるということ</title>
+<body>
+
+<p>
+一般ユーザに、設定ファイルやパスワードへのアクセス権を持たせるべきではありません。
+アタッカーが、データベースやWebサイトからパスワードを盗み出し、
+それを使ってデータを改変したり、ひどい場合には、データを削除することがあります。
+そのため、ファイルパーミッションを適切に設定することが重要になります。
+rootだけが使用するファイルであれば、パーミッションを<c>0600</c>に設定し、
+<c>chown</c>を用いて適切なユーザにファイルを割り当てて下さい。
+</p>
+
+</body>
+</section>
+<section>
+<title>誰でも/どのグループでも書き込めるということ</title>
+<body>
+
+<pre caption="誰でも書き込めるファイルとディレクトリを検出する">
+# <i>find / -type f \( -perm -2 -o -perm -20 \) -exec ls -lg {} \; 2>/dev/null >writable.txt</i>
+# <i>find / -type d \( -perm -2 -o -perm -20 \) -exec ls -ldg {} \; 2>/dev/null >>writable.txt</i>
+</pre>
+
+<p>
+これにより、所有者グループもしくは他のユーザにも書き込み権限が割り当てられている全ファイルのパーミッションに関して、
+膨大なリストが作成されるはずです。パーミッションをチェックし、
+どのユーザでも書き込めるファイルに対し<c>/bin/chmod o-w</c>を実行し、
+他のユーザから書き込み権限を削除して下さい。
+</p>
+
+</body>
+</section>
+<section>
+<title>SUID/SGIDファイル</title>
+<body>
+
+<p>
+SUIDもしくはSGIDビットがセットされたファイルは、
+<e>所有する</e>ユーザもしくはグループ権限で実行されるのであり、
+ファイルを実行したユーザの権限で実行されるわけではありません。
+通常、これらのビットは、システム管理時にrootとして実行されるべきファイルで用いられます。
+これらのファイルにより、ローカル環境でroot権限が乗っ取られることにもなりかねません(もし、
+セキュリティホールが存在すれば)。
+これらは危険であり、SUIDもしくはSGIDビットがセットされたファイルは、
+必ず回避されるぺきです。これらのファイルを使用しないのであれば、
+<c>chmod 0</c>を実行するか、
+もしくは関連するパッケージをunmergeすべきです(<c>equery</c>を使用して、
+属するパッケージをチェックして下さい。まだインストールしていなければ、
+単に<c>emerge gentoolkit</c>とタイプするだけです)。別の方法としては、
+<c>chmod -s</c>を実行して、SUIDビットを単に削除して下さい。
+</p>
+
+<pre caption="setuidファイルを検出する">
+# <i>find / -type f \( -perm -004000 -o -perm -002000 \) -exec ls -lg {} \; 2>/dev/null >suidfiles.txt</i>
+</pre>
+
+<p>
+これにより、全てのSUID/SGIDファイルに関してリスト化されたファイルが作成されます。
+</p>
+
+<pre caption="setuidバイナリのリスト">
+/bin/su
+/bin/ping
+/bin/mount
+/bin/umount
+/var/qmail/bin/qmail-queue
+/usr/bin/chfn
+/usr/bin/chsh
+/usr/bin/crontab
+/usr/bin/chage
+/usr/bin/expiry
+/usr/bin/sperl5.6.1
+/usr/bin/newgrp
+/usr/bin/passwd
+/usr/bin/gpasswd
+/usr/bin/procmail
+/usr/bin/suidperl
+/usr/lib/misc/pt_chown
+/usr/sbin/unix_chkpwd
+/usr/sbin/traceroute
+/usr/sbin/pwdb_chkpwd
+</pre>
+
+<p>
+デフォルトでは、Gentoo Linuxは、それほど多くのSUIDファイルを含みません
+(これは、何をインストールしたかにもよりますが)。しかし、
+上記のようなリストを実行結果から取得するかもしれません。
+多くのコマンドは一般ユーザから使用されるべきではなく、rootからのみ使用されるべきです。
+<c>ping</c>、<c>mount</c>、<c>umount</c>、<c>chfn</c>、<c>chsh</c>、<c>newgrp</c>、<c>suidperl</c>、
+<c>pt_chown</c>、そして<c>traceroute</c>に対し、<c>chmod -s</c>を実行し、
+SUIDビットを削除して下さい。なお、<c>su</c>、<c>qmail-queue</c>、
+もしくは<c>unix_chkpwd</c>に対しては、該当ビットを削除しないで下さい。
+これらのファイルに対し、setuidを削除すると<c>su</c>できなくなり、
+メールを受信できなくなります。該当ビットを削除することで(そうしても、問題無い場合)、
+一般ユーザ(もしくは、アタッカー)が、
+これらのファイルを通してrootアクセス権を取得できる可能性を排除します。
+</p>
+
+<p>
+筆者のシステムにおけるSUIDファイルは、<c>su</c>、<c>passwd</c>、
+<c>gpasswd</c>、<c>qmail-queue</c>、<c>unix_chkpwd</c>、
+そして<c>pwdb_chkpwd</c>のみです。但し、Xを動かしているなら、
+より多くのSUIDファイルが必要となるかもしれません。なぜなら、
+Xでは、SUIDで昇格するアクセス権が必要になるからです。
+</p>
+
+</body>
+</section>
+<section>
+<title>SUID/SGIDバイナリとハードリンク</title>
+<body>
+
+<p>
+ファイルは、指し示すリンクが全く無い場合のみ、
+削除されたと考えられます。これは、
+奇妙な考え方だと思われるかもしれませんが、以下のようなファイル名を考えて下さい。
+<path>/usr/bin/perl</path>が、実際にはデータが格納されるinodeに対するリンクです。
+いくつものリンクが、そのファイルを指し示しているかもしれず、それら全てが消えるまで、
+そのファイルは存在することになります。
+</p>
+
+<p>
+ユーザが、<c>nosuid</c>や<c>noexec</c>でマウントされていないパーティションに、
+アクセスできるのであれば(例えば、<path>/tmp</path>、<path>/home</path>、
+もしくは<path>/var/tmp</path>が、分割されたパーティションでなければ)、
+SUIDもしくはSGIDバイナリに対して、
+ユーザがハードリンクを作成しないよう注意すべきです。そうしなければ、
+Portageアップデート後、ユーザが古いバージョンにまだアクセスできてしまうでしょう。
+</p>
+
+<warn>
+Portageから残っているハードリンクに関して警告を受け取り、
+SUID/SGIDファイルの実行を許可されたパーティションに、ユーザが書き込める場合は、
+このセクションを注意深く読んで下さい。
+プログラムのバージョンを古いままにさせることで、ユーザの内1人が、
+アップデートを巧みに逃れようとしているかもしれません。
+ユーザが自身のSUIDファイルを作成できなかったり、
+ダイナミックローダを使用し(<c>noexec</c>でマウントされているパーティション)プログラムを実行できるのみであれば、
+心配しなくても大丈夫です。
+</warn>
+
+<note>
+ファイルに対しリンクを作成する場合、ユーザにはファイルの読み取り権限は必要ありません。
+必要なのは、そのファイルを含むディレクトリへの読み取り権限だけです。
+</note>
+
+<p>
+ファイルが、どれくらいリンクを持っているのか確認するには、<c>stat</c>コマンドを使用できます。
+</p>
+
+<pre caption="Statコマンド">
+$ stat /bin/su    
+  File: `/bin/su'
+  Size: 29350           Blocks: 64         IO Block: 131072 regular file
+Device: 900h/2304d      Inode: 2057419     Links: 1
+Access: (4711/-rws--x--x)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2005-02-07 01:59:35.000000000 +0000
+Modify: 2004-11-04 01:46:17.000000000 +0000
+Change: 2004-11-04 01:46:17.000000000 +0000
+</pre>
+
+<p>
+複数のリンクからなるSUID/SGIDファイルを検出するには、<c>find</c>を使用できます。
+</p>
+
+<pre caption="複数のリンクからなるSUID/SGIDバイナリファイルを検出する">
+$ find / -type f \( -perm -004000 -o -perm -002000 \) -links +1 -ls
+</pre>
+
+</body>
+</section>
+</sections>

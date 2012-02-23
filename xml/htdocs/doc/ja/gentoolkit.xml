@@ -1,0 +1,780 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/gentoolkit.xml,v 1.9 2007/03/05 21:07:33 nightmorph Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/en/gentoolkit.xml">
+<title>Gentoolkit</title>
+
+<author title="Author">
+  <mail link="mbutcher@aleph-null.tv">Matt Butcher</mail>
+</author>
+<author title="Editor">
+  <!-- zhen@gentoo.org -->John P. Davis
+</author>
+<author title="Editor">
+  <mail link="erwin@gentoo.org">Erwin</mail>
+</author>
+<author title="Editor">
+  <mail link="fox2mike@getoo.org">Shyam Mani</mail>
+</author>
+<author title="Editor">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+<author title="Editor">
+  <mail link="karltk@gentoo.org">Karl Trygve</mail>
+</author>
+<author title="Editor">
+  <mail link="yoswink@gentoo.org">José Luis Rivero</mail>
+</author>
+<author title="翻訳">
+  <mail link="shindo-n@zephyr.dti.ne.jp">真藤直観</mail>
+</author>
+
+<abstract>
+GentoolkitはGentooシステム管理しやすくするツール群です。
+このドキュメントはGentoolkitに含まれるツールの基本を対象にしています。
+</abstract>
+
+<!-- Licensed under GFDL -->
+
+<version>1.8</version>
+<date>2005-06-07</date>
+<!-- Original Revision: 1.22 -->
+<!-- Original revision: 1.22 -->
+
+<chapter>
+<title>
+はじめに
+</title>
+<section>
+<title>
+gentoolkitとは
+</title>
+<body>
+
+<p>
+Gentooは独自のディストリビューションで他のディストリビューションにはない面倒なことあります。
+Gentooの開発者や協力者はこれらの面倒な部分をみつけると、ユーザーや管理者のためのツールを開発しました。
+こうした多くのツールはGentooプロジェクトに寄付されており、
+<c>app-portage/gentoolkit</c>パッケージにまとめられています。
+</p>
+
+<note>
+現在のところ、gentoolkitには<c>app-portage/gentoolkit</c>と<c>app-portage/gentoolkit-dev</c>
+の二つのバージョンがあります。前者には管理用スクリプトが含まれ、
+後者にはGentooでの開発を補助するスクリプトが含まれています。
+もしあなたが開発者の場合、Gentoolkitのメンテナーに連絡をとったうえで、
+あなたのスクリプトを<c>gentoolkit-dev</c>に取り込むことができます。
+このドキュメントはgentoolkitだけを対象にしています。
+</note>
+
+<p>
+パッケージ管理とシステムの動きを管理するための便利なツールが一まとまりとなってgentoolkitに入っています。
+大多数のユーザー、特に頻繁にシステムをアップデートするユーザーにはgentoolkitを導入するメリットがあります。
+</p>
+
+</body>
+</section>
+<section>
+<title>
+インストール
+</title>
+<body>
+
+<p>
+他のGentooパッケージと同じく、インストールは単にemergeするだけです。
+</p>
+
+<pre caption="gentoolkitの入手">
+# <i>emerge gentoolkit</i>
+</pre>
+
+<note>
+gentoolkitのなかの多くのツールは重要なシステム情報を表示したりroot権限を必要とします。
+このため、いくつかのプログラムはroot権限をもつユーザーだけが実行できます。
+(またはroot権限があるときだけ正常に動作します)。
+</note>
+
+</body>
+</section>
+<section>
+<title>ドキュメントを読むには</title>
+<body>
+
+<p>
+(manページ以外の)プログラムに付属するすべてのドキュメントは
+<path>/usr/share/doc/gentoolkit-[version]/[program-name]/</path>
+に納められています。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>equery</title>
+<section>
+<title>
+はじめに
+</title>
+<body>
+
+<p>
+<c>equery</c>は<c>epm</c>(とすでに推奨されていない<c>qpkg</c>)
+の機能のいくつかをサポートするツールで、equery自身の機能でとても便利なものになっています。
+<c>equery --help</c>によりオプションがすべてわかります。
+<c>eqeury</c>は将来的に今後のGentoolkitのリリースで<c>etcat</c>と置き換わるでしょう。
+</p>
+
+<note>
+<c>equery --help</c>で表示される機能はまだすべて実装されていません。
+実装されていないものについては、その旨が表示されます。
+また、短いオプションも用意されており、たとえば<c>belogns</c>の代わりに<c>b</c>を使えます。
+</note>
+
+<note>
+現在パイプでequeryの出力を渡す場合、出力フォーマットが変わりつつあることに注意してください。
+パイプ向けのフォーマットはツールによりパースされやすいよう意図されたものですが、
+あまり評判はよくなく、おそらく将来変更されるでしょう。
+もし、equeryをつかったスクリプトを書いているならば、このことにご注意ください。
+</note>
+
+</body>
+</section>
+<section>
+<title>
+ファイルが由来するパッケージを見つけるには
+</title>
+<body>
+
+<p>
+<c>equery</c>で<c>belogs</c>コマンド(または単に<c>b</c>で)で、
+ファイルがどのパッケージに由来するのかがわかります。
+</p>
+
+<pre caption="ファイルからebuldを見つける">
+# <i>equery belongs /usr/bin/xmms</i>
+[ Searching for file(s) /usr/bin/xmms in *... ]
+media-sound/xmms-1.2.10-r9 (/usr/bin/xmms)
+</pre>
+
+<p>
+<c>-f</c>オプションで任意の正規表現にマッチするファイルに対してパッケージを探すことができます。
+<c>-e</c>はパッケージが見つかった時点で探索を終了させるのに便利なオプションです。
+</p>
+
+</body>
+</section>
+<section>
+<title>パッケージの整合性を確かめる</title>
+<body>
+
+<p>
+パッケージの整合性を確かめるのにも役に立ちます。
+<c>equery</c>でパッケージがダメになったり、置き換わったり、
+移動したかもしれないタイムスタンプはもちろん、md5sumも確かめられます。
+</p>
+
+<pre caption="問題のないパッケージ整合性">
+# <i>equery check gentoolkit</i>
+[ Checking app-portage/gentoolkit-0.2.0 ]
+ * 54 out of 54 files good
+</pre>
+
+<p>
+もしインストール後にコンフィグレーションファイルを変更した場合には
+"not good"と表示されるかも知れないことに注意してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>
+あるものに依存しているパッケージを出力する
+</title>
+<body>
+
+<p>
+<c>equery</c>は直接依存関係があるパッケージを出力することができます。
+これを行うのに使用すべき機能は<c>depends</c>であり、以下のように簡単です。
+</p>
+
+<pre caption="pygtkに依存しているパッケージを探す">
+# <i>equery depends pygtk</i>
+[ Searching for packages depending on pygtk... ]
+app-office/dia-0.93
+dev-python/gnome-python-2.0.0-r1
+gnome-extra/gdesklets-core-0.26.2
+media-gfx/gimp-2.0.4
+x11-libs/vte-0.11.11-r1
+</pre>
+
+</body>
+</section>
+<section>
+<title>
+依存図式
+</title>
+<body>
+
+<p>
+<c>equery</c>で特定のパッケージに対する依存図式を出力することもできます。
+依存図式とは対象のパッケージについて直接的、間接的な依存関係をもつすべてのパッケージを出力したものです。
+</p>
+
+<pre caption="cdrtoolsについての依存図式">
+# <i>equery depgraph cdrtools</i>
+Displaying dependencies for app-cdr/cdrtools-2.01_alpha37
+`-- app-cdr/cdrtools-2.01_alpha37
+ `-- sys-libs/glibc-2.3.4.20040808 (virtual/libc)
+  `-- sys-kernel/linux-headers-2.4.22 (virtual/os-headers)
+   `-- sys-apps/baselayout-1.10.4
+    `-- sys-apps/sysvinit-2.85-r1
+     `-- sys-apps/gawk-3.1.3-r1
+      `-- sys-apps/util-linux-2.12-r4
+          `-- sys-apps/sed-4.0.9
+	      `-- sys-libs/ncurses-5.4-r4
+	          `-- sys-apps/pam-login-3.14
+	          `-- sys-libs/pam-0.77-r1
+                 `-- sys-libs/cracklib-2.7-r10
+               `-- sys-apps/miscfiles-1.3-r1
+              `-- app-arch/gzip-1.3.5-r1
+              `-- sys-apps/portage-2.0.50-r10
+</pre>
+
+<p>
+たとえば、glibcはcdrtoolsに対して直接的な依存関係があり、
+linux-headersは間接的な依存関係があります。
+この出力にはバーチャルパッケージも含まれることに注意してください。
+上の例でいうと、<c>cdrtools</c>は実際にはvirtual/libcが必要だと書かれており
+sys-libs/glibc とは書かれていません。しかし、この例のシステムでは
+sys-libs/glibcがvirtual/libcを提供しています。
+</p>
+
+</body>
+</section>
+<section>
+<title>
+ebuldに属するファイルを出力する
+</title>
+<body>
+
+<p>
+<c>equery</c>でインストール済ebuildに属しているファイルを出力することができます。
+もし、私がGentoolkitによりシステムに導入されたファイルについて知らなくても、
+<c>equery</c>を使うことでわかります。
+</p>
+
+<pre caption="ファイルを出力する">
+#<i> equery files gentoolkit</i>
+[ Searching for packages matching gentoolkit... ]
+app-portage/gentoolkit-0.2.0
+* Contents of app-portage/gentoolkit-0.2.0:
+/usr
+/usr/bin
+/usr/bin/equery
+/usr/bin/etcat
+/usr/bin/euse
+/usr/bin/glsa-check
+/usr/bin/qpkg
+/usr/bin/revdep-rebuild
+/usr/lib
+/usr/lib/gentoolkit
+/usr/lib/gentoolkit/pym
+/usr/lib/gentoolkit/pym/gentoolkit
+/usr/lib/gentoolkit/pym/gentoolkit/__init__.py
+/usr/lib/gentoolkit/pym/gentoolkit/gentoolkit.py
+/usr/lib/gentoolkit/pym/gentoolkit/pprinter.py
+/usr/lib/gentoolkit/pym/glsa.py
+/usr/sbin
+/usr/share
+/usr/share/doc
+/usr/share/doc/gentoolkit-0.2.0_pre10
+
+[...]
+</pre>
+
+<p>
+<c>equery</c>の<c>files</c>コマンドには出力を変更するオプションがあります。
+くわしくは<c>equery</c>のmam pageを見てください。
+</p>
+
+</body>
+</section>
+<section>
+<title>
+特定のUSEフラグを使っているパッケージを探し出す
+</title>
+<body>
+
+<p>
+もし、特定のUSEフラグを使用しているパッケージを見つけたい場合には
+<c>equery</c>の<c>hasuse</c>機能を使ってください。
+</p>
+
+<pre caption="mozilla USEフラグを使っているパッケージを探す">
+# <i>equery hasuse mozilla</i>
+[ Searching for USE flag mozilla in all categories among: ]
+ * installed packages
+[I--] [  ] dev-java/blackdown-jre-1.4.2.01 (1.4.2)
+[I--] [  ] mail-client/evolution-2.0.2 (2.0)
+</pre>
+
+</body>
+</section>
+<section>
+<title>
+パッケージを出力する
+</title>
+<body>
+
+<p>
+<c>equery</c>にはportageやoverlayでもシステム内にあるパッケージを出力する
+強力な機能が備わっています。この機能を見てみましょう。
+</p>
+
+<pre caption="equeryでパッケージを出力する">
+# <i>equery list gentoolkit</i>
+[ Searching for package 'gentoolkit' in all categories among: ]
+ * installed packages
+[I--] [  ] app-portage/gentoolkit-0.2.0 (0)
+</pre>
+
+<p>
+通常のクエリではインストール済のパッケージから与えられた名前を検索をします。
+もし、見つかれば、次の通り情報を表示されます。
+最初のブラケットでパッケージの場所をあらわします(Iはインストール済、PはPortage、OはOverlay)。
+二つの目のブラケットでパッケージのマスクを表示します(~ によりキーワードを、- によりarchを、
+Mはハードマスクを意味します)。
+そして、カテゴリと完全な名前がつづき、最後にパッケージが保管されるスロットが表示されます。
+</p>
+
+<p>
+別な例です。今度はportageツリーとoverlayを含めて検索するためローカルオプションを使ってみましょう。
+</p>
+
+<pre caption="equeryでローカルオプションを使う">
+# <i>equery list -p -o vim</i>
+[ Searching for package 'vim' in all categories among: ]
+ * installed packages
+[I--] [  ] app-editors/vim-6.3-r4 (0)
+ * Portage tree (/usr/portage)
+[-P-] [M~] app-editors/vim-7.0_alpha20050126 (0)
+[-P-] [M~] app-editors/vim-7.0_alpha20050201 (0)
+[-P-] [  ] app-editors/vim-6.3-r2 (0)
+[-P-] [M~] app-editors/vim-7.0_alpha20050122 (0)
+[-P-] [M~] app-editors/vim-core-7.0_alpha20050126 (0)
+[-P-] [  ] app-editors/vim-core-6.3-r3 (0)
+[-P-] [M~] app-editors/vim-core-7.0_alpha20050122 (0)
+[-P-] [M~] app-editors/vim-core-7.0_alpha20050201 (0)
+[-P-] [  ] app-editors/vim-core-6.3-r4 (0)
+ * overlay tree (/opt/ebuilds)
+</pre>
+
+</body>
+</section>
+<section>
+<title>パッケージのサイズを知る</title>
+<body>
+
+<p>
+あるパッケージが占めるスペースがどのくらいか知りたいと思ったことはありませんか?
+パッケージはファイルをたくさんのディレクトリに展開することもあるため、
+<c>du -hc</c>では正しい数値が分からない場合があります。
+ご心配なく、<c>eqeury</c>で解決できます。
+</p>
+
+<pre caption="Package Size パッケージサイズ">
+# <i>equery size openoffice-bin</i>
+* app-office/openoffice-bin-1.1.2
+	   Total Files : 2908
+	   Total Size  : 223353.31 KiB
+</pre>
+
+<p>
+ご覧のとおり、<c>equery</c>はキロバイト単位の合計サイズと、パッケージ
+にあるファイルの合計数を表示します。
+</p>
+
+</body>
+</section>
+<section>
+<title>
+パッケージ毎のUSEフラグリスト
+</title>
+<body>
+
+<p>
+<c>equery</c> を使って特定のパッケージで使われているUSEフラグ情報を得ることができます。
+またパッケージにたいするUSEフラグとそのパッケージで使うことができるUSEフラグがわかります。
+</p>
+
+<pre caption="USEフラグの設定状況">
+# <i>equery uses ethereal</i>
+[ Colour Code : set unset ]
+[ Legend    : (U) Col 1 - Current USE flags        ]
+[           : (I) Col 2 - Installed With USE flags ]
+
+ U I [ Found these USE variables in : net-analyzer/ethereal-0.10.6 ]
+ - - adns  : Adds support for the adns DNS client library
+ + + gtk   : Adds support for x11-libs/gtk+ (The GIMP Toolkit)
+ - - ipv6  : Adds support for IP version 6
+ - - snmp  : Adds support for the Simple Network Management Protocol if available
+ + + ssl   : Adds support for Secure Socket Layer connections
+ + + gtk2  : Use gtk+-2.0.0 over gtk+-1.2 in cases where a program supports both.
+ - - debug : Tells configure and the makefiles to build for debugging. Effects vary across packages,
+             but generally it will at least add -g to CFLAGS. Remember to set FEATURES=nostrip too
+</pre>
+
+<p>
+etherealをgtk, ssl, gtk2のUSEフラグをセットしインストールした結果です。ほかの
+etherialにたいするUSEフラグはadns, ipv6, snmp, debug です。
+USEフラグについては <uri link="/doc/en/handbook/">Gentoo ハンドブック</uri><uri link="/doc/ja/handbook/">(日本語訳)</uri>。
+<uri link="/doc/en/handbook/handbook-x86.xml?part=2&amp;chap=2">USE フラグ</uri><uri link="/doc/ja/handbook/handbook-x86.xml?part=2&amp;chap=2">(日本語訳)</uri>
+の章を参照してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>ebuildはどこにあるか</title>
+<body>
+
+<p>
+<c>equery</c>をつかってパッケージが属するebuildを見つけることができます。
+<c>equery which</c>をコマンドをつかってebuildのフルパスを表示します。
+</p>
+
+<pre caption="ebuildのパスを表示する">
+# <i>equery which cdrtools</i>
+/usr/portage/app-cdr/cdrtools/cdrtools-2.01_alpha37.ebuild
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>euse</title>
+<section>
+<title>
+はじめに
+</title>
+<body>
+
+<warn>
+<c>euse</c>は現在のところカスケーディングされたプロファイルをうまく扱えません。
+</warn>
+
+<p>
+<c>euse</c>はいろいろな場面でUSEフラグをみたり、設定、解除するためのツールです。
+USEフラグについては
+<uri link="/doc/en/handbook/handbook-x86.xml?part=2&amp;chap=2">USE フラグ</uri><uri link="/doc/ja/handbook/handbook-x86.xml?part=2&amp;chap=2">(日本語訳)</uri>
+を参照してください。
+完全なヘルプとすべてのオプションは<c>euse -h</c>を参照してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>
+USEフラグの読み出し、設定、解除
+</title>
+<body>
+
+<p>
+<c>euse -a</c> コマンドで現在アクティブなUSEフラグを読み取り、表示します。
+</p>
+
+<note>
+現在<c>euse</c>はフラグが設定/解除されているか、どこで設定されているかを示すために
+5「カラム」使用します。カラムは次のようになっています。+/-、環境変数で設定されているか、
+make.confで設定されているか、make.Defaultsで設定されているか、make.Globalsで設定されているか。
+この表示は[+ECDG]のようになります。
+</note>
+
+<pre caption="アクティブなUSEフラグをすべて見る">
+# <i> euse -a</i>
+X                   [+ CD ]
+aalib               [+    ]
+acpi                [+ C  ]
+alsa                [+ C  ]
+apache2             [+ C  ]
+apm                 [+  D ]
+avi                 [+  D ]
+berkdb              [+  D ]
+bitmap-fonts        [+  D ]
+bonobo              [+    ]
+cdr                 [+ C  ]
+crypt               [+ CD ]
+cscope              [+ C  ]
+cups                [+ CD ]
+curl                [+    ]
+emboss              [+  D ]
+encode              [+  D ]
+esd                 [+    ]
+ethereal            [+ C  ]
+fam                 [+    ]
+fbcon               [+ C  ]
+font-server         [+  D ]
+foomaticdb          [+  D ]
+fortran             [+  D ]
+gd                  [+ C  ]
+gdbm                [+  D ]
+gif                 [+ CD ]
+gimpprint           [+ C  ]
+gnome               [+ CD ]
+gphoto2             [+    ]
+gpm                 [+ CD ]
+gstreamer           [+ C  ]
+gtk                 [+  D ]
+gtk2                [+ CD ]
+gtkhtml             [+ C  ]
+guile               [+    ]
+imagemagick         [+    ]
+imlib               [+ CD ]
+imlib2              [+    ]
+innodb              [+    ]
+ipv6                [+  D ]
+javascript          [+ C  ]
+jpeg                [+ CD ]
+kde                 [+  D ]
+ldap                [+    ]
+libg++              [+ CD ]
+libwww              [+ CD ]
+mad                 [+ CD ]
+mbox                [+ C  ]
+md5sum              [+ C  ]
+mikmod              [+ CD ]
+mmx                 [+ C  ]
+motif               [+ CD ]
+mozilla             [+ C  ]
+mp3                 [+    ]
+mpeg                [+ CD ]
+mpeg4               [+ C  ]
+mysql               [+ C  ]
+ncurses             [+ CD ]
+nls                 [+  D ]
+nvidia              [+ C  ]
+odbc                [+    ]
+offensive           [+    ]
+oggvorbis           [+ CD ]
+opengl              [+ CD ]
+oss                 [+  D ]
+pam                 [+ CD ]
+pdflib              [+ CD ]
+perl                [+ CD ]
+png                 [+ CD ]
+python              [+ CD ]
+qt                  [+  D ]
+quicktime           [+ CD ]
+readline            [+ CD ]
+ruby                [+    ]
+sdl                 [+ CD ]
+slang               [+  D ]
+spell               [+ CD ]
+sse                 [+ C  ]
+ssl                 [+ CD ]
+svga                [+ CD ]
+tcltk               [+ C  ]
+tcpd                [+  D ]
+tiff                [+ C  ]
+truetype            [+ CD ]
+truetype-fonts      [+  D ]
+type1-fonts         [+  D ]
+usb                 [+ C  ]
+vanilla             [+ C  ]
+x86                 [+ C  ]
+xml                 [+    ]
+xml2                [+  D ]
+xmms                [+  D ]
+xosd                [+ C  ]
+xv                  [+ CD ]
+xvid                [+ C  ]
+zlib                [+ CD ]
+</pre>
+
+<p>
+同じように<c>euse -a -g</c>コマンドでアクティブなグローバルUSEフラグだけをみることができます。
+<c>euse -a -l</c>は同じようにアクティブなローカルなUSEフラグを表示します。
+<c>-g</c>と<c>-l</c>は<c>euse</c>のサブオプションで、
+正しく動作するには(<c>-a</c>のような)オプションが前に必要です。
+</p>
+
+<pre caption="アクティブなローカルUSEフラグをみる">
+# <i>euse -a -l</i>
+bitmap-fonts        [+  D ]
+font-server         [+  D ]
+fortran             [+  D ]
+gimpprint           [+ C  ]
+imlib2              [+    ]
+md5sum              [+ C  ]
+mpeg4               [+ C  ]
+nvidia              [+ C  ]
+offensive           [+    ]
+truetype            [+ CD ]
+truetype-fonts      [+  D ]
+type1-fonts         [+  D ]
+</pre>
+
+<p>
+USEフラグを設定したり解除する目的で<c>euse</c>を使うこともできます。
+このためには<c>euse -E フラグ名</c>(フラグの有効化)や
+<c>euse -D フラグ名</c>(フラグの無効化)というようにします。
+</p>
+
+<warn>
+<c>euse -E</c>や<c>euse -D</c>というようにコマンド単独(フラグ名なし)で使わないでください。
+これをすると、<c>/etc/make.conf</c>のすべてのUSEフラグが設定/解除されてしまいます。
+<path>/etc/make.conf.euse_backup</path>にバックアップは残っていますが、
+<c>euse -E</c>や<c>euse -D</c>を使うときにはくれぐれも慎重に。
+</warn>
+
+<pre caption="USEフラグの設定や解除">
+<comment>
+(USEフラグを有効にする)
+</comment>
+# <i> euse -E 3dfx</i>
+/etc/make.conf was modified, a backup copy has been placed at /etc/make.conf.euse_backup
+
+<comment>
+(コマンド後の/etc/make.conf)
+</comment>
+USE="alsa acpi apache2 -arts cups cdr crypt cscope -doc ethereal fbcon gd \
+     gif gimpprint gnome gpm gstreamer gtk2 gtkhtml imlib imlib2 \
+     innodb -java javascript jpeg libg++ libwww mad mbox md5sum \
+     mikmod mmx motif mozilla mpeg mpeg4 mysql ncurses nvidia \
+     oggvorbis odbc offensive opengl pam pdflib perl png python \
+     quicktime readline sdl spell sse ssl svga tcltk tiff truetype usb \
+     vanilla X xml2 xmms xosd xv xvid x86 zlib 3dfx"
+
+<comment>
+(USEフラグの無効化)
+</comment>
+# <i> euse -D 3dfx</i>
+/etc/make.conf was modified, a backup copy has been placed at /etc/make.conf.euse_backup
+
+<comment>
+(コマンド後の/etc/make.conf)
+</comment>
+USE="alsa acpi apache2 -arts cups cdr crypt cscope -doc ethereal fbcon gd \
+     gif gimpprint gnome gpm gstreamer gtk2 gtkhtml imlib imlib2 \
+     innodb -java javascript jpeg libg++ libwww mad mbox md5sum \
+     mikmod mmx motif mozilla mpeg mpeg4 mysql ncurses nvidia \
+     oggvorbis odbc offensive opengl pam pdflib perl png python \
+     quicktime readline sdl spell sse ssl svga tcltk tiff truetype usb \
+     vanilla X xml2 xmms xosd xv xvid x86 zlib -3dfx"
+</pre>
+
+<note>
+<c>euse</c>はmake.confから物理的にフラグを取り除くわけではありません。
+解除には- (マイナス)をフラグのまえにつけるだけです。
+もし、不要な変数を避けるならば手動でmake.confをきれいにしなければならないでしょう。
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>
+そのほかのツール
+</title>
+<section>
+<title>revdep-rebuild</title>
+<body>
+
+<p>
+このツールはGentooのReverse Dependency rebuilderといったものです。
+あるパッケージをアップグレードをした場合にアップグレードするパッケージに依存し壊れてしまうパッケージ群を見つけるために、
+インストール済みebuldをスキャンします。こうしたパッケージ群をemergeすることもできますし、
+現在インストールされている依存関係ではうまく動作しないパッケージを示すこともあります。
+その場合はより新しいバージョンにアップグレードすべきでしょう。
+revdep-rebuild は事前に何が再度emergeされるか確認するために
+<c>--pretend</c> フラグでemregeをパスします。
+</p>
+
+<pre caption="仮想モードでrevdep-rebuildを動かす">
+# <i>revdep-rebuild -p</i>
+
+Checking reverse dependencies...
+Packages containing binaries and libraries broken by any package update,
+will be recompiled.
+
+Collecting system binaries and libraries... done.
+  (/root/.revdep-rebuild.1_files)
+
+Collecting complete LD_LIBRARY_PATH... done.
+  (/root/.revdep-rebuild.2_ldpath)
+
+Checking dynamic linking consistency...
+  broken /usr/lib/ao/plugins-2/libarts.so (requires libartsc.so.0)
+  broken /usr/lib/kde3/libkpresenterpart.so (requires libartskde.so.1 libqtmcop.so.1
+         libsoundserver_idl.so.1 libkmedia2_idl.so.1 libartsflow.so.1 libartsflow_idl.so.1 libmcop.so.1)
+  broken /usr/lib/ruby/site_ruby/1.8/i686-linux/fox.so (requires libFOX-1.0.so.0)
+  broken /usr/lib/xine/plugins/1.0.0/xineplug_ao_out_arts.so (requires libartsc.so.0)
+  broken /usr/lib/perl5/vendor_perl/5.8.0/i686-linux/auto/SDL_perl/SDL_perl.so (requires libSDL_gfx.so.0)
+  broken /usr/lib/libloudmouth-1.so.0.0.0 (requires libgnutls.so.10)
+  broken /usr/bin/k3b (requires libartskde.so.1 libqtmcop.so.1 libsoundserver_idl.so.1 libkmedia2_idl.so.1
+         libartsflow.so.1 libartsflow_idl.so.1 libmcop.so.1)
+  broken /usr/bin/lua (requires libhistory.so.4)
+  broken /usr/bin/lyx (requires libAiksaurus-1.0.so.0)
+  broken /usr/bin/luac (requires libhistory.so.4)
+  broken /usr/bin/avidemux2 (requires libartsc.so.0)
+  broken /usr/bin/pptout (requires libxml++-0.1.so.11)
+  broken /usr/bin/xml2ps (requires libxml++-0.1.so.11)
+ done.
+  (/root/.revdep-rebuild.3_rebuild)
+
+Assigning files to ebuilds... done.
+  (/root/.revdep-rebuild.4_ebuilds)
+
+Evaluating package order... done.
+  (/root/.revdep-rebuild.5_order)
+
+All prepared. Starting rebuild...
+emerge --oneshot --nodeps -p =app-cdr/k3b-0.11.14 =app-office/koffice-1.3.2 =app-office/lyx-1.3.4 \
+       =app-office/passepartout-0.2 =dev-lang/lua-5.0.2 =dev-ruby/fxruby-1.0.29 =media-libs/libao-0.8.5 \
+       =media-libs/xine-lib-1_rc5-r3 =media-video/avidemux-2.0.26 =net-libs/loudmouth-0.16 
+
+These are the packages that I would merge, in order:
+
+Calculating dependencies ...done!
+[ebuild   R   ] app-cdr/k3b-0.11.14  
+[ebuild   R   ] app-office/koffice-1.3.2  
+[ebuild   R   ] app-office/lyx-1.3.4  
+[ebuild   R   ] app-office/passepartout-0.2  
+[ebuild   R   ] dev-lang/lua-5.0.2  
+[ebuild   R   ] dev-ruby/fxruby-1.0.29  
+[ebuild   R   ] media-libs/libao-0.8.5  
+[ebuild   R   ] media-libs/xine-lib-1_rc5-r3  
+[ebuild   R   ] media-video/avidemux-2.0.26  
+[ebuild   R   ] net-libs/loudmouth-0.16  
+
+Now you can remove -p (or --pretend) from arguments and re-run revdep-rebuild.
+</pre>
+
+<p>
+もし、なにかパッケージをリビルドする必要が出た場合、<c>-p</c>フラグなしで<c>revdep-rebuild</c>
+を実行すればリストされたパッケージが再度emergeされます。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>glsa-check</title>
+<body>
+
+<p>
+<c>glsa-check</c> は主にさまざまなGLSA(Gentoo Linux Security Advisory)の把握をするテストツールで
+ゆくゆくは<c>emerge</c>と<c>equery</c>と統合されるでしょう。
+詳しくは <uri link="/proj/en/portage/glsa-integration.xml">Portage GLSA Integration Page</uri>
+をご覧ください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

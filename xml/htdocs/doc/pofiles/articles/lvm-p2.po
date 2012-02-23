@@ -1,0 +1,774 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/articles/lvm-p2.xml:6
+#, no-wrap
+msgid "Learning Linux LVM, Part 2"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/articles/lvm-p2.xml:14
+#, no-wrap
+msgid ""
+"In this article, Daniel shares his experiences converting cvs.gentoo.org's\n"
+"/home filesystem to an LVM logical volume. After the transition, we get to see\n"
+"the benefits of LVM when cvs.gentoo.org's /home partition is dynamically\n"
+"resized in real-time, without rebooting, unmounting /home, or even dropping to\n"
+"runlevel 1. All processes continue to work without any interruption. Daniel's\n"
+"step-by-step details of the conversion will help anyone interested in peforming\n"
+"a similar transition on their own machine.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/lvm-p2.xml:32
+#, no-wrap
+msgid "The cvs.gentoo.org upgrade"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/lvm-p2.xml:34
+#, no-wrap
+msgid "Introduction"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:38
+#, no-wrap
+msgid ""
+"In <uri link=\"/doc/en/articles/lvm-p1.xml\">my first LVM article</uri>, I\n"
+"explained the concepts behind LVM. Now it's time to put LVM into action. In\n"
+"this article, I'm going to set up LVM on the official Gentoo Linux cvs server,\n"
+"cvs.gentoo.org. Although cvs.gentoo.org has only one hard drive, LVM's\n"
+"flexibility still provides an incredible improvement over the standard static\n"
+"partitioning approach. I'll show you all the steps of the LVM conversion\n"
+"process, so that if you're interested you can perform a similar conversion on\n"
+"one of your machines.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><warn>
+#: en/articles/lvm-p2.xml:49
+#, no-wrap
+msgid ""
+"Because implementing LVM is a major change to the system (involving the\n"
+"creation of new partitions and other potentially hazardous actions) it's a\n"
+"really good idea to perform a full system backup before beginning this process.\n"
+"If you're not going to perform a backup, I hope you're using a test box with no\n"
+"important data on it. I should mention that I didn't experience any problems\n"
+"while converting to LVM, but it's best to be prepared in case something goes\n"
+"wrong.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:59
+#, no-wrap
+msgid ""
+"That said, let's continue. Before starting the conversion process, I upgraded\n"
+"cvs.gentoo.org so that it was using the following packages. At the time I\n"
+"performed the LVM transition, these were the latest versions available (see\n"
+"<uri link=\"#resources\">Resources</uri> later in this article):\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p2.xml:66
+#, no-wrap
+msgid "Linux kernel 2.4.1-ac19"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p2.xml:67
+#, no-wrap
+msgid "LVM 0.9.1_beta5"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p2.xml:68
+#, no-wrap
+msgid "reiserfs-utils 3.6.25"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:72
+#, no-wrap
+msgid ""
+"Now, for the hard drive. cvs.gentoo.org had a nice new IBM 45 GB hard drive\n"
+"sitting in it; however, when I installed Gentoo Linux on cvs, I only\n"
+"partitioned about 10 gigabytes of the drive, keeping the remaining 35 GB for\n"
+"future partitions. Such are the little tricks you need to employ when not using\n"
+"LVM -- leaving part of the drive unpartitioned is a primitive but effective way\n"
+"to allow for future expansion. However, with LVM there is a better approach.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/lvm-p2.xml:83
+#, no-wrap
+msgid "The space problem"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:87
+#, no-wrap
+msgid ""
+"In the past few weeks, I had been noticing that my root ReiserFS partition had\n"
+"been slowly filling up, as you can see from this <c>df</c> output:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:91
+#, no-wrap
+msgid "Shrinking free space"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:92
+#, no-wrap
+msgid ""
+"Filesystem           1k-blocks      Used Available Use% Mounted on\n"
+"/dev/hda3              9765200   6989312   2775888  72% /\n"
+"tmpfs                   269052         0    269052   0% /dev/shm\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:98
+#, no-wrap
+msgid ""
+"Now, a 72% full root partition isn't exactly a crisis, but it isn't a wonderful\n"
+"situation either. ReiserFS, like many other filesystems, starts slowing down as\n"
+"it gets more and more full, and it was just a matter of time before my root\n"
+"filesystem would fill up completely and filesystem performance would take a\n"
+"hit.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:106
+#, no-wrap
+msgid ""
+"I decided to fix this problem by using LVM to create a new logical volume out\n"
+"of the 35 GB of currently unpartitioned space at the end of my hard drive.\n"
+"Then, I'd create a filesystem on this volume and move a good chunk of the\n"
+"contents of <path>/dev/hda3</path> to it.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:113
+#, no-wrap
+msgid ""
+"If you're thinking of making a similar transition on one of your machines, the\n"
+"first thing you need to do is find a suitable piece of your root filesystem to\n"
+"move to a logical volume. For me, the choice was easy -- my <path>/home</path>\n"
+"tree was taking up around 5.7 GB. By moving <path>/home</path> to its own LVM\n"
+"logical volume, my root filesystem would then be at about 20% capacity. Since\n"
+"most new data is being added to <path>/home</path>, my root filesystem would\n"
+"likely stay at around 20% capacity as well -- a very healthy situation.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/lvm-p2.xml:125
+#, no-wrap
+msgid "The beginnings of a solution"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:129
+#, no-wrap
+msgid ""
+"To begin the conversion, I first had to partition the unused space at the end\n"
+"of my hard drive. Using <c>cfdisk</c>, I created a 35 GB partition\n"
+"(<path>/dev/hda5</path>) and set the partition type of the partition to\n"
+"<c>8E</c> (the official LVM partition type). After this change, I rebooted to\n"
+"force a reread of my partition table. After the reboot, my partition table\n"
+"looked like this:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:137
+#, no-wrap
+msgid "The new partition table"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:138
+#, no-wrap
+msgid ""
+"# <i>sfdisk -l</i>\n"
+"Disk /dev/hda: 89355 cylinders, 16 heads, 63 sectors/track\n"
+"Units = cylinders of 516096 bytes, blocks of 1024 bytes, counting from 0\n"
+"   Device Boot Start     End   #cyls   #blocks   Id  System\n"
+"/dev/hda1   *      0+    247     248-   124960+  83  Linux\n"
+"/dev/hda2        248     743     496    249984   82  Linux swap\n"
+"/dev/hda3        744   20119   19376   9765504   83  Linux\n"
+"/dev/hda4      20120   89354   69235  34894440    5  Extended\n"
+"/dev/hda5      20120+  89354   69235- 34894408+  8e  Linux LVM\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:150
+#, no-wrap
+msgid ""
+"Now that I had an empty 35 GB partition, I was ready to initialize it for LVM.\n"
+"Here's the procedure -- first, I would initialize the 35 gigabytes as a\n"
+"<e>physical</e> volume; then, I would create a <e>volume</e> group using this\n"
+"physical volume, and finally, I would allocate some of the extents on the\n"
+"volume group, creating a <e>logical volume</e> that would contain my new\n"
+"filesystem and house all the files currently in <path>/home</path>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:159
+#, no-wrap
+msgid ""
+"To begin the process, I used the <c>pvcreate</c> command to initialize\n"
+"<path>/dev/hda5</path> as a physical volume:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:163
+#, no-wrap
+msgid "Creating the physical volume"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:164
+#, no-wrap
+msgid ""
+"# <i>pvcreate /dev/hda5</i>\n"
+"pvcreate -- physical volume \"/dev/hda5\" successfully created\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:169
+#, no-wrap
+msgid ""
+"<c>pvcreate</c> set up a special \"accounting\" area on <path>/dev/hda5</path>,\n"
+"called the VGDA (volume group descriptor area). LVM uses this area to keep\n"
+"track of how the physical extents are allocated, among other things.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:175
+#, no-wrap
+msgid ""
+"My next step was to create a volume group and add <path>/dev/hda5</path> to\n"
+"this group. The volume group would act as a pool of extents (chunks of storage\n"
+"blocks). Once the volume group was created, I could create as many logical\n"
+"volumes as I wanted. I decided that my volume group would be called \"main\":\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:181
+#, no-wrap
+msgid "Creating the volume group"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:182
+#, no-wrap
+msgid ""
+"# <i>vgcreate main /dev/hda5</i>\n"
+"vgcreate -- INFO: using default physical extent size 4 MB\n"
+"vgcreate -- INFO: maximum logical volume size is 255.99 Gigabyte\n"
+"vgcreate -- doing automatic backup of volume group \"main\"\n"
+"vgcreate -- volume group \"main\" successfully created and activated\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:190
+#, no-wrap
+msgid ""
+"The <c>vgcreate</c> command did a couple of things. In addition to creating the\n"
+"\"main\" volume group, it also set up <path>/dev/hda5</path> to use 4 MB extents,\n"
+"the default extent size. This means that any logical volumes I create from this\n"
+"volume group can be expanded and shrunk in 4 MB increments.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:197
+#, no-wrap
+msgid ""
+"Due to kernel limitations, the extent size determines the maximum size that a\n"
+"logical volume can be. As you can see from the above output, a 4 MB extent size\n"
+"imposes a logical volume size limitation of 256 gigabytes, which is an easily\n"
+"attainable logical volume size if you're adding several high-capacity drives to\n"
+"your volume group. If your volumes could end up being greater than 256 GB\n"
+"apiece, I recommend specifying a larger extent size at <c>vgcreate</c> time.\n"
+"Extents can range anywhere from 8 KB to 512 MB, and must always be a multiple\n"
+"of two. By increasing the extent size above 4 MB, the maximum physical volume\n"
+"size will be scaled accordingly, up to a maximum of 1 petabyte (although the\n"
+"current real-world size limit is 2 terabytes on x86 systems). For example, if I\n"
+"wanted to create a volume group with 32 megabyte extents, I'd type:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:210
+#, no-wrap
+msgid "A larger extent size"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:211
+#, no-wrap
+msgid "# <i>vgcreate -s 32M main /dev/hda5</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:215
+#, no-wrap
+msgid ""
+"32 MB is a good extent size, since a 32 MB granularity is still manageable and\n"
+"pushes the maximum logical volume size to 2 terabytes to boot. Once your volume\n"
+"group is created, you can view its information by typing <c>vgdisplay</c>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:220
+#, no-wrap
+msgid "Examining volume information"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:221
+#, no-wrap
+msgid ""
+"# <i>vgdisplay</i>\n"
+"--- Volume group ---\n"
+"VG Name               main\n"
+"VG Access             read/write\n"
+"VG Status             available/resizable\n"
+"VG #                  0\n"
+"MAX LV                256\n"
+"Cur LV                0\n"
+"Open LV               0\n"
+"MAX LV Size           255.99 GB\n"
+"Max PV                256\n"
+"Cur PV                1\n"
+"Act PV                1\n"
+"VG Size               33.28 GB\n"
+"PE Size               4 MB\n"
+"Total PE              8519\n"
+"Alloc PE / Size       0 / 0\n"
+"Free  PE / Size       8519 / 33.28 GB\n"
+"VG UUID               2qC2H2-iA8s-qW6F-cwXx-JVIh-I6VC-VVCGmn\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:243
+#, no-wrap
+msgid ""
+"Now that I had my volume group, I was ready to create a logical volume. I\n"
+"decided to initially make it 8 gigabytes in size and call it \"lv_home\":\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:247
+#, no-wrap
+msgid "Creating the logical volume"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:248
+#, no-wrap
+msgid ""
+"# <i>lvcreate -L8G -nlv_home main</i>\n"
+"lvcreate -- doing automatic backup of \"main\"\n"
+"lvcreate -- logical volume \"/dev/main/lv_home\" successfully created\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:254
+#, no-wrap
+msgid "Then, I created a filesystem on the volume:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:257
+#, no-wrap
+msgid "Filesystem creation"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:258
+#, no-wrap
+msgid ""
+"# <i>mkreiserfs /dev/main/lv_home</i>\n"
+"\n"
+"\n"
+"  &lt;----------- MKREISERFSv2 -----------&gt;\n"
+"\n"
+"   Block size 4096 bytes\n"
+"   Block count 2097152\n"
+"   Used blocks 8275\n"
+"           Journal - 8192 blocks (18-8209), journal header is in block 8210\n"
+"           Bitmaps: 17, 32768, 65536, 98304, 131072, 163840,\n"
+"           196608, 229376, 262144, 294912, 327680, 360448,\n"
+"           393216, 425984, 458752, 491520, 524288, 557056,\n"
+"           589824, 622592, 655360, 688128, 720896, 753664,\n"
+"           786432, 819200, 851968, 884736, 917504, 950272,\n"
+"           983040, 1015808, 1048576, 1081344, 1114112,\n"
+"           1146880, 1179648, 1212416, 1245184, 1277952,\n"
+"           1310720, 1343488, 1376256, 1409024, 1441792,\n"
+"           1474560, 1507328, 1540096, 1572864, 1605632,\n"
+"           1638400, 1671168, 1703936, 1736704, 1769472,\n"
+"           1802240, 1835008, 1867776, 1900544, 1933312,\n"
+"           1966080, 1998848, 2031616, 2064384\n"
+"   Root block 8211\n"
+"Hash function \"r5\"\n"
+"ATTENTION: ALL DATA WILL BE LOST ON '/dev/main/lv_home'! (y/n)y\n"
+"journal size 8192 (from 18)\n"
+"Initializing journal - 0%....20%....40%....60%....80%....100%\n"
+"Syncing..done.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:288
+#, no-wrap
+msgid ""
+"Now that the filesystem was created, I could mount it at\n"
+"<path>/mnt/newhome</path>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:292
+#, no-wrap
+msgid "Mounting the new volume"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:293
+#, no-wrap
+msgid ""
+"# <i>mkdir /mnt/newhome</i>\n"
+"# <i>mount /dev/main/lv_home /mnt/newhome</i>\n"
+"# <i>df</i>\n"
+"Filesystem           1k-blocks      Used Available Use% Mounted on\n"
+"/dev/hda3              9765200   6989840   2775360  72% /\n"
+"tmpfs                   291388         0    291388   0% /dev/shm\n"
+"/dev/main/lv_home      8388348     32840   8355508   1% /mnt/newhome\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:303
+#, no-wrap
+msgid ""
+"As you can see above, I was almost ready to copy over all my data in\n"
+"<path>/home</path>. Before I began, I dropped to runlevel 1 to ensure that no\n"
+"users or processes would be accessing or modifying files in <path>/home</path>\n"
+"as they were being copied over:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:309
+#, no-wrap
+msgid "Runlevel 1"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:310
+#, no-wrap
+msgid "# <i>init 1</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:314
+#, no-wrap
+msgid "Then, I began copying the files:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:317
+#, no-wrap
+msgid "Copying files to the new directory"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:318
+#, no-wrap
+msgid "# <i>cp -avx /home/* /mnt/newhome</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:322
+#, no-wrap
+msgid ""
+"The copy completed in about ten minutes. Then, I backed up my original\n"
+"<path>/home</path> to <path>/home.old</path>, just in case something was wrong\n"
+"with my copy. I created a new mount point, and remounted the new home at\n"
+"<path>/home</path>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:328
+#, no-wrap
+msgid "The new mount point"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:329
+#, no-wrap
+msgid ""
+"# <i>cd /</i>\n"
+"# <i>mv home home.old</i>\n"
+"# <i>mkdir home</i>\n"
+"# <i>umount /mnt/newhome</i>\n"
+"# <i>mount /dev/main/lv_home /home</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:337
+#, no-wrap
+msgid ""
+"Then, it was time to set up the server so that my new <path>/home</path>\n"
+"partition would be available every time the machine started up. First, I\n"
+"modified my <path>/etc/fstab</path> so that it included a new\n"
+"<path>/home</path> entry:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:343
+#, no-wrap
+msgid "Editing fstab"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:344
+#, no-wrap
+msgid ""
+"<comment>\n"
+"#fs                 mountpoint       type         opts          dump/pass</comment>\n"
+"/dev/hda3           /                reiserfs     defaults      1 1\n"
+"/dev/main/lv_home   /home            reiserfs     defaults      2 2\n"
+"/dev/hda2           none             swap         sw            0 0\n"
+"/dev/hda1           /boot            reiserfs     noauto        0 0\n"
+"/dev/cdrom          /mnt/cdrom       iso9660      noauto,ro     0 0\n"
+"proc                /proc            proc         defaults      0 0\n"
+"none                /dev/pts         devpts       mode=620      0 0\n"
+"tmpfs               /dev/shm         tmpfs        defaults      0 0\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:357
+#, no-wrap
+msgid ""
+"Then, I made minor modifications to my initialization scripts. I modified my\n"
+"\"checkroot\" startup script so that the following commands would run immediately\n"
+"after my root partition was remounted read/write:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:362
+#, no-wrap
+msgid "Modifying the startup script"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:363
+#, no-wrap
+msgid ""
+"/sbin/vgscan\n"
+"/sbin/vgchange -a y\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:368
+#, no-wrap
+msgid ""
+"Then, I modified my filesystem unmounting script that gets run on shutdown, so\n"
+"that the following command would run immediately after all filesystems were\n"
+"unmounted:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:373
+#, no-wrap
+msgid "Modifying the shutdown script"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:374
+#, no-wrap
+msgid "/sbin/vgchange -a n\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:378
+#, no-wrap
+msgid ""
+"Once I had completed these steps, I rebooted the machine, and to my delight\n"
+"everything worked perfectly. After a day or so of absolutely no problems, I\n"
+"deleted <path>/home.old</path> to free up some space on my root filesystem.\n"
+"Yay! The transition to LVM was a success.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/lvm-p2.xml:387
+#, no-wrap
+msgid "The beauty of LVM"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:391
+#, no-wrap
+msgid ""
+"While the transition to LVM is a bit of an ordeal, once the transition is\n"
+"complete, managing filesystems becomes tremendously easier. As an example, I\n"
+"decided to resize my new <path>/home</path> logical volume, adding about 2\n"
+"gigabytes worth of space to the end of the filesystem. First, I added\n"
+"additional capacity to my \"lv_home\" logical volume, and then I used the\n"
+"<c>resize_reiserfs</c> utility to expand the filesystem so that it would use\n"
+"this additional capacity. Here are the two commands that did all this:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:400
+#, no-wrap
+msgid "Using additional space"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:401
+#, no-wrap
+msgid ""
+"# <i>lvextend -L+2G /dev/main/lv_home</i>\n"
+"# <i>resize_reiserfs -f /dev/main/lv_home</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:406
+#, no-wrap
+msgid ""
+"In about a second, I had enlarged my <path>/home</path> filesystem by 2 GB;\n"
+"amazingly, I didn't need to reboot, drop to runlevel 1, or even unmount\n"
+"<path>/home</path> to perform the resize. Everything continued to work as it\n"
+"had before. Isn't that great? Here's the current state of my filesystems:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:412
+#, no-wrap
+msgid "Filesystem space"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/lvm-p2.xml:413
+#, no-wrap
+msgid ""
+"# <i>df</i>\n"
+"Filesystem           1k-blocks      Used Available Use% Mounted on\n"
+"/dev/hda3              9765200   1413340   8351860  15% /\n"
+"/dev/main/lv_home     10485436   5609836   4875600  54% /home\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/lvm-p2.xml:420
+#, no-wrap
+msgid ""
+"You can see how LVM really can make an administrator's work a whole lot easier.\n"
+"In the future, I hope to move additional parts of my root filesystem over to\n"
+"LVM, and eventually even convert my root filesystem over to an LVM logical\n"
+"volume. The resources below will help you learn even more about LVM.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/lvm-p2.xml:429
+#, no-wrap
+msgid "Resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p2.xml:434
+#, no-wrap
+msgid ""
+"    For LVM concepts and advice on get the latest kernel patches and tools\n"
+"    installed on your system, see my previous article, <uri\n"
+"    link=\"/doc/en/articles/lvm-p1.xml\">Learning Linux LVM, Part 1</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p2.xml:439
+#, no-wrap
+msgid ""
+"    Download the <uri link=\"ftp://sources.redhat.com/pub/lvm2\">LVM\n"
+"    tarball</uri> from RedHat.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p2.xml:455
+#, no-wrap
+msgid ""
+"    The impatient will want to check out <uri\n"
+"    link=\"http://www.linux.org/docs/ldp/howto/LVM-HOWTO.html\">Heinz\n"
+"    Mauelshagen's LVM HOWTO</uri>, which contains more examples on how to set\n"
+"    up volume groups and logical volumes.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p2.xml:461
+#, no-wrap
+msgid ""
+"    There's also an interesting HOWTO that shows you <uri\n"
+"    link=\"http://www.the-infinite.org/archive/docs/lvm/howto-boot-off-root-lv.txt\">\n"
+"    how to set up your root filesystem on a logical volume</uri>. Once\n"
+"    LVM-0.9.1_final is out, I may try doing this.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p2.xml:467
+#, no-wrap
+msgid ""
+"    Andreas Dilger is involved with the Linux LVM project and has a\n"
+"    nice-looking <e>online</e> <uri\n"
+"    link=\"http://www-mddsp.enel.ucalgary.ca/People/adilger/online-ext2/\">ext2\n"
+"    filesystem resizer</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p2.xml:473
+#, no-wrap
+msgid ""
+"    <uri link=\"http://www.namesys.com\">ReiserFS</uri> is an excellent\n"
+"    filesystem (especially in combination with LVM). If you're using ReiserFS,\n"
+"    you'll want to grab the reiserfs-utils tarball, which contains a program\n"
+"    called <c>reiserfs_resize</c> -- allowing online resizing of ReiserFS\n"
+"    filesystems.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p2.xml:480
+#, no-wrap
+msgid ""
+"    For more information on setting up Linux software RAID volumes, see <uri\n"
+"    link=\"/doc/en/articles/software-raid-p1.xml\">Part 1</uri> and <uri\n"
+"    link=\"/doc/en/articles/software-raid-p2.xml\">Part 2</uri> of Daniel's\n"
+"    series on software RAID.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/lvm-p2.xml:486
+#, no-wrap
+msgid ""
+"    For a refresher, see Daniel's <uri\n"
+"    link=\"/doc/en/articles/linux-kernel-compiling.xml\">tutorial on compiling\n"
+"    the Linux kernel</uri>.\n"
+"  "
+msgstr ""

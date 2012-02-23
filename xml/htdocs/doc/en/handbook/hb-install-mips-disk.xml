@@ -1,0 +1,657 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-mips-disk.xml,v 1.31 2011/10/17 19:51:45 swift Exp $ -->
+
+<sections>
+
+<abstract>
+To be able to install Gentoo, you must create the necessary partitions.
+This chapter describes how to partition a disk for future usage.
+</abstract>
+
+<version>7</version>
+<date>2011-10-17</date>
+
+<section>
+<title>Introduction to Block Devices</title>
+
+<subsection>
+<include href="hb-install-blockdevices.xml"/>
+</subsection>
+
+<subsection>
+<title>Partitions</title>
+<body>
+
+<p>
+Although it is theoretically possible to use a full disk to house your Linux
+system, this is almost never done in practice. Instead, full disk block devices
+are split up in smaller, more manageable block devices. These are called
+<e>partitions</e>. 
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Designing a Partitioning Scheme</title>
+<subsection>
+<title>How Many and How Big?</title>
+<body>
+
+<p>
+The number of partitions is highly dependent on your environment. For instance,
+if you have lots of users, you will most likely want to have your
+<path>/home</path> separate as it increases security and makes backups easier.
+If you are installing Gentoo to perform as a mailserver, your <path>/var</path>
+should be separate as all mails are stored inside <path>/var</path>. A good
+choice of filesystem will then maximise your performance. Gameservers will have
+a separate <path>/opt</path> as most gaming servers are installed there. The
+reason is similar for <path>/home</path>: security and backups. You will
+definitely want to keep <path>/usr</path> big: not only will it contain the
+majority of applications, the Portage tree alone takes around 500 Mbyte
+excluding the various sources that are stored in it.
+</p>
+
+<p>
+As you can see, it very much depends on what you want to achieve. Separate
+partitions or volumes have the following advantages:
+</p>
+
+<ul>
+<li>
+  You can choose the best performing filesystem for each partition or volume
+</li>
+<li>
+  Your entire system cannot run out of free space if one defunct tool is
+  continuously writing files to a partition or volume
+</li>
+<li>
+  If necessary, file system checks are reduced in time, as multiple checks can
+  be done in parallel (although this advantage is more with multiple disks than
+  it is with multiple partitions)
+</li>
+<li>
+  Security can be enhanced by mounting some partitions or volumes read-only, 
+  nosuid (setuid bits are ignored), noexec (executable bits are ignored) etc.
+</li>
+</ul>
+
+<p>
+However, multiple partitions have disadvantages as well. If not configured
+properly, you will have a system with lots of free space on one partition and
+none on another. Another nuisance is that separate partitions - especially
+for important mountpoints like <path>/usr</path> or <path>/var</path> - often
+require the administrator to boot with an initramfs to mount the partition
+before other boot scripts start. This isn't always the case though, so YMMV.
+</p>
+
+<p>
+There is also a 15-partition limit for SCSI and SATA.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Using fdisk on MIPS to Partition your Disk</title>
+<subsection>
+<title>SGI Machines: Creating an SGI Disk Label</title>
+<body>
+
+<p>
+All disks in an SGI System require an <e>SGI Disk Label</e>, which serves a
+similar function as Sun &amp; MS-DOS disklabels -- It stores information about
+the disk partitions. Creating a new SGI Disk Label will create two special
+partitions on the disk:
+</p>
+
+<ul>
+  <li>
+    <e>SGI Volume Header</e> (9th partition): This partition is important. It
+    is where the bootloader will reside, and in some cases, it will also
+    contain the kernel images.
+  </li>
+  <li>
+    <e>SGI Volume</e> (11th partition): This partition is similar in purpose to
+    the Sun Disklabel's third partition of "Whole Disk". This partition spans
+    the entire disk, and should be left untouched. It serves no special purpose
+    other than to assist the PROM in some undocumented fashion (or it is used
+    by IRIX in some way).
+  </li>
+</ul>
+
+<warn>
+The SGI Volume Header <e>must</e> begin at cylinder 0. Failure to do so means
+you won't be able to boot from the disk.
+</warn>
+
+<p>
+The following is an example excerpt from an <c>fdisk</c> session. Read and
+tailor it to your needs...
+</p>
+
+<pre caption="Creating an SGI Disklabel">
+# <i>fdisk /dev/sda</i>
+
+Command (m for help): <i>x</i>
+
+Expert command (m for help): <i>m</i>
+Command action
+   b   move beginning of data in a partition
+   c   change number of cylinders
+   d   print the raw data in the partition table
+   e   list extended partitions
+   f   fix partition order
+   g   create an IRIX (SGI) partition table
+   h   change number of heads
+   m   print this menu
+   p   print the partition table
+   q   quit without saving changes
+   r   return to main menu
+   s   change number of sectors/track
+   v   verify the partition table
+   w   write table to disk and exit
+
+Expert command (m for help): <i>g</i>
+Building a new SGI disklabel. Changes will remain in memory only,
+until you decide to write them. After that, of course, the previous
+content will be irrecoverably lost.
+
+Expert command (m for help): <i>r</i>
+
+Command (m for help): <i>p</i>
+
+Disk /dev/sda (SGI disk label): 64 heads, 32 sectors, 17482 cylinders
+Units = cylinders of 2048 * 512 bytes
+
+----- partitions -----
+Pt#     Device  Info     Start       End   Sectors  Id  System
+ 9:  /dev/sda1               0         4     10240   0  SGI volhdr
+11:  /dev/sda2               0     17481  35803136   6  SGI volume
+----- Bootinfo -----
+Bootfile: /unix
+----- Directory Entries -----
+
+Command (m for help):
+</pre>
+
+<note>
+If your disk already has an existing SGI Disklabel, then fdisk will not allow
+the creation of a new label. There are two ways around this. One is to create a
+Sun or MS-DOS disklabel, write the changes to disk, and restart fdisk. The
+second is to overwrite the partition table with null data via the following
+command: <c>dd if=/dev/zero of=/dev/sda bs=512 count=1</c>.
+</note>
+</body>
+</subsection>
+
+<subsection>
+<title>Getting the SGI Volume Header to just the right size</title>
+<body>
+
+<impo>
+This step is often needed, due to a bug in <c>fdisk</c>. For some reason, the
+volume header isn't created correctly, the end result being it starts and ends
+on cylinder 0. This prevents multiple partitions from being created. To get
+around this issue... read on.
+</impo>
+
+<p>
+Now that an SGI Disklabel is created, partitions may now be defined. In the
+above example, there are already two partitions defined for you. These are the
+special partitions mentioned above and should not normally be altered. However,
+for installing Gentoo, we'll need to load a bootloader, and possibly multiple
+kernel images (depending on system type) directly into the volume header. The
+volume header itself can hold up to <e>eight</e> images of any size, with each
+image allowed eight-character names.
+</p>
+
+<p>
+The process of making the volume header larger isn't exactly straight-forward;
+there's a bit of a trick to it. One cannot simply delete and re-add the volume
+header due to odd fdisk behavior. In the example provided below, we'll create a
+50MB Volume header in conjunction with a 50MB /boot partition. The actual
+layout of your disk may vary, but this is for illustrative purposes only.
+</p>
+
+<pre caption="Resizing the SGI Volume Header correctly">
+Command (m for help): <i>n</i>
+Partition number (1-16): <i>1</i>
+First cylinder (5-8682, default 5): <i>51</i>
+ Last cylinder (51-8682, default 8682): <i>101</i>
+
+<comment>(Notice how fdisk only allows Partition #1 to be re-created starting at a     )
+(minimum of cylinder 5?  Had you attempted to delete &amp; re-create the SGI      )
+(Volume Header this way, this is the same issue you would have encountered.   )
+(In our example, we want /boot to be 50MB, so we start it at cylinder 51 (the )
+(Volume Header needs to start at cylinder 0, remember?), and set its ending   )
+(cylinder to 101, which will roughly be 50MB (+/- 1-5MB).                     )</comment>
+
+Command (m for help): <i>d</i>
+Partition number (1-16): <i>9</i>
+
+<comment>(Delete Partition #9 (SGI Volume Header))</comment>
+
+Command (m for help): <i>n</i>
+Partition number (1-16): <i>9</i>
+First cylinder (0-50, default 0): <i>0</i>
+ Last cylinder (0-50, default 50): <i>50</i>
+
+<comment>(Re-Create Partition #9, ending just before Partition #1)</comment>
+</pre>
+
+<p>
+If you're unsure how to use <c>fdisk</c> have a look down further at the
+instructions for partitioning on Cobalts. The concepts are exactly the same --
+just remember to leave the volume header and whole disk partitions alone.
+</p>
+
+<p>
+Once this is done, you are safe to create the rest of your partitions as you
+see fit. After all your partitions are laid out, make sure you set the
+partition ID of your swap partition to <c>82</c>, which is Linux Swap. By
+default, it will be <c>83</c>, Linux Native.
+</p>
+
+<p>
+Now that your partitions are created, you can continue with <uri
+link="#filesystems">Creating Filesystems</uri>.
+</p>
+
+</body>
+</subsection>
+
+<subsection>
+<title>Cobalt Machines: Partitioning your drive</title>
+<body>
+
+<p>
+On Cobalt machines, the BOOTROM expects to see a MS-DOS MBR, so partitioning
+the drive is relatively straightforward -- in fact, it's done the same way as
+you'd do for an Intel x86 machine. <e>However</e> there are some things you
+need to bear in mind.
+</p>
+
+<ul>
+  <li>
+    Cobalt firmware will expect <path>/dev/sda1</path> to be a Linux partition
+    formatted <e>EXT2 Revision 0</e>. <e>EXT2 Revision 1 partitions will NOT
+    WORK!</e> (The Cobalt BOOTROM only understands EXT2r0)
+  </li>
+  <li>
+    The above said partition must contain a gzipped ELF image,
+    <path>vmlinux.gz</path> in the root of that partition, which it loads as
+    the kernel
+  </li>
+</ul>
+
+<p>
+For that reason, I recommend creating a ~20MB <path>/boot</path> partition
+formatted EXT2r0 upon which you can install CoLo &amp; your kernels. This
+allows you to run a modern filesystem (EXT3 or ReiserFS) for your root
+filesystem.
+</p>
+
+<p>
+I will assume you have created <path>/dev/sda1</path> to mount later as a
+<path>/boot</path> partition. If you wish to make this <path>/</path>, you'll
+need to keep the PROM's expectations in mind.
+</p>
+
+<p>
+So, continuing on... To create the partitions you type <c>fdisk /dev/sda</c> at
+the prompt. The main commands you need to know are these:
+</p>
+
+<ul>
+  <li>
+    <c>o</c>: Wipe out old partition table, starting with an empty MS-DOS
+    partition table
+  </li>
+  <li>
+    <c>n</c>: New Partition
+  </li>
+  <li>
+    <c>t</c>: Change Partition Type
+    <ul>
+      <li>Use type <c>82</c> for Linux Swap, <c>83</c> for Linux FS</li>
+    </ul>
+  </li>
+  <li>
+    <c>d</c>: Delete a partition
+  </li>
+  <li>
+    <c>p</c>: Display (print) Partition Table
+  </li>
+  <li>
+    <c>q</c>: Quit -- leaving old partition table as is.
+  </li>
+  <li>
+    <c>w</c>: Quit -- writing partition table in the process.
+  </li>
+</ul>
+
+<pre caption="Partitioning the disk">
+# <i>fdisk /dev/sda</i>
+
+The number of cylinders for this disk is set to 19870.
+There is nothing wrong with that, but this is larger than 1024,
+and could in certain setups cause problems with:
+1) software that runs at boot time (e.g., old versions of LILO)
+2) booting and partitioning software from other OSs
+   (e.g., DOS FDISK, OS/2 FDISK)
+
+<comment>(Start by clearing out any existing partitions)</comment>
+Command (m for help): <i>o</i>
+Building a new DOS disklabel. Changes will remain in memory only,
+until you decide to write them. After that, of course, the previous
+content won't be recoverable.
+
+
+The number of cylinders for this disk is set to 19870.
+There is nothing wrong with that, but this is larger than 1024,
+and could in certain setups cause problems with:
+1) software that runs at boot time (e.g., old versions of LILO)
+2) booting and partitioning software from other OSs
+   (e.g., DOS FDISK, OS/2 FDISK)
+Warning: invalid flag 0x0000 of partition table 4 will be corrected by w(rite)
+
+<comment>(You can now verify the partition table is empty using the 'p' command)</comment>
+
+Command (m for help): <i>p</i>
+
+Disk /dev/sda: 10.2 GB, 10254827520 bytes
+16 heads, 63 sectors/track, 19870 cylinders
+Units = cylinders of 1008 * 512 = 516096 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+
+<comment>(Create the /boot partition)</comment>
+
+Command (m for help): <i>n</i>
+Command action
+   e   extended
+   p   primary partition (1-4)
+<i>p</i>
+Partition number (1-4): <i>1</i>
+
+<comment>(Just press ENTER here to accept the default)</comment>
+
+First cylinder (1-19870, default 1):
+Last cylinder or +size or +sizeM or +sizeK (1-19870, default 19870): <i>+20M</i>
+
+<comment>(and now if we type 'p' again, we should see the new partition)</comment>
+Command (m for help): <i>p</i>
+
+Disk /dev/sda: 10.2 GB, 10254827520 bytes
+16 heads, 63 sectors/track, 19870 cylinders
+Units = cylinders of 1008 * 512 = 516096 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1               1          40       20128+  83  Linux
+
+<comment>(The rest, I prefer to put in an extended partition, so I'll create that)</comment>
+
+Command (m for help): <i>n</i>
+Command action
+   e   extended
+   p   primary partition (1-4)
+<i>e</i>
+Partition number (1-4): <i>2</i>
+
+<comment>(Again, the default is fine, just press ENTER.)</comment>
+
+First cylinder (41-19870, default 41):
+Using default value 41
+
+<comment>(We want to use the whole disk here, so just press ENTER again)</comment>
+Last cylinder or +size or +sizeM or +sizeK (41-19870, default 19870):
+Using default value 19870
+
+<comment>(Now, the / partition -- I use separate partitions for /usr, /var,
+etc... so / can be small. Adjust as per your preference.)</comment>
+
+Command (m for help): <i>n</i>
+Command action
+   l   logical (5 or over)
+   p   primary partition (1-4)
+<i>l</i>
+First cylinder (41-19870, default 41):<i>&lt;Press ENTER&gt;</i>
+Using default value 41
+Last cylinder or +size or +sizeM or +sizeK (41-19870, default 19870): <i>+500M</i>
+
+<comment>(... and similar for any other partitions ...)</comment>
+
+<comment>(Last but not least, the swap space. I recommend at least 250MB swap,
+preferrably 1GB)</comment>
+
+Command (m for help): <i>n</i>
+Command action
+   l   logical (5 or over)
+   p   primary partition (1-4)
+<i>l</i>
+First cylinder (17294-19870, default 17294): <i>&lt;Press ENTER&gt;</i>
+Using default value 17294
+Last cylinder or +size or +sizeM or +sizeK (1011-19870, default 19870): <i>&lt;Press ENTER&gt;</i>
+Using default value 19870
+
+<comment>(Now, if we check our partition table, everything should mostly be ship
+shape except for one thing...)</comment>
+
+Command (m for help): <i>p</i>
+
+Disk /dev/sda: 10.2 GB, 10254827520 bytes
+16 heads, 63 sectors/track, 19870 cylinders
+Units = cylinders of 1008 * 512 = 516096 bytes
+
+Device Boot      Start         End      Blocks      ID  System
+/dev/sda1               1          21       10552+  83  Linux
+/dev/sda2              22       19870    10003896    5  Extended
+/dev/sda5              22        1037      512032+  83  Linux
+/dev/sda6            1038        5101     2048224+  83  Linux
+/dev/sda7            5102        9165     2048224+  83  Linux
+/dev/sda8            9166       13229     2048224+  83  Linux
+/dev/sda9           13230       17293     2048224+  83  Linux
+/dev/sda10          17294       19870     1298776+  83  Linux
+
+<comment>(Notice how #10, our swap partition is still type 83?)</comment>
+
+Command (m for help): <i>t</i>
+Partition number (1-10): <i>10</i>
+Hex code (type L to list codes): <i>82</i>
+Changed system type of partition 10 to 82 (Linux swap)
+
+<comment>(That should fix it... just to verify...)</comment>
+
+Command (m for help): <i>p</i>
+
+Disk /dev/sda: 10.2 GB, 10254827520 bytes
+16 heads, 63 sectors/track, 19870 cylinders
+Units = cylinders of 1008 * 512 = 516096 bytes
+
+Device Boot      Start         End      Blocks      ID  System
+/dev/sda1               1          21       10552+  83  Linux
+/dev/sda2              22       19870    10003896    5  Extended
+/dev/sda5              22        1037      512032+  83  Linux
+/dev/sda6            1038        5101     2048224+  83  Linux
+/dev/sda7            5102        9165     2048224+  83  Linux
+/dev/sda8            9166       13229     2048224+  83  Linux
+/dev/sda9           13230       17293     2048224+  83  Linux
+/dev/sda10          17294       19870     1298776+  82  Linux Swap
+
+<comment>(Now, we write out the new partition table.)</comment>
+
+Command (m for help): <i>w</i>
+The partition table has been altered!
+
+Calling ioctl() to re-read partition table.
+Syncing disks.
+
+#
+</pre>
+
+<p>
+And that's all there is to it. You should now be right to proceed onto the next
+stage: <uri link="#filesystems">Creating Filesystems</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+
+<section id="filesystems">
+<title>Creating Filesystems</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Now that your partitions are created, it is time to place a filesystem on them.
+If you don't care about what filesystem to choose and are happy with what we
+use as default in this handbook, continue with <uri
+link="#filesystems-apply">Applying a Filesystem to a Partition</uri>. Otherwise
+read on to learn about the available filesystems...
+</p>
+
+</body>
+</subsection>
+
+<subsection>
+<include href="hb-install-filesystems.xml"/>
+</subsection>
+
+<subsection id="filesystems-apply">
+<title>Applying a Filesystem to a Partition</title>
+<body>
+
+<p>
+To create a filesystem on a partition or volume, there are tools available for
+each possible filesystem:
+</p>
+
+<table>
+<tr>
+  <th>Filesystem</th>
+  <th>Creation Command</th>
+</tr>
+<tr>
+  <ti>ext2</ti>
+  <ti><c>mkfs.ext2</c></ti>
+</tr>
+<tr>
+  <ti>ext3</ti>
+  <ti><c>mkfs.ext3</c></ti>
+</tr>
+<tr>
+  <ti>ext4</ti>
+  <ti><c>mkfs.ext4</c></ti>
+</tr>
+<tr>
+  <ti>reiserfs</ti>
+  <ti><c>mkfs.reiserfs</c></ti>
+</tr>
+<tr>
+  <ti>xfs</ti>
+  <ti><c>mkfs.xfs</c></ti>
+</tr>
+<tr>
+  <ti>jfs</ti>
+  <ti><c>mkfs.jfs</c></ti>
+</tr>
+</table>
+
+<p>
+For instance, to have the boot partition (<path>/dev/sda1</path> in our
+example) in ext2 and the root partition (<path>/dev/sda3</path> in our example)
+in ext3, you would use:
+</p>
+
+<pre caption="Applying a filesystem on a partition">
+# <i>mkfs.ext2 /dev/sda1</i>
+# <i>mkfs.ext3 /dev/sda3</i>
+</pre>
+
+<p>
+Now create the filesystems on your newly created partitions (or logical
+volumes).
+</p>
+
+<warn>
+If you're installing on a Cobalt server, remember <path>/dev/sda1</path> MUST
+be of type <e>EXT2 revision 0</e>; Anything else (e.g. EXT2 revision 1, EXT3,
+ReiserFS, XFS, JFS and others) <e>WILL NOT WORK!</e> You can format the
+partition using the command: <c>mkfs.ext2 -r 0 /dev/sda1</c>.
+</warn>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating the Swap Partition</title>
+<body>
+
+<p>
+<c>mkswap</c> is the command that is used to create and initialize swap
+partitions:
+</p>
+
+<pre caption="Creating a Swap signature">
+# <i>mkswap /dev/sda2</i>
+</pre>
+
+<p>
+To activate the swap partition, use <c>swapon</c>:
+</p>
+
+<pre caption="Activating the swap partition">
+# <i>swapon /dev/sda2</i>
+</pre>
+
+<p>
+Create and activate the swap with the commands mentioned above.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Mounting</title>
+<body>
+
+<p>
+Now that your partitions are initialized and are housing a filesystem, it is
+time to mount those partitions. Use the <c>mount</c> command. Don't forget to
+create the necessary mount directories for every partition you created. As an
+example we mount the root and boot partition:
+</p>
+
+<pre caption="Mounting partitions">
+# <i>mount /dev/sda3 /mnt/gentoo</i>
+# <i>mkdir /mnt/gentoo/boot</i>
+# <i>mount /dev/sda1 /mnt/gentoo/boot</i>
+</pre>
+
+<note>
+If you want your <path>/tmp</path> to reside on a separate partition, be sure
+to change its permissions after mounting: <c>chmod 1777 /mnt/gentoo/tmp</c>.
+This also holds for <path>/var/tmp</path>.
+</note>
+
+<p>
+We will also have to mount the proc filesystem (a virtual interface with the
+kernel) on <path>/proc</path>. But first we will need to place our files on the
+partitions.
+</p>
+
+<p>
+Continue with <uri link="?part=1&amp;chap=5">Installing the Gentoo Installation
+Files</uri>.
+</p>
+
+</body>
+</section>
+</sections>

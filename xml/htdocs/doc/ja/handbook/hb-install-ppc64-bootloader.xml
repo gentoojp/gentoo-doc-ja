@@ -1,0 +1,259 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-ppc64-bootloader.xml,v 1.4 2007/07/13 08:40:58 nightmorph Exp $ -->
+
+<!-- Translator: Yuta SATOH -->
+<!-- Original revision: 1.17 -->
+
+<sections>
+
+<version>2.3</version>
+<date>2005-10-06</date>
+
+<section>
+<title>ブートローダの選択</title>
+<subsection>
+<title>はじめに</title>
+<body>
+
+<p>
+さて、カーネルを設定し、コンパイルし、そして必要なシステムの設定ファイルも適切に編集したので、システムを起動するときに、カーネルを立ち上げるプログラムをインストールするときが来ました。そのようなプログラムは、<e>ブートローダ</e>と呼ばれています。
+</p>
+
+<p>
+Linux/PPC64において、grub2が完成されるまで私たちはブートローダとしてyaBootだけを持っています。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="yaboot">
+<title>yaBootを使用する</title>
+<subsection>
+<title>はじめに</title>
+<body>
+
+<impo>
+yabootがPPC64上でコンパイルできないので、yabootのかわりにyaboot-staticを使う必要があります。
+</impo>
+
+<p>
+システムにyaBootを設定する方法が2つあります。自動的にyabootを設定するために<path>yaboot-1.3.8-r1</path>以降に含まれた、新しく改善された<c>yabootconfig</c>を使うことができます。何らかの理由のために、自動的に<path>/etc/yaboot.conf</path>を設定するための<c>yabootconfig</c>を実行したくないか、G5(<c>yabootconfig</c>は常に動作するとは限りません)にGentooをインストールしているならば、既にシステムにインストールされたサンプルファイルを編集することができます。
+</p>
+
+<impo>
+yabootconfigとybinはIBMハードウェア上では動かないでしょう。yabootを別の方法でインストールする必要があります。その場合は、<uri link="#yaboot-ibm">IBMハードウェア上でyabootを使用する</uri>へ進んでください。
+</impo>
+
+<note>
+rootファイルシステムにJFSを使うなら、必ずカーネル引数に<c>ro</c>を追加してください。JFSでは、read-writeマウントする前にread-onlyモードでログを再読み込みできなければなりません。
+</note>
+
+<ul>
+  <li><uri link="#yabootconfig">一般的な選択: yabootconfigを使用する</uri></li>
+  <li>
+    <uri link="#manual_yaboot">もう一つの選択: 手動でyaBootを構成する</uri>
+  </li>
+</ul>
+
+</body>
+</subsection>
+<subsection id="yabootconfig">
+<title>一般的な選択: yabootconfigを使用する</title>
+<body>
+
+<p>
+<c>yabootconfig</c>はマシンのパーティションを自動検出し、Linux、Mac OS、およびMac OS Xによるデュアルおよびトリプルブートの組み合わせを設定します。
+</p>
+
+<p>
+<c>yabootconfig</c>を使用するために、ドライブはbootstrapパーティションを持っていなければならず、<path>/etc/fstab</path>はLinuxパーティションで設定されなければなりません。これらの両方は既に上記のステップで行われているべきです。手始めに、<c>emerge --update yaboot-static</c>を実行してインストールされたyabootが最新のバージョンであるか確認してください。最新のバージョンがPortage経由で利用可能になるので、この作業は必要です。しかし、Portageをstageファイルの代わりにすることはできません。
+</p>
+
+<pre caption = "yaboot-staticをインストールする">
+# <i>emerge --update yaboot-static</i>
+</pre>
+
+<p>
+さあ、<c>yabootconfig</c>を実行してください。プログラムが動作し、bootstrapパーティションの位置を確認するでしょう。それが正しいならば、<c>Y</c>を入力してください。もし、そうでなければ<path>/etc/fstab</path>を再確認してください。yabootconfigはその時システムの構成を詳しく調べて<path>/etc/yaboot.conf</path>を作成し、<c>mkofboot</c>を実行するでしょう。<c>mkofboot</c>はbootstrapパーティションをフォーマットし、そこにyabootの構成ファイルをインストールするために使用されます。
+</p>
+
+<p>
+<path>/etc/yaboot.conf</path>の内容を確認したいかもしれません。<path>/etc/yaboot.conf</path>に(既定で起動するOSの設定のような)変更を加える場合は、bootstrapパーティションに変更を適用する<c>ybin -v</c>を再実行するのを忘れないでください。
+</p>
+
+<p>
+それでは、<uri link="#reboot">システムの再起動</uri>へ進みましょう。 
+</p>
+
+</body>
+</subsection>
+<subsection id="manual_yaboot">
+<title>もう一つの選択: 手動でyaBootを構成する</title>
+<body>
+
+<p>
+最初に、最新の<c>yaboot-static</c>がシステムにインストールされているか確認してください。
+</p>
+
+<pre caption = "yabootをインストールする">
+# <i>emerge --update yaboot-static</i>
+</pre>
+
+<p>
+以下に、あなたは完成した<path>yaboot.conf</path>ファイルを見つけることでしょう。それを思いのままに変更してください。
+</p>
+
+<pre caption = "/etc/yaboot.conf">
+<comment>## /etc/yaboot.conf
+##
+## 詳細を得るために"man yaboot.conf"を実行してください。理解するまで変更しないでください!!
+## 同様に/usr/share/doc/yaboot/examplesの構成例を見てください。
+##
+## デュアルブートメニューのために、下記の1つ以上を追加してください。
+## bsd=/dev/hdaX, macos=/dev/hdaY, macosx=/dev/hdaZ
+
+## bootstrapパーティション:</comment>
+
+boot=/dev/hda2
+
+<comment>## ofbootはbootstrapパーティションを指定するOpen Firmwareのやり方です。
+## これが定義されていないと、yabootはG5といくつかのG4において(必要な引数を
+## mkofbootやybinプログラムに渡さない限り)失敗します。
+## hd:Xは/dev/sdaX(または/dev/hdaX)を意味しています。</comment>
+
+ofboot=hd:2
+
+<comment>##hd:はOpen Firmwareがhda(訳注:またはsda)を要求します</comment>
+device=hd:
+
+delay=5
+defaultos=macosx
+timeout=30
+install=/usr/lib/yaboot/yaboot
+magicboot=/usr/lib/yaboot/ofboot
+
+<comment>#################
+## 複数のカーネルまたは起動オプションのセットを持っているならば、この節を複写
+## することができます。2.6.9をあなたのカーネルのバージョンに置換してください。
+#################</comment>
+image=/boot/kernel-2.6.9
+  label=Linux
+  root=/dev/hda3
+  partition=3
+  read-only
+
+macos=hd:13
+macosx=hd:12
+enablecdboot
+enableofboot
+</pre>
+
+<p>
+いったん<path>yaboot.conf</path>があなたの望むように設定したら、bootstrapパーティションに設定をインストールするために<c>mkofboot -v</c>を実行します。<e>これを忘れないでください!</e><c>mkofboot</c>が、新しいファイルシステムを作成するか尋ねた時には承認してください。
+</p>
+
+<p>
+全てがうまくいき、上記のサンプルと同じオプションを持っている場合、再起動後、簡素で5つの項目のブートメニューに出会うでしょう。もし、後でyabootの設定ファイルを更新するならば、bootstrapパーティションを更新するために<c>ybin -v</c>を実行する必要があるでしょう。<c>mkofboot</c>はただ初期設定のために使われます。
+</p>
+
+<p>
+yabootの詳細については、<uri link="http://penguinppc.org/projects/yaboot">yaboot project</uri>を見てください。ひとまず、<uri link="#reboot">システムの再起動</uri>へ進んでインストールを続行しましょう。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="yaboot-ibm">
+<title>IBMハードウェア上でyabootを使用する</title>
+<body>
+
+<p>
+IBMハードウェア上でyabootconfigまたはybinを動作させることができません。次の手順で進めなければなりません。
+</p>
+
+<ul>
+  <li>yaboot-staticをインストールします。</li>
+  <li>'dd if=/usr/lib/yaboot/yaboot.chrp of=/dev/sdXX'を実行します(PRePパーティションのディスクとパーティションでXXを埋めてください。これは私たちの例では/dev/sda1にありました)。</li>
+  <li>次は/etc中にあなた自身のyaboot.confファイルと場所を構成します(上記の設定や、yaboot.confのマニュアルページを見るか、下記のyaboot.confの例を見てください)。</li>
+  <li>OFの起動装置がブートパーティションを準備したハードディスクを示しているならば、それはすぐ動作するでしょう。そうでなければ、IPL時にマルチブートメニューに入りブートパーティションを持つものを起動装置として設定してください。</li>
+  <li>これで終わりです!</li>
+</ul>
+
+<pre caption = "IBMハードウェアのためのyaboot.conf">
+device=disk:
+partition=2
+root=/dev/sda2
+default=2.6.8-gentoo-r3
+timeout=50
+
+image=/boot/vmlinux-2.6.8-gentoo-r3
+      label=2.6.8-gentoo-r3
+	  append="console=ttyS0,9600"
+	  read-only
+</pre>
+
+<p>
+PRePディスクパーティションとカーネルを含むディスクパーティションが同じ物理ディスクにあるPOWER4、POWER5、そしてbladeベースのハードウェアのために、単純化されたyaboot.confを使うことができます。以下の内容で十分なはずです。
+</p>
+
+<pre caption="PRePハードウエアのためのyaboot.conf">
+default = linux
+timeout = 100
+image=/boot/vmlinux
+        label=linux
+        read-only
+        root = /dev/sda2
+        append="root=/dev/sda2"
+</pre>
+
+<p>
+次のようにしてyabootがPRePパーティションにコピーされたか確認することができます。
+</p>
+
+<pre caption="yabootがPRePパーティションにインストールされたか確認します">
+# <i>dd if=/dev/sda1 count=10 | grep ELF</i>
+Binary file (standard input) matches
+10+0 records in
+10+0 records out
+</pre>
+
+<p>
+バイナリファイルとの一致がyabootが正しくインストールされたことを示します。
+</p>
+
+</body>
+</section>
+<section id="reboot">
+<title>システムの再起動</title>
+<subsection>
+<body>
+
+<p>
+chroot環境を抜けて、マウントしたすべてのパーティションをアンマウントしてください。そして、待ちに待った次のコマンドを入力しましょう: <c>reboot</c>
+</p>
+
+<pre caption="chrootを抜けて、すべてのパーティションをアンマウントし再起動する">
+# <i>exit</i>
+~# <i>cd</i>
+~# <i>umount /mnt/gentoo/boot /mnt/gentoo/proc /mnt/gentoo/dev /mnt/gentoo</i>
+~# <i>reboot</i>
+</pre>
+
+<p>
+もちろん、起動CDを抜くことを忘れずに。さもなければ、新しいGentooシステムではなく、CDからまた起動してしまいます。 
+</p>
+
+<p>
+再起動したら、<uri link="?part=1&amp;chap=11">Gentooインストールの終わり</uri>へ進んでインストールを完了させましょう。 
+</p>
+
+</body>
+</subsection>
+</section>
+
+</sections>

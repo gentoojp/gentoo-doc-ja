@@ -1,0 +1,114 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/security/shb-chroot.xml,v 1.3 2006/09/18 09:22:48 neysx Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.1</version>
+<date>2005-12-15</date>
+
+<section>
+<title>Chrooting</title>
+<body>
+
+<p>
+Chrooting a service is a way of limiting a service (or user) environment to
+only accessing what it should and not gaining access (or information) that
+could lead to root access. By running the service as another user than
+<c>root</c> (<c>nobody</c>, <c>apache</c>, <c>named</c>) an attacker can only
+access files with the permissions of this user. This means that an attacker
+cannot gain <c>root</c> access even if the services has a security flaw.
+</p>
+
+<p>
+Some services like <c>pure-ftpd</c> and <c>bind</c> have features for
+chrooting, and other services do not. If the service supports it, use it,
+otherwise you have to figure out how to create your own. Lets see how to create
+a chroot, for a basic understanding of how chroots work, we will test it with
+<c>bash</c> (easy way of learning).
+</p>
+
+<p>
+Create the <path>/chroot</path> directory with <c>mkdir /chroot</c>. And find what
+dynamic libraries that <c>bash</c> is compiled with (if it is compiled with
+<c>-static</c> this step is not necessary):
+</p>
+
+<p>
+The following command will create a list of libraries used by <c>bash</c>.
+</p>
+
+<pre caption="Get listing of used libraries">
+# <i>ldd /bin/bash</i>
+  libncurses.so.5 => /lib/libncurses.so.5 (0x4001b000)
+  libdl.so.2 => /lib/libdl.so.2 (0x40060000)
+  libc.so.6 => /lib/libc.so.6 (0x40063000)
+  /lib/ld-linux.so.2 => /lib/ld-linux.so.2 (0x40000000)
+</pre>
+
+<p>
+Now lets create the environment for <c>bash</c>.
+</p>
+
+<pre caption="Create chroot-environment for bash">
+# <i>mkdir /chroot/bash</i>
+# <i>mkdir /chroot/bash/bin</i>
+# <i>mkdir /chroot/bash/lib</i>
+</pre>
+
+<p>
+Next copy the files used by <c>bash</c> (<path>/lib</path>) to the chrooted
+<path>lib</path> and copy the bash command to the chrooted <path>bin</path>
+directory. This will create the exact same environment, just with less
+functionality. After copying try it out: <c>chroot /chroot/bash /bin/bash</c>.
+If you get an prompt saying <path>/</path> it works! Otherwise it will properly
+tell you what a file is missing. Some shared libraries depend on each other.
+</p>
+
+<p>
+You will notice that inside the chroot nothing works except <c>echo</c>. This
+is because we have no other commands in out chroot environment than bash and
+<c>echo</c> is a build-in functionality.
+</p>
+
+<p>
+This is basically the same way you would create a chrooted service. The only
+difference is that services sometimes rely on devices and configuration files
+in <path>/etc</path>. Simply copy them (devices can be copied with <c>cp
+-a</c>) to the chrooted environment, edit the init script to use chroot before
+executing. It can be difficult to find what devices and configuration files a
+services need. This is where the <c>strace</c> command becomes handy. Start
+the service with <c>/usr/bin/strace</c> bash and look for open, read, stat and
+maybe connect. This will give you a clue on what files to copy. But in most
+cases just copy the passwd file (edit the copy and remove users that has
+nothing to do with the service), <path>/dev/zero</path>, <path>/dev/log</path>
+and <path>/dev/random</path>.
+</p>
+
+</body>
+</section>
+<section>
+<title>User Mode Linux</title>
+<body>
+
+<p>
+Another way of creating a more secure environment is by running a virtual
+machine. A virtual machine, as the name implies, is a process that runs on top
+of your real operating system providing a hardware and operating system
+environment that appears to be its own unique machine. The security benefit is
+that if the server running on the virtual machine is compromised, only the
+virtual server is affected and not the parent installation.
+</p>
+
+<p>
+For more information about how to setup User Mode Linux consult the <uri
+link="/doc/en/uml.xml">User Mode Linux Guide</uri>.
+</p>
+
+</body>
+</section>
+
+</sections>

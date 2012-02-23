@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/security/shb-limits.xml,v 1.5 2008/08/24 13:56:57 shindo Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+<sections>
+
+<version>1.4</version>
+<date>2007-07-08</date>
+
+<!-- Original revision: 1.7 -->
+
+<section id="limits_conf">
+<title>/etc/security/limits.conf</title>
+<body>
+
+<p>
+リソースを制御する手法はローカルからのDOS攻撃を防ぐ場合や、グループやユーザで許可される最大同時ログイン数を制限する場合に効果的です。
+しかし、厳しすぎる設定はシステムの動作の妨げになり、結果としてプログラムの実行が失敗するため、最初にそれぞれの設定をチェックしてください。
+</p>
+
+<pre caption="/etc/security/limits.conf">
+*    soft core 0
+*    hard core 0
+*    hard nproc 15
+*    hard rss 10000
+*    -    maxlogins 2
+@dev hard core 100000
+@dev soft nproc 20
+@dev hard nproc 35
+@dev -    maxlogins 10
+</pre>
+
+<p>
+<c>nproc</c>や<c>maxlogins</c>を0に設定するなら、その代わりにユーザを削除した方が良いでしょう。
+上記の例では<c>dev</c>グループのプロセス、coreファイルと<c>maxlogins</c>の設定を行っています。
+残りの部分はデフォルト値です。
+</p>
+
+<note>
+<path>/etc/security/limits.conf</path>はPAMパッケージの一部で、PAMを使うパッケージにのみ適用されます。
+</note>
+
+</body>
+</section>
+<section>
+<title>/etc/limits</title>
+<body>
+
+<p>
+<path>/etc/limits</path>は制限を行うファイル<path>/etc/security/limits.conf</path>と大変似ています。
+ただ一つの違いはフォーマットで、この制限はユーザもしくはワイルドカードでの指定でしか機能しません(グループで指定できません)。
+サンプルの設定を見てみましょう。
+</p>
+
+<pre caption="/etc/limits">
+*   L2 C0 U15 R10000
+kn L10 C100000 U35
+</pre>
+
+<p>
+これはデフォルトのセッティングと、ユーザknに対する設定です。
+この制限はsys-apps/shadowパッケージの一部です。
+<path>/etc/make.conf</path>で<c>pam</c>を有効にしている場合、このファイルに制限を設定する必要はありません。
+</p>
+
+</body>
+</section>
+<section id="quotas">
+<title>Quota</title>
+<body>
+
+<warn>
+あなたが使用しているファイルシステムがquotaをサポートしているか確かめてください。
+ReiserFSでquotaを使用するためには、<uri link="ftp://ftp.namesys.com/pub/reiserfs-for-2.4/testing/quota-2.4.20">Namesys</uri>にあるパッチをkernelに当てる必要があります。
+ユーザ用のツールは<uri link="http://www.sf.net/projects/linuxquota/">the Linux DiskQuotaproject</uri>にあります。
+ReiserFSでquotaを使用している間は、他の問題に遭遇する場合があります。注意してください。
+</warn>
+
+<p>
+ファイルシステムにquotaを設定することは、ユーザ毎あるいはグループ毎にディスクの使用を制限することです。
+quotaはkernelで有効にし、<path>/etc/fstab</path>のマウントポイントに設定を追加します。
+kernelの設定でkernelオプションの<c>File systems-&gt;Quota support</c>にある設定を有効にします。
+以下の設定を適用し、kernelをリビルドして、新しいkernelを使ってリブートしてください。
+</p>
+
+<p>
+最初に<c>emerge quota</c>を実行してquotaをインストールします。
+そして、<path>/etc/fstab</path>を編集して以下の例のように、ディスクの使用に制限をかけたいパーティションに<c>usrquota</c>や<c>grpquota</c>を追加します。
+</p>
+
+<pre caption="/etc/fstab">
+/dev/sda1 /boot ext2 noauto,noatime 1 1
+/dev/sda2 none swap sw 0 0
+/dev/sda3 / reiserfs notail,noatime 0 0
+/dev/sda4 /tmp ext3 noatime,nodev,nosuid,noexec,usrquota,grpquota 0 0
+/dev/sda5 /var ext3 noatime,nodev,usrquota,grpquota 0 0
+/dev/sda6 /home ext3 noatime,nodev,nosuid,usrquota,grpquota 0 0
+/dev/sda7 /usr reiserfs notail,noatime,nodev,ro 0 0
+/dev/cdroms/cdrom0 /mnt/cdrom iso9660 noauto,ro 0 0
+proc /proc proc defaults 0 0
+</pre>
+
+<p>
+quotaを有効にしたパーティションすぺてについて、quotaファイル(<path>aquota.user</path>と<path>aquota.group</path>)を作成してください。
+そして、各パーティションのルートに置いてください。
+</p>
+
+<pre caption="quotaファイルの作成">
+# <i>touch /tmp/aquota.user</i>
+# <i>touch /tmp/aquota.group</i>
+# <i>chmod 600 /tmp/aquota.user</i>
+# <i>chmod 600 /tmp/aquota.group</i>
+</pre>
+
+<p>
+この手順はquotaを有効にした全てのパーティションで行う必要があります。
+quotaの設定を追加した後、<c>quota</c>スクリプトをbootランレベルに加える必要があります。
+</p>
+
+<impo>
+XFSは内部的にすべてのquotaをチェックしますので、<c>quota</c>スクリプトをbootランレベルへ追加する必要は<e>ありません。</e>
+このドキュメントで記述されていないファイルシステムで同じような振る舞いをするものがあるかもしれません。
+お使いのファイルシステムでquotaチェックをどのように行うのかより知るためにmanページを読んでください。
+</impo>
+
+<pre caption="quotaをbootランレベルに追加">
+# <i>rc-update add quota boot</i>
+</pre>
+
+<p>
+quotaを一週間毎にチェックするようにシステムを設定するために、<path>/etc/crontab</path>に以下の行を追加します。
+</p>
+
+<pre caption="crontabにquotaのチェックを追加">
+0 3 * * 0 /usr/sbin/quotacheck -avug.
+</pre>
+
+<p>
+マシンを再起動した後、ユーザとグループのquotaが設定します。
+<c>edquota -u kn</c>を実行すると、$EDITORに定義されたエディタが起動し (デフォルトはnano)、ユーザknに対するquotaの設定を行います。
+<c>edquota -g</c>を実行すればグループに対して同様の事を行います。
+</p>
+
+<pre caption="ユーザknに対するquotaの設定">
+Quotas for user kn:
+/dev/sda4: blocks in use: 2594, limits (soft = 5000, hard = 6500) 
+         inodes in use: 356, limits (soft = 1000, hard = 1500)
+</pre>
+
+<p>
+さらに詳しい情報は<c>man edquota</c>や<uri link="http://www.tldp.org/HOWTO/Quota.html">Quota mini howto</uri>(訳注：<uri link="http://www.linux.or.jp/JF/JFdocs/Quota/">Linux JF Projectによる日本語訳</uri>)を参照してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>/etc/login.defs</title>
+<body>
+    
+<p>
+セキュリティポリシーとしてユーザが隔週でパスワードを変更するよう定めている場合、<c>PASS_MAX_DAYS</c>の値を14に、<c>PASS_WARN_AGE</c>の値を7に変更してください。
+十分な時間をがあると、総当たり攻撃によってパスワードが発見することができるため、使用しているパスワードに時効を設定する事が推奨されています。
+また、<c>LOG_OK_LOGINS</c>をyesに設定することをお薦めします。
+</p>
+
+</body>
+</section>
+<section>
+<title>/etc/login.access</title>
+<body>
+
+<p>
+<path>login.access</path>ファイルもsys-apps/shadowの一部ですが、ログインアクセスをコントロールするテーブルを提供します。
+このテーブルはユーザ名やグループ名、ホスト名によって、ログインの可否ををコントロールするために使用されます。
+デフォルトではファイルはコメントと例しか含んでいないため、システム上の全てのユーザはログイン可能です。
+サーバやワークステーションがセキュアにするつもりがあろうとなかろうと、あなた(管理者)以外の誰も、コンソールからアクセスするできないように、このファイルを設定する事をお薦めします。
+</p>
+
+<note>
+これらの設定はrootには適用されません。
+</note>
+
+<pre caption="/etc/login.access">
+-:ALL EXCEPT wheel sync:console
+-:wheel:ALL EXCEPT LOCAL .gentoo.org
+</pre>
+
+<impo>
+これらのオプションを設定する時は注意してください。あなたがroot権限を持っていない場合は、設定ミスをするとマシンにアクセスする手段を失います。
+</impo>
+
+<note>
+SSHはデフォルトでは<c>/bin/login</c>を実行しないため、これらの設定はSSHには適用されません。
+<path>/etc/ssh/sshd_config</path>に<c>UseLogin yes</c>を設定すると、有効にすることができます。
+</note>
+
+<p>
+これにより、wheelグループのメンバーはローカルまたはgentoo.orgドメインからのログインだけ可能になるよう設定されます。
+神経質かも知れませんが、後悔するより安全な方が良いでしょう。
+</p>
+
+</body>
+</section>
+
+
+</sections>

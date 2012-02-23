@@ -1,0 +1,471 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/mysql-upgrading.xml,v 1.22 2011/09/04 17:53:40 swift Exp $ -->
+
+<guide>
+<title>Upgrade guide to MySQL 4.* or 5.0.*</title>
+
+<author title="Author">
+  <mail link="citizen428@gentoo.org">Michael Kohl</mail>
+</author>
+<author title="Author">
+  <mail link="vivo@gentoo.org">Francesco Riosa</mail>
+</author>
+
+<abstract>
+The MySQL herd is proud to announce that MySQL 5.0 will soon be found in
+Gentoo's stable tree. This document describes how to upgrade to MySQL 4.* and
+to 5.0.*.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.17</version>
+<date>2007-06-04</date>
+
+<chapter>
+<title>Straight upgrade, suggested for 4.1 =&gt; 5.0 migration</title>
+<section>
+<body>
+
+<p>
+The myisam storage engine in version 4.1 was already mature enough to allow a
+direct upgrade to the next major version of MySQL.
+</p>
+
+<note>
+This is not true for MERGE tables. You will likely run into trouble if you
+attempt a direct upgrade for this (rarely used) type of table. You should dump
+and recreate those tables and restore their contents in the process of
+upgrading. If unsure, you should begin with <uri link="#doc_chap2">Upgrading
+from old versions of MySQL</uri>.
+</note>
+
+<p>
+For this step two shells are required because locks belong to the mysql
+session.
+</p>
+
+<pre caption="Straight upgrade from 4.1 to 5.0.*">
+# <i>quickpkg dev-db/mysql</i>
+# <i>alias MYSQL="mysql --user=root --password=</i><comment>'your_password'</comment><i>"</i>
+# <i>DATADIR=$(MYSQL --batch --raw --silent --skip-column-names \</i>
+     <i>--execute='SHOW variables LIKE "datadir";' \</i>
+     <i>| sed -e 's|datadir[ \t]||')</i>
+
+<comment>(This next step should be done in the second shell)</comment>
+# <i>mysql --user=root --password=</i><comment>'your_password'</comment>
+mysql&gt; <i>FLUSH TABLES WITH READ LOCK;</i>
+
+<comment>(Return to the first shell to run this command)</comment>
+# <i>tar -cjpvf ~/mysql.$(date +%F"T"%H-%M).tar.bz2 \</i>
+     <i>/etc/conf.d/mysql /etc/mysql/my.cnf "${DATADIR}"</i>
+
+<comment>(The following commands should be done in the second shell)</comment>
+mysql&gt; <i>UNLOCK TABLES;</i>
+mysql&gt; <i>quit</i>
+
+<comment>(Return to the first shell for the rest of the upgrade)</comment>
+# <i>tar -tjvf ~/mysql.*.tar.bz2</i>
+# <i>emerge -av "&gt;dev-db/mysql-5.0"</i>
+# <i>dispatch-conf</i>
+# <i>revdep-rebuild</i>
+# <i>/etc/init.d/mysql restart</i>
+# <i>mysql_upgrade_shell --user=root --password=</i><comment>'your_password'</comment><i> \</i>
+     <i>--protocol=tcp --datadir="${DATADIR}"</i>
+# <i>/etc/init.d/mysql restart</i>
+# <i>unset DATADIR</i>
+# <i>unalias MYSQL</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Upgrading from old versions of MySQL</title>
+<section>
+<body>
+
+<p>
+Users upgrading from an old version (&lt;4.0.24) of MySQL will first have to
+install MySQL 4.0.25. If you are already running a more recent version, you can
+skip this section and continue with the <uri link="#backup">next one</uri>.
+</p>
+
+<pre caption="Simple upgrade">
+# <i>emerge -av --buildpkg "&lt;mysql-4.1"</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="backup">
+<title>Creating a backup of your current data</title>
+<section>
+<body>
+
+<impo>
+Values inside primary keys are handled differently in various MySQL versions,
+see <uri link="http://bugs.gentoo.org/108502">bug #108502</uri> for more
+details, it is higly recommended to scan your tables for values of "0" (zero)
+or less and update them to a value greater than or equal to "1".
+</impo>
+
+<p>
+One of the most important tasks that every database administrator has to
+perform is backing up data. Here we go:
+</p>
+
+<pre caption="Dump of all databases">
+# <i>mysqldump \</i>
+  <i>-uroot \</i>
+  <i>--password=</i><comment>'your_password'</comment><i> \</i>
+  <i>-hlocalhost \</i>
+  <i>--all-databases \</i>
+  <i>--opt \</i>
+  <i>--allow-keywords \</i>
+  <i>--flush-logs \</i>
+  <i>--hex-blob \</i>
+  <i>--master-data \</i>
+  <i>--max_allowed_packet=16M \</i>
+  <i>--quote-names \</i>
+  <i>--result-file=BACKUP_MYSQL_4.0.SQL</i>
+</pre>
+
+<p>
+Now a file named <path>BACKUP_MYSQL_4.0.SQL</path> should exist, which can be
+used later to recreate your data. The data is described in the MySQL dialect of
+SQL, the Structured Query Language.
+</p>
+
+<p>
+Now would also be a good time to see if the backup you have created is working.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Upgrading from recent versions of MySQL</title>
+<section>
+<body>
+
+<p>
+If you have skipped step #1, you now have to create a backup package (of the
+database server, not the data) of the currently installed version:
+</p>
+
+<pre caption="Binary package backup">
+# <i>quickpkg dev-db/mysql</i>
+</pre>
+
+<p>
+Now it's time to clean out the current version and all of its data:
+</p>
+
+<pre caption="Uninstall MySQL">
+# <i>/etc/init.d/mysql stop</i>
+# <i>emerge -C mysql</i>
+# <i>tar cjpvf ~/mysql.$(date +%F"T"%H-%M).tar.bz2 /etc/mysql/my.cnf /var/lib/mysql/</i>
+# <i>ls -l ~/mysql.*</i>
+# <i>rm -rf /var/lib/mysql/ /var/log/mysql</i>
+</pre>
+
+<note>
+Now two different backups should exist: the SQL one, which is portable between
+various versions of MySQL, and the other one that will allow you to quickly
+restore your database. This is covered later in this document in more detail.
+</note>
+
+<p>
+After you get rid of your old MySQL installation, you can now install the new
+version. Note that <c>revdep-rebuild</c> is necessary for rebuilding packages
+linking against MySQL.
+</p>
+
+<pre caption="Upgrading the binaries">
+# <i>emerge -av "&gt;mysql-4.1"</i>
+<comment>(Update your config files, you may also use dispatch-conf)</comment>
+# <i>etc-update</i>
+# <i>revdep-rebuild</i>
+</pre>
+
+<p>
+Now configure the newly installed version of MySQL and restart the daemon:
+</p>
+
+<pre caption="Configure MySQL 4.1 base setup">
+# <i>emerge --config =mysql-4.1.<comment>&lt;micro_version&gt;</comment></i>
+# <i>/etc/init.d/mysql start</i>
+</pre>
+
+<p>
+Finally you can import the backup you have created during step #2.
+</p>
+
+<impo>
+The default <path>/etc/mysql/my.cnf</path> file sets binary logging on
+(<c>log-bin</c>) by default. This will log every single transaction that
+modifies data. If run on a very large database (1GB or more), this could create
+extremely large files that take up disk space rather quickly. If you are low on
+space, disabling binary logging might be a good idea.
+</impo>
+
+<impo>
+The default character set in MySQL 4.1 and above is <c>utf8</c>. If the data
+contain <e>non</e>-ASCII characters, you may want to preserve the default
+character set of the database replacing all occurrences of <c>utf8</c> with
+<c>latin1</c> in the <path>/etc/mysql/my.cnf</path> config file. More
+information can be found <uri link="#On_charset_conversion">Charset
+conversion</uri> chapter.
+</impo>
+
+<impo>
+The administrative <c>mysql</c> database that contains user names, passwords
+amongst other things is and <b>must</b> be encoded in utf8.
+</impo>
+
+<p>
+Older mysqldump utilities may export tables in the wrong order when foreign keys
+are involved. To work around this problem, surround the SQL with the following
+statements:
+</p>
+
+<pre caption="Fixing foreign key checks">
+SET FOREIGN_KEY_CHECKS=0
+SET FOREIGN_KEY_CHECKS=1
+</pre>
+
+<p>
+Next, import the backup.
+</p>
+
+<pre caption="Importing the SQL backup">
+# <i>cat BACKUP_MYSQL_4.0.SQL \</i>
+     <i>| mysql \</i>
+     <i>-uroot \</i>
+     <i>--password=</i><comment>'your_password'</comment><i> \</i>
+     <i>-hlocalhost \</i>
+     <i>--max_allowed_packet=16M</i>
+
+# <i>mysql_fix_privilege_tables \</i>
+     <i>--defaults-file=/etc/mysql/my.cnf \</i>
+     <i>--user=root \</i>
+     <i>--password=</i><comment>'your_password'</comment><i></i>
+</pre>
+
+<p>
+If you restart your MySQL daemon now and everything goes as expected, you have
+a fully working version of 4.1.x.
+</p>
+
+<pre caption="Restart the MySQL instance">
+# <i>/etc/init.d/mysql restart</i>
+</pre>
+
+<p>
+If you encountered any problems during the upgrade process, please report them
+on <uri link="http://bugs.gentoo.org">Bugzilla</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Recover the old installation of MySQL 4.0</title>
+<section>
+<body>
+
+<p>
+If you are not happy with MySQL 4.1, it's possible to go back to MySQL 4.0.
+</p>
+
+<pre caption="Reverting to the previous version">
+# <i>/etc/init.d/mysql stop</i>
+# <i>emerge -C mysql</i>
+# <i>rm -rf /var/lib/mysql/ /var/log/mysql</i>
+# <i>emerge --usepkgonly "&lt;mysql-4.1"</i>
+<comment>(Replace &lt;timestamp&gt; with the one used when creating the backup.)</comment>
+# <i>tar -xjpvf mysql.&lt;timestamp&gt;.tar.bz2 -C /</i>
+# <i>/etc/init.d/mysql start</i>
+</pre>
+
+<impo>
+If packages other than <c>dev-db/mysql</c> have been emerged following this
+guide, you need to run <c>revdep-rebuild</c> to ensure that every client is
+using the correct mysqlclient shared object.
+</impo>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="On_charset_conversion">
+<title>On charset conversion:</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+This chapter is not intended to be an exhaustive guide on how to do such
+conversions, rather a short list of hints on which the reader can elaborate.
+</p>
+
+<p>
+Converting a database may be a complex task and difficulty increases with data
+variancy. Things like serialized object and blobs are one example where it's
+difficult to keeps pieces together.
+</p>
+
+</body>
+</section>
+<section>
+<title>Indexes</title>
+<body>
+
+<p>
+Every utf-8 character is considered 3 bytes long within an index. Indexes in
+MySQL can be up to 1000 bytes long (767 bytes for InnoDB tables). Note that the
+limits are measured in bytes, whereas the length of a column is interpreted as
+number of characters.
+</p>
+
+<p>
+MySQL can also create indexes on parts of a column, this can be of some help.
+Below are some examples:
+</p>
+
+<pre caption="Indexing using prefixes">
+$ <i>mysql -uroot -p'<comment>your_password</comment>' test</i>
+
+mysql> <i>SHOW variables LIKE "version" \G</i>
+*************************** 1. row ***************************
+Variable_name: version
+    Value: <comment>5.0.24-log</comment>
+1 row in set (0.00 sec)
+
+mysql> <i>CREATE TABLE t1 (</i>
+  ->   <i>c1 varchar(255) NOT NULL default '',</i>
+  ->   <i>c2 varchar(255) NOT NULL default ''</i>
+  ->   <i>) ENGINE=MyISAM DEFAULT CHARSET=utf8;</i>
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> <i>ALTER TABLE t1</i>
+  ->   <i>ADD INDEX idx1 ( c1 , c2 );</i>
+<comment>ERROR 1071 (42000): Specified key was too long; max key length is 1000 bytes</comment>
+
+mysql> <i>ALTER TABLE t1</i>
+  ->   <i>ADD INDEX idx1 ( c1(165) , c2(165) );</i>
+Query OK, 0 rows affected (0.01 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> <i>CREATE TABLE t2 (</i>
+  ->   <i>c1 varchar(255) NOT NULL default '',</i>
+  ->   <i>c2 varchar(255) NOT NULL default ''</i>
+  ->   <i>) ENGINE=MyISAM DEFAULT CHARSET=sjis;</i>
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> <i>ALTER TABLE t2</i>
+  ->   <i>ADD INDEX idx1 ( c1(250) , c2(250) );</i>
+Query OK, 0 rows affected (0.03 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> <i>CREATE TABLE t3 (</i>
+  ->   <i>c1 varchar(255) NOT NULL default '',</i>
+  ->   <i>c2 varchar(255) NOT NULL default ''</i>
+  ->   <i>) ENGINE=MyISAM DEFAULT CHARSET=latin1;</i>
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> <i>ALTER TABLE t3</i>
+  ->   <i>ADD INDEX idx1 ( c1 , c2 );</i>
+Query OK, 0 rows affected (0.03 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+</pre>
+
+</body>
+</section>
+<section>
+<title>Environment</title>
+<body>
+
+<p>
+The system must be configured to support the UTF-8 locale. You will find more
+information in our <uri link="/doc/en/utf-8.xml">Using UTF-8 with Gentoo</uri>
+and <uri link="/doc/en/guide-localization.xml">Localization Guide</uri>
+documents.
+</p>
+
+<p>
+In this example, we set some shell environment variables to make use of the
+English UTF-8 locale in <path>/etc/env.d/02locale</path>:
+</p>
+
+<pre caption="/etc/env.d/02locale">
+LC_ALL=en_US.UTF-8
+LANG=en_US.UTF-8
+</pre>
+
+<p>
+Be sure to run <c>env-update &amp;&amp; source /etc/profile</c> afterward.
+</p>
+
+</body>
+</section>
+<section>
+<title>iconv</title>
+<body>
+
+<p>
+<c>iconv</c>, provided by <c>sys-libs/glibc</c>, is used to convert text files
+from one charset to another. The <c>app-text/recode</c> package can be used as
+well.
+</p>
+
+<pre caption="Using iconv">
+<comment>(From latin1 to utf8)</comment>
+$ <i>iconv -f ISO-8859-15 -t UTF-8 file1.sql &gt; file2.sql</i>
+
+<comment>(From Japanese to utf8)</comment>
+$ <i>iconv -f ISO2022JP -t UTF-8 file1.sql &gt; file2.sql</i>
+</pre>
+
+<p>
+<c>iconv</c> can be used to recode a sql dump even if the environment is not
+set to utf8.
+</p>
+
+</body>
+</section>
+<section>
+<title>SQL Mangling</title>
+<body>
+
+<p>
+It's possible to use the <c>CONVERT()</c> and <c>CAST()</c> MySQL functions to
+convert data in your SQL scripts.
+</p>
+
+</body>
+</section>
+<section>
+<title>Apache (webserver)</title>
+<body>
+
+<p>
+To use utf-8 with apache, you need to adjust the following variables in
+<path>httpd.conf</path>: AddDefaultCharset, CharsetDefault, CharsetSourceEnc.
+If your source html files aren't encoded in utf-8, they <b>must</b> be
+converted with <c>iconv</c> or <c>recode</c>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

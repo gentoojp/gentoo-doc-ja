@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/security/shb-pam.xml,v 1.5 2008/06/20 01:07:27 shindo Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.1</version>
+<date>2006-08-03</date>
+
+<!-- Original revision: 1.4 -->
+
+<section>
+<title>PAM</title>
+<body>
+
+<p>
+PAMとは、共有ライブラリのセットで、プログラムの中でユーザ認証を提供する代替手段となります。
+<c>pam</c>USEフラグは、デフォルトで有効になっています。このように、
+Gentoo LinuxにおけるPAMの設定は、本当に合理的なものになっています。しかし、
+改善の余地というものは常にあるものです。まずは、
+cracklibをインストールしてみましょう。
+</p>
+
+<pre caption="cracklibをインストールする">
+# <i>emerge cracklib</i>
+</pre>
+
+<pre caption="/etc/pam.d/passwd">
+auth     required pam_unix.so shadow nullok
+account  required pam_unix.so
+password required pam_cracklib.so difok=3 retry=3 minlen=8 dcredit=-2 ocredit=-2
+password required pam_unix.so md5 use_authtok
+session  required pam_unix.so
+</pre>
+
+<p>
+これによりcracklibが追加され、ユーザのパスワードは最低８文字で、数字と記号を最低２文字含み、最後に使用したパスワードと３文字以上異なるものになります。
+こうしておけば、
+ユーザは良いパスワードを選択するよう強制されます(パスワードポリシー)。
+詳細なオプションに関しては、
+<uri link="http://www.kernel.org/pub/linux/libs/pam/Linux-PAM-html/sag-pam_cracklib.html">PAM</uri>のドキュメントを参照して下さい。
+</p>
+
+<pre caption="/etc/pam.d/sshd">
+auth     required pam_unix.so nullok 
+auth     required pam_shells.so
+auth     required pam_nologin.so
+auth     required pam_env.so
+account  required pam_unix.so
+password required pam_cracklib.so difok=3 retry=3 minlen=8 dcredit=-2 ocredit=-2 use_authtok
+password required pam_unix.so shadow md5
+session  required pam_unix.so
+session  required pam_limits.so
+</pre>
+
+<p>
+<path>/etc/pam.d</path>以下のPAMファイルで設定されない全てのサービスには、
+<path>/etc/pam.d/other</path>で定義されるルールが適用されます。
+もちろん、デフォルトでは<c>deny</c>に設定されます。但し、
+ログを多めに取るのが好みな筆者は、<c>pam_warn.so</c>を追加しています。
+最後に触れる設定は、<c>pam_limits</c>です。これは、
+<path>/etc/security/limits.conf</path>により制御されます。
+設定に関する詳細は、
+<uri link="?part=1&amp;chap=5#limits_conf">/etc/security/limits.conf</uri>のセクションを参照して下さい。
+</p>
+
+<pre caption="/etc/pam.d/other">
+auth     required pam_deny.so 
+auth     required pam_warn.so 
+account  required pam_deny.so 
+account  required pam_warn.so 
+password required pam_deny.so 
+password required pam_warn.so 
+session  required pam_deny.so 
+session  required pam_warn.so
+</pre>
+
+</body>
+</section>
+</sections>

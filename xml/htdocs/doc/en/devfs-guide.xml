@@ -1,0 +1,481 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/devfs-guide.xml,v 1.18 2011/09/04 17:53:40 swift Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide disclaimer="obsolete">
+<title>Device File System Guide</title>
+<author title="Author">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Reviewer">
+  <mail link="seemant@gentoo.org">Seemant Kulleen</mail>
+</author>
+
+<abstract>
+In this document you'll find information on what devfs is really about
+and how to work with it.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>0.8</version>
+<date>2007-11-15</date>
+
+<chapter>
+<title>What is devfs?</title>
+<section>
+<title>The (good?) old days</title>
+<body>
+
+<warn>
+devfs is <e>obsolete</e> and has been removed from the stable 2.6 tree in the
+2.6.13 release. Users on 2.6 kernels are hereby advised to switch to udev. For
+further information on udev, please refer to the <uri
+link="/doc/en/udev-guide.xml">Gentoo udev Guide</uri>.
+</warn>
+
+<p>
+Traditional Linux implementations provide their users with an
+abstract device path, called <path>/dev</path>. Inside this path the
+user finds <e>device nodes</e>, special files that represent devices
+inside their system. For instance, <path>/dev/hda</path> represents the
+first IDE device in their system. By providing device files to the
+users, they can create programs that interact with hardware as if the
+hardware was a regular file instead of using special APIs.
+</p>
+
+<p>
+The device files are split in two groups, called <e>character</e>
+devices and <e>block</e> devices. The first group consists of hardware
+of which read/writes are not buffered. The second group naturally
+consists of hardware of which read/writes are buffered. Both devices can
+be read one character at a time, or in blocks. Therefore, the naming
+might sound confusing and in fact is wrong.
+</p>
+
+<p>
+If you take a look at a certain device file, you might find something
+like this:
+</p>
+
+<pre caption="Checking the information of a device file">
+# <i>ls -l /dev/hda</i>
+brw-rw----    1 root     disk       3,   0 Jul  5  2000 /dev/hda
+</pre>
+
+<p>
+In the previous example we see that <path>/dev/hda</path> is a block
+device. However, more importantly, it has two special numbers assigned
+to it: <b>3, 0</b>. This pair is called the <e>major-minor</e>
+pair. It is used by the kernel to map a device file to a real device.
+The major corresponds with a certain device, the minor with a subdevice.
+Seems confusing? It isn't.
+</p>
+
+<p>
+Two examples are <path>/dev/hda4</path> and <path>/dev/tty5</path>. The
+first device file corresponds with the fourth partition on the first IDE
+device. Its major-minor pair is <b>3, 4</b>. In other words, the
+minor corresponds with the partition where the major corresponds with
+the device. The second example has <b>4, 5</b> as major-minor
+pair. In this case, the major corresponds with the terminal driver,
+while the minor corresponds with the terminal number (in this case, the
+fifth terminal).
+</p>
+
+</body>
+</section>
+<section>
+<title>The problems</title>
+<body>
+
+<p>
+If you do a quick check in such a <path>/dev</path>, you'll find out
+that not only all your devices are listed, but <e>all</e> possible
+devices that you can imagine. In other words, you have device files for
+devices you don't have. Managing such a device group is cumbersome to
+say the least. Imagine having to change the permissions of all device
+files that have a corresponding device in your system, and leaving the
+rest of the device files as they are.
+</p>
+
+<p>
+When you add new hardware to your system, and this hardware didn't have
+a device file previously, you would have to create one. Advanced users know
+that this task can be accomplished with <c>./MAKEDEV</c> inside the
+<path>/dev</path> tree, but do you immediately know what device you have
+to create?
+</p>
+
+<p>
+When you have programs interacting with hardware using the device files,
+you can't have the root partition mounted read only, while there is no
+further need to have it mounted read-write. And you can't have
+<path>/dev</path> on a seperate partition, since <c>mount</c> needs
+<path>/dev</path> to mount partitions.
+</p>
+
+</body>
+</section>
+<section>
+<title>The solutions</title>
+<body>
+
+<p>
+As you can imagine, the kernel hackers have found quite a number of
+solutions to the aforementioned problems. However, many of them had
+other flaws as described in
+<uri>http://www.atnf.csiro.au/people/rgooch/linux/docs/devfs.html#faq-why</uri>.
+We are not going to talk about these implementations, but focus on the
+one implementation that did make it to the official kernel sources:
+devfs.
+</p>
+
+</body>
+</section>
+<section>
+<title>devfs as all-round winner ?</title>
+<body>
+
+<p>
+devfs tackles all listed problems. It only provides the user with
+existing devices, adds new nodes when new devices are found, and makes
+it possible to mount the root filesystem read only. And it tackles more
+problems we haven't discussed previously because they are less
+interesting for users...
+</p>
+
+<p>
+For instance, with devfs, you don't have to worry about major/minor
+pairs. It is still supported (for backwards compatibility), but isn't
+needed. This makes it possible for Linux to support even more devices,
+since there are no limits anymore (numbers always have boundaries :)
+</p>
+
+<p>
+Yet devfs does come with it's own problems; for the end users these issues
+aren't really visible, but for the kernel maintainers the problems are big
+enough to mark devfs <e>obsolete</e> in favor of <uri
+link="udev-guide.xml">udev</uri>, which Gentoo supports and uses by default on
+most architectures since the 2005.0 release when using a 2.6 kernel.
+</p>
+
+<p>
+For more information as to why devfs is marked obsolete, please read the <uri
+link="http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev-FAQ">udev
+FAQ</uri> and <uri
+link="http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev_vs_devfs">udev
+versus devfs document</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Navigating through the device tree</title>
+<section>
+<title>Directories</title>
+<body>
+
+<p>
+One of the first things you might notice is that devfs uses directories
+to group devices together. This improves readability, as now all related
+devices are inside a common directory.
+</p>
+
+<p>
+For instance, all IDE-related devices are inside the
+<path>/dev/ide/</path> device directory, and SCSI-related devices are inside
+<path>/dev/scsi/</path>. SCSI and IDE disks are seen in the same way,
+meaning they both have the same subdirectory structure.
+</p>
+
+<p>
+IDE and SCSI disks are controlled by an adapter (on-board or a seperate
+card), called the <e>host</e>. Every adapter can have several channels.
+A channel is called a <e>bus</e>. On each channel, you can have several
+IDs. Such an ID identifies a disk. This ID is called the <e>target</e>.
+Some SCSI devices can have multiple luns (<e>Logical Unit Numbers</e>),
+for instance devices that handle multiple media simultaneously (hi-end
+tapedrives). You mostly have only a single lun, <path>lun0/</path>.
+</p>
+
+<p>
+So, whereas <path>/dev/hda4</path> was used previously, we now have
+<path>/dev/ide/host0/bus0/target0/lun0/part4</path>. This is far more
+easy... no, don't argue with me... it <e>is</e> easier... ah whatever!
+:)
+</p>
+
+<note>
+You can also use more Unix-like device file naming for hard disks, such as
+<path>c0b0t0u0p2</path>. They can be found in <path>/dev/ide/hd</path>,
+<path>/dev/scsi/hd</path> etc.
+</note>
+
+<p>
+To give you an idea on the directories, this is a listing of the
+directories which I have on my laptop:
+</p>
+
+<pre caption="Directories in /dev">
+cdroms/     cpu/        discs/          floppy/
+ide/        input/      loop/           misc/
+netlink/    printers/   pts/            pty/
+scsi/       sg/         shm/            sound/
+sr/         usb/        vc/             vcc/
+</pre>
+
+</body>
+</section>
+<section>
+<title>Backwards compatibility using devfsd</title>
+<body>
+
+<p>
+Using this new scheme sounds fun, but several tools and programs make
+use of the previous, old scheme. To make sure no system is broken,
+<c>devfsd</c> is created. This daemon creates symlinks with the old
+names, pointing to the new device files.
+</p>
+
+<pre caption="Created symlinks">
+$ <i>ls -l /dev/hda4</i>
+lr-xr-xr-x    1 root     root           33 Aug 25 12:08 /dev/hda4 -> ide/host0/bus0/target0/lun0/part4
+</pre>
+
+<p>
+With <c>devfsd</c>, you can also set the permissions, create new device
+files, define actions etc. All this is described in the next chapter.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Administrating the device tree</title>
+<section>
+<title>Restarting devfsd</title>
+<body>
+
+<p>
+When you alter the <path>/etc/devfsd.conf</path> file, and you want the
+changes to be forced onto the system, you don't have to reboot.
+Depending on what you want, you can use any of the two following
+signals:
+</p>
+
+<p>
+<b>SIGHUP</b> will have <c>devfsd</c> reread the configuration file,
+reload the shared objects and generate the REGISTER events for each leaf
+node in the device tree.
+</p>
+
+<p>
+<b>SIGUSR1</b> will do the same, but won't generate REGISTER events.
+</p>
+
+<p>
+To send a signal, simply use <c>kill</c> or <c>killall</c>:
+</p>
+
+<pre caption="Sending the SIGHUP signal to devfsd">
+# <i>kill -s SIGHUP `pidof devfsd`</i>
+<comment>or</comment>
+# <i>killall -s SIGHUP devfsd</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Removing compatibility symlinks</title>
+<body>
+
+<warn>
+Currently, Gentoo cannot live without the compatibility symlinks.
+</warn>
+
+<p>
+If you want the compatibility symlinks that clutter up <path>/dev</path>
+removed from your Gentoo system (Gentoo activates it per default), edit
+<path>/etc/devfsd.conf</path> and remove the following two lines:
+</p>
+
+<pre caption="/etc/devfsd.conf for backwards compatibility">
+<comment># Comment the following two lines out to remove the symlinks</comment>
+REGISTER        .*  MKOLDCOMPAT
+UNREGISTER      .*  RMOLDCOMPAT
+</pre>
+
+<p>
+You need to reboot your system for the changes to take affect.
+</p>
+
+</body>
+</section>
+<section>
+<title>Removing autoload functionality</title>
+<body>
+
+<p>
+When you load a module, devfs will automatically create the device
+files. If you don't want this behaviour, remove the following line from
+<path>/etc/devfsd.conf</path>:
+</p>
+
+<pre caption="/etc/devfsd.conf, autoload functionality">
+LOOKUP      .*  MODLOAD
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Permission Related Items</title>
+<section>
+<title>Set/change permissions with devfsd</title>
+<body>
+
+<impo>
+These instructions are valid as long as pam_console is disabled in
+<path>/etc/pam.d/system-auth</path>. If you enabled pam_console there, then PAM
+has the final word on permissions. You shouldn't be using pam_console anyway, as
+it has been <uri
+link="http://www.gentoo.org/proj/en/base/pam/upgrade-0.99.xml">removed from
+Portage</uri>.
+</impo>
+
+<p>
+If you want to set permissions using <path>/etc/devfsd.conf</path>,
+then use the syntax used in the following example:
+</p>
+
+<pre caption="Permissions in /etc/devfsd.conf">
+REGISTER    ^cdroms/.*  PERMISSIONS root.cdrom 0660
+</pre>
+
+<p>
+The second field is the device group, starting from <path>/dev</path>.
+It is a regular expression, meaning you can select several device files
+in one rule.
+</p>
+
+<p>
+The fourth field is the ownership of the device file, and the fifth
+field contains the permissions of the device file.
+</p>
+
+</body>
+</section>
+<section>
+<title>Manually set permissions and have devfsd save it</title>
+<body>
+
+<p>
+This is the default behaviour for Gentoo: if you <c>chown</c> (CHange
+OWNer) and <c>chmod</c> (CHange MODe) some device files, <c>devfsd</c>
+will save the information so that it will persist across reboots. This
+is because the <path>/etc/devfsd.conf</path> file contains the
+following lines:
+</p>
+
+<pre caption="/etc/devfsd.conf for saving permissions">
+REGISTER        ^pt[sy]/.*   IGNORE
+CHANGE          ^pt[sy]/.*   IGNORE
+CREATE          ^pt[sy]/.*   IGNORE
+DELETE          ^pt[sy]      IGNORE
+REGISTER        ^log         IGNORE
+CHANGE          ^log         IGNORE
+CREATE          ^log         IGNORE
+DELETE          ^log         IGNORE
+REGISTER        .*           COPY    /lib/dev-state/$devname $devpath
+CHANGE          .*           COPY    $devpath /lib/dev-state/$devname
+CREATE          .*           COPY    $devpath /lib/dev-state/$devname
+DELETE          .*           CFUNCTION GLOBAL unlink
+/lib/dev-state/$devname
+RESTORE         /lib/dev-state
+</pre>
+
+<p>
+In other words, changed device files are copied over to
+<path>/lib/dev-state</path> as soon as the change happens, and are
+copied over to <path>/dev</path> when booting the system.
+</p>
+
+<p>
+Another possibility is to mount <path>/lib/dev-state</path> on
+<path>/dev</path> at boot-time. To do this, you must make sure that
+devfs is not mounted automatically (meaning you'll have to recompile
+your kernel) and that <path>/dev/console</path> exists. Then, somewhere
+at the beginning of the bootscripts of your system, you place:
+</p>
+
+<pre caption="Mounting /lib/dev-state on top of /dev">
+mount --bind /dev /lib/dev-state
+mount -t devfs none /dev
+devfsd /dev
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Resources</title>
+<section>
+<body>
+
+<p>
+For more information on devfs, check out the following resources.
+</p>
+
+<p>
+The devfsd.conf manpage explains the syntax of the
+<path>/etc/devfsd.conf</path> file. To view it, type <c>man
+devfsd.conf</c>.
+</p>
+
+<p>
+The <uri
+link="http://www.atnf.csiro.au/people/rgooch/linux/docs/devfs.html">devfs
+FAQ</uri> explains everything about devfs. It also contains information
+about the internal devfs structure and how drivers can support devfs.
+</p>
+
+<p>
+On <uri link="http://www.linuxjournal.com">LinuxJournal</uri> there is
+an interesting article on <uri
+link="http://www.linuxjournal.com/article.php?sid=6035">devfs for
+Management and Administration</uri>.
+</p>
+
+<p>
+Daniel Robbins has written a set of articles for IBM's DeveloperWorks
+about Advanced filesystems. Three of them are about devfs:
+</p>
+
+<ul>
+  <li>
+    <uri link="http://www-106.ibm.com/developerworks/linux/library/l-fs4/">
+    Introduction to devfs</uri>
+  </li>
+  <li>
+    <uri link="http://www-106.ibm.com/developerworks/linux/library/l-fs5/">
+    Setting up devfs</uri>
+  </li>
+  <li>
+    <uri link="http://www-106.ibm.com/developerworks/linux/library/l-fs6/">
+    Implementing devfs</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

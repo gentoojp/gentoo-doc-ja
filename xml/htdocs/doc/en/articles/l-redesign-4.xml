@@ -1,0 +1,513 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/l-redesign-4.xml,v 1.3 2011/09/04 17:53:41 swift Exp $ -->
+
+<guide disclaimer="articles">
+<title>The gentoo.org redesign, Part 4: A site reborn</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+
+<abstract>
+Have you ever woken up one morning and suddenly realized that your cute little
+personal development Web site isn't really that great? If so, you're in good
+company. In this series, Daniel Robbins shares his experiences as he redesigns
+the Gentoo Linux Web site using technologies like XML, XSLT, and Python. This
+article: Daniel completes the conversion to XML/XSLT, fixes a host of Netscape
+4.x browser compatibility bugs, and adds an auto-generated XML Changelog to the
+site.
+</abstract>
+
+<!-- The original version of this article was first published on IBM
+developerWorks, and is property of Westtech Information Services. This
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>1.1</version>
+<date>2005-10-10</date>
+
+<chapter>
+<title>The final touch</title>
+<section>
+<title>A new look, but...</title>
+<body>
+
+<p>
+At the end of the previous article, the Gentoo Linux Web site had a completely
+new look, but there are still some things that aren't quite complete. In this
+article, the final installment in this series, I finally put those finishing
+touches on the site, resulting in a fully-functional, refined, and modular
+XML-based site that's ready for the future. Here's what was missing from the
+site since the last article:
+</p>
+
+</body>
+</section>
+<section>
+<title>Loose ends</title>
+<body>
+
+<p>
+First, while the site has a completely new look, only the documentation portion
+of the site is XML-based. The main "category" pages are still in raw HTML and
+need to be converted to an XML/XSLT solution to make things more maintainable
+and expandable.
+</p>
+
+<p>
+Also, my developers have found several problems with the raw HTML itself. The
+site looks particularly bad when viewed under Netscape 4.77 -- obviously, this
+is a problem. Also, there are a number of other minor rendering problems that
+appear in more modern browsers, the most annoying of which is a thin vertical
+black line that does not extend completely down the entire page, ruining the
+illusion that the main content area is being spoken by our flying-saucer guy.
+Also, our documentation pages don't completely match the more refined look of
+our new main category pages -- clearly something worth updating.
+</p>
+
+</body>
+</section>
+<section>
+<title>The goal</title>
+<body>
+
+<p>
+Here's the plan for the final rework of the Gentoo Linux site. First, we'll
+totally rework the main page HTML, keeping the same overall look, but making
+the page more browser-compatible. At the same time, we'll add a few
+presentation-related refinements suggested by our visitors, and also fix
+browser compatibility problems with our existing "guide" documentation system.
+</p>
+
+<p>
+Next, we'll completely move the site over to XML and XSLT. By the end of this
+article, any change made to the site will be made by modifying XML or XSLT
+rather than directly editing HTML, which will now be generated automatically
+with the help of xsltproc. This will make the site a whole lot easier to
+maintain. Because Gentoo Linux is a community-developed project, this will, in
+turn, allow our developers (and me) to maintain and improve the site as needed.
+I'm really excited about this since it will save us a bunch of time and ensure
+that our visitors are greeted with up-to-date content.
+</p>
+
+</body>
+</section>
+<section>
+<title>Compatibility issues</title>
+<body>
+
+<p>
+While Netscape 4.x is still a very widely used browser, it is difficult for me
+to decide exactly how many hoops to jump through in order to make the site look
+better when viewed through this browser. Should I merely ensure that the site
+is readable (without any major glitches) or should I do everything I can to
+make sure the site looks absolutely perfect under Netscape 4.x, even if that
+means using less or no CSS and adding strange compatibility hacks to the
+existing HTML?
+</p>
+
+<p>
+In the end, I decide to make several major changes to the HTML so that the site
+will still look quite good under Netscape 4.x without focusing too much on
+minor bug-related table spacing and font-rendering issues. Here are some of the
+changes made to the site's HTML to get everything 4.x compatible. (The Gentoo
+Linux development team has submitted several of these fixes.)
+</p>
+
+<p>
+First, Netscape 4.x has a bug that causes CSS background colors of block
+elements to be displayed incorrectly. For example, here's how a particular
+portion of a guide document is supposed to be rendered:
+</p>
+
+<figure link="/images/docs/l-redesign-07.gif" caption="A sample guide document
+in IE5"/>
+
+<p>
+And, here is how Netscape 4.x renders this same portion when background colors
+are specified using CSS:
+</p>
+
+<figure link="/images/docs/l-redesign-08.gif" caption="A sample guide document
+in Netscape 4.7; some fixes are needed"/>
+
+<p>
+This is ugly. To fix it, existing block-level elements, such as this one...
+</p>
+
+<pre caption="Sample paragraph">
+&lt;p class="note"&gt;This paragraph doesn't look so good in 4.x&lt;/p&gt;
+</pre>
+
+<p>
+...were replaced with tables, as follows:
+</p>
+
+<pre caption="Sample table">
+&lt;table width="100%" border="0" cellpadding="0" cellspacing="0"&gt;
+        &lt;tr&gt;
+                &lt;td bgcolor="#ddffff"&gt;&lt;p class="note"&gt;
+                This looks a whole lot better in 4.x&lt;/p&gt;&lt;/td&gt;
+        &lt;/tr&gt;
+&lt;/table&gt;
+</pre>
+
+<p>
+This hack fixes the background-rendering problem. However, this "fix" also
+requires color information to be included in the HTML, which undermines the
+benefits of using CSS in the first place. This is an unfortunate situation,
+especially for fans of CSS like myself, but is required for Netscape 4.x
+compatibility.
+</p>
+
+</body>
+</section>
+<section>
+<title>Rebuilding the HTML</title>
+<body>
+
+<p>
+Now it's time to deal with the black vertical line that doesn't always extend
+all the way to the bottom of the screen. I have been unable to find a solution
+to this problem that works in both a 4.x and 5.x browser; every 5.x version has
+triggered bugs in Netscape 4.x, and every 4.x-compatible version looks horrible
+in a 5.x browser. So, I decide to simply remove the black line entirely:
+Finally, the site works in all popular browsers. Next, I will to create a
+guide-like syntax for creating the main pages.
+</p>
+
+</body>
+</section>
+<section>
+<title>Approaching the XML</title>
+<body>
+
+<p>
+Instead of implementing a completely new tagset for the main page, I think it
+would be a good idea to try to use as many of the "guide" XML documentation
+tags as possible (see part 2 of this series for more information on the guide
+XML format). So, I hack away at some new XSL, using my guide XSL as a template
+for my work. After an hour or two, I have a fully-functional set of XSL
+transformations for turning a guide-like syntax into an HTML main page.
+Revision 2 of the new main page looks like this:
+</p>
+
+<figure link="/images/docs/l-redesign-09.gif" caption="The new main page
+revision"/>
+
+<p>
+Now that the main page is using a new XML/XSLT backend, I direct my attention
+to the "guide" system's HTML output. Not only do I need to fix a host of
+Netscape 4.7 compatibility bugs, but I also need to further update the
+generated HTML and graphics so that they will match those of my newly-revised
+main page. Then the idea strikes me: Why not simply tweak my new main page
+XML/XSL just a little bit so that it can also generate HTML for my
+documentation? After all, I have just added support for nearly every "guide"
+XML tag, so that they can also be used for main page content.
+</p>
+
+<p>
+This solution turns out to be really easy to implement. I just tweak the new
+XSLT file so that it will remove the left-hand "link bar" and perform a few
+other minor changes to the output HTML when it processes documentation pages.
+Since most of the XSLT is still the same, I can use a single set of master XSLT
+templates for both the guide documentation and the category pages:
+</p>
+
+<figure link="/images/docs/l-redesign-10.gif" caption="How the new XSL works"/>
+
+<p>
+Not only do I now have a single set of XSLT templates to maintain, but because
+both flavors of output HTML are based on the same master document, they now
+share the same CSS stylesheet. This means that there is no need to "synchronize
+the look" between two disparate sets of stylesheets and output HTML. And as you
+can see, the new documentation HTML is a perfect match for the new main page:
+</p>
+
+<figure link="/images/docs/l-redesign-11.gif" caption="The new documentation
+pages perfectly match the new main page"/>
+
+</body>
+</section>
+<section>
+<title>The XML implementation</title>
+<body>
+
+<p>
+The actual implementation is quite easy; my existing guide XML syntax requires
+that every document be part of a single master &lt;guide&gt; element. To add
+support for main category pages, I create a new master element:
+&lt;mainpage&gt;. To create a main category page, I place everything inside a
+&lt;mainpage&gt; element instead of a &lt;guide&gt; element, and the XSLT makes
+the appropriate changes to the output.  Besides this, the only major change
+required is the addition of an optional &lt;sidebar&gt; element that's used to
+specify the contents of the floating table on a main category page. The
+existing &lt;guide&gt; XSLT template looks something like this:
+</p>
+
+<pre caption="XSLT template">
+&lt;xsl:template match="/guide"&gt;
+        &lt;html&gt;
+        &lt;head&gt;
+                guide header goes here
+        &lt;/head&gt;
+        &lt;body&gt;
+                top part of guide body HTML content goes here
+&lt;!--next, we insert our content--&gt;
+                &lt;xsl:apply-templates select="chapter" /&gt;
+                bottom part of guide body HTML content goes here
+        &lt;/body&gt;
+        &lt;/html&gt;
+&lt;/xsl:template&gt;
+</pre>
+
+<p>
+If you're not too familiar with XSLT, this template tells an XSLT processor to
+replace the &lt;guide&gt; &lt;/guide&gt; tags with the shell of an HTML
+document, as well as recursively applying templates to any &lt;chapter&gt;
+elements (opening/closing tag pairs) inside the &lt;guide&gt; element and
+inserting the resultant output into the middle of the HTML shell.
+</p>
+
+<p>
+So, to add support for the main category pages, I need to specify that a
+different HTML shell should be used if everything happens to be enclosed in a
+single &lt;mainpage&gt; element. To do this, I add a new template, as follows:
+</p>
+
+<pre caption="The new template">
+&lt;xsl:template match="/mainpage"&gt;
+        &lt;html&gt;
+        &lt;head&gt;
+                mainpage header goes here
+        &lt;/head&gt;
+        &lt;body&gt;
+                top part of mainpage body HTML content goes here
+&lt;!--next, we insert our content--&gt;
+                &lt;xsl:apply-templates select="chapter" /&gt;
+                bottom part of mainpage body HTML content goes here
+        &lt;/body&gt;
+        &lt;/html&gt;
+&lt;/xsl:template&gt;
+</pre>
+
+<p>
+Because nearly every other XML element (from &lt;chapter&gt; all the way on
+down) produces identical HTML output for both guide and main category pages,
+almost every other XSLT template can be shared for both types of pages. Thus,
+we can get along just fine with a single XSLT file that specifies two "HTML
+shells" and a common set of XML-to-HTML XSLT templates. As always, code reuse
+is definitely a good thing.
+</p>
+
+</body>
+</section>
+<section>
+<title>The Changelog page</title>
+<body>
+
+<p>
+You'll remember that in Part 2 of this series I mentioned that the cvs2cl.pl
+CVS Changelog generation script could produce XML output and that I wanted to
+eventually use this feature as the basis for a daily CVS Changelog page that
+would appear on the new Web site. Now, with the new XML backend in place,
+adding the new Changelog page is a piece of cake. Here's an enhanced version of
+the <path>cvslog.sh</path> script that also takes care of handling the
+XML-to-HTML conversion:
+</p>
+
+<pre caption="Enhanced version of cvslog.sh script">
+#!/bin/bash
+#various paths
+HOMEDIR=/home/drobbins
+CVSDIR=${HOMEDIR}/gentoo/gentoo-x86
+OUTLOG=${HOMEDIR}/gentoo/xmlcvslog.txt
+OUTMAIL=${HOMEDIR}/gentoo/cvslog.txt
+WEBDIR=/usr/local/httpd/htdocs
+XSLTP=/opt/gnome/bin/xsltproc
+TMPFILE=${HOMEDIR}/gentoo/xmlcvslog.tmp
+USER=drobbins
+#if $CVSMAIL is undefined, set it to "yes"
+if [ -z "$CVSMAIL" ]
+then
+        export CVSMAIL="yes"
+fi
+#the main script
+cd $CVSDIR 
+cvs -q update -dP
+yesterday=`date -d "1 day ago 00:00" -R`
+today=`date -d "00:00" -R`
+cvsdate=-d\'${yesterday}\&lt;${today}\'
+nicedate=`date -d yesterday +"%d %b %Y %Z (%z)"`
+#generate cvs2cl.pl XML output
+/usr/bin/cvs2cl.pl --xml -f $OUTLOG -l "${cvsdate}" 
+#use sed to remove "xmlns=" from cvs2cl.pl output
+/usr/bin/sed -e 's/xmlns=".*"//' $OUTLOG > ${OUTLOG}.2
+#convert cvs2cl.pl XML output to guide format using $XLSTP
+$XSLTP ${WEBDIR}/xsl/cvs.xsl ${OUTLOG}.2 > $TMPFILE
+#convert guide XML output to HTML format using $XLSTP
+$XSLTP ${WEBDIR}/xsl/guide-main.xsl 
+$TMPFILE > ${WEBDIR}/index-changelog.html
+#fix perms
+chmod 0644 ${WEBDIR}/index-changelog.html
+#automatically send cvs mail if $CVSMAIL is set to "yes"
+if [ "$CVSMAIL" = "yes" ]
+then
+        /usr/bin/cvs2cl.pl -f ${OUTMAIL} -l "${cvsdate}" 
+        mutt -x gentoo-cvs -s "cvs log for $nicedate" > ${OUTMAIL} 
+fi
+</pre>
+
+<p>
+While this script may look significantly more complicated than the earlier
+version, it really only contains four or five key additional lines; the rest of
+the additions are either comments or environment variable definitions.
+</p>
+
+<p>
+Here's how the new XML-related parts of the cvslog.sh script work. First, we
+call cvs2cl.pl and instruct it to generate an XML-based Changelog containing
+all the files that were modified yesterday. Then, this XML output is run
+through sed to remove an unneeded xmlns= attribute from the XML. Next, we hand
+this slightly tweaked XML over to xsltproc and tell it to apply the processing
+found in cvs.xsl; these instructions transform the XML output from cvs2cl.pl's
+into a proper guide XML document. Finally, we again use xsltproc to convert
+this guide XML document into Web-ready HTML, which is piped into our Web
+server's htdocs directory. The generated HTML Changelog page is complete, and
+this is the result:
+</p>
+
+<figure link="/images/docs/l-redesign-12.gif" caption="The automatically
+generated Changelog page"/>
+
+<p>
+You might be surprised at the simplicity of the XSLT contained in cvs.xsl. In
+it, we specify three templates for &lt;changelog&gt;, &lt;entry&gt;, and
+&lt;file&gt;. We also make reference to a few other tags in the source XML,
+including &lt;date&gt;, &lt;author&gt;, and &lt;msg&gt; (which cvs2cl.pl uses
+to specify the CVS committer's comments). cvs.xsl does quite a bit considering
+that it is only around 35 lines long:
+</p>
+
+<pre caption="The cvs.xsl">
+&lt;?xml version='1.0' encoding="iso-8859-1"?&gt;
+&lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
+&lt;xsl:output encoding="iso-8859-1" method="xml" indent="yes"/&gt;
+&lt;xsl:template match="/changelog"&gt;
+        &lt;mainpage id="changelog"&gt;
+        &lt;title&gt;Gentoo Linux Development Changelog for &lt;xsl:value-of select="entry/date"/&gt;&lt;/title&gt;
+        &lt;author title="script"&gt;cvs-xml.xsl&lt;/author&gt;
+        &lt;standout&gt;
+                &lt;title&gt;About the Development Changelog&lt;/title&gt;
+                &lt;body&gt;
+                        This page contains a daily Changelog, listing all modifications made to our
+                        CVS tree on &lt;xsl:value-of select="entry/date"/&gt; (yesterday).
+                &lt;/body&gt;
+        &lt;/standout&gt;
+        &lt;version&gt;1.0.0&lt;/version&gt;
+        &lt;date&gt;&lt;xsl:value-of select="entry/date"/&gt;&lt;/date&gt;
+        &lt;chapter&gt;
+                &lt;xsl:apply-templates select="entry"/&gt;
+        &lt;/chapter&gt;
+        &lt;/mainpage&gt;
+&lt;/xsl:template&gt;
+&lt;xsl:template match="entry"&gt;
+        &lt;section&gt;
+                &lt;title&gt;Files modified by &lt;xsl:value-of select="author"/&gt; at 
+                                        &lt;xsl:value-of select="time"/&gt;
+                &lt;/title&gt;
+                &lt;body&gt;
+                        &lt;note&gt;&lt;xsl:value-of select="msg"/&gt;&lt;/note&gt;
+                        &lt;ul&gt;
+                                &lt;xsl:apply-templates select="file"/&gt;
+                        &lt;/ul&gt;
+                &lt;/body&gt;
+        &lt;/section&gt;
+&lt;/xsl:template&gt;
+&lt;xsl:template match="file"&gt;
+        &lt;li&gt;&lt;path&gt;&lt;xsl:value-of select="name"/&gt;&lt;/path&gt;, &lt;xsl:value-of select="revision"/&gt;&lt;/li&gt;
+&lt;/xsl:template&gt;
+&lt;/xsl:stylesheet&gt;
+</pre>
+
+</body>
+</section>
+<section>
+<title>Project complete!</title>
+<body>
+
+<p>
+Since the beginning of the Gentoo Linux Web site redesign, we've created a
+user-centric action plan, designed a new XML-based documentation system, a new
+logo, a new look for the site, converted all remaining parts to XML, and added
+a new XML-based Changelog page. Phew! I hope that you've enjoyed following my
+progress, and have found ample ideas and inspiration along the way. I've
+received several requests for more information and code related to the
+redesign, so I've set up a special <uri
+link="http://www.gentoo.org/proj/en/site.xml">Gentoo Linux XML Projects</uri>
+page that contains the most recent XML, XSLT, scripts, and documentation used
+for www.gentoo.org.  In addition to visiting the Projects page, be sure to
+check out the valuable resources listed below.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Resources</title>
+<section>
+<body>
+
+<ul>
+  <li>
+    Check out the <uri link="http://www.gentoo.org/proj/en/site.xml">Gentoo
+    Linux XML Projects</uri> page if you're interested in using the Gentoo Linux
+    guide XML system as a basis for your own projects. All the latest XML/XSLT
+    stuff can be found here.
+  </li>
+  <li>
+    Read the other articles in this developerWorks series about the redesign of
+    the www.gentoo.org Web site using technologies like XML, XSLT, and Python:
+    <ul>
+      <li>
+        In <uri link="/doc/en/articles/l-redesign-1.xml">Part 1</uri>, the
+        author creates a user-centric action plan and introduces pytext, an
+        embedded Python interpreter (March 2001).
+      </li>
+      <li>
+        In <uri link="/doc/en/articles/l-redesign-2.xml">Part 2</uri>, Daniel
+        shows off the new documentation system and sets up a daily CVS-log
+        mailing list (May 2001).
+      </li>
+      <li>
+        In <uri link="/doc/en/articles/l-redesign-3.xml">Part 3</uri>, he
+        creates a new look for the site (July 2001)
+      </li>
+    </ul>
+  </li>
+  <li>
+    Learn more about CSS (cascading style sheets) by visiting the <uri
+    link="http://www.w3.org/Style/CSS/">CSS</uri> page at the World Wide Web
+    Consortium, or W3C. You can find out more about <uri
+    link="http://www.w3.org/XML">XML</uri>, <uri
+    link="http://www.w3.org/TR/xslt">XSLT</uri> and a host of other
+    technologies as well.
+  </li>
+  <li>
+    Check out <uri link="http://xara.com">Xara.com</uri>, the home of Xara X --
+    an excellent vector drawing package for Windows. With virtually no bloat
+    and blazing speed, it has my personal recommendation.
+  </li>
+  <li>Learn even more about XSLT at <uri>http://www.xslt.com</uri></li>
+  <li>
+    When you wake up, check out Sablotron, a nice, fast XSLT processor
+    available from <uri>http://www.gingerall.com</uri>
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,800 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/articles/l-posix2.xml:6
+#, no-wrap
+msgid "POSIX threads explained, part 2"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/articles/l-posix2.xml:13
+#, no-wrap
+msgid ""
+"POSIX threads are a great way to increase the responsiveness and performance of\n"
+"your code. In this second article of a three-part series, Daniel Robbins shows\n"
+"you how to protect the integrity of shared data structures in your threaded code\n"
+"by using nifty little things called mutexes.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/l-posix2.xml:28
+#, no-wrap
+msgid "The little things called mutexes"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix2.xml:30
+#, no-wrap
+msgid "Mutex me!"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:34
+#, no-wrap
+msgid ""
+"In my <uri link=\"/doc/en/articles/l-posix1.xml\">previous article</uri>, I talked\n"
+"about threaded code that did unusual and unexpected things. Two threads each\n"
+"incremented a global variable twenty times.  The variable was supposed to end up\n"
+"with a value of 40, but ended up with a value of 21 instead. What happened? The\n"
+"problem occurred because one thread repeatedly \"cancelled out\" the increment\n"
+"performed by the other thread. Let's take a look at some corrected code that\n"
+"uses a <b>mutex</b> to solve the problem:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:43
+#, no-wrap
+msgid "thread3.c"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:44
+#, no-wrap
+msgid ""
+"#include &lt;pthread.h&gt;\n"
+"#include &lt;stdlib.h&gt;\n"
+"#include &lt;unistd.h&gt;\n"
+"#include &lt;stdio.h&gt;\n"
+"\n"
+"int myglobal;\n"
+"pthread_mutex_t mymutex=PTHREAD_MUTEX_INITIALIZER;\n"
+"\n"
+"void *thread_function(void *arg) {\n"
+"  int i,j;\n"
+"  for ( i=0; i&lt;20; i++ ) {\n"
+"    pthread_mutex_lock(&amp;mymutex);\n"
+"    j=myglobal;\n"
+"    j=j+1;\n"
+"    printf(\".\");\n"
+"    fflush(stdout);\n"
+"   sleep(1);\n"
+"    myglobal=j;\n"
+"    pthread_mutex_unlock(&amp;mymutex);\n"
+"  }\n"
+"  return NULL;\n"
+"}\n"
+"\n"
+"int main(void) {\n"
+"\n"
+"  pthread_t mythread;\n"
+"  int i;\n"
+"\n"
+"  if ( pthread_create( &amp;mythread, NULL, thread_function, NULL) ) {\n"
+"    printf(\"error creating thread.\");\n"
+"    bort();\n"
+"  }\n"
+"\n"
+"  for ( i=0; i&lt;20; i++) {\n"
+"    pthread_mutex_lock(&amp;mymutex);\n"
+"    myglobal=myglobal+1;\n"
+"    pthread_mutex_unlock(&amp;mymutex);\n"
+"    printf(\"o\");\n"
+"    fflush(stdout);\n"
+"    sleep(1);\n"
+"  }\n"
+"\n"
+"  if ( pthread_join ( mythread, NULL ) ) {\n"
+"    printf(\"error joining thread.\");\n"
+"    abort();\n"
+"  }\n"
+"\n"
+"  printf(\"\\nmyglobal equals %d\\n\",myglobal);\n"
+"\n"
+"  exit(0);\n"
+"\n"
+"}\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix2.xml:101
+#, no-wrap
+msgid "Comprehension time"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:105
+#, no-wrap
+msgid ""
+"If you compare this code to the version in my <uri\n"
+"link=\"/doc/en/articles/l-posix1.xml\">previous article</uri>, you'll notice the\n"
+"addition of the calls pthread_mutex_lock() and pthread_mutex_unlock(). These\n"
+"calls perform a much-needed function in threaded programs. They provide a means\n"
+"of mutual exclusion (hence the name). No two threads can have the same mutex\n"
+"locked at the same time.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:114
+#, no-wrap
+msgid ""
+"This is how mutexes work. If thread \"a\" tries to lock a mutex while thread \"b\"\n"
+"has the same mutex locked, thread \"a\" goes to sleep. As soon as thread \"b\"\n"
+"releases the mutex (via a pthread_mutex_unlock() call), thread \"a\" will be able\n"
+"to lock the mutex (in other words, it will return from the pthread_mutex_lock()\n"
+"call with the mutex locked). Likewise, if thread \"c\" tries to lock the mutex\n"
+"while thread \"a\" is holding it, thread \"c\" will also be put to sleep\n"
+"temporarily. All threads that go to sleep from calling pthread_mutex_lock() on\n"
+"an already-locked mutex will \"queue up\" for access to that mutex.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:125
+#, no-wrap
+msgid ""
+"pthread_mutex_lock() and pthread_mutex_unlock() are normally used to protect\n"
+"data structures. That is, you make sure that only one thread at a time can\n"
+"access a certain data structure by locking and unlocking it. As you may have\n"
+"guessed, the POSIX threads library will grant a lock without having put the\n"
+"thread to sleep at all if a thread tries to lock an unlocked mutex.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><figure>
+#: en/articles/l-posix2.xml:132
+#, no-wrap
+msgid ""
+"For your enjoyment, four\n"
+"znurts re-enact a scene from recent pthread_mutex_lock() calls"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:136
+#, no-wrap
+msgid ""
+"The thread in this image that has the mutex locked gets to access the complex\n"
+"data structure without worrying about having other threads mess with it at the\n"
+"same time. The data structure is in effect \"frozen\" until the mutex is unlocked.\n"
+"It's as if the pthread_mutex_lock() and pthread_mutex_unlock() calls are \"under\n"
+"construction\" signs that surround a particular piece of shared data that's being\n"
+"modified or read. The calls act as a warning to other threads to go to sleep and\n"
+"wait their turn for the mutex lock. Of course this is only true if your surround\n"
+"every read and write to a particular data structure with calls to\n"
+"pthread_mutex_lock() and pthread_mutex_unlock().\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix2.xml:150
+#, no-wrap
+msgid "Why mutex at all?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:154
+#, no-wrap
+msgid ""
+"Sounds interesting, but why exactly do we want to put our threads to sleep?\n"
+"After all, isn't the main advantage of threads their ability to work\n"
+"independently and in many cases simultaneously? Yes, that's completely true.\n"
+"However, every non-trivial threads program will require at least some use of\n"
+"mutexes. Let's refer to our example program again to understand why.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:162
+#, no-wrap
+msgid ""
+"If you take a look at thread_function(), you'll notice that the mutex is locked\n"
+"at the beginning of the loop and released at the very end. In this example\n"
+"program, mymutex is used to protect the value of myglobal. If you look carefully\n"
+"at thread_function() you'll notice that the increment code copies myglobal to a\n"
+"local variable, increments the local variable, sleeps for one second, and only\n"
+"then copies the local value back to myglobal. Without the mutex,\n"
+"thread_function() will overwrite the incremented value when it wakes up if our\n"
+"main thread increments myglobal during thread_function()'s one-second nap. Using\n"
+"a mutex ensures that this doesn't happen. (In case you're wondering, I added the\n"
+"one-second delay to trigger a flawed result. There is no real reason for\n"
+"thread_function() to go to sleep for one second before writing the local value\n"
+"back to myglobal.) Our new program using mutex produces the desired result:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:176
+#, no-wrap
+msgid "Output of program using mutex"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:177
+#, no-wrap
+msgid ""
+"$ <i>./thread3</i>\n"
+"o..o..o.o..o..o.o.o.o.o..o..o..o.ooooooo\n"
+"myglobal equals 40\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:183
+#, no-wrap
+msgid ""
+"To further explore this extremely important concept, let's take a look at the\n"
+"increment code from our program:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:187
+#, no-wrap
+msgid "Incremented code"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:188
+#, no-wrap
+msgid ""
+"thread_function() increment code: \n"
+"   j=myglobal;\n"
+"    j=j+1;\n"
+"    printf(\".\");\n"
+"    fflush(stdout);\n"
+"    sleep(1);\n"
+"    myglobal=j;\n"
+"\n"
+"main thread increment code:\n"
+"    myglobal=myglobal+1;\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:201
+#, no-wrap
+msgid ""
+"If this code were in a single-threaded program we'd expect the\n"
+"thread_function() code to execute in its entirety. The execution would then be\n"
+"followed by the main thread code (or the other way around). In a threaded\n"
+"program without mutexes, the code can (and often will, thanks to the sleep()\n"
+"call) end up executing in the following order:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:208
+#, no-wrap
+msgid "Executing order"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:209
+#, no-wrap
+msgid ""
+"  thread_function() thread        main thread\n"
+"\n"
+"  j=myglobal;\n"
+"  j=j+1;\n"
+"  printf(\".\");\n"
+"  fflush(stdout);\n"
+"  sleep(1);                        myglobal=myglobal+1;\n"
+"  myglobal=j;\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:220
+#, no-wrap
+msgid ""
+"When the code executes in this particular order, the main thread's modification\n"
+"to myglobal gets overwritten. We then end up with an incorrect value at the end\n"
+"of our program. If we were manipulating pointers we'd probably end up with a\n"
+"segfault. Notice that our thread_function() thread executes all its\n"
+"instructions in order. It's not as if thread_function() does anything out of\n"
+"order. The problem is that we have another thread performing the other\n"
+"modifications to the same data structure effectively at the same time.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix2.xml:232
+#, no-wrap
+msgid "Inside threads 1"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:236
+#, no-wrap
+msgid ""
+"Before I explain how to figure out where to use mutexes, I'll offer a little\n"
+"insight into the internal working of threads. Here's our first example:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:241
+#, no-wrap
+msgid ""
+"Let's say you have a main thread that creates three new threads: threads \"a\",\n"
+"\"b\", and \"c\". Let's say that thread \"a\" is created first, thread \"b\", second and\n"
+"thread \"c\" last.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:246
+#, no-wrap
+msgid "Thread creating order"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:247
+#, no-wrap
+msgid ""
+"  pthread_create( &amp;thread_a, NULL, thread_function, NULL);\n"
+"  pthread_create( &amp;thread_b, NULL, thread_function, NULL);\n"
+"  pthread_create( &amp;thread_c, NULL, thread_function, NULL);\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:253
+#, no-wrap
+msgid ""
+"After the first pthread_create() call completes, you can assume either that\n"
+"thread \"a\" exists or that it has finished and is now stopped. After the second\n"
+"pthread_create() call, both the main thread and thread \"b\" can assume that\n"
+"thread \"a\" exists (or has stopped).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:260
+#, no-wrap
+msgid ""
+"However, immediately after the second create() call returns, the main thread\n"
+"can't assume which thread (a or b) will actually start running first. Although\n"
+"both threads exist it's up to the kernel and threads library to give them a\n"
+"slice of CPU time. And there is no hard rule as to who goes first. Now, it's\n"
+"very likely that thread \"a\" will start executing before thread \"b\", but it isn't\n"
+"guaranteed. This is especially true on a multi-processor machine. If you write\n"
+"code that assumes that thread \"a\" will actually start executing its code before\n"
+"thread \"b\" starts, you'll end up with a program that works 99% of the time. Or\n"
+"worse, a program that works 100% of the time on your machine but 0% of the time\n"
+"on your client's quad-processor server.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:273
+#, no-wrap
+msgid ""
+"Another thing that we can learn from this example is that the threads library\n"
+"preserves the order of code execution for each individual thread. In other\n"
+"words, those three pthread_create() calls will in fact execute in the order that\n"
+"they appear. From the main thread's perspective, all the code is executing in\n"
+"order. Sometimes we can take advantage of this to optimize parts of our threaded\n"
+"programs. For instance, in the above example, thread \"c\" can assume that thread\n"
+"\"a\" and \"b\" are running or have already terminated. It does not have to worry\n"
+"about the possibility that threads \"a\" and \"b\" haven't been created yet. You can\n"
+"use this logic to optimize your threaded programs.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix2.xml:287
+#, no-wrap
+msgid "Inside threads 2"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:291
+#, no-wrap
+msgid ""
+"OK, now for another hypothetical example. Let's say we have a bunch of threads\n"
+"that are executing the following code:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:295
+#, no-wrap
+msgid "Code being executed"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:296
+#, no-wrap
+msgid "  myglobal=myglobal+1;\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:300
+#, no-wrap
+msgid ""
+"Do we need to lock and unlock the mutex before and after the increment\n"
+"respectively? Some of you may say \"no\". The compiler will after all very likely\n"
+"compile the above assignment into a single machine instruction. As you know a\n"
+"single machine instruction cannot be interrupted \"mid-stream\". Even hardware\n"
+"interrupts will respect the atomicity of machine instructions. Because of this\n"
+"tendency it's tempting to leave out the pthread_mutex_lock() and\n"
+"pthread_mutex_unlock() calls entirely. Don't do it.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:310
+#, no-wrap
+msgid ""
+"Am I being a wimp? Not really. First, you shouldn't assume that the above\n"
+"assignment would be compiled as a single machine instruction unless you\n"
+"personally verify the machine code yourself. Even if you insert some inline\n"
+"assembly to ensure that the increment happens atomically -- or even if you wrote\n"
+"the compiler yourself! -- you may still have problems.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:318
+#, no-wrap
+msgid ""
+"Here's why. Using a single inline assembly opcode will probably work wonderfully\n"
+"on a uni-processor machine. Each increment will happen atomically, and chances\n"
+"are you'll get the desired result. But a multi-processor machine is another\n"
+"story. On a multi-CPU machine, you can have two separate processors executing\n"
+"the above assignment at nearly (or at times exactly) the same time. And remember\n"
+"that this memory modification will need to trickle down from L1 to L2 cache, and\n"
+"then to main memory. (An SMP machine is not just an additional processor; it\n"
+"also has special hardware that arbitrates access to RAM.) In the end, you'll\n"
+"really have no idea which CPU \"wins\" the race of writing to main memory. To\n"
+"produce predictable code, you'll want to use mutexes. Mutexes will insert a\n"
+"\"memory barrier,\" which ensures that the writes to main memory occur in the\n"
+"order the threads lock the mutex.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:333
+#, no-wrap
+msgid ""
+"Consider an SMP architecture that updates main memory in 32-bit blocks. If you\n"
+"are incrementing a 64-bit integer without mutexes, the uppermost 4 bytes might\n"
+"come from one CPU and the other four might come from another. Bummer! Worst of\n"
+"all, using poor technique will probably make your program bomb out once in a\n"
+"blue moon or at 3 AM on an important client's system. David R. Butenhof covers\n"
+"the possible permutations of not using mutexes in his book, Programming with\n"
+"POSIX Threads (see <uri link=\"#resources\">Resources</uri> at the end of this\n"
+"article).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix2.xml:346
+#, no-wrap
+msgid "Many mutexes"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:350
+#, no-wrap
+msgid ""
+"If you place too many mutexes, your code won't have any kind of concurrency and\n"
+"will run slower than a single-threaded solution. If you place too few, your code\n"
+"will have weird and embarrassing bugs. Fortunately, there is a middle ground.\n"
+"First of all, mutexes are used to serialize access to *shared data*. Don't use\n"
+"them for non-shared data, and don't use them if your program's logic ensures\n"
+"that only one thread is accessing a particular data structure at a single time.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:359
+#, no-wrap
+msgid ""
+"Second of all, if you are using shared data, use mutexes for both reading and\n"
+"writing. Surround your read and write sections with pthread_mutex_lock() and\n"
+"pthread_mutex_unlock(), or use them any time a program's invariant is\n"
+"temporarily broken. Learn to view your code from the perspective of a single\n"
+"thread and make sure each individual thread in your program has a consistent,\n"
+"friendly view of memory. It'll probably take you several hours of writing your\n"
+"own code to get the hang of mutexes, but they will soon become second nature and\n"
+"you'll be able to use them properly without thinking <e>too</e> much.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix2.xml:372
+#, no-wrap
+msgid "Using the calls: initialization"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:376
+#, no-wrap
+msgid ""
+"OK, now it's time to see all the different ways to use mutexes. First, we'll\n"
+"start with initialization. In our <uri link=\"#thread3c\">thread3.c example</uri>,\n"
+"we used a static initialization method. This involved declaring a\n"
+"pthread_mutex_t variable and assigning it the constant\n"
+"PTHREAD_MUTEX_INITIALIZER:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:383
+#, no-wrap
+msgid "Initialization example"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:384
+#, no-wrap
+msgid "pthread_mutex_t mymutex=PTHREAD_MUTEX_INITIALIZER;\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:388
+#, no-wrap
+msgid ""
+"That's pretty easy. But you can also create a mutex dynamically. Use this\n"
+"dynamic method whenever your code allocates a new mutex using malloc(). In this\n"
+"case, the static initialization method won't do, and the routine\n"
+"pthread_mutex_init() should be used:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:394
+#, no-wrap
+msgid "Dynamic way of creating mutex"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:395
+#, no-wrap
+msgid "int pthread_mutex_init( pthread_mutex_t *mymutex, const pthread_mutexattr_t*attr)\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:399
+#, no-wrap
+msgid ""
+"As you can see, pthread_mutex_init accepts a pointer to an already-allocated\n"
+"region of memory to initialize as a mutex. As a second argument, it can also\n"
+"accept an optional pthread_mutexattr_t pointer. This structure can be used to\n"
+"set various mutex attributes. But usually these attributes are not needed, so\n"
+"specifying NULL is the norm.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:407
+#, no-wrap
+msgid ""
+"Whenever you initialize a mutex using pthread_mutex_init(), it should be\n"
+"destroyed using pthread_mutex_destroy(). pthread_mutex_destroy() accepts a\n"
+"single pointer to a pthread_mutex_t and frees any resources allocated to the\n"
+"mutex when it was created. Be sure to note that pthread_mutex_destroy() does not\n"
+"free the memory used to store the pthread_mutex_t. It's up to you to free() your\n"
+"own memory. Also remember that both pthread_mutex_init() and\n"
+"pthread_mutex_destroy() return zero on success.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix2.xml:419
+#, no-wrap
+msgid "Using the calls: locking"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:422
+#, no-wrap
+msgid "Locking example"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:423
+#, no-wrap
+msgid "pthread_mutex_lock(pthread_mutex_t *mutex)\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:427
+#, no-wrap
+msgid ""
+"pthread_mutex_lock() accepts a single pointer to a mutex to lock. If the mutex\n"
+"already happens to be locked, the caller will go to sleep. When the function\n"
+"returns, the caller will be woken up (obviously), and the caller will also now\n"
+"hold the lock. This call either returns zero on success or a non-zero error code\n"
+"on failure.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:434
+#, no-wrap
+msgid "Unlocking example"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:435
+#, no-wrap
+msgid "pthread_mutex_unlock(pthread_mutex_t *mutex)\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:439
+#, no-wrap
+msgid ""
+"pthread_mutex_unlock() complements pthread_mutex_lock() and unlocks a mutex that\n"
+"the thread has already locked. You should always unlock a mutex that you've\n"
+"locked as soon as safely possible (to increase performance). And you should\n"
+"never unlock a mutex that you don't hold a lock for (otherwise, the\n"
+"pthread_mutex_unlock() call will fail with a non-zero EPERM return value).\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:446
+#, no-wrap
+msgid "Trying the lock example"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-posix2.xml:447
+#, no-wrap
+msgid "pthread_mutex_trylock(pthread_mutex_t *mutex)\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:451
+#, no-wrap
+msgid ""
+"This call is handy when you want to lock a mutex while your thread is doing\n"
+"something else (because the mutex is currently locked). When you call\n"
+"pthread_mutex_trylock() you'll attempt to lock the mutex. If the mutex is\n"
+"currently unlocked you'll get the lock, and this function will return zero.\n"
+"However, if the mutex is locked this call won't block. Rather, it will return a\n"
+"non-zero EBUSY error value. Then you can go about your business and try to lock\n"
+"at a later time.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-posix2.xml:463
+#, no-wrap
+msgid "Waiting on conditions"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:467
+#, no-wrap
+msgid ""
+"Mutexes are necessary tools for threaded programs, but they can't do everything.\n"
+"What happens, for instance, if your thread is waiting for a certain condition to\n"
+"appear in shared data? Your code could repeatedly lock and unlock the mutex,\n"
+"checking for any changes to the value. At the same time it will also quickly\n"
+"unlock the mutex so that others can make any necessary changes. But this is a\n"
+"horrible approach because this thread will need to busy-loop to detect a change\n"
+"in a reasonable time frame.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:477
+#, no-wrap
+msgid ""
+"You could put the calling thread to sleep for a little bit, say three seconds\n"
+"between each check, but then your threaded code wouldn't be optimally\n"
+"responsive. What you really need is a way to put a thread to sleep while it\n"
+"waits for some condition to be met. Once the condition is met you need a method\n"
+"to wake up the thread(s) that are waiting for that particular condition to\n"
+"become true. If you can do this, your threaded code will be really efficient and\n"
+"it won't tie up valuable mutex locks. That's precisely what POSIX condition\n"
+"variables can do for you!\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-posix2.xml:488
+#, no-wrap
+msgid ""
+"And POSIX condition variables are the subject of my next article, where I'll\n"
+"show you exactly how to use them. Then you'll have all the resources to create\n"
+"sophisticated threaded programs that model work crews, assembly lines, and more.\n"
+"I'm going to pick up the pace in the next article now that you're getting more\n"
+"familiar with threads. I'm hoping this will allow me to squeeze in a reasonably\n"
+"sophisticated threaded program at the end of the next article. And speaking of\n"
+"waiting on conditions, I'll see you then!\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/l-posix2.xml:502
+#, no-wrap
+msgid "Resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix2.xml:508
+#, no-wrap
+msgid ""
+"    Read Daniel's POSIX threads explained <uri link=\"l-posix1.xml\">Part 1</uri>\n"
+"    and <uri link=\"l-posix3.xml\">Part 3</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix2.xml:512
+#, no-wrap
+msgid ""
+"    See documentation on <uri\n"
+"    link=\"http://metalab.unc.edu/pub/Linux/docs/faqs/Threads-FAQ/html/\">Linux\n"
+"    threads</uri>, by Sean Walton, KB7rfa.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix2.xml:517
+#, no-wrap
+msgid ""
+"    Always go to your friendly Linux pthread man pages (<c>man -k pthread</c>).\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix2.xml:520
+#, no-wrap
+msgid ""
+"    See <uri link=\"http://pauillac.inria.fr/~xleroy/linuxthreads/\">The\n"
+"    LinuxThreads Library.</uri>\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix2.xml:524
+#, no-wrap
+msgid ""
+"    <uri link=\"http://www.users.itl.net.ua/~prool/proolix.html\">Proolix</uri> is\n"
+"    a simple POSIX-compliant operating system for i8086+ under permanent\n"
+"    development.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix2.xml:529
+#, no-wrap
+msgid ""
+"    Take a look at David R. Butenhof's book <uri\n"
+"    link=\"http://www.amazon.com/exec/obidos/ASIN/0201633922/o/qid=961544788/sr=8-1/ref=aps_sr_b_1_1/002-2882413-1227240\">Programming\n"
+"    with POSIX Threads</uri>, in which he covers, among other things, the\n"
+"    possible permutations of not using\n"
+"    mutexes.\n"
+"  "
+msgstr ""
+
+#
+#.  FIXME not available out there,
+#.     commenting out and leaving finding it pleasure to readers<uri
+#.     link="http://devworks.krcinfo.com/WebForms/ProductDetails.aspx?ProductID=0139498761">
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix2.xml:536
+#, no-wrap
+msgid ""
+"    Check out W. Richard Stevens' book \"UNIX\n"
+"    Network Programming\".\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix2.xml:542
+#, no-wrap
+msgid ""
+"    Find more resources for Linux developers in the <uri\n"
+"    link=\"http://www.ibm.com/developerworks/linux/\">developerWorks Linux\n"
+"    zone</uri>. \n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-posix2.xml:547
+#, no-wrap
+msgid ""
+"    Get involved in the developerWorks community by participating in\n"
+"    <uri link=\"http://www.ibm.com/developerworks/blogs/\">developerWorks\n"
+"    blogs</uri>.\n"
+"  "
+msgstr ""

@@ -1,0 +1,319 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/apache-upgrading.xml,v 1.4 2007/03/24 11:21:36 nightmorph Exp $ -->
+<guide link="/doc/ja/apache-upgrading.xml" lang="ja">
+<title>Apacheのアップグレード</title>
+
+<author title="Author">
+  <mail link="vericgar@gentoo.org">Michael Stewart</mail>
+</author>
+<author title="翻訳">
+  <mail link="mignon@gentoo.gr.jp">武田洋之</mail>
+</author>
+
+<abstract>
+このドキュメントでは、エンドユーザが従うべきApacheの安全なアップグレードの手順を説明しています。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<!-- Original revision: 1.5 -->
+<version>2.3</version>
+<date>2005-09-29</date>
+
+<chapter>
+<title>導入</title>
+<section>
+<body>
+
+<p>
+GentooにおけるApacheとそのモジュールの状態は、悲惨な状態になりつつありました。
+サポートの問題を引き起こし、Apacheグループが責任を持つすべての保守を難しくする数多くの問題がありました。
+</p>
+
+<ul>
+  <li>
+    Gentooが提供する設定は、多くのユーザが期待するApache本家の設定とはまるっきり違っていました。
+  </li>
+  <li>
+    大部分のモジュールは似たようなコードを使用していましたが、
+    すべてが、独自のやり方で書かれていました。
+  </li>
+  <li>
+    大部分のモジュールはあまり保守されていませんでした。
+    モジュールの莫大な数が主な原因です。
+  </li>
+  <li>モジュールには標準的な設定がありませんでした。</li>
+  <li>
+    2つのバージョンのApacheをサポートするモジュールもありますが、
+    ebuildは、それに対応していませんでした。
+  </li>
+  <li>
+    Apacheでは可能な選択が、Gentooユーザには入手できるようになっていませんでした(例えばMPM)。
+  </li>
+  <li>Apacheのバグが累積していました。</li>
+</ul>
+
+<p>
+解決策？Apacheグループは拡大し、eclassを一緒に作成し、
+すべてのモジュールを更新し、数多くのバグを修正するための何人かの新しいメンバーを補充しました。
+</p>
+
+<p>
+このドキュメントでは、あなたのシステムを壊すことなく、Apacheをアップグレードする方法の詳細を説明します。
+もしあなたが開発者である、または、私たちが変更した内容を知りたい、
+あるいは、eclassを利用してebuildを修正する方法を知りたいなら、
+<uri 
+link="apache-developer.xml">Apache Developer Reference</uri>を参照してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="upgrade">
+<title>アップグレード手順</title>
+<section>
+<body>
+
+<p>
+GentooにおけるApacheの動作に多くの変更を加えました。
+Apacheに直接関係のあるすべてのパッケージは、アップグレードする必要があり、
+以前は動いていたものがこれ以降は動かないものもあります。
+</p>
+
+<p>
+最初に、どのパッケージをアップグレードする必要があるかをはっきりさせましょう。
+<c>app-portage/gentoolkit</c>の一部である、
+<c>equery</c>ツールを使うことでこれを実施することができます。
+</p>
+
+<pre caption="アップグレードすべきパッケージを探す">
+$ <i>equery depends net-www/apache</i>
+[ Searching for packages depending on net-www/apache... ]
+dev-db/phpmyadmin-2.5.6
+dev-php/mod_php-4.3.10
+dev-php/phpsysinfo-2.1-r2
+net-www/mod_bandwidth-2.0.5
+net-www/mod_layout-4.0.1a
+net-www/mod_ldap_userdir-1.1.4
+net-www/mod_loopback-1.04
+net-www/mod_mp3-0.40
+net-www/mod_random-2.0
+net-www/mod_throttle-3.1.2-r1
+net-www/mod_watch-3.18
+www-apps/viewcvs-0.9.2_p20030430
+</pre>
+
+<impo>
+これは、あなたがインストールしているパッケージとは全く異なります。
+このコマンドをあなた自身が実行して確かめてください。
+</impo>
+
+<warn>
+アップグレードされないApacheに依存するモジュールやパッケージがあるかもしれません。
+Apacheと一緒に使用する重要ななパッケージを<uri
+ link="http://bugs.gentoo.org">search bugzilla</uri>で検索してください。
+</warn>
+
+<p>
+多くのwebappは、その大部分がそれらを正常にインストール役割を担う<c>webapp</c> eclassを使用しているため、
+いかなる影響も受けません。
+新しいリビジョンがあるかチェックしてみてください。
+</p>
+
+<p>
+わたしたちは、新しいUSEフラグをいくつか追加したので、
+それらをよく吟味して、
+<path>/etc/portage/package.use</path>の適切な行に追加してください。
+詳細は、<uri 
+link="#use">ApacheがサポートするUSEフラグ</uri>を見てください。
+</p>
+
+<pre caption="USEフラグの設定の確認と再構築">
+<comment>(USEフラグとアップグレードが必要なものの確認)</comment>
+# <i>emerge --pretend --verbose --update --newuse --deep apache subversion \
+mod_php mod_bandwidth mod_layout mod_ldap_userdir mod_loopback mod_mp3 \ 
+mod_random mod_throttle mod_watch</i>
+
+<comment>(パッケージのアップグレード)</comment>
+# <i>emerge --verbose --update --newuse --deep apache subversion mod_php \
+mod_bandwidth mod_layout mod_ldap_userdir mod_loopback mod_mp3 mod_random \
+mod_throttle mod_watch</i>
+
+<comment>(前述のやり方の代わりに単にworldを更新する方がより簡単です)</comment>
+# <i>emerge --ask --verbose --update --newuse --deep world</i>
+</pre>
+
+<p>
+さて、ここでApacheとモジュールの再設定が必要です。
+<c>etc-update</c>あるいは<c>dispatch-conf</c>を実行して、
+<path>/etc/init.d</path>と<path>/etc/conf.d</path>にあるファイルを更新しましょう。
+Apacheの設定ファイルが更新に表示されないことに気づくでしょう。
+これは、すべての設定ファイルが移動されたことに起因します。
+</p>
+
+<p>
+もし、以前のデフォルトの<path>apache.conf</path>と<path>commonapache.conf</path>を変更しているなら、
+その変更を<path>/etc/apache{|2}/httpd.conf</path>へ反映させる必要があります。
+また、モジュールと仮想ホストの設定ファイルの場所が変更されました。
+これらはそれぞれ<path>/etc/apache2/modules.d</path>および<path>/etc/apache2/vhosts.d</path>に置かれることになります。
+</p>
+
+<p>
+変更箇所を新しい設定ファイルに移行したら、
+古い設定ファイルは削除する必要があります(あるいはどこか安全な場所に移動してください)。
+新しい<path>/etc/init.d/apache{|2}</path>は、これらのファイルをチェックし、
+これらが削除されるまでApacheは起動できないようにし、
+そして、再設定したApacheは新しいパスを使用することになります。
+</p>
+
+<note>
+デフォルトで有効となっていた多くのモジュールは無効化されます。
+それらがApacheビルトインモジュールの場合、
+httpd.confの適切な行のコメントを外してください。
+もし外部モジュールの場合、これを有効にするためにモジュールの設定ファイルの<c>IfDefine</c>と同じ名前を<path>/etc/conf.d/apache{|2}</path>に追加してください。
+</note>
+
+<p>
+それではApacheを再起動してください。
+</p>
+
+<pre caption="apacheの再起動">
+# <i>/etc/init.d/apache stop</i>
+# <i>/etc/init.d/apache start</i>
+</pre>
+
+<p>
+もし問題が起きたら<uri 
+link="/doc/en/apache-troubleshooting.xml">Apache Troubleshooting Guide</uri>をチェックし、
+問題を解決できない場合、<uri 
+link="http://bugs.gentoo.org">Gentoo Bugzilla</uri>に報告してください。
+あなたが有効にしたモジュールが正しく導入されていること、そして(もしApache2を使用していて、有効にしているなら)どのMPM USEフラグを有効にしてコンパイルしたかを確認してください。
+<path>irc.freenode.net</path>の<path>#gentoo-apache</path>に参加してサポートを得ることもできます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="use">
+<title>ApacheがサポートするUSEフラグ</title>
+<section>
+<body>
+
+<p>
+Apacheとそのモジュールに特有のUSEフラグがあります。
+Apacheは<c>ssl</c>のような他のもっと一般的なUSEフラグもサポートしますが、
+Apacheにおけるその効果は他のパッケージと相違ありませんので、
+このリストには含まれていません。
+サポートされるUSEフラグの完全なリストを得るには<c>emerge --verbose --pretend 
+apache</c>を実行してください。
+</p>
+
+<table>
+<tr>
+  <th>USEフラグ</th>
+  <th>パッケージ</th>
+  <th>説明</th>
+</tr>
+<tr>
+  <ti>apache2</ti>
+  <ti>depend.apache eclass (すべてのモジュール)</ti>
+  <ti>
+    Apache2.0系を使用している場合は常に設定され、
+    Apache1.3系を使用している場合には設定されません。
+    eclassはこれをどのバージョンのApacheに依存しているのかを決定するのに使います。
+  </ti>
+</tr>
+<tr>
+  <ti>mpm-leader</ti>
+  <ti>apache-2*</ti>
+  <ti>
+    <uri	
+    link="http://httpd.apache.org/docs/2.0/mod/leader.html">leader</uri> 
+    MPMをビルドします。</ti>
+</tr>
+<tr>
+  <ti>mpm-metux</ti>
+  <ti>apache-2*</ti>
+  <ti><uri link="http://www.metux.de/mpm/">metux</uri> MPMをビルドします。</ti>
+</tr>
+<tr>
+  <ti>mpm-peruser</ti>
+  <ti>apache-2*</ti>
+  <ti>
+    <uri link="http://www.telana.com/peruser.php">peruser</uri> MPMをビルドします。
+  </ti>
+</tr>
+<tr>
+  <ti>mpm-prefork</ti>
+  <ti>apache-2*</ti>
+  <ti>
+    <uri	
+    link="http://httpd.apache.org/docs/2.0/mod/prefork.html">prefork</uri> 
+    MPMをビルドします。</ti>
+</tr>
+<tr>
+  <ti>mpm-threadpool</ti>
+  <ti>apache-2*</ti>
+  <ti>
+    <uri	
+    link="http://httpd.apache.org/docs/2.0/mod/threadpool.html">threadpool</uri>
+    MPMをビルドします。</ti>
+</tr>
+<tr>
+  <ti>mpm-worker</ti>
+  <ti>apache-2*</ti>
+  <ti>
+    <uri	
+    link="http://httpd.apache.org/docs/2.0/mod/worker.html">worker</uri> 
+    MPMをビルドします。</ti>
+</tr>
+<tr>
+  <ti>no-suexec</ti>
+  <ti>apache</ti>
+  <ti>
+    suexecモジュールをビルドしません(潜在低に安全でないsuidバイナリをシステムに置きたくない人向け)
+  </ti>
+</tr>
+<tr>
+  <ti>static-modules</ti>
+  <ti>apache</ti>
+  <ti>
+    Apacheバイナリ内にモジュールを静的にリンクします。
+    このため、LoadModuleは基本的なモジュールをApacheにロードすることを要求しません。
+  </ti>
+</tr>
+<tr>
+  <ti>lingerd</ti>
+  <ti>apache-1*</ti>
+  <ti>
+    <uri   
+    link="http://www.iagora.com/about/software/lingerd/">lingerd</uri>サポートを追加します。
+  </ti>
+</tr>
+<tr>
+  <ti>no-htdocs</ti>
+  <ti>gentoo-webroot-default</ti>
+  <ti>
+    カスタムファイルを上書きしないように、デフォルトwebrootを<path>/var/www/localhost</path>にインストールしないようにします。
+    代わりにwebrootは、<path>/usr/share/doc/gentoo-webroot-default-*/webroot/</path>にインストールされます。
+  </ti>
+</tr>
+</table>
+
+<note>
+たくさんのmpm-* USEフラグがありますが、それらはお互いに排他的です。
+あなたは、mpm-* USEフラグを1つだけ有効にすべきです。
+(もし、あなたがどれも有効にしなかった場合は、mpm-preforkあるいはmpm-workerが使用されます。
+どちらが使用されるかは、thread USEフラグが設定されているかどうかで決まります。)
+</note>
+
+</body>
+</section>
+</chapter>
+
+</guide>

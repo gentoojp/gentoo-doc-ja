@@ -1,0 +1,1207 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/diskless-howto.xml,v 1.3 2004/03/09 20:40:06 nakano Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/diskless-howto.xml">
+
+<title>Gentooを用いたディスクレスノード</title>
+
+<author title="Researcher">
+    <mail link="ma53@drexel.edu">Michael Andrews</mail>
+</author>
+<author title="Reviewer">
+    <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Reviewer">
+    <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+<author title="翻訳"><mail link="hiro@extreme.jpseed.jp">武田洋之</mail>
+</author>
+
+<abstract>
+このHOWTOは、Gentoo Linuxを用いてディスクレスノードをセットアップする手助けをします。
+</abstract>
+
+<license/>
+
+<version>1.1</version>
+<date>November 20, 2003</date>
+<!-- Original revision: 1.2 -->
+
+<chapter>
+<title>導入</title>
+
+<section>
+<title>このHOWTOについて</title>
+<body>
+
+<p>
+このHOWTOは、Gentoo Linuxディストリビューションを元に<e>ディスクレス</e>ワークステーションをセットアップする手助けをします。
+できるだけユーザーフレンドリーに、そして、Linux初心者にも理解できるように説明していきます。
+わたしたちの誰もが、ある時点では初心者だったのですから :)。
+経験豊富なユーザーは、ディスクレスノード、ネットワークに関する複数のHOWTOを容易に結びつけることが可能かもしれません。
+それに関心のあるユーザーすべてが、たとえ知識があると無かろうと、このガイドによって簡単に導入できればよいと思います。
+</p>
+
+</body>
+</section>
+<section>
+<title>ディスクレスマシンとは何か?</title>
+<body>
+
+<p>
+ディスクレスマシンとは、ハードディスク、フロッピードライブ、CD-ROMドライブ等のような、通常起動可能ないかなる装置も持たないPCのことです。
+ディスクレスノードは、ネットワークから起動し、ローカルハードディスクが提供していたような保存場所を提供するサーバーが必要です。
+今から、このサーバーのことを<e>マスター</e>と呼ぶことにします。それに対し、ディスクレスマシンの方は、<e>スレーブ</e>(名前が何だと言うのだ？ 訳注:コンピュータ関連では割とよく用いられるマスター／スレーブという言葉は、人種差別的な良くない言葉なのでそれを考慮してのこと)とします。
+スレーブノードは、PXEブート可能なネットワークアダプタが必要です(訳注:PXEとは、intel提唱するPreboot Execution Environmentのことで使用方法等は後述されています。また、PXE以外にもgrubやetherboot等を使うことによってディスクレス環境を構築することができる場合もあります。)。
+ほとんどの最近のカードは、PXEをサポートしていますし、多くのマザーボード組み込みのアダプタも動作するでしょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>はじめる前に</title>
+<body>
+
+<p>
+Gentooがマスターノードにインストールされていなければなりません。また、スレーブノードのファイルシステムを記録しておくのに十分な空き容量がマスターに必要です。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>マスターとスレーブの設定</title>
+<section>
+<title>カーネルについて</title>
+<body>
+
+<note>
+もし、あなたのノードをopenMosixクラスターにしようとしているなら、
+カーネルにopenMosixパッチが当たっているか確認してください。
+それは、portageの<path>sys-kernel/openmosix-sources</path>にあります。
+また、openMosix用のカーネルをコンパイルする方法を知るために、<uri link="openmosix-howto.xml">openMosix HOWTO</uri>を読むべきです。
+</note>
+
+<p>
+カーネルとは、ハードウェアとマシン上で起動される他のあらゆるソフトウェアとの間に存在するものであり、
+本質的に、カーネルベースのOSの中心となるものです。
+コンピュータが起動するとき、BIOSはハードディスクの予約されたブート領域に"指示"を見つけ出し、これを実行します。
+この"指示"とは、典型的には、カーネルを起動するブートローダーです。
+カーネルが起動した後、カーネルによってすべてのプロセスが処理されます。
+</p>
+
+<p>
+カーネルやカーネルの設定についてもっと情報が欲しい場合、<uri link="http://www.tldp.org/HOWTO/Kernel-HOWTO.html">カーネルHOWTO</uri>を見てください。
+</p>
+
+</body>
+</section>
+<section>
+<title>マスター用カーネルの設定</title>
+<body>
+
+<p>
+マスター用カーネルは、望みのサイズにすることができますが、選択しておかなければならないオプションがいくつか有ります。
+次のように打ち込んでカーネル設定メニューに入りましょう:
+</p>
+
+<pre caption="マスター用カーネルの設定編集">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+<path>/usr/src/linux/.config</path>を手作業で編集する代わりに、
+安全に編集できるグレーとブルーのGUIのメニューが出てきたと思います。
+もし、あなたのカーネルが現在正常に機能しているのなら、現在の設定をファイルに保存するためにGUIを抜けて、次のように打ち込んでください。
+</p>
+
+<pre caption="マスター用カーネルの設定をバックアップ">
+# <i>cp .config .config_working</i>
+</pre>
+
+<p>
+次のサブメニューに進んで、列挙した項目が(モジュールとして<e>ではなく</e>)ビルトイン(訳注:カーネルに組み込み)として選択されているか確認してください。
+次に示すオプションは、カーネルバージョン2.4.22のものです。
+もし、違うバージョンを使う場合、文字列や順序が異なるかもしれません。
+少なくとも下に示したものだけは、確実に選択してください。
+</p>
+
+<pre caption="マスター用カーネルのオプション">
+Code maturity level options  ---&gt;
+  [*] Prompt for development and/or incomplete code/drivers
+
+
+Networking options ---&gt;
+  &lt;*&gt; Packet socket
+  [ ]   Packet socket: mmapped IO
+  &lt; &gt; Netlink device emulation
+  [ ] Network packet filtering (replaces ipchains)
+  [ ] Socket Filtering
+  &lt;*&gt; Unix domain sockets
+  [*] TCP/IP networking
+  [*]   IP: multicasting
+
+  
+File systems ---&gt;
+  [*] /proc file system support
+  [*] /dev file system support (EXPERIMENTAL)
+  [*]   Automatically mount at boot    
+  Network File Systems  ---&gt;
+    &lt;*&gt; NFS server support
+    [*]   Provide NFSv3 server support
+</pre>
+
+<note>
+カーネル設定オプションは、あなたのシステムの設定オプションに、単に追加するべきで、完全に置き換えるという意味ではありません。
+</note>
+
+<p>
+マスター用カーネルを再設定したら、再コンパイルします:
+</p>
+
+<pre caption="マスター用カーネルとモジュールの再コンパイル">
+# <i>make dep</i>
+# <i>make clean bzImage modules modules_install</i>
+<comment>(コピーする前に/bootがマウントされている事を確認してください)</comment>
+# <i>cp arch/i386/boot/bzImage /boot/bzImage-master</i>
+# <i>cp System.map /boot/System.map-master</i>
+</pre>
+
+<p>
+次に、新しいカーネルに対するエントリを<path>lilo.conf</path>、または、<path>grub.conf</path>に追加し、新しいカーネルをデフォルトで起動するエントリにします。
+どちらに追加するかは、どちらのブートローダーを使っているのかによります。
+bootディレクトリに新しいbzImageをコピーしてしまったので、後は、これらの新しいオプションを有効にする為にシステムを再起動するだけです。
+</p>
+
+</body>
+</section>
+<section>
+<title>スレーブ用カーネルについて</title>
+<body>
+
+<p>
+スレーブ用カーネルは、モジュール無しにコンパイルすることをお薦めします。
+というのは、モジュールをリモート起動でロードし、設定するのは難しく、必要がない処理だからです。
+さらに、スレーブ用カーネルは、ネットワークから効率よく起動できようにできるだけ小さく、コンパクトにすべきです。
+わたしたちは、スレーブ用カーネルをマスターを設定したのと同じ場所でコンパイルすることにします。
+</p>
+
+<p>
+混乱を避け、時間を浪費しない為に、マスターの設定ファイルをバックアップしておくのはいい考えです。
+</p>
+
+<pre caption="マスター用カーネルの設定バックアップ">
+# <i>cp /usr/src/linux/.config /usr/src/linux/.config_master</i>
+</pre>
+
+<p>
+それでは、マスター用カーネルを設定したのと同じようにしてスレーブ用カーネルを設定します。
+もし、まっさらな設定ファイルからはじめたいのなら、次のように打ち込むことで、<path>/usr/src/linux/.config</path>ファイルをデフォルトに戻すことができます:
+</p>
+
+<pre caption="カーネル設定を白紙に戻す">
+# <i>cd /usr/src/linux</i>
+# <i>make mrproper</i>
+</pre>
+
+<p>
+GUIの設定画面に進みます:
+</p>
+
+<pre caption="スレーブ用カーネルの設定編集">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+次のオプションが、モジュール<e>ではなく</e>、ビルトインで選択されていることを確認してください。
+</p>
+
+<pre caption="スレーブのカーネルオプション">
+Code maturity level options  ---&gt;
+  [*] Prompt for development and/or incomplete code/drivers
+
+Networking options ---&gt;
+  &lt;*&gt; Packet socket
+  [ ]   Packet socket: mmapped IO
+  &lt; &gt; Netlink device emulation
+  [ ] Network packet filtering (replaces ipchains)
+  [ ] Socket Filtering
+  &lt;*&gt; Unix domain sockets
+  [*] TCP/IP networking
+  [*]   IP: multicasting
+  [*]   IP: kernel level autoconfiguration
+  [*]     IP: DHCP support (NEW)
+
+
+File systems ---&gt;
+  [*] /proc file system support
+  [*] /dev file system support (EXPERIMENTAL)
+  [*]   Automatically mount at boot
+  Network File Systems  ---&gt;
+    &lt;*&gt; file system support 
+    [*]   Provide NFSv3 client support
+    [*]   Root file system on NFS
+</pre>
+
+<p>
+それでは、スレーブ用カーネルをコンパイルしましょう。(もしあればですが)マスターに対して構築したモジュールを台無しにしたくないでしょうから、ここで慎重になる必要があります:
+</p>
+
+<pre caption="スレーブ用カーネルのコンパイル">
+# <i>cd /usr/src/linux</i>
+# <i>make clean dep bzImage</i>
+</pre>
+
+<p>
+さて、スレーブのファイルを保存しておくのに使われるディレクトリをマスター上に作成しましょう。
+わたしたちは、<path>/diskless</path>を使うことにしますが、どこでも好きな場所にすることができます。
+それでは、スレーブのbzImageを<path>/diskless</path>にコピーします:
+</p>
+
+<pre caption="スレーブ用カーネルのコピー">
+# <i>mkdir /diskless</i>
+# <i>cp /usr/src/linux/arch/i386/boot/bzImage /diskless</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>最初のスレーブのファイルシステムの設定</title>
+<body>
+
+<p>
+マスターとスレーブのファイルシステムは、大きく違った設定に変更されていてもかまいません。
+私達は、今のところ、適切なファイルとマウントポイントを持った予備の(訳注:スレーブの)ファイルシステムを用意することにだけ関心があります。
+まずはじめに、<path>/diskless</path>の中に最初のスレーブ用のディレクトリを作る必要があります。
+ある種のシステムファイルを共有することは、パーミッションの問題やシステムクラッシュの原因となるので、
+それぞれのスレーブに対して、別々のルートファイルシステムが必要です。
+これらのディレクトリには好きな名前をつけることができますが、ユニークで混乱がない為、スレーブのIPアドレスを使うことを提案します。
+最初のスレーブの静的IPアドレスは、例えば、<c>192.168.1.21</c>とします:
+</p>
+
+<pre caption="リモートルートディレクトリの作成">
+# <i>mkdir /diskless/192.168.1.21</i>
+</pre>
+
+<p>
+<path>/etc</path>にある様々な設定ファイルを、スレーブ上で動作するように変更してやる必要があります。
+マスターの<path>/etc</path>ディレクトリを新しいスレーブのルートにコピーします:
+</p>
+
+<pre caption="スレーブファイルシステム用の/etcの作成">
+# <i>cp -r /etc /diskless/192.168.1.21/etc</i>
+</pre>
+
+<p>
+まだファイルシステムは準備できていません。様々なマウントポイントやディレクトリが必要です。
+それらを作るには:
+</p>
+
+<pre caption="スレーブファイルシステムのマウントポイントやディレクトリの作成">
+# <i>mkdir /diskless/192.168.1.21/home</i>
+# <i>mkdir /diskless/192.168.1.21/dev</i>
+# <i>mkdir /diskless/192.168.1.21/proc</i>
+# <i>mkdir /diskless/192.168.1.21/tmp</i>
+# <i>mkdir /diskless/192.168.1.21/mnt</i>
+# <i>mkdir /diskless/192.168.1.21/mnt/.initd</i>
+# <i>mkdir /diskless/192.168.1.21/root</i>
+# <i>mkdir /diskless/192.168.1.21/var</i>
+# <i>mkdir /diskless/192.168.1.21/var/empty</i>
+# <i>mkdir /diskless/192.168.1.21/var/lock</i>
+# <i>mkdir /diskless/192.168.1.21/var/log</i>
+# <i>mkdir /diskless/192.168.1.21/var/run</i>
+<comment>(openMosixの場合のみ)</comment>
+# <i>mkdir /diskless/192.168.1.21/mfs</i>
+</pre>
+
+<p>
+ほとんどのディレクトリは理解できるでしょう。
+<path>/dev</path>や<path>/proc</path>のようなディレクトリは、スレーブが起動するときに使用され、
+その他のディレクトリは、その後でマウントされます。
+また、スレーブのホスト名が反映されるように、<path>/diskless/192.168.1.21/etc/hostname</path>ファイルを変更した方がよいでしょう。
+バイナリやライブラリ、その他のファイルは、このHOWTOの後の方、スレーブを起動する直前に用意します。
+</p>
+
+</body>
+</section>
+</chapter>
+
+
+<chapter>
+<title>DHCPサーバーの設定</title>
+<section>
+<title>DHCPサーバーについて</title>
+<body>
+
+<p>
+DHCPとは、Dynamic Host Configuration Procotol(動的ホスト設定プロトコル)の略です。
+DHCPサーバーは、スレーブがPXEブートで、最初に通信するコンピュータです。
+DHCPサーバーの主な目的は、IPアドレスを割り当てることです。
+DHCPサーバーは、MACアドレスに基づいてIPアドレスを割り当てることができます。
+スレーブがIPアドレスを取得したら、DHCPサーバーはスレーブに起動時のファイルシステムとカーネルをどこから取得すればよいのかを教えます。
+</p>
+
+</body>
+</section>
+<section>
+<title>はじめる前に</title>
+<body>
+
+<p>
+始める前に、いくつか確認しておかなければならないことがあります。
+ネットワーク接続を次のように打ち込んで確認します:
+</p>
+
+<pre caption="ネットワーク設定の確認">
+# <i>ifconfig eth0 enable multicast</i>
+# <i>ifconfig -a</i>
+</pre>
+
+<p>
+<e>eth0</e>デバイスの稼動状況を確認してください。次のようにな感じに見えると思います:
+</p>
+
+<pre caption="正常動作のeth0デバイス">
+eth0      Link encap:Ethernet  HWaddr 00:E0:83:16:2F:D6
+          inet addr:192.168.1.1  Bcast:192.168.1.255  Mask:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:26460491 errors:0 dropped:0 overruns:2 frame:0
+          TX packets:32903198 errors:0 dropped:0 overruns:0 carrier:1
+          collisions:0 txqueuelen:100
+          RX bytes:2483502568 (2368.4 Mb)  TX bytes:1411984950 (1346.5 Mb)
+          Interrupt:18 Base address:0x1800
+</pre>
+
+<p>
+<e>MULTICAST</e>の項目が重要です。
+もし、この項目が現れないなら、マルチキャストサポートを含めてカーネルを再コンパイルする必要があります。
+</p>
+
+</body>
+</section>
+<section>
+<title>DHCPサーバーのインストール</title>
+<body>
+
+<p>
+もしまだDHCPサーバーをインストールしていないなら、次のように打ち込んでインストールする必要があります:
+</p>
+
+<pre caption="DHCPサーバーのインストール">
+# <i>emerge dhcp</i>
+</pre>
+
+<p>
+もし、DHCPサーバーのインストールが済んでいるなら、PXEブートが正しく機能するように設定ファイルを編集します。
+</p>
+
+</body>
+</section>
+<section>
+<title>DHCPサーバーの設定</title>
+<body>
+
+<p>
+DHCPサーバーを起動する前に編集しなければならないファイルは一つだけです:<path>/etc/dhcp/dhcpd.conf</path>。
+サンプルファイルをコピーして編集します:
+</p>
+
+<pre caption="DHCPサーバーの設定ファイル編集">
+# <i>cp /etc/dhcp/dhcpd.conf.sample /etc/dhcp/dhcpd.conf</i>
+# <i>nano -w /etc/dhcp/dhcpd.conf</i>
+</pre>
+
+<p>
+この設定ファイル内の全般的なレイアウトとしては、階層的に設定を書いていきます。次のような感じです:
+</p>
+
+<pre caption="dhcpd.confのレイアウト例">
+<comment># ここにはグローバルオプションを書きます</comment>
+ddns-update-style none;
+shared-network LOCAL-NET {
+<comment># 共有ネットワークのオプションをここに書きます</comment>
+subnet 192.168.1.0 netmask 255.255.255.0 {
+<comment>    # サブネットワークのオプションはここに書きます</comment>
+    host slave{
+<comment>        # ホスト特有のオプションはここに書きます</comment>
+    }
+    group {
+<comment>        # グループ特有のオプションはここに書きます</comment>
+    }
+}
+}
+</pre>
+
+<p>
+<c>shared-network</c>宣言の記述は任意で、同じネットワークトポロジーに属する割り当てたいIPアドレスに使用されます。
+少なくとも、一つの<c>subnet</c>は宣言されていなければなりません。
+<c>group</c>宣言は、複数の宣言にオプションをまとめて適用できるようにするものです。
+<path>dhcpd.conf</path>の例は次の様な感じになるでしょう:
+</p>
+
+<pre caption="dhcpd.confの例">
+# DHCP configuration file for DHCP ISC 3.0
+ 
+ddns-update-style none;
+ 
+# PXE特有の定義
+# Code 1: ブートファイルサーバーのマルチキャストIPアドレス
+# Code 2: クライアントがMTFTP応答に対して監視するUDPポート
+# Code 3: MTFTPサーバーがMTFTP要求を待ち受けるUDPポート
+# Code 4: 新規MTFTP転送を開始しようとする前に、クライアントが待機する秒数
+# Code 5: MTFTP転送を再開しようとする前に、クライアントが待機する秒数
+ 
+option space PXE;
+option PXE.mtftp-ip               code 1 = ip-address;
+option PXE.mtftp-cport            code 2 = unsigned integer 16;
+option PXE.mtftp-sport            code 3 = unsigned integer 16;
+option PXE.mtftp-tmout            code 4 = unsigned integer 8;
+option PXE.mtftp-delay            code 5 = unsigned integer 8;
+option PXE.discovery-control      code 6 = unsigned integer 8;
+option PXE.discovery-mcast-addr   code 7 = ip-address;
+ 
+subnet 192.168.1.0 netmask 255.255.255.0 {
+ 
+  class "pxeclients" {
+    match if substring (option vendor-class-identifier, 0, 9) = "PXEClient";
+    option vendor-class-identifier "PXEClient";
+    vendor-option-space PXE;
+ 
+    # クライアント起動ROMが、PXE準拠のサーバーであると認識できるように、
+    # 少なくともひとつのベンダー特有のPXEオプションが設定されていなければなりません。
+    # 起動ROMにマルチキャストTFTPを提供しないようにする為に、
+    # マルチキャストIPアドレスを0.0.0.0に設定しています。
+    # (0.0.0.0というアドレスは、アドレス設定無しという意味です。)
+ 
+    option PXE.mtftp-ip 0.0.0.0;
+ 
+    # ここには、起動ROMがダウンロードするファイルの名前を指定します。
+    filename "pxelinux.0";
+    # それを取得するサーバーの名前をここに書きます。
+    <comment># マスターのIPアドレスを使います</comment>
+    next-server 192.168.1.1;
+  }
+ 
+  pool {
+    max-lease-time 86400;
+    default-lease-time 86400;
+    <comment># これを書くことで、リストにはないマシンからのアドレス要求を禁止します</comment>
+    deny unknown clients;
+  }
+ 
+  host slave21 {
+       <comment># スレーブのマックアドレスを書きます</comment>
+       hardware ethernet                00:40:63:C2:CA:C9;
+       <comment># スレーブに静的IPアドレスを割り当てます</comment>
+       fixed-address                    192.168.1.21;
+       server-name                      "master";
+       <comment># もし必要なら、ゲートウェイアドレスを書きます</comment>
+       option routers                   192.168.1.1;
+       <comment># もし必要なら、DNSのIPアドレスを書きます</comment>
+       option domain-name-servers       192.168.1.1;
+       option domain-name               "mydomain.com";
+       <comment># スレーブのホスト名を書きます</comment>
+       option host-name                 "slave21";
+  }
+}
+</pre>
+
+<p>
+<c>next-server</c>の後のIPアドレスに対して、<c>filename</c>で指定されるファイルを要求します。
+このIPアドレスは、tftpサーバーのIPアドレスとなりますが、通常は、マスターのIPアドレスと同じです。
+<c>filename</c>は、<path>/diskless</path>ディレクトリと関係があります(後述しますが、tftpサーバーに指定するオプションによります)。
+<c>host</c>宣言内の<c>hardware ethernet</c>オプションには、MACアドレスを指定し、
+その特定のMACアドレスに対して、<c>fixed-address</c>で指定した固定IPアドレスを割り当てます。
+<c>host-name</c>を書いておくことは恐らくいい考えで、単に、特定のスレーブのホスト名を書きます。
+このHOWTOの範囲を超えるようなオプションについては、
+<path>dhcpd.conf</path>に関するとても良いmanページがあります。
+次のように打ち込んで読むことができます:
+</p>
+
+<pre caption="dhcpd.confのmanページを参照する">
+# <i>man dhcpd.conf</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>DHCPサーバーの起動</title>
+<body>
+
+<p>
+DHCP初期化スクリプトを起動する前に、<path>/etc/conf.d/dhcp</path>ファイルを編集します。
+次のような感じです:
+</p>
+
+<pre caption="/etc/conf.d/dhcpの例">
+IFACE="eth0"
+<comment># 必要なオプションを追加してください</comment>
+DHCPD_OPTS="-d"
+</pre>
+
+<p>
+-dフラグは、詳細なデバッグの為につけます。(訳注:ログをsyslog経由(デフォルトでは/var/log/daemon.log)ではなく、標準エラー出力に出すようになります。)
+<c>IFACE</c>変数には、わたしたちの場合、<c>eth0</c>ですが、DHCPサーバーを起動したいデバイスを指定します。
+複数のイーサネットカードを持つような複雑なネットワークトポロジーに対しては、
+<c>IFACE</c>にもっと変数を追加できることは便利でしょう。
+(訳注:eth0,eth1,eth3の３つのインタフェースがある場合、IFACE="eth0 eth1 eth3"のようにスペース区切りで追加します。デバイス名の順番は任意です。)
+DHCPサーバーを起動するには:
+</p>
+
+<pre caption="マスター上のDHCPサーバーを起動する">
+# <i>/etc/init.d/dhcp start</i>
+</pre>
+
+<p>
+DHCPサーバーを起動スクリプトに追加するには:
+</p>
+
+<pre caption="マスターのデフォルトランレベルにDHCPサーバーを追加する">
+# <i>rc-update add dhcp default</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>DHCPサーバーのトラブルシューティング</title>
+<body>
+
+<p>
+ノードが起動したかどうかを知るには、<path>/var/log/daemon.log</path>を見ます。
+もしノードが起動に成功したなら、<path>daemon.log</path>ファイルは次のようになっているでしょう:
+</p>
+
+<pre caption="DHCPログファイルの例">
+DHCPDISCOVER from 00:00:00:00:00:00 via eth0
+DHCPOFFER on 192.168.1.21 to 00:00:00:00:00:00 via eth0
+DHCPREQUEST for 192.168.1.21 from 00:00:00:00:00:00 via eth0
+DHCPACK on 192.168.1.21 to 00:00:00:00:00:00 via eth0
+</pre>
+
+<note>
+このログファイルは、スレーブのMACアドレスを知る手助けにもなります。
+</note>
+
+<p>
+もし次のようなメッセージが出ていたら、恐らく、DHCPサーバーは正しくブロードキャストしていますが、
+何か設定ファイルに間違いがあるということを意味しています。
+</p>
+
+<pre caption="DHCPサーバーエラーの例">
+no free leases on subnet LOCAL-NET
+</pre>
+
+<p>
+設定ファイルを変更したら必ずDHCPサーバーを再起動してください。
+再起動するためには:
+</p>
+
+<pre caption="マスターのDHCPサーバーを再起動する">
+# <i>/etc/init.d/dhcpd restart</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>TFTPサーバーの設定とPXE Linuxブートローダーの設定</title>
+<section>
+<title>TFTPサーバーについて</title>
+<body>
+
+<p>
+TFTPとは、Trivial File Transfer Protocol(機能が貧弱なファイル転送プロトコル)の略です。
+TFTPサーバーは、スレーブにカーネルと初期のファイルシステムを提供します。
+すべてのスレーブのカーネルとファイルシステムは、TFTPサーバーに保存されていますので、
+恐らくマスターをTFTPサーバーにするのはいい考えでしょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>PXELINUXについて</title>
+<body>
+
+<p>
+PXELINUXは、LILOやGRUBと同等のネットワークブートローダーで、TFTP経由で提供されます。
+基本的には、クライアントにカーネルや起動初期のファイルシステムがどこにあるかを伝え、カーネルに様々なオプションを渡します。
+</p>
+
+</body>
+</section>
+<section>
+<title>はじめる前に</title>
+<body>
+
+<p>
+H. Peter AnvinさんによるSYSLINUXパッケージに含まれるpxelinux.0ファイルが必要です。
+次のように打ち込むことで、パッケージをインストールできます:
+</p>
+
+<pre caption="syslinuxのインストール">
+# <i>emerge syslinux</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>TFTPサーバーのインストール</title>
+<body>
+
+<p>
+tftpサーバーとしては、パッケージとして入手可能なtftp-hpaを強くお薦めします。
+このtftpサーバーは、偶然にもSYSLINUXの作者と同一人物によって書かれていて、pxelinuxと相性がよいです。
+インストールする為には、単に次のように打ち込んでください:
+</p>
+
+<pre caption="TFTPサーバーのインストール">
+# <i>emerge tftp-hpa</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>PXELINUXの設定</title>
+<body>
+
+<p>
+TFTPサーバーを起動する前に、pxelinuxを設定しておく必要があります。
+まず、pxelinuxバイナリを<path>/diskless</path>ディレクトリにコピーします:
+</p>
+
+<pre caption="リモートブートローダーの設定">
+# <i>cp /usr/lib/syslinux/pxelinux.0 /diskless</i>
+# <i>mkdir /diskless/pxelinux.cfg</i>
+# <i>touch /diskless/pxelinux.cfg/default</i>
+</pre>
+
+<p>
+これでデフォルトのブートローダーの設定ファイルが作成されました。
+<path>pxelinux.0</path>バイナリは、<path>pxelinux.cfg</path>ディレクトリ内において、
+クライアントのIPアドレスを16進数表記した名前を持つファイルを探します。
+もし見つけられなかった場合、一番右端の桁を取り除いたファイル名があるかを試し、これを桁がなくなるまで繰り返します。
+バージョン2.05以降のsyslinuxは、さらにMACアドレスにちなんで付けられたファイル名も検索します。
+もしファイルが一つも見つからなかった場合、<path>default</path>ファイルを使用します。
+</p>
+
+<pre caption="PXEがpxelinux.cfg/の中に探すファイルの順番">
+<comment>(16進表記の割り当てられたIPアドレス)</comment>
+C0A80115
+C0A8011
+C0A801
+C0A80
+C0A8
+C0A
+C0
+C
+<comment>(01はイーサネットの意味で、それ以降はスレーブのMACアドレスと一致します</comment>
+01-00-40-63-c2-ca-c9
+default
+</pre>
+
+<p>
+<path>default</path>ファイルから始めましょう。
+</p>
+
+
+<pre caption="pxelinux.cfg/defaultの例">
+DEFAULT /diskless/bzImage
+APPEND ip=dhcp root=/dev/nfs nfsroot=192.168.1.1:/diskless/192.168.1.21
+</pre>
+
+<p>
+<c>DEFAULT</c>タグでは、pxelinuに、以前コンパイルしたカーネルイメージ、bzImageを使うよう指示しています。
+<c>APPEND</c>タグは、カーネル初期化オプションです。
+わたしたちは、スレーブ用カーネルを<c>NFS_ROOT_SUPPORT</c>オプション付きでコンパイルしたので、nftrootをここで指定します。
+最初のIPアドレスはマスターのIPアドレスで、二番目のIPドレスは<path>/diskless</path>に中に作成した、スレーブの初期のファイルシステムが保存されているディレクトリです。
+</p>
+
+</body>
+</section>
+<section>
+<title>TFTPサーバーの設定</title>
+<body>
+
+<p>
+<path>/etc/conf.d/in.tftpd</path>を編集します。
+<c>INTFTPD_PATH</c>にtftprootディレクトリを、<c>INTFTPD_OPTS</c>にコマンドラインオプションを指定する必要があります。
+次のような感じになるでしょう:
+</p>
+
+<pre caption="/etc/conf.d/in.tftpdの例">
+INTFTPD_PATH="/diskless"
+INTFTPD_OPTS="-l -v -s ${INTFTPD_PATH}"
+</pre>
+
+<p>
+<c>-l</c>オプションは、このサーバーはスタンドアローンモードで動作する、つまりinetd経由で動作させないことを表しています。
+<c>-v</c>オプションは、ログ/エラーメッセージを詳細に出力することを表します。
+<c>-s /diskless</c>では、tftpサーバーのルートを指定しています。
+</p>
+
+</body>
+</section>
+<section>
+<title>TFTPサーバーの起動</title>
+<body>
+
+<p>
+TFTPサーバーを起動するには、次のようにします:
+</p>
+
+<pre caption="マスターのTFTPサーバーの起動">
+# <i>/etc/init.d/in.tftpd start</i>
+</pre>
+
+<p>
+こうすることで、<path>/etc/conf.d/in.tfpd</path>で指定したオプション付きでTFTPサーバーが起動します。
+もしシステム起動時に自動的にこのサーバーを起動したいなら:
+</p>
+
+<pre caption="TFTPサーバーをマスターのデフォルトランレベルに追加する">
+# <i>rc-update add in.tftpd default</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>ネットワーク起動プロセスのトラブルシューティング</title>
+<body>
+
+<p>
+ネットワーク起動プロセスのデバッグにおいて、できることがいくつかあります。
+主に、<c>tcpdump</c>と呼ばれるツールを使います。
+(訳注:X環境があるなら、tcpdumpよりetherealというツールの方が直感的に操作し易いGUIを提供します。)
+<c>tcpdump</c>をインストールするには:
+</p>
+
+<pre caption="tcpdumpのインストール">
+# <i>emerge tcpdump</i>
+</pre>
+
+<p>
+これで様々なネットワークトラフィックを監視し、クライアントとサーバー間のやりとりが機能しているか確かめることができるようになりました。
+もし、上手く行かないなら、確認する項目がいくつかあります。
+まず、クライアント、及びサーバーが物理的に正しく接続されているか、ネットワークケーブルが損傷していないかを確認します。
+もし、あなたのクライアントあるいはサーバーが特定のポートでだけ要求を受け付けないのなら、ファイアウォールの妨害がないか確認してください。
+二つのコンピュータ間のやり取りを監視するには:
+</p>
+
+<pre caption="クライアント、サーバー間のやり取りをtcpdumpで監視する">
+# <i>tcpdump host </i><comment>クライアントのIPアドレス</comment><i> and </i><comment>サーバーのIPアドレス</comment>
+</pre>
+
+<p>
+<c>tcpdump</c>をTFTPが使うポートの様な、特定のポートでだけ動作させることも可能です:
+</p>
+
+<pre caption="TFTPサーバーの監視">
+# <i>tcpdump port 69</i>
+</pre>
+
+<p>
+受信しうる一般的なエラーは、"PXE-E32: TFTP open time-out"です。
+これは恐らくファイアウォールの問題です。
+もし<c>TCPwrappers</c>を使っているなら、<path>/etc/hosts.allow</path>と<path>etc/hosts.deny</path>を調べて、
+それらが正しく設定されているか確認してください。
+クライアントは、サーバーに接続を許可されていなければなりません。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>NFSサーバーの設定</title>
+<section>
+<title>NFSサーバーについて</title>
+<body>
+
+<p>
+NFSは、Network File System(ネットワークファイルシステム)の略です。
+NFSサーバーは、スレーブに対してディレクトリを提供するのに使用されます。
+この部分は、後で、各個人がいくらか変更できますが、今は、最初のスレーブノードをディスクレスで起動することに専念します。
+</p>
+
+</body>
+</section>
+<section>
+<title>Portmapperについて</title>
+<body>
+
+<p>
+様々なクライアント・サーバーサービスは、特定のポートでは動作するかわりに、RPC(Remote Procedure Calls)に依存しています。
+サービスが初期化されるときに、ランダムなポートで待ち受け状態になり、このポートをPortmapperユーティリティに登録します。
+NFSはRPCに依存している為、NFSを起動させる前にPortmapperが起動していることが必要です。
+</p>
+
+</body>
+</section>
+<section>
+<title>はじめる前に</title>
+<body>
+
+<p>
+NFSサーバーは、カーネルレベルのサポートが必要です。もしこれを有効にしていないなら、マスター用カーネルの再コンパイルが必要です。
+マスター用カーネルの設定を再びチェックする為には:
+</p>
+
+<pre caption="NFS特有のオプションを調べる">
+# <i>grep NFS /usr/src/linux/.config_master</i>
+</pre>
+
+<p>
+もしあなたのカーネルが適切に設定されているなら、次のような出力があるはずです:
+</p>
+
+<pre caption="マスター用カーネルの設定にNFS特有のオプションが正しく設定されている場合">
+# CONFIG_ROOT_NFS is not set
+CONFIG_NFSD=y
+CONFIG_NFSD_V3=y
+# CONFIG_NFSD_TCP is not set
+# CONFIG_NCPFS_NFS_NS is not set
+</pre>
+
+</body>
+</section>
+<section>
+<title>NFSサーバーのインストール</title>
+<body>
+
+<p>
+NFSパッケージは、次のように打ち込むことで、portageから取得できます:
+</p>
+
+<pre caption="nfs-utilsのインストール">
+# <i>emerge nfs-utils</i>
+</pre>
+
+<p>
+このパッケージには、portmapユーティリティ、nfsサーバー、nfsクライアントユーティリティが含まれ、
+自動的に初期化時の依存性を解決します(訳注:前述のように、NFSを起動する前にportmapperを起動しなければならないが、これを自動でやってくれるという意味)。
+</p>
+
+</body>
+</section>
+<section>
+<title>NFSサーバーの設定</title>
+<body>
+
+<p>
+修正しなければならない主なファイルは３つです:
+</p>
+
+<pre caption="NFS設定ファイル">
+/etc/exports
+/diskless/192.168.1.21/etc/fstab
+/etc/conf.d/nfs
+</pre>
+
+<p>
+<path>/etc/exports</path>ファイルは、NFS経由で、どのように、誰に対して、何をエクスポートするのかを指定します。
+マスターがエクスポートしているNFSファイルシステムをマウントできるように、スレーブのfstabを変更します。
+</p>
+
+<p>
+マスターの典型的な<path>/etc/exports</path>は、次のような感じです:
+</p>
+
+<pre caption="マスターの/etc/exportsの例">
+<comment># それぞれのスレーブに対して次のように１行で書きます</comment>
+/diskless/192.168.1.21   192.168.1.21(rw,no_root_squash,no_all_squash)
+<comment># すべてのスレーブに共通</comment>
+/opt   192.168.1.0/24(ro,no_root_squash,no_all_squash)
+/usr   192.168.1.0/24(ro,no_root_squash,no_all_squash)
+/home  192.168.1.0/24(rw,no_root_squash,no_all_squash)
+<comment># ログを共有したい場合</comment>
+/var/log   192.168.1.21(rw,no_root_squash,no_all_squash)
+</pre>
+
+<p>
+最初のフィールドは、エクスポートするディレクトリを示しています。
+次のフィールドは、誰にどうやってエクスポートするのかを示しています。
+"誰に"の欄では、特定のディレクトリをマウントするのを許可する相手をNFSに指示します。
+"どうやって"の欄では、マウントするクライアントがファイルシステムに対して何ができるのかを表しています。
+読み取り専用にするには<c>ro</c>、読み書き可能にするには<c>rw</c>を指定します。
+<c>no_root_squash</c>と<c>no_all_squash</c>オプションは、ディスクレスクライアントがディスクに書き込むのに重要で、
+これを指定することで、クライアントがI/O要求を出したときに、"squashed"しないようになります。
+(訳注:NFSオプションには、セキュリティ対策として、アクセス要求の権限をマッピングする"root_squash"(ugi/gid=0の要求を匿名ユーザーの権限に置き換えます)"と"all_squash"(root_suqashに似ていますが、すべてのuid/gidからのアクセスを匿名ユーザー権限に置き換えます)がありますが、no_root_squash、no_all_squashは、これらを無効にするものです。ディスクレスクライアントは、システム起動時に必ずroot権限(uid=0/gid=0)でNFSマウントしに行く為、このオプションが必要です。詳細は、man 5 exportsを見てください。)
+スレーブのfstabファイル<path>/tftpboot/192.168.1.21/etc/fstab</path>は、次のようになるでしょう:
+</p>
+
+<pre caption="スレーブのfstabの例">
+<comment># これらのエントリは基本的なものです</comment>
+master:/diskless/192.168.1.21   /         nfs     hard,intr,rw,nolock,rsize=8192,wsize=8192    0 0
+master:/opt                     /opt      nfs     hard,intr,ro,nolock,rsize=8192,wsize=8192    0 0
+master:/usr                     /usr      nfs     hard,intr,ro,nolock,rsize=8192,wsize=8192    0 0
+master:/home                    /home     nfs     hard,intr,rw,nolock,rsize=8192,wsize=8192    0 0
+none                            /proc     proc    defaults                                     0 0
+<comment># これは便利ですが無くても良いです</comment>
+master:/var/log                 /var/log  nfs     hard,intr,rw                                 0 0
+
+<comment>(openMosixクラスターを構築している場合のみ)</comment>
+none                            /mfs      mfs     dfsa=1                                       0 0
+</pre>
+
+<p>
+この例では、<e>master</e>は単にマスターのホスト名ですが、容易に想像つくように、マスターのIPアドレスでも良いです。
+最初の欄は、ディレクトリマウントしようとするディレクトリで、二番目の欄はどこにマウントするのかを示しています。
+三番目の欄は、ファイルシステムで、NFS経由でマウントされるディレクトリはどれもNFSを指定します。
+四番目の欄は、マウント処理において使用される様々なオプションです(マウントオプションについては、mount(1)を見てください(訳注:mount(8)のtypo？mountのmanは8章です))。
+ソフトマウントポイントで問題がおきる人もいますので、すべてハードマウントにしましたが、
+あなたのクラスターをより効率の良いものにしたいなら、<path>/etc/fstab</path>の様々なオプションを調べるべきです。
+</p>
+
+<p>
+修正すべき最後のファイルは、<path>/etc/conf.d/nfs</path>です。
+これは初期化時にNFSにオプションを指定する為のもので、次のような感じになります:
+</p>
+
+<pre caption="マスターの/etc/conf.d/nfsの例">
+# Config file for /etc/init.d/nfs
+
+# デフォルトで起動するサーバーの数
+RPCNFSDCOUNT=8
+
+# rpc.mountdに渡すオプション
+RPCMOUNTDOPTS=""
+</pre>
+
+<p>
+ネットワーク上のディスクレスノードの数に応じて<c>RPCNFSDCOUNT</c>を変更すべきです。
+</p>
+
+</body>
+</section>
+<section>
+<title>NFSサーバーの起動</title>
+<body>
+
+<p>
+<path>/etc/init.d</path>にある初期化スクリプトを使ってNFSサーバーを起動します:
+</p>
+
+<pre caption="マスターのNFSサーバーの起動">
+# <i>/etc/init.d/nfs start</i>
+</pre>
+
+<p>
+もしこのスクリプトをシステム起動時に開始させたいなら、単に次のように打ち込んでください:
+</p>
+
+<pre caption="NFSサーバーをマスターのデフォルトランレベルに追加する">
+# <i>rc-update add nfs default</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>スレーブのファイルシステムをコンパイルする</title>
+<section>
+<title>足りないファイルをコピーする</title>
+<body>
+
+<p>
+スレーブ特有のファイルは保存してありますが、ここで、マスターに同期させて、
+スレーブのファイルシステムを作成し、必要なバイナリをスレーブに対して提供するようにします。
+</p>
+
+<pre caption="スレーブのファイルシステムの作成">
+# <i>cp -r /bin /diskless/192.168.1.21/bin</i>
+# <i>cp -r /sbin /diskless/192.168.1.21/sbin </i>
+# <i>cp -r /lib /diskless/192.168.1.21/lib </i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>初期化スクリプト</title>
+<body>
+
+<p>
+デフォルトのスクリプトは、<e>checkroot</e>を起動しようとしまが、スレーブノードにおいては意味がありません。
+難しい方法としては、手作業で<path>/diskless/192.168.1.21/sbin/rc</path>スクリプトを編集することですが、
+厄介で危険な方法であり、もしスレーブノードファイルシステムをマスターと再び同期させようとするときに、このスクリプトを取っておくのを忘れてしまい、上書きしていまう恐れがあります。
+上手い回避策としては、システム起動時に<path>/fastboot</path>を持つことです。
+このフィアルは、<e>checkroot</e>がファイルシステムチェックをしないようにします。
+しかし、初期化プロセスが完了する時に、初期化プロセスによってそのファイルは消されてしまいます。
+私達が初期化プロセスの最後にこのファイルを再び作成する必要がある理由はそういう訳です。
+次のようにします:
+</p>
+
+<pre caption="初期化スクリプトがファイルシステムチェックをするのを防止する">
+<comment>(次の起動の為に/fastbootファイルを作成する)</comment>
+# <i>touch /diskless/192.168.1.21/fastboot</i>
+<comment>(毎回、起動時に/fastbootファイルを作成する)</comment>
+# <i>echo "touch /fastboot" &gt;&gt; /diskless/192.168.1.21/etc/conf.d/local.start</i>
+</pre>
+
+<p>
+ディスクレスノードに必要なサービスの数だけ、<path>/diskless/192.168.1.21/etc/runlevel</path>に初期化スクリプトが必要です。
+それは、あなたのスレーブに何をさせたいかによります。
+</p>
+
+<warn>
+マスターにログインしているときに、スレーブのランレベルに起動スクリプトを追加・削除する目的で、
+<c>rc-update</c>プログラムを使用しないでください。
+そうしてしまうと、マスターのランレベルを変更してしまいます。
+手作業でリンクを作成するか、sshを使って、あるいはディスプレイとキーボードを繋いで、スレーブノードにログインする必要があります。
+(訳注:あるいは、各スレーブノードのディレクトリ、例えばこの例では/diskless/192.168.1.21にchrootしても良いでしょう。)
+</warn>
+
+<pre caption="典型的なスレーブのランレベル">
+/diskless/192.168.1.21/etc/runlevels/:
+total 16
+drwxr-xr-x    2 root     root         4096 2003-11-09 15:27 boot
+drwxr-xr-x    2 root     root         4096 2003-10-01 21:10 default
+drwxr-xr-x    2 root     root         4096 2003-03-13 19:05 nonetwork
+drwxr-xr-x    2 root     root         4096 2003-02-23 12:26 single
+ 
+/diskless/192.168.1.21/etc/runlevels/boot:
+total 0
+lrwxrwxrwx    1 root     root           20 2003-10-18 17:28 bootmisc -> /etc/init.d/bootmisc
+lrwxrwxrwx    1 root     root           19 2003-10-18 17:28 checkfs -> /etc/init.d/checkfs
+lrwxrwxrwx    1 root     root           17 2003-10-18 17:28 clock -> /etc/init.d/clock
+lrwxrwxrwx    1 root     root           23 2003-10-18 17:28 consolefont -> /etc/init.d/consolefont
+lrwxrwxrwx    1 root     root           20 2003-10-18 17:28 hostname -> /etc/init.d/hostname
+lrwxrwxrwx    1 root     root           19 2003-10-18 17:28 keymaps -> /etc/init.d/keymaps
+lrwxrwxrwx    1 root     root           22 2003-10-18 17:28 localmount -> /etc/init.d/localmount
+lrwxrwxrwx    1 root     root           18 2003-10-18 17:28 net.lo -> /etc/init.d/net.lo
+lrwxrwxrwx    1 root     root           20 2003-10-18 17:28 netmount -> /etc/init.d/netmount
+lrwxrwxrwx    1 root     root           19 2003-10-18 17:28 portmap -> /etc/init.d/portmap
+lrwxrwxrwx    1 root     root           21 2003-10-18 17:28 rmnologin -> /etc/init.d/rmnologin
+lrwxrwxrwx    1 root     root           18 2003-10-18 17:28 serial -> /etc/init.d/serial
+lrwxrwxrwx    1 root     root           19 2003-10-18 17:28 urandom -> /etc/init.d/urandom
+ 
+/diskless/192.168.1.21/etc/runlevels/default:
+total 0
+lrwxrwxrwx    1 root     root           17 2003-10-18 17:28 clock -> /etc/init.d/clock
+lrwxrwxrwx    1 root     root           19 2003-10-18 17:28 distccd -> /etc/init.d/distccd
+lrwxrwxrwx    1 root     root           17 2003-10-18 17:28 local -> /etc/init.d/local
+lrwxrwxrwx    1 root     root           19 2003-10-18 17:28 metalog -> /etc/init.d/metalog
+lrwxrwxrwx    1 root     root           22 2003-10-18 17:28 ntp-client -> /etc/init.d/ntp-client
+lrwxrwxrwx    1 root     root           16 2003-10-18 17:28 ntpd -> /etc/init.d/ntpd
+lrwxrwxrwx    1 root     root           16 2003-10-18 17:28 sshd -> /etc/init.d/sshd
+lrwxrwxrwx    1 root     root           17 2003-10-18 17:28 vcron -> /etc/init.d/vcron
+ 
+/diskless/192.168.1.21/etc/runlevels/nonetwork:
+total 0
+lrwxrwxrwx    1 root     root           17 2003-10-18 17:28 local -> /etc/init.d/local
+ 
+/diskless/192.168.1.21/etc/runlevels/single:
+total 0
+</pre>
+
+<p>
+さぁ、スレーブを起動する時が来ました。幸運を祈って。起動しましたか？
+おめでとう、いまやあなたはディスクレスノードの誇れる所有者です。:)
+</p>
+
+</body>
+</section>
+
+<!-- 
+
+<section>
+<title>別の方法:ClusterNFS</title>
+<body>
+
+<warn>
+次に述べられていることは、この文章の査読者がこの解決方法を使用していたという理由によってのみ掲載されるものです。
+Gentooは、ClusterNFSをサポート<e>しない</e>ということに注意してください。
+portageには無いし、初期化スクリプトの基本構成を変える必要があります。
+あくまで<b>自己責任で使用してください</b>。
+</warn>
+
+<p>
+マスターディレクトリからファイルをアップグレードするときに保守が必要になるので、
+それぞれのスレーブに対して個別のルートを持ちたくないのなら、
+同一のルートをマスター、スレーブ含めて、すべてのノード間で共有することも可能です。
+これは、あなたのシステムがすべて互換性があるものである必要があることを意味します。
+なぜなら、バイナリ一式しか持たないことになるからです。
+また、マスターのルートはすべてNFSを通してエクスポートされるので、
+セキュリティの問題もあることを意識しておく必要があります。
+</p>
+
+<p>
+もし、それでもこのもう一つの方法を試してみたいなら、
+ClusterNFSの<uri link="http://clusternfs.sourceforge.net/">ホームページ</uri>を訪れて、
+ソフトウェアをダウンロードし、ドキュメントを読んでください。
+</p>
+
+<p>
+簡単に言うと、すべてのファイルは共有され、マスターとすべてのスレーブ間で異なる必要があるファイルは、
+<path>file$$CLIENT$$</path>にコピーしておきます。
+スレーブが<path>file</path>を要求したとき、ClusterNFSは<path>file$$CLIENT$$</path>の存在を検知し、
+代わりにこのファイルを送信します。
+それぞれのノードで異なる必要があるファイルは、<path>file$$IP=192.168.1.21$$</path>というような名前にコピーしておきます。
+同じことがディレクトリにも当てはまります。
+</p>
+
+<p>
+すごく簡略化して言うと、前述してきたインストール手順と違うところは:
+</p>
+
+<ul>
+  <li>マスター用カーネルにおいて、NFSサーバーサポートは必要ありません</li>
+  <li>nfs-utilsをemergeした<e>後</e>に、ClusterNFSをインストールします</li>
+  <li>後述のようにスレーブ用のファイルとディレクトリのコピーを作ります</li>
+  <li>それぞれのノード用にルートディレクトリを作りません</li>
+  <li><path>/etc/exports</path>ファイルで、/のみをエクスポートします</li>
+  <li>
+    スレーブの<path>/etc/fstab$$CLIENT$$</path>ファイルで、NFS経由で/のみをマウントするようにします
+  </li>
+  <li><path>/etc/init.d/nfs</path>を後述するように編集します</li>
+  <li>
+    <path>/etc/conf.d/local.start$$CLIENT$$</path>を後述するように編集します
+  </li>
+</ul>
+
+<pre caption="マスターとスレーブで異なる必要があるファイル">
+/etc/conf.d/local.start$$CLIENT$$
+/etc/conf.d/local.stop$$CLIENT$$<comment> ()</comment>
+/etc/crontab$$CLIENT$$<comment> (おそらく中身は空、雑務はマスターがやります)</comment>
+/etc/exports$$CLIENT$$<comment> (空ファイル、スレーブはNFSエクスポートしません)</comment>
+/etc/fstab$$CLIENT$$
+/etc/hostname$$IP=192.168.1.21$$<comment> (スレーブの名前)</comment>
+/etc/mtab$$IP=192.168.1.21$$
+/etc/runlevels$$CLIENT$$<comment> (マスターとスレーブの起動スクリプトは完全に分けます)</comment>
+/fastboot$$CLIENT$$
+/tmp$$IP=192.168.1.21$$
+/var$$IP=192.168.1.21$$<comment> (/varのサブディレクトリは分けます)</comment>
+</pre>
+
+<pre caption="/etc/init.d/nfsの編集">
+        ebegin "Starting NFS daemon"
+        start-stop-daemon - -start - -quiet - -exec \
+<comment># "- -translate-names"オプションを追加</comment>
+                $nfsd - - - -translate-names
+        eend $? "Error starting NFS daemon"
+         # NFSv3をサポートしているかチェック
+        ebegin "Starting NFS mountd"
+<comment># 次の２行はコメント化しておきます(ClusterNFSはNFS v2のみのサポートです)</comment>
+#       rpcinfo -u localhost nfs 3 &amp;&gt;/dev/null || \
+#               RPCMOUNTDOPTS="$RPCMOUNTDOPTS - -no-nfs-version 3"
+        start-stop-daemon - -start - -quiet - -exec \
+                $mountd - - $RPCMOUNTDOPTS 1&gt;&amp;2
+        eend $? "Error starting NFS mountd"
+</pre>
+
+<pre caption="/etc/conf.d/local.start$$CLIENT$$の編集">
+<comment>(この行を追加)</comment>
+touch /fastboot\$\$CLIENT\$\$
+</pre>
+
+</body>
+</section>
+-->
+</chapter>
+
+</guide>

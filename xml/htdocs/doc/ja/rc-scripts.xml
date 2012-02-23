@@ -1,0 +1,663 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/rc-scripts.xml,v 1.10 2003/11/15 07:42:10 nakano Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/rc-scripts.xml">
+<title>Gentoo Linux 1.0 Init System</title>
+<author title="Author"><mail link="azarah@gentoo.org">Martin Schlemmer</mail></author>
+<author title="Proof-reader"><mail link="seemant@gentoo.org">Seemant Kulleen</mail></author>
+<author title="翻訳"><mail link="docs@gentoo.gr.jp">yteraoka</mail></author>
+
+<abstract>
+このドキュメントはGentoo Linuxのinit system の説明と、rc-scriptsの記述方法をいくつか説明します。
+</abstract>
+
+<license/>
+
+<version>1.0.2</version>
+<date>8 April 2002</date>
+<!-- Original revision: 1.8 -->
+
+<chapter>
+<title>導入</title>
+<section>
+<body>
+
+<p>
+Gentoo Linux は依存性をコントロールするinitsystem を使用しています。
+どんな種類のセットアップにおいてもパワフルで柔軟性があり、管理しやすいはずです。
+この文章は Gentoo の initsystem についてのクイックガイドにすぎません。
+内部の動作を詳しく知りたい場合はソースコードを読んで下さい。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Runlevels</title>
+<section>
+<body>
+
+<p>
+他の初期化システムと違い、 Gentoo のrunlevelは固定の名前や数字を持っては
+いませんが標準的なrunlevelに対応したよりわかりやすい名前を持っています。
+
+<note><e>&quot;boot&quot;</e>, <e>&quot;default&quot;</e>, <e>&quot;nonetwork&quot;</e> の 3 つのrunlevelが標準で存在します。</note>
+</p>
+
+<p>
+&quot;boot&quot; runlevelはほとんどのセットアップで標準であるべきです。
+また、名前が示す通り起動時に最初に実行されるrunlevelです。
+次の <e>&quot;default&quot;</e> は起動後のメインrunlevelです。
+最後の <e>&quot;nonetwork&quot;</e> はサンプルです。
+</p>
+
+<p>
+<path>/etc/runlevels</path> にrunlevelの名前のサブディレクトリがあり
+その中にはそのrunlevelで起動させるサービスへのシンボリックリンクがあります。
+
+<note>サービスの追加、削除については &quot;Utilities/helper scripts&quot; のセクションで説明します。</note>
+</p>
+
+<p>
+既に述べたように名前は変更することが出来ます。ただし、併せて <path>/etc/inittab</path> も変更する必要があります。
+
+<impo>runlevel <e>&quot;boot&quot;</e> だけは例外ですので注意が必要です。</impo>
+
+<warn>runlevel <e>&quot;boot&quot;</e> の名前は絶対に変更しないでください。システムを壊してしまいます。</warn>
+</p>
+
+<p>これらの作業は全て <path>/sbin/rc</path> が行ってくれます、そしてそれは
+システム稼働中にランレベルを切替える為に起動させることも出来ます。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>仮想runlevel</title>
+<body>
+
+<p>
+runlevelは init に静的に関連付けられているわけではないので init の対応する数以上に設定することが可能です。このことは必要に応じてプロファイルや仮想のrunlevelを作成することを可能にします。
+</p>
+
+<p>
+例えばラップトップユーザは &quot;online&quot; と &quot;offline&quot; という2つのデフォルトrunlevelを持つことが出来ます。
+これにより PCMCIA の NIC が挿さっている場合とそうでない場合とでrunlevelを分けることが出来ます。
+<c>&quot;/sbin/rc online&quot;</c> もしくは <c>&quot;/sbin/rc offline&quot;</c> というコマンドで PCMCIA の NIC の有無に依存したサービスの開始、停止を制御出来ます。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>runlevelと XFree86</title>
+<body>
+
+<p>
+Gentoo の方法では X 専用のrunlevelを用意する必要はありません。
+代わりに &quot;xdm&quot; という起動スクリプトをユーザが望むrunlevelに追加するだけです。
+
+<note>ユーザーが望むメインのrunlevelが選択されるべきです。</note>
+
+<warn>boot runlevelに追加すると望まない副作用があるかもしれません。</warn>
+</p>
+   
+<p>
+標準でそうなっていますが、getty が起動する前に xdm, gdm もしくは kdm が
+実行されると X は次の利用可能なコンソールで起動されるでしょう。
+遅い PC の場合、デスクトップマネージャサービスがrunlevelの初期化プロセスの終りの方にあればこれは問題になりません。
+X よりも前に getty が起動され、そして X はコンソール 7 で起動されるでしょう。
+しかし、速い PC の場合そうはなりません。 X はコンソール 2 で起動されてしまいます。
+その後 getty が起動されるとそれはキーボードを制御し、デスクトップマネージャはキーボードサポートを失います。
+</p>
+
+<p>
+これはデスクトップマネージャの起動スクリプトを 'a' などの別のrunlevelに置くことで解決できます。
+runlevel 'a' は実際のrunlevelではなく &quot;xdm&quot; スクリプトを <c>&quot;telinit a&quot;</c> とするだけです。
+runlevel 'a' の全てのサービスは現在のrunlevelの開始後、したがって getty 起動後に起動させます。
+
+<note>runlevel 'a' についてさらに詳しく知りたい場合は init の man ページを参照してください。</note>
+</p>
+   
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>RC-Scripts</title>
+<section>
+<body>
+
+<p>
+RC-Scripts は依存性を考えた各サービスの起動の為の関数を定義したスクリプトです。
+それらは <path>/etc/init.d/</path> にあります。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>rc-script の基本レイアウト</title>
+   
+<body>
+<pre caption="rc-script layout">
+#!/sbin/runscript
+ 
+depend() {
+    need bar
+}
+ 
+start() {
+    ebegin &quot;Starting foo&quot;
+    /sbin/foo
+    eend $? &quot;Failed to start foo&quot;
+}
+ 
+stop() {
+    ebegin &quot;Stopping foo&quot;
+    kill $(cat /var/run/foo.pid)
+    eend $? &quot;Failed to stop foo&quot;
+}
+</pre>
+
+<p>
+<note>インタープリタは &quot;/sbin/runscript&quot; です。</note>
+<note>&quot;depend&quot; 関数はオプションです。</note>
+<note>全ての rc-script は少なくとも &quot;start&quot; 関数を必要とします。</note>
+</p>
+
+</body>
+</section>
+
+<section>
+<title>サービス起動の制御</title>
+<body>
+
+<p>
+runlevelの中のサービスの起動順は基本的にはアルファベット順です。
+ですから <path>/bin/ls</path> で表示される順番と同じです。
+</p>
+
+<p>
+サービスには依存関係がそんざいするのでその為に起動の順番を変更することが
+出来ます。方法は2種類ありますがどちらか一方しか使用できません。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>依存関係タイプ</title>
+<section>
+<body>
+
+<p>
+ほとんどのサービスは他のなんらかのサービスに依存しています。
+</p>
+
+<p>
+たとえば Postfix はネットワークとシステムロギングのサービスが必要です。
+</p>
+
+<p>
+samba はネットワークサービスを必要とします。
+もし印刷に CUPS を利用するのであれば samba より先に cupsd が起動している
+必要があります。ただし、 cups が起動していないことは samba の起動に致命的
+な問題が発生するわけではありません。
+</p>
+
+<p>
+このように異なる依存関係を設定する2つの方法があります。
+runlevelが変更されたり、手動でサービスを起動させたり停止させたりしても
+この依存関係は有効です。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>依存タイプ NEED</title>
+<body>
+
+<p>
+サービス起動に必ず必要なサービスがある場合に使用します。
+</p>
+
+<pre caption="adding logger and net as a NEED dependency">
+depend() {
+    need net logger
+}
+</pre>
+
+<p>
+<note>
+NEED の後に列挙するサービスはそのサービスの起動に必ず必要となります。
+それらのサービスの起動に失敗した場合はそのサービスの起動にも失敗します。
+</note>
+
+<impo><e>NEED</e> の後に並べられているサービスはそのrunlevelと <e>&quot;boot&quot;</e> runlevelに追加されていなくても起動されます。</impo>
+
+したがって <e>NEED</e> の依存性はは &quot;強い&quot; です。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>依存タイプ USE</title>
+<body>
+
+<p>
+起動されていなくても現在のサービスは起動可能であるが、もし起動させるのであれば
+現在のサービスの前に起動させるべきもの。
+</p>
+
+<pre caption="adding portmap as a USE dependency to netmount">
+depend() {
+    use portmap
+}
+</pre>
+
+<p>
+netmount は標準で NFS マウントが可能であるが portmap に依存しています。
+現在のrunlevelか boot runlevelに portmap が追加されていれば先に起動されます。
+netmount には USE を使って先に portmap を起動させるべきです。
+</p>
+
+<p>
+<impo>
+<e>USE</e> に使われる全てのサービスはそのrunlevelか boot runlevelに追加されていなければなりません。
+</impo>
+
+このように <e>USE</e> は &quot;ゆるい&quot; 依存性です。
+</p>
+
+<p>
+<note>
+<e>USE</e> に指定されているサービスが起動に失敗しても、そのサービスは起動されます。<e>USE</e> に指定するサービスは起動に必須であるべきではありません。
+</note>
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>依存性を使わないで起動の順番を制御する</title>
+<section>
+<body>
+
+<p>
+2 つのサービスの間に関連はないがどちらかを明示的に先または後に起動させたい場合は
+<e>AFTER</e> と <e>BEFORE</e> を使います。
+
+<note>これら 2 つのタイプはrunlevelの変更時にのみ有効です。</note>
+</p>
+
+<p>これら 2 つはその他の全てのサービスを示す &quot;*&quot; のグラブをサポートしています。
+</p>
+
+<pre caption="a glob example for AFTER">
+depend() {
+    after *
+}
+</pre>
+
+<p>このサービスは他の全てのサービスの <e>*後*</e> に起動されるでしょう。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>BEFORE オーダータイプ</title>
+<body>
+
+<p>
+サービスは <e>BEFORE</e> にリストされたサービスより前に起動されます。
+</p>
+
+<pre caption="let foo start before bar (snippit of foo)">
+depend() {
+   before bar
+}
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>AFTER オーダータイプ</title>
+<body>
+
+<p>
+サービスは <e>AFTER</e> にリストされたサービスより後に起動されます。
+</p>
+
+<pre caption="let bar start after foo (snippit of bar)">
+depend() {
+    after foo
+}
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>仮想サービス</title>
+<section>
+<body>
+
+<p>
+サービスには様々なものが存在します。通常、どれを使うかはユーザか管理者が選択します。
+</p>
+
+<p>
+system loggerサービスは一例です。
+この文章を書いている時点で Gentoo Linux ユーザは 4 つの中から選択することが可能です。
+system loggerが先に起動されている必要のある全てのサービスは <e>NEED</e> に 4 つ全てを設定することは出来ません。
+<e>USE</e> では弱すぎます。
+</p>
+
+<p>
+ここが仮想サービスと <e>PROVIDE</e> タイプを使用する場面です。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>PROVIDE タイプ</title>
+<body>
+
+<p>
+<e>PROVIDE</e> は他のサービスが <e>NEED</e> や <e>USE</e> で使用する仮想サービスを定義します。
+</p>
+
+<pre caption="sysklogd providing logger">
+depend() {
+    provide logger
+}
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>LOGGER 仮想サービス</title>
+<body>
+
+<p>
+<e>LOGGER</e> は全てのsystem loggerであらかじめ設定されている仮想サービスです。
+これは <e>NEED</e> や <e>USE</e> で使用できます。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>NET 仮想サービス</title>
+<body>
+
+<p>
+<e>NET</e> サービスはもう一つの仮想サービスですが、 <e>LOGGER</e> とは違い、
+明示的な <e>PROVIDE</e> サービスではありません。
+</p>
+
+<p>
+<impo>
+<e>NET</e> 仮想サービスを提供するには
+To provide the <e>NET</e> virtual, a service must:
+<ul>
+<li>現在のrunlevelか boot runlevelに追加します。</li>
+<li>Have &quot;net.&quot; pre-pended.</li>
+<li>&quot;net.&quot; の後に実際のネットワークインターフェイスの名前をつける必要があります。(例: net.eth0, net.ppp1)
+</li>
+</ul>
+</impo>
+</p>
+
+<p>
+全ての有効な net.* サービスで $IFACE にネットワークインターフェイスの名前がセットされます。(例: net.eth0 に &quot;eth0&quot; がセットされる。)
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>標準のコマンドラインオプション</title>
+<section>
+<body>
+
+<p>
+全てのサービスは標準のオプションを付けて起動されます。
+ユーザの rc-script で定義する関数のうちここで言及しているものは <e>START</e> と <e>STOP</e> 以外は全て既に定義されています。
+
+<impo><e>start()</e> 関数は必ず定義されてなければなりません。</impo>
+<note><e>stop()</e> 関数はそれほど重要ではなく、省略することが可能です。</note>
+</p>
+
+<p>
+<note>
+一般的にユーザは <e>start()</e> 、 <e>stop()</e> および <e>restart()</e> だけを定義します。残りはそのままにしておくべきでしょう。
+</note>
+</p>
+
+<pre caption="start the httpd service">
+# <c>/etc/init.d/httpd start</c>
+</pre>
+
+<p>
+<note>コマンドラインオプションは複数与えることが可能です。</note>
+</p>
+
+<pre caption="pause/start net.eth0">
+# <c>/etc/init.d/net.eth0 pause start</c>
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>START/STOP オプション</title>
+<body>
+
+<p>
+依存するものを含むサービスの <e>START</e>。
+</p>
+
+<p>
+依存するものを含むサービスの <e>STOP</e>。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>RESTART オプション</title>
+<body>
+
+<p>
+<e>RESTART</e> が機能するにはにはサービスが起動されていなければなりません。
+依存するサービスも同じように再起動されます。
+
+<impo>
+カスタム <e>restart()</e> 関数を定義する場合、サービスの開始、停止には
+<e>&quot;svc_start()&quot;</e> と <e>&quot;svc_stop()&quot;</e> を使用するべきです。
+</impo>
+
+<note>依存するサービスをこれは正しく扱うためです。</note>
+</p>
+
+</body>
+</section>
+
+<section>
+<title>PAUSE オプション</title>
+<body>
+
+<p>これはサービスを停止させますが、 <e>STOP</e> と違い依存サービスは停止しません。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>ZAP オプション</title>
+<body>
+
+<p>サービスのステータスを停止にリセットします。
+
+<note>
+<e>stop()</e> 関数の中のコマンドはどれも実行されないことに注意してください。
+必要なクリーンアップ処理をユーザが行うべきです。
+</note>
+</p>
+
+</body>
+</section>
+
+<section>
+<title>INEED/NEEDSME オプション</title>
+<body>
+
+<p>
+<e>INEED</e> そのサービスに設定してある <e>NEED</e> のリストを表示します。
+</p>
+
+<p>
+<e>NEEDSME</e> そのサービスを <e>NEED</e> に設定しているサービスのリストを表示します。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>IUSE/USESME オプション</title>
+<body>
+
+<p><e>IUSE</e> そのサービスに設定してある <e>USE</e> のリストを表示します。
+</p>
+
+<p><e>USESME</e> そのサービスを <e>USE</e> に設定しているサービスのリストを表示します。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>BROKEN オプション</title>
+<body>
+
+<p>
+<e>NEED</e> に設定してあるサービスにもし見つからないものがあればリストを表示します。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>コマンドラインオプションの追加</title>
+<section>
+<body>
+
+<p>
+カスタムコマンドラインオプションの追加は比較的簡単です。
+rc-script にオプションの名前の関数を定義し、次のように <e>$opts</e> 変数に追加します。
+</p>
+
+<pre caption="foo as a custom option">
+opts=&quot;${opts} foo&quot;
+ 
+foo() {
+    ............
+}
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>設定</title>
+<section>
+<body>
+
+<p>
+基本的に設定には環境変数を用いますが、 rc-script の中で定義するのではなく、個別の設定ファイルに記述します。
+</p>
+
+<p>
+一つ目は各 rc-script 毎のファイル、後の2つは全体の設定ファイルです。
+</p>
+
+<pre caption="config files for rc-scripts">
+<path>/etc/conf.d/&lt;name of rc-script&gt;</path>
+<path>/etc/conf.d/basic</path>
+<path>/etc/rc.conf</path>
+</pre>
+
+<p>
+<note>
+これらの3つのファイルはリストの順に読み込まれます。
+</note>
+
+<impo>全ての <e>NET</e> サービスは <path>/etc/conf.d/net</path> も読み込みます。</impo>
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Utilities/helper スクリプト</title>
+
+<section>
+<title>rc-update ユーティリティ</title>
+<body>
+
+<p>
+rc-update はrunlevelのサービスを追加、削除するツールです。
+rc-pudate は依存関係のキャッシュを更新する為に内部で &quot;depscan.sh&quot; も呼び出します。
+</p>
+
+<pre caption="add metalog to the default runlevel">
+# <c>rc-update add metalog default</c>
+</pre>
+
+<pre caption="remove metalog from the default runlevel">
+# <c>rc-update del metalog default</c>
+</pre>
+
+<p>
+<note>オプションなしで rc-update を実行するともう少し詳しい説明が表示されます。 </note>
+</p>
+
+</body>
+</section>
+
+<section>
+<title>depscan.sh helper スクリプト</title>
+<body>
+
+<p>
+depscan.sh について言及しておきます。
+これはサービス間の依存関係マップのキャッシュを作成するのに使用します。
+</p>
+
+<p>
+新しい rc-script を <path>/etc/init.d/</path> に追加した際に実行する必要があります。しかし rc-update が自動的に呼び出すのでほとんどのユーザは実行する必要はありません。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>
+

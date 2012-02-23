@@ -1,0 +1,350 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-working-features.xml,v 1.11 2011/12/10 14:27:10 naota Exp $ -->
+
+<sections>
+
+<abstract>
+Portageの持つ、分散コンパイルやccacheのサポートなど、より多くの機能を知ってください。
+</abstract>
+
+<version>4</version>
+<date>2011-11-27</date>
+<!-- Original revision: 1.40 -->
+<!-- Translator: kobayashi -->
+<!-- Translator: naota -->
+
+<section>
+<title>Portageの機能</title>
+<body>
+
+<p>
+PortageはあなたのGentoo環境をより良くしてくれるいくつかの追加の機能があります。
+これらの機能の多くはパフォーマンス、信頼性、セキュリティなどを改良してくれるソフトウェアツールに頼っています。
+</p>
+
+<p>
+Portageの機能を有効にしたり無効にするには、スペースで区切られた様々な機能のキーワードを含む<path>/etc/make.conf</path>の<c>FEATURES</c>変数を編集する必要があります。
+いくつかのケースでは機能が依存している追加のツールをインストールする必要があります。
+</p>
+
+<p>
+Portageがサポートしている機能が全てここで紹介されているわけではありません。
+全てを知るには、<path>make.conf</path>のmanページを調べてください。
+</p>
+
+<pre caption="make.confのmanページを調べる">
+$ <i>man make.conf</i>
+</pre>
+
+<p>
+デフォルトでFEATURESに何が設定されているかを知るには、<c>emerge --info</c>を実行してFEATURES変数を検索するかgrepを利用します。
+</p>
+
+<pre caption="既に設定されているFEATURESを知る">
+$ <i>emerge --info | grep FEATURES</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>分散コンパイル</title>
+<subsection>
+<title>distccを使う</title>
+<body>
+
+<p>
+<c>distcc</c>はネットワーク上のそれぞれのマシン(同一である必要はない)にコンパイル作業を分散させるプログラムです。
+<c>distcc</c>クライアントは利用可能な(<c>distccd</c>が実行されている)distccサーバに必要な情報の全てを送信するので、
+それらサーバはクライアントのためにソースコードの断片をコンパイルすることができます。
+この結果、コンパイルの時間が高速化されます。
+</p>
+
+<p>
+<c>distcc</c>に関するより多くの情報(そしてどのようにしてGentooで動作するのか)については<uri link="/doc/en/distcc.xml">Gentoo Distcc Documentation</uri><uri link="/doc/ja/distcc.xml">(日本語訳)</uri>を見てください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>distccのインストール</title>
+<body>
+
+<p>
+distccはコンピュータが送信したコンパイルタスクを監視するグラフィカルモニターを提供します。
+もしGnomeを使っているのならUSEフラグに'gnome'を追加してください。
+しかし、Gnomeを使っていないがモニターを利用したいときはUSEフラグに'gtk'を追加してください。
+</p>
+
+<pre caption="distccのインストール">
+# <i>emerge distcc</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Portageのサポートを有効化する</title>
+<body>
+
+<p>
+<path>/etc/make.conf</path>内のFEATURES変数に<c>distcc</c>を追加してください。
+次に、MAKEOPTS変数をあなたの好みに編集してください。
+よく知られたガイドラインには"-jX"と埋めうるように指示されています。
+Xは<c>distccd</c>を実行している(現在のホストも含める)CPUの数+1ですが、他の数字の方が良い結果が得られるかもしれません。
+</p>
+
+<p>
+では<c>distcc-config</c>を実行して利用可能なdistccサーバのリストを入力しましょう。
+簡単な例ではdistccサーバが192.168.1.102(現在のホスト)、192.168.1.103、192.168.1.104(２つのリモートホスト)で利用可能であると仮定します。
+</p>
+
+<pre caption="distccが３つのサーバを使うように設定">
+# <i>distcc-config --set-hosts "192.168.1.102 192.168.1.103 192.168.1.104"</i>
+</pre>
+
+<p>
+忘れずに<c>distccd</c>デーモンを実行してください。
+</p>
+
+<pre caption="distccdデーモンを起動">
+# <i>rc-update add distccd default</i>
+# <i>/etc/init.d/distccd start</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>キャッシングコンパイル</title>
+<subsection>
+<title>ccacheについて</title>
+<body>
+
+<p>
+<c>ccache</c>は高速なコンパイラーキャッシュです。
+プログラムをコンパイルすると、中間結果をキャッシュするので、同じプログラムを再コンパイルしたときはいつでも、コンパイル時間は大いに減少します。
+ccacheを初めて用いた場合は、通常のコンパイル時に比べて遥かに遅くなりますが、次回以降の再コンパイルは速やかに済みます。
+ccacheは同一のアプリケーションを何度もコンパイルする際のみ役立つので、主にソフトウェア開発者に対してだけ有益となります。
+</p>
+
+<p>
+ccacheに関する特徴に興味があるなら、<uri link="http://ccache.samba.org">ccacheのホームページ</uri>を訪れてください。
+</p>
+
+<warn>
+<c>ccache</c>は数々のコンパイルの失敗を引き起こすことで知られています。ときにはstaleコードオブジェクト、または壊れたファイルを生成し、
+その結果パッケージのemergeは失敗してしまいます。
+もしこの問題が起こった場合（もし"File recognized: File truncated"といったエラーに遭遇したら）、
+バグ報告の<e>前</e>にccacheを無効にして(<path>/etc/make.conf</path>内で<c>FEATURES="-ccache"</c>と設定)、
+アプリケーションを再度コンパイルしてみてください。もし開発をしていないのであれば、<e>ccacheは有効にしないでください</e>。
+</warn>
+
+</body>
+</subsection>
+<subsection>
+<title>ccacheのインストール</title>
+<body>
+
+<p>
+<c>ccache</c>をインストールするには、<c>emerge ccache</c>を実行してください。
+</p>
+
+<pre caption="ccacheのインストール">
+# <i>emerge ccache</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Portageのサポートを有効化する</title>
+<body>
+
+<p>
+<path>/etc/make.conf</path>を開いてFEATURES変数に<c>ccache</c>を追加します。
+次にCCACHE_SIZEという変数を追加して"2G"と設定します。
+</p>
+
+<pre caption="/etc/make.confのCCACHE_SIZEを編集">
+CCACHE_SIZE="2G"
+</pre>
+
+<p>
+ccacheが動作しているかを確認するには、ccacheに統計を提供するよう問い合わせてください。
+Portageは異なったccacheホームディレクトリを使用しているので、<c>CCACHE_DIR</c>も設定する必要があります。
+</p>
+
+<pre caption="ccacheの統計を見る">
+# <i>CCACHE_DIR="/var/tmp/ccache" ccache -s</i>
+</pre>
+
+<p>
+<path>/var/tmp/ccache</path>はPortageのデフォルトのccacheホームディレクトリです。
+設定を変更したいのなら、<path>/etc/make.conf</path>で<c>CCACHE_DIR</c>変数を設定することができます。
+</p>
+
+<p>
+ですが、<c>ccache</c>を実行すれば、それはデフォルトの位置である<path>${HOME}/.ccache</path>を使用するでしょう。
+そのため、Portageのccache統計を見るときには<c>CCACHE_DIR</c>変数を設定する必要があったのです。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>ccacheをPortageのCのコンパイル以外に使用する</title>
+<body>
+
+<p>
+もしPortageでないコンパイルにccacheを使いたいのなら、PATH変数の最初(<path>/usr/bin</path>より前)に<path>/usr/lib/ccache/bin</path>を追加してください。
+これは、ユーザのホームディレクトリの<path>.bash_profile</path>を編集することで完了します。
+<path>.bash_profile</path>はPATH変数を定義する方法のひとつです。
+</p>
+
+<pre caption=".bash_profileを編集">
+PATH="<i>/usr/lib/ccache/bin</i>:/opt/bin:${PATH}"
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>バイナリパッケージのサポート</title>
+<subsection>
+<title>予めビルドされたパッケージを作成する</title>
+<body>
+
+<p>
+Portageは予めビルドされたパッケージのインストールをサポートしています。
+Gentoo自体は（GRPスナップショットを除いて）ビルドされたパッケージを提供しませんが、Portageはビルドされたパッケージを完全に認識することができます。
+</p>
+
+<p>
+パッケージが既にインストールされているなら<c>quickpkg</c>を使うことができますし、そうでなければ<c>emerge</c>に<c>--buildpkg</c>もしくは<c>--buildpkgonly</c>オプションを付けることでビルドされたパッケージを作成することができます。
+</p>
+
+<p>
+Portageにインストールするパッケージごとにビルドされたパッケージを作成して欲しいのなら、FEATURES変数に<c>buildpkg</c>を追加します。
+</p>
+
+<p>
+ビルド済みのパッケージ集を作成するためのより拡張されたサポートが、<c>catalyst</c>によって取得できます。
+catalystについての詳しい説明は<uri link="/proj/en/releng/catalyst/faq.xml">Catalyst Frequently Asked Questions</uri>を見てください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>予めビルドされたパッケージのインストール</title>
+<body>
+
+<p>
+Gentooは提供してくれませんが、ビルドされたパッケージを置いておく中央レポジトリを作ることができます。
+このレポジトリを使いたいのなら、Portageが認識できるようPORTAGE_BINHOST変数にその場所を指定しなければなりません。
+例えば、ビルドされたパッケージがftp://buildhost/gentooにあるならこうします。
+</p>
+
+<pre caption="/etc/make.confにPORTAGE_BINHOSTを設定">
+PORTAGE_BINHOST="ftp://buildhost/gentoo"
+</pre>
+
+<p>
+ビルドされたパッケージをインストールしたいときには、emergeコマンドに<c>--getbinpkg</c>オプションを<c>--usepkg</c>と並べて記述します。
+前者が前もって定義したサーバからビルドされたパッケージをダウンロードするようにemergeに伝えているのに対し、
+後者はソースをダウンロードしてコンパイルする前にビルドされたパッケージのインストールを試すように言っています。
+</p>
+
+<p>
+例えば、<c>gnumeric</c>をビルドされたパッケージからインストールするにはこうします。
+</p>
+
+<pre caption="ビルドされたgnumericパッケージをインストール">
+# <i>emerge --usepkg --getbinpkg gnumeric</i>
+</pre>
+
+<p>
+emergeの予めビルドされたパッケージに関するより多くの情報はemergeのmanページにあります。
+</p>
+
+<pre caption="emergeのmanページを読む">
+$ <i>man emerge</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>ファイルの取得</title>
+<subsection>
+<title>並行取得</title>
+<body>
+
+<p>
+複数のパッケージを連続してemergeするとき、Portageは、あるパッケージをコンパイルしている間に次のパッケージのソースファイルを取得してくることで、コンパイル時間を短縮することができます。
+この機能を使うためには、FEATURESに"parallel-fetch"を追加してください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Userfetch</title>
+<body>
+
+<p>
+Portageをrootで走らせるとき、FEATURES="userfetch"としておくと、パッケージのソースを取得しにいっている間、rootの権限を下げることができます。
+これは小さなセキュリティの改善です。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="webrsync-gpg">
+<title>検証済みのPortageツリースナップショットを取得する</title>
+<body>
+
+<p>
+管理ポリシーとして暗号的に検証済みのPortageツリーのスナップショットのみから更新するようにすることができます。
+こうすることで望ましくないコードがやパッケージがダウンロードするrsyncミラーに入ることを避けることができます。
+</p>
+
+<p>
+Portageを設定するには、まずダウンロードに使用する証明書キーストアを作成し、
+Portageツリースナップショットに署名しているGentooインフラストラクチャチームの鍵を登録します。
+もちろん、お望みであれば、
+<uri link="/doc/en/gnupg-user.xml#doc_chap2_sect4">適切なガイドライン</uri>に基づいてこのGPG鍵を検証することができます。
+(鍵<c>0x239C75C4</c>の指紋が<c>AE54 54F9 67B5 6AB0 9AE1 6064 0838
+C26E 239C 75C4</c>であるかを検証したり、
+鍵<c>0x96D8BF6D</c>の指紋が<c>DCD0 5B71 EAB9 4199 527F 44AC
+DB6B 8C1F 96D8 BF6D</c>であるかを検証します。)
+</p>
+
+<pre caption="Portage用の証明書キーストアを作成">
+# <i>mkdir -p /etc/portage/gpg</i>
+# <i>chmod 0700 /etc/portage/gpg</i>
+# <i>gpg --homedir /etc/portage/gpg --keyserver subkeys.pgp.net --recv-keys 0x239C75C4 0x96D8BF6D</i>
+# <i>gpg --homedir /etc/portage/gpg --edit-key 0x239C75C4 trust</i>
+# <i>gpg --homedir /etc/portage/gpg --edit-key 0x96D8BF6D trust</i>
+</pre>
+
+<p>
+次に<path>/etc/make.conf</path>を編集し、署名されたPortageツリースナップショットを検証する機能を有効にします。(<c>FEATURES="webrsync-gpg"</c>を使います。)
+そして、通常の<c>emerge --sync</c>を使ったPortageツリーの更新を無効にします。
+</p>
+
+<pre caption="署名されたツリーを検証して更新する">
+FEATURES="webrsync-gpg"
+PORTAGE_GPG_DIR="/etc/portage/gpg"
+SYNC=""
+</pre>
+
+<p>
+これで終わりです。次からは<c>emerge-webrsync</c>では、有効な署名がなされたスナップショットだけがシステムに展開されます。
+</p>
+
+
+</body>
+</section>
+
+</sections>

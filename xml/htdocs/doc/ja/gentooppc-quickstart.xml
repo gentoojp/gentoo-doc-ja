@@ -1,0 +1,294 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<guide link="/doc/ja/gentooppc-quickstart.xml">
+<title>Gentoo Linux PPC クイックスタートガイド</title>
+<author title="Gentoo PPC Developer"><mail link="daybird@gentoo.org">David Chamberlain</mail></author>
+<author title="Maintainer"><mail link="rajiv@gentoo.org">Rajiv Manglani</mail></author>
+<author title="翻訳"><mail link="madmax@users.sourceforge.jp">前嶋良昭</mail></author>
+
+<abstract>このガイドは、すでにGentoo Linuxに親しんでいる人に向けたものです。PPC portとx86 バージョンの違いを意識する必要がある大きく異なる点を示します。もし、あなたがGentooに親しんでいないのなら、まず始めにGentoo Install Guideを十分に読む必要があります。
+</abstract>
+
+<version>1.0.2</version>
+<date>25 October 2002</date>
+<!-- Original revision: 1.4 -->
+
+<chapter>
+<title>  インストールの前に</title>
+<section>
+<body>
+<warn>この文書は古くなっています。 代わりに <uri link="http://www.gentoo.org/doc/gentoo-ppc-install.html">Gentoo Linux/PPC Installation Guide</uri> を参照して下さい。</warn>
+<p>もし、この箱にLinuxのみを入れようとしているのなら、始める準備は完了です。もし、OS9と/またはOSXを必要とするのなら、最初にMac環境からセットアップする必要があります。  ここには全般的な手引きがあります:
+<uri>http://people.debian.org/~branden/ibook.html</uri> 加えてここも見て下さい:
+<uri>http://www.oreillynet.com/pub/a/mac/2002/03/29/ibook_linux.html</uri></p>
+<p>これらの手順で1つだけ重要な違いがあります: インストーラを起動するためにOpen Firmwareに行く必要はありません - Macパーティションがインストールされている場所で1度CDから起動します</p>
+<p>
+たくさんのパーティションを作るのに夢中になってはいけません - ドライブをmac-fdiskで見ると、Appleはドライバのためにドライブの先頭に少なくとも8パーティションをすでに持っていることがわかるでしょう。そして、我々が使用するある種のフェイクMBRのためにさらにもう1つ必要となります。私はLinuxを使い始めてから、ドライブ上の数多くのパーティションのためにOSXはむしろクラッシュづいていると感じています。なお、考慮に入れる1つとして、小さめの、素のHFS("Apple標準")パーティションを作成するということがあります。そうすることによって、LinuxとMacの間で楽にファイルのやり取りが出来ます - 1つのフォーマットでお互いが読み取り出来ます。(とは言うもののHFS上のファイルを削除することで私はかなり多くのLinuxカーネルパニックに陥りました。; そしてこの共有パーティションを削除した後は、OSXがクラッシュすることは無くなりました。)</p>
+<note>
+ほとんどのOSXユーザーは、たとえOSXと同じパーティションにインストールすることが出来たとしても、OS9 ("Classic")用に別のパーティションを持つと言うgoodな考え方には賛成すると思います。</note>
+</body>
+</section></chapter>
+
+<chapter>
+<title>  インストールCDを使って</title>
+<section>
+<body>
+
+<p>
+インストールCD用のisoイメージは、<uri>http://ftp.sunsite.dk/projects/gentooppc/build</uri>からダウンロード出来ます。それをマスターCDとして焼けば、Macをそれで起動させることが出来ます。ドライブにCDを入れて、Cキーを押しながらMacの電源を入れます。あるいは、ブートメニューの間Optionキーを押し続け、CDを選択します。古いMacでは、C, D, Shift, Optionキーなどの神秘的な組み合わせを要求されるかもしれません。もし、それらのうちの1つなら、試して下さい。または、 <uri link="http://www.info.apple.com/support/manuals.html">マニュアル</uri>を参照して下さい。
+</p>
+
+<note>もし古いMacを持っていて、Open Firmwareを使用しない、あるいは、古いバージョンのOFを使用している("Blue and White" G3より以前のほとんどのマシン)場合、CDから起動するために<uri link="http://master.penguinppc.org/~benh">BootX</uri>を使う必要があります。(GentooPPC boot imageにStuffItアーカイブとして含まれています) これは、最初にMacOSへインストールして設定しなければいけません。いくつかの(簡単な)説明のために<uri link="http://penguinppc.org/projects/bootx">この文書</uri> を参照して下さい。"initrd"をRAMディスクに、そしてCDの"boot"フォルダからカーネル(vmlinux)をMacのシステムフォルダにコピーする必要があります。その後、BootXでそれらのファイルを指定します。BootXに含まれるReadMeを必ず読んで下さい - 知らなければならない事柄がそこに書かれています。
+</note>
+<p>
+ftpサイトにアクセスしている間に、<path>build-ppc.tar.bz2</path>のバージョンがあるかどうか見て下さい。それは、CDイメージよりも新しいものです。もしあればそれも取り込んで下さい。 - その中にはあなたが欲しいものが多分あるでしょう。
+</p>
+
+<p>
+もしCDからの起動に成功したのなら、ブートモードを選択することが出来るでしょう。最近4年以内に作られた全てのMacもしくは"New-World"と呼ばれているマシンは、デフォルトのブートモードを使用できます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>  セットアップ</title>
+<section>
+<body>
+<p>
+x86のブートCDと違い、PPCバージョンは、modprobeする必要なく全ての必要なハードウェアをほとんど確実に動かせるでしょう。あなたは、ネットワークを動かすための説明を見るでしょう。 - はい、ethernetドライバを探す必要はありません。もしifconfigが、今のところ動作してなければ、ロードできるドライバがあるかどうか見るために、/lib/modulesの辺りを探る事が出来ます。 - 見たところpci autodetectionは、常にiBook上のsungemカードを見つけ出すわけではないようです。その場合、あなたは"modprobe sungem"をする必要があるかもしれません。
+</p>
+<p>
+一方、/lib/modulesには他にもいろいろ役に立つドライバがあります - 特にFirewireなど。もしインストールの間Firewireドライバを使いたいのなら(あるいはpowerbookでターゲットディスクモードを使いたいなら :-) - 例えば、新しいビルドのtarballをロードするとか - 試して下さい:
+</p>
+<pre>
+# modprobe ieee1394
+<codenote>実際には、カーネルに組み込まれていると思います</codenote>
+# modprobe ohci1394
+# modprobe sbp2
+</pre>
+
+<p>これは、ドライブをscsiデバイスのエミュレーションとして認識させるでしょう。 - それが示されているのを見るためには、<c>dmesg</c>をチェックして下さい。もし動作してないのであれば、チェックするために、モジュールをアンロードし再ロードする事を2度試して下さい。 - firewireのサポートはかなり進歩しています。しかし、まだ不完全です。特に、 - 皮肉な事に - PPCサイドにおいて
+</p>
+
+<note>私は、Linuxでターゲットディスクを試してません - 考えだけですが...</note>
+
+<p>いったんネットワークの設定をしてしまえば、<c>mac-fdisk</c>を使ってパーティションを切る準備は完了です。 それはとても簡単です - デフォルトのスタートとエンドのブロックを選択するためにパーティション番号の後に"p"を使います。上に挙げたガイドを見て下さい。それと、"b"コマンドを使って特別なブートストラップ パーティションを作成するのを忘れないで下さい。 - これは我々が作り替えたMBRです。(けれどもYabootの代わりにBootXを使う必要が無ければ必要ありません。) もしこれを最初の(no-driver)パーティションに作るなら、Macは最初にそれからブートしようと試みます; しかし、この方法でそれをする必要が無いことに注意して下さい。いったんインストールしてしまえば、OpenFirmare (Cmd-Option-O-F)でブートすることが出来ます。そして、どのパーティションからブートするかは、ある謎めいた強制コマンドをマシンに出すことで出来ます: <c>setenv boot-device
+hd:9,\\:tbxi</c> わかりきった事ですが、ここの9を適当なパーティション番号に入れ替える必要があります。
+</p>
+<note>私は、非常に多くのパーティションを持つことに関して心配だったため、rootパーティションに/bootをおいていました。これまでは不測の事態はありません。そして、OSXは共有のHFSパーティションを削除して以来クラッシュしていません。
+</note>
+<note>全てのAppleパーティションに対して、重要なパーティション番号と名前をどこかに書きとめておくといいでしょう。
+</note>
+</body>
+</section></chapter>
+
+<chapter>
+<title>  インストール</title>
+<section>
+<body>
+<p>
+もう標準的なGentooインストールガイドのほとんどを通して進めることが出来ます。きっとネット接続は動作しているでしょう。 (例えば、<path>/etc/resolv.conf</path>に入力がある);
+linuxファイルシステムを作成し、それをマウントします。<path>/mnt/gentoo</path>にビルドのtarballをアンパックします。 - もしアップデートされたtarballを今取り込みたいなら、wgetが役に立つでしょう - procをマウントし、<path>/etc/resolv.conf</path>を上書きして<c>chroot</c>します。
+</p>
+<p>
+これで<c>emerge rsync</c>を動作させる事が出来ます。しかし、最初に<path>/etc/make.conf</path>をチェックして下さい。 - rsync://rsync.gentoo.org/gentoo-portageにSYNCをセットします。ブートストラップとemergeシステムの準備は完了です。
+</p>
+<note>私は、始める前に全てのソースを手に入れておくことを強くお勧めします。: bootstrapの前に、<c>emerge --fetchonly</c> baselayout, gcc, glibc,
+binutils, gettextをすべきです。<c>emerge system</c>の前に<c>emerge --fetchonly system</c>をします。
+</note>
+<impo>多くのMacは、CDをイジェクトするためのボタンがありません。そして、Linuxではキーボード上のイジェクトボタンは動作しません(設定した後で無い限り)。ブートイメージでは、CDを取り出すためには<c>eject -r</c>のコマンドを出す<i>必要があります</i>。いったんCDからブートし、linuxパーティションに必要なもの全てをコピーあるいはuntarすれば、もうCDは必要ありません。もし他のCDを使いたいなら、おそらく、アップデートされたビルドのtarballをロードする。あるいは、どこか速く接続できるところからプログラムのソース("distfiles")をダウンロードして使います。その後、(もしマウントされていれば)ブートCDをアンマウントし、<c>eject -r</c>して、他のCDをインサートします。いったん中身をemergeすることが出来れば、きっと<c>emerge eject</c>のコマンドが動作するでしょう。CDからdistfileを取り出すための直接的なPortageの仕方の説明が出ているメインのインストールガイドを見てください。
+</impo>
+<note>必ず<path>/etc/make.conf</path>はppc用の設定にしなければなりません: それをnanoで開き、ppc用のコンパイラフラグがコメントアウトされていないか確認して下さい。フラグの2つの定義済みセットを選択することがわかると思います。確実に最適化のレベルが低い方がより信頼性があります。もしある理由でmake.confが混乱してしまったなら、もっとも最近のppcディレクトリの<path>/usr/portage/sys-apps/portage/files</path>の中にオリジナルを見つけることが出来ます。
+</note>
+</body>
+</section></chapter>
+
+<chapter>
+<title>  システム設定</title>
+<section>
+<body>
+<p>
+x86 Linuxとのもっと主だった違いはbootloaderのyabootです(BootXを使う必要が無い限り - 上記を参照)。それはliloと多くの点で似通っています: <path>/etc/yaboot.conf</path>を設定します - 私のはこんな感じです:</p>
+<pre>
+## /etc/yaboot.conf
+##
+## run: "man yaboot.conf" for details. Do not make changes until you have!!
+## see also: /usr/share/doc/yaboot/examples for example configurations.
+##
+## For a dual-boot menu, add one or more of:
+## bsd=/dev/hdaX, macos=/dev/hdaY, macosx=/dev/hdaZ
+
+## our bootstrap partition:
+boot=/dev/hda9
+
+##hd: is open firmware speak for hda
+device=hd:
+partition=11
+
+root=/dev/hda11
+delay=5
+defaultos=macosx
+timeout=30
+install=/usr/lib/yaboot/yaboot
+magicboot=/usr/lib/yaboot/ofboot
+
+#################
+## This section can be duplicated if you have more than one kernel or set of
+## boot options
+#################
+image=/boot/vmlinux
+	label=Linux
+	read-only
+##################
+
+macos=/dev/hda13
+macosx=/dev/hda12
+enablecdboot
+enableofboot
+</pre>
+
+<p>いったん<path>yaboot.conf</path>が希望通りに設定されたら、bootstrapパーティションに設定をインストールするために<c>mkofboot -v</c>を実行します。これを忘れないで下さい! もし全てうまく行き、私と同じオプションなら、次の再起動は単に5つのブートメニューになるでしょう。もし後でyabootの設定をアップデートしたなら、bootstrapパーティションをアップデートするために<c>ybin</c>を実行する必要があります - mkofbootは、イニシャルのセットアップのためだけのものです。
+</p>
+
+<note>
+Yabootはブート時のコンフィグを設定するためにいくつかの機能を持っています。より詳しい情報は<uri>http://penguinppc.org/projects/yaboot</uri>を見て下さい。
+</note>
+
+<p>kernelのコンフィグとコンパイルに限れば、gentoo ppcのソースはデフォルトのコンフィグとして重要な内容をすでに設定してあります。大抵Macのハードウェアは、ドライバの選択肢が非常に少ないです。加えて、必要なものはほぼ確実にあらかじめ選択されています。それにもかかわらず疑わしければ、<c>make menuconfig</c>で'help'を使用します。bzImageを作成するのに問題があることに注意して下さい。もし実行している内容を理解していなければ、<c>make vmlinux</c>を変更しないで下さい。言い換えると、kernelを設定した後、こうして下さい:
+</p>
+<pre>
+# make dep; make clean; make vmlinux; make modules; make modules_install
+<codenote>kernelイメージは /usr/src/linux ディレクトリの最上位にあります</codenote>
+<codenote>もしそれが別のパーティションあるなら /boot をマウントするのを忘れないで下さい ;-)</codenote>
+# cp vmlinux /boot
+# cp System.map /boot
+</pre>
+<impo>kernelソースのPPCバージョンをインストールするのに、<i>sys-kernel/ppc-sources</i>をemergeしたいです。現在のところ、それらはppc用のkernelパッケージだけのものです - しかしx86 kernelソースパッケージの大部分と違って、それはXFSパッチを含みます。
+</impo>
+<note>もしBenが何者かを知りたければ、<uri>http://penguinppc.org/~benh</uri>あるいは<uri>http://ppckernel.org</uri>を見て下さい。彼は、PPC kernelのメインテナーで、多くのPPC linuxユーザーがkernel.orgのツリーではなく、彼のツリーのソースを使っています。
+</note>
+
+<p>他にppcで癖のあるところは、XFreeの設定が難しいところです。最初に、ビデオカードでのダイレクトレンダリングを使用したいなら、確実に、適当なkernelモジュールを最初に読み込むことを試みて下さい。2番目に、私は最近<c>XFree86 --configure</c>で幸運がもたらされました; 我々には今ppcのみのxeasyconfのebuildがあります。(<c>emerge x11-misc/xeasyconf</c>) - Mark Guertinによって特別に書かれた素晴らしいプログラムです。それでもコンフィグプログラムが動作すべきであると考えることはないでしょう。ところでusbマウスは多分<path>/dev/input/mice</path>にあります。もしあなたが持っているハードウェア(例えばビデオカード)のことがわからなければ、pci-utilsをemergeしてみて下さい。その後、<c>lspci</c>コマンドを出します。それが関連した詳細をピックアップします。
+</p>
+
+<note>
+"Option" "UseFBdev"はあなたの友達です :-)
+</note>
+
+<p>Macでlinux用の<i>sound</i>を設定することも魔術です。しかし、大丈夫です。<path>kernel/drivers/sound</path>内のモジュール(<i>soundcore</i> and <i>dmasound_pmac</i>)を読み込みます(<c>modprobe</c>)。ミキサー(例えばaumix)をインストールして再生します。KDEにおいては、8-bitサウンドだけでOSSを使うことをサウンドサーバに伝える必要があることに注意して下さい。もしAlsaに挑戦したいなら、適切なドライバが<i>snd-card-awacs</i>にあります。しかし、まだsoundcore (kernel)とsnd (alsa)を最初にロードさせる必要があります。KDEにおいてAlsaを使うには、alsa-oss互換のモジュール(snd-pcm, snd-pcm-plugin, snd-pcm-oss, snd-mixer-oss)もロードします。そして、ArtsサウンドサーバにAlsaではなく(そうなんです、実は)、OSSを使うことを伝えます。これは、Alsa 0.5に対して適用されます。 - Alsa 0.9が主流になるときには変るかもしれません。
+</p>
+<note>もしkernel内でdmasoundをコンパイルするなら、Alsaを試すためにそれをアンロードすることは出来ないでしょう。(故にモジュールを代わりに使います)
+</note>
+
+
+<p>もしhfs+パーティションにアクセスしたいなら、penguinppcサイトで<i>hfsplus</i> utilitiesの説明を見て下さい。あとはkdeコンポーネントの<i>kio-mac</i>です。 - 私はまだこれらを試したことがありませんが、それらは、konquerorでmacパーティションを読むためのものです。 すぐにebuildされることを期待します。
+</p>
+
+<p>他のパワフルなlinux-ppcのツールは、<i>MOL</i> (Mac on Linux)です。もしOS9やそれ以前のバージョンのパーティションを持っているなら、きっとネイティブに近いスピードでそのシステムをlinux<i>内</i>で動作させることが出来るでしょう。設定は少しばかりトリッキーですが、それはかなりクールです。<c>emerge mol</c>とタイプするだけでインストールできます。さあ、これで再起動せずにPhotshopも実行できるし、webでFlashやShockwaveのアニメーションも見れます :-)。
+</p>
+
+<p>さあ、出来ました。今のところうまく機能しているけれど、多くの人がテストすることでより良くすることができます。もし自分の手で機種依存のebuildを作るのに挑戦したいなら、<path>/usr/portage/media-sound/mpg123/mpg123r-r1.ebuild</path>を見ましょう。作者がppc用を用意してくれない限り、ダウンロードしたebuildのバイナリファイルが壊れてしまうかも知れないことに注意しましょう。(新しい <path>xanim</path> ebuildを参照)
+</p>
+<note>A quick tip: Linuxコンソールは、私のiMac(DV400/2000)のスクリーン上においてその位置が完全に右になりません: <c>fbset -move right</c>はこの問題を修正します。
+</note>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>  BootXトラブルシューティング</title>
+<section>
+<body>
+<p>いくつかの注意点はメーリングリストから拾ってきています:</p>
+<ul>
+<li>もし、BootXからの起動でエラーが出たら、MacOSを起動する際に機能拡張と/または 仮想メモリを切ります</li>
+<li>BootXでのインストール (Gerkの好意による):
+<ol>
+<li> ハードディスクのわかる場所にCDからBootX_1.2.2.sitアーカイブを解凍する</li>
+<li> ハードディスクに解凍したBootXフォルダ内のLinux kernelフォルダ内にvmlinuxファイルをGentoo CDの/bootフォルダからコピーする</li>
+<li> BootXフォルダにGentoo CDの/bootフォルダからinitrd.imgをコピーする</li>
+<li> BootXアプリケーションをダブルクリックする</li>
+<li> 'options'ボタンをクリックし、ramdiskとして、コピーしたinitrd.imgを選択する</li>
+<li> okをクリックする</li>
+<li> ramdiskのサイズを24000にセットする</li>
+<li> kernelの引数の枠に次の文字を追加する: rw</li>
+<li> Linuxボタンをクリックしてインストールを開始する (任意にsave prefsをクリックする)</li>
+</ol></li>
+<li>もし、まだread-onlyでinitrd ramdiskをマウントしているなら、次のようにread-writeとして再マウントすることが出来ます:
+<c>#mount /dev/root / -o remount,rw</c></li>
+<li>initrdには多くの重要なコマンドがbusyboxにシンボリックリンクされています。もし"command not found"エラーが出たとしたら、リンクが切れているかもしれません - rwで(必要なら)再マウントし、自分自身でリンクを作成して下さい。</li>
+<li>以下のSUSEのサイトリストは、特にBootXの問題に役に立ちます。</li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>  リソース</title>
+<section>
+<body>
+
+<ul>
+<li>
+iBookへのDebianのインストール: 
+	<ol>
+	<li><uri>http://people.debian.org/~branden/ibook.html</uri></li>
+ 	<li><uri>http://www.oreillynet.com/pub/a/mac/2002/03/29/ibook_linux.html</uri></li>
+	</ol>
+</li>
+
+<li>
+非常に多くの情報が<uri link="http://tuxppc.org/">tuxppc</uri>にあります。 (非常に役に立つ <uri link="http://forums.tuxppc.org/">forums</uri>も含まれます)
+</li>
+
+<li>
+<uri link="http://penguinppc.org/">penguinppc</uri>
+</li>
+
+<li>
+<uri link="http://sdb.suse.de/sdb/en/html/keylist.PPC.html">SUSE Linux Knowledgebase</uri>
+PPC 関連の記事 (トラブルシューティングに役立ちます)
+</li>
+
+<li>Debian PPCの <uri link="http://www.debian.org/ports/powerpc/inst/install">supported
+hardware</uri>リスト。GentooPPCは、同じマシンをサポートしますが、実際には、全てに対して動作するブートディスクを組むのに我々は少し間があくかもしれません。
+</li>
+
+<li>
+DebianのPPC <uri link="http://lists.debian.org/debian-powerpc/">メーリングリストのアーカイブ</uri>
+</li>
+
+<li>
+Linux on PowerPC <uri link="http://lppcfom.sourceforge.net/">FAQ-O-Matic</uri> (古いですが、まだいくつか使えます。特に古いマシンには)
+</li>
+
+<li>
+<uri link="http://ppckernel.org/">ppckernel</uri>
+</li>
+
+<li>
+<uri link="http://www.maconlinux.net/">Mac-on-Linux</uri>
+</li>
+
+<li>
+<uri link="http://www.gentoo.org/doc/build.html">Gentoo Linux x86 インストール手引書</uri>
+</li>
+
+<li>
+<uri link="http://www.netneurotic.net/mac/openfirmware.html">Open Firmwareガイド</uri>
+</li>
+
+<li>
+<uri link="http://www.info.apple.com/support/manuals.html">Apple マニュアル</uri>
+</li>
+
+</ul>
+
+</body>
+</section>
+</chapter>
+
+</guide>
+

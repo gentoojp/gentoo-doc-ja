@@ -1,0 +1,497 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/gcc-upgrading.xml,v 1.5 2008/06/17 17:15:03 shindo Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/gcc-upgrading.xml" lang="ja">
+<title>Gentoo GCCアップグレードガイド</title>
+
+<author title="Author">
+  <mail link="amne@gentoo.org">Wernfried Haas</mail>
+</author>
+<author title="Author">
+  <mail link="jkt@gentoo.org">Jan Kundr叩t</mail>
+</author>
+<author title="Editor">
+  <mail link="mark@halcy0n.com">Mark Loeser</mail>
+</author>
+<author title="翻訳">
+  <mail link="mignon@gentoo.gr.jp">武田洋之</mail>
+</author>
+<author title="翻訳">
+  <mail link="tma@gside.org">Takeshi Matsuba</mail>
+</author>
+
+<abstract>
+このドキュメントは、ユーザがGentooマシンでGCCをアップグレードする手順を説明しています。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<!-- Original revision: 1.27 -->
+<version>22</version>
+<date>2007-04-03</date>
+
+<chapter id="intro">
+<title>はじめに</title>
+<section>
+<title>GCCのアップグレード</title>
+<body>
+
+<p>
+なぜあなたはアップグレードすべきなのでしょうか？
+GCCはあなたのシステムの他のパッケージと非常に似ていますが、
+ちょっとだけ重要です。
+あなたを不愉快にさせるバグが修正されたとき、
+あなたが必要とする新しい機能が導入されたとき、
+あるいは、あなたがシステムを最新に保ちたいなら、いつでもGCCをアップグレードすべきです。
+もし、前述した場合が当てはまらなくても、
+あなたが使用しているGCCバージョンがGentoo開発者にサポートされている間は、アップグレードを安全に延期することができます。
+</p>
+
+<p>
+もし新しいメジャーバージョンのGCC(3.3.6 から 3.4.5のような)をインストールしても、
+システムがそれを使うように自動的には切り替わりません。
+移行のためには追加の手順が要求されるため、明示的に変更する必要があります。
+もし切り替えないことにしたら、Portageはあなたの気がが変わる、つ
+まり古いコンパイラをシステムから削除するまでは、古いバージョンの
+コンパイラを使い続けるでしょう。
+メジャーでないGCCのアップグレード (3.4.5 から3.4.6のような)では、自動的に切り替わります。
+</p>
+
+<p>
+このガイドは、あなたのGentooシステムで使用されているコンパイラのシームレスなアップグレードに必要な手順を説明しています。
+<uri link="#upgrade-3.3-to-3.4">GCC 3.3から3.4へのアップグレード</uri>と、
+<c>libstdc++</c>の問題という特別なセクションが設けられています。
+2つ目の特別なセクションとして、GCCのメジャーまたはマイナーなバージョンがリリースされた後に、
+stage3のtarballを使ってGentooを<uri link="#first-install">初めてインストールする</uri>ユーザー向けのセクションを設けました。
+</p>
+
+<warn>
+GCC 3.4(または3.3)からGCC 4.1またはそれ以上のバージョンへのアップグレードは、下記の<uri link="#upgrade-general">一般的なアップグレードの手順</uri>が必要です。
+なぜなら、GCC 3.4とGCC 4.1は少し異なるABIを使用しているからです。
+</warn>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="upgrade-general">
+<title>一般的なアップグレードの手順</title>
+<section>
+<title>はじめに</title>
+<body>
+
+<impo>
+もしあなたが、GCC-3.3からGCC-3.4へのアップグレードについての手順を探しているなら、
+<uri link="#upgrade-3.3-to-3.4">専用のセクション</uri>を参照してください。
+</impo>
+
+<impo>
+もしあなたが新しくインストールしたマシンでのGCCのアップグレードについての手順を探しているなら、
+<uri link="#first-install">専用のセクション</uri>を参照してください。
+</impo>
+
+<p>
+一般的に3.3.5から3.3.6のような<e>バグ修正リリース</e>へのアップグレードは、完全に安全です。
+ただ新しいバージョンをemergeし、あなたのシステムがそれを使うように切り替え、
+影響のあるパッケージ<c>libtool</c>だけを再構築すればよいです。
+しかし、GCCアップグレードによってバイナリ互換がなくなる場合もあります。
+そのような場合、影響のあるパッケージ(あるいは、toolchainとシステム全体)は再構築される必要があります。
+</p>
+
+<p>
+手動で新しいバージョンへコンパイラを切り替える必要性を話しましたとき、
+自動ではこれは起こらないといいました。
+しかし、例外が1つあります。
+3.3.5から3.3.6のようなバグ修正リリースで、1つのシステムにこれらを共存させるために"multislot"を使用していない場合です。
+ユーザの大部分は"multislot"によって利益を得られないので、デフォルトでは無効にされています。
+</p>
+
+<pre caption="GCCのアップグレード">
+# <i>emerge -uav gcc</i>
+
+<comment>("i686-pc-linux-gnu-4.1.1" の部分は、あなたがアップグレードしようとしているGCCバージョンとCHOSTの設定で読み替えてください)</comment>
+# <i>gcc-config i686-pc-linux-gnu-4.1.1</i>
+# <i>env-update &amp;&amp; source /etc/profile</i>
+
+<comment>もし、gcc 3 から gcc 4へのアップグレード(例えば、この例では 3.4.6 から 4.1.1)を行うなら、fix_libtool_files.shを手動で実行する必要があります。</comment>
+# <i>fix_libtool_files.sh 3.4.6</i>
+
+<comment>(libtoolの再構築)</comment>
+# <i>emerge --oneshot -av libtool</i>
+</pre>
+
+<p>
+完全にシステムを安全な状態にするには、<e> 必ず</e>toolchain、それからworldを再構築し、新しいコンパイラを使用するようにしないといけません。
+</p>
+
+<pre caption="システムの再構築">
+# <i>emerge -eav system</i>
+# <i>emerge -eav world</i>
+</pre>
+
+<p>
+ここで古いGCCバージョンを削除するのは安全です。
+もし必要だと感じるなら次のコマンドを実行してください(通常は、
+<c>=sys-devel/gcc-3.4*</c>の部分をあなたが削除したいバージョンに読み替えてください)
+</p>
+
+<pre caption="古いバージョンのGCCを削除">
+# <i>emerge -aC =sys-devel/gcc-3.4*</i>
+</pre>
+
+<impo>
+GCC 4.1以降では2.4.34より新しいカーネルしかコンパイルできないことに注意してください。
+古いカーネルを使用したいなら、古いバージョンのGCCを削除しないでください。
+</impo>
+
+<impo> <!-- FIXME: do we really want to keep it here? -->
+GCC-3.3からアップグレードしている場合、古いC++バイナリアプリケーションの適切な機能を確実にするため、
+<c>emerge --oneshot sys-libs/libstdc++-v3</c>を実行すべきです。
+</impo>
+</body>
+</section>
+</chapter>
+
+<chapter id="upgrade-3.3-to-3.4">
+<title>GCC-3.3から3.4へのアップグレード</title>
+<section>
+<title>はじめに</title>
+<body>
+
+<p>
+2つのバージョン間でC++ ABIが変更されたため、
+GCC/3.3から3.4へのアップグレードは、それほどシームレスではありません。
+このため<c>libstdc++</c>ライブラリで問題があり、これを処理をする必要があります。
+</p>
+
+</body>
+</section>
+<section id="upgrade-3.3-to-3.4-choices">
+<title>選択肢</title>
+<body>
+
+<impo>
+もしGCC 3.4からGCC 4.1へアップグレードする場合は、<uri link="#upgrade-general">一般的なアップグレードの手順</uri>を参照してください。
+</impo>
+
+<impo>
+もしあなたがSPARCマシンをアップグレードする場合、GCCのパラメータのやり取りで内部的に<uri link="http://gcc.gnu.org/gcc-3.4/sparc-abi.html">ABIが変更</uri>されたため、<uri link="#upgrade-3.3-to-3.4-emerge-e">完全なシステムのリビルド</uri>を行う必要があります。
+</impo>
+
+<p>
+もしGCC 3.3からGCC3.4へのアップグレードを行う場合、システムをアップグレードするには2つの方法があります。
+<uri link="#upgrade-3.3-to-3.4-revdep-rebuild">最初の方法</uri>の方が手早くでき、
+<c>gentoolkit</c>パッケージに含まれる<c>revdep-rebuild</c>ツールを使う必要があります。
+これに対し、<uri link="#upgrade-3.3-to-3.4-emerge-e">2番目の方法</uri>は、
+システム全体をスクラッチから再構築し、GCCの新しい機能を使うことができます。
+これらの2つの方法からどちらを選ぶかはあなた次第です。
+ほとんどの場合、最初の方法で十分です。
+</p>
+
+<p>
+GCC 3.3からGCC4.1へアップグレードする場合は、revdep-rebuildを基にした方法は使用せず、<uri link="#upgrade-3.3-to-3.4-emerge-e">完全にシステムを再構築</uri>してください。
+</p>
+
+</body>
+</section>
+<section id="upgrade-3.3-to-3.4-revdep-rebuild">
+<title>revdep-rebuildを使う</title>
+<body>
+
+<p>
+この方法では、まだインストールしていないなら、
+まず最初に<c>gentoolkit</c>をインストールする必要があります。
+そしてGCCをアップグレードし新しいコンパイラに切り替えます。
+また、toolchainを確実に健全な状態にするために<c>libtool</c>パッケージを再構築します。
+</p>
+
+<pre caption="gentoolkitのインストールとGCCのアップグレード">
+# <i>emerge -an gentoolkit</i>
+# <i>emerge -uav gcc</i>
+<comment>("i686-pc-linux-gnu-3.4.5"の部分は、
+あなたがアップグレードしようとしているGCCバージョンとCHOSTの設定で読み替えてください)</comment>
+# <i>gcc-config i686-pc-linux-gnu-3.4.5</i>
+# <i>source /etc/profile</i>
+
+<comment>(libtoolの再構築)</comment>
+# <i>emerge --oneshot -av libtool</i>
+</pre>
+
+<p>
+ここでrevdep-rebuildに実際に再構築するパッケージを問い合わせます。
+その後、revdep-rebuildに実際にパッケージを再構築するよう指示します。
+これにはしばらく時間がかかりますが辛抱してください。
+</p>
+
+<pre caption="revdep-rebuildを使う">
+# <i>revdep-rebuild --library libstdc++.so.5 -- -p -v</i>
+# <i>revdep-rebuild --library libstdc++.so.5</i>
+</pre>
+
+<note>
+古くなっている、または、マスクされているために、
+存在しないパッケージバージョンで問題が起きる可能性があります。
+こうした事態に遭遇したら、<c>revdep-rebuild</c>に対して<c>--package-names</c>オプションを使ってください。
+こうすることで、厳密な名前とバージョンではなくパッケージ名に基づいて再構築するようになります。
+</note>
+
+<p>
+古いC++アプリケーションやrevdep-rebuildが検出できなかったパッケージにバイナリ互換を提供するために、
+GCC 3.3をシステムからunmergeする前に<c>sys-libs/libstdc++-v3</c>をマージする必要があります。
+</p>
+
+<pre caption="libstdc++-v3のインストールと古いGCCの削除">
+# <i>emerge --oneshot sys-libs/libstdc++-v3</i>
+# <i>emerge -aC =sys-devel/gcc-3.3*</i>
+</pre>
+
+</body>
+</section>
+<section id="upgrade-3.3-to-3.4-emerge-e">
+<title>emerge -eを使う</title>
+<body>
+
+<p>
+この方法は、より時間がかかる方法で、
+新しいコンパイラでシステム全体を再構築され、それゆえに、より安全です。
+まずGCCとlibtoolをアップグレードし、新しいコンパイラに切り替えます。
+</p>
+
+<pre caption="GCCのアップグレード">
+# <i>emerge -uav gcc</i>
+<comment>("i686-pc-linux-gnu-3.4.5"の部分は、
+あなたがアップグレードしようとしているGCCバージョンとCHOSTの設定で読み替えてください)</comment>
+# <i>gcc-config i686-pc-linux-gnu-3.4.5</i>
+# <i>source /etc/profile</i>
+
+<comment>もし、gcc 3 から gcc 4へのアップグレード(例えば、この例では 3.3.6 から 4.1.1)を行うなら、fix_libtool_files.shを手動で実行する必要があります。</comment>
+# <i>fix_libtool_files.sh 3.3.6</i>
+
+
+<comment>(libtoolを再構築)</comment>
+# <i>emerge --oneshot -av libtool</i>
+</pre>
+
+<p>
+古いC++アプリケーションにバイナリ互換を提供するために、
+<c>sys-libs/libstdc++-v3</c>をあなたのシステムにインストールする必要があります。
+</p>
+
+<pre caption="libstdc++-v3のインストール">
+# <i>emerge --oneshot sys-libs/libstdc++-v3</i>
+</pre>
+
+<p>
+ここでsystemターゲットに対して最初の再構築を実施し、次にworldターゲットを実施します。
+toolchain全体とシステムをサポートするファイル全体を再構築するので、
+これには、あなたのインストールしているパッケージの数に応じてとても長い時間がかかります。
+これはtoolchain自身を含む全てのパッケージが新しいtoolchainで確実に再構築されるのに必要です。
+</p>
+
+<pre caption="systemとworldを再構築する">
+# <i>emerge -e system</i>
+# <i>emerge -e world</i>
+</pre>
+
+<p>
+この時点で古いバージョンのGCCを削除しても安全です。
+</p>
+
+<pre caption="古いGCCの削除">
+# <i>emerge -aC =sys-devel/gcc-3.3*</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="first-install">
+<title>初めてインストールしたマシンでのGCCのアップグレード</title>
+<section>
+<title>はじめに</title>
+<body>
+
+<p>
+stage3のtarballを使ってシステムをインストールした後に、GCCのアップグレードを行うのは簡単な事です。
+新しくインストールしたユーザーが有利な点は、古いGCCに依存したソフトウェアが過剰にインストールされていない事です。
+下記の例は、GCC 3.3からGCC 3.4へのアップグレードです。
+他のバージョンのGCCからアップグレードする場合は、一部異なる部分があるでしょう。
+例えば、以下で<c>revdep-rebuild</c>で使用されるライブラリはGCC 3.3に特化していますが、
+同じように<c>libstdc++-v3</c>をインストールする必要があります。
+</p>
+
+<p>
+もしユーザーが、まだシステムにカスタマイズを加えていなければ、
+GCCの新しいバージョンにアップグレードするのは、わずかな手順しかありません。
+GCC 3.3から3.4へのアップグレードでは、二つの選択肢があります。
+しかし、GCC 3.3から3.4へのアップグレードでない場合は、二つの方法にほとんど違いが無いため、とても簡単です。
+<uri link="#first-install-revdep-rebuild">最初の方法</uri>は早くて<c>gentoolkit</c>にある<c>revdep-rebuild</c>ツールを利用する、上述の手順に似ています。
+revdep-rebuildを使う事により、実際にGCCライブラリに依存しているパッケージのみリビルドされます。
+一方<uri link="#first-install-emerge-e">2番目の方法</uri>は新たにインストールしたパッケージが新しいGCCにより再コンパイルされるため、時間がかかります。
+2番目の方法は、決して必要ではありませんが、完全なアップグレードを提供するためだけに、記述されています。
+</p>
+
+<p>
+最初の手順は、二つの方法で共通な手順で、みんなが完了すべきです。
+</p>
+
+<pre caption="GCCのアップグレード">
+# <i>emerge -uav gcc</i>
+<comment>("i686-pc-linux-gnu-3.4.5"の部分は、
+あなたがアップグレードしようとしているGCCバージョンとCHOSTの設定で読み替えてください)</comment>
+# <i>gcc-config i686-pc-linux-gnu-3.4.5</i>
+# <i>source /etc/profile</i>
+
+<comment>(libtoolのリビルド)</comment>
+# <i>emerge --oneshot -av libtool</i>
+</pre>
+
+<p>
+古いバイナリのC++アプリケーションに互換性を提供するため、
+<c>sys-libs/libstdc++-v3</c> をシステムにマージする必要があります。
+</p>
+
+<pre caption="libstdc++-v3のインストール">
+# <i>emerge --oneshot sys-libs/libstdc++-v3</i>
+</pre>
+
+</body>
+</section>
+
+<section id="first-install-revdep-rebuild">
+<title>revdep-rebuildの使用</title>
+<body>
+
+<p>
+この方法では、まだ<c>gentoolkit</c>をインストールしていないなら、
+まず最初にインストールする必要があります。
+リビルドすべきインストールされたパッケージを実際に検索するために<c>revdep-rebuild</c>を実行し、
+それらをリビルドします。
+</p>
+
+<pre caption="gentoolkitをインストールし、revdep-rebuildを実行する">
+# <i>emerge -an gentoolkit</i>
+# <i>revdep-rebuild --library libstdc++.so.5 -- -p -v</i>
+# <i>revdep-rebuild --library libstdc++.so.5</i>
+</pre>
+
+<note>
+古かったりmaskされていたりする理由でパッケージのバージョンが存在しない問題が発生する可能性があります。
+この場合、<c>revdep-rebuild</c>に<c>--package-names</c>オプションを使うのが良いでしょう。
+これにより、正確な名前とバージョンではなくパッケージ名に基づいて、パッケージの再コンパイルが行われます。
+</note>
+
+</body>
+</section>
+<section id="first-install-emerge-e">
+<title>emerge -eを使う</title>
+<body>
+
+<p>
+この方法は、新しいコンパイラでシステムの全てを確実にリビルドするため、大変遅いです。
+これは必要ないのですが、もしあなたがシステムのコンパイルに影響を与えるCFLAGSやmake.confの値の変更を行っていれば、有効です。
+</p>
+
+<p>
+最初のインストールの後にこれらを実行しているので、既にインストールされたシステム上でアップグレードをしているときに、
+<c>world</c>を再コンパイルする必要はありません。
+しかし、全てのパッケージを確実にアップデートするために、worldをsystemの代わりにアップデートする選択もできます。
+</p>
+
+<pre caption="systemのリビルド">
+# <i>emerge -e system</i>
+</pre>
+
+</body>
+</section>
+<section id="first-install-cleaning-up">
+<title>後始末</title>
+<body>
+
+<p>
+この時点で古いバージョンのGCCを削除しても安全です。
+<c>YOUR-NEW-GCC-VERSION</c>の部分は実際にアップグレードしたバージョンに置き換えてください。
+</p>
+
+<pre caption="後始末">
+# <i>emerge -aC "&lt;sys-devel/gcc-YOUR-NEW-GCC-VERSION"</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="common-pitfalls">
+<title>共通的な落とし穴</title>
+<section>
+<body>
+
+<p>
+アップグレード中は<c>distcc</c>を無効にすることが重要です。
+あなたのノードで複数のコンパイラバージョンを使うことは<e>ビルドで問題を起こすでしょう</e>。
+cacheオブジェクトはとにかく無効になるため、ccacheに対しては何かをする必要はありません。
+</p>
+
+<p>
+カーネルとカーネルモジュールに対しては、常に同じGCCバージョンを使用してください。
+いったんworldを新しいGCCで再構築したら、
+<c>app-emulation/qemu-softmmu</c>のような外部モジュールは、ロードに失敗します。
+これを修正するには、カーネルを新しいGCCで再構築してください。
+</p>
+
+<p>
+もしSPARCマシンでアップデートを行う場合は、worldを再構築した後に<c>silo -f</c>を確実に再実行して、
+起こりそうな問題を回避しましょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>よくあるエラーメッセージ</title>
+<body>
+
+<p>
+もしあなたのシステムが<e>libtool: link:
+`/usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.6/libstdc++.la' is not a valid libtool
+archive</e>と言うようなエラーを出すなら、
+<c>/sbin/fix_libtool_files.sh 3.3.6</c>を実行してください。
+("3.3.6"の部分はエラーメッセージで出力されるバージョン番号で読み替えてください)。
+</p>
+
+<p>
+<e>error: /usr/bin/gcc-config: line 632:
+/etc/env.d/gcc/i686-pc-linux-gnu-3.3.5: No such file or directory</e>と言うエラーが出る場合、
+<path>/etc/env.d/gcc/config-i686-pc-linux-gnu</path>を削除し、
+<c>gcc-config</c>を再度実行し、続けて<c>source /etc/profile</c>としてみてください。
+cross-compilerをセットアップしていない場合は、単にこれを実行してください。
+</p>
+
+<p>
+<c>emerge -e system</c> または <c>emerge -e world</c>の実行中にパッケージの構築に失敗した場合、
+<c>emerge --resume</c>で再開することができます。
+もしパッケージの構築に再度失敗するようなら、<c>emerge --resume --skipfirst</c>とすることでそのパッケージをスキップできます。
+この間に他のemergeを実行しないでください。
+さもなければ再開情報が失われてしまいます。
+</p>
+
+<p>
+コンパイラのアップグレード中に<e>spec failure: unrecognized spec option</e>というエラーが出た場合、
+デフォルトコンパイラに切り替えて、<c>GCC_SPECS</c>環境変数を削除し、
+GCCを再びアップグレードしてください
+</p>
+
+<pre caption="1番目のspecsを修復">
+# <i>gcc-config 1</i>
+# <i>source /etc/profile</i>
+# <i>unset GCC_SPECS</i>
+# <i>emerge -uav gcc</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+</guide>

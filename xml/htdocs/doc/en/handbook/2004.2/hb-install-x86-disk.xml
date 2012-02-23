@@ -1,0 +1,674 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-install-x86-disk.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.12</version>
+<date>September 25, 2004</date>
+
+<section>
+<title>Introduction to Block Devices</title>
+<subsection>
+<title>Block Devices</title>
+<body>
+
+<p>
+We'll take a good look at disk-oriented aspects of Gentoo Linux
+and Linux in general, including Linux filesystems, partitions and block devices.
+Then, once you're familiar with the ins and outs of disks and filesystems,
+you'll be guided through the process of setting up partitions and filesystems
+for your Gentoo Linux installation.
+</p>
+
+<p>
+To begin, we'll introduce <e>block devices</e>. The most famous block device is
+probably the one that represents the first IDE drive in a Linux system, namely
+<path>/dev/hda</path>. If your system uses SCSI or SATA drives, then your 
+first hard drive would be <path>/dev/sda</path>.
+</p>
+
+<p>
+The block devices above represent an abstract interface to the disk. User
+programs can use these block devices to interact with your disk without worrying
+about whether your drives are IDE, SCSI or something else. The program can
+simply address the storage on the disk as a bunch of contiguous,
+randomly-accessible 512-byte blocks.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Partitions</title>
+<body>
+
+<p>
+Although it is theoretically possible to use a full disk to house your Linux
+system, this is almost never done in practice. Instead, full disk block devices
+are split up in smaller, more manageable block devices. On x86 systems,
+these are called <e>partitions</e>. 
+</p>
+
+<p>
+Partitions are divided in three types:
+<e>primary</e>, <e>extended</e> and <e>logical</e>.
+</p>
+
+<p>
+A <e>primary</e> partition is a partition which has its information stored in
+the MBR (master boot record). As an MBR is very small (512 bytes) only four
+primary partitions can be defined (for instance, <path>/dev/hda1</path> to
+<path>/dev/hda4</path>).
+</p>
+
+<p>
+An <e>extended</e> partition is a special primary partition (meaning the
+extended partition must be one of the four possible primary partitions) which
+contains more partitions. Such a partition didn't exist originally, but as
+four partitions were too few, it was brought to life to extend the formatting
+scheme without losing backward compatibility.
+</p>
+
+<p>
+A <e>logical</e> partition is a partition inside the extended partition. Their
+definitions aren't placed inside the MBR, but are declared inside the extended
+partition. 
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Advanced Storage</title>
+<body>
+
+<p>
+The x86 LiveCDs provide support for EVMS and LVM2. EVMS and LVM2 increase the 
+flexibility offered by your partitioning setup. During the installation 
+instructions, we will focus on "regular" partitions, but it is still good to 
+know EVMS and LVM2 are supported as well.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Designing a Partitioning Scheme</title>
+<subsection>
+<title>Default Partitioning Scheme</title>
+<body>
+
+<p>
+If you are not interested in drawing up a partitioning scheme for your system,
+you can use the partitioning scheme we use throughout this book:
+</p>
+
+<table>
+<tr>
+  <th>Partition</th>
+  <th>Filesystem</th>
+  <th>Size</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><path>/dev/hda1</path></ti>
+  <ti>ext2</ti>
+  <ti>32M</ti>
+  <ti>Boot partition</ti>
+</tr>
+<tr>
+  <ti><path>/dev/hda2</path></ti>
+  <ti>(swap)</ti>
+  <ti>512M</ti>
+  <ti>Swap partition</ti>
+</tr>
+<tr>
+  <ti><path>/dev/hda3</path></ti>
+  <ti>ext3</ti>
+  <ti>Rest of the disk</ti>
+  <ti>Root partition</ti>
+</tr>
+</table>
+
+<p>
+If you are interested in knowing how big a partition should be, or even how 
+many partitions you need, read on. Otherwise continue now with partitioning 
+your disk by reading <uri link="#fdisk">Using fdisk to Partition your
+Disk</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>How Many and How Big?</title>
+<body>
+
+<p>
+The number of partitions is highly dependent on your environment. For instance,
+if you have lots of users, you will most likely want to have your
+<path>/home</path> separate as it increases security and makes backups easier.
+If you are installing Gentoo to perform as a mailserver, your 
+<path>/var</path> should be separate as all mails are stored inside 
+<path>/var</path>. A good choice of filesystem will then maximise your 
+performance. Gameservers will have a separate <path>/opt</path> as most gaming 
+servers are installed there. The reason is similar for <path>/home</path>: 
+security and backups.
+</p>
+
+<p>
+As you can see, it very much depends on what you want to achieve. Separate
+partitions or volumes have the following advantages:
+</p>
+
+<ul>
+<li>
+  You can choose the best performing filesystem for each partition or volume
+</li>
+<li>
+  Your entire system cannot run out of free space if one defunct tool is
+  continuously writing files to a partition or volume
+</li>
+<li>
+  If necessary, file system checks are reduced in time, as multiple checks can
+  be done in parallel (although this advantage is more with multiple disks than
+  it is with multiple partitions)
+</li>
+<li>
+  Security can be enhanced by mounting some partitions or volumes read-only, 
+  nosuid (setuid bits are ignored), noexec (executable bits are ignored) etc.
+</li>
+</ul>
+
+<p>
+However, multiple partitions have one big disadvantage: if not configured 
+properly, you might result in having a system with lots
+of free space on one partition and none on another. There is also a 15-partition
+limit for SCSI and SATA.
+</p>
+
+<p>
+As an example partitioning, we show you one for a 20Gb disk, used as a
+demonstration laptop (containing webserver, mailserver, gnome, ...):
+</p>
+
+<pre caption="Filesystem usage example">
+Filesystem    Type    Size  Used Avail Use% Mounted on
+/dev/hda5     ext3    509M  132M  351M  28% /
+/dev/hda2     ext3    5.0G  3.0G  1.8G  63% /home
+/dev/hda7     ext3    7.9G  6.2G  1.3G  83% /usr
+/dev/hda8     ext3   1011M  483M  477M  51% /opt
+/dev/hda9     ext3    2.0G  607M  1.3G  32% /var
+/dev/hda1     ext2     51M   17M   31M  36% /boot
+/dev/hda6     swap    516M   12M  504M   2% &lt;not mounted&gt;
+<comment>(Unpartitioned space for future usage: 2 Gb)</comment>
+</pre>
+
+<p>
+<path>/usr</path> is rather full (83% used) here, but once
+all software is installed, <path>/usr</path> doesn't tend to grow that much.
+For <path>/var</path>, people might think the assigned
+space is too much. However, Gentoo compiles all programs inside
+<path>/var/tmp/portage</path>, so you should have <path>/var</path> with at
+least 1G free if you don't want to compile big programs and at least 3G free if 
+compiling KDE or OpenOffice.org is no big deal for you.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="fdisk">
+<title>Using fdisk to Partition your Disk</title>
+<subsection>
+<body>
+
+<p>
+The following parts explain how to create the example partition layout 
+described previously, namely:
+</p>
+
+<table>
+<tr>
+  <th>Partition</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><path>/dev/hda1</path></ti>
+  <ti>Boot partition</ti>
+</tr>
+<tr>
+  <ti><path>/dev/hda2</path></ti>
+  <ti>Swap partition</ti>
+</tr>
+<tr>
+  <ti><path>/dev/hda3</path></ti>
+  <ti>Root partition</ti>
+</tr>
+</table>
+
+<p>
+Change your partition layout according to your own preference.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Viewing the Current Partition Layout</title>
+<body>
+
+<p>
+<c>fdisk</c> is a popular and powerful tool to split your disk into partitions.
+Fire up <c>fdisk</c> on your disk (in our example, we use
+<path>/dev/hda</path>):
+</p>
+
+<pre caption="Starting fdisk">
+# <i>fdisk /dev/hda</i>
+</pre>
+
+<p>
+Once in <c>fdisk</c>, you'll be greeted with a prompt that looks like this:
+</p>
+
+<pre caption="fdisk prompt">
+Command (m for help): 
+</pre>
+
+<p>
+Type <c>p</c> to display your disk's current partition configuration:
+</p>
+
+<pre caption="An example partition configuration">
+Command (m for help): <i>p</i>
+
+Disk /dev/hda: 240 heads, 63 sectors, 2184 cylinders
+Units = cylinders of 15120 * 512 bytes
+
+Device Boot    Start       End    Blocks   Id  System
+/dev/hda1             1        14    105808+  83  Linux
+/dev/hda2            15        49    264600   82  Linux swap
+/dev/hda3            50        70    158760   83  Linux
+/dev/hda4            71      2184  15981840    5  Extended
+/dev/hda5            71       209   1050808+  83  Linux
+/dev/hda6           210       348   1050808+  83  Linux
+/dev/hda7           349       626   2101648+  83  Linux
+/dev/hda8           627       904   2101648+  83  Linux
+/dev/hda9           905      2184   9676768+  83  Linux
+
+Command (m for help): 
+</pre>
+
+<p>
+This particular disk is configured to house seven Linux filesystems (each with a
+corresponding partition listed as "Linux") as well as a swap partition (listed
+as "Linux swap"). 
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Removing all Partitions</title>
+<body>
+
+<p>
+We will first remove all existing partitions from the disk. Type <c>d</c> to
+delete a partition. For instance, to delete an existing <path>/dev/hda1</path>:
+</p>
+
+<pre caption="Deleting a partition">
+Command (m for help): <i>d</i>
+Partition number (1-4): <i>1</i>
+</pre>
+
+<p>
+The partition has been scheduled for deletion. It will no longer show up if you
+type <c>p</c>, but it will not be erased until your changes have been saved. If
+you made a mistake and want to abort without saving your changes, type <c>q</c>
+immediately and hit enter and your partition will not be deleted.
+</p>
+
+<p>
+Now, assuming that you do indeed want to wipe out all the partitions on your
+system, repeatedly type <c>p</c> to print out a partition listing and then type
+<c>d</c> and the number of the partition to delete it. Eventually, you'll end 
+up with a partition table with nothing in it:
+</p>
+
+<pre caption="An empty partition table">
+Disk /dev/hda: 30.0 GB, 30005821440 bytes
+240 heads, 63 sectors/track, 3876 cylinders
+Units = cylinders of 15120 * 512 = 7741440 bytes
+
+Device Boot    Start       End    Blocks   Id  System
+
+Command (m for help):
+</pre>
+
+<p>
+Now that the in-memory partition table is empty, we're ready to create the
+partitions. We will use a default partitioning scheme as discussed previously.
+Of course, don't follow these instructions to the letter if you don't want the
+same partitioning scheme!
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Creating the Boot Partition</title>
+<body>
+
+<p>
+We first create a small boot partition. Type <c>n</c> to create a new partition,
+then <c>p</c> to select a primary partition, followed by <c>1</c> to select the
+first primary partition. When prompted for the first cylinder, hit enter. When
+prompted for the last cylinder, type <c>+32M</c> to create a partition 32 Mbyte
+in size:
+</p>
+
+<pre caption="Creating the boot partition">
+Command (m for help): <i>n</i>
+Command action
+  e   extended
+  p   primary partition (1-4)
+<i>p</i>
+Partition number (1-4): <i>1</i>
+First cylinder (1-3876, default 1): <comment>(Hit Enter)</comment>
+Using default value 1
+Last cylinder or +size or +sizeM or +sizeK (1-3876, default 3876): <i>+32M</i>
+</pre>
+
+<p>
+Now, when you type <c>p</c>, you should see the following partition printout:
+</p>
+
+<pre caption="Created boot partition">
+Command (m for help): <i>p</i>
+
+Disk /dev/hda: 30.0 GB, 30005821440 bytes
+240 heads, 63 sectors/track, 3876 cylinders
+Units = cylinders of 15120 * 512 = 7741440 bytes
+
+Device Boot    Start       End    Blocks   Id  System
+/dev/hda1          1        14    105808+  83  Linux
+</pre>
+
+<p>
+We need to make this partition bootable. Type <c>a</c> to toggle the bootable
+flag on a partition and select <c>1</c>. If you press <c>p</c> again, you will 
+notice that an <path>*</path> is placed in the "Boot" column.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Creating the Swap Partition</title>
+<body>
+
+<p>
+Let's now create the swap partition. To do this, type <c>n</c> to create a new 
+partition, then <c>p</c> to tell fdisk that you want a primary partition. Then 
+type <c>2</c> to create the second primary partition, <path>/dev/hda2</path> in
+our case. When prompted for the first cylinder, hit enter. When prompted for 
+the last cylinder, type <c>+512M</c> to create a partition 512MB in size. After
+you've done this, type <c>t</c> to set the partition type, <c>2</c> to select 
+the partition you just created and then type in <c>82</c> to set the partition 
+type to "Linux Swap". After completing these steps, typing <c>p</c> should
+display a partition table that looks similar to this:
+</p>
+
+<pre caption="Partition listing after creating a swap partition">
+Command (m for help): <i>p</i>
+
+Disk /dev/hda: 30.0 GB, 30005821440 bytes
+240 heads, 63 sectors/track, 3876 cylinders
+Units = cylinders of 15120 * 512 = 7741440 bytes
+
+Device Boot    Start       End    Blocks   Id  System
+/dev/hda1 *        1        14    105808+  83  Linux
+/dev/hda2         15        81    506520   82  Linux swap
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Creating the Root Partition</title>
+<body>
+
+<p>
+Finally, let's create the root partition. To do this, type <c>n</c> to create a 
+new partition, then <c>p</c> to tell fdisk that you want a primary partition. 
+Then type <c>3</c> to create the third primary partition, <path>/dev/hda3</path>
+in our case. When prompted for the first cylinder, hit enter. When prompted for
+the last cylinder, hit enter to create a partition that takes up the rest of the
+remaining space on your disk. After completing these steps, typing <c>p</c> 
+should display a partition table that looks similar to this:
+</p>
+
+<pre caption="Partition listing after creating the root partition">
+Command (m for help): <i>p</i>
+
+Disk /dev/hda: 30.0 GB, 30005821440 bytes
+240 heads, 63 sectors/track, 3876 cylinders
+Units = cylinders of 15120 * 512 = 7741440 bytes
+
+Device Boot    Start       End    Blocks   Id  System
+/dev/hda1 *        1        14    105808+  83  Linux
+/dev/hda2         15        81    506520   82  Linux swap
+/dev/hda3         82      3876  28690200   83  Linux
+</pre>
+
+
+</body>
+</subsection>
+<subsection>
+<title>Saving the Partition Layout</title>
+<body>
+
+<p>
+To save the partition layout and exit <c>fdisk</c>, type <c>w</c>.
+</p>
+
+<pre caption="Save and exit fdisk">
+Command (m for help): <i>w</i>
+</pre>
+
+<p>
+Now that your partitions are created, you can now continue with <uri
+link="#filesystems">Creating Filesystems</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="filesystems">
+<title>Creating Filesystems</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Now that your partitions are created, it is time to place a filesystem on them. 
+If you don't care about what filesystem to choose and are happy with what we use
+as default in this handbook, continue with <uri 
+link="#filesystems-apply">Applying a Filesystem to a Partition</uri>.
+Otherwise read on to learn about the available filesystems...
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Filesystems?</title>
+<body>
+
+<p>
+The Linux kernel supports various filesystems. We'll explain ext2, ext3,
+ReiserFS, XFS and JFS as these are the most commonly used filesystems on Linux
+systems.
+</p>
+
+<p>
+<b>ext2</b> is the tried and true Linux filesystem but doesn't have metadata
+journaling, which means that routine ext2 filesystem checks at startup time can
+be quite time-consuming. There is now quite a selection of newer-generation
+journaled filesystems that can be checked for consistency very quickly and are
+thus generally preferred over their non-journaled counterparts. Journaled
+filesystems prevent long delays when you boot your system and your filesystem
+happens to be in an inconsistent state.
+</p>
+
+<p>
+<b>ext3</b> is the journaled version of the ext2 filesystem, providing metadata
+journaling for fast recovery in addition to other enhanced journaling modes like
+full data and ordered data journaling. ext3 is a very good and reliable
+filesystem. It has an additional hashed b-tree indexing option that enables 
+high performance in almost all situations. In short, ext3 is an excellent 
+filesystem.
+</p>
+
+<p>
+<b>ReiserFS</b> is a B*-tree based filesystem that has very good overall 
+performance and greatly outperforms both ext2 and ext3 when dealing with small 
+files (files less than 4k), often by a factor of 10x-15x. ReiserFS also scales 
+extremely well and has metadata journaling. As of kernel 2.4.18+, ReiserFS is 
+solid and usable as both general-purpose filesystem and for extreme cases such 
+as the creation of large filesystems, the use of many small files, very large 
+files and directories containing tens of thousands of files. 
+</p>
+
+<p>
+<b>XFS</b> is a filesystem with metadata journaling which comes with a robust
+feature-set and is optimized for scalability. We only recommend using this
+filesystem on Linux systems with high-end SCSI and/or fibre channel storage and
+an uninterruptible power supply. Because XFS aggressively caches in-transit data
+in RAM, improperly designed programs (those that don't take proper precautions
+when writing files to disk and there are quite a few of them) can lose a good
+deal of data if the system goes down unexpectedly.
+</p>
+
+<p>
+<b>JFS</b> is IBM's high-performance journaling filesystem. It has recently 
+become production-ready and there hasn't been a sufficient track record to 
+comment positively nor negatively on its general stability at this point.
+</p>
+
+</body>
+</subsection>
+<subsection id="filesystems-apply">
+<title>Applying a Filesystem to a Partition</title>
+<body>
+
+<p>
+To create a filesystem on a partition or volume, there are tools available for 
+each possible filesystem:
+</p>
+
+<table>
+<tr>
+  <th>Filesystem</th>
+  <th>Creation Command</th>
+</tr>
+<tr>
+  <ti>ext2</ti>
+  <ti><c>mke2fs</c></ti>
+</tr>
+<tr>
+  <ti>ext3</ti>
+  <ti><c>mke2fs -j</c></ti>
+</tr>
+<tr>
+  <ti>reiserfs</ti>
+  <ti><c>mkreiserfs</c></ti>
+</tr>
+<tr>
+  <ti>xfs</ti>
+  <ti><c>mkfs.xfs</c></ti>
+</tr>
+<tr>
+  <ti>jfs</ti>
+  <ti><c>mkfs.jfs</c></ti>
+</tr>
+</table>
+
+<p>
+For instance, to have the boot partition (<path>/dev/hda1</path> in our
+example) in ext2 and the root partition (<path>/dev/hda3</path> in our example)
+in ext3 (as in our example), you would use:
+</p>
+
+<pre caption="Applying a filesystem on a partition">
+# <i>mke2fs /dev/hda1</i>
+# <i>mke2fs -j /dev/hda3</i>
+</pre>
+
+<p>
+Now create the filesystems on your newly created partitions (or logical
+volumes).
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating the Swap Partition</title>
+<body>
+
+<p>
+<c>mkswap</c> is the command that is used to initialize swap partitions:
+</p>
+
+<pre caption="Creating a Swap signature">
+# <i>mkswap /dev/hda2</i>
+</pre>
+
+<p>
+To activate the swap partition, use <c>swapon</c>:
+</p>
+
+<pre caption="Activating the swap partition">
+# <i>swapon /dev/hda2</i>
+</pre>
+
+<p>
+Create and activate the swap now.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Mounting</title>
+<body>
+
+<p>
+Now that your partitions are initialized and are housing a filesystem, it is
+time to mount those partitions. Use the <c>mount</c> command. Don't forget to
+create the necessary mount directories for every partition you created. As an
+example we mount the root and boot partition:
+</p>
+
+<pre caption="Mounting partitions">
+# <i>mount /dev/hda3 /mnt/gentoo</i>
+# <i>mkdir /mnt/gentoo/boot</i>
+# <i>mount /dev/hda1 /mnt/gentoo/boot</i>
+</pre>
+
+<note>
+If you want your <path>/tmp</path> to reside on a separate partition, be sure to
+change its permissions after mounting: <c>chmod 1777 /mnt/gentoo/tmp</c>. This
+also holds for <path>/var/tmp</path>.
+</note>
+
+<p>
+We will also have to mount the proc filesystem (a virtual interface with the 
+kernel) on <path>/proc</path>. But first we will need to place our files on the partitions.
+</p>
+
+<p>
+Continue with <uri link="?part=1&amp;chap=5">Installing the Gentoo
+Installation Files</uri>.
+</p>
+
+</body>
+</section>
+</sections>

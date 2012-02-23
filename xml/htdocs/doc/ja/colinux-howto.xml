@@ -1,0 +1,466 @@
+﻿<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/colinux-howto.xml,v 1.7 2006/03/07 19:15:26 idani Exp $ -->
+
+<guide link="/doc/ja/colinux-howto.xml" lang="ja">
+<title>Gentooを稼動させるためのcoLinux設定方法</title>
+<author title="Author">
+  IWBCMAN
+</author>
+<author title="Author">
+  janlaur
+</author>
+<author title="Editor">
+  <mail link="joshua@sungentoo.homeunix.com">Joshua Preston</mail>
+</author>
+<author title="Editor">
+  <mail link="avenj@gentoo.org">Jon Portnoy</mail>
+</author>
+<author title="翻訳"><mail link="mignon@gentoo.gr.jp">武田洋之</mail>
+</author>
+<abstract>
+このHOWTOでは、Windowsマシン上でLinuxをWindowsのスレッドとして起動することが可能なcoLinuxの簡単なセットアップの仕方を提示します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+<license/>
+<!-- Original revision: 1.10 -->
+
+<version>1.4</version>
+<date>2005-07-26</date>
+
+<chapter>
+<title>導入</title>
+<section>
+<title>coLinuxとは何か？</title>
+<body>
+
+<p>
+coLinuxとは、Windowsのデーモンプログラムです。
+LinuxカーネルをWindowsのネイティブスレッドとして実行するために開発され、
+実際LinuxをWindows上でネイティブに動作させることができます。
+</p>
+
+<p>
+あなたの主な関心事は、恐らくパフォーマンスでしょう。
+Xアプリケーションのパフォーマンスは悪いですが、使うことは可能です。
+一般的なアプリケーションは、本当のLinuxと同等の速度で動作します。
+</p>
+
+<warn>
+coLinuxは、まだ開発の初期段階です。
+十分に動作しますが、サポートされていない多くの機能があります。
+</warn>
+
+<p>
+このHOWTOは、IWBCMANとjanlaurによって<uri link="http://forums.gentoo.org">Gentooフォーラム</uri> で提供されている、2つのすばらしいHOWTOを結合し、編集したものです。
+これらの議論については、以下のリンクからたどることができます:
+</p>
+
+<ul>
+  <li><uri link="http://forums.gentoo.org/viewtopic.php?t=162420">IWBCMANによる投稿</uri></li>
+  <li><uri link="http://forums.gentoo.org/viewtopic.php?t=163154">janlaurによる投稿</uri></li>
+</ul>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>インストール</title>
+<section>
+<title>coLinuxの取得</title>
+<body>
+
+<warn>
+coLinuxを使うには、Windows 2000、2003、またはXP (Home/Professional)でなければなりません。
+</warn>
+
+<p>
+<uri link="http://colinux.org/snapshots/">coLinux.org</uri>から最新のスナップショットをダウンロードしましょう。
+</p>
+
+<note>
+このHOWTOでは、coLinux-20040417.exeを使用しています。
+スナップショットには、複数のバグフィックスも含まれていますので、
+(正式リリースではなく)スナップショットを使うことをお奨めします。
+</note>
+
+<p>
+ダウンロードした.EXEファイルは、インストーラープログラムで、
+基本的なディストリビューションイメージ(Gentoo/Debian/Fedora)をSourceForge からダウンロードさせることも可能です。
+</p>
+
+<p>
+.EXEを実行し、必要ならデフォルト値を変更してください。
+もちろん、ディストリビューションを選択する場面では、Gentooを選びます。
+</p>
+
+<p>
+イメージファイルは、インストール先のディレクトリに<path>gentoo-i586-ext3-2g-deluxe.bz2</path>という名前で保存されます。
+</p>
+
+<p>
+この新しい仮想パーティションファイルは、stage3からインストールしたGentooシステムが含まれています。
+実際には、単にstage3からインストールされた状態ではなく、XFree86、XFCE4、Firefox、GAIM、そしてXChatも含まれています。
+そして、この仮想パーティションはext3でフォーマットされています。
+</p>
+
+<ul>
+  <li>
+    このファイルを2GBの空きがあるWinodwsドライブに解凍してください。
+  </li>
+  <li>もし、このファイルを解凍したディスクに空き容量がないなら、</li>
+  <li>解凍後は、.bz2ファイルは削除してかまいません。</li>
+</ul>
+
+<p>
+もしWindowsでbz2を解凍するツールを持っていないならWinrarがいいかもしれません。
+<uri link="http://wiki.colinux.org/cgi-bin/NiceTools">coLinux
+Nice Tools page</uri>を訪れて、イメージファイルを展開するツールと仮想スワップパーティションを作成するツールを探してください。
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>設定</title>
+<section>
+<title>設定ファイルの編集</title>
+<body>
+
+<p>
+設定ファイルは1つだけです。インストールしたディレクトリにある<path>default.colinux.xml</path>というファイルがそれです。
+お好みのエディタで開き、次のように編集してください。
+(訳注:日本語のコメントを書く場合は、XMLのルールに従って、encodingで指定される文字コードで保存するように注意してください。ただし、私はUTF-8以外は試していません。)
+</p>
+
+<pre caption="default.colinux.xml">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;colinux&gt;
+    <comment>&lt;!-- あなたの環境ではパスは異なるでしょう --&gt;</comment>
+    &lt;block_device index="0" path="\DosDevices\e:\gentoo-i586-ext3-2g-deluxe" enabled="true"&gt;&lt;/block_device&gt;
+    &lt;bootparams&gt;root=/dev/cobd0&lt;/bootparams&gt;
+    &lt;image path="vmlinux"&gt;&lt;/image&gt;
+    <comment>&lt;!-- サイズは調整してください --&gt;</comment>
+    &lt;memory size="256"&gt;&lt;/memory&gt;
+    <comment>&lt;!-- name= には、ネットワーク接続にあるTAPデバイスと正確に同じ名前にしてください!--&gt;</comment>
+    &lt;network index="0" type="tap" name="TAP"&gt;&lt;/network&gt;
+&lt;/colinux&gt;
+</pre>
+
+<p>
+イメージへを解凍した場所へパスを変更し、coLinuxに対して割り当てるメモリのサイズを変更してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>ネットワークの設定</title>
+<body>
+
+<p>
+現時点で、colinux-daemon.exeをダブルクリックすればcoLinuxを起動できますが
+ほとんどの人は、ネットワークを必要とするでしょう。
+立ち上げる前にまずこれを設定してしまいます。
+仮想ネットワークアダプタをインストールしている必要があります。
+(訳注:最新のスナップショットcoLinux-20040509.exeでは次の手順を踏まなくても、インストーラのデフォルトの設定でTAPインタフェースをインストールしてくれます。)
+</p>
+
+<ul>
+  <li>コントロールパネルから「ハードウェアの追加」を選択して「次へ」をクリックします</li>
+  <li>
+    "はい、ハードウェアを接続しています。(Y)"を選択し、"次へ"をクリックしてください。
+  </li>
+  <li>
+    次の画面では、ハードウェアのリストを一番下までスクロールしていって、
+    "新しいハードウェアデバイスの追加"を選択肢、"次へ"をクリックします。
+  </li> 
+  <li>
+    "一覧から選択したハードウェアをインストールする(詳細)(M)"を選択肢、"次へ"をクリックします。
+  </li>
+  <li>"ネットワークアダプタ"を選択し"次へ"をクリックします。
+  </li>
+  <li>
+    "ディスク使用(H)..."をクリックし、coLinuxを解凍した場所までたどります。
+    "netdriver"ディレクトリに入ります。ファイルが一つだけあるはずです。
+  </li>
+  <li>それを選択して"開く"をクリックします</li>
+</ul>
+
+<p>
+これで仮想ネットワークアダプタが設定されました。
+仮想ネットワークアダプタは、既にあなたのシステムにある他のアダプタと同じように設定することができます。
+</p>
+
+<ul>
+  <li>"コントロールパネル->ネットワーク接続"とたどります</li>
+  <li>
+    インターネットへ接続されているインタフェースをクリックし、
+    次にCTRLを押しながら新しくインストールしたTAPネットワーク接続をクリックします。
+    (訳注:つまり両方を同時に選択するということ)
+  </li>
+  <li>右クリックして、"ブリッジ接続(G)"を選択します。</li>
+</ul>
+
+<p>
+Windowsはネットワークブリッジを作成するはずです。
+もし、インターネットへの接続が有効であれば、恐らくちゃんと動いている証拠です。
+(訳注:ブリッジ接続ができるのはWindowsXPだけです。Windows2000では、coLinuxからインターネットなど外部ネットワークへ接続するにはNATしてやる必要があります。WindowsでNATするには、例えば"ローカルエリア接続"を右クリックして、プロパティ->詳細->インターネット接続の共有のチェックを入れてください。)
+</p>
+
+</body>
+</section>
+<section>
+<title>起動</title>
+<body>
+
+<p>
+さあこれでcolinux-daemon.exeを起動する準備ができました。
+マジックを見てみましょう。
+XFree86や、XFCE4、GAIM、kernel-2.4.26、他のにもあなたが望むような基本的なものがインストールされたGentooシステムが起動するのを見ることができるでしょう。
+</p>
+
+<p>
+もしログインしたら、最初にいくつかやっておくことがあります。
+</p>
+
+<ul>
+  <li>パスワードなしでrootとしてログインし、rootのパスワードを設定します。</li>
+  <li>ネットワークが動作しているか確認します。</li>
+  <li>sshdを起動します。Puttyでログインします(ターミナル種別にはcygwinを使ってください)。
+  </li>
+</ul>
+
+<p>
+おそらく、あなたのシステムをアップデートしたくなるでしょう。それではアップデートしてしまいましょう:
+</p>
+
+<pre caption="設定の仕上げ">
+# <i>emerge --sync</i>
+# <i>env-update &amp;&amp; source /etc/profile</i>
+<comment>(もしvncを使いたいなら)</comment>
+# <i>emerge tightvnc</i>
+</pre>
+
+<p>
+さて、ここでXの設定をする必要があります。
+もし適用できるなら単純にあなたのLinuxからcoLinuxへ<path>/etc/X11/XF86Config</path>をコピーしてくるだけです。
+</p>
+
+<note>
+Xと一緒に配布されているドライバしか使うことはできません(すなわち、nvidia-glx/kernelは使えません)。
+また、color depthは16しか動作しないように思えます。
+したがって、少し設定をいじる必要があるかもしれません。
+Windowsのビデオカードに直接はアクセスできないということを覚えておいてください。
+そのため、どこか他のところからコピーしてくるか、手動で作成する必要があります。
+あるいは、KNOPPIXで起動して、KNOPPIXにあなたのマシンにあった<path>XF86Config</path>ファイルを作らせてもよいでしょう。
+</note>
+
+<p>
+<path>XF86Configの編集が終わったら、~/.vnc/xstartup</path>を作成しましょう:
+</p>
+
+<pre caption="Sample ~/.vnc/xstartup">
+startxfce4 &amp;
+</pre>
+
+<p>
+では、vncserverを起動してみましょう。
+パスワードを聞かれると思いますので、作成して、記憶しておいてください。
+</p>
+
+<pre caption="vncserverを起動する">
+$ <i>vncserver -geometry "1024x768" -depth 16</i>
+</pre>
+
+<p>
+Wｉndowsから接続するには、Windows用のVNCをダウンロードしなければなりません。
+vncviewrを起動し、パスワードと共に、仮想ネットワークアダプタに(例えば、192.168.0.X:1のような)IPアドレスを振ります。
+もしうまく行けば、vncviewerは、XFCE4デスクトップを表示するでしょう。楽しんで!
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>一歩進んだ話題</title>
+<section>
+<title>スワップパーティションの追加</title>
+<body>
+
+<p>
+スワップファイルを<uri link="http://gniarf.nerim.net/colinux/swap/">here</uri>
+からダウンロードしてください(ファイル名はswapsizeです)。容量に空きのあるところに展開し、
+<path>default.colinux.xml</path>に次の行を追加してください:
+</p>
+
+<pre caption="スワップドライブの追加">
+    <comment>&lt;-- index="1"は、/dev/cobd1にマッピングされます --&gt;</comment>
+    <comment>&lt;-- 訳注:この例はスワップファイルがswap-fileという名前でe:\ドライブにある場合です --&gt;</comment>
+    &lt;block_device index="1" path="\DosDevices\e:\swap-file" enabled="true"&gt;&lt;/block_device&gt;
+</pre>
+
+<p>
+それでは、coLinuxを(再)起動し、<c>mkswap</c>を実行してください:
+</p>
+
+<pre caption="スワップパーティションの設定">
+# <i>mkswap /dev/cobd1</i>
+</pre>
+
+<p>
+<path>/etc/fstab</path>に次の行を追加する必要があります:
+</p>
+
+<pre caption="Add to /etc/fstab">
+/dev/cobd1    none    swap    sw    0    0
+</pre>
+
+<p>
+それでは、スワップを再起動なしに有効にしましょう。
+</p>
+
+<pre caption="スワップを有効にする">
+# <i>swapon -a</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>coLinuxから、Linuxパーティションにアクセスする</title>
+<body>
+
+<p>
+coLinuxウェブサイトは<uri 
+link="http://wiki.colinux.org/cgi-bin/GettingStarted">基本原理</uri>を提供しています。
+読み終えたら、設定ファイルは次のようになるでしょう:
+</p>
+
+<pre caption="Linuxパーティションにアクセスするためのdefault.colinux.xml">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;colinux&gt;
+    &lt;block_device index="0" path="\DosDevices\e:\gentoo-i586-ext3-2g-deluxe" enabled="true"&gt;&lt;/block_device&gt;
+    &lt;block_device index="1" path="\DosDevices\e:\swap-file" enabled="true"&gt;&lt;/block_device&gt;
+    <comment>&lt;!-- あなたの環境のディスク構成によって、パスの部分などは異なります --&gt;</comment>
+    &lt;block_device index="2" path="\Device\Harddisk0\Partition5" enabled="true"&gt;&lt;/block_device&gt; 
+    &lt;bootparams&gt;root=/dev/cobd0&lt;/bootparams&gt;
+    &lt;image path="vmlinux"&gt;&lt;/image&gt;
+    &lt;memory size="256"&gt;&lt;/memory&gt;
+    &lt;network index="0" type="tap" name="TAP"&gt;&lt;/network&gt;
+&lt;/colinux&gt;
+</pre>
+
+
+<p>
+設定を反映するには、coLinuxを(再)起動する必要があります。
+You will have to (re)start coLinux to let the changes be taken into account. 
+"\Device\Harddisk0\Partition5"に/dev/cobd2を通してアクセスできるはずです。
+</p>
+
+<pre caption="Linuxパーティションのマウント">
+# <i>mount /dev/cobd2 /mnt/linux</i>
+</pre>
+
+<impo>
+Windowsが使用していないパーティションにのみうまく動作することを覚えておいてください。
+Windowsが使用しているパーティションについては、smbfsを通してアクセスする必要があります、。
+</impo>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>Q&amp;A</title>
+<section>
+<title>どのUSEフラグを使うべきですか?</title>
+<body>
+
+<p>
+USEフラグは、ネイティブLinuxシステムと全く同様です。
+</p>
+
+</body>
+</section>
+<section>
+<title>ダイアルアップ接続を共有できますか?</title>
+<body>
+
+<p>
+Linuxネットワークを外部のネットワークに接続するには、インターネット接続の共有を使います。
+TAP接続をPPP接続にブリッジすることで実現します。
+</p>
+
+</body>
+</section>
+<section>
+<title>Linuxカーネルは、ハードウェアにアクセス可能ですか?</title>
+<body>
+
+<p>
+coLinuxは、必要とされるいろいろな種類のハードウェアをエミュレートします。
+例えば、ディスクアクセス、ネットワークなどです。
+まだサポートされていないのはUSBと、グラフィックカードへの直接アクセス、そしてサウンドカードへのアクセスです。
+現在、coLinuxでは、USBを使えるようにするために作業中です(ただし、USBキーボードとUSBマウスは除きます)。
+</p>
+
+</body>
+</section>
+<section>
+<title>coLinuxに代わるものはありますか?</title>
+<body>
+
+<p>
+はい!
+</p>
+
+<ul>
+<li><uri link="http://www.vmware.com/">VMWare</uri></li>
+<li><uri link="http://bochs.sourceforge.net/">Bochs</uri></li>
+</ul>
+
+<p>
+(訳注:User Mode LinuxのWindowsへの移植である<uri link="http://umlwin32.sourceforge.net/">umlwin32</uri>というプロジェクトもあります。)
+</p>
+</body>
+</section>
+<section>
+<title>coLinuxはカーネル2.6で動作しますか?</title>
+<body>
+
+<p>
+現時点では、「いいえ」です。
+Windowsとリソースを共有したり、デバイスをエミュレートするためにあてるパッチは、2.4カーネルをベースにしています。
+</p>
+
+</body>
+</section>
+<section>
+<title>なぜXは動作しないのですか?</title>
+<body>
+
+<p>
+ネイティブなXのサポートはありません。
+vncもしくは、CygwinのX11を使わなければなりません。
+このHOWTOにある指示に従って設定してください。
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>最後に</title>
+<section>
+<body>
+
+<p>
+coLinuxが秘める可能性はまさに驚嘆すべきものです。
+Apache、Samba、DHCP、mail、distcc、NFS、<e>どんな</e>サーバーでもcoLinux上で動かすことができます。
+デバイスやディスクアクセスを除けば、Windows上でLinuxが動いているなんて誰にもわかりません。
+これは本当に驚くべきことです。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

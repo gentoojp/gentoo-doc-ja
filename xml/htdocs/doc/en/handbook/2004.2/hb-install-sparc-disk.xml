@@ -1,0 +1,646 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-install-sparc-disk.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.9</version>
+<date>October 21, 2004</date>
+
+<section>
+<title>Introduction to Block Devices</title>
+<subsection>
+<title>Block Devices</title>
+<body>
+
+<p>
+We'll take a good look at some of the disk-oriented aspects of Gentoo Linux
+and Linux in general, including Linux filesystems, partitions, and block
+devices. Then, once you're familiar with the ins and outs of disks and
+filesystems, you'll be guided through the process of setting up partitions
+and filesystems for your Gentoo Linux installation.
+</p>
+
+<p>
+To begin, we introduce <e>block devices</e>. The most typical block device is
+probably the one that represents the first SCSI hard disk in a Linux system,
+namely <path>/dev/sda</path>.
+</p>
+
+<p>
+Block devices represent an abstract interface to the disk. User programs can
+use these block devices to interact with your disk without worrying about
+whether your drives are IDE, SCSI, or something else. The program can simply
+address the storage on the disk as a bunch of contiguous, randomly-accessible
+512-byte blocks.
+</p>
+
+<p>
+Block devices show up as entries in <path>/dev/</path>. Typically, the first
+SCSI drive is named <path>/dev/sda</path>, the second <path>/dev/sdb</path>,
+and so on.  IDE drives are named similarly, however, they are prefixed by hd-
+instead of sd-. If you are using IDE drives, the first one will be named
+<path>/dev/hda</path>, the second <path>/dev/hdb</path>, and so on.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Partitions</title>
+<body>
+
+<p>
+Although it is theoretically possible to use the entire disk to house your Linux
+system, this is almost never done in practice. Instead, full disk block devices
+are split up in smaller, more manageable block devices. These are known as
+<e>partitions</e> or <e>slices</e>.
+</p>
+
+<p>
+The first partition on the first SCSI disk is <path>/dev/sda1</path>, the second
+<path>/dev/sda2</path> and so on.  Similarly, the first two partitions on the
+first IDE disk are <path>/dev/hda1</path> and <path>/dev/hda2</path>.
+</p>
+
+<p>
+The third partition on Sun systems is set aside as a special "whole disk"
+slice. This partition must not contain a file system.
+</p>
+
+<p>
+Users who are used to the DOS partitioning scheme should note that Sun
+disklabels do not have "primary" and "extended" partitions. Instead, up to
+eight partitions are available per drive, with the third of these being
+reserved.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Designing a Partitioning Scheme</title>
+<subsection>
+<title>Default Partitioning Scheme</title>
+<body>
+
+<p>
+If you are not interested in drawing up a partitioning scheme,
+the table below suggests a suitable starting point for most systems. For
+IDE-based systems, substitute <c>hda</c> for <c>sda</c> in the following.
+</p>
+
+<p>
+Note that a separate <path>/boot</path> partition is generally <e>not</e>
+recommended on SPARC, as it complicates the bootloader configuration.
+</p>
+
+<table>
+<tr>
+  <th>Partition</th>
+  <th>Filesystem</th>
+  <th>Size</th>
+  <th>Mount Point</th>
+  <th>Description</th>
+</tr>
+<tr>
+    <ti>/dev/sda1</ti>
+    <ti>ext3</ti>
+    <ti>&lt;2 GByte</ti>
+    <ti>/</ti>
+    <ti>
+      Root partition. For all sparc32 systems, and sparc64 systems with older
+      OBP versions, this <e>must</e> be less than 2 GBytes in size, and the first
+      partition on the disk.
+    </ti>
+</tr>
+<tr>
+    <ti>/dev/sda2</ti>
+    <ti>swap</ti>
+    <ti>512 MBytes</ti>
+    <ti>none</ti>
+    <ti>
+      Swap partition. For bootstrap and certain larger compiles, at least 512
+      MBytes of RAM (including swap) is required.
+    </ti>
+</tr>
+<tr>
+    <ti>/dev/sda3</ti>
+    <ti>none</ti>
+    <ti>Whole disk</ti>
+    <ti>none</ti>
+    <ti>Whole disk partition. This is required on SPARC systems.</ti>
+</tr>
+<tr>
+    <ti>/dev/sda4</ti>
+    <ti>ext3</ti>
+    <ti>at least 2 GBytes</ti>
+    <ti>/usr</ti>
+    <ti>
+      /usr partition. Applications are installed here. By default this partition
+      is also used for Portage data.
+    </ti>
+</tr>
+<tr>
+    <ti>/dev/sda5</ti>
+    <ti>ext3</ti>
+    <ti>at least 1GByte</ti>
+    <ti>/var</ti>
+    <ti>
+      /var partition. Used for program-generated data. By default Portage uses
+      this partition for temporary space whilst compiling. Certain larger
+      applications such as Mozilla and OpenOffice.org can require over 1 GByte
+      of temporary space here when building.
+    </ti>
+</tr>
+<tr>
+    <ti>/dev/sda6</ti>
+    <ti>ext3</ti>
+    <ti>remaining space</ti>
+    <ti>/home</ti>
+    <ti>/home partition. Used for users' home directories.</ti>
+</tr>
+</table>
+
+</body>
+</subsection>
+</section>
+
+<section id="fdisk">
+<title>Using fdisk to Partition your Disk</title>
+<subsection>
+<body>
+
+<p>
+The following parts explain how to create the example partition layout described
+previously, namely:
+</p>
+
+<table>
+<tr>
+  <th>Partition</th>
+  <th>Description</th>
+</tr>
+<tr>
+    <ti>/dev/sda1</ti>
+    <ti>/</ti>
+</tr>
+<tr>
+    <ti>/dev/sda2</ti>
+    <ti>swap</ti>
+</tr>
+<tr>
+    <ti>/dev/sda3</ti>
+    <ti>whole disk slice</ti>
+</tr>
+<tr>
+    <ti>/dev/sda4</ti>
+    <ti>/usr</ti>
+</tr>
+<tr>
+    <ti>/dev/sda5</ti>
+    <ti>/var</ti>
+</tr>
+<tr>
+    <ti>/dev/sda6</ti>
+    <ti>/home</ti>
+</tr>
+</table>
+
+<p>
+Change the partition layout as required. Remember to keep the root partition
+entirely within the first 2 GBytes of the disk for older systems. There is also
+a 15-partition limit for SCSI and SATA.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Firing up fdisk</title>
+<body>
+
+<p>
+Start <c>fdisk</c> with your disk as argument:
+</p>
+
+<pre caption="Starting fdisk">
+# <i>fdisk /dev/sda</i>
+</pre>
+
+<p>
+You should be greeted with the fdisk prompt:
+</p>
+
+<pre caption="The fdisk prompt">
+Command (m for help):
+</pre>
+
+<p>
+To view the available partitions, type in <c>p</c>:
+</p>
+
+<pre caption="Listing available partitions">
+Command (m for help): <i>p</i>
+
+Disk /dev/sda (Sun disk label): 64 heads, 32 sectors, 8635 cylinders
+Units = cylinders of 2048 * 512 bytes
+
+   Device Flag    Start       End    Blocks   Id  System
+/dev/sda1             0       488    499712   83  Linux native
+/dev/sda2           488       976    499712   82  Linux swap
+/dev/sda3             0      8635   8842240    5  Whole disk
+/dev/sda4           976      1953   1000448   83  Linux native
+/dev/sda5          1953      2144    195584   83  Linux native
+/dev/sda6          2144      8635   6646784   83  Linux native
+</pre>
+
+<p>
+Note the <c>Sun disk label</c> in the output. If this is missing, the disk is
+using the DOS-partitioning, not the Sun partitioning. In this case, use <c>s</c>
+to ensure that the disk has a sun partition table:
+</p>
+
+<pre caption="Creating a Sun Disklabel">
+Command (m for help): s
+Building a new sun disklabel. Changes will remain in memory only,
+until you decide to write them. After that, of course, the previous
+content won't be recoverable.
+
+Drive type
+   ?   auto configure
+   0   custom (with hardware detected defaults)
+   a   Quantum ProDrive 80S
+   b   Quantum ProDrive 105S
+   c   CDC Wren IV 94171-344
+   d   IBM DPES-31080
+   e   IBM DORS-32160
+   f   IBM DNES-318350
+   g   SEAGATE ST34371
+   h   SUN0104
+   i   SUN0207
+   j   SUN0327
+   k   SUN0340
+   l   SUN0424
+   m   SUN0535
+   n   SUN0669
+   o   SUN1.0G
+   p   SUN1.05
+   q   SUN1.3G
+   r   SUN2.1G
+   s   IOMEGA Jaz
+Select type (? for auto, 0 for custom): <i>0</i>
+Heads (1-1024, default 64): 
+Using default value 64
+Sectors/track (1-1024, default 32): 
+Using default value 32
+Cylinders (1-65535, default 8635): 
+Using default value 8635
+Alternate cylinders (0-65535, default 2): 
+Using default value 2
+Physical cylinders (0-65535, default 8637): 
+Using default value 8637
+Rotation speed (rpm) (1-100000, default 5400): <i>10000</i>
+Interleave factor (1-32, default 1): 
+Using default value 1
+Extra sectors per cylinder (0-32, default 0): 
+Using default value 0
+</pre>
+
+<p>
+You can find the correct values in your disk's documentation. The
+'auto configure' option does not usually work.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Deleting Existing Partitions</title>
+<body>
+
+<p>
+It's time to delete any existing partitions. To do this, type <c>d</c> and hit 
+Enter. You will then be prompted for the partition number you would like to 
+delete. To delete a pre-existing <path>/dev/sda1</path>, you would type:
+</p>
+
+<pre caption="Deleting a partition">
+Command (m for help): <i>d</i>
+Partition number (1-4): <i>1</i>
+</pre>
+
+<p>
+<e>You should not delete partition 3 (whole disk).</e> This is required. If
+this partition does not exist, follow the "Creating a Sun Disklabel"
+instructions above.
+</p>
+
+<p>
+After deleting all partitions except the Whole disk slice, you should have a
+partition layout similar to the following:
+</p>
+
+<pre caption="View an empty partition scheme">
+Command (m for help): <i>p</i>
+
+Disk /dev/sda (Sun disk label): 64 heads, 32 sectors, 8635 cylinders
+Units = cylinders of 2048 * 512 bytes
+
+   Device Flag    Start       End    Blocks   Id  System
+/dev/sda3             0      8635   8842240    5  Whole disk
+</pre>
+
+
+</body>
+</subsection>
+
+<subsection>
+<title>Creating the Root Partition</title>
+<body>
+
+<p>
+We're ready to create the root partition. To do this, type <c>n</c> to create a 
+new partition, then type <c>1</c> to create the partition. When prompted for the
+first cylinder, hit enter. When prompted for the last cylinder, type <c>+512M</c>
+to create a partition <c>512MBytes</c> in size. Make sure that the entire root
+partition must be contained entirely within the first 2GBytes of the disk. 
+You can see output from these steps below:
+</p>
+
+<pre caption="Creating a root partition">
+Command (m for help): <i>n</i>
+Partition number (1-8): <i>1</i>
+First cylinder (0-8635): <i>(press Enter)</i>
+Last cylinder or +size or +sizeM or +sizeK (0-8635, default 8635): <i>+512M</i>
+</pre>
+
+<p>
+Now, when you type <c>p</c>, you should see the following partition printout:
+</p>
+
+<pre caption="Listing the partition layout">
+Command (m for help): <i>p</i>
+
+Disk /dev/sda (Sun disk label): 64 heads, 32 sectors, 8635 cylinders
+Units = cylinders of 2048 * 512 bytes
+
+   Device Flag    Start       End    Blocks   Id  System
+/dev/sda1             0       488    499712   83  Linux native
+/dev/sda3             0      8635   8842240    5  Whole disk
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Creating a swap partition</title>
+<body>
+
+<p>
+Next, let's create the swap partition. To do this, type <c>n</c> to create a new
+partition, then <c>2</c> to create the second partition, <path>/dev/sda2</path>
+in our case. When prompted for the first cylinder, hit enter. When prompted for 
+the last cylinder, type <c>+512M</c> to create a partition 512MB in size. After 
+you've done this, type <c>t</c> to set the partition type, and then type in 
+<c>82</c> to set the partition type to "Linux Swap". After completing these 
+steps, typing <c>p</c> should display a partition table that looks similar to 
+this:
+</p>
+
+<pre caption="Listing of available partitions">
+Command (m for help): <i>p</i>
+
+Disk /dev/sda (Sun disk label): 64 heads, 32 sectors, 8635 cylinders
+Units = cylinders of 2048 * 512 bytes
+
+   Device Flag    Start       End    Blocks   Id  System
+/dev/sda1             0       488    499712   83  Linux native
+/dev/sda2           488       976    499712   82  Linux swap
+/dev/sda3             0      8635   8842240    5  Whole disk
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Creating the /usr, /var and /home partitions</title>
+<body>
+
+<p>
+Finally, let's create the /usr, /var and /home partitions. As before,
+type <c>n</c> to create a new partition, then type <c>4</c> to create the
+third partition, <path>/dev/sda4</path> in our case. When prompted for the
+first cylinder, hit enter. When prompted for the last cylinder, enter 
+<c>+2048M</c> to create a partition 2 GBytes in size. Repeat this process
+for <path>sda5</path> and <path>sda6</path>, using the desired sizes. Once
+you're done, you should see something like this:
+</p>
+
+<pre caption="Listing complete partition table">
+Command (m for help): <i>p</i>
+
+Disk /dev/sda (Sun disk label): 64 heads, 32 sectors, 8635 cylinders
+Units = cylinders of 2048 * 512 bytes
+
+   Device Flag    Start       End    Blocks   Id  System
+/dev/sda1             0       488    499712   83  Linux native
+/dev/sda2           488       976    499712   82  Linux swap
+/dev/sda3             0      8635   8842240    5  Whole disk
+/dev/sda4           976      1953   1000448   83  Linux native
+/dev/sda5          1953      2144    195584   83  Linux native
+/dev/sda6          2144      8635   6646784   83  Linux native
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Save and Exit</title>
+<body>
+
+<p>
+To save your partition layout and exit <c>fdisk</c>, type <c>w</c>:
+</p>
+
+<pre caption="Save and exit fdisk">
+Command (m for help): <i>w</i>
+</pre>
+
+<p>
+Now that your partitions are created, you can now continue with <uri
+link="#filesystems">Creating Filesystems</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="filesystems">
+<title>Creating Filesystems</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Now that your partitions are created, it is time to place a filesystem on them. 
+If you don't care about what filesystem to choose and are happy with what is
+used as default in this handbook, continue with <uri 
+link="#filesystems-apply">Applying a Filesystem to a Partition</uri>.
+Otherwise, read on to learn about the available filesystems...
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Filesystems?</title>
+<body>
+
+<p>
+Several filesystems are available, some are known to be stable on the
+SPARC architecture.  Ext2 and ext3, for example, are known to work well.
+Alternate filesystems may not function correctly.
+</p>
+
+<p>
+<b>ext2</b> is the tried-and-true Linux filesystem. It does not support
+journaling, which means that periodic checks of ext2 filesystems at startup
+can be quite time-consuming.  There is quite a selection of newer-generation
+journaled filesystems that can be checked for consistency very quickly at
+startup, and are therefore generally preferred over their non-journaled
+counterparts. In general, journaled filesystems prevent long delays when a
+system is booted and the filesystem is in an inconsistent state.
+</p>
+
+<p>
+<b>ext3</b> is the journaled version of the ext2 filesystem. It provides
+metadata journaling for fast recovery as well as other enhanced journaling
+modes like full-data and ordered-data journaling. Ext3 has an additional hashed
+b-tree indexing option that enables high performance in almost all situations.
+Ext3 makes an excellent and reliable alternative to ext2.
+</p>
+
+<p>
+<b>ReiserFS</b> works only partially on sparc64 systems and is therefore not
+recommended for general use.  <b>XFS</b> should be avoided, as it is known to
+have many problems on SPARCs and could ruin your data. Another journaling
+filesystem, <b>JFS</b>, is not supported.  Regardless of your decision for
+filesystems, the bootloader requires that the root partition be either ext2 or
+ext3."
+</p>
+
+</body>
+</subsection>
+<subsection id="filesystems-apply">
+<title>Applying a Filesystem to a Partition</title>
+<body>
+
+<p>
+To create a filesystem on a partition or volume, tools specific to the chosen
+filesystem are available:
+</p>
+
+<table>
+<tr>
+  <th>Filesystem</th>
+  <th>Creation Command</th>
+</tr>
+<tr>
+  <ti>ext2</ti>
+  <ti><c>mke2fs</c></ti>
+</tr>
+<tr>
+  <ti>ext3</ti>
+  <ti><c>mke2fs -j</c></ti>
+</tr>
+<tr>
+  <ti>ext3 with hashed b-tree indexing (2.6 kernels only)</ti>
+  <ti><c>mke2fs -j -O dir_index</c></ti>
+</tr>
+<tr>
+  <ti>reiserfs</ti>
+  <ti><c>mkreiserfs</c></ti>
+</tr>
+</table>
+
+<p>
+For instance, to create the root partition (<path>/dev/sda1</path> in our
+example) as ext2, and the <path>/usr</path>, <path>/var</path>, and
+<path>/home</path> partitions (<path>/dev/sda4</path>, <path>5</path>
+and <path>6</path> in our example, respectively) as ext3, you would use:
+</p>
+
+<pre caption="Applying a filesystem on a partition">
+# <i>mke2fs /dev/sda1</i>
+# <i>mke2fs -j /dev/sda4</i>
+# <i>mke2fs -j /dev/sda5</i>
+# <i>mke2fs -j /dev/sda6</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating the Swap Partition</title>
+<body>
+
+<p>
+<c>mkswap</c> is the command used to initialize swap partitions:
+</p>
+
+<pre caption="Creating a Swap signature">
+# <i>mkswap /dev/sda2</i>
+</pre>
+
+<p>
+To activate the swap partition, use <c>swapon</c>:
+</p>
+
+<pre caption="Activating the swap partition">
+# <i>swapon /dev/sda2</i>
+</pre>
+
+<p>
+Create and activate the swap now.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Mounting</title>
+<body>
+
+<p>
+Now that your partitions are initialized and are housing a filesystem, it is
+time to mount them using the <c>mount</c> command. Don't forget to first
+create the necessary mount directories for every partition you created. For
+example:
+</p>
+
+<pre caption="Mounting partitions">
+# <i>mount /dev/sda1 /mnt/gentoo</i>
+# <i>mkdir /mnt/gentoo/usr</i>
+# <i>mount /dev/sda4 /mnt/gentoo/usr</i>
+# <i>mkdir /mnt/gentoo/var</i>
+# <i>mount /dev/sda5 /mnt/gentoo/var</i>
+# <i>mkdir /mnt/gentoo/home</i>
+# <i>mount /dev/sda6 /mnt/gentoo/home</i>
+</pre>
+
+<note>
+If you want your <path>/tmp</path> to reside on a separate partition, be sure
+to change its permissions after mounting: <c>chmod 1777 /mnt/gentoo/tmp</c>.
+This also holds for <path>/var/tmp</path>.
+</note>
+
+<p>
+We will also have to mount the proc filesystem (a virtual interface with the 
+kernel) on <path>/proc</path>. But first we will need to place our files on the partitions.
+</p>
+
+<p>
+Continue with <uri link="?part=1&amp;chap=5">Installing the Gentoo
+Installation Files</uri>.
+</p>
+
+</body>
+</section>
+</sections>
+

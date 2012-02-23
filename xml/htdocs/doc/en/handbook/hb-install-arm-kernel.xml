@@ -1,0 +1,296 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-arm-kernel.xml,v 1.15 2012/02/22 21:27:45 swift Exp $ -->
+
+<sections>
+
+<version>10</version>
+<date>2012-02-22</date>
+
+<section>
+<title>Timezone</title>
+<body>
+
+<p>
+You first need to select your timezone so that your system knows where it is
+located. Look for your timezone in <path>/usr/share/zoneinfo</path>, then copy
+it to <path>/etc/localtime</path>. Please avoid the
+<path>/usr/share/zoneinfo/Etc/GMT*</path> timezones as their names do not
+indicate the expected zones. For instance, <path>GMT-8</path> is in fact
+GMT+8.
+</p>
+
+<pre caption="Setting the timezone information">
+# <i>ls /usr/share/zoneinfo</i>
+<comment>(Suppose you want to use Europe/Brussels)</comment>
+# <i>cp /usr/share/zoneinfo/Europe/Brussels /etc/localtime</i>
+<comment>(Next set the timezone)</comment>
+# <i>echo "Europe/Brussels" &gt; /etc/timezone</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Installing the Sources</title>
+<subsection>
+<title>Choosing a Kernel</title>
+<body>
+
+<p>
+The core around which all distributions are built is the Linux kernel. It is the
+layer between the user programs and your system hardware. Gentoo provides its
+users several possible kernel sources. A full listing with description is
+available at the <uri link="/doc/en/gentoo-kernel.xml">Gentoo Kernel
+Guide</uri>. 
+</p>
+
+<p>
+For ARM systems, we will use <c>gentoo-sources</c> (contains additional patches
+for extra features).
+</p>
+
+<p>
+Now install it using <c>emerge</c>.
+</p>
+
+<pre caption="Installing a kernel source">
+# <i>emerge gentoo-sources</i>
+</pre>
+
+<p>
+When you take a look in <path>/usr/src</path> you should see a symlink called
+<path>linux</path> pointing to your kernel source. In this case, the installed
+kernel source points to <c>gentoo-sources-<keyval id="kernel-version"/></c>.
+Your version may be different, so keep this in mind.
+</p>
+
+<pre caption="Viewing the kernel source symlink">
+# <i>ls -l /usr/src/linux</i>
+lrwxrwxrwx    1 root   root    12 Oct 13 11:04 /usr/src/linux -&gt; linux-<keyval id="kernel-version"/>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section id="manual">
+<title>Default: Manual Configuration</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Manually configuring a kernel is often seen as the most difficult procedure a
+Linux user ever has to perform. Nothing is less true -- after configuring a
+couple of kernels you don't even remember that it was difficult ;)
+</p>
+
+<p>
+However, one thing <e>is</e> true: you must know your system when you start
+configuring a kernel manually. Most information can be gathered by emerging 
+pciutils (<c>emerge pciutils</c>) which contains <c>lspci</c>. You will now 
+be able to  use <c>lspci</c> within the chrooted environment. You may safely 
+ignore any <e>pcilib</e> warnings (like pcilib: cannot open 
+/sys/bus/pci/devices) that <c>lspci</c> throws out. Alternatively, you can run 
+<c>lspci</c> from a <e>non-chrooted</e> environment. The results are the same. 
+You can also run <c>lsmod</c> to see what kernel modules the Installation CD 
+uses (it might provide you with a nice hint on what to enable).
+</p>
+
+<p>
+Now go to your kernel source directory and execute <c>make menuconfig</c>. This
+will fire up an ncurses-based configuration menu.
+</p>
+
+<pre caption="Invoking menuconfig">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+You will be greeted with several configuration sections. We'll first list some
+options you must activate (otherwise Gentoo will not function, or not function
+properly without additional tweaks).
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating Required Options</title>
+<body>
+
+<p>
+Due to the highly specific nature of the embedded, we'll cover known
+configurations for boards here. If your machine is not listed, then you should
+visit the respective community website to figure out how to properly configure
+your kernel.
+</p>
+
+<p>
+Please select your machine from the list below to jump to the configuration
+section.
+</p>
+
+<ul>
+ <li><uri link="#netwinder">NetWinder</uri></li>
+</ul>
+
+</body>
+</subsection>
+</section>
+<section id="netwinder">
+<title>NetWinder configuration options</title>
+<body>
+
+<p>
+Remember that EXT2 support is required for the boot partition as that is the
+only filesystem that the bootloader can read reliably. Otherwise, the only
+filesystem that has been tested is EXT3 but your welcome to try your luck with
+the others ;).
+</p>
+
+<pre caption="NetWinder configuration options">
+<comment>First generate a default config</comment>
+# <i>make netwinder_defconfig</i>
+
+<comment>Required options</comment>
+System Type ---&gt;
+  ARM system type (FootBridge) ---&gt;
+    (X) FootBridge
+  Footbridge Implementations ---&gt;
+    [*] NetWinder
+
+Floating point emulation ---&gt;
+  [*] NWFPE math emulation
+
+File systems ---&gt;
+  [*] Second extended fs support
+  Pseudo Filesystems ---&gt;
+    [*] /proc file system support
+    [*] Virtual memory file system support (former shm fs)
+
+Device Drivers ---&gt;
+  ATA/ATAPI/MFM/RLL support ---&gt;
+    [*] ATA/ATAPI/MFM/RLL support
+    [*]   Enhanced IDE/MFM/RLL disk/cdrom/tape/floppy support
+    [*]     Include IDE/ATA-2 DISK support
+    ---     IDE chipset support/bugfixes
+    [*]     PCI IDE chipset support
+    [*]       Winbond SL82c105 support
+    [*]       Generic PCI bus-master DMA support
+
+  Network device support ---&gt;
+    [*] Network device support
+    Ethernet (10 or 100Mbit) ---&gt;
+      [*] Ethernet (10 or 100Mbit)
+      Tulip family network device support ---&gt;
+        [*] "Tulip" family network device support
+        [*]   DECchip Tulip (dc2114x) PCI support
+        [*]     Use PCI shared mem for NIC registers
+        [*]     Use NAPI RX polling
+      [*] EISA, VLB, PCI and on board controllers
+      [*]   PCI NE2000 and clones support
+
+  Character devices ---&gt;
+    Serial drivers ---&gt;
+      [*] 8250/16550 and compatible serial support
+      [*]   Console on 8250/16550 and compatible serial port
+      --- Non-8250 serial port support
+      [*] DC21285 serial port support
+      [*]   Console on DC21285 serial port
+    Watchdog Cards ---&gt;
+      [*] Watchdog Timer Support
+      [*]   NetWinder WB83C977 watchdog
+    [*] NetWinder thermometer support
+    [*] NetWinder Button
+    [*]   Reboot Using Button
+
+<comment>Recommended options</comment>
+Kernel Features ---&gt;
+  [*] Preemptible Kernel
+  [*] Timer and CPU usage LEDs
+  [*]   CPU usage LED
+
+File systems ---&gt;
+  [*] Ext3 journalling file system support
+
+Device Drivers ---&gt;
+  Input device support ---&gt;
+    [*] Keyboards ---&gt;
+      [*] AT keyboard
+    [*] Mouse ---&gt;
+      [*] PS/2 mouse
+
+  Graphics support ---&gt;
+    [*] Support for frame buffer devices
+    [*]   Enable firmware EDID
+    [*]   CyberPro 2000/2010/5000 support
+    Logo configuration ---&gt;
+      [*] Bootup logo
+      [*]   Standard 224-color Linux logo
+
+  Sound ---&gt;
+    [*] Sound card support
+    Open Sound System ---&gt;
+      [*] Open Sound System
+      [*]   OSS sound modules
+      [*]     Yamaha FM synthesizer (YM3812/OPL-3) support
+      [*]     Netwinder WaveArtist
+
+<comment>You should only enable this to upgrade your flash</comment>
+Device Drivers ---&gt;
+  Character devices ---&gt;
+    [*] NetWinder flash support
+</pre>
+
+<p>
+When you've finished configuring the kernel, continue with <uri 
+link="#compiling">Compiling and Installing</uri>.
+</p>
+
+</body>
+</section>
+<section id="compiling">
+<title>Compiling and Installing</title>
+<body>
+
+<p>
+Now that your kernel is configured, it is time to compile and install it. Exit 
+the configuration and start the compilation process:
+</p>
+
+<pre caption="Compiling the kernel">
+# <i>make &amp;&amp; make modules_install</i>
+</pre>
+
+
+<p>
+When the kernel has finished compiling, copy the kernel image to
+<path>/boot</path>. Use whatever name you feel is appropriate for your kernel
+choice and remember it as you will need it later on when you configure your
+bootloader. Remember to replace <c><keyval id="kernel-name"/></c> with the
+name and version of your kernel.
+</p>
+
+<pre caption="Installing the kernel">
+# <i>cp vmlinux.gz /boot/<keyval id="kernel-name"/></i>
+</pre>
+
+<p>
+Now continue with <uri link="#kernel_modules">Kernel Modules</uri>.
+</p>
+
+</body>
+</section>
+<section id="kernel_modules">
+<title>Kernel Modules</title>
+
+<subsection>
+<include href="hb-install-kernelmodules.xml"/>
+</subsection>
+
+</section>
+</sections>

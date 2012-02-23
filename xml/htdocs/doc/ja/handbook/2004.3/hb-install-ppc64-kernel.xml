@@ -1,0 +1,281 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-install-ppc64-kernel.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+
+<!-- Original revision: 1.6 -->
+
+<sections>
+
+<version>1.3</version>
+<date>2004-09-01</date>
+
+<section>
+<title>タイムゾーン</title>
+<body>
+
+<p>
+最初にタイムゾーンを選択する必要があります。そうするとシステムがどの地域に置かれているかがわかります。自分のタイムゾーンを<path>/usr/share/zoneinfo</path>から探して、<c>ln</c>を使って<path>/etc/localtime</path>にリンクを張ってください。
+</p>
+
+<pre caption="タイムゾーン情報を設定する">
+# <i>ls /usr/share/zoneinfo</i>
+<comment>(GMTを使うとして)</comment>
+# <i>ln -sf /usr/share/zoneinfo/GMT /etc/localtime</i>
+<comment>(訳注：JST(日本時間)を使う例)</comment>
+# <i>ln -sf /usr/share/zoneinfo/Japan /etc/localtime</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>ソースをインストールする</title>
+<subsection>
+<title>カーネルを選択する</title>
+<body>
+
+<p>
+全ディストリビューションの構成の核をなすのは、Linuxカーネルです。カーネルはユーザープログラムとシステムハードウェアの間の階層です。Gentooではユーザーに選択できる色々なカーネルソースを提供しています。説明付の全リストは<uri link="/doc/en/gentoo-kernel.xml">Gentoo Kernel Guide</uri><uri link="/doc/jp/gentoo-kernel.xml">(日本語訳)</uri>で見られます。
+</p>
+
+<p>
+PPC64のために<c>gentoo-dev-sources</c>を使うべきです。それでは、カーネルソースを<c>emerge</c>して続行しましょう。
+</p>
+
+<pre caption="カーネルソースをインストールする">
+# <i>emerge gentoo-dev-sources</i>
+</pre>
+
+<p>
+<path>/usr/src</path>の中を見ると、選択したカーネルソースを指す<path>linux</path>と呼ばれるシンボリックリンクが見られるでしょう。
+</p>
+
+<pre caption="カーネルソースへのシンボリックリンクを見る">
+# <i>ls -l /usr/src/linux</i>
+lrwxrwxrwx    1 root     root           12 Oct 13 11:04 /usr/src/linux
+-&gt; linux-2.6.7-gentoo-r8
+</pre>
+
+<p>
+もしこういう風になっていなければ(つまり、シンボリックリンクが違うカーネルソースを指している場合)、続ける前にシンボリックリンクを変更してください。
+</p>
+
+<pre caption="カーネルソースへのシンボリックリンクを変更する">
+# <i>rm /usr/src/linux</i>
+# <i>cd /usr/src</i>
+# <i>ln -s linux-2.6.7-gentoo-r8 linux</i>
+</pre>
+
+<p>
+さあカーネルソースを設定して、コンパイルする時が来ました。LiveCDで使われているような一般的なカーネルを作成する「genkernel」を使うことができますが、現在PPC64では完全に機能しません。
+</p>
+
+<p>
+では、<uri link="#manual">手動設定</uri>へ進んでください。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="manual">
+<title>手動設定</title>
+<subsection>
+<title>はじめに</title>
+<body>
+
+<p>
+カーネルの手動設定はLinuxユーザがこれまでに実行しなければならない手続きの中で最も難しい手続きとしばしば見なされています。何もそれほど真実ではありません。2、3のカーネル設定の後では、難しかったことすら思い出せないでしょう。;)
+</p>
+
+<p>
+しかし、一つだけは<e>本当</e>です。手動でカーネルの設定を始める時に自分のシステムを判ってなければなりません。ほとんどの情報は<path>/proc/pci</path>の内容を見ることで集められます(もしくは有効であれば<c>lspci</c>を使って)。LiveCDではどんなカーネルモジュールを使っているかを見るために<c>lsmod</c>を実行することもできます(これはどんが機能が利用可能かの良いヒントを与えてくれるかも知れません)。
+</p>
+
+<p>
+それではカーネルソースのディレクトリに行って、<c>make menuconfig</c>を実行しましょう。これでncursesベースの設定メニューが立ち上がります。
+</p>
+
+<pre caption="menuconfigを実行する">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+いくつかの設定項目が出てきます。最初に有効にしなければならないいくつかのオプションをリストアップしましょう(そうしなければGentooは機能しないか、特別な調整無しではうまく機能しないでしょう)。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>必要なオプションを有効にする</title>
+<body>
+
+<p>
+まず最初に開発中や試験的なコード/ドライバーの使用を有効にします。必ず有効にください。そうしないといくつかのとても重要なコード/ドライバーが表示されません。
+</p>
+
+<pre caption="試験的なコード/ドライバを選択する">
+Code maturity level options ---&gt;
+  [*] Prompt for development and/or incomplete code/drivers
+</pre>
+
+<p>
+さて<c>File Systems</c>に行き、使用するファイルシステムの項目を選択してください。
+それらをモジュールとしてコンパイル<e>しないで</e>ください。さもないとGentooシステムはパーティションをマウントすることができないでしょう。<c>Virtual memory</c>、<c>/proc file system</c>、<c>/dev file system</c>、<c>Automatically mount at boot</c>そして<c>/dev/pts file system for Unix98 PTYs</c>も選択してください。
+</p>
+
+<pre caption="必要なファイルシステムを選択する">
+File systems ---&gt;
+  [*] Virtual memory file system support (former shm fs)
+  [*] /proc file system support
+  [*] /dev file system support (EXPERIMENTAL)
+  [*]   Automatically mount at boot
+  [*] /dev/pts file system for Unix98 PTYs
+
+<comment>(下記のオプションで、システムに必要なものを1つ以上選択 訳注:ルートパーティションで選択したファイルシステムは必ず有効にする必要があります)</comment>
+  &lt;*&gt; Reiserfs support
+  &lt;*&gt; Ext3 journalling file system support
+  &lt;*&gt; JFS filesystem support
+  &lt;*&gt; Second extended fs support
+  &lt;*&gt; XFS filesystem support
+</pre>
+
+<note>
+<c>File systems</c>の下位項目である<c>Pseudo filesystems</c>の下で前述のオプションのいくつかを見つけることができます。
+</note>
+
+<p>
+もしインターネット接続にPPPoEを使っていたり、モデムでダイアルアップしているなら、カーネル内の以下のオプションが必要になります(<c>Device Drivers</c>の下位項目である<c>Networking support</c>の下でオプションを見つけることができます)。
+</p>
+
+<pre caption="PPPoEに必要なドライバーを選択する">
+Network device support ---&gt;
+  &lt;*&gt; PPP (point-to-point protocol) support
+  &lt;*&gt;   PPP support for async serial ports
+  &lt;*&gt;   PPP support for sync tty ports
+</pre>
+
+<p>
+2つの圧縮オプションは差し支えは無いけれども、絶対に必要でもありません。<c>PPP over Ethernet</c>オプションもそうです。これはカーネルモードのPPPoEをするために設定された時だけに<c>rp-pppoe</c>に使用されるものです。
+</p>
+
+<p>
+もしPPPoEを使用する必要があるなら、カーネルにイーサネットカード用のサポートを含めることを忘れないでください。
+</p>
+
+<p>
+ADB raw keycodesを無効にします。
+</p>
+
+<pre caption="ADB raw keycodesを無効にする">
+Macintosh Device Drivers ---&gt;
+  [ ] Support for ADB raw keycodes
+</pre>
+
+<p>
+また、正しいRTCサポートを選択してください(<c>Enhanced RTC</c>は<e>無効</e>にします)。
+</p>
+
+<pre caption="正しいRTCオプションを有効にします">
+Character devices ---&gt;
+  [ ] Enhanced RTC
+
+General setup ---&gt;
+  [*] Support for /dev/rtc
+</pre>
+
+<p>
+カーネルの設定が終れば、<uri link="#compiling">コンパイルとインストール</uri>に進んでください。
+</p>
+
+</body>
+</subsection>
+<subsection id="compiling">
+<title>コンパイルとインストール</title>
+<body>
+
+<p>
+これでカーネルの設定がされたので、コンパイルとインストールする時が来ました。設定を抜けて、<c>make</c>と<c>make modules_install</c>を実行してください。
+</p>
+
+<pre caption="カーネルをコンパイルする">
+(Apple/IBM)  # <i>make &amp;&amp; make modules_install</i>
+</pre>
+
+<p>
+カーネルのコンパイルが終れば、カーネルイメージを<path>/boot</path>にコピーしてください。
+</p>
+
+<pre caption="カーネルをインストールする">
+(Apple/IBM)  # <i>cp vmlinux /boot/kernel-2.6.7-gentoo-r8</i>
+</pre>
+
+<p>
+また、システムマップを<path>/boot</path>にコピーするのを忘れないでください。
+</p>
+
+<pre caption="システムマップをコピーする">
+# <i>cp System.map /boot/System.map-2.6.7</i>
+</pre>
+
+<p>
+万が一のためにカーネルの設定ファイルも<path>/boot</path>にコピーしておくのも賢明です。:)
+</p>
+
+<pre caption="カーネル設定をバックアップする">
+# <i>cp .config /boot/config-2.6.7-gentoo-r8</i>
+</pre>
+
+<p>
+では、<uri link="#kernel_modules">モジュールを設定する</uri>へ進んでください。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="kernel_modules">
+<title>モジュールを設定する</title>
+<body>
+
+<p>
+自動的にロードさせたいモジュールを<path>/etc/modules.autoload.d/kernel-2.6</path>に記入してください。もし望むなら、モジュールに追加オプションを加えることもできます。
+</p>
+
+<p>
+すべての利用可能なモジュールを見るには、次の<c>find</c>コマンドを実行してください。"&lt;kernel version&gt;"に今コンパイルしたカーネルのバージョンを入れてください。
+</p>
+
+<pre caption="すべての利用可能なモジュールを見る">
+# <i>find /lib/modules/&lt;kernel version&gt;/ -type f -iname '*.o' -or -iname '*.ko'</i>
+</pre>
+
+<p>
+例えば、<c>3c59x.o</c>モジュールを自動でロードするなら、<path>kernel-2.6</path>ファイルを開いて、モジュール名をそこに記入してください。
+</p>
+
+<pre caption="/etc/modules.autoload.d/kernel-2.6を編集する">
+# <i>nano -w /etc/modules.autoload.d/kernel-2.6</i>
+</pre>
+
+<pre caption="/etc/modules.autoload.d/kernel-2.6">
+3c59x
+</pre>
+
+<p>
+さあ、変更を<path>/etc/modules.conf</path>ファイルに書き込むために<c>modules-update</c>を実行してください。
+</p>
+
+<pre caption="modules-updateを実行する">
+# <i>modules-update</i>
+</pre>
+
+<p>
+<uri link="?part=1&amp;chap=8">システムの設定</uri>に進んで、インストールを続けてください。
+</p>
+
+</body>
+</section>
+</sections>

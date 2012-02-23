@@ -1,0 +1,351 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/security/shb-logging.xml,v 1.6 2010/04/02 07:34:39 nightmorph Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.3</version>
+<date>2010-04-02</date>
+
+<section>
+<title>Introduction</title>
+<body>
+<p>
+Extra logging should be added to catch warnings or errors that might indicate
+an ongoing attack or a successful compromise. Attackers often scan or probe
+before attacking.
+</p>
+
+<p>
+It's also vital that your log files are easily readable and manageable. Gentoo
+Linux lets you choose between 3 different loggers when installing.
+</p>
+
+</body>
+</section>
+<section>
+<title>Logging: Syslogd</title>
+<body>
+
+<p>
+Syslogd is the most common logger for Linux and Unix in general.
+It has some log rotation facilities, but using
+<path>/usr/sbin/logrotate</path> in a cron job (logrotate is configured in
+<path>/etc/logrotate.conf</path>) might prove to be more powerful as
+<c>logrotate</c> has many features. How often
+log rotation should be done depends on the system load.
+</p>
+
+<p>
+Below is the standard <path>syslog.conf</path> with some added features. We
+have uncommented the <c>cron</c> and <c>tty</c> lines and added a remote
+logging server. To further enhance security you could add logging to two places.
+</p>
+
+<pre caption="/etc/syslog.conf">
+#  /etc/syslog.conf      Configuration file for syslogd.
+#
+#                       For more information see syslog.conf(5)
+#                       manpage.
+#                       This is from Debian, we are using it for now
+#                       Daniel Robbins, 5/15/99
+
+#
+# First some standard logfiles.  Log by facility.
+#
+
+auth,authpriv.*                 /var/log/auth.log
+*.*;auth,authpriv.none          -/var/log/syslog
+cron.*                         /var/log/cron.log
+daemon.*                        -/var/log/daemon.log
+kern.*                          -/var/log/kern.log
+lpr.*                           -/var/log/lpr.log
+mail.*                          /var/log/mail.log
+user.*                          -/var/log/user.log
+uucp.*                          -/var/log/uucp.log
+local6.debug                    /var/log/imapd.log
+
+#
+# Logging for the mail system. Split it up so that
+# it is easy to write scripts to parse these files.
+#
+mail.info                       -/var/log/mail.info
+mail.warn                       -/var/log/mail.warn
+mail.err                        /var/log/mail.err
+
+# Logging for INN news system
+#
+news.crit                       /var/log/news/news.crit
+news.err                        /var/log/news/news.err
+news.notice                     -/var/log/news/news.notice
+
+#
+# Some `catch-all' logfiles.
+#
+*.=debug;\
+        auth,authpriv.none;\
+        news.none;mail.none     -/var/log/debug
+*.=info;*.=notice;*.=warn;\
+        auth,authpriv.none;\
+        cron,daemon.none;\
+        mail,news.none          -/var/log/messages
+
+#
+# Emergencies and alerts are sent to everybody logged in.
+#
+*.emerg                         *
+*.=alert                        *
+
+#
+# I like to have messages displayed on the console, but only on a virtual
+# console I usually leave idle.
+#
+daemon,mail.*;\
+       news.=crit;news.=err;news.=notice;\
+       *.=debug;*.=info;\
+       *.=notice;*.=warn       /dev/tty8
+
+#Setup a remote logging server
+*.*                        @logserver
+
+# The named pipe /dev/xconsole is for the `xconsole' utility.  To use it,
+# you must invoke `xconsole' with the `-file' option:
+#
+#    $ xconsole -file /dev/xconsole [...]
+#
+# NOTE: adjust the list below, or you'll go crazy if you have a reasonably
+#      busy site..
+#
+#daemon.*,mail.*;\
+#       news.crit;news.err;news.notice;\
+#       *.=debug;*.=info;\
+#       *.=notice;*.=warn       |/dev/xconsole
+
+local2.*                --/var/log/ppp.log
+</pre>
+
+<p>
+Attackers will most likely try to erase their tracks by editing or deleting log
+files. You can make it harder for them by logging to one or more remote logging
+servers on other machines. Get more info about syslogd by executing <c>man
+syslog</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Metalog</title>
+<body>
+
+<p>
+<uri link="http://metalog.sourceforge.net">Metalog</uri> by Frank Dennis is not
+able to log to a remote server, but it does have advantages when it comes to
+performance and logging flexibility. It can log by program name, urgency,
+facility (like syslogd), and comes with regular expression matching with which
+you can launch external scripts when specific patterns are found. It is very good
+at taking action when needed.
+</p>
+
+<p>
+The standard configuration is usually enough.  If you want to be notified by
+email whenever a password failure occurs use one of the following scripts.
+</p>
+
+<p>
+For postfix:
+</p>
+
+<pre caption="/usr/local/sbin/mail_pwd_failures.sh for postfix">
+#! /bin/sh
+echo "$3" | mail -s "Warning (program : $2)" root
+</pre>
+
+<p>
+For netqmail:
+</p>
+
+<pre caption="/usr/local/sbin/mail_pwd_failures.sh for netqmail">
+#!/bin/sh
+echo "To: root
+Subject:Failure (Warning: $2)
+$3
+" | /var/qmail/bin/qmail-inject -f root
+</pre>
+
+<p>
+Remember to make the script executable by issuing <c>/bin/chmod +x
+/usr/local/sbin/mail_pwd_failures.sh</c>
+</p>
+
+<p>
+Then uncomment the command line under "Password failures" in
+<path>/etc/metalog/metalog.conf</path> like:
+</p>
+
+<pre caption="/etc/metalog/metalog.conf">
+command  = "/usr/local/sbin/mail_pwd_failures.sh"
+</pre>
+
+</body>
+</section>
+<section>
+<title>Syslog-ng</title>
+<body>
+
+<p>
+Syslog-ng provides some of the same features as syslog and metalog with a small
+difference. It can filter messages based on level and content (like metalog),
+provide remote logging like syslog, handle logs from syslogd (even streams from
+Solaris), write to a TTY, execute programs, and it can act as a logging server.
+Basically it is the best of both loggers combined with advanced configuration.
+</p>
+
+<p>
+Below is a classic configuration file slightly modified.
+</p>
+
+<pre caption="/etc/syslog-ng/syslog-ng.conf">
+options {
+        chain_hostnames(no);
+
+        <comment># The default action of syslog-ng is to log a STATS line
+        # to the file every 10 minutes.  That's pretty ugly after a while.
+        # Change it to every 12 hours so you get a nice daily update of
+        # how many messages syslog-ng missed (0).</comment>
+        stats_freq(43200);
+};
+
+source src {
+    unix-stream("/dev/log" max-connections(256));
+    internal();
+};
+
+source kernsrc { file("/proc/kmsg"); };
+
+<comment># define destinations</comment>
+destination authlog { file("/var/log/auth.log"); };
+destination syslog { file("/var/log/syslog"); };
+destination cron { file("/var/log/cron.log"); };
+destination daemon { file("/var/log/daemon.log"); };
+destination kern { file("/var/log/kern.log"); };
+destination lpr { file("/var/log/lpr.log"); };
+destination user { file("/var/log/user.log"); };
+destination mail { file("/var/log/mail.log"); };
+
+destination mailinfo { file("/var/log/mail.info"); };
+destination mailwarn { file("/var/log/mail.warn"); };
+destination mailerr { file("/var/log/mail.err"); };
+
+destination newscrit { file("/var/log/news/news.crit"); };
+destination newserr { file("/var/log/news/news.err"); };
+destination newsnotice { file("/var/log/news/news.notice"); };
+
+destination debug { file("/var/log/debug"); };
+destination messages { file("/var/log/messages"); };
+destination console { usertty("root"); };
+
+<comment># By default messages are logged to tty12...</comment>
+destination console_all { file("/dev/tty12"); };
+
+<comment># ...if you intend to use /dev/console for programs like xconsole
+# you can comment out the destination line above that references /dev/tty12
+# and uncomment the line below.</comment>
+#destination console_all { file("/dev/console"); };
+
+<comment># create filters</comment>
+filter f_authpriv { facility(auth, authpriv); };
+filter f_syslog { not facility(authpriv, mail); };
+filter f_cron { facility(cron); };
+filter f_daemon { facility(daemon); };
+filter f_kern { facility(kern); };
+filter f_lpr { facility(lpr); };
+filter f_mail { facility(mail); };
+filter f_user { facility(user); };
+filter f_debug { not facility(auth, authpriv, news, mail); };
+filter f_messages { level(info..warn)
+        and not facility(auth, authpriv, mail, news); };
+filter f_emergency { level(emerg); };
+
+filter f_info { level(info); };
+filter f_notice { level(notice); };
+filter f_warn { level(warn); };
+filter f_crit { level(crit); };
+filter f_err { level(err); };
+filter f_failed { message("failed"); };
+filter f_denied { message("denied"); };
+
+<comment># connect filter and destination</comment>
+log { source(src); filter(f_authpriv); destination(authlog); };
+log { source(src); filter(f_syslog); destination(syslog); };
+log { source(src); filter(f_cron); destination(cron); };
+log { source(src); filter(f_daemon); destination(daemon); };
+log { source(kernsrc); filter(f_kern); destination(kern); };
+log { source(src); filter(f_lpr); destination(lpr); };
+log { source(src); filter(f_mail); destination(mail); };
+log { source(src); filter(f_user); destination(user); };
+log { source(src); filter(f_mail); filter(f_info); destination(mailinfo); };
+log { source(src); filter(f_mail); filter(f_warn); destination(mailwarn); };
+log { source(src); filter(f_mail); filter(f_err); destination(mailerr); };
+
+log { source(src); filter(f_debug); destination(debug); };
+log { source(src); filter(f_messages); destination(messages); };
+log { source(src); filter(f_emergency); destination(console); };
+
+<comment># default log</comment>
+log { source(src); destination(console_all); };
+</pre>
+
+<p>
+Syslog-ng is very easy to configure, but it is also very easy to miss something
+in the configuration file since it is huge. The author still promises some extra
+features like encryption, authentication, compression and MAC (Mandatory Access
+Control) control. With these options it will be a perfect for network logging,
+since the attacker cannot spy on the log.
+</p>
+
+<p>
+And syslog-ng does have one other advantage: it does not have to run as root!
+</p>
+
+</body>
+</section>
+
+<section>
+<title>Log analysis with Logcheck</title>
+<body>
+
+<p>
+Of course, keeping logs alone is only half the battle. An application such as
+Logcheck can make regular log analysis much easier. Logcheck is a script,
+accompanied by a binary called <c>logtail</c>, that runs from your cron daemon
+and checks your logs against a set of rules for suspicious activity. It then
+mails the output to root's mailbox.
+</p>
+<p>
+Logcheck and logtail are part of the <c>app-admin/logsentry</c> package.
+</p>
+<p>
+Logcheck uses four files to filter important log entries from the
+unimportant. These files are <path>logcheck.hacking</path>, which contains known
+hacking attack messages, <path>logcheck.violations</path>, which contains
+patterns indicating security
+violations, <path>logcheck.violations.ignore</path>, which contains keywords
+likely to be matched by the violations file, allowing normal entries to be
+ignored, and <path>logcheck.ignore</path>, which matches those entries to be
+ignored.
+</p>
+
+<warn>
+Do not leave <path>logcheck.violations.ignore</path> empty. Logcheck
+uses <c>grep</c> to parse logs, some versions of which will take an empty file
+to mean wildcard. All violations would thus be ignored.
+</warn>
+<!-- FIXME: Might want to add more details on logcheck here...I have to install
+it on Gentoo to figure out how it's configured! -->
+</body>
+</section>
+
+</sections>

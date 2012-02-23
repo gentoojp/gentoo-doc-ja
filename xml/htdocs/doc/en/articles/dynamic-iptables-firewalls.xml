@@ -1,0 +1,466 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/dynamic-iptables-firewalls.xml,v 1.6 2011/09/04 17:53:41 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide disclaimer="articles">
+<title>Dynamic iptables firewalls</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+
+<abstract>
+Firewalls are good and fun, but what do you do when you need to make rapid,
+complex changes to your firewall rules? Easy. Use Daniel Robbins' dynamic
+firewall scripts that are demonstrated in this article. You can use these
+scripts to increase your network security and responsiveness, and to inspire
+your own creative designs.
+</abstract>
+
+<!-- The original version of this article was published on IBM developerWorks,
+and is property of Westtech Information Services. This document is an updated
+version of the original article, and contains various improvements made by the
+Gentoo Linux Documentation team -->
+
+<version>1.3</version>
+<date>2005-10-09</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>Flexible (and fun) network security</title>
+<body>
+
+<p>
+The best way to see the benefits of dynamic firewall scripts is to see them in
+action. To do this, let's imagine that I'm a sysadmin at an ISP, and I've
+recently set up a Linux-based firewall to protect my customers and internal
+systems from malicious users on the Internet. To do this, my firewall uses the
+new Linux 2.4 iptables stateful functionality to allow new outgoing connections
+to be established by my customers and servers, and of course to allow new
+incoming connections, but only to "public" services, such as web, ftp, ssh, and
+SMTP. Since I used a deny-by-default design, any from-Internet connections to
+non-public services, such as the squid proxy cache or Samba server, are
+automatically rejected. So far, I have a pretty decent firewall that offers a
+good level of protection for everyone at my ISP.
+</p>
+
+<p>
+For the first week or so, the firewall works great, but then something ugly
+happens: Bob, my arch-nemesis (who works at a competing ISP) decides that he
+wants to flood my network with packets in an attempt to deny service to my
+customers. Unfortunately, Bob has carefully studied my firewall and knows that
+while I'm protecting many internal services, port 25 and 80 must be publicly
+accessible so that I can receive mail and serve HTTP requests. Bob decides to
+take advantage of this fact by launching a bandwidth-sucking attack against my
+web and mail server.
+</p>
+
+<p>
+About a minute or so after Bob begins his attack, I notice that my uplinks start
+becoming saturated with packets. After taking a look at the situation with
+<c>tcpdump</c> I determine that this is yet another Bob attack, and I figure out
+what IP addresses he's using to launch it. Now that I have this information, all
+that I need to do is block these IP addresses, and that should solve the problem
+-- a simple solution, or so I think.
+</p>
+
+</body>
+</section>
+
+<section>
+<title>Responding to an attack</title>
+<body>
+
+<p>
+I quickly load my firewall setup script into vi and begin hacking away at my
+iptables rules, modifying my firewall so that it'll block those evil incoming
+Bob packets. After a minute or so, I find the exact place to make the
+appropriate DROP rule additions, and I add them. Then, I start and stop the
+firewall...ooops, made a bit of a mistake when I added the rules. I load up the
+firewall scripts again, fix the problem, and thirty seconds later the firewall
+has been tweaked to block Bob's attack of the month. At first, it seems like I
+successfully thwarted the attack...until the helpdesk phones begin ringing.
+Apparently, Bob was able to disrupt my network for about 10 minutes, and now my
+customers are calling to find out what's going on. Even worse, after a few
+minutes pass, I notice that our uplinks again start to become saturated. This
+time, Bob appears to be using a brand-new set of IP addresses for his attacks.
+In response, I begin feverishly hacking away at our firewall scripts, except
+this time, I'm a bit panicky -- maybe my solution isn't so good after all.
+</p>
+
+<p>
+Here's what went wrong in the above scenario. Although I had a decent firewall
+in place and also quickly identified the cause of the network problem, I was
+unable to modify the behavior of my firewall to respond to the threat in time.
+Of course, when your network is under attack, you want to be able to respond
+immediately, and being forced to hack away at your master firewall setup script
+in a panicked state is not only stressful, but also very inefficient.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Scripts</title>
+<section>
+<title>ipdrop</title>
+<body>
+
+<p>
+It would be far better if I had a special <c>ipdrop</c> script that's
+specifically designed to insert just the rules you need to block the IP address
+that I specify. With such a script, blocking a firewall is no longer a
+two-minute ordeal; instead, it takes five seconds. And since the script shields
+me from the task of editing firewall rules by hand, it eliminates a major source
+of errors. All that's left for me to do is to determine the IP address that I'd
+like to block, and then type:
+</p>
+
+<pre caption="Dropping IP">
+# <i>ipdrop 129.24.8.1 on</i>
+IP 129.24.8.1 drop on.
+</pre>
+
+<p>
+Immediately, the ipdrop script would block 129.24.8.1, Bob's current evil IP
+address of the week. This script dramatically improves your defenses, because
+now an IP block is a no-brainer. Now, let's take a look at my implementation of
+the ipdrop script:
+</p>
+
+<pre caption="ipdrop script">
+#!/bin/bash
+
+source /usr/local/share/.sh
+
+args 2 $# "${0} IPADDR {on/off}" 
+
+<comment># Drops packets to/from IPADDR. Good for obnoxious
+networks/hosts/DoS"</comment>
+
+if [ "$2" == "on" ] 
+then
+<comment># Rules will be appended or inserted as normal</comment>
+ APPEND="-A"
+  INSERT="-I"
+  rec_check ipdrop $1 "$1 already blocked" on
+  record ipdrop $1
+elif [ "$2" == "off" ]
+then
+<comment># Rules will be deleted instead</comment>
+ APPEND="-D"
+  INSERT="-D"
+  rec_check ipdrop $1 "$1 not currently blocked" off 
+  unrecord ipdrop $1
+else
+  echo "Error: \"off\" or \"on\" expected as second argument"
+  exit 1
+fi  
+
+<comment># Block outside IP address that's causing problems</comment>
+<comment># Attacker's incoming TCP connections will take a minute or so to time
+out, reducing DoS effectiveness</comment>
+
+iptables $INSERT INPUT   -s $1 -j DROP
+iptables $INSERT OUTPUT  -d $1 -j DROP
+iptables $INSERT FORWARD -d $1 -j DROP
+iptables $INSERT FORWARD -s $1 -j DROP
+
+echo "IP ${1} drop ${2}."
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>ipdrop: the explanation</title>
+<body>
+
+<p>
+If you take a look at the last four highlighted lines, you'll see the actual
+commands that insert the appropriate rules into the firewall tables. As you can
+see, the definition of the $INSERT environment variable varies, depending on
+whether we're running in "on" or "off" mode. When the iptables lines execute,
+the particular rules will be inserted or deleted appropriately.
+</p>
+
+<p>
+Now, let's look at the function of the rules themselves, which should work
+perfectly with any type of existing firewall, or even on a system with no
+firewall; all you need is iptables support built-in to your 2.4 kernel. We block
+incoming packets arriving from the evil IP (first iptables line), block outgoing
+packets headed for the evil IP (next iptables line), and then turn off
+forwarding in either direction for this particular IP (last two iptables lines.)
+Once these rules are in place, your system will simply discard any packets that
+fall into one of these categories.
+</p>
+
+<p>
+Another quick note: you'll also notice calls to "rec_check", "unrecord",
+"record", and "args". These are special helper bash functions defined in
+<path>dynfw.sh</path>. The "record" function records the blocked ip in the
+<path>/root/.dynfw-ipdrop</path> file, while the "unrecord" removes the entry
+from <path>/root/.dynfw-ipdrop</path>. The "rec_check" function is used to abort
+the script with an error message if you attempt to re-block an already-blocked
+IP, or unblock an IP that isn't currently being blocked. The "args" function
+takes care of making sure that we receive the correct number of command-line
+arguments, and also handles printing helpful usage information. I've created a
+<uri
+link="http://www-128.ibm.com/developerworks/library/l-fw/dynfw-1.0.tar.gz">dynfw-1.0.tar.gz</uri>
+that contains all these tools; see the <uri link="#resources">Resources</uri>
+section at the end of this article for more information.
+</p>
+
+</body>
+</section>
+
+<section>
+<title>tcplimit</title>
+<body>
+
+<p>
+This next dynamic firewall script is useful if you need to limit the usage of a
+particular TCP-based network service, possibly something that generates a heavy
+CPU load on your end. Called "tcplimit", this script takes a TCP port, a rate, a
+scale, and "on" or "off" as an argument:
+</p>
+
+<pre caption="Limiting of particular TCP-based network service usage">
+# <i>tcplimit 873 5 minute on</i>
+Port 873 new connection limit (5/minute, burst=5) on.
+</pre>
+
+<p>
+<c>tcplimit</c> uses the new iptables "state" module (make sure you've enabled
+this in your kernel or loaded the module) to allow only a certain number of new,
+incoming connections in a specific period of time. In this example, the firewall
+will allow only five new connections to my rsync server (port 873) per minute --
+and it's possible to specify the desired number of connections you'd like per
+second/minute/hour or day, as needed.
+</p>
+
+<p>
+<c>tcplimit</c> offers a good way of limiting non-essential services -- so that
+a flood of traffic to a non-essential service doesn't disrupt your network or
+server. In my case, I use <c>tcplimit</c> to set a maximum upper bound for rsync
+usage to prevent my DSL line from becoming saturated by too many rsync
+connections. Connection-limited services are recorded in
+<path>/root/.dynfw-tcplimit</path>, and if I ever want to turn the new
+connection limiting off, I can simply type:
+</p>
+
+<pre caption="Turning off the connection limiting">
+# <i>tcplimit 873 5 minute off</i>
+Port 873 new connection limit off.
+</pre>
+
+<p>
+<c>tcplimit</c> works by creating a completely new chain in the "filter" table.
+This new chain will reject all packets that exceed our specified limit. Then, a
+single rule is inserted into the INPUT chain that redirects all incoming NEW
+connection packets headed to the target port (873 in this case) to this special
+chain, effectively placing a limit on new, incoming connections while not
+affecting packets that are part of an established connection.
+</p>
+
+<p>
+When <c>tcplimit</c> is turned off, the INPUT rule and special chain are
+deleted. This is the kind of fancy stuff that really highlights the importance
+of having a well-tested, reliable script manage the firewall rules for you. As
+with <c>ipblock</c>, the <c>tcplimit</c> script should be compatible with any
+type of firewall, or even no firewall, as long as you have the proper iptables
+functionality enabled in your kernel.
+</p>
+
+</body>
+</section>
+
+<section>
+<title>host-tcplimit</title>
+<body>
+
+<p>
+<c>host-tcplimit</c> is a lot like <c>tcplimit</c>, but it limits new TCP
+connections coming in from a particular IP address and heading for a particular
+TCP port on your server(s). <c>host-tcplimit</c> is particularly useful for
+preventing a particular person from abusing your network resources. For example,
+let's say you're running a CVS server, and you discover that a particular new
+developer appears to have set up a script that updates his sources with the
+repository every 10 minutes, using up a huge amount of unnecessary network
+resources over the course of a day. However, while you're in the process of
+composing an e-mail to him explaining the error of his ways, you receive an
+incoming message that reads as follows:
+</p>
+
+<pre caption="Incoming message">
+Hi guys!
+
+I'm really excited to be part of your development project. I just set up a
+script to update my local copy of the code every ten minutes. I'm about to
+leave on a two-week cruise, but when I get back, my sources will be totally
+up-to-date and I'll be ready to help out! I'm heading out the door now...see
+you in two weeks!
+
+Sincerely,
+
+Mr. Newbie
+</pre>
+
+<p>
+For such situations, a simple <c>host-tcplimit</c> command will solve the
+problem:
+</p>
+
+<pre caption="host-tcplimit command">
+# <i>host-tcplimit 1.1.1.1 2401 1 day on</i>
+</pre>
+
+<p>
+Now, Mr. Newbie (IP address 1.1.1.1) is limited to one CVS connection (port
+2401) per day, saving oodles of network bandwidth.
+</p>
+
+</body>
+</section>
+
+<section>
+<title>user-outblock</title>
+<body>
+
+<p>
+The last and possibly most intriguing of all my dynamic firewall scripts is
+<c>user-outblock</c>. This script provides an ideal way to allow a particular
+user to telnet or ssh into your system, yet not allow this user to establish any
+new outgoing connections from the command-line. Here's an example of a situation
+where user-outblock would come in handy. Let's say that a particular family has
+an account at my ISP. Mom and Dad use a graphical e-mail client to read their
+mail and occasionally surf the Web, but their son happens to be an aspiring
+hacker, and generally uses his shell access to do naughty things to other
+people's computers.
+</p>
+
+<p>
+One day, you find that he's established ssh connections with several systems
+that appear to belong to the Pakistani military -- ouch. You'd like to help
+direct this youth towards more beneficial activities, so you do the following:
+</p>
+
+<p>
+First, you do an audit of your system and make sure that you remove the suid bit
+from all your network binaries, like ssh:U
+</p>
+
+<pre caption="Removing suid bit from all the network binaries">
+# <i>chmod u-s /usr/bin/ssh</i>
+</pre>
+
+<p>
+Now, any processes that he tries to use to interact with the network will be
+owned by his UID. You can now use user-outblock to block all outgoing TCP
+connections initiated by this UID (which happens to be 2049):
+</p>
+
+<pre caption="Blocking all outgoing TCP connections initiated by some UID">
+# <i>user-outblock 2049 on</i>
+UID 2049 block on.
+</pre>
+
+<p>
+Now, he can log in and read his mail, but he's not going to be using your
+servers to establish ssh connections and the like. Now, he could install an ssh
+client on his home PC. However, it's not too hard to whip up another dynamic
+firewall script that limits his home PC to Web, mail, and outgoing ssh
+connections (to your servers only).
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="resources">
+<title>Resources</title>
+<section>
+<title>Tarballs</title>
+<body>
+
+<p>
+Because I've found these dynamic firewall scripts so helpful, I've put together
+a neat little tarball (<uri
+link="/doc/en/articles/files/dynfw-1.0.1.tar.bz2">dynfw-1.0.1.tar.bz2</uri>)
+that you can download and install on your machine.
+</p>
+
+<p>
+To install, extract the tarball and run the included <c>install.sh</c> script.
+This script will install a shared bash script to
+<path>/usr/local/share/dynfw.sh</path>, and install the dynamic firewall scripts
+themselves to <path>/usr/local/sbin</path>. If you'd like them to end up in
+<path>/usr/share</path> and <path>/usr/sbin</path> instead, simply type this
+before running <c>install.sh</c>:
+</p>
+
+<pre caption="Exporting location of install directory">
+# <i>export PREFIX=/usr</i>
+</pre>
+
+<p>
+I've also added a <uri link="/proj/en/dynfw.xml">dynamic
+firewall scripts</uri> page to the Gentoo Linux Web site that you can visit to
+get the latest version of the tarball. I'd like to continue improving and adding
+to the collection, making a truly useful resource for sysadmins planetwide. Now
+that we have iptables in the kernel, it's time to start taking advantage of it!
+</p>
+
+<p>
+If all this iptables firewall stuff is new to you, I highly recommend my Linux
+<uri link="http://www-128.ibm.com/developerworks/edu/l-dw-linuxfw-i.html">2.4
+stateful firewall tutorial</uri> (registration required), containing complete
+instructions on how to design your own iptables-based stateful firewall.
+</p>
+
+<p>
+<uri link="http://www.tcpdump.org/">tcpdump</uri> is an essential tool for
+exploring low-level packet exchanges and verifying that your firewall is working
+correctly. If you don't have it, get it. If you've got it, start using it. If
+you're using it... good for you. :) 
+</p>
+
+<p>
+Visit the <uri link="http://netfilter.samba.org">home page for the netfilter
+team</uri> to find lots of excellent resources, including the iptables sources,
+and Rusty's excellent <uri
+link="http://netfilter.samba.org/unreliable-guides/index.html">unreliable
+guides</uri>. These include a basic networking concepts HOWTO, a netfilter
+(iptables) HOWTO, a NAT HOWTO, and a netfilter hacking HOWTO for developers.
+There's also a <uri
+link="http://netfilter.org/documentation/index.html#documentation-faq">netfilter FAQ</uri>
+available, as well as other things.
+</p>
+
+<p>
+Thankfully, there are a lot of good online netfilter resources; however, don't
+forget the basics. The iptables man page is very detailed and is a shining
+example of what a man page should be. 
+</p>
+
+<p>
+There's now an <uri link="http://www.ds9a.nl/2.4Routing/">Advanced Linux Routing
+and Traffic Control HOWTO</uri> available.
+There's a good section that shows how to use iptables to mark packets, and then
+use Linux routing functionality to route the packets based on these marks. 
+</p>
+
+<p>
+There's a <uri link="http://netfilter.org/mailinglists.html#ml-user">netfilter
+(iptables) mailing list</uri> available, as well as one for
+<uri link="http://netfilter.org/mailinglists.html#ml-devel">netfilter
+developers</uri>. You can also access the mailing list archives at these
+URLs.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

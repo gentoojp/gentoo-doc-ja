@@ -1,0 +1,660 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/xorg-config.xml,v 1.9 2008/12/14 14:54:24 shindo Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+
+<title>X サーバー設定ガイド</title>
+
+<author title="Author">
+  <mail link="swift"/>
+</author>
+<author title="Author">
+  <mail link="nightmorph"/>
+</author>
+
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+<author title="翻訳">
+  <mail link="murakami.taku@gmail.com">Taku Murakami</mail>
+</author>
+<author title="翻訳">
+  <mail link="katanotsupqr@gmail.com">masuda</mail>
+</author>
+<author title="翻訳">
+  <mail link="naota@gentoo.org">naota</mail>
+</author>
+
+<abstract>
+Xorgはユーザーがグラフィカル環境を利用できるようになるXウィンドウサーバーです。このガイドではXorgとは何か、どのようにインストールするのか、そして様々な設定オプションは何かを説明します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>10</version>
+<date>2011-09-02</date>
+
+<!-- Original revision: 1.48 -->
+
+<chapter>
+<title>X ウィンドウサーバーとは何か？</title>
+<section>
+<title>グラフィカル vs コマンドライン</title>
+<body>
+
+<p>
+平均的なユーザーはコマンドを打つと考えることに脅えているかもしれません。
+なぜGentooや一般的なLinuxではしたいようにポイントしてクリックすることができないのでしょうか。
+よろしい、もちろんあなたはこれを行うことが可能です!
+Linuxは、既存のインストール済のシステム上にインストール可能な、様々な派手なユーザーインターフェースと環境を提供します。
+</p>
+
+<p>
+これは新しいユーザーが見つける最も大きな驚きの一つです。
+すなわち、グラフィカルユーザーインタフェースはシステムで実行するアプリケーションに過ぎないということです。
+これはLinuxカーネルやシステム内部の一部<e>ではありません。</e>
+これはワークステーションのグラフィカル能力を完全に可能にする強力なツールです。
+</p>
+
+<p>
+標準は重要なので、スクリーン上でウィンドウを描写したり移動したり、
+マウスやキーボードや他の一般的な物でユーザーと相互に作用すると言った標準が作成され、<e>X Window System</e>と呼ばれています。
+<e>X11</e> や、単に<e>X</e>とも略されます。
+それは世界中のUnixやLinuxやUnixの様なオペレーティングシステムで利用されています。
+</p>
+
+<p>
+LinuxユーザーにX11の標準としてグラフィカルユーザーインターフェースの実行能力を提供するアプリケーションは、XFree86プロジェクトから分岐したXorg-X11です。
+XFree86はGPLライセンスと互換性のないライセンスの利用を決定したので、Xorgの利用が推奨されています。
+公式のPortageツリーにはもはやXFree86パッケージは存在しません。
+</p>
+
+</body>
+</section>
+<section>
+<title>X.org プロジェクト</title>
+<body>
+
+<p>
+<uri link="http://www.x.org">X.org</uri>プロジェクトは自由に再配布可能なオープンソースのX11システム実行環境を制作し、維持しています。
+それはオープンソースなX11ベースデスクトップの基盤となっています。
+</p>
+
+<p>
+Xorgはハードウェアとあなたが実行したいソフトウェアとの間のインターフェースを提供します。
+その上、Xorgはまた完全なネットワークアウェアです。これは他の誰かがシステムを閲覧中にあなたがアプリケーションを実行できると言うことです。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Xorgのインストール</title>
+<section>
+<body>
+
+<p>
+Xorgをインストールする前に、システムの準備をします。
+まずは、入力デバイスとビデオカードをサポートするようにカーネルを設定します。
+そして正しいドライバとXorgのパッケージとがビルドされインストールされるように
+<path>/etc/make.conf</path>を準備します。
+</p>
+
+</body>
+</section>
+<section>
+<title>入力ドライバのサポート</title>
+<body>
+
+<p>
+デフォルトではXorgは<c>evdev</c>という一般的な入力ドライバを使います。
+カーネルの設定を変更して<c>evdev</c>のサポートを有効にしなくてはいけません。
+カーネルの設定方法がわからなければ、
+<uri link="/doc/en/kernel-config.xml">Kernel Configuration Guide</uri>
+<uri link="/doc/ja/kernel-config.xml">(日本語訳)</uri>を読んでください。
+</p>
+
+<pre caption="カーネルでevdevを有効にする">
+Device Drivers ---&gt;
+  Input device support ---&gt;
+  &lt;*&gt;  Event interface
+</pre>
+
+</body>
+</section>
+<section>
+<title>カーネルモードセッティング</title>
+<body>
+
+<p>
+最近のオープンソースのビデオドライバはカーネルモードセッティング(Kernel Modesetting, KMS)という機能に依存しています。
+KMSにより、グラフィカルなブートがより改善されちらつきが少なくなり、
+ユーザの切り替えが速くなり、フレームバッファコンソールが組み込まれ、
+コンソールからXorgへの切り替えがシームレスになるなどなどの機能が実現されています。
+KMSは過去のフレームバッファドライバと衝突するので、それらのドライバは<b>無効</b>にしなければいけません。
+</p>
+
+<p>
+First, prepare your kernel for KMS. You need to do this step regardless of which
+Xorg video driver you're using.
+</p>
+
+<pre caption="Configuring framebuffers">
+Device Drivers ---&gt;
+  Graphics support ---&gt;
+    Support for frame buffer devices ---&gt;
+    <comment>(Disable all drivers, including VGA, Intel, nVidia, and ATI)</comment>
+
+    <comment>(Further down, enable basic console support. KMS uses this.)</comment>
+    Console display driver support ---&gt;
+      &lt;*&gt;  Framebuffer Console Support
+</pre>
+
+<p>
+Next, configure your kernel to use the proper KMS driver for your video card.
+Intel, nVidia, and AMD/ATI are the most common cards, so follow code listing for
+your card below.
+</p>
+
+<p>
+For Intel cards:
+</p>
+
+<pre caption="Intel settings">
+Device Drivers ---&gt;
+  Graphics support ---&gt;
+    /dev/agpgart (AGP Support) ---&gt;
+    &lt;*&gt;  Intel 440LX/BX/GX, I8xx and E7x05 chipset support
+    Direct Rendering Manager (XFree86 4.1.0 and higher DRI support) ---&gt;
+    &lt;*&gt;  Intel 830M, 845G, 852GM, 855GM, 865G (i915 driver)
+         i915 driver
+    [*]    Enable modesetting on intel by default
+</pre>
+
+<p>
+For nVidia cards:
+</p>
+
+<pre caption="nVidia settings">
+<comment>(Enable DRM)</comment>
+Device Drivers ---&gt;
+  Graphics support ---&gt;
+  &lt;*&gt;  Direct Rendering Manager ---&gt;
+
+<comment>(Nouveau is currently in the Staging drivers section)</comment>
+Device Drivers ---&gt;
+  Staging drivers ---&gt;
+  [ ]  Exclude Staging drivers from being built
+  &lt;*&gt;    Nouveau (nVidia) cards
+</pre>
+
+<p>
+For newer AMD/ATI cards (<uri link="/doc/en/ati-faq.xml">RadeonHD 2000 and
+up</uri>), you will need to emerge <c>radeon-ucode</c> or
+<c>linux-firmware</c>. Once you have installed one of these packages,
+configure your kernel as shown:
+</p>
+
+<pre caption="AMD/ATI settings">
+<comment>(Setup the kernel to use the radeon-ucode firmware)</comment>
+Device Drivers ---&gt;
+  Generic Driver Options ---&gt;
+  [*]  Include in-kernel firmware blobs in kernel binary
+  <comment># RadeonHD 2000, 3000, and 4000 series cards:</comment>
+  (radeon/R600_rlc.bin radeon/R700_rlc.bin) External firmware blobs
+  <comment># RadeonHD 5000, a.k.a Evergreen, and newer cards:</comment>
+  (radeon/CEDAR_me.bin radeon/CEDAR_pfp.bin radeon/CEDAR_rlc.bin
+   radeon/CYPRESS_me.bin radeon/CYPRESS_pfp.bin radeon/CYPRESS_rlc.bin
+   radeon/JUNIPER_me.bin radeon/JUNIPER_pfp.bin radeon/JUNIPER_rlc.bin
+   radeon/REDWOOD_me.bin radeon/REDWOOD_pfp.bin 
+   radeon/REDWOOD_rlc.bin) External firmware blobs
+  <comment># Radeon HD 6000 series Fusion APUs:</comment>
+  (radeon/PALM_me.bin radeon/PALM_pfp.bin radeon/SUMO2_me.bin
+   radeon/SUMO2_pfp.bin radeon/SUMO_me.bin radeon/SUMO_pfp.bin
+   radeon/SUMO_rlc.bin) External firmware blobs
+  <comment># Radeon HD 6400-6900 aka. Northern Islands:</comment>
+  (radeon/BARTS_mc.bin radeon/BARTS_me.bin radeon/BARTS_pfp.bin
+   radeon/BTC_rlc.bin radeon/CAICOS_mc.bin radeon/CAICOS_me.bin
+   radeon/CAICOS_pfp.bin radeon/CAYMAN_mc.bin radeon/CAYMAN_me.bin
+   radeon/CAYMAN_pfp.bin radeon/CAYMAN_rlc.bin radeon/TURKS_mc.bin
+   radeon/TURKS_me.bin radeon/TURKS_pfp.bin) External firmware blobs
+   (/lib/firmware/) Firmware blobs root directory
+
+<comment>(Enable Radeon KMS support)</comment>
+Device Drivers ---&gt;
+  Graphics support ---&gt;
+  &lt;*&gt;  Direct Rendering Manager ---&gt;
+  &lt;*&gt;    ATI Radeon
+  [*]      Enable modesetting on radeon by default
+</pre>
+
+<note>
+Old Radeon cards (X1900 series and older) don't need the <c>radeon-ucode</c>
+package or any firmware configuration. Just enable the Direct Rendering Manager
+and ATI Radeon modesetting.
+</note>
+
+<p>
+Now that you're done setting up KMS, continue with preparing
+<path>/etc/make.conf</path> in the next section.
+</p>
+
+</body>
+</section>
+<section>
+<title>make.conf configuration</title>
+<body>
+
+<p>
+Now that your kernel is prepared, you have to configure two important variables
+in the <path>/etc/make.conf</path> file before you can install Xorg.
+</p>
+
+<p>
+1つめの変数が<c>VIDEO_CARDS</c>です。これは使用予定のビデオドライバを設定するのに用いられ、
+通常は所有するカードの種類やブランドがベースになります。
+最も一般的な設定としてNvidiaカード用に<c>nvidia</c>が、ATI Radeonカード用に<c>fglrx</c>があります。
+それぞれNvidiaとATIから提供される独自ドライバです。オープンソース版を使用したければ、
+<c>nvidia</c>ではなく<c>nv</c>を変数で指定して下さい。但し、
+このドライバを使用すると3Dアクセラレーションが全くサポートされないことに注意して下さい。
+ATIカード用のフリーな<c>radeon</c>、<c>radeonhd</c>ドライバは古めのRadeonカードの3Dアクセラレーションをサポートしていますが、まだ新しいカードのすべての機能をサポートしているわけではありません。
+なお、<c>VIDEO_CARDS</c>には複数のドライバを含めることもできます。その場合は、
+項目をスペースで区切って下さい。
+</p>
+
+<p>
+2つめの変数が<c>INPUT_DEVICES</c>で、
+インプットデバイスに対しビルドされるドライバを決定するのに使用されます。
+ほとんどの場合は<c>keyboard mouse</c>を設定するだけでうまくいくでしょう。
+ノートパソコンのタッチパッドのような代替インプットデバイスを使う場合は、必ず<c>INPUT_DEVICES</c>にそれを追加してください。
+</p>
+
+<p>
+使用するドライバは決まったはずですので、
+必要な設定を<path>/etc/make.conf</path>ファイルに追加します。
+</p>
+
+<pre caption="make.confの記入例">
+<comment>(マウスとキーボードのサポート用)</comment>
+INPUT_DEVICES="keyboard mouse"
+ <comment>(Nvidiaカード用)</comment>
+ VIDEO_CARDS="nvidia"
+ <comment>(または、ATI Radeonカード用)</comment>
+ VIDEO_CARDS="fglrx"
+ </pre>
+
+<p>
+nVidiaとATIカードの設定方法に関しては、<uri link="/doc/en/nvidia-guide.xml">Gentoo Linux nVidia 
+Guide</uri><uri link="/doc/ja/nvidia-guide.xml">(日本語訳)</uri>と<uri 
+link="/doc/en/ati-faq.xml">Gentoo Linux ATI FAQ</uri><uri 
+link="/doc/ja/ati-faq.xml">(日本語訳)</uri>でより詳細な説明がされています。
+選択すべきドライバがわからなければ、より詳細な情報を得るため上記ガイドを参照して下さい。
+</p>
+
+<note>
+提示した設定でうまくいかなければ、<c>emerge -pv xorg-server</c>を実行し利用可能なオプションを全てチェックした上でシステムに適用すべきものを選択して下さい。
+例ではamd64アーキテクチャと<c>xorg-server-1.2</c>を対象としています。
+</note>
+
+<pre caption="利用可能なドライバオプションを全て表示">
+# <i>emerge -pv xorg-server</i>
+
+These are the packages that would be merged, in order:
+
+Calculating dependencies... done!
+[ebuild   R   ] x11-base/xorg-server-1.2.0-r3 USE="dri nptl xorg (-3dfx) -debug
+-dmx -ipv6 -kdrive -minimal -sdl -xprint" INPUT_DEVICES="keyboard mouse -acecad
+-aiptek -calcomp -citron -digitaledge -dmc -dynapro -elo2300 -elographics -evdev
+-fpit -hyperpen -jamstudio -joystick -magellan -microtouch -mutouch -palmax
+-penmount -spaceorb -summa -synaptics -tek4957 -ur98 -vmmouse -void -wacom"
+VIDEO_CARDS="nvidia -apm -ark -chips -cirrus -cyrix -dummy -epson -fbdev -fglrx
+-glint -i128 (-i740) -i810 (-impact) (-imstt) -mach64 -mga -neomagic (-newport)
+(-nsc) -nv -r128 -radeon -rendition -s3 -s3virge -savage siliconmotion -sis
+-sisusb (-sunbw2) (-suncg14) (-suncg3) (-suncg6) (-sunffb) (-sunleo) (-suntcx)
+-tdfx -tga -trident -tseng -v4l -vesa -vga -via -vmware -voodoo" 0 kB
+</pre>
+
+<p>
+必要な変数を全て設定すれば、Xorgパッケージをインストールできます。
+</p>
+
+<pre caption="Xorgのインストール">
+# <i>emerge xorg-x11</i>
+</pre>
+
+<p>
+インストールが完了すれば、あなたは継続する前にいくらかの環境変数を初期化する必要があるかもしれません。
+<c>env-update</c>の後に<c>source /etc/profile</c>を実行するだけであなたは準備が整います。
+</p>
+
+<pre caption="環境変数の初期化">
+# <i>env-update</i>
+# <i>source /etc/profile</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>Xorgの設定</title>
+<section>
+<title>xorg.conf ファイル</title>
+<body>
+
+<p>
+Xorgの設定ファイルは<path>xorg.conf</path>と呼ばれ、<path>/etc/X11</path>に存在します。
+Xorg-X11パッケージはあなた自身の設定を作成できるように<path>/etc/X11/xorg.conf.example</path>に設定例を提供します。
+それにはかなりのコメントがされていますが、もしもっとたくさんのドキュメントが必要ならば、manページを読むことをためらわないでください。
+</p>
+
+<pre caption="xorg.conf man ページを読む">
+# <i>man 5 xorg.conf</i>
+</pre>
+
+<p>
+その気になれば読めない事はありません。ですが、私たちはもちろんそんなことはしたくないので、どうすればファイルを自動生成できるかをもう少し探してみましょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>一般的な選択: xorg.confの自動生成</title>
+<body>
+
+<p>
+Xorg自身はあなたのために多くのパラメータを推測することができます。
+ほとんどの場合、実行して欲しい解像度を得るために数行変更するだけです。
+もしより深い調整に興味があるなら、この章の終わりにある文章を見るようにしてください。
+しかしまず、(起動すると期待する)Xorgの設定ファイルを生成しましょう。
+</p>
+
+<pre caption="xorg.conf ファイルの生成">
+# <i>Xorg -configure</i>
+</pre>
+
+<p>
+Xorgがハードウェアを調査し終わったときにスクリーンの最後の行を読むようにしてください。
+もしいくつかの失敗を伝えていれば、<path>xorg.conf</path>ファイルを手動で書く必要があります。
+失敗していないとすれば、それは<path>/root/xorg.conf.new</path>に書かれてテストする準備が整ったことを伝えているでしょう。
+ではテストしてみましょう :)
+</p>
+
+<pre caption="xorg.conf.new ファイルのテスト">
+# <i>X -config /root/xorg.conf.new</i>
+</pre>
+
+<p>
+もし全てがうまくいけば、あなたは単純な黒と白の模様を見るでしょう。
+マウスが正常に動作していて解像度が正しいことを確認してください。
+"/dev/mouse"に関するエラーを受け取ったら、<path>xorg.conf</path>の"InputDevice"セクションで、マウスデバイスを<c>/dev/input/mice</c>に変更してみてください。
+正確な解像度を推定することができないかもしれませんが、低すぎるかどうかは分かるでしょう。
+Ctrl-Alt-Backspaceを押すといつでも終了できます。
+</p>
+
+</body>
+</section>
+<section>
+<title>もう一つの選択: xorg.confの半自動生成</title>
+<body>
+
+<p>
+Xorgは<c>xorgconfig</c>と呼ばれる、システムが必要とする様々な情報(グラフィカルアダプタ、キーボード、...)を質問するツールを提供します。
+あなたの入力に基づいて<path>xorg.conf</path>ファイルが生成されます。
+</p>
+
+<pre caption="xorg.confの半自動生成">
+# <i>xorgconfig</i>
+</pre>
+
+<p>
+Xorgが提供するその他のツールに、<c>xorgcfg</c>という、最初に<c>Xorg -configure</c>の実行を試みて、その後より多くの調整のためにXサーバを起動する物があります。
+</p>
+
+<pre caption="xorgcfgを使用する">
+# <i>xorgcfg</i>
+<comment>(Xがクラッシュしたり設定が失敗したら、以下を試してください)</comment>
+# <i>xorgcfg -textmode</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>xorg.confのコピー</title>
+<body>
+
+<p>
+まず<path>xorg.conf.new</path>を<path>/etc/X11/xorg.conf</path>にコピーしましょう。
+こうすることによって何度も<c>Xorg -config</c>を実行する必要がなくなり、
+単に<c>X</c>や<c>startx</c>と打つだけで良くなるので、より簡単です :)
+</p>
+
+<pre caption="xorg.confのコピー">
+# <i>cp /root/xorg.conf.new /etc/X11/xorg.conf</i>
+</pre>
+
+</body>
+</section>
+<section id="using_startx">
+<title>startxを使う</title>
+<body>
+
+<p>
+ではXサーバーを起動するために<c>startx</c>を試してください。
+<c>startx</c>は<e>Xセッション</e>を実行するスクリプトで、すなわち、Xサーバといくつかのグラフィカルアプリケーションを起動します。
+これは以下の論理でどのアプリケーションを起動するかを決定します。
+</p>
+
+<ul>
+  <li>
+    もし<path>.xinitrc</path>というファイルがホームディレクトリに存在すれば、そこに記述されているコマンドが実行されます
+  </li>
+  <li>
+    そうでなければ、XSESSION変数の値を読み、<path>/etc/X11/Sessions/</path>で利用可能なセッションの1つを実行します（<path>/etc/rc.conf</path>中のXSESSION変数を設定することで、システム上の全ユーザのデフォルト設定をすることができます。）
+  </li>
+  <li>
+    もし上記の全てが失敗したら、単純なウィンドウマネージャ、一般には<c>twm</c>を使用します
+  </li>
+</ul>
+
+<pre caption="Xの起動">
+# <i>startx</i>
+</pre>
+
+<p>
+もしあなたが醜く、いやでたまらない、不快な、奇形のウィンドウマネージャーを見ているなら、それが<c>twm</c>です。
+twmセッションを終了させるには、xtermに<c>exit</c>と入力するかCtrl-Dを押してください。
+Ctrl-Alt-Backspaceの組み合わせによりXセッションを強制終了させることもできます。
+しかし、これは通常行なうような良い終了の仕方ではありません。ですがそれは何も破壊しません :)
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>xorg.confの調整</title>
+<section>
+<title>解像度の設定</title>
+<body>
+
+<p>
+もしスクリーン解像度が間違っていると感じれば、設定の内の２つのセクションを確認する必要があります。
+何よりもまず、Xサーバーが実行する解像度リストが書かれた<e>Screen</e>セクションがあります。
+デフォルトでは、このセクションには何の解像度も書かれていないはずです。
+この場合、Xorgは次のセクションである<e>Monitor</e>の情報に基づいて解像度を決定します。
+</p>
+
+<p>
+何が起こっているかというと、Xorgは妥当な解像度を計算するために<e>Monitor</e>セクションの<c>HorizSync</c>と<c>VertRefresh</c>の設定をチェックしています。
+今のところは、これらの設定はそのままにしておきます。
+<e>Screen</e>セクション(もう少しで説明します)の変更だけでは動作しない場合にのみ、あなたのモニターのスペックを確認して正しい値を入れなければなりません。
+あなたはまた<c>sys-apps/ddcxinfo-knoppix</c>というモニターのスペックを調べるツールを利用することもできます。
+</p>
+
+<warn>
+モニターの説明書の確認なしにモニターに依存する２つの値を変更<b>してはいけません</b>。
+間違った値は良くても同期エラーを引き起こし、最悪ではスクリーンを破壊します。
+</warn>
+
+<p>
+では解像度を変更しましょう。
+次の<path>/etc/X11/xorg.conf</path>の例では<c>Modes</c>行と<c>DefaultDepth</c>を追加し、
+Xサーバーがデフォルトで1024x768の24ビットで動作するようにしました。
+これらの値はあまり気にしないでください。
+これらは例であり、あなたのシステムの設定次第で異なります。
+</p>
+
+<pre caption="/etc/X11/xorg.confのスクリーンセクションの変更">
+Section "Screen"
+  Identifier  "Default Screen"
+  Device    "S3 Inc. ProSavage KN133 [Twister K]"
+  Monitor   "Generic Monitor"
+  <i>DefaultDepth  24</i>
+  <comment># 読みやすくするためにいくらかのテキストを省略</comment>
+  SubSection "Display"
+    Depth   24
+    <i>Modes   "1024x768"</i>
+  EndSubSection
+EndSection
+</pre>
+
+<p>
+Xを起動 (<c>startx</c>) し、あなたが望む解像度が利用されていることを確認してください :)
+</p>
+
+</body>
+</section>
+<section>
+<title>キーボードの設定</title>
+<body>
+
+<p>
+Xが各国語のキーボードを使うよう設定するために、キーボードの設定を行う<e>InputDevice</e>セクションを検索し、
+あなたが望むキーボードレイアウトを示す<c>XkbLayout</c>オプションを追加してください。
+例では、ベルギーレイアウトを適用する方法を示しています。あなた自身の国キーコードに置き換えてください。
+</p>
+
+<pre caption="キーボードレイアウトの設定">
+Section "InputDevice"
+  Identifier  "Generic Keyboard"
+  Driver    "keyboard"
+  Option    "CoreKeyboard"
+  Option    "XkbRules"  "xorg"
+  Option    "XkbModel"  "pc105"
+  <i>Option    "XkbLayout" "be"</i>
+EndSection
+</pre>
+
+<note>
+訳注：日本語用キーボードを使う場合はXkbModelをjp106に、XkbLayoutをjpに変更してください。
+</note>
+
+</body>
+</section>
+<section>
+<title>マウスの設定</title>
+<body>
+
+<p>
+もしマウスが動作していないのなら、まずカーネルに認識されているかを確認してください。
+マウスは<path>/dev/input/mouse0</path>に（いくつかのマウスを使用したいなら<path>/dev/input/mice</path>)に見えるでしょう。
+<path>/dev/psaux</path>が使われる場合もあります。
+いずれにせよ、マウスを動かしたときのそのファイルの出力によって、そのデバイスがマウスに相当するかどうか確認することができます。
+スクリーンに意味のない記号の羅列が表示されるでしょう。
+このセッションを終了するには<c>Ctrl-C</c>を押します。
+</p>
+
+<pre caption="デバイスファイルの確認">
+# <i>cat /dev/input/mouse0</i>
+<comment>(Ctrl-Cを押して終了することを忘れないでください)</comment>
+</pre>
+
+<p>
+もしマウスが見つからない場合は、必要なモジュールが全て読み込まれているか確認してください。
+</p>
+
+<p>
+もしマウスが見つかったなら、<e>InputDevice</e>セクションにデバイスを記入してください。
+次の例では、利用されるマウスプロトコル(ほとんどはPS/2かIMPS/2)が書かれた<c>Protocol</c>と、マウスホイールを使えるようにする<c>ZAxisMapping</c>という、2つの異なるオプションが設定されています。
+</p>
+
+<pre caption="Xorgのマウス設定の変更">
+Section "InputDevice"
+  Identifier  "TouchPad Mouse"
+  Driver    "mouse"
+  Option    "CorePointer"
+  <i>Option    "Device"    "/dev/input/mouse0"</i>
+  <i>Option    "Protocol"    "IMPS/2"</i>
+  <i>Option    "ZAxisMapping"    "4 5"</i>
+EndSection
+</pre>
+
+<p>
+<c>startx</c>を実行し、結果に喜んでください :)
+おめでとうございます、これで動作するXorgをシステムに導入することができました。
+次のステップはこの醜く取るに足らないウィンドウマネージャを削除し、KDEやGNOMEといった高機能の物を使うようにすることですが、それはこのガイドの部分ではありません :)
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>リソース</title>
+<section>
+<title>xorg.confの生成と調整</title>
+<body>
+
+<p>
+まず第一に、<c>man xorg.conf</c>は設定ファイルで使われる構文についての完全な参考文献を提供します。
+設定ファイルを編集するときにはターミナルでこれをそばに開いておくようにしましょう。
+</p>
+
+<p>
+また、必ず<path>/etc/X11/xorg.conf.example</path>を見てください。
+自分の<path>xorg.conf</path>を書くために、これをコピーし基礎として使ってもよいでしょう。
+</p>
+
+<p>
+X.orgのウェブサイトで提供されている<uri link="http://www.x.org/wiki/FAQ">FAQ</uri>を見てみるのもよいでしょうし、X.Orgの他のドキュメントもみることができます。
+</p>
+
+<p>
+<path>xorg.conf</path>の編集に関するたくさんのオンラインリソースもまた存在します。
+私たちはそれらの内のほんの少しを提示しますので、<uri link="http://www.google.com">Google</uri>でより多くを検索するようにしてください :)
+<path>xorg.conf</path>と<path>XF86Config</path>(XFree86プロジェクトの設定ファイル)は多くの設定オプションで同じ構文を利用しており、
+よりたくさんの<path>XF86Config</path>に関する情報が利用可能ですので、私たちはこれらのリソースも同じように提示します。
+</p>
+
+<ul>
+  <li>
+    <uri link="http://tldp.org/HOWTO/XFree-Local-multi-user-HOWTO/">The XFree
+    Local Multi-User HOWTO</uri>
+  </li>
+  <li>
+    <uri
+    link="http://www-106.ibm.com/developerworks/edu/os-dw-linuxxwin-i.html">An
+    Introduction to XFree 4.x</uri> by Chris Houser
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>その他の参考資料</title>
+<body>
+
+<p>
+様々なグラフィカルなデスクトップ環境、及びアプリケーションのインストールや設定についてのさらに詳しい情報は、
+<uri link="/doc/en/?catid=desktop">Gentoo Desktop Documentation Resources</uri>
+(<uri link="/doc/ja/?catid=desktop">日本語訳</uri>)で見つけることができます。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

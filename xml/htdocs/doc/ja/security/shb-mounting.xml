@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/security/shb-mounting.xml,v 1.4 2008/06/21 14:09:40 shindo Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.0</version>
+<date>2005-05-31</date>
+
+<!-- Original revision: 1.4 -->
+
+<section>
+<title>パーティションのマウント</title>
+<body>
+
+<p>
+<c>ext2</c>、<c>ext3</c>、あるいは<c>reiserfs</c>のパーティションをマウントしているなら、
+<path>/etc/fstab</path>にいくつかのオプションを設定することができます。
+以下がそのオプションです。
+</p>
+
+<ul>
+<li>
+  <c>nosuid</c> - SUIDビットを無視して、通常のファイルと同様に扱う
+</li>
+<li>
+  <c>noexec</c> - このパーティションからのファイルの実行を防ぐ
+</li>
+<li>
+  <c>nodev</c> - デバイスを無視する
+</li>
+</ul>
+
+<p>
+残念ながら、間接的に実行する事でこれらの設定は簡単に回避されます。
+しかしながら、<path>/tmp</path>に noexec を設定することで、<path>/tmp</path>から直接実行するように設計されている多くのexploitsを防ぐでしょう。
+</p>
+
+<pre caption="/etc/fstab">
+/dev/sda1 /boot ext2 noauto,noatime 1 1
+/dev/sda2 none swap sw 0 0
+/dev/sda3 / reiserfs notail,noatime 0 0
+/dev/sda4 /tmp reiserfs notail,noatime,nodev,nosuid,noexec 0 0
+/dev/sda5 /var reiserfs notail,noatime,nodev 0 0
+/dev/sda6 /home reiserfs notail,noatime,nodev,nosuid 0 0
+/dev/sda7 /usr reiserfs notail,noatime,nodev,ro 0 0
+/dev/cdroms/cdrom0 /mnt/cdrom iso9660 noauto,ro 0 0
+proc /proc proc defaults 0 0
+</pre>
+
+<warn>
+<path>/tmp</path>を<c>noexec</c>に設定しておく事は、特定のスクリプトの実行を適切に防ぐ事ができます。
+</warn>
+
+<note>
+Quotaについては、<uri link="?part=1&amp;chap=5#quotas">Quotaの節</uri>を御覧ください。
+</note>
+
+<note>
+私はファイルが<path>/var</path>で実行されることがなくても、このマウントポイントには<c>noexec</c>や<c>nosuid</c>を設定しません。
+この理由は、netqmailが<path>/var/qmail</path>にインストールされ、ファイルを実行したり、SUIDされたあるファイルへのアクセスを許可する必要があるからです。
+また私は<path>/usr</path>はリードオンリーでマウントし、Gentooをアップデートしたい場合を除いては、決して書き込みをしません。
+Gentooをアップデートしたい場合は、読み書きモードでマウントし直してアップデートを行い、再びリードオンリーでマウントします。
+</note>
+
+<note>
+netqmailを使わない場合であっても、Gentooは<path>/var/tmp</path>にebuildを作るために実行属性が必要です。
+どうしても<path>/var</path>を<c>noexec</c>モードでマウントしたい場合は、代わりのパスを設定することができます。
+</note>
+
+</body>
+</section>
+</sections>

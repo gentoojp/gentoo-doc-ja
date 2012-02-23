@@ -1,0 +1,489 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-working-portage.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+
+<sections>
+
+<version>1.42</version>
+<date>2004-10-24</date>
+
+<!-- Original revision: 1.45 -->
+
+<section>
+<title>Portageへようこそ</title>
+<body>
+
+<p>
+PortageはもしかするとGentooのソフトウェア管理における最も革新的な注目すべきものかもしれません。
+その高い柔軟性と膨大な量の機能で、それはたびたびLinuxで利用できる最高のソフトウェア管理ツールと見られています。
+</p>
+
+<p>
+Portageは全て<uri link="http://www.python.org">Python</uri>と<uri link="http://www.gnu.org/software/bash">Bash</uri>によって書かれており、
+故に両方がスクリプト言語であるとユーザーに完全に明白となっています。
+</p>
+
+<p>
+ほとんどのユーザーが<c>emerge</c>ツールを通してPortageを利用しています。
+この章はemergeのmanページから利用可能な情報の複製を作るつもりはありません。
+emergeのオプションについての完全な概要を得るために、manページを調べてください。
+</p>
+
+<pre caption="emergeのmanページを読む">
+$ <i>man emerge</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Portageツリー</title>
+<subsection>
+<title>ebuild</title>
+<body>
+
+<p>
+パッケージについて話すとき、私たちはたびたびGentooユーザーがPortageツリーを通して利用可能なソフトウェアのタイトルを意味しています。
+Portageツリーは<e>ebuild</e>という、Portageがソフトウェアを維持する(インストール、検索など)ために必要な全ての情報を含んだファイルのコレクションです。
+これらebuildはデフォルトでは<path>/usr/portage</path>に存在します。
+</p>
+
+<p>
+Porgageにソフトウェアタイトルに関する行動を行うよう指示するときはいつでも、システムにあるebuildがベースに使われます。
+故にPortageが新しいソフトウェアやセキュリティアップデートなどを知るために、定期的にebuildを更新することが重要です。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Portageツリーの更新</title>
+<body>
+
+<p>
+Portageツリーは一般に<uri link="http://rsync.gentoo.org">rsync</uri>という高速ファイル転送ユーティリティで更新されます。
+更新はrsyncのフロントエンドを提供する<c>emerge</c>コマンドを使うというとても簡単なものです。
+</p>
+
+<pre caption="Portageツリーの更新">
+# <i>emerge --sync</i>
+</pre>
+
+<p>
+もしファイヤーウォールの制限などによりrsyncが実行できないときには、毎日作成されるPortageツリーのスナップショットを利用することによってPortageを更新することができます。
+<c>emerge-webrsync</c>ツールは自動的に最新のスナップショットを取得し、システムにインストールしてくれます。
+</p>
+
+<pre caption="emerge-webrsyncを実行">
+# <i>emerge-webrsync</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>ソフトウェアのメンテナンス</title>
+<subsection>
+<title>ソフトウェアの検索</title>
+<body>
+
+<p>
+Portageツリーからソフトウェアタイトルを検索するには、<c>emerge</c>に内蔵された検索能力を利用することができます。
+デフォルトでは、<c>emerge search</c>は検索用語に(完全もしくは部分)一致したパッケージ名を返します。
+</p>
+
+<p>
+例えば、"pdf"を名前に持つパッケージを検索するにはこうします。
+</p>
+
+<pre caption="pdfと名付けられたパッケージを検索">
+$ <i>emerge search pdf</i>
+</pre>
+
+<p>
+もし詳細を検索したいのなら<c>--searchdesc</c>(もしくは <c>-S</c>)スイッチを使うことができます。
+</p>
+
+<pre caption="pdfに関連したパッケージを検索">
+$ <i>emerge --searchdesc pdf</i>
+</pre>
+
+<p>
+出力を見ると、それがたくさんの情報を与えてくれることに気付くでしょう。
+それらが意味するものと違うように取られないために、各フィールドにははっきりとラベル付けがされています。
+</p>
+
+<pre caption="emergeの検索結果の例">
+*  net-print/cups-pdf
+      Latest version available: 1.5.2
+      Latest version installed: [ Not Installed ]
+      Size of downloaded files: 15 kB
+      Homepage:    http://cip.physik.uni-wuerzburg.de/~vrbehr/cups-pdf/
+      Description: Provides a virtual printer for CUPS to produce PDF files.
+      License:     GPL-2
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>ソフトウェアのインストール</title>
+<body>
+
+<p>
+一度好みのソフトウェアを見つけたら、<c>emerge</c>で簡単にインストールすることができます:ただパッケージの名前を追加するだけです。
+例えば、<c>gnumeric</c>をインストールするにはこうします。
+</p>
+
+<pre caption="gnumericのインストール">
+# <i>emerge gnumeric</i>
+</pre>
+
+<p>
+たくさんのアプリケーションがお互いに依存し合っているため、あるソフトウェアを確実にインストールしようとすると、
+結果的にいくつかの依存関係もインストールすることになるでしょう。
+ご心配なく、Portageは依存関係をうまく扱ってくれます。
+もしパッケージをインストールしたいときにPortageが何をインストール<e>しようとしている</e>か確かめたいときには、
+<c>--pretend</c>スイッチを追加します。例えばこのようにします。
+</p>
+
+<pre caption="gnumericをインストールするふりをする">
+# <i>emerge --pretend gnumeric</i>
+</pre>
+
+<p>
+Portageにパッケージをインストールするよう要求したときは、必要なソースコードをインターネットからダウンロードし、
+デフォルトでは<path>/usr/portage/distfiles</path>に保持します。
+この後、解凍し、パッケージをコンパイルしてインストールします。
+Portageにソースをダウンロードするだけでインストールは行って欲しくないときには、<c>emerge</c>コマンドに<c>--fetchonly</c>コマンドを追加します。
+</p>
+
+<pre caption="gnumericのソースコードをダウンロード">
+# <i>emerge --fetchonly gnumeric</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>ソフトウェアの削除</title>
+<body>
+
+<p>
+システムからパッケージを削除したいときは、<c>emerge unmerge</c>を利用します。
+これはPortageにパッケージによってインストールされた設定ファイル<e>をのぞく</e>全てのファイルを削除するよう命令します。
+設定ファイルを残しておくと、もう一度インストールしようと決めたときに作業を続けることが可能です。
+</p>
+
+<p>
+しかし、<brite>大きな警告</brite>があります:Portageは削除したいパッケージが他から必要とされているかを確認<e>しません</e>。
+とにかく、unmergeするとシステムを破壊する様な重要なパッケージを削除するときには気をつけろと言うことです。
+</p>
+
+<pre caption="gnumericをシステムから削除">
+# <i>emerge unmerge gnumeric</i>
+</pre>
+
+<p>
+システムからパッケージを削除するときには、インストール時に依存関係により自動的にインストールされたソフトウェアは残されます。
+Portageにある削除可能な依存関係を削除するには、<c>emerge</c>の<c>depclean</c>機能を利用します。
+これについては後で話します。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>システムの更新</title>
+<body>
+
+<p>
+システムを完全な形に保つ(もちろん最新のセキュリティアップデートをインストールすることも)には、システムを定期的に更新する必要があります。
+Portageはツリーの中のebuildsのみ確認するので、最初にPortageツリーを更新しなければなりません。
+Portageツリーが更新されたら、<c>emerge --update world</c>でシステムを更新できます。
+</p>
+
+<pre caption="システムを更新する">
+# <i>emerge --update world</i>
+</pre>
+
+<p>
+Portageはインストールされているアプリケーションの新しいバージョンを検索します。
+しかし、これは明示的にインストールされたものしか確かめず、依存関係のものは確認されません。
+システムの全てのパッケージを更新したいときには<c>--deep</c>引数を与えてやります。
+</p>
+
+<pre caption="システムの全てを更新する">
+# <i>emerge --update --deep world</i>
+</pre>
+
+<p>
+もし最近<uri link="?part=2&amp;chap=2">USEフラグ</uri>を変更したのなら、<c>--newuse</c>を追加したくなるでしょう。
+そうするとPortageは新しいパッケージのインストールか既にあるものの再コンパイルが必要かを確認します。
+</p>
+
+<pre caption="完全な更新の実行">
+# <i>emerge --update --deep --newuse world</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>パッケージの抹消</title>
+<body>
+
+<p>
+Portageツリーのいくらかのパッケージは実際には何も含まれていませんが、パッケージのコレクションのインストールに利用されるものがあります。
+例えば、<c>kde</c>パッケージは様々なKDE関連のパッケージを依存関係に引き連れて、完全なKDE環境をシステムにインストールします。
+</p>
+
+<p>
+このようなパッケージをシステムから削除したいときには、<c>emerge unmerge</c>をパッケージに対して実行しても依存関係が残ってしまうのでたいした効果は得られないでしょう。
+</p>
+
+<p>
+Portageは残された依存関係を削除する機能性を持っていますが、動的に依存関係を変更するソフトウェアが存在するので、
+USEフラグに変更を加えたときも含めてまずシステムを完全に更新する必要があります。
+その後残された依存関係を削除するために<c>emerge depclean</c>を実行してください。
+これが完了したら、今削除されたソフトウェアを動的にリンクしているが、もはやそれを必要としないアプリケーションを再ビルドします。
+</p>
+
+<p>
+これら全ては以下の３つのコマンドで処理できます。
+</p>
+
+<pre caption="残された依存関係を削除する">
+# <i>emerge --update --deep --newuse world</i>
+# <i>emerge depclean</i>
+# <i>revdep-rebuild</i>
+</pre>
+
+<p>
+<c>revdep-rebuild</c>は<c>gentoolkit</c>によって提供されます;まず最初にemergeすることを忘れないでください。
+</p>
+
+<pre caption="gentoolkitパッケージのインストール">
+# <i>emerge gentoolkit</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Portageが不満を言ったら</title>
+<subsection>
+<title>SLOT、Virtual、ブランチ、アーキテクチャ、そしてProfilesについて</title>
+<body>
+
+<p>
+既に述べたように、Portageはとても強力で他のソフトウェア管理ツールに無い多くの機能をサポートしています。
+このことを理解するために、あまり細かくなり過ぎるのを避けて、もう少しPortageの特徴について説明します。
+</p>
+
+<p>
+Portageでは、一つのパッケージで複数のバージョンをシステム上に共存させることができます。
+他のディストリビューションがそれらの名前にバージョンを付けている(<c>freetype</c>と<c>freetype2</c>の様に)のに対し、
+Portageは<e>SLOT</e>と呼ばれる技術を使っています。
+ebuildはそのバージョンの確かなSLOTを宣言します。異なったSLOTのebuildはシステムに共存できます。
+例えば、<c>freetype</c>パッケージは<c>SLOT="1"</c>と<c>SLOT="2"</c>のebuildを持っています。
+</p>
+
+<p>
+同じ機能を提供しますが異なった実装のパッケージもまた存在します。
+例えば、<c>metalogd</c>、<c>sysklogd</c>、<c>syslog-ng</c>は全てシステムロガーです。
+「システムロガー」の機能を必要とするアプリケーションは、例えば<c>metalogd</c>に依存することはできません。他のシステムロガーも同様に問題のない選択だからです。
+Portageは<e>virtuals</e>を考慮に入れます:他のアプリケーションが<c>virtual/syslog</c>に依存できるように、それぞれのシステムロガーは<c>virtual/syslog</c>を規定します。
+</p>
+
+<p>
+Portageツリーのソフトウェアは異なったブランチに所属することができます。
+デフォルトではシステムはGentooがstableだと思うもののみ受け付けます。
+ほとんどのコミットされた新しいソフトウェアのタイトルは、stableにされる前にもっとテストが必要だという意味のテストブランチに追加されます。
+これらのソフトウェアのebuildをPortageツリーで見かけても、Portageはstableブランチに置かれるまでは更新しようとしないでしょう。
+</p>
+
+<p>
+いくらかのソフトウェアは少しのアーキテクチャのみで利用可能です。
+すなわちそのソフトウェアは他のアーキテクチャでは動作しないか、もっとテストが必要か、
+Portageツリーにソフトウェアをcommitした開発者が異なったアーキテクチャで動作するかどうか確認できないかです。
+</p>
+
+<p>
+各々のGentooのインストールはある<c>プロファイル</c>と一緒になっています。
+それには、他の情報と一緒に、システムが正常に動作するために必要なパッケージのリストが含まれています。
+</p>
+
+</body>
+</subsection>
+<subsection id="blocked">
+<title>ブロックされたパッケージ</title>
+<body>
+
+<pre caption="ブロックされたパッケージに対するPortageの警告(--pretendを利用)">
+[blocks B     ] gnome-base/bonobo-activation (from pkg gnome-base/libbonobo-2.4.0)
+</pre>
+
+<pre caption="ブロックされたパッケージに対するPortageの警告(--pretendを利用しない)">
+!!! Error: the gnome-base/bonobo-activation package conflicts with another package.
+!!!        both can't be installed on the same system together.
+!!!        Please use 'emerge --pretend' to determine blockers. 
+</pre>
+
+<p>
+ebuildはPortageの依存関係に関する特別なフィールドを含んでいます。
+依存関係には２つの種類があります: <c>DEPEND</c>によって宣言されたビルド依存と、<c>RDEPEND</c>よって宣言された実行時依存です。
+これらの依存関係が明確に互換性<e>のない</e>パッケージまたはvirtualを指している場合、ブロックを引き起します。
+</p>
+
+<p>
+ブロックを解決するには、パッケージのインストールを行わないか、衝突しているパッケージを先にunmergeするかのどちらかを選べます。
+上記の例では、<c>libbonobo</c>のインストールを諦めるか、先に<c>bonobo-activation</c>を削除するかのどちらかです。
+</p>
+
+</body>
+</subsection>
+<subsection id="masked">
+<title>マスクされたパッケージ</title>
+<body>
+
+<pre caption="マスクされたパッケージに対するPortageの警告">
+!!! all ebuilds that could satisfy "bootsplash" have been masked. 
+</pre>
+
+<pre caption="マスクされたパッケージに対するPortageの警告に関する理由">
+!!! possible candidates are:
+
+- gnome-base/gnome-2.8.0_pre1 (masked by: <i>~x86 keyword</i>)
+- lm-sensors/lm-sensors-2.8.7 (masked by: <i>-sparc keyword</i>)
+- sys-libs/glibc-2.3.4.20040808 (masked by: <i>-* keyword</i>)
+- dev-util/cvsd-1.0.2 (masked by: <i>missing keyword</i>)
+- media-video/ati-gatos-4.3.0 (masked by: <i>package.mask</i>)
+- sys-libs/glibc-2.3.2-r11 (masked by: <i>profile</i>)
+</pre>
+
+<p>
+システムで利用できないパッケージをインストールしようとしたときに、このマスクエラーを受け取るでしょう。
+あなたはシステムで利用できる他のアプリケーションのインストールを試みるか、パッケージが利用可能になるまで待つかをするべきです。
+パッケージがマスクされているのにはいつも理由があります。
+</p>
+
+<ul>
+  <li>
+    <b>~arch keyword</b> はstableブランチに置くには十分なテストが行われていないことを意味します。
+    何日か何週間か待ってもう一度試してみてください。
+  </li>
+  <li>
+    <b>-arch keyword</b>か<b>-* keyword</b>はあなたのアーキテクチャでは動作しないことを意味します。
+    もしパッケージが動作すると信じているなら<uri link="http://bugs.gentoo.org">bugzilla</uri>にバグを提出してください。
+  </li>
+  <li>
+    <b>missing keyword</b>はあなたのアーキテクチャでは未だテストされていないことを意味します。
+     アーキテクチャのポーティングチームにテストするよう頼むか、彼らのために自分でテストして気付いたことを<uri link="http://bugs.gentoo.org">bugzilla</uri>まで報告してください。
+  </li>
+  <li>
+    <b>package.mask</b>はパッケージが腐敗、unstableもしくは有害であると見られ、故意に利用禁止とマークされていることを意味します。
+  </li>
+  <li>
+    <b>profile</b>はあなたのプロファイルには適当ではないことを意味します。
+    インストールするとシステムを破壊するおそれがあるか、もしくは単にあなたのprogileと互換性がないかのどちらかです。
+  </li>
+</ul>
+
+</body>
+</subsection>
+<subsection id="missingdependencies">
+<title>依存関係の喪失</title>
+<body>
+
+<pre caption="依存関係の喪失に対するPortageの警告">
+emerge: there are no ebuilds to satisfy "&gt;=sys-devel/gcc-4.2-r4".
+
+!!! Problem with ebuild sys-devel/gcc-3.4.2-r2
+!!! Possibly a DEPEND/*DEPEND problem. 
+</pre>
+
+<p>
+インストールしようとしているアプリケーションはシステムで利用できない他のパッケージに依存しています。
+<uri link="http://bugs.gentoo.org">bugzilla</uri>に既に報告されているか確認して、まだであれば報告してください。
+ブランチを混ぜていない限りこれが起こることはありませんので、それはバグであると言えます。
+</p>
+
+</body>
+</subsection>
+<subsection id="ambiguousebuild">
+<title>曖昧なebuild名</title>
+<body>
+
+<pre caption="曖昧なebuild名に対するPortageの警告">
+!!! The short ebuild name "aterm" is ambiguous.  Please specify
+!!! one of the following fully-qualified ebuild names instead:
+
+    dev-libs/aterm
+    x11-terms/aterm
+</pre>
+
+<p>インストールしようとしているアプリケーション名が２つ以上と一致しています。
+正しいカテゴリー名を追加する必要があります。
+Portageは可能性のある一致した選択肢を知らせるでしょう。
+</p>
+
+</body>
+</subsection>
+<subsection id="circulardependencies">
+<title>環状依存性</title>
+<body>
+
+<pre caption="環状依存性に対するPortageの警告">
+!!! Error: circular dependencies: 
+
+ebuild / net-print/cups-1.1.15-r2 depends on ebuild / app-text/ghostscript-7.05.3-r1
+ebuild / app-text/ghostscript-7.05.3-r1 depends on ebuild / net-print/cups-1.1.15-r2 
+</pre>
+
+<p>
+２つ(もしくはそれ以上)のインストールしたいパッケージがお互いに依存し合っているためにインストールすることができません。
+これはほとんどはPortageツリーのバグです。
+<uri link="http://bugs.gentoo.org">bugzilla</uri>に既に報告されているか確認して、まだであれば報告してください。
+</p>
+
+</body>
+</subsection>
+<subsection id="fetchfailed">
+<title>取得失敗</title>
+<body>
+
+<pre caption="取得失敗に対するPortageのエラー">
+!!! Fetch failed for sys-libs/ncurses-5.4-r5, continuing...
+<comment>(...)</comment>
+!!! Some fetch errors were encountered.  Please see above for details.
+</pre>
+
+<p>
+Portageがアプリケーションのソースのダウンロードに失敗し、他のアプリケーションのインストールを続けようとしています。
+この失敗はミラーが正しく同期されていないか、ebuildが正しくない場所を示しているからかもしれません。
+ソースを置いているサーバーが何らかの理由でダウンしているのかもしれません。
+</p>
+
+<p>
+この問題がいつまでも続くようであれば１時間後にもう一度試してください。
+</p>
+
+</body>
+</subsection>
+<subsection id="profileprotect">
+<title>システムプロファイルの保護</title>
+<body>
+
+<pre caption="プロファイルによって保護されたパッケージに対するPortageの警告">
+!!! Trying to unmerge package(s) in system profile. 'sys-apps/portage'
+!!! This could be damaging to your system.
+</pre>
+
+<p>
+あなたはシステムのコアの一部であるパッケージを削除しようとしました。
+それはプロファイルに必要であると載っているのでシステムから削除できません。
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

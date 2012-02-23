@@ -1,0 +1,602 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/l-sed2.xml,v 1.7 2011/09/04 17:53:41 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide disclaimer="articles"> 
+<title>Sed by example, Part 2</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+
+<abstract>
+Sed is a very powerful and compact text stream editor. In this article, the
+second in the series, Daniel shows you how to use sed to perform string
+substitution; create larger sed scripts; and use sed's append, insert, and
+change line commands.
+</abstract>
+
+<!-- The original version of this article was published on IBM developerWorks,
+and is property of Westtech Information Services. This document is an updated
+version of the original article, and contains various improvements made by the
+Gentoo Linux Documentation team -->
+
+<version>1.2</version>
+<date>2005-10-09</date>
+
+<chapter>
+<title>How to further take advantage of the UNIX text editor</title>
+<section>
+<title>Substitution!</title>
+<body>
+
+<p>
+Let's look at one of sed's most useful commands, the substitution command.
+Using it, we can replace a particular string or matched regular expression with
+another string. Here's an example of the most basic use of this command:
+</p>
+
+<pre caption="Most basic use of substitution command">
+$ <i>sed -e 's/foo/bar/' myfile.txt</i>
+</pre>
+
+<p>
+The above command will output the contents of myfile.txt to stdout, with the
+first occurrence of 'foo' (if any) on each line replaced with the string 'bar'.
+Please note that I said first occurrence on each line, though this is normally
+not what you want. Normally, when I do a string replacement, I want to perform
+it globally. That is, I want to replace all occurrences on every line, as
+follows:
+</p>
+
+<pre caption="Replacing all the occurences on every line">
+$ <i>sed -e 's/foo/bar/g' myfile.txt</i>
+</pre>
+
+<p>
+The additional 'g' option after the last slash tells sed to perform a global
+replace.
+</p>
+
+<p>
+Here are a few other things you should know about the <c>s///</c> substitution
+command. First, it is a command, and a command only; there are no addresses
+specified in any of the above examples. This means that the <c>s///</c> command
+can also be used with addresses to control what lines it will be applied to, as
+follows:
+</p>
+
+<pre caption="Specifying lines command will be applied to">
+$ <i>sed -e '1,10s/enchantment/entrapment/g' myfile2.txt</i>
+</pre>
+
+<p>
+The above example will cause all occurrences of the phrase 'enchantment' to be
+replaced with the phrase 'entrapment', but only on lines one through ten,
+inclusive.
+</p>
+
+<pre caption="Specifying more options">
+$ <i>sed -e '/^$/,/^END/s/hills/mountains/g' myfile3.txt</i>
+</pre>
+
+<p>
+This example will swap 'hills' for 'mountains', but only on blocks of text
+beginning with a blank line, and ending with a line beginning with the three
+characters 'END', inclusive.
+</p>
+
+<p>
+Another nice thing about the <c>s///</c> command is that we have a lot of
+options when it comes to those <c>/</c> separators. If we're performing string
+substitution and the regular expression or replacement string has a lot of
+slashes in it, we can change the separator by specifying a different character
+after the 's'. For example, this will replace all occurrences of
+<path>/usr/local</path> with <path>/usr</path>:
+</p>
+
+<pre caption="Replacing all the occurences of one string with another one">
+$ <i>sed -e 's:/usr/local:/usr:g' mylist.txt</i>
+</pre>
+
+<note>
+In this example, we're using the colon as a separator. If you ever need to
+specify the separator character in the regular expression, put a backslash
+before it.
+</note>
+
+</body>
+</section>
+<section>
+<title>Regexp snafus</title>
+<body>
+
+<p>
+Up until now, we've only performed simple string substitution. While this is
+handy, we can also match a regular expression. For example, the following sed
+command will match a phrase beginning with '&lt;' and ending with '&gt;', and
+containing any number of characters inbetween. This phrase will be deleted
+(replaced with an empty string):
+</p>
+
+<pre caption="Deleting specified phrase">
+$ <i>sed -e 's/&lt;.*&gt;//g' myfile.html</i>
+</pre>
+
+<p>
+This is a good first attempt at a sed script that will remove HTML tags from a
+file, but it won't work well, due to a regular expression quirk. The reason?
+When sed tries to match the regular expression on a line, it finds the longest
+match on the line. This wasn't an issue in my previous sed article, because we
+were using the <c>d</c> and <c>p</c> commands, which would delete or print the
+entire line anyway. But when we use the <c>s///</c> command, it definitely makes
+a big difference, because the entire portion that the regular expression matches
+will be replaced with the target string, or in this case, deleted. This means
+that the above example will turn the following line:
+</p>
+
+<pre caption="Sample HTML code">
+&lt;b&gt;This&lt;/b&gt; is what &lt;b&gt;I&lt;/b&gt; meant.
+</pre>
+
+<p>
+Into this:
+</p>
+
+<pre caption="Not desired effect">
+meant.
+</pre>
+
+<p>
+Rather than this, which is what we wanted to do:
+</p>
+
+<pre caption="Desired effect">
+This is what I meant.
+</pre>
+
+<p>
+Fortunately, there is an easy way to fix this. Instead of typing in a regular
+expression that says "a '&lt;' character followed by any number of characters, and
+ending with a '&gt;' character", we just need to type in a regexp that says "a
+'&lt;' character followed by any number of non-'&gt;' characters, and ending
+with a '&gt;' character". This will have the effect of matching the shortest
+possible match, rather than the longest possible one. The new command looks like
+this:
+</p>
+
+<pre caption="">
+$ <i>sed -e 's/&lt;[^&gt;]*&gt;//g' myfile.html</i>
+</pre>
+
+<p>
+In the above example, the '[^&gt;]' specifies a "non-'&gt;'" character, and the '*'
+after it completes this expression to mean "zero or more non-'&gt;' characters".
+Test this command on a few sample html files, pipe them to more, and review
+their results.
+</p>
+
+</body>
+</section>
+<section>
+<title>More character matching</title>
+<body>
+
+<p>
+The '[ ]' regular expression syntax has some more additional options. To specify
+a range of characters, you can use a '-' as long as it isn't in the first or
+last position, as follows:
+</p>
+
+<pre caption="Specifying a rangle of characters">
+'[a-x]*'
+</pre>
+
+<p>
+This will match zero or more characters, as long as all of them are
+'a','b','c'...'v','w','x'. In addition, the '[:space:]' character class is
+available for matching whitespace. Here's a fairly complete list of available
+character classes:
+</p>
+
+
+<table>
+  <tr>
+    <th>Character class</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <ti>[:alnum:]</ti>
+    <ti>Alphanumeric [a-z A-Z 0-9]</ti>
+  </tr>
+  <tr>
+    <ti>[:alpha:]</ti>
+    <ti>Alphabetic [a-z A-Z]</ti>
+  </tr>
+  <tr>
+    <ti>[:blank:]</ti>
+    <ti>Spaces or tabs</ti>
+  </tr>
+  <tr>
+    <ti>[:cntrl:]</ti>
+    <ti>Any control characters</ti>
+  </tr>
+  <tr>
+    <ti>[:digit:]</ti>
+    <ti>Numeric digits [0-9]</ti>
+  </tr>
+  <tr>
+    <ti>[:graph:]</ti>
+    <ti>Any visible characters (no whitespace)</ti>
+  </tr>
+  <tr>
+    <ti>[:lower:]</ti>
+    <ti>Lower-case [a-z]</ti>
+  </tr>
+  <tr>
+    <ti>[:print:]</ti>
+    <ti>Non-control characters</ti>
+  </tr>
+  <tr>
+    <ti>[:punct:]</ti>
+    <ti>Punctuation characters</ti>
+  </tr>
+  <tr>
+    <ti>[:space:]</ti>
+    <ti>Whitespace</ti>
+  </tr>
+  <tr>
+    <ti>[:upper:]</ti>
+    <ti>Upper-case [A-Z]</ti>
+  </tr>
+  <tr>
+    <ti>[:xdigit:]</ti>
+    <ti>hex digits [0-9 a-f A-F]</ti>
+  </tr>
+</table>
+
+<p>
+It's advantageous to use character classes whenever possible, because they adapt
+better to nonEnglish speaking locales (including accented characters when
+necessary, etc.).
+</p>
+
+</body>
+</section>
+<section>
+<title>Advanced substitution stuff</title>
+<body>
+
+<p>
+We've looked at how to perform simple and even reasonably complex straight
+substitutions, but sed can do even more. We can actually refer to either parts
+of or the entire matched regular expression, and use these parts to construct
+the replacement string. As an example, let's say you were replying to a message.
+The following example would prefix each line with the phrase "ralph said: ":
+</p>
+
+<pre caption="Prefixing each line with certain string">
+$ <i>sed -e 's/.*/ralph said: &amp;/' origmsg.txt</i>
+</pre>
+
+<p>
+The output will look like this:
+</p>
+
+<pre caption="Output of the above command">
+ralph said: Hiya Jim,
+ralph said:
+ralph said: I sure like this sed stuff!
+ralph said:
+</pre>
+
+<p>
+In this example, we use the '&amp;' character in the replacement string,
+which tells sed to insert the entire matched regular expression. So, whatever
+was matched by '.*' (the largest group of zero or more characters on the line,
+or the entire line) can be inserted anywhere in the replacement string, even
+multiple times. This is great, but sed is even more powerful.
+</p>
+
+</body>
+</section>
+<section>
+<title>Those wonderful backslashed parentheses</title>
+<body>
+
+<p>
+Even better than '&amp;', the <c>s///</c> command allows us to define regions in
+our regular expression, and we can refer to these specific regions in our
+replacement string. As an example, let's say we have a file that contains the
+following text:
+</p>
+
+<pre caption="Sample text">
+foo bar oni
+eeny meeny miny
+larry curly moe
+jimmy the weasel
+</pre>
+
+<p>
+Now, let's say we wanted to write a sed script that would replace "eeny meeny
+miny" with "Victor eeny-meeny Von miny", etc. To do this, first we would write a
+regular expression that would match the three strings, separated by spaces:
+</p>
+
+<pre caption="Matching regular expression">
+'.* .* .*'
+</pre>
+
+<p>
+There. Now, we will define regions by inserting backslashed parentheses around
+each region of interest:
+</p>
+
+<pre caption="Defining regions">
+'\(.*\) \(.*\) \(.*\)'
+</pre>
+
+<p>
+This regular expression will work the same as our first one, except that it will
+define three logical regions that we can refer to in our replacement string.
+Here's the final script:
+</p>
+
+<pre caption="Final script">
+$ <i>sed -e 's/\(.*\) \(.*\) \(.*\)/Victor \1-\2 Von \3/' myfile.txt</i>
+</pre>
+
+<p>
+As you can see, we refer to each parentheses-delimited region by typing '\x',
+where x is the number of the region, starting at one. Output is as follows:
+</p>
+
+<pre caption="Output of the above command">
+Victor foo-bar Von oni
+Victor eeny-meeny Von miny
+Victor larry-curly Von moe
+Victor jimmy-the Von weasel
+</pre>
+
+<p>
+As you become more familiar with sed, you will be able to perform fairly
+powerful text processing with a minimum of effort. You may want to think about
+how you'd have approached this problem using your favorite scripting language --
+could you have easily fit the solution in one line?
+</p>
+
+</body>
+</section>
+<section>
+<title>Mixing things up</title>
+<body>
+
+<p>
+As we begin creating more complex sed scripts, we need the ability to enter more
+than one command. There are several ways to do this. First, we can use
+semicolons between the commands. For example, this series of commands uses the
+'=' command, which tells sed to print the line number, as well as the <c>p</c>
+command, which explicitly tells sed to print the line (since we're in '-n'
+mode):
+</p>
+
+<pre caption="First method, semicolons">
+$ <i>sed -n -e '=;p' myfile.txt</i>
+</pre>
+
+<p>
+Whenever two or more commands are specified, each command is applied (in order)
+to every line in the file. In the above example, first the '=' command is
+applied to line 1, and then the <c>p</c> command is applied. Then, sed proceeds
+to line 2, and repeats the process. While the semicolon is handy, there are
+instances where it won't work. Another alternative is to use two -e options to
+specify two separate commands:
+</p>
+
+<pre caption="Second method, multiple -e">
+$ <i>sed -n -e '=' -e 'p' myfile.txt</i>
+</pre>
+
+<p>
+However, when we get to the more complex append and insert commands, even
+multiple '-e' options won't help us. For complex multiline scripts, the best way
+is to put your commands in a separate file. Then, reference this script file
+with the -f options:
+</p>
+
+<pre caption="Third method, external file with commands">
+$ <i>sed -n -f mycommands.sed myfile.txt</i>
+</pre>
+
+<p>
+This method, although arguably less convenient, will always work.
+</p>
+
+</body>
+</section>
+<section>
+<title>Multiple commands for one address</title>
+<body>
+
+<p>
+Sometimes, you may want to specify multiple commands that will apply to a single
+address. This comes in especially handy when you are performing lots of
+<c>s///</c> to transform words or syntax in the source file. To perform multiple
+commands per address, enter your sed commands in a file, and use the '{ }'
+characters to group commands, as follows:
+</p>
+
+<pre caption="Entering multiple commands per address">
+1,20{
+        s/[Ll]inux/GNU\/Linux/g
+        s/samba/Samba/g
+        s/posix/POSIX/g
+}
+</pre>
+
+<p>
+The above example will apply three substitution commands to lines 1 through 20,
+inclusive. You can also use regular expression addresses, or a combination of
+the two:
+</p>
+
+<pre caption="Combination of both methods">
+1,/^END/{
+        s/[Ll]inux/GNU\/Linux/g 
+        s/samba/Samba/g 
+        s/posix/POSIX/g 
+       p
+}
+</pre>
+
+<p>
+This example will apply all the commands between '{ }' to the lines starting at
+1 and up to a line beginning with the letters "END", or the end of file if
+"END" is not found in the source file.
+</p>
+
+</body>
+</section>
+<section>
+<title>Append, insert, and change line</title>
+<body>
+
+<p>
+Now that we're writing sed scripts in separate files, we can take advantage of
+the append, insert, and change line commands. These commands will insert a line
+after the current line, insert a line before the current line, or replace the
+current line in the pattern space. They can also be used to insert multiple
+lines into the output. The insert line command is used as follows:
+</p>
+
+<pre caption="Using the insert line command">
+i\
+This line will be inserted before each line
+</pre>
+
+<p>
+If you don't specify an address for this command, it will be applied to each
+line and produce output that looks like this:
+</p>
+
+<pre caption="Output of the above command">
+This line will be inserted before each line
+line 1 here
+This line will be inserted before each line
+line 2 here
+This line will be inserted before each line
+line 3 here
+This line will be inserted before each line
+line 4 here
+</pre>
+
+<p>
+If you'd like to insert multiple lines before the current line, you can add
+additional lines by appending a backslash to the previous line, like so:
+</p>
+
+<pre caption="Inserting multiple lines before the current one">
+i\
+insert this line\
+and this one\
+and this one\
+and, uh, this one too.
+</pre>
+
+<p>
+The append command works similarly, but will insert a line or lines after the
+current line in the pattern space. It's used as follows:
+</p>
+
+<pre caption="Appending lines after the current one">
+a\
+insert this line after each line.  Thanks! :)
+</pre>
+
+<p>
+On the other hand, the "change line" command will actually replace the current
+line in the pattern space, and is used as follows:
+</p>
+
+<p>
+Because the append, insert, and change line commands need to be entered on
+multiple lines, you'll want to type them in to text sed scripts and tell sed to
+source them by using the '-f' option. Using the other methods to pass commands
+to sed will result in problems.
+</p>
+
+</body>
+</section>
+<section>
+<title>Next time</title>
+<body>
+
+<p>
+Next time, in the final article of this series on sed, I'll show you lots of
+excellent real-world examples of using sed for many different kinds of tasks.
+Not only will I show you what the scripts do, but why they do what they do.
+After you're done, you'll have additional excellent ideas of how to use sed in
+your various projects. I'll see you then!
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Resources</title>
+<section>
+<title>Useful links</title>
+<body>
+
+<ul>
+  <li>
+    Read Daniel's other sed articles from developerWorks: Common threads: Sed by
+    example, <uri link="l-sed1.xml">Part 1</uri> and <uri
+    link="l-sed3.xml">Part 3</uri>.
+  </li>
+  <li>
+    Check out Eric Pement's excellent <uri
+    link="http://sed.sourceforge.net/sedfaq.html">sed
+    FAQ</uri>.
+  </li>
+  <li>
+    You can find the sources to sed at
+    <uri>ftp://ftp.gnu.org/pub/gnu/sed</uri>.
+  </li>
+  <li>
+    Eric Pement also has a handy list of <uri
+    link="http://sed.sourceforge.net/sed1line.txt">sed
+    one-liners</uri> that any aspiring sed guru should definitely look at.
+  </li>
+  <li>
+    If you'd like a good old-fashioned book, <uri
+    link="http://www.oreilly.com/catalog/sed2/">O'Reilly's sed &amp; awk, 2nd
+    Edition</uri> would be wonderful choice.
+  </li>
+<!-- FIXME BOTH DEAD and no other locations, sorry
+ <li>
+    Maybe you'd like to read <uri
+    link="http://www.softlab.ntua.gr/unix/docs/sed.txt">7th edition UNIX's sed
+    man page</uri> (circa 1978!).
+  </li>
+  <li>
+    Take Felix von Leitner's short <uri
+    link="http://www.math.fu-berlin.de/~leitner/sed/tutorial.html">sed
+    tutorial</uri>.
+  </li>
+-->
+<!-- Dead link
+  <li>
+    Brush up on <uri link="http://vision.eng.shu.ac.uk/C++/misc/regexp/">using
+    regular expressions</uri> to find and modify patterns in text in this free,
+    dW-exclusive tutorial.
+  </li>
+-->
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

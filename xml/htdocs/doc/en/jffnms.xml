@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/jffnms.xml,v 1.11 2011/09/04 17:53:40 swift Exp $ -->
+
+<guide lang="en">
+<title>Jffnms Installation and Setup Guide</title>
+
+<author title="Author">
+  <mail link="angusyoung@gentoo.org">Otavio R. Piske</mail>
+</author>
+
+<abstract>
+This guide shows you how to proceed with the post installation setup of Jffnms,
+a network management and monitoring system, and how to monitor your systems
+with it.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.5</version>
+<date>2008-03-17</date>
+
+<chapter>
+<title>Jffnms Basics</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+<uri link="http://www.jffnms.org">Jffnms</uri> is a network management and
+monitoring system. It allows you to grab information from many different kinds
+of hosts and protocols. With this guide, we aim to show you how to get Jffnms
+properly installed and have your systems monitored by this amazing tool.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Initial Setup</title>
+<section>
+<title>Choosing your USE flags</title>
+<body>
+
+<p>
+The Jffnms ebuild has the following USE flags available:
+</p>
+
+<table>
+<tr>
+  <th>USE Flags for Jffnms</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><c>mysql</c></ti>
+  <ti>Uses Mysql to store Jffnms data</ti>
+</tr>
+<tr>
+  <ti><c>postgres</c></ti>
+  <ti>Uses PostgreSQL to store Jffnms data</ti>
+</tr>
+<tr>
+  <ti><c>snmp</c></ti>
+  <ti>
+    Adds support for snmp, which enables jffnms to gather data from other hosts.
+  </ti>
+</tr>
+</table>
+
+</body>
+</section>
+<section>
+<title>USE flags for PHP</title>
+<body>
+
+<p>
+Being written in PHP, Jffnms is heavily dependent on PHP USE flags. In order to
+install Jffnms successfully, you are required to have your PHP package installed
+with (at least) the following USE flags:
+</p>
+
+<table>
+<tr>
+  <th>USE Flags for PHP</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><c>gd</c></ti>
+  <ti>Adds support for media-libs/gd (to generate graphics on the fly)</ti>
+</tr>
+<tr>
+  <ti><c>wddx</c></ti>
+  <ti>Adds support for Web Distributed Data eXchange </ti>
+</tr>
+<tr>
+  <ti><c>sockets</c></ti>
+  <ti>Adds support for tcp/ip sockets</ti>
+</tr>
+<tr>
+  <ti><c>session</c></ti>
+  <ti>Adds persistent session support</ti>
+</tr>
+<tr>
+  <ti><c>spl</c></ti>
+  <ti>Adds support for the Standard PHP Library</ti>
+</tr>
+<tr>
+  <ti><c>cli</c></ti>
+  <ti>Enable CLI SAPI</ti>
+</tr>
+</table>
+
+</body>
+</section>
+<section>
+<title>Installation</title>
+<body>
+
+<p>
+Just like any package in Portage, jffnms can be installed with <c>emerge</c>:
+</p>
+
+<pre caption="Installing Jffnms">
+# <i>emerge jffnms</i>
+</pre>
+
+<p>
+Jffnms should be installed in <path>/opt/jffnms/</path>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring Apache 2</title>
+<body>
+
+<warn>
+This very basic configuration procedure for Apache does not cover all aspects
+of setting up a web server.
+</warn>
+
+<p>
+Sometimes you will want to run Jffnms on your local computer instead of a
+remote server. If this is your case, it is very likely that you don't have an
+apache setup running. Don't worry about installing apache though, Portage has
+already done that for you. Nevertheless, you still have to configure and test
+apache, which (luckily) is pretty straightforward. Start by adding Apache to
+your default runlevel:
+</p>
+
+<pre caption="Adding apache2 to the default runlevel">
+# <i>rc-update add apache2 default</i>
+</pre>
+
+<p>
+If you haven't done it yet, it's time to start apache2:
+</p>
+
+<pre caption="Starting apache2">
+# <i>/etc/init.d/apache2 start</i>
+</pre>
+
+<p>
+Finally, point your browser at <uri>http://localhost/</uri> and you should be
+presented with a home page about your newly installed Apache 2.  Now that we
+know that Apache is up and running, we can proceed to the mod_php
+configuration.  Fire up your favorite text editor, open
+<path>/etc/conf.d/apache2</path> and add <c>-D PHP5</c> the APACHE2_OPTS
+variable.
+</p>
+
+<pre caption="Apache 2 Configuration">
+# <i>nano -w /etc/conf.d/apache2</i>
+APACHE2_OPTS="-D DEFAULT_VHOST -D PHP5"
+</pre>
+
+<p>
+After that, you should create a symlink to the Jffnms install directory in your
+Apache document root dir. In Gentoo, by default, Apache uses
+<path>/var/www/localhost/htdocs</path> as document root. So, you should do the
+following:
+</p>
+
+<pre caption="Creating Jffnms symlink">
+# <i>cd /var/www/localhost/htdocs &amp;&amp; ln -s /opt/jffnms/</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Configuring PHP</title>
+<body>
+
+<p>
+Now that Apache is running, it is time to configure PHP. Jffnms requires that
+you set some variables in php.ini in order to run. The <path>php.ini</path> file
+is usually located in <path>/etc/php/apache2-php5/php.ini</path>. You have to
+set these variables to the following values:
+</p>
+
+<pre caption="Configuring PHP">
+# <i>nano -w /etc/php/apache2-php5/php.ini</i>
+register_globals = On
+register_argc_argv = On 
+error_reporting  =  E_ALL &amp; ~E_NOTICE
+allow_url_fopen = On
+include_path = ".:/usr/share/php5:/usr/share/php:/usr/share/php/PEAR"
+short_open_tag = On
+</pre>
+
+</body>
+</section>
+<section>
+<title>Database setup</title>
+<body>
+
+<warn>
+Please note again that this a very basic configuration procedure for any
+database system and does not cover all aspects of setting up such systems.
+</warn>
+
+<p>
+Jffnms allows you to use either PostgreSQL or MySQL as its database. Here we'll
+show you how to create the database and necessary tables where Jffnms will
+store its data.  It's important to note that it isn't necessary to have a
+database running locally to run Jffnms and except for the fact that you need to
+run this commands on the remote host, the procedure is the same.
+</p>
+
+</body>
+</section>
+<section>
+<title>Setting up PostgreSQL</title>
+<body>
+
+<note>
+If you already have a PostgreSQL database up and running, you can proceed to
+the <uri link="#use-pg">next section</uri>.
+</note>
+
+<p>
+You should add PostgreSQL to your default runlevel so it's started each time
+you boot your computer.
+</p>
+ 
+<pre caption="Adding PostgreSQL to the default runlevel">
+# <i>rc-update add postgresql default</i>
+</pre>
+
+<p>
+Now you must setup the PostgreSQL database.
+</p>
+
+<pre caption="Preparing PostgreSQL">
+# <i>emerge --config postgresql</i>
+</pre>
+
+<p>
+Now start PostgreSQL:
+</p>
+
+<pre caption="Starting PostgreSQL">
+# <i>/etc/init.d/postgresql start</i>
+</pre>
+
+</body>
+</section>
+<section id="use-pg">
+<title>Using PostgreSQL as database</title>
+<body>
+
+<p>
+Once you have your PostgreSQL set up and running, you have to create a Jffnms
+user and a database to store host data.
+</p>
+
+<pre caption="Creating the Jffnms user and database">
+# <i>psql template1 postgres</i>
+template1=# <i>create user jffnms password 'jfnms' createdb;</i>
+template1=# <i>\connect template1 jffnms</i>
+template1=# <i>create database jffnms;</i>
+template1=# <i>\q</i>
+</pre>
+
+<p>
+Finally, you need to create all the tables where data will be stored:
+</p>
+
+<pre caption="Creating Jffnms tables">
+# <i>psql jffnms jffnms &lt; /opt/jffnms/docs/jffnms-0.8.3.pgsql</i>
+</pre>
+
+<p>
+Once you have run those steps, the PostgreSQL database configuration for Jffnms
+should be ok.
+</p>
+
+</body>
+</section>
+<section>
+<title>Using MySQL as database</title>
+<body>
+
+<warn>
+Installing and configuring a MySQL database is not covered in this guide.
+Please see our <uri link="/doc/en/mysql-howto.xml">MySQL Startup Guide</uri>.
+</warn>
+
+<p>
+In case you want to run Jffnms with MySQL, you'll first need to create a
+database and a MySQL user. After that, create your MySQL table:
+</p>
+
+<pre caption="Create a mysql table.">
+# <i>mysql -u jffnms -pjffnms jffnms &lt; /opt/jffnms/docs/jffnms-0.8.3.mysql</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>UDP Port Monitoring and discovery</title>
+<body>
+
+<warn>
+This section covers setting up and running suid programs, so it may not be
+adequate for systems where security is too much an issue.
+</warn>
+
+<p>
+If you want UDP port monitoring and discovery, you need to set <c>nmap</c> and
+<c>fping</c> as a SUID programs. This may give you security hole in case
+there's a bug in one of them. To set them as a SUID you can run the following
+commands:
+</p>
+
+<pre caption="Setting up udp port monitoring and discovery">
+# <i>chmod +s /usr/bin/nmap ; chmod a+x /usr/bin/nmap</i>
+# <i>chmod +s /usr/sbin/fping ; chmod a+x /usr/sbin/fping</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring Jffnms</title>
+<section>
+<title>Configuring the poller process</title>
+<body>
+
+<p>
+The poller process is responsible for gathering data from hosts. In order to
+collect this data at regular intervals, it must be added to crontab.
+</p>
+
+<pre caption="Collecting data at regular intervals">
+# <i>crontab -u jffnms /opt/jffnms/docs/unix/crontab</i>
+# <i>crontab -e -u jffnms</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Final setup</title>
+<body>
+
+<p>
+By now, Jffnms should be correctly installed on your system. You still need,
+however, to configure Jffnms. Luckily, Jffnms provides us with an easy to use
+web page where it's possible to configure access to database, user access as
+well as check if the current host configuration suffices Jffnms needs. You can
+access this web interface through the following URL:
+<uri>http://localhost/jffnms/admin/setup.php</uri>. You can login to your new
+installation by using the username and password <c>admin</c>. You should visit
+<uri link="http://www.jffnms.org/">Jffnms's home page</uri> for details on how
+to properly configure it.
+</p>
+
+ </body>
+</section>
+</chapter>
+
+<chapter>
+<title>Support</title>
+<section>
+<body>
+
+<p>
+Though Jffnms is a wonderful application, it is a bit hard to get it up and
+running. So if you run into problems with Jffnms, there are some places where
+you can look for help:
+</p>
+
+<ul>
+  <li>
+    <uri link="http://www.jffnms.org/docs/installing.html">Jffnms Installation
+    Manual</uri>
+  </li>
+  <li>
+    <uri link="http://www.jffnms.org/docs/jffnms.html">Jffnms Manual</uri>
+  </li>
+  <li><uri link="http://forums.gentoo.org">Gentoo Forums</uri></li>
+  <li>
+    <uri link="http://www.postgresql.org/docs/8.0/static/index.html">PostgreSQL
+    8 Documentation</uri>
+  </li>
+  <li><uri link="http://dev.mysql.com/doc/">MySQL Documentation</uri></li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

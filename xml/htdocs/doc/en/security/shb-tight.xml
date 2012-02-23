@@ -1,0 +1,165 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/security/shb-tight.xml,v 1.4 2008/01/11 21:57:50 nightmorph Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.1</version>
+<date>2006-03-04</date>
+
+<section>
+<title>USE flags</title>
+<body>
+
+<p>
+The <path>make.conf</path> file contains user defined USE flags and
+<path>/etc/make.profile/make.defaults</path> contains the default USE flags for
+Gentoo Linux. For this guide's purposes, the important flags are <c>pam</c>
+(Pluggable Authentication Modules), <c>tcpd</c> (TCP wrappers), and <c>ssl</c>
+(Secure Socket Layer). These are all in the default USE flags.
+</p>
+
+</body>
+</section>
+<section id = "passwording_GRUB">
+<title>Password protecting GRUB</title>
+<body>
+
+<p>
+GRUB supports two different ways of adding password protection to your boot
+loader. The first uses plain text, while the latter uses md5+salt encryption.
+</p>
+
+<pre caption="/boot/grub/grub.conf">
+timeout 5
+password changeme
+</pre>
+
+<p>
+This will add the password <c>changeme</c>. If no password is entered at boot,
+GRUB will simply use the default boot setting.
+</p>
+
+<p>
+When adding an md5 password, you must convert your password into crypt format,
+which is the same format used in <path>/etc/shadow</path>. For more information
+see <c>man crypt</c>. The encrypted password <e>changeme</e>, for example, could
+look like this: <c>$1$T7/dgdIJ$dJM.n2wZ8RG.oEiIOwJUs</c>.
+</p>
+
+<p>
+You can encrypt your password directly at the GRUB shell:
+</p>
+
+<pre caption="md5crypt in grub shell">
+#<i>/sbin/grub</i>
+
+GRUB version 0.92 (640K lower / 3072K upper memory)
+
+   [ Minimal BASH-like line editing is supported. For the first word, TAB lists
+     possible command completions. Anywhere else TAB lists the possible
+     completions of a device/filename. ]
+
+grub> <i>md5crypt</i>
+
+Password: <i>********</i>
+<comment>(Typed changeme at the prompt)</comment>
+Encrypted: $1$T7/dgdIJ$dJM.n2wZ8RG.oEiIOwJUs.
+
+grub> <i>quit</i>
+</pre>
+
+<p>
+Then, cut and paste your password to <path>/boot/grub/grub.conf</path>.
+</p>
+
+<pre caption="/boot/grub/grub.conf">
+timeout 5
+password --md5 $1$T7/dgdIJ$dJM.n2wZ8RG.oEiIOwJUs.
+</pre>
+
+<p>
+The 5 seconds timeout becomes handy if the system is remote and should be able
+to reboot without any keyboard interaction. Learn more about GRUB passwords by
+executing <c>info grub</c>.
+</p>
+
+</body>
+</section>
+<section id = "passwording_LILO">
+<title>Password protecting LILO</title>
+<body>
+
+<p>
+LILO also supports two ways of handling passwords: global and per-image, both in
+clear text.
+</p>
+
+<p>
+The global password is set at the top of the configuration file, and applies to
+every boot image:
+</p>
+
+<pre caption="/etc/lilo.conf">
+password=changeme
+restricted
+delay=3
+</pre>
+
+<p>
+The per-image password is set as below:
+</p>
+
+<pre caption="/etc/lilo.conf">
+image=/boot/bzImage
+      read-only
+      password=changeme
+      restricted
+</pre>
+
+<p>
+If the <c>restricted</c> option is not entered, it will prompt for a password
+every time.
+</p>
+
+<p>
+In order to store the new information in <path>lilo.conf</path>, you must run
+<c>/sbin/lilo</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Restricting Console Usage</title>
+<body>
+
+<p>
+The <path>/etc/securetty</path> file allows you to specify which <c>tty</c>
+(terminal) devices root is allowed to login to.
+</p>
+
+<p>
+We suggest that you comment out all lines except <c>vc/1</c> if you are using
+devfs and all lines except <c>tty1</c> if you are using udev. This will ensure
+that root only can login once and only on one terminal.
+</p>
+
+<note>
+Users in the group "wheel" can still <c>su -</c> to become root on other TTYs.
+</note>
+
+<pre caption="/etc/securetty">
+<comment>(For devfs)</comment>
+vc/1
+<comment>(For udev)</comment>
+tty1
+</pre>
+
+</body>
+</section>
+
+
+</sections>

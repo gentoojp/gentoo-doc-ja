@@ -1,0 +1,949 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/mysql-howto.xml,v 1.10 2011/09/04 17:53:40 swift Exp $ -->
+
+<guide>
+<title>MySQL Startup Guide</title>
+
+<author title="Author">
+  <mail link="chriswhite@gentoo.org">Chris White</mail>
+</author>
+<author title="Editor">
+  <mail link="fox2mike@gentoo.org">Shyam Mani</mail>
+</author>
+<author title="Editor">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+
+<abstract>
+This document helps a user set up and use MySQL.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.5</version>
+<date>2006-08-08</date>
+
+<chapter>
+<title>Getting Started With MySQL</title>
+<section>
+<title>Background</title>
+<body>
+
+<p>
+MySQL is a popular database server that is used in various applications. SQL
+stands for (S)tructured (Q)uery (L)anguage, which is what MySQL uses to
+communicate with other programs. On top of that, MySQL has its own expanded SQL
+functions to provide additional functionality to users. In this document, we'll
+look at how to do the initial MySQL installation, set up databases and tables,
+and create new users. Let's start out with the installation.
+</p>
+
+</body>
+</section>
+<section>
+<title>MySQL Installation</title>
+<body>
+
+<p>
+First make sure you have MySQL installed on your system. In case you need
+specific functionality from MySQL, please make sure you have the required USE
+flags enabled as they will help fine tune your installation.
+</p>
+
+<pre caption="Installing MySQL">
+<comment>(View available USE flags)</comment>
+# <i>emerge --pretend --verbose mysql</i>
+<comment>(Install MySQL)</comment>
+# <i>emerge mysql</i>
+</pre>
+
+<p>
+Upon completion of the installation, you will see the following notice:
+</p>
+
+<pre caption="MySQL einfo message">
+You might want to run:
+"emerge --config =dev-db/mysql-[version]"
+if this is a new install.
+</pre>
+
+<p>
+Since this is a new installation, we run the command. You need to press
+<c>ENTER</c> when prompted while configuring the MySQL database. The
+configuration sets up the main MySQL database which contains administrative
+information such as databases, tables, users, permissions and more. The
+configuration recommends that you change your root password as soon as
+possible. We will definitely do this, otherwise someone could come along by
+chance and hack our default setup MySQL server.
+</p>
+
+<pre caption="MySQL configuration">
+<comment>(Replace [version] with the version number you have just installed.)</comment>
+# <i>emerge --config =dev-db/mysql-[version]</i>
+ * MySQL DATADIR is /var/lib/mysql
+ * Press ENTER to create the mysql database and set proper
+ * permissions on it, or Control-C to abort now...
+
+   Preparing db table
+   Preparing host table
+   Preparing user table
+   Preparing func table
+   Preparing tables_priv table
+   Preparing columns_priv table
+   Installing all prepared tables
+
+   To start mysqld at boot time you have to copy support-files/mysql.server
+   to the right place for your system
+
+   PLEASE REMEMBER TO SET A PASSWORD FOR THE MySQL root USER !
+   To do so, issue the following commands to start the server
+   and change the applicable passwords:
+<comment>(Note the next 3 lines)</comment>
+   /etc/init.d/mysql start
+   /usr/bin/mysqladmin -u root -h pegasos password 'new-password'
+   /usr/bin/mysqladmin -u root password 'new-password'
+   Depending on your configuration, a -p option may be needed
+   in the last command. See the manual for more details.
+
+<comment>(Some MySQL non-ebuild specific information has been removed from here
+so as to keep this document as consistent as possible)</comment>
+
+   * For security reasons you should set your MySQL root
+   * password as soon as possible.
+</pre>
+
+<impo>
+As of mysql-4.0.24-r2, passwords are entered during the config phase making
+root password entry more secure.
+</impo>
+
+<p>
+The config script has already printed out the commands we need to run to setup
+our password, so we shall now run them.
+</p>
+
+<pre caption="Setting up your MySQL root password">
+# <i>/etc/init.d/mysql start</i>
+ * Re-caching dependency info (mtimes differ)...
+ * Starting mysqld (/etc/mysql/my.cnf) ...        [ ok ]
+<comment>(Replace new-password with your desired password)</comment>
+# <i>/usr/bin/mysqladmin -u root -h localhost password 'new-password'</i>
+</pre>
+
+<p>
+You can now test that your root password was successfully configured by trying
+to login to your MySQL server:
+</p>
+
+<pre caption="Logging into the MySQL server using mysql">
+$ <i>mysql -u root -h localhost -p</i>
+Enter password:
+Welcome to the MySQL monitor. Commands end with ; or \g.
+Your MySQL connection id is 4 to server version: 4.0.25
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt;
+</pre>
+
+<p>
+The <c>-u</c> switch sets the user that will be logging in. The <c>-h</c>
+switch sets the host. This will usually be <c>localhost</c> unless you are
+setting up a remote server. Finally, <c>-p</c> tells the mysql client that you
+will be entering a password to access your database. Notice the
+<c>mysql&gt;</c> prompt. This is where you type in all your commands. Now that
+we're in the mysql prompt as the root user, we can begin to setup our database.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Setting Up The Database</title>
+<section>
+<title>Creating A Database</title>
+<body>
+
+<p>
+We have logged in and a mysql prompt is displayed. First let's take a look at
+the databases we currently have. To do so, we use the <c>SHOW DATABASES</c>
+command.
+</p>
+
+<pre caption="Displaying MySQL databases">
+mysql&gt; <i>SHOW DATABASES;</i>
++----------+
+| Database |
++----------+
+| mysql    |
+| test     |
++----------+
+2 rows in set (0.09 sec)
+</pre>
+
+<impo>
+Please remember that MySQL commands should end with a semicolon -- <c>;</c>
+</impo>
+
+<p>
+Despite the fact that a test database is already created, we are going to
+create our own. Databases are created using the <c>CREATE DATABASE</c> command.
+We'll create one named "gentoo".
+</p>
+
+<pre caption="Creating the gentoo database">
+mysql&gt; <i>CREATE DATABASE gentoo;</i>
+Query OK, 1 row affected (0.08 sec)
+</pre>
+
+<p>
+The response lets us know that the command was executed without any errors. In
+this case, 1 row was modified. This is a reference to the main mysql database,
+which carries a list of all the databases. You won't need to worry too much
+about the background details. The last number is how fast the query was
+executed. We can verify the database was created by running the <c>SHOW
+DATABASES</c> command again.
+</p>
+
+<pre caption="Verifing the database is created">
+mysql&gt; <i>SHOW DATABASES;</i>
++----------+
+| Database |
++----------+
+| gentoo   |
+| mysql    |
+| test     |
++----------+
+3 rows in set (0.00 sec)
+</pre>
+
+<p>
+Indeed our database has been created. In order to work with creating tables for
+our new gentoo database, we need to select it as our current database. To do
+so, we use the <c>USE</c> command. The <c>USE</c> command takes the name of the
+database you wish to use as your current database. Another option is to set it
+on the command line after the <c>-D</c> switch. Let's go ahead and switch to
+the gentoo database.
+</p>
+
+<pre caption="Switching our database">
+mysql&gt; <i>USE gentoo;</i>
+Database changed
+</pre>
+
+<p>
+And the current database is now our previously created gentoo database. Now
+that we're using it, we can start to create some tables and put information in
+them.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Working With Tables In MySQL</title>
+<section>
+<title>Creating a Table</title>
+<body>
+
+<p>
+In the structure of MySQL, there are databases, tables, records, and fields.
+Databases hold together tables, tables hold together records, records hold
+together fields, which contain the actual information. This structure lets
+users select how they want to access their information. So far we've dealt with
+databases, now let's work with tables. First off, tables can be listed
+similiarly to databases using the <c>SHOW TABLES</c> command. Right now there
+are no tables in our gentoo database, as running the command will show us:
+</p>
+
+<pre caption="Empty gentoo Database">
+mysql&gt; <i>SHOW TABLES;</i>
+Empty set (0.00 sec)
+</pre>
+
+<p>
+This means we need to create some tables. In order to do so, we use the
+<c>CREATE TABLE</c> command. However, this command is quite different from
+simple <c>CREATE DATABASE</c> command. This command takes a list of arguments.
+The form is as follows:
+</p>
+
+<pre caption="CREATE TABLE Syntax">
+CREATE TABLE [table_name] ([field_name] [field_data_type]([size]));
+</pre>
+
+<p>
+<b>table_name</b> is the name of the table we wish to create. In this case,
+let's make a table named <c>developers</c>. This table will contain the
+developer's name, email and job. <b>field_name</b> will contain the name of the
+field. We have 3 required names in this case: name, email, and job. The
+<b>field_data_type</b> is what type of information will be stored. The
+different formats available can be found at the <uri
+link="http://dev.mysql.com/doc/mysql/en/column-types.html">MySQL Column Types
+Page</uri>. For our purposes, we'll use the <c>VARCHAR</c> data type for all of
+our fields. <c>VARCHAR</c> is one of the simplest of data types when it comes
+to working with strings. <b>size</b> is how much of data a single field will
+store. In this case, we'll use 128. This means that the field can have
+<c>VARCHAR</c> data that is 128 bytes. You can safely think of this as 128
+characters for the time being, though there is a somewhat more technical
+explanation that the above site will provide you with. Now that we know how we
+are going to create the table, let's do it.
+</p>
+
+<pre caption="Creating our table">
+mysql&gt; <i>CREATE TABLE developers ( name VARCHAR(128), email VARCHAR(128), job VARCHAR(128));</i>
+Query OK, 0 rows affected (0.11 sec)
+</pre>
+
+<p>
+Looks like our table was created ok. Let's check it with the <c>SHOW TABLES</c>
+command:
+</p>
+
+<pre caption="Verifying our table">
+mysql&gt; <i>SHOW TABLES;</i>
++------------------+
+| Tables_in_gentoo |
++------------------+
+| developers       |
++------------------+
+1 row in set (0.00 sec)
+</pre>
+
+<p>
+Yes, there's our table. However, it doesn't seem to have any information on the
+types of fields we setup. For that, we use the <c>DESCRIBE</c> command (or
+<c>DESC</c> for short), which takes the name of the table as its argument.
+Let's see what that gives us for our developers table.
+</p>
+
+<pre caption="Describing our developers table">
+mysql&gt; <i>DESCRIBE developers;</i>
++-------+--------------+------+-----+---------+-------+
+| Field | Type         | Null | Key | Default | Extra |
++-------+--------------+------+-----+---------+-------+
+| name  | varchar(128) | YES  |     | NULL    |       |
+| email | varchar(128) | YES  |     | NULL    |       |
+| job   | varchar(128) | YES  |     | NULL    |       |
++-------+--------------+------+-----+---------+-------+
+3 rows in set (0.00 sec)
+</pre>
+
+<p>
+This shows the different fields and their types. It also shows a few extra
+attributes that are beyond the scope of this howto. Feel free to refer to the
+<uri link="http://dev.mysql.com/doc/mysql/en/">MySQL Reference Manual</uri> for
+more information. We now have a table to work with. Now let's go ahead and
+populate it.
+</p>
+
+</body>
+</section>
+<section>
+<title>Populating Our MySQL Database</title>
+<body>
+
+<p>
+We populate a table (or add data) using the <c>INSERT</c> command. Like the
+<c>CREATE TABLE</c> command, it also has a specific format:
+</p>
+
+<pre caption="INSERT Syntax">
+INSERT INTO table (col1, col2, ...) VALUES('value1', 'value2', ...);
+</pre>
+
+<p>
+This command is used to insert a record into table. table contains the MySQL
+table we wish to enter the information into. The table name may be followed by
+the list of columns to insert data into and <c>VALUES()</c> contains the values
+you wish to insert into the table. You may omit the list of columns if you
+insert a value into each one and if you write the values in the same order the
+columns have been defined. In this case, we want to insert data into the
+developers table. Let's insert sample records:
+</p>
+
+<pre caption="Inserting information into our developers table">
+mysql&gt; <i>INSERT INTO developers VALUES('Joe Smith', 'joesmith@gentoo.org', 'toolchain');</i>
+Query OK, 1 row affected (0.06 sec)
+<comment>(If you don't know the order of the columns in the table or want to insert an incomplete record)</comment>
+mysql&gt; <i>INSERT INTO developers (job, name) VALUES('outsourced', 'Jane Doe');</i>
+Query OK, 1 row affected (0.01 sec)
+</pre>
+
+<p>
+According to our return result, it appears that the record was inserted
+correctly. What if we want to input more information than just one record?
+That's where the <c>LOAD DATA</c> command comes into play. This loads records
+from a tab separated file. Let's try that by editing a file in our home
+directory with the records. We'll call this file <path>records.txt</path>.
+Here's a sample:
+</p>
+
+<pre caption="~/records.txt">
+John Doe	johndoe@gentoo.org	portage
+Chris White	chriswhite@gentoo.org	documentation
+Sam Smith	samsmith@gentoo.org	amd64
+</pre>
+
+<impo>
+Be sure you know what data you're dealing with. It's very unsafe to use <c>LOAD
+DATA</c> when you are uncertain of the file's contents!
+</impo>
+
+<p>
+Now the <c>LOAD DATA</c> command has a somewhat enlongated definition, but
+we'll use the simplest form here.
+</p>
+
+<pre caption="LOAD DATA Syntax">
+LOAD DATA LOCAL INFILE '/path/to/filename' INTO TABLE table;
+</pre>
+
+<p>
+<path>/path/to/filename</path> is the directory and filename that will be used.
+table is the name of our table. In this case, our file is
+<path>~/records.txt</path> and the table is developers.
+</p>
+
+<pre caption="Loading in our data">
+mysql&gt; <i>LOAD DATA LOCAL INFILE '~/records.txt' INTO TABLE developers;</i>
+Query OK, 3 rows affected (0.00 sec)
+Records: 3  Deleted: 0  Skipped: 0  Warnings: 0
+</pre>
+
+<impo>
+If you come up with any strange behaviour, make sure your fields are separated
+by tabs. If you paste information into your infile from another source, it may
+convert your tabs to spaces.
+</impo>
+
+<p>
+That worked well. However, this simply inserts records, and does not give you
+any sort of control over MySQL. Many web applications use sql scripts in order
+to setup MySQL quickly and easily. If you want to use an sql script, you'll
+need to run mysql in batch mode, or source the file. Here's an example of
+running mysql in batch mode:
+</p>
+
+<pre caption="MySQL in batch mode">
+$ <i>mysql -u root -h localhost -p &lt; sqlfile</i>
+</pre>
+
+<p>
+Like <c>LOAD DATA</c>, be sure you can tell what <path>sqlfile</path> does.
+<e>Failure to do so may cause your database to be compromised!</e> Another way
+you can accomplish this is to use the <c>source</c> command. This command will
+run mysql commands from an sql file while in the mysql interactive mode. Here
+is how to source an sql file:
+</p>
+
+<pre caption="Sourcing an sql file">
+mysql&gt; <i>source sqlfile;</i>
+</pre>
+
+<p>
+If you see a web application wanting you to run an sql file, the two above
+commands can be used to accomplish that task. We have our table setup, so how
+do we check our fields?  We do this by searching our table with queries.
+</p>
+
+</body>
+</section>
+<section>
+<title>Browsing MySQL Tables With Queries</title>
+<body>
+
+<p>
+Queries are one of the main features of any SQL database. They help us turn
+data in our tables into something useful. Most queries are done with the
+<c>SELECT</c> command. The <c>SELECT</c> command is fairly complex, and we're
+only going to look at three main forms of the command in this document.
+</p>
+
+<pre caption="SELECT forms">
+<comment>(Select all entries in a table)</comment>
+SELECT * FROM table;
+<comment>(Select specific entries in a table)</comment>
+SELECT * FROM table WHERE field=value;
+<comment>(Select specific fields)</comment>
+SELECT field1,field2,field3 FROM table [WHERE field=value];
+</pre>
+
+<p>
+Let's take a quick look at the first form. It's relatively simple and gives
+you an overall look of your table. We'll go ahead and run it to see what data
+we have so far.
+</p>
+
+<pre caption="Contents of our table">
+mysql&gt; <i>SELECT * FROM developers;</i>
++-------------+-----------------------+----------------+
+| name        | email                 | job            |
++-------------+-----------------------+----------------+
+| Joe Smith   | joesmith@gentoo.org   | toolchain      |
+| John Doe    | johndoe@gentoo.org    | portage        |
+| Chris White | chriswhite@gentoo.org | documentation  |
+| Sam Smith   | samsmith@gentoo.org   | amd64          |
+| Jane Doe    | NULL                  | Outsourced job |
++-------------+-----------------------+----------------+
+5 rows in set (0.00 sec)
+</pre>
+
+<p>
+We see both the data we inserted through <c>INSERT</c> and those inserted by
+<c>LOAD DATA</c> present. Now, let's say that we just want to see the record
+for Chris White. We can do so with the second form of select as shown below.
+</p>
+
+<pre caption="Selecting a specific record using SELECT">
+mysql&gt; <i>SELECT * FROM developers WHERE name = 'Chris White';</i>
++-------------+-----------------------+---------------+
+| name        | email                 | job           |
++-------------+-----------------------+---------------+
+| Chris White | chriswhite@gentoo.org | documentation |
++-------------+-----------------------+---------------+
+1 row in set (0.08 sec)
+</pre>
+
+<p>
+As expected, the specific entry that we were looking for has been selected. Now,
+let's say we only wanted to know the person's job and email address, not their
+name. We can do so with the third form of <c>SELECT</c> as shown here.
+</p>
+
+<pre caption="Selecting a specific record and fields using SELECT">
+mysql> <i>SELECT email,job FROM developers WHERE name = 'Chris White';</i>
++-----------------------+---------------+
+| email                 | job           |
++-----------------------+---------------+
+| chriswhite@gentoo.org | documentation |
++-----------------------+---------------+
+1 row in set (0.04 sec)
+</pre>
+
+<p>
+This method of selection is a lot easier to manage, expecially with larger
+amounts of information, as we'll see later on. Right now, being the root
+mysql user, we have unlimited permissions to do what we wish with the MySQL
+database. In a server environment, a user with such privileges can be quite
+problematic. In order to control who does what with the databases, we setup
+privileges.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>MySQL Privileges</title>
+<section>
+<title>Granting Privileges with GRANT</title>
+<body>
+
+<p>
+Privileges are what kind of access users have to databases, tables, pretty much
+anything. Right now in the gentoo database, the MySQL root account is the only
+account that can access it, given its permissions. Now, let's create two
+somewhat generic users, guest and admin, who will access the gentoo database
+and work with the information in it. The guest account will be a restricted
+one. All it will be able to do is get information from the database, and that's
+it. admin will have the same control as root, but only for the gentoo database
+(not the main mysql databases). Before we start on that, let's have a closer
+look at this somewhat simplified format of the <c>GRANT</c> command.
+</p>
+
+<pre caption="GRANT Syntax">
+GRANT [privileges] ON database.* TO '[user]'@'[host]' IDENTIFIED BY '[password]';
+</pre>
+
+<note>
+<c>GRANT</c> is considered to be the way to create a user. Later versions of
+MySQL, however, do contain a <c>CREATE_USER</c> function, though <c>GRANT</c>
+is still preferred.
+</note>
+
+<p>
+First we have the privileges we wish to assign. With what we've learned so far,
+here are some of the privileges you can set:
+</p>
+
+<ul>
+  <li><c>ALL</c> - Gives the all privilege control for the database</li>
+  <li><c>CREATE</c> - Allows users to create tables</li>
+  <li><c>SELECT</c> - Allows users to query tables</li>
+  <li><c>INSERT</c> - Allows users to insert data into a table</li>
+  <li><c>SHOW DATABASES</c> - Allows users to see a list of databases</li>
+  <li><c>USAGE</c> - User has no privileges</li>
+  <li><c>GRANT OPTION</c> - Allows users to grant privileges</li>
+</ul>
+
+<note>
+If you're running MySQL to communicate data to a web application, <c>CREATE</c>,
+<c>SELECT</c>, <c>INSERT</c> (discussed here), <c>DELETE</c> and <c>UPDATE</c>
+(for further infomation look up the
+<uri link="http://dev.mysql.com/doc/mysql/en/grant.html"> MySQL
+Reference Manual - GRANT and REVOKE Syntax</uri> section) are the only
+permissions you will most likely need. A lot of people make the mistake of
+granting all permissions when it's not really necessary. Check with the
+application developers to see if such permissions will cause issues with
+general operation.
+</note>
+
+<p>
+For our admin user, ALL will do. For the guest user, <c>SELECT</c> will be
+sufficient for read only access. database is the database we wish the user
+to have these permissions on. In this example, gentoo is the database. The .*
+means all tables. If you wanted to, you could apply per table access. user is
+the name of the user and host is the hostname the user will be accessing from.
+In most cases, this will be localhost. Finally, password is the user's
+password. Given the information, let's go ahead and create our users.
+</p>
+
+<pre caption="Creating the admin and guest user">
+<comment>(admin)</comment>
+mysql&gt; <i>GRANT ALL ON gentoo.* TO 'admin'@'localhost' IDENTIFIED BY 'password';</i>
+<comment>(guest)</comment>
+mysql&gt; <i>GRANT SELECT ON gentoo.* TO 'guest'@'localhost' IDENTIFIED BY 'password';</i>
+</pre>
+
+<p>
+Now that we have the users setup, let's test them out. First we quit mysql by
+typing <c>quit</c> at the command prompt:
+</p>
+
+<pre caption="Quitting MySQL">
+mysql&gt; <i>quit</i>
+</pre>
+
+<p>
+We're now back at the console. Now that we have our users setup, let's go ahead
+and see what they can do.
+</p>
+
+</body>
+</section>
+<section>
+<title>Testing User Permissions</title>
+<body>
+
+<p>
+We shall now attempt to login as the guest user. Currently, the guest user has
+<c>SELECT</c> only privileges. This basically comes down to being able to search
+and nothing more. Go ahead and login with the guest account.
+</p>
+
+<pre caption="Logging in with the guest account">
+$ <i>mysql -u guest -h localhost -p</i>
+Enter password:
+Welcome to the MySQL monitor. Commands end with ; or \g.
+Your MySQL connection id is 6 to server version: 4.0.25
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt;
+</pre>
+
+<p>
+Now we should test the user restriction(s). Let's switch to the gentoo database:
+</p>
+
+<pre caption="Switching to the gentoo database">
+mysql&gt; <i>USE gentoo;</i>
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+</pre>
+
+<p>
+Now let's try to do something we are not supposed to. We'll attempt to create a
+table.
+</p>
+
+<pre caption="Attempting to create a table with the guest user">
+mysql&gt; <i>CREATE TABLE test (test VARCHAR(20), foobar VARCHAR(2));</i>
+ERROR 1044: Access denied for user: 'guest@localhost' to database 'gentoo'
+</pre>
+
+<p>
+As you can see, this function fails, as our user does not have the appropriate
+access. However, one access we did grant is the <c>SELECT</c> statement. Let's
+go ahead and try that:
+</p>
+
+<pre caption="Attempting the SELECT statement">
+mysql&gt; <i>SELECT * FROM developers;</i>
++-------------+-----------------------+----------------+
+| name        | email                 | job            |
++-------------+-----------------------+----------------+
+| Joe Smith   | joesmith@gentoo.org   | toolchain      |
+| John Doe    | johndoe@gentoo.org    | portage        |
+| Chris White | chriswhite@gentoo.org | documentation  |
+| Sam Smith   | samsmith@gentoo.org   | amd64          |
+| Jane Doe    | NULL                  | Outsourced job |
++-------------+-----------------------+----------------+
+5 rows in set (0.00 sec)
+</pre>
+
+<p>
+The command succeeds, and we're given a glimpse of what user permissions can
+do. We did, however, create an admin account as well. This was created to show
+that even all permissions granted users can still have limitations. Go ahead
+and quit MySQL and login as the admin.
+</p>
+
+<pre caption="Logging in as admin">
+mysql&gt; <i>quit</i>
+Bye
+$ <i>mysql -u admin -h localhost -p</i>
+Enter password:
+Welcome to the MySQL monitor. Commands end with ; or \g.
+Your MySQL connection id is 7 to server version: 4.0.25
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt;
+</pre>
+
+<p>
+To begin, we'll try creating a new database with our admin user. This admin
+user will have access similiar to the root MySQL account, and will be able to
+do any kind of modification to the gentoo database it chooses. This will test
+the user's access to the main MySQL database. Remember ealier that we only set
+permissions to a specific database.
+</p>
+
+<pre caption="Attempting to create a new database">
+mysql&gt; <i>CREATE DATABASE gentoo2;</i>
+ERROR 1044: Access denied for user: 'admin@localhost' to database 'gentoo2'
+</pre>
+
+<p>
+Indeed, the admin user cannot create databases on the main MySQL database,
+despite all his permissions on the gentoo database. However, we're still able
+to use the admin account to modify the gentoo database, as shown here by this
+example data insertion.
+</p>
+
+<pre caption="Admin permissions in gentoo database">
+mysql&gt; <i>USE gentoo;</i>
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt; <i>INSERT INTO developers VALUES('Bob Simmons', 'bobsimmons@gentoo.org', 'python');</i>
+Query OK, 1 row affected (0.08 sec)
+</pre>
+
+<p>
+The admin user can access the database as they please. Now sometimes, we need
+to get rid of user permissions. This could be anything from a problematic user
+to a retired employee. Let's take a look at how to disable user permissions
+with the <c>REVOKE</c> command.
+</p>
+
+</body>
+</section>
+<section>
+<title>Removing User Access With The REVOKE Command</title>
+<body>
+
+<p>
+The <c>REVOKE</c> command lets us deny access to a user. We can either deny
+full access, or specific access. In fact, the format is very similiar to
+<c>GRANT</c>.
+</p>
+
+<pre caption="REVOKE Syntax">
+REVOKE [privileges] ON database.* FROM '[user]'@'[host]';
+</pre>
+
+<p>
+Options here are explained in the <c>GRANT</c> command section. In this section
+however, we're going to deny full access to a user. Let's say we find out the
+guest account is causing some problems security wise. We decide to revoke all
+privileges. We login as root and do the needful.
+</p>
+
+<pre caption="Revoking user permissions">
+mysql&gt; <i>REVOKE ALL ON gentoo.* FROM 'guest'@'localhost';</i>
+Query OK, 0 rows affected (0.00 sec)
+</pre>
+
+<note>
+In this case, user access is simple, so per database revoking is not a problem.
+However, in larger cases, you would most likely be using *.* instead of
+gentoo.* to remove user access to all other databases.
+</note>
+
+<p>
+Now let's quit and attempt to login as a guest user.
+</p>
+
+<pre caption="Attempting guest user login">
+$ <i>mysql -u guest -h localhost -p</i>
+Enter password:
+Welcome to the MySQL monitor. Commands end with ; or \g.
+Your MySQL connection id is 9 to server version: 4.0.25
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt;
+</pre>
+
+<p>
+Although we're able to login, our access to gentoo is now gone.
+</p>
+
+<pre caption="Denied access to guest account">
+mysql&gt; <i>USE gentoo;</i>
+ERROR 1044: Access denied for user: 'guest@localhost' to database 'gentoo'
+</pre>
+
+<p>
+And our problematic user is no longer able to access the gentoo database.
+Please note that the user was still able to login. That is because they remain
+in the main MySQL database. Let's take a look at how to completely remove an
+account with <c>DELETE</c> and the MySQL user table.
+</p>
+
+</body>
+</section>
+<section>
+<title>Removing Accounts Using DELETE</title>
+<body>
+
+<p>
+The MySQL user table is a listing of all users and information about them. Make
+sure you're logged in as root. Then go ahead and use the main MySQL database.
+</p>
+
+<pre caption="Using the main mysql database">
+mysql&gt; <i>USE mysql;</i>
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt;
+</pre>
+
+<p>
+Now let's see what tables the mysql database has:
+</p>
+
+<pre caption="mysql database table listing">
+mysql&gt; <i>SHOW TABLES;</i>
++-----------------+
+| Tables_in_mysql |
++-----------------+
+| columns_priv    |
+| db              |
+| func            |
+| host            |
+| tables_priv     |
+| user            |
++-----------------+
+6 rows in set (0.00 sec)
+</pre>
+
+<p>
+The user table is the table we're after. However, the user table contains 30
+different fields, making it very hard to read. In order to make things easier
+to read, we'll go ahead and use the third version of the <c>SELECT</c>
+statement. The fields we're after are Host and User.
+</p>
+
+<pre caption="Finding our guest user in the user table">
+mysql&gt; <i>SELECT Host,User FROM user WHERE User = 'guest';</i>
++-----------+-------+
+| Host      | User  |
++-----------+-------+
+| localhost | guest |
++-----------+-------+
+1 row in set (0.00 sec)
+</pre>
+
+<p>
+Now that we have our information, we can get rid of the guest user.
+This is done with the <c>DELETE</c> command and the syntax is shown below.
+</p>
+
+<pre caption="DELETE Syntax">
+DELETE FROM table WHERE field='value';
+</pre>
+
+<p>
+You may notice that <c>DELETE</c> is somewhat similiar to the <c>SELECT</c>
+statement in its format. In this case, the field will be User, and the value
+guest. This will delete the record in the user table where the user is guest,
+successfully deleting our guest user account. Let's go ahead and do that:
+</p>
+
+<pre caption="Deleting the guest account">
+mysql&gt; <i>DELETE FROM user WHERE User='guest';</i>
+Query OK, 1 row affected (0.07 sec)
+<comment>(FLUSH PRIVILEGES is needed to update user permissions)</comment>
+mysql&gt; <i>FLUSH PRIVILEGES;</i>
+Query OK, 0 rows affected (0.00 sec)
+</pre>
+
+<p>
+It seems to have worked ok. Let's test by logging out and attempting to login
+as our guest user.
+</p>
+
+<pre caption="Attempting login as the guest user">
+mysql&gt; <i>quit</i>
+Bye
+$ <i>mysql -u guest -h localhost -p</i>
+Enter password:
+ERROR 1045: Access denied for user: 'guest@localhost' (Using password: YES)
+</pre>
+
+<p>
+Our user is now successfully deleted!
+</p>
+
+</body>
+</section>
+<section>
+<title>Conclusion</title>
+<body>
+
+<p>
+While this guide focuses mainly on setting up MySQL on the command line, a few
+alternatives are available in GUI form:
+</p>
+
+<ul>
+  <li>
+    <uri link="http://www.phpmyadmin.net/home_page/">phpMyAdmin</uri> - Popular
+    php based MySQL administration tool.
+  </li>
+  <li>
+    <uri
+    link="http://sourceforge.net/projects/mysqlnavigator/">mysqlnavigator</uri>
+    - QT frontend to MySQL.
+  </li>
+  <li>
+    <uri link="http://gmyclient.sourceforge.net/">gmyclient</uri> - A GNOME
+    based MySQL client.
+  </li>
+  <li><uri link="http://www.knoda.org/">knoda</uri> - A KDE MySQL client.</li>
+</ul>
+
+<p>
+This ends the MySQL introductory tutorial. I hope this gives you a better
+understanding of the basics behind MySQL and getting a database set up. Please
+email me at <mail>chriswhite@gentoo.org</mail> if you have any comments.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

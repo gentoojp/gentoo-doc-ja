@@ -1,0 +1,998 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/draft/debugging-howto.xml:6
+#, no-wrap
+msgid "Gentoo Linux Debugging Guide"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/draft/debugging-howto.xml:16
+#, no-wrap
+msgid ""
+"This document aims at helping the user debug various errors they may encounter\n"
+"during day to day usage of Gentoo.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/draft/debugging-howto.xml:28 en/draft/debugging-howto.xml:105
+#: en/draft/debugging-howto.xml:345 en/draft/debugging-howto.xml:539
+#, no-wrap
+msgid "Introduction"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/draft/debugging-howto.xml:30
+#, no-wrap
+msgid "Preface"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:34
+#, no-wrap
+msgid ""
+"One of the factors that delay a bug being fixed is the way it is reported. By\n"
+"creating this guide, we hope to help improve the communication between\n"
+"developers and users in bug resolution. Getting bugs fixed is an important, if\n"
+"not crucial part of the quality assurance for any project and hopefully this\n"
+"guide will help make that a success.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/draft/debugging-howto.xml:44
+#, no-wrap
+msgid "Bugs!!!!"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:48
+#, no-wrap
+msgid ""
+"You're emerge-ing a package or working with a program and suddenly the worst\n"
+"happens -- you find a bug. Bugs come in many forms like emerge failures or\n"
+"segmentation faults. Whatever the cause, the fact still remains that such a bug\n"
+"must be fixed. Here is a few examples of such bugs.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:54
+#, no-wrap
+msgid "A run time error"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:55 en/draft/debugging-howto.xml:181
+#, no-wrap
+msgid ""
+"$ <i>./bad_code `perl -e 'print Ax100'`</i>\n"
+"Segmentation fault\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:59
+#, no-wrap
+msgid "An emerge failure"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:60
+#, no-wrap
+msgid ""
+"/usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.2/include/g++-v3/backward/backward_warning.h:32:2:\n"
+"warning: #warning This file includes at least one deprecated or antiquated\n"
+"header. Please consider using one of the 32 headers found in section 17.4.1.2 of\n"
+"the C++ standard. Examples include substituting the &lt;X&gt; header for the &lt;X.h&gt;\n"
+"header for C++ includes, or &lt;sstream&gt; instead of the deprecated header\n"
+"&lt;strstream.h&gt;. To disable this warning use -Wno-deprecated.\n"
+"In file included from main.cc:40:\n"
+"menudef.h:55: error: brace-enclosed initializer used to initialize `\n"
+"OXPopupMenu*'\n"
+"menudef.h:62: error: brace-enclosed initializer used to initialize `\n"
+"OXPopupMenu*'\n"
+"menudef.h:70: error: brace-enclosed initializer used to initialize `\n"
+"OXPopupMenu*'\n"
+"menudef.h:78: error: brace-enclosed initializer used to initialize `\n"
+"OXPopupMenu*'\n"
+"main.cc: In member function `void OXMain::DoOpen()':\n"
+"main.cc:323: warning: unused variable `FILE*fp'\n"
+"main.cc: In member function `void OXMain::DoSave(char*)':\n"
+"main.cc:337: warning: unused variable `FILE*fp'\n"
+"make[1]: *** [main.o] Error 1\n"
+"make[1]: Leaving directory\n"
+"`/var/tmp/portage/xclass-0.7.4/work/xclass-0.7.4/example-app'\n"
+"make: *** [shared] Error 2\n"
+"\n"
+"!!! ERROR: x11-libs/xclass-0.7.4 failed.\n"
+"!!! Function src_compile, Line 29, Exitcode 2\n"
+"!!! 'emake shared' failed\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:90
+#, no-wrap
+msgid ""
+"These errors can be quite troublesome. However, once you find them, what do\n"
+"you do? The following sections will look at two important tools for handling\n"
+"run time errors. After that, we'll take a look at compile errors, and how to\n"
+"handle them. Let's start out with the first tool for debugging run time\n"
+"errors -- <c>gdb</c>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/draft/debugging-howto.xml:103
+#, no-wrap
+msgid "Debugging using GDB"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:109
+#, no-wrap
+msgid ""
+"GDB, or the (G)NU (D)e(B)ugger, is a program used to find run time errors that\n"
+"normally involve memory corruption. First off, let's take a look at what\n"
+"debugging entails. One of the main things you must do in order to debug a\n"
+"program is to <c>emerge</c> the program with <c>FEATURES=\"nostrip\"</c>. This\n"
+"prevents the stripping of debug symbols. Why are programs stripped by default?\n"
+"The reason is the same as that for having gzipped man pages -- saving space.\n"
+"Here's how the size of a program varies with and without debug symbol stripping.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:118
+#, no-wrap
+msgid "Filesize Comparison"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:119
+#, no-wrap
+msgid ""
+"<comment>(debug symbols stripped)</comment>\n"
+"-rwxr-xr-x  1 chris users 3140  6/28 13:11 bad_code\n"
+"<comment>(debug symbols intact)</comment>\n"
+"-rwxr-xr-x  1 chris users 6374  6/28 13:10 bad_code\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:126
+#, no-wrap
+msgid ""
+"Just for reference, <e>bad_code</e> is the program we'll be debugging with\n"
+"<c>gdb</c> later on. As you can see, the program without debugging symbols is\n"
+"3140 bytes, while the program with them is 6374 bytes. That's close to double\n"
+"the size! Two more things can be done for debugging. The first is adding ggdb3\n"
+"to your CFLAGS and CXXFLAGS. This flag adds more debugging information than is\n"
+"generally included. We'll see what that means later on. This is how\n"
+"<path>/etc/make.conf</path> <e>might</e> look with the newly added flags.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:135
+#, no-wrap
+msgid "make.conf settings"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:136
+#, no-wrap
+msgid ""
+"CFLAGS=\"-O2 -pipe -ggdb3\"\n"
+"CXXFLAGS=\"${CFLAGS}\"\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:141
+#, no-wrap
+msgid ""
+"Lastly, you can also add debug to the package's USE flags. This can be done\n"
+"with the <path>package.use</path> file.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:145
+#, no-wrap
+msgid "Using package.use to add debug USE flag"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:146
+#, no-wrap
+msgid "# <i>echo \"category/package debug\" >> /etc/portage/package.use</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/draft/debugging-howto.xml:150
+#, no-wrap
+msgid ""
+"The directory <path>/etc/portage</path> does not exist by default and you may\n"
+"have to create it, if you have not already done so. If the package already has\n"
+"USE flags set in <path>package.use</path>, you will need to manually modify them\n"
+"in your favorite editor.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:157
+#, no-wrap
+msgid ""
+"Then we re-emerge the package with the modifications we've done so far as shown\n"
+"below.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:161
+#, no-wrap
+msgid "Re-emergeing a package with debugging"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:162
+#, no-wrap
+msgid "# <i>FEATURES=\"nostrip\" emerge package</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:166
+#, no-wrap
+msgid "Now that debug symbols are setup, we can continue with debugging the program.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/draft/debugging-howto.xml:172
+#, no-wrap
+msgid "Running the program with GDB"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:176
+#, no-wrap
+msgid ""
+"Let's say we have a program here called \"bad_code\". Some person claims that the\n"
+"program crashes and provides an example. You go ahead and test it out:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:180
+#, no-wrap
+msgid "Breaking The Program"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:186
+#, no-wrap
+msgid ""
+"It seems this person was right. Since the program is obviously broken, we have\n"
+"a bug at hand. Now, it's time to use <c>gdb</c> to help solve this matter. First\n"
+"we run <c>gdb</c> with <c>--args</c>, then give it the full program with\n"
+"arguments like shown:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:192
+#, no-wrap
+msgid "Running Our Program Through GDB"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:193
+#, no-wrap
+msgid ""
+"$ <i>gdb --args ./bad_code `perl -e 'print Ax100'`</i>\n"
+"GNU gdb 6.3\n"
+"Copyright 2004 Free Software Foundation, Inc.\n"
+"GDB is free software, covered by the GNU General Public License, and you are\n"
+"welcome to change it and/or distribute copies of it under certain conditions.\n"
+"Type \"show copying\" to see the conditions.\n"
+"There is absolutely no warranty for GDB. Type \"show warranty\" for details.\n"
+"This GDB was configured as \"i686-pc-linux-gnu\"...Using host libthread_db library \"/lib/libthread_db.so.1\".\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/draft/debugging-howto.xml:204
+#, no-wrap
+msgid ""
+"One can also debug with core dumps. These core files contain the same\n"
+"information that the program would produce when run with gdb.  In order to debug\n"
+"with a core file with bad_code, you would run <c>gdb ./bad_code core</c> where\n"
+"core is the name of the core file.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:211
+#, no-wrap
+msgid ""
+"You should see a prompt that says \"(gdb)\" and waits for input. First, we have to\n"
+"run the program. We type in <c>run</c> at the command and receive a notice like:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:215
+#, no-wrap
+msgid "Running the program in GDB"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:216
+#, no-wrap
+msgid ""
+"(gdb) <i>run</i>\n"
+"Starting program: /home/chris/bad_code\n"
+"\n"
+"Program received signal SIGSEGV, Segmentation fault.\n"
+"0xb7ec6dc0 in strcpy () from /lib/libc.so.6\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:224
+#, no-wrap
+msgid ""
+"Here we see the program starting, as well as a notification of SIGSEGV, or\n"
+"Segmentation Fault. This is GDB telling us that our program has crashed. It\n"
+"also gives the last run function it could trace when the program crashes.\n"
+"However, this isn't too useful, as there could be multiple strcpy's in the\n"
+"program, making it hard for developers to find which one is causing the issue.\n"
+"In order to help them out, we do what's called a backtrace. A backtrace runs\n"
+"backwards through all the functions that occurred upon program execution, to the\n"
+"function at fault. Functions that return (without causing a crash) will not show\n"
+"up on the backtrace. To get a backtrace, at the (gdb) prompt, type in <c>bt</c>.\n"
+"You will get something like this:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:236
+#, no-wrap
+msgid "Program backtrace"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:237
+#, no-wrap
+msgid ""
+"(gdb) <i>bt</i>\n"
+"#0  0xb7ec6dc0 in strcpy () from /lib/libc.so.6\n"
+"#1  0x0804838c in run_it ()\n"
+"#2  0x080483ba in main ()\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:244
+#, no-wrap
+msgid ""
+"You can notice the trace pattern clearly. main() is called first, followed by\n"
+"run_it(), and somewhere in run_it() lies the strcpy() at fault. Things such as\n"
+"this help developers narrow down problems. There are a few exceptions to the\n"
+"output. First off is forgetting to enable debug symbols with\n"
+"<c>FEATURES=\"nostrip\"</c>. With debug symbols stripped, the output looks\n"
+"something like this:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:252
+#, no-wrap
+msgid "Program backtrace With debug symbols stripped"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:253
+#, no-wrap
+msgid ""
+"(gdb) <i>bt</i>\n"
+"#0  0xb7e2cdc0 in strcpy () from /lib/libc.so.6\n"
+"#1  0x0804838c in ?? ()\n"
+"#2  0xbfd19510 in ?? ()\n"
+"#3  0x00000000 in ?? ()\n"
+"#4  0x00000000 in ?? ()\n"
+"#5  0xb7eef148 in libgcc_s_personality () from /lib/libc.so.6\n"
+"#6  0x080482ed in ?? ()\n"
+"#7  0x080495b0 in ?? ()\n"
+"#8  0xbfd19528 in ?? ()\n"
+"#9  0xb7dd73b8 in __guard_setup () from /lib/libc.so.6\n"
+"#10 0xb7dd742d in __guard_setup () from /lib/libc.so.6\n"
+"#11 0x00000006 in ?? ()\n"
+"#12 0xbfd19548 in ?? ()\n"
+"#13 0x080483ba in ?? ()\n"
+"#14 0x00000000 in ?? ()\n"
+"#15 0x00000000 in ?? ()\n"
+"#16 0xb7deebcc in __new_exitfn () from /lib/libc.so.6\n"
+"#17 0x00000000 in ?? ()\n"
+"#18 0xbfd19560 in ?? ()\n"
+"#19 0xb7ef017c in nullserv () from /lib/libc.so.6\n"
+"#20 0xb7dd6f37 in __libc_start_main () from /lib/libc.so.6\n"
+"#21 0x00000001 in ?? ()\n"
+"#22 0xbfd195d4 in ?? ()\n"
+"#23 0xbfd195dc in ?? ()\n"
+"#24 0x08048201 in ?? ()\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:282
+#, no-wrap
+msgid ""
+"This backtrace contains a large number of ?? marks. This is because without\n"
+"debug symbols, <c>gdb</c> doesn't know how the program was run. Hence, it is\n"
+"crucial that debug symbols are <e>not</e> stripped. Now remember a while ago we\n"
+"mentioned the -ggdb3 flag. Let's see what the output looks like with the flag\n"
+"enabled:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:289
+#, no-wrap
+msgid "Program backtrace with -ggdb3"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:290
+#, no-wrap
+msgid ""
+"(gdb) <i>bt</i>\n"
+"#0  0xb7e4bdc0 in strcpy () from /lib/libc.so.6\n"
+"#1  0x0804838c in run_it (input=0x0) at bad_code.c:7\n"
+"#2  0x080483ba in main (argc=1, argv=0xbfd3a434) at bad_code.c:12\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:297
+#, no-wrap
+msgid ""
+"Here we see that a lot more information is available for developers. Not only is\n"
+"function information displayed, but even the exact line numbers of the source\n"
+"files. This method is the most preferred if you can spare the extra space.\n"
+"Here's how much the file size varies between debug, strip, and -ggdb3 enabled\n"
+"programs.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:304
+#, no-wrap
+msgid "Filesize differences With -ggdb3 flag"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:305
+#, no-wrap
+msgid ""
+"<comment>(debug symbols stripped)</comment>\n"
+"-rwxr-xr-x  1 chris users 3140  6/28 13:11 bad_code\n"
+"<comment>(debug symbols enabled)</comment>\n"
+"-rwxr-xr-x  1 chris users 6374  6/28 13:10 bad_code\n"
+"<comment>(-ggdb3 flag enabled)</comment>\n"
+"-rwxr-xr-x  1 chris users 19552  6/28 13:11 bad_code\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:314
+#, no-wrap
+msgid ""
+"As you can see, -ggdb3 adds about <e>13178</e> more bytes to the file size\n"
+"over the one with debugging symbols. However, as shown above, this increase\n"
+"in file size can be worth it if presenting debug information to developers.\n"
+"The backtrace can be saved to a file by copying and pasting from the\n"
+"terminal (if it's a non-x based terminal, you can use gpm. To keep this\n"
+"doc simple, I recommend you read up on the documentation for gpm to see\n"
+"how to copy and paste with it). Now that we're done with <c>gdb</c>, we\n"
+"can quit.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:324
+#, no-wrap
+msgid "Quitting GDB"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:325
+#, no-wrap
+msgid ""
+"(gdb) <i>quit</i>\n"
+"The program is running. Exit anyway? (y or n) <i>y</i>\n"
+"$\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:331
+#, no-wrap
+msgid ""
+"This ends the walk-through of <c>gdb</c>. Using <c>gdb</c>, we hope that you\n"
+"will be able to use it to create better bug reports. However, there are other\n"
+"types of errors that can cause a program to fail during run time. One of the\n"
+"other ways is through improper file access. We can find those using a nifty\n"
+"little tool called <c>strace</c>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/draft/debugging-howto.xml:343
+#, no-wrap
+msgid "Finding file access errors using strace"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:349
+#, no-wrap
+msgid ""
+"Programs often use files to fetch configuration information, access hardware or\n"
+"write logs. Sometimes, a program attempts to reach such files incorrectly. A\n"
+"tool called <c>strace</c> was created to help deal with this. <c>strace</c>\n"
+"traces system calls (hence the name) which include calls that use the memory and\n"
+"files. For our example, we're going to take a program foobar2. This is an\n"
+"updated version of foobar. However, during the change over to foobar2, you\n"
+"notice all your configurations are missing!  In foobar version 1, you had it\n"
+"setup to say \"foo\", but now it's using the default \"bar\".\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:359
+#, no-wrap
+msgid "Foobar2 With an invalid configuration"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:360
+#, no-wrap
+msgid ""
+"$ <i>./foobar2</i>\n"
+"Configuration says: bar\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:365
+#, no-wrap
+msgid ""
+"Our previous configuration specifically had it set to foo, so let's use\n"
+"<c>strace</c> to find out what's going on.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/draft/debugging-howto.xml:372
+#, no-wrap
+msgid "Using strace to track the issue"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:376
+#, no-wrap
+msgid ""
+"We make <c>strace</c> log the results of the system calls. To do this, we run\n"
+"<c>strace</c> with the -o[file] arguments. Let's use it on foobar2 as shown.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:380
+#, no-wrap
+msgid "Running foobar2 through strace"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:381
+#, no-wrap
+msgid "# <i>strace -ostrace.log ./foobar2</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:385
+#, no-wrap
+msgid ""
+"This creates a file called <path>strace.log</path> in the current directory. We\n"
+"check the file, and shown below are the relevant parts from the file.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:389
+#, no-wrap
+msgid "A Look At the strace Log"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:390
+#, no-wrap
+msgid ""
+"open(\".foobar2/config\", O_RDONLY)       = 3\n"
+"read(3, \"bar\", 3)                       = 3\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:395
+#, no-wrap
+msgid ""
+"Aha! So There's the problem. Someone moved the configuration directory to\n"
+"<path>.foobar2</path> instead of <path>.foobar</path>. We also see the program\n"
+"reading in \"bar\" as it should. In this case, we can recommend the ebuild\n"
+"maintainer to put a warning about it. For now though, we can copy over the\n"
+"config file from <path>.foobar</path> and modify it to produce the correct\n"
+"results.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/draft/debugging-howto.xml:406 en/draft/debugging-howto.xml:524
+#, no-wrap
+msgid "Conclusion"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:410
+#, no-wrap
+msgid ""
+"<c>strace</c> is a great way at seeing what the kernel is doing to with the\n"
+"filesystem. Another program exists to help users see what the kernel is doing,\n"
+"and help with kernel debugging.  This program is called <c>dmesg</c>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/draft/debugging-howto.xml:420
+#, no-wrap
+msgid "Kernel Debugging With dmesg"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/draft/debugging-howto.xml:422
+#, no-wrap
+msgid "dmesg Introduction"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:426
+#, no-wrap
+msgid ""
+"<c>dmesg</c> is a system program created with debugging kernel operation. It\n"
+"basically reads the kernel messages and keeps them in buffer, letting the user\n"
+"see them later on. Here's an example of what a dmesg output looks like:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:431
+#, no-wrap
+msgid "dmesg sample output"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:432
+#, no-wrap
+msgid ""
+"SIS5513: IDE controller at PCI slot 0000:00:02.5\n"
+"SIS5513: chipset revision 208\n"
+"SIS5513: not 100% native mode: will probe irqs later\n"
+"SIS5513: SiS 961 MuTIOL IDE UDMA100 controller\n"
+"ide0: BM-DMA at 0x4000-0x4007, BIOS settings: hda:DMA, hdb:DMA\n"
+"ide1: BM-DMA at 0x4008-0x400f, BIOS settings: hdc:DMA, hdd:DMA\n"
+"Probing IDE interface ide0...\n"
+"input: ImPS/2 Generic Wheel Mouse on isa0060/serio1\n"
+"hda: WDC WD800BB-60CJA0, ATA DISK drive\n"
+"hdb: CD-RW 52X24, ATAPI CD/DVD-ROM drive\n"
+"ide0 at 0x1f0-0x1f7,0x3f6 on irq 14\n"
+"Probing IDE interface ide1...\n"
+"hdc: SAMSUNG DVD-ROM SD-616T, ATAPI CD/DVD-ROM drive\n"
+"hdd: Maxtor 92049U6, ATA DISK drive\n"
+"ide1 at 0x170-0x177,0x376 on irq 15\n"
+"hda: max request size: 128KiB\n"
+"hda: 156301488 sectors (80026 MB) w/2048KiB Cache, CHS=65535/16/63,\n"
+"UDMA(100)\n"
+"hda: cache flushes not supported\n"
+"hda: hda1\n"
+"hdd: max request size: 128KiB\n"
+"hdd: 39882528 sectors (20419 MB) w/2048KiB Cache, CHS=39566/16/63,\n"
+"UDMA(66)\n"
+"hdd: cache flushes not supported\n"
+"hdd: unknown partition table\n"
+"hdb: ATAPI 52X CD-ROM CD-R/RW drive, 2048kB Cache, UDMA(33)\n"
+"Uniform CD-ROM driver Revision: 3.20\n"
+"hdc: ATAPI 48X DVD-ROM drive, 512kB Cache, UDMA(33)\n"
+"ide-floppy driver 0.99.newide\n"
+"libata version 1.11 loaded.\n"
+"usbmon: debugs is not available\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:466
+#, no-wrap
+msgid ""
+"The dmesg displayed here is my machine's bootup. You can see the hard disks and\n"
+"input devices being initialized.  While what you see here seems relatively\n"
+"harmless, <c>dmesg</c> is also good at showing when things go wrong. Let's take\n"
+"for example an IPAQ 1945 I have. After a couple of minutes of inactivity, the\n"
+"device powers off. Now, I have the device connected into the USB port in the\n"
+"front of my system. Now, I want to copy over some files using libsynCE, so I go\n"
+"ahead and initiate a connection:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:475
+#, no-wrap
+msgid "IPAQ connection attempt"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:476
+#, no-wrap
+msgid ""
+"# <i>synce-serial-start</i>\n"
+"/usr/sbin/pppd: In file /etc/ppp/peers/synce-device: unrecognized option\n"
+"'/dev/tts/USB0'\n"
+"\n"
+"synce-serial-start was unable to start the PPP daemon!\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:484
+#, no-wrap
+msgid ""
+"The connection fails, as we see here, and we assume that only the screen is in\n"
+"powersave mode, and that maybe the connection is faulty.  In order to see what\n"
+"truly happened, we can use <c>dmesg</c>.  Now, <c>dmesg</c> tends to give a\n"
+"rather large ammount of output. One can use the <c>tail</c> command to help\n"
+"keep the output down:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:491
+#, no-wrap
+msgid "Adjusting the output ammount with tail"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:492
+#, no-wrap
+msgid ""
+"$ <i>dmesg | tail -n 4</i>\n"
+"usb 1-1.2: PocketPC PDA converter now attached to ttyUSB0\n"
+"usb 1-1.2: USB disconnect, address 11\n"
+"PocketPC PDA ttyUSB0: PocketPC PDA converter now disconnected from ttyUSB0\n"
+"ipaq 1-1.2:1.0: device disconnected\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:500
+#, no-wrap
+msgid ""
+"This gives us the last 4 lines of the <c>dmesg</c> output. Now, this is enough\n"
+"to give us some information on the situation. It seems that in the first 2\n"
+"lines, the pocketpc is recognized as connected. However, in the last 2 lines, it\n"
+"appears to have been disconnected. With this information we check the pocketpc\n"
+"again, and find out it is powered off, and now know about the powersave mode. We\n"
+"can use this information to turn the feature off, or be aware of it next time.\n"
+"While this is a somewhat simple example, it does go to show how well\n"
+"<c>dmesg</c> can work. However, in more complex examples (such as kernel bugs),\n"
+"the entire <c>dmesg</c> output may be required. To obtain that, simple redirect\n"
+"to a log file as such:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:512
+#, no-wrap
+msgid "Saving dmesg output to a log"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:513
+#, no-wrap
+msgid "$ <i>dmesg > dmesg.log</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:517
+#, no-wrap
+msgid ""
+"You can then attach this to a bug report, or post it online somewhere for\n"
+"collaborative debugging sessions.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:528
+#, no-wrap
+msgid ""
+"Now that we've taken a look at a few ways to debug runtime and kernel errors,\n"
+"let's take a look at how to handle emerge errors.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/draft/debugging-howto.xml:537
+#, no-wrap
+msgid "Handling emerge Errors"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:543
+#, no-wrap
+msgid ""
+"<c>emerge</c> errors, such as the one displayed earlier, can be a major cause\n"
+"of frustration for users. Reporting them is considered crucial for maintaining\n"
+"the health of Gentoo. Let's take a look at a sample ebuild, foobar2, which\n"
+"contains some build errors.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/draft/debugging-howto.xml:552
+#, no-wrap
+msgid "Evaluating emerge Errors"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:556
+#, no-wrap
+msgid "Let's take a look at this very simple <c>emerge</c> error:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:559
+#, no-wrap
+msgid "emerge Error"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:560
+#, no-wrap
+msgid ""
+"gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2-7.o foobar2-7.c\n"
+"gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2-8.o foobar2-8.c\n"
+"gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2-9.o foobar2-9.c\n"
+"gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2.o foobar2.c\n"
+"foobar2.c:1:17: ogg.h: No such file or directory\n"
+"make: *** [foobar2.o] Error 1\n"
+"\n"
+"!!! ERROR: sys-apps/foobar2-1.0 failed.\n"
+"!!! Function src_compile, Line 19, Exitcode 2\n"
+"!!! Make failed!\n"
+"!!! If you need support, post the topmost build error, NOT this status message\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:574
+#, no-wrap
+msgid ""
+"The program is compiling smoothly when it suddenly stops and presents an error\n"
+"message. This particular error can be split into 3 different sections, The\n"
+"compile messages, the build error, and the emerge error message as shown below.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:579
+#, no-wrap
+msgid "Parts of the error"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:580
+#, no-wrap
+msgid ""
+"<comment>(Compilation Messages)</comment>\n"
+"gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2-7.o foobar2-7.c\n"
+"gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2-8.o foobar2-8.c\n"
+"gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2-9.o foobar2-9.c\n"
+"gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2.o foobar2.c\n"
+"\n"
+"<comment>(Build Error)</comment>\n"
+"foobar2.c:1:17: ogg.h: No such file or directory\n"
+"make: *** [foobar2.o] Error 1\n"
+"\n"
+"<comment>(emerge Error)</comment>\n"
+"!!! ERROR: sys-apps/foobar2-1.0 failed.\n"
+"!!! Function src_compile, Line 19, Exitcode 2\n"
+"!!! Make failed!\n"
+"!!! If you need support, post the topmost build error, NOT this status message\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:598
+#, no-wrap
+msgid ""
+"The compilation messages are what lead up to the error. Most often, it's good to\n"
+"at least include 10 lines of compile information so that the developer knows\n"
+"where the compilation was at when the error occurred.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:604
+#, no-wrap
+msgid ""
+"Make errors are the actual error and the information the developer needs. When\n"
+"you see \"make: ***\", this is often where the error has occurred. Normally, you\n"
+"can copy and paste 10 lines above it and the developer will be able to address\n"
+"the issue. However, this may not always work and we'll take a look at an\n"
+"alternative shortly.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:612
+#, no-wrap
+msgid ""
+"The emerge error is what <c>emerge</c> throws out as an error. Sometimes, this\n"
+"might also contain some important information. Often people make the mistake of\n"
+"posting the emerge error and that's all. This is useless by itself, but with\n"
+"make error and compile information, a developer can get what application and\n"
+"what version of the package is failing. As a side note, make is commonly used as\n"
+"the build process for programs (<b>but not always</b>). If you can't find a\n"
+"\"make: ***\" error anywhere, then simply copy and paste 20 lines before the\n"
+"emerge error. This should take care of most all build system error messages. Now\n"
+"let's say the errors seem to be quite large. 10 lines won't be enough to catch\n"
+"everything. That's where PORT_LOGDIR comes into play.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/draft/debugging-howto.xml:627
+#, no-wrap
+msgid "emerge and PORT_LOGDIR"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:631
+#, no-wrap
+msgid ""
+"PORT_LOGDIR is a portage variable that sets up a log directory for separate\n"
+"emerge logs. Let's take a look and see what that entails. First, run your emerge\n"
+"with PORT_LOGDIR set to your favorite log location. Let's say we have a\n"
+"location <path>/var/log/portage</path>. We'll use that for our log directory:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/draft/debugging-howto.xml:638
+#, no-wrap
+msgid ""
+"In the default setup, <path>/var/log/portage</path> does not exist, and you will\n"
+"most likely have to create it. If you do not, portage will fail to write the\n"
+"logs.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:643
+#, no-wrap
+msgid "emerge-ing With PORT_LOGDIR"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:644
+#, no-wrap
+msgid "# <i>PORT_LOGDIR=/var/log/portage emerge foobar2</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:648
+#, no-wrap
+msgid ""
+"Now the emerge fails again. However, this time we have a log we can work with,\n"
+"and attach to the bug later on. Let's take a quick look at our log directory.\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:652
+#, no-wrap
+msgid "PORT_LOGDIR Contents"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/draft/debugging-howto.xml:653
+#, no-wrap
+msgid ""
+"# <i>ls -la /var/log/portage</i>\n"
+"total 16\n"
+"drwxrws---   2 root root 4096 Jun 30 10:08 .\n"
+"drwxr-xr-x  15 root root 4096 Jun 30 10:08 ..\n"
+"-rw-r--r--   1 root root 7390 Jun 30 10:09 2115-foobar2-1.0.log\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/draft/debugging-howto.xml:661
+#, no-wrap
+msgid ""
+"The log files have the format [counter]-[package name]-[version].log. Counter\n"
+"is a special variable that is meant to state this package as the n-th package\n"
+"you've emerged. This prevents duplicate logs from appearing. A quick look at\n"
+"the log file will show the entire emerge process. This can be attached later\n"
+"on as we'll see in the bug reporting section. Now that we've safely obtained\n"
+"our information needed to report the bug we can continue to do so. However,\n"
+"before we get started on that, we need to make sure no one else has reported\n"
+"the issue.\n"
+msgstr ""

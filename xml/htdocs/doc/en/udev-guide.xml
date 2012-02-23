@@ -1,0 +1,401 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/udev-guide.xml,v 1.55 2011/12/26 15:22:40 swift Exp $ -->
+
+<guide>
+<title>Gentoo udev Guide</title>
+
+<author title="Author">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Contributor">
+  <mail link="greg_g@gentoo.org">Gregorio Guidi</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This document explains what udev is and how you can use udev to fit your needs.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>10</version>
+<date>2011-12-26</date>
+
+<chapter>
+<title>What is udev?</title>
+<section>
+<title>The /dev Directory</title>
+<body>
+
+<p>
+When Linux-users talk about the hardware on their system in the vicinity of
+people who believe Linux is some sort of virus or brand of coffee, the use of
+"slash dev slash foo" will return a strange look for sure. But for the fortunate
+user (and that includes you) using <path>/dev/sda1</path> is just a fast way of
+explaining that we are talking about the primary master SATA, first partition. Or
+aren't we?
+</p>
+
+<p>
+We all know what a device file is. Some even know why device files have special
+numbers when we take a closer look at them when we issue <c>ls -l</c> in
+<path>/dev</path>. But what we always take for granted is that the primary
+SATA disk is referred to as <path>/dev/sda</path>. You might not see it
+this way, but this is a flaw by design.
+</p>
+
+<p>
+Think about hotpluggable devices like USB, IEEE1394, hot-swappable PCI, ... What
+is the first device? And for how long? What will the other devices be named when
+the first one disappears? How will that affect ongoing transactions? Wouldn't it
+be fun that a printing job is suddenly moved from your supernew laserprinter to
+your almost-dead matrix printer because your mom decided to pull the plug of the
+laserprinter which happened to be the first printer?
+</p>
+
+<p>
+Enter <e>udev</e>. The goals of the udev project are both interesting and
+needed:
+</p>
+
+<ul>
+  <li>Runs in userspace</li>
+  <li>Dynamically creates/removes device files</li>
+  <li>Provides consistent naming</li>
+  <li>Provides a user-space API</li>
+</ul>
+
+<p>
+Every time a change happens within the device structure, the kernel emits a 
+<e>uevent</e> which gets picked up by udev. udev then follows the rules as
+declared in the <path>/etc/udev/rules.d</path> and 
+<path>/lib/udev/rules.d</path> directories. Based on the information contained
+within the uevent, it finds the rule or rules it needs to trigger and performs 
+the required actions. These actions can be creating or deleting device files, 
+but can also trigger the loading of particular firmware files into the
+kernel memory.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Using udev on Gentoo</title>
+<section>
+<title>Requirements</title>
+<body>
+
+<p>
+udev is meant to be used in combination with a 2.6 kernel (like
+<c>gentoo-sources</c> with the default 10.0 profile). If you're using such a
+kernel then you just should have no issues whatsoever with using udev as the 
+necessary support is built-in in all stable <c>sys-apps/baselayout</c> 
+versions. Normally, udev should already be installed on your system, but if
+this is not the case, then it is easy to install:
+</p>
+
+<pre caption="Installing udev">
+# <i>emerge udev</i>
+</pre>
+
+<p>
+Kernelwise, be sure to activate the following options:
+</p>
+
+<pre caption="Required kernel options">
+General Setup ---&gt;
+  <comment>(Make sure the following item is *not* enabled)</comment>
+  [ ] enable deprecated sysfs features to support old userspace tools
+
+File Systems ---&gt;
+  [*] Inotify support for userspace
+  Pseudo filesystems ---&gt;
+    [*] Virtual memory file system support (former shm fs)
+</pre>
+
+<p>
+If you use <c>genkernel</c>, you don't need to do anything special. Genkernel
+sets up udev by default.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Known Issues</title>
+<section>
+<title>Missing device node files at boot</title>
+<body>
+
+<p>
+If you can't boot successfully because you get an error about
+<path>/dev/null</path> not found, or because the initial console is missing, the
+problem is that you lack some device files that must be available <e>before</e>
+<path>/dev</path> is mounted and handled by udev. This is common on Gentoo
+machines installed from old media.
+</p>
+
+<p>
+If you run <c>sys-apps/baselayout-1.8.12</c> or later, this problem is
+alleviated since the boot process should still manage to complete. However, to
+get rid of those annoying warnings, you should create the missing device nodes
+as described below.
+</p>
+
+<p>
+To see which devices nodes are present before the <path>/dev</path> filesystem
+is mounted, run the following commands:
+</p>
+
+<pre caption="Listing device nodes available at boot">
+# <i>mkdir test</i>
+# <i>mount --bind / test</i>
+# <i>cd test/dev</i>
+# <i>ls</i>
+</pre>
+
+<p>
+The devices needed for a successful boot are <path>/dev/null</path> and
+<path>/dev/console</path>. If they didn't show up in the previous test, you have
+to create them manually. Issue the following commands in the
+<path>test/dev/</path> directory:
+</p>
+
+<pre caption="Creating necessary device node files">
+# <i>mknod -m 660 console c 5 1</i>
+# <i>mknod -m 660 null c 1 3</i>
+</pre>
+
+<p>
+When you're finished, don't forget to unmount the <path>test/</path> directory:
+</p>
+
+<pre caption="Unmounting the test/ directory">
+# <i>cd ../..</i>
+# <i>umount test</i>
+# <i>rmdir test</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>udev and nvidia</title>
+<body>
+
+<p>
+If you use the proprietary driver from nVidia and the X server fails to start on
+a udev-only system, then make sure you have the <c>nvidia</c> module listed in 
+<path>/etc/conf.d/modules</path>.
+</p>
+
+</body>
+</section>
+<section>
+<title>No Consistent Naming between DevFS and udev</title>
+<body>
+
+<p>
+Even though our intention is to have a consistent naming scheme between both
+dynamical device management solutions, sometimes naming differences do occur.
+</p>
+
+<p>
+One reported clash is with a HP Smart Array 5i RAID controller (more precisely
+the <c>cciss</c> kernel module). With udev, the devices are named
+<path>/dev/cciss/cXdYpZ</path> with X, Y and Z regular numbers. With devfs, the
+devices are <path>/dev/hostX/targetY/partZ</path> or symlinked from
+<path>/dev/cciss/cXdY</path>.
+</p>
+
+<p>
+If this is the case, don't forget to update your <path>/etc/fstab</path> and
+bootloader configuration files accordingly.
+</p>
+
+<p>
+The same happens with all-round symlinks that used to exist in
+<path>/dev</path>, such as <path>/dev/mouse</path>, which <c>udev</c> doesn't
+create anymore. Be certain to check your X configuration file and see if the
+Device rule for your mouse points to an existing device file.
+</p>
+
+<p>
+Another issue is the difference in naming of terminals between devfs and udev.
+While devfs calls its terminals <c>tty</c>, udev calls them <c>vc</c> and
+<c>tty</c>. This could lead to a problem in case you are restricting root
+logins from consoles using <path>/etc/securetty</path>. You will need to make
+sure that both <c>tty1</c> and <c>vc/1</c> are listed in
+<path>/etc/securetty</path> to ensure that root can login using the console.
+</p>
+
+</body>
+</section>
+<section>
+<title>Block device renaming</title>
+<body>
+
+<p>
+Recent versions of udev (104 and up) along with newer kernel versions (2.6.19
+and up) may change your disc device names, due to a change in the kernel's
+libata implementation. A CD-RW device at <path>/dev/hdc</path> may be changed to
+<path>/dev/sr0</path>. While this is not normally a problem, it may cause issues
+for some applications that are hardcoded to look for devices at other locations.
+For example, <c>media-sound/rip</c> expects to find discs at
+<path>/dev/cdrom</path>, which becomes a problem if you use a newer kernel and
+udev renames your device to <path>/dev/cdrom1</path>.
+</p>
+
+<p>
+To work around these issues, you must edit
+<path>/etc/udev/rules.d/70-persistent-cd.rules</path> and assign the correct
+name to the device.
+</p>
+
+<p>
+For more information on writing udev rules, be sure to read Daniel Drake's <uri
+link="http://www.reactivated.net/udevrules.php">guide</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Network device renaming</title>
+<body>
+
+<p>
+Sometimes unplugging and replugging a network device (like a USB WiFi card) can
+rename your net device each time, incrementing the number by one.
+</p>
+
+<p>
+When this happens, you'll see it become <c>wlan0</c>, <c>wlan1</c>,
+<c>wlan2</c>, etc. This is because udev is adding additional rules to its rules
+file, instead of reloading the existing rules. Since udev watches its rules
+directory via inotify, you need inotify support in your kernel config:
+</p>
+
+<pre caption="Enabling inotify support in the kernel">
+File systems ---&gt;
+    [*] Inotify file change notification support
+    [*]   Inotify support for userspace
+</pre>
+
+<p>
+Now udev will retain proper names for your network devices.
+</p>
+
+</body>
+</section>
+<section>
+<title>udev loads modules in an unpredictable order</title>
+<body>
+
+<p>
+Sometimes udev loads modules in an undesired, unpredictable, or seemingly random
+order. This is especially common for systems that have multiple devices of the
+same type, as well as multimedia devices. This can affect the assigned numbers
+of devices; for example, sound cards may sometimes swap numbers.
+</p>
+
+<p>
+There are a few solutions to fix device numbers and/or module load order.
+Ideally, you can just use module parameters to specify your desired device
+number. Some modules, such as ALSA, include the "index" parameter. Modules that
+use the index parameter can be adjusted as shown. This example is for a system
+with two sound cards. The card with an index of 0 is designated as the first
+card. Once the parameters are changed, the module config files must be updated.
+</p>
+
+<pre caption="Specifying module parameters">
+# <i>echo "option snd-ice1724 index=0" >> /etc/modprobe.d/alsa.conf</i>
+# <i>echo "option snd-ymfpci index=1" >> /etc/modprobe.d/alsa.conf</i>
+# <i>update-modules</i>
+</pre>
+
+<p>
+The above example is the preferred solution, but not all modules support
+parameters such as index. For these modules, you'll have to force the correct
+module load order. First, you must stop udev from autoloading the modules by
+blacklisting them. Be sure to use the exact name of the module being loaded.
+For PCI devices, you'll need to use the module names obtained from the output of
+<c>lspci -k</c>, available in the <c>pciutils</c> package. The following example
+uses DVB modules.
+</p>
+
+<pre caption="Blacklisting modules">
+# <i>echo "blacklist b2c2-flexcop-pci" >> /etc/modprobe.d/dvb</i>
+# <i>echo "blacklist budget" >> /etc/modprobe.d/dvb</i>
+# <i>update-modules</i>
+</pre>
+
+<p>
+Next, load the modules in the correct order. Add them to
+<path>/etc/conf.d/modules</path> <e>in the exact order you want
+them loaded</e>.
+</p>
+
+<pre caption="Loading modules in the correct order">
+# <i>nano -w /etc/conf.d/modules</i>
+
+modules="<i>budget b2c2-flexcop-pci</i>"
+</pre>
+
+</body>
+</section>
+<section>
+<title>Other issues</title>
+<body>
+
+<p>
+Support for the framebuffer devices (<path>/dev/fb/*</path>) comes with the
+kernel starting from version 2.6.6-rc2.
+</p>
+
+<p>
+For kernels older than 2.6.4 you have to explicitly include support for the
+<path>/dev/pts</path> filesystem.
+</p>
+
+<pre caption="Enabling the /dev/pts filesystem">
+File systems ---&gt;
+  Pseudo filesystems ---&gt;
+    [*] /dev/pts file system for Unix98 PTYs
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Resources &amp; Acknowledgements</title>
+<section>
+<body>
+
+<p>
+The udev talk on the Linux Symposium (Ottawa, Ontario Canada - 2003) given by
+Greg Kroah-Hartman (IBM Corporation) provided a solid understanding on the udev
+application.
+</p>
+
+<p>
+<uri link="http://webpages.charter.net/decibelshelp/LinuxHelp_UDEVPrimer.html">Decibel's
+UDEV Primer</uri> is an in-depth document about udev and Gentoo.
+</p>
+
+<p>
+<uri link="http://www.reactivated.net/udevrules.php">Writing udev rules</uri> by
+fellow Gentoo developer Daniel Drake is an excellent document to learn how to
+customize your udev installation.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

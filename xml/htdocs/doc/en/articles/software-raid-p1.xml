@@ -1,0 +1,546 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/software-raid-p1.xml,v 1.5 2011/09/04 17:53:41 swift Exp $ -->
+
+<guide disclaimer="articles">
+<title>Software RAID in the new Linux 2.4 kernel, Part 1</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<!-- xmlified by: Joshua Saddler (nightmorph@gentoo.org) -->
+
+<abstract>
+In his two-part series on the Linux 2.4 Software RAID, Daniel Robbins 
+introduces the new technology that's used to increase disk performance 
+and reliability by distributing data over multiple disks. This first 
+installment covers Software RAID setup (kernel and tools installation) 
+and shows you how to create linear and RAID-0 volumes.
+</abstract>
+
+<!-- The original version of this article was first published on IBM 
+developerWorks, and is property of Westtech Information Services. This 
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>1.1</version>
+<date>2005-10-09</date>
+
+<chapter>
+<title>Installation and a general introduction</title>
+<section>
+<title>The wonders of RAID</title>
+<body>
+
+<p>
+The 2.4 kernel has a number of nifty features and additions. One of 
+these is the inclusion of a modern Software RAID implementation -- yay! 
+Software RAID allows you to dramatically increase Linux disk IO 
+performance and reliability without buying expensive hardware RAID 
+controllers or enclosures. Because it's implemented in software, Linux 
+RAID software is flexible, fast... and fun!
+</p>
+
+<p>
+The concept behind Software RAID is simple -- it allows you to combine 
+two or more block devices (usually disk partitions) into a single RAID 
+device. So let's say you have three empty partitions: 
+<path>hda3</path>, <path>hdb3</path>, and <path>hdc3</path>. Using 
+Software RAID, you can combine these partitions and address them as a 
+single RAID device, <path>/dev/md0</path>. <path>md0</path> can then 
+be formatted to contain a filesystem and used like any other 
+partition. There are also a number of different ways to configure a 
+RAID volume -- some maximize performance, others maximize 
+availability, while others provide a mixture of both.
+</p>
+
+<p>
+There are two forms of RAID: linear and RAID-0 mode. Neither one is 
+technically a form of RAID at all, since RAID stands for "redundant 
+array of inexpensive disks", and RAID-0 and linear mode don't 
+provide any kind of data redundancy. However, both modes -- especially 
+RAID-0 -- are very useful. After giving you a quick overview of these 
+two forms of "AID", I'll step you through the process of getting 
+Software RAID set up on your system.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Introduction to linear mode</title>
+<section>
+<body>
+
+<p>
+Linear mode is one of the simplest methods of combining two or more 
+block devices into a RAID volume -- the method of simple 
+concatenation. If you have three partitions, <path>hda3</path>, 
+<path>hdb3</path>, and <path>hdc3</path>, and each is about 2GB, they 
+will create a resultant linear volume of 6GB. The first third of the 
+linear volume will reside on <path>hda3</path>, the last third on 
+<path>hdc3</path>, and the middle third on <path>hdb3</path>.
+</p>
+
+<p>
+To configure a linear volume, you'll need at least two partitions 
+that you'd like to join together. They can be different sizes, and 
+they can even all reside on the same physical disk without 
+negatively affecting performance.
+</p>
+
+</body>
+</section>
+<section>
+<title>Linear applications</title>
+<body>
+
+<p>
+Linear mode is the best way to combine two or more partitions on the 
+same disk into a single volume. While doing this with any other RAID 
+technique will result in a dramatic loss of performance, linear mode 
+is saved from this problem because it doesn't write to its 
+constituent partitions in parallel (as all the other RAID modes do). 
+But for the same reason, linear mode has the liability of lacking 
+scale in performance compared to RAID-0, RAID-4, RAID-5, and to some 
+extent RAID-1.
+</p>
+
+<p>
+In general, linear mode doesn't provide any kind of performance 
+improvement over traditional non-RAID partitions. Actually, if you 
+spread your linear volume over multiple disks, your volume is more 
+likely to become unavailable due to a random hard drive failure. The 
+probability of failure of a linear volume will be equal to the sum of 
+the probabilities of failure of its constituent physical disks and 
+controllers. If one physical disk dies, the linear volume is 
+generally unrecoverable. Linear mode does not offer any additional 
+redundancy over using a single disk.
+</p>
+
+<p>
+But linear mode is a great way to avoid repartitioning a single disk. 
+For example, say your second IDE drive has two unused partitions, 
+<path>hdb1</path> and <path>hdb3</path>. And say you're unable to 
+repartition the drive due to critical data hanging out at 
+<path>hdb2</path>. You can still combine <path>hdb1</path> and 
+<path>hdb3</path> into a single, cohesive whole using linear mode.
+</p>
+
+<p>
+Linear mode is also a good way to combine partitions of different 
+sizes on different disks when you just need a single big partition 
+(and don't really need to increase performance). But for any other 
+job there are better RAID technologies you can use.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Introduction to RAID-0 mode</title>
+<section>
+<body>
+
+<p>
+RAID-0 is another one of those "RAID" modes that doesn't have any 
+"R" (redundancy) at all. Nevertheless, RAID-0 is immensely useful. 
+This is primarily because it offers the highest performance 
+potential of any form of RAID.
+</p>
+
+<p>
+To set up a RAID-0 volume you'll need two or more equally (or 
+almost equally) sized partitions. The RAID-0 code will evenly 
+distribute writes (and thus reads) between all constituent 
+partitions. And by parallelizing reads and writes between all 
+constituent devices, RAID-0 has the benefit of multiplying IO 
+performance. Ignoring the complexities of controller and bus 
+bandwidth, you can expect a RAID-0 volume composed of two 
+partitions on two separate identical disks to offer nearly double 
+the performance of a traditional partition. Crank your RAID-0 
+volume up to three disks, and performance will nearly triple. 
+This is why a RAID-0 array of IDE disks can outperform the fastest 
+SCSI or FC-AL drive on the market. For truly blistering 
+performance, you can set up a bunch of SCSI or FC-AL drives in a 
+RAID-0 array. That's the beauty of RAID-0.
+</p>
+
+<p>
+To create a RAID-0 volume, you'll need two or more equally sized 
+partitions located on separate disks. The capacity of the volume 
+will be equal to the combined capacity of the constituent 
+partitions. As with linear mode, you can combine block devices 
+from various sources (such as IDE and SCSI drives) into a single 
+volume with no problems.
+</p>
+
+<p>
+If you're creating a RAID-0 volume using IDE disks, you should try 
+to use UltraDMA compliant disks and controllers for maximum 
+reliability. And you should use only one drive per IDE channel to 
+avoid sluggish performance -- a slave device, especially if it's 
+also part of the RAID-0 array, will slow things down so much as to 
+nearly eliminate any RAID-0 performance benefit. You may also need 
+to add an off-board IDE controller so that you have the extra IDE 
+channels you require.
+</p>
+
+<p>
+If you're creating a RAID-0 volume out of SCSI devices, be aware 
+that the combined throughput of all the drives can potentially 
+exceed the maximum throughput of the SCSI (and potentially PCI) bus. 
+In such a case, the SCSI bus will be the performance-limiting 
+factor. If, for example, you have four drives that have a maximum 
+throughput of 15Mb/sec set up on a 40Mb/sec 68-pin Ultra Wide bus, 
+there will be times when the drives will saturate the bus, and 
+performance will reach an upper maximum of close to 40Mb/sec. This 
+may be fine for your application (after all, 40Mb/sec IO ain't bad!), 
+but you'd probably have identical peak IO performance from a RAID-0 
+volume that used only three drives.
+</p>
+
+</body>
+</section>
+<section>
+<title>RAID-0 applications</title>
+<body>
+
+<p>
+From a reliability standpoint, RAID-0 has the same characteristics 
+as linear mode -- the more drives you add to the array, the higher 
+the probability of volume failure. And, like linear mode, the 
+death of a single drive will bring down the entire RAID-0 volume 
+and make it unrecoverable. To figure out the probability of 
+failure of your RAID-0 volume, simply add together the 
+probabilities of failure of all constituent drives.
+</p>
+
+<p>
+RAID-0 is ideal for applications for which you need maximum IO 
+performance, since it's the highest-performing RAID mode available. 
+But remember that RAID-0 should only be used if you can tolerate a 
+slightly higher risk of volume failure.
+</p>
+
+<p>
+If you're putting together a compute farm or web cluster, RAID-0 is 
+an excellent way to increase disk IO performance. Since in this 
+case you would already have an existing level of redundancy (lots 
+of spare machines), your resources would continue to be available 
+for the rare case that a machine with a failed hard drive needs to 
+be brought down for a drive replacement and reload.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Setting up Linux 2.4 Software RAID</title>
+<section>
+<body>
+
+<p>
+There are two steps involved in getting your 2.4 system ready for 
+Software RAID. First, RAID support needs to be enabled in the kernel. 
+This normally involves recompiling and installing a new kernel 
+unless you're already using a 2.4 series kernel with RAID support 
+compiled-in.
+</p>
+
+<p>
+Then the raidtools package needs to be compiled and installed. The 
+raidtools are the user-level tools that allow you to initialize, 
+start, stop, and control your RAID volumes. Once these two steps are 
+complete, you'll be able to create your own RAID volumes, create 
+filesystems on the volumes, mount them, etc.
+</p>
+
+</body>
+</section>
+<section>
+<title>Kernel issues</title>
+<body>
+
+<p>
+I'm using kernel 2.4.0-test10 for this series. I recommend that you 
+use the most recent 2.4 kernel you can track down, which should at 
+least be kernel 2.4.0-test10 or later (but not 2.4.0-test11, which 
+had serious filesystem corruption problems). You can find a recent 
+kernel over at <uri link="http://www.kernel.org">kernel.org</uri>, 
+and a tutorial showing you how to recompile and install a new kernel 
+from sources elsewhere on gentoo.org (see the <uri 
+link="#resources">Resources</uri> section later in this article).
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring the kernel</title>
+<body>
+
+<p>
+I recommend that you configure your kernel so that Software RAID 
+support is compiled-in, rather than supported as modules. When you 
+type <c>make menuconfig</c> or <c>make xconfig</c>, you'll find the 
+Software RAID settings under the "Multi-device support (RAID and 
+LVM)" section. I also recommend that you enable everything 
+RAID-related here, including "Boot support" and "Auto Detect 
+support". This will allow the kernel to auto-start your RAID volume 
+at boot-time, as well as allow you to create a root RAID filesystem 
+if you so desire. Here's a snapshot of <c>make menuconfig</c>. The 
+last two options (LVM support) are not required, although I 
+compiled them into the kernel anyway:
+</p>
+
+<figure link="/images/docs/l-raid.gif" 
+caption="Configuring the kernel for RAID"/>
+
+<p>
+Once the kernel is properly configured, install it and reboot. Now 
+let's track down the latest version of raidtools.
+</p>
+
+</body>
+</section>
+<section>
+<title>Installing raidtools</title>
+<body>
+
+<p>
+Before we can install raidtools we need to do a bit of searching to 
+find the latest version. You can generally find the raidtools 
+program at <uri link="http://www.kernel.org">kernel.org</uri>. Now 
+track down the most recent "raidtools-0.90" archive (not 
+"raid0145"!). Currently it's "raidtools-19990824-0.90.tar.gz".
+</p>
+
+<p>
+If you like living on the bleeding edge (and if you're using a 
+2.4.0-test kernel, then you do), you may want to head over to 
+RedHat (see <uri link="#resources">Resources</uri>) and snag the 
+latest version of raidtools you can find. Currently it's 
+"raidtools-dangerous-0.90-20000116.tar.gz".
+</p>
+
+<pre caption="Installing raidtools">
+# <i>cd raidtools-0.90</i>
+# <i>./configure</i>
+# <i>make</i>
+# <i>make install</i>
+</pre>
+
+<pre caption="Examining RAID">
+# <i>cat /proc/mdstat</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Partition setup</title>
+<body>
+
+<p>
+OK, now it's time to prepare some disk partitions, of which you'll 
+need at least two. If you're using RAID-0, make sure they're on 
+separate disks and approximately the same size. It goes without 
+saying that the data on these partitions will be destroyed.
+</p>
+
+<p>
+One other important note -- when you create your partitions, give 
+them the partition type <c>FD</c>. This will allow the Linux 
+kernel to recognize them as Linux RAID partitions, so they will be 
+autodetected and started at every boot. If you don't mark your 
+RAID partitions this way, you'll need to type 
+<c>raidstart --all</c> after every boot before you can mount your 
+RAID volumes. That can be annoying, so set the partition type 
+correctly.
+</p>
+
+</body>
+</section>
+<section>
+<title>/etc/raidtab setup</title>
+<body>
+
+<p>
+The raidtab syntax is fairly easy to figure out: each block of 
+directives begins with a <c>raiddev</c> entry specifying the RAID 
+volume that will be created. When you installed raidtools, the 
+Makefile created <path>/dev/md0</path> through <path>md15</path> 
+for you, so they're available for use.
+</p>
+
+<p>
+Next, <c>nr-raid-disks</c> should specify the number of disks in 
+your array. Then you set the <c>persistent-superblock</c> to 
+<c>1</c>, telling the raid tools that when this volume is 
+created, a special superblock should be written to each 
+constituent device describing the configuration of the RAID 
+array. The Linux kernel uses this information to auto-detect and 
+start up RAID arrays at boot time, so you should make sure that 
+every RAID volume you create is configured to do this.
+</p>
+
+<p>
+<c>chunk-size</c> specifies the granularity of the chunks used 
+for RAID-0 in kilobytes. In this example, our RAID-0 volume will 
+write to its constituent partitions in 32K blocks; that is, the 
+first 32K of the RAID volume maps to <path>hde1</path>, the 
+second 32K maps to <path>hdg1</path>, etc. We also specify a 
+chunk size for our <path>/dev/md1</path> linear volume -- this is 
+just a dummy entry and doesn't mean anything.
+</p>
+
+<p>
+Finally, you specify the devices that make up the volume. First 
+you specify the actual block device with a <c>device</c> line, 
+and then you immediately follow it with a <c>raid-disk</c> entry 
+that specifies its position in the array, starting with zero.
+</p>
+
+<p>
+Once you've created your own <path>/etc/raidtab</path> file, 
+you're ready to do a one-time initialization of the array.
+</p>
+
+</body>
+</section>
+<section>
+<title>mkraid and creating the filesystem</title>
+<body>
+
+<p>
+OK. Our partitions are created, the raidtab file is in place -- 
+now it's time to initialize our first partition by using the 
+<c>mkraid</c> command:
+</p>
+
+<pre caption="Initializing the partition">
+# <i>mkraid /dev/md0</i>
+</pre>
+
+<p>
+After this command completes, <path>/dev/md0</path> will be 
+initialized and the md0 array will be started. If you type 
+<c>cat /proc/mdstat</c>, you should see something like this:
+</p>
+
+<pre caption="cat /proc/mdstat">
+Personalities : [linear] [raid0] [raid1] [raid5]
+read_ahead 1024 sectors
+md0 : active raid0 hdg1[1] hde1[0]
+      90069632 blocks 32k chunks
+ 
+unused devices: &lt;none&gt;
+</pre>
+
+<p>
+Yay! Our RAID device is up and running. All we need to do now 
+is create a filesystem on it. To do this, use the 
+<c>mke2fs</c> command or the <c>mkreiserfs</c> command 
+(RAID-0 and ReiserFS is a great combination!):
+</p>
+
+<pre caption="An ext2 RAID device">
+# <i>mke2fs /dev/md0</i>
+</pre>
+
+<p>
+or
+</p>
+
+<pre caption="A ReiserFS RAID device">
+# <i>mkreiserfs /dev/md0</i>
+</pre>
+
+<p>
+Now your new filesystem can be mounted:
+</p>
+
+<pre caption="Mounting the new RAID device">
+# <i>mkdir /mnt/raid</i>
+# <i>mount /dev/md0 /mnt/raid</i>
+</pre>
+
+<p>
+Feel free to add a <path>/dev/md0</path> entry to your fstab. 
+It goes something like this:
+</p>
+
+<pre caption="Editing fstab">
+/dev/md0      /mnt/raid      reiserfs      defaults        0 0
+</pre>
+
+<p>
+If you set the partition type correctly to <c>FD</c>, your 
+RAID volume will be auto-started at boot time. Now all that's 
+left to do is use and enjoy your new Software RAID volume. 
+And catch my second Software RAID article, in which we'll 
+take a look at some more advanced Software RAID functionality 
+and RAID-1.
+</p>
+
+</body>
+</section>
+<section id="resources">
+<title>Resources</title>
+<body>
+
+<ul>
+  <li>
+    Read <uri link="/doc/en/articles/software-raid-p2.xml">Part 
+    2</uri> in Daniel's series on RAID, where he explains what 
+    software RAID-1, 4, and 5 can and cannot do for you and how 
+    you should approach the implementation of these RAID levels 
+    in a production environment.
+  </li>
+  <li>
+    The <uri 
+    link="http://www.tldp.org/HOWTO/Software-RAID-HOWTO.html">
+    Software-RAID HOWTO</uri> is another excellent resource for 
+    information related to Linux Software RAID.
+  </li>
+  <li>
+    You may want to check out the <uri 
+    link="http://www.tldp.org/HOWTO/Boot+Root+Raid+LILO.html">
+    Boot+Root+RAID+Lilo Software RAID HOWTO</uri> if you'd like 
+    to learn how to create a root RAID filesystem.
+  </li>
+  <li>
+    For updated versions of raidtools-0.90, keep an eye on <uri 
+    link="http://people.redhat.com/mingo/raid-patches/">
+    people.redhat.com</uri>.
+  </li>
+  <li>
+    Find a <uri 
+    link="http://www.kernel.org">recent kernel</uri> in The Linux 
+    Kernel Archives.
+  </li>
+  <li>
+    Read Daniel's <uri 
+    link="/doc/en/articles/linux-kernel-compiling.xml">tutorial</uri> 
+    on compiling and installing a new kernel from sources.
+  </li>
+  <li>
+    Find the <uri link="http://people.redhat.com/mingo/raidtools/">
+    raidtools program</uri>.
+  </li>
+  <li>
+    Snag the <uri link="http://people.redhat.com/mingo/raid-patches">
+    latest version of raidtools</uri>.
+  </li>
+  <li>
+    Check out <uri link="http://linas.org/linux/raid.html">more tips 
+    on Software Raid solutions for Linux</uri>.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

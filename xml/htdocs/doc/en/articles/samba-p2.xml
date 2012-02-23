@@ -1,0 +1,630 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/samba-p2.xml,v 1.4 2011/09/04 17:53:41 swift Exp $ -->
+
+<guide disclaimer="articles">
+<title>Introduction to Samba, Part 2</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<!-- <author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author> -->
+
+<abstract>
+In his previous article, Daniel introduced you to what Samba can do.  Now it's
+time to get it running on your system. In this article, he'll walk you through
+the process of compiling, installing, and initially configuring Samba (version
+2.0.7) so that it works in your environment.
+</abstract>
+
+<!-- The original version of this article was first published on IBM
+developerWorks, and is property of Westtech Information Services. This document
+is an updated version of the original article, and contains various improvements
+made by the Gentoo Linux Documentation team -->
+
+<version>1.0</version>
+<date>2005-10-06</date>
+
+<chapter>
+<title>Compiling, installing, and configuring Samba for your environment</title>
+<section>
+<title>Downloading Samba</title>
+<body>
+
+<p>
+OK, it's time to download Samba 2.0.7 or greater from the Samba.org Web site
+(see <uri link="#resources">Resources</uri> later in this article).
+</p>
+
+<note>
+While I'll be compiling Samba from scratch, you may choose to install Samba from
+a binary package (such as RPM that came with your Linux distribution). This is
+perfectly OK. But, as I mentioned in my last article, if you do this, your file
+locations may be slightly different than what I refer to here.
+</note>
+
+<p>
+After you've downloaded Samba 2.0.7 or greater, it's time to decompress it to a
+directory location of your choice. From the command prompt, type:
+</p>
+
+<pre caption="Unpacking the source files">
+$ <i>tar -xzvf samba-2.0.7.tar.gz</i>
+</pre>
+
+<p>
+A <path>samba-2.0.7</path> directory will be created. <c>cd</c> into it, and
+we'll take a look around. First, notice the docs directory.  Inside it you'll
+see another directory called <path>textdocs</path>.  <path>texdocs</path>
+contains a whole bunch of Samba documentation.  One of the most important files
+in the <path>textdocs</path> directory is called DIAGNOSIS.txt. It walks you
+through a step-by-step process of diagnosing problems you may have with proper
+Samba operation. We'll be covering some, but not all, of the diagnosis
+procedures mentioned in this file.
+</p>
+
+</body>
+</section>
+<section>
+<title>Compiling and installing Samba</title>
+<body>
+
+<p>
+You'll also notice the <path>sources</path> directory in the main
+<path>samba-2.0.7</path> directory. Inside <path>sources</path> you'll find a
+well designed configure script designed to set up all the makefiles properly. As
+with any other configure script, to get a list of the configuration options,
+type:
+</p>
+
+<pre caption="Investigating options">
+$ <i>./configure --help</i>
+</pre>
+
+<p>
+You will probably want to pipe the output to <c>more</c> so that you can view
+all the options:
+</p>
+
+<pre caption="Even more options">
+$ <i>./configure --help | more</i>
+</pre>
+
+<p>
+Note the directory and file name options. Notice where everything gets
+installed, and that the default install path is <path>/usr/local/samba</path>.
+You will probably want to change this to <path>/usr/local</path> by passing the
+<c>--prefix=/usr/local</c> option when you configure Samba. For this example,
+I'm going to use the following path settings:
+</p>
+
+<pre caption="Configuring the directory options">
+$ <i>./configure --prefix=/usr/local --localstatedir=/var/log --sysconfdir=/etc</i>
+</pre>
+
+<p>
+The above configuration options will cause Samba's default tree to be in
+<path>/usr/local</path>, with the exception of the configuration files. Samba
+will expect to find these in <path>/etc</path> and log files, which will end up
+in <path>/var/log</path>. If you omit those configure options, you'll find
+everything in the <path>/usr/local/samba</path> directory tree
+(<path>/usr/local/samba/var</path>, <path>/usr/local/samba/etc</path>, etc.).
+</p>
+
+<p>
+It's now time to start the compilation. After running <c>configure</c>, type:
+</p>
+
+<pre caption="Compiling Samba">
+$ <i>make</i>
+</pre>
+
+<p>
+After compilation completes, type the following as root to install the
+software:
+</p>
+
+<pre caption="Installing Samba">
+# <i>make install</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Configuring the server</title>
+<body>
+
+<p>
+For the most part, configuring Samba begins and ends with the
+<path>smb.conf</path> file. This is Samba's main configuration file.  It has
+many different configuration options. To avoid confusion, we're going to start
+only with those options essential to the proper operation of Samba. First,
+you'll need to find out where <path>smb.conf</path> should be. If you used the
+configuration options I specified above, you should place <path>smb.conf</path>
+in <path>/etc</path>. If you used the default paths, Samba will look for it in
+<path>/usr/local/samba/etc</path>. To get started, <c>cd</c> to the appropriate
+directory, fire up your favorite text editor, and type in the following lines.
+I'll intersperse commentary along the way to provide you with a good
+understanding of what each option does. Add these lines to your
+<path>smb.conf</path> file:
+</p>
+
+<pre caption="smb.conf">
+[global] 
+workgroup = YOURWORKGROUP 
+security = user 
+encrypt passwords = yes 
+guest account = guest
+</pre>
+
+<p>
+The first line tells Samba that we are placing options in the "global" section.
+There are many options that are intended to be defined only in this section.
+These options control the global behavior of Samba.
+</p>
+
+<p>
+The second line tells Samba the name of the Windows workgroup that Samba will
+create. Replace YOURWORKGROUP with an appropriate name for your workgroup.
+</p>
+
+<p>
+On the third line, we tell Samba to run in user-level security mode.  This
+option will cause Samba to tell all connecting Windows clients that they need to
+provide a valid username/password combination to gain access to any network
+resource. This is definitely a good thing.  User-level security is Samba's most
+often used security level because it's an excellent match for the majority of
+file sharing situations.  However, there are other security levels available.
+One handy mode tells Samba to authenticate all users against the security
+database of an existing Windows NT or 2000 Server. We won't be covering that
+particular mode in this article. If you want more information about it, take a
+look at the "security" option in the <path>smb.conf</path> main page.
+</p>
+
+<p>
+Now, on to the fourth line. Here we tell Samba to exchange passwords with Samba
+in encrypted mode. You will always want to run Samba in encrypted mode, unless
+all your client machines are extremely ancient (like Windows for Workgroups-era
+machines). Enabling encrypted passwords does cause Samba to need its own
+password file, in addition to the standard Unix password database. If you are
+thinking that it may be nice to turn encrypted passwords off, so that you can
+avoid having to maintain two password files, don't do it! Turning encrypted
+passwords off will cause sharing problems with even moderately old versions of
+Windows NT 4.0 in addition to Windows 2000. If you really want to avoid
+maintaining two separate databases, Samba provides several ways to synchronize
+both databases, which is a better approach.
+</p>
+
+<p>
+The next line specifies a valid Unix user account that will be used 
+for guest access. While people often use "guest account=nobody", it's 
+recommended that you add a literal "guest" user to your system if one 
+doesn't exist already. The new "guest" account does not need a 
+password set and does not need to be able to log in interactively. 
+(It's fine if you do choose to configure guest with a password and a 
+valid default shell.)
+</p>
+
+<p>
+Now we're ready to add WINS support options to <path>smb.conf</path>. You'll
+want to add one of the following two lines to the global section:
+</p>
+
+<pre caption="WINS support">
+wins support = yes
+</pre>
+
+<p>
+OR
+</p>
+
+<pre caption="WINS server IP address">
+wins server = IP address of WINS server
+</pre>
+
+<p>
+If you already have a WINS server on your current subnet (a Windows NT Server
+running WINS, for example), you'll want to use the second option and specify the
+name of the WINS server on the right side of the equals sign. Samba's internal
+WINS services will then be disabled, and it will use the WINS server you
+specify.
+</p>
+
+<p>
+If you don't have a WINS server running on your subnet, or you're setting Samba
+up at home and you don't know exactly what a WINS server is, you'll want to use
+the first option. This will tell Samba to become a WINS server for your LAN.
+</p>
+
+<p>
+You may be wondering what WINS does. Basically, you can think of WINS as a local
+dynamic DNS database. When Samba is running as a WINS server, every
+Windows-compatible machine on the same subnet will register its IP address and
+NetBIOS name (a.k.a. "computer name") with Samba. This enables Windows machines
+to use Samba's WINS database to request an IP address for a particular NetBIOS
+name.  WINS is a key component of network browsing, which is what you are doing
+when you poke around inside the Network Neighborhood on a Windows machine.
+</p>
+
+<p>
+Now we're ready to add several more options to the global section:
+</p>
+
+<pre caption="Network browsing setup">
+local master = yes 
+os level = 99 
+domain master = yes 
+preferred master = yes
+</pre>
+
+<p>
+Now for an explanation. All these options are related to network browsing. I've
+already mentioned that WINS is a key component of network browsing, but there's
+another element required for browsing to work properly. A local master browser
+must exist. Sound strange?  Some further explanation is required.
+</p>
+
+<p>
+For browsing to work properly, there must be some central location that keeps
+track of what machines and workgroups exist on the local subnet.  This
+particular list is called the browse list. The browse list is used to construct
+the list of workgroups, domains, and machines you see when you first click on
+the Network Neighborhood. Any modern Windows machine can become the local master
+browser. Ideally, we'd like Samba to be the local master browser on the network.
+</p>
+
+<p>
+How is this accomplished? Basically, several beefy Windows-compatible machines
+on your subnet will regularly duke it out by flinging packets back and forth
+across your LAN in an attempt to determine who will become the local master
+browser. This process is called a "browser election."
+</p>
+
+<note>
+Be a good sport. Please don't use Samba's ability to beat Windows in all
+browser elections as an excuse to tease Microsoft administrators in your
+organization.  Remember, it's important to be a good winner.
+</note>
+
+<p>
+In the end the "winner" of this broadcast packet war gets to become the local
+master browser. We can cause Samba to win the battle by using the <c>os level =
+99</c> option, which causes it to beat every other machine on the LAN. This
+happens because every version of Windows (from Windows 95 to NT to 2000) has a
+hard-coded OS level that was intended to cause the most advanced version of
+Windows to become the local master browser (later versions of Windows have a
+bigger number). Setting Samba to 99 will cause it to beat all Microsoft
+products, allowing it to become the local master browser every time.
+</p>
+
+</body>
+</section>
+<section>
+<title>Security options</title>
+<body>
+
+<p>
+Before we leave the global section, here are a few security options that you may
+be interested in. The host's <c>allow</c> option lets you limit the IP addresses
+that can connect to Samba:
+</p>
+
+<pre caption="Allowed IP addresses">
+hosts allow = 192.168.1. 127.
+</pre>
+
+<p>
+This option allows only machines in the <b>192.168.1</b> network to connect to
+Samba, in addition to <b>127</b>, the localhost. Always make sure there is a
+<b>127.</b> at the end of your hosts allow line.
+</p>
+
+<p>
+The interfaces option is very useful if your machine happens to have multiple
+network interfaces. It allows you to specify the network interfaces on which
+Samba is available. It is used as follows:
+</p>
+
+<pre caption="Specifying interfaces">
+interfaces = eth1
+</pre>
+
+<p>
+This is an easy way to limit Samba to the necessary interfaces. And limiting
+the interfaces prevents possible hacking attempts from unwanted users.
+</p>
+
+</body>
+</section>
+<section>
+<title>A test share</title>
+<body>
+
+<p>
+Now that we've configured Samba's global options, it's time to create a test
+share that will allow us to access the <path>/tmp</path> directory. Add the
+following lines:
+</p>
+
+<pre caption="Setting the /tmp directory">
+[tmp] 
+path=/tmp 
+writeable=yes
+</pre>
+
+<p>
+When Samba is started, these settings will make a share available called
+<c>tmp</c>. This share will contain the contents of your <path>/tmp</path>
+directory on your Samba server. Also, if a particular user has write permission
+in <path>/tmp</path>, as almost all do, that user will be able to create and
+modify files in that directory.
+</p>
+
+<p>
+Now that we've added all these entries to <path>smb.conf</path>, it's time to
+verify that our configuration is correct. To do this, we'll use the
+<c>testparm</c> utility:
+</p>
+
+<pre caption="Using testparm">
+$ testparm
+</pre>
+
+<p>
+A list of all your configuration options will be listed to the screen after you
+hit Enter. Any errors in <path>smb.conf</path> will also be noted and commented
+upon at this point. If there are any errors, follow the instructions on-screen
+to fix them. Now we're ready to configure Samba users and fire up Samba for the
+test run.
+</p>
+
+</body>
+</section>
+<section>
+<title>Creating users</title>
+<body>
+
+<p>
+In order for the "myuser" user with the "mypass" password to be able to use
+Samba, the following things must exist:
+</p>
+
+<ol>
+  <li>
+    A valid <b>myuser</b> Unix account. <b>myuser</b> does not need to be able
+    to log in, and <b>myuser</b>'s Unix password is not used by Samba, so you
+    can set to a dummy value if you like. If <b>myuser</b> also logs in
+    interactively to your Samba server, that's OK, too.
+  </li>
+  <li>
+    A valid <b>myuser</b> entry in the <path>smbpasswd</path> file. The
+    <path>smbpasswd</path> file is found in the directory called
+    <path>private</path> that resides in the default Samba install prefix
+    (<path>/usr/local/private</path> in this example).  <b>myuser</b> can be
+    added to the <path>smbpasswd</path> file by using the <c>smbpasswd</c>
+    command and by typing the following as root:
+  </li>
+</ol>
+
+<pre caption="Adding users">
+# <i>smbpasswd -a myuser</i>
+New SMB password: &lt;enter "mypass" here&gt;
+Retype new SMB password: &lt;enter "mypass" again&gt;
+Added user myuser.
+</pre>
+
+<p>
+These steps must be repeated for every new Samba user. If you are Samba-enabling
+an existing Unix account, remember to add the username and password to the
+<path>smbpasswd</path> file. If you're adding a Windows-only user, remember that
+in addition to adding the user to the <path>smbpasswd</path> file you'll also
+need to create a valid Unix account with an identical username. In fact, you'll
+need to create the Unix account first since <path>smbpasswd</path> won't add a
+user unless the Unix account already exists.
+</p>
+
+<p>
+Both accounts are needed because Samba uses the Unix account to set the proper
+permissions on disk, while the <path>smbpasswd</path> file is used for
+authentication purposes. If you are going to connect from Windows NT, you'll
+want to create a Samba "administrator" user.
+</p>
+
+</body>
+</section>
+<section>
+<title>Final server configuration</title>
+<body>
+
+<p>
+We're almost ready to start Samba and configure the client machines.  But you
+must first make sure that your Samba box can ping every Windows client machine
+on your network, by name. If this doesn't work, you'll need to add some entries
+to <path>/etc/hosts</path> or update your DNS so that your Samba box can
+properly find your Windows machines.
+</p>
+
+<p>
+It is also helpful to note that Samba works best when <path>/etc/hosts</path> is
+set up so that only the "localhost" name maps to 127.0.0.1. The FQDN of your
+machine should map to the primary IP address used on your LAN. For example:
+</p>
+
+<pre caption="/etc/hosts">
+<comment>/etc/hosts excerpt</comment>
+
+127.0.0.1       localhost 
+192.168.1.1   mybox mybox.mydomain.com
+</pre>
+
+</body>
+</section>
+<section>
+<title>Starting Samba</title>
+<body>
+
+<p>
+Samba is now configured and ready to go. We'll start Samba and then focus on
+configuring the Windows machines properly. To start Samba, type the following as
+root:
+</p>
+
+<pre caption="Starting Samba">
+# <i>smbd</i>
+# <i>nmbd</i>
+</pre>
+
+<p>
+This will start Samba's two main server processes, <c>smbd</c> and <c>nmbd</c>.
+They will log any informational and error messages to
+<path>/var/log/log.smb</path> and <path>/var/log/log.nmb</path>, respectively.
+Now that the Unix side is up and running, it's time to turn to the client
+machines and get them set up properly.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring client machines</title>
+<body>
+
+<p>
+To configure a Windows machine so that it can participate in your Samba
+Workgroup, you'll need to make sure the TCP/IP protocol is properly configured.
+You must also make sure that:
+</p>
+
+<ol>
+  <li>
+    Your Windows machine can ping your Unix machine by name. (Type <c>ping
+    myserver</c> at the C:\&gt; prompt.)
+  </li>
+  <li>
+    Your Windows machine is configured to use a WINS server. If Samba is
+    providing WINS services, this should be set to the IP of your Samba box. If
+    not, it should be set to the IP of a valid WINS server. This setting is
+    normally found inside the TCP/IP settings dialog.
+  </li>
+  <li>Your Windows machine is a member of YOURWORKGROUP.</li>
+</ol>
+
+</body>
+</section>
+<section>
+<title>Testing it out</title>
+<body>
+
+<p>
+Now is the moment of truth. After your Windows machines have finished rebooting,
+you'll need to log on to Windows using a username/password that will be accepted
+by Samba. If you're using Windows 95/98, this username/password combo will be
+simply stored in a file and used later when you try to connect to any network
+resource.
+</p>
+
+<p>
+If you are using Windows NT Workstation, this username/password combo must also
+be in the NT's local security database (otherwise you won't be able to initially
+log in to NT). To do this, log on to NT as administrator and create the account
+using User Manager. Afterwards, log out and log in as the new user.
+</p>
+
+<p>
+After you've properly logged in, double-click on the Network Neighborhood and
+take a look at the YOURWORKGROUP workgroup. Look inside. See if your Samba
+server is listed. Double-click on it and see if the <path>/tmp</path> share is
+listed. If so, congratulations!  Samba is working! If not, here are some things
+to check:
+</p>
+
+<ol>
+  <li>
+    Run <c>testparm</c>. Is your <path>smb.conf</path> OK? If not, fix the
+    problem and restart Samba.
+  </li>
+  <li>
+    Are <c>smbd</c> and <c>nmbd</c> running? If not, check the log files for
+    possible errors, correct any issues, and restart <c>smbd</c> and
+    <c>nmbd</c>.
+  </li>
+  <li>
+    Did you configure your Windows client machines to use a proper WINS server?
+    If not, they will have problems looking up the IP addresses of machines on
+    your network.
+  </li>
+  <li>
+    Can you ping the Unix machine from Windows and vice-versa? If not, you'll
+    need to configure your <path>/etc/hosts</path> file or DNS so that name
+    resolution is working properly.
+  </li>
+</ol>
+
+<p>
+If all these things check out and Samba is still not working, carefully follow
+each step in the DIAGNOSIS.txt file found in the <path>docs/textdocs</path>
+directory. You should be able to pinpoint and fix your configuration or network
+problem within minutes. If you change <path>smb.conf</path> in any way, you'll
+need to send <c>smbd</c> and <c>nmbd</c> a HUP signal to force them to reread
+<path>smb.conf</path>. This is done as follows:
+</p>
+
+<pre caption="Troubleshooting">
+# <i>kill -hup &lt;pid of smbd&gt;</i>
+# <i>kill -hup &lt;pid of nmbd&gt;</i>
+</pre>
+
+<p>
+Alternately, you can simply kill <c>smbd</c> and <c>nmbd</c> and restart them
+again.
+</p>
+
+</body>
+</section>
+<section>
+<title>Next time</title>
+<body>
+
+<p>
+In my <uri link="/doc/en/articles/samba-p3.xml">next Samba article</uri> I'll
+familiarize you with Samba's more advanced options. Then you'll be able to set
+up shares that function exactly the way you want them to. We'll also look at
+several advanced features of Samba, like Samba printing. I'll see you then!
+</p>
+
+</body>
+</section>
+<section id="resources">
+<title>Resources</title>
+<body>
+
+<ul>
+  <li>The main <uri link="http://fi.samba.org">Samba</uri> web site</li>
+  <li>
+    <uri link="http://www.kampsax.dtu.dk/~rask/Samba/mailinglist/">Amiga
+    Samba</uri> mailing list
+  </li>
+  <li><uri link="http://linuxguy.net/samba.htm">Samba</uri> by Ed Weinberg</li>
+  <li>
+    <uri link="http://www.amazon.com/exec/obidos/ASIN/0672318628/">Samba
+    Unleashed</uri>>, by Steve Litt, with contributions from Daniel Robbins
+  </li>
+  <li>
+    <uri link="http://www.oreilly.com/catalog/samba/">Using Samba</uri>
+    (O'Reilly Publishing; 1999)
+  </li>
+  <li>
+    <uri link="http://www.mdb.ku.dk/tarvin/samba/">Samba Notes</uri> on Samba
+    and Redhat
+  </li>
+  <li>
+    The <uri link="http://fi.samba.org/docs/swat_ssl.html">SWAT</uri> main
+    page
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

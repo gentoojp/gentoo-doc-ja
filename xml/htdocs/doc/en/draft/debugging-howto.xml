@@ -1,0 +1,674 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/draft/debugging-howto.xml,v 1.6 2011/09/04 17:53:42 swift Exp $ -->
+
+<guide>
+<title>Gentoo Linux Debugging Guide</title>
+
+<author title="Author">
+  <mail link="chriswhite@gentoo.org">Chris White</mail>
+</author>
+<author title="Editor">
+  <mail link="fox2mike@gentoo.org">Shyam Mani</mail>
+</author>
+
+<abstract>
+This document aims at helping the user debug various errors they may encounter
+during day to day usage of Gentoo.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.0</version>
+<date>2005-07-13</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>Preface</title>
+<body>
+
+<p>
+One of the factors that delay a bug being fixed is the way it is reported. By
+creating this guide, we hope to help improve the communication between
+developers and users in bug resolution. Getting bugs fixed is an important, if
+not crucial part of the quality assurance for any project and hopefully this
+guide will help make that a success.
+</p>
+
+</body>
+</section>
+<section>
+<title>Bugs!!!!</title>
+<body>
+
+<p>
+You're emerge-ing a package or working with a program and suddenly the worst
+happens -- you find a bug. Bugs come in many forms like emerge failures or
+segmentation faults. Whatever the cause, the fact still remains that such a bug
+must be fixed. Here is a few examples of such bugs.
+</p>
+
+<pre caption="A run time error">
+$ <i>./bad_code `perl -e 'print Ax100'`</i>
+Segmentation fault
+</pre>
+
+<pre caption="An emerge failure">
+/usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.2/include/g++-v3/backward/backward_warning.h:32:2:
+warning: #warning This file includes at least one deprecated or antiquated
+header. Please consider using one of the 32 headers found in section 17.4.1.2 of
+the C++ standard. Examples include substituting the &lt;X&gt; header for the &lt;X.h&gt;
+header for C++ includes, or &lt;sstream&gt; instead of the deprecated header
+&lt;strstream.h&gt;. To disable this warning use -Wno-deprecated.
+In file included from main.cc:40:
+menudef.h:55: error: brace-enclosed initializer used to initialize `
+OXPopupMenu*'
+menudef.h:62: error: brace-enclosed initializer used to initialize `
+OXPopupMenu*'
+menudef.h:70: error: brace-enclosed initializer used to initialize `
+OXPopupMenu*'
+menudef.h:78: error: brace-enclosed initializer used to initialize `
+OXPopupMenu*'
+main.cc: In member function `void OXMain::DoOpen()':
+main.cc:323: warning: unused variable `FILE*fp'
+main.cc: In member function `void OXMain::DoSave(char*)':
+main.cc:337: warning: unused variable `FILE*fp'
+make[1]: *** [main.o] Error 1
+make[1]: Leaving directory
+`/var/tmp/portage/xclass-0.7.4/work/xclass-0.7.4/example-app'
+make: *** [shared] Error 2
+
+!!! ERROR: x11-libs/xclass-0.7.4 failed.
+!!! Function src_compile, Line 29, Exitcode 2
+!!! 'emake shared' failed
+</pre>
+
+<p>
+These errors can be quite troublesome. However, once you find them, what do
+you do? The following sections will look at two important tools for handling
+run time errors. After that, we'll take a look at compile errors, and how to
+handle them. Let's start out with the first tool for debugging run time
+errors -- <c>gdb</c>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+
+<chapter>
+<title>Debugging using GDB</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+GDB, or the (G)NU (D)e(B)ugger, is a program used to find run time errors that
+normally involve memory corruption. First off, let's take a look at what
+debugging entails. One of the main things you must do in order to debug a
+program is to <c>emerge</c> the program with <c>FEATURES="nostrip"</c>. This
+prevents the stripping of debug symbols. Why are programs stripped by default?
+The reason is the same as that for having gzipped man pages -- saving space.
+Here's how the size of a program varies with and without debug symbol stripping.
+</p>
+
+<pre caption="Filesize Comparison">
+<comment>(debug symbols stripped)</comment>
+-rwxr-xr-x  1 chris users 3140  6/28 13:11 bad_code
+<comment>(debug symbols intact)</comment>
+-rwxr-xr-x  1 chris users 6374  6/28 13:10 bad_code
+</pre>
+
+<p>
+Just for reference, <e>bad_code</e> is the program we'll be debugging with
+<c>gdb</c> later on. As you can see, the program without debugging symbols is
+3140 bytes, while the program with them is 6374 bytes. That's close to double
+the size! Two more things can be done for debugging. The first is adding ggdb3
+to your CFLAGS and CXXFLAGS. This flag adds more debugging information than is
+generally included. We'll see what that means later on. This is how
+<path>/etc/make.conf</path> <e>might</e> look with the newly added flags.
+</p>
+
+<pre caption="make.conf settings">
+CFLAGS="-O2 -pipe -ggdb3"
+CXXFLAGS="${CFLAGS}"
+</pre>
+
+<p>
+Lastly, you can also add debug to the package's USE flags. This can be done
+with the <path>package.use</path> file.
+</p>
+
+<pre caption="Using package.use to add debug USE flag">
+# <i>echo "category/package debug" >> /etc/portage/package.use</i>
+</pre>
+
+<note>
+The directory <path>/etc/portage</path> does not exist by default and you may
+have to create it, if you have not already done so. If the package already has
+USE flags set in <path>package.use</path>, you will need to manually modify them
+in your favorite editor.
+</note>
+
+<p>
+Then we re-emerge the package with the modifications we've done so far as shown
+below.
+</p>
+
+<pre caption="Re-emergeing a package with debugging">
+# <i>FEATURES="nostrip" emerge package</i>
+</pre>
+
+<p>
+Now that debug symbols are setup, we can continue with debugging the program.
+</p>
+
+</body>
+</section>
+<section>
+<title>Running the program with GDB</title>
+<body>
+
+<p>
+Let's say we have a program here called "bad_code". Some person claims that the
+program crashes and provides an example. You go ahead and test it out:
+</p>
+
+<pre caption="Breaking The Program">
+$ <i>./bad_code `perl -e 'print Ax100'`</i>
+Segmentation fault
+</pre>
+
+<p>
+It seems this person was right. Since the program is obviously broken, we have
+a bug at hand. Now, it's time to use <c>gdb</c> to help solve this matter. First
+we run <c>gdb</c> with <c>--args</c>, then give it the full program with
+arguments like shown:
+</p>
+
+<pre caption="Running Our Program Through GDB">
+$ <i>gdb --args ./bad_code `perl -e 'print Ax100'`</i>
+GNU gdb 6.3
+Copyright 2004 Free Software Foundation, Inc.
+GDB is free software, covered by the GNU General Public License, and you are
+welcome to change it and/or distribute copies of it under certain conditions.
+Type "show copying" to see the conditions.
+There is absolutely no warranty for GDB. Type "show warranty" for details.
+This GDB was configured as "i686-pc-linux-gnu"...Using host libthread_db library "/lib/libthread_db.so.1".
+</pre>
+
+<note>
+One can also debug with core dumps. These core files contain the same
+information that the program would produce when run with gdb.  In order to debug
+with a core file with bad_code, you would run <c>gdb ./bad_code core</c> where
+core is the name of the core file.
+</note>
+
+<p>
+You should see a prompt that says "(gdb)" and waits for input. First, we have to
+run the program. We type in <c>run</c> at the command and receive a notice like:
+</p>
+
+<pre caption="Running the program in GDB">
+(gdb) <i>run</i>
+Starting program: /home/chris/bad_code
+
+Program received signal SIGSEGV, Segmentation fault.
+0xb7ec6dc0 in strcpy () from /lib/libc.so.6
+</pre>
+
+<p>
+Here we see the program starting, as well as a notification of SIGSEGV, or
+Segmentation Fault. This is GDB telling us that our program has crashed. It
+also gives the last run function it could trace when the program crashes.
+However, this isn't too useful, as there could be multiple strcpy's in the
+program, making it hard for developers to find which one is causing the issue.
+In order to help them out, we do what's called a backtrace. A backtrace runs
+backwards through all the functions that occurred upon program execution, to the
+function at fault. Functions that return (without causing a crash) will not show
+up on the backtrace. To get a backtrace, at the (gdb) prompt, type in <c>bt</c>.
+You will get something like this:
+</p>
+
+<pre caption="Program backtrace">
+(gdb) <i>bt</i>
+#0  0xb7ec6dc0 in strcpy () from /lib/libc.so.6
+#1  0x0804838c in run_it ()
+#2  0x080483ba in main ()
+</pre>
+
+<p>
+You can notice the trace pattern clearly. main() is called first, followed by
+run_it(), and somewhere in run_it() lies the strcpy() at fault. Things such as
+this help developers narrow down problems. There are a few exceptions to the
+output. First off is forgetting to enable debug symbols with
+<c>FEATURES="nostrip"</c>. With debug symbols stripped, the output looks
+something like this:
+</p>
+
+<pre caption="Program backtrace With debug symbols stripped">
+(gdb) <i>bt</i>
+#0  0xb7e2cdc0 in strcpy () from /lib/libc.so.6
+#1  0x0804838c in ?? ()
+#2  0xbfd19510 in ?? ()
+#3  0x00000000 in ?? ()
+#4  0x00000000 in ?? ()
+#5  0xb7eef148 in libgcc_s_personality () from /lib/libc.so.6
+#6  0x080482ed in ?? ()
+#7  0x080495b0 in ?? ()
+#8  0xbfd19528 in ?? ()
+#9  0xb7dd73b8 in __guard_setup () from /lib/libc.so.6
+#10 0xb7dd742d in __guard_setup () from /lib/libc.so.6
+#11 0x00000006 in ?? ()
+#12 0xbfd19548 in ?? ()
+#13 0x080483ba in ?? ()
+#14 0x00000000 in ?? ()
+#15 0x00000000 in ?? ()
+#16 0xb7deebcc in __new_exitfn () from /lib/libc.so.6
+#17 0x00000000 in ?? ()
+#18 0xbfd19560 in ?? ()
+#19 0xb7ef017c in nullserv () from /lib/libc.so.6
+#20 0xb7dd6f37 in __libc_start_main () from /lib/libc.so.6
+#21 0x00000001 in ?? ()
+#22 0xbfd195d4 in ?? ()
+#23 0xbfd195dc in ?? ()
+#24 0x08048201 in ?? ()
+</pre>
+
+<p>
+This backtrace contains a large number of ?? marks. This is because without
+debug symbols, <c>gdb</c> doesn't know how the program was run. Hence, it is
+crucial that debug symbols are <e>not</e> stripped. Now remember a while ago we
+mentioned the -ggdb3 flag. Let's see what the output looks like with the flag
+enabled:
+</p>
+
+<pre caption="Program backtrace with -ggdb3">
+(gdb) <i>bt</i>
+#0  0xb7e4bdc0 in strcpy () from /lib/libc.so.6
+#1  0x0804838c in run_it (input=0x0) at bad_code.c:7
+#2  0x080483ba in main (argc=1, argv=0xbfd3a434) at bad_code.c:12
+</pre>
+
+<p>
+Here we see that a lot more information is available for developers. Not only is
+function information displayed, but even the exact line numbers of the source
+files. This method is the most preferred if you can spare the extra space.
+Here's how much the file size varies between debug, strip, and -ggdb3 enabled
+programs.
+</p>
+
+<pre caption="Filesize differences With -ggdb3 flag">
+<comment>(debug symbols stripped)</comment>
+-rwxr-xr-x  1 chris users 3140  6/28 13:11 bad_code
+<comment>(debug symbols enabled)</comment>
+-rwxr-xr-x  1 chris users 6374  6/28 13:10 bad_code
+<comment>(-ggdb3 flag enabled)</comment>
+-rwxr-xr-x  1 chris users 19552  6/28 13:11 bad_code
+</pre>
+
+<p>
+As you can see, -ggdb3 adds about <e>13178</e> more bytes to the file size
+over the one with debugging symbols. However, as shown above, this increase
+in file size can be worth it if presenting debug information to developers.
+The backtrace can be saved to a file by copying and pasting from the
+terminal (if it's a non-x based terminal, you can use gpm. To keep this
+doc simple, I recommend you read up on the documentation for gpm to see
+how to copy and paste with it). Now that we're done with <c>gdb</c>, we
+can quit.
+</p>
+
+<pre caption="Quitting GDB">
+(gdb) <i>quit</i>
+The program is running. Exit anyway? (y or n) <i>y</i>
+$
+</pre>
+
+<p>
+This ends the walk-through of <c>gdb</c>. Using <c>gdb</c>, we hope that you
+will be able to use it to create better bug reports. However, there are other
+types of errors that can cause a program to fail during run time. One of the
+other ways is through improper file access. We can find those using a nifty
+little tool called <c>strace</c>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Finding file access errors using strace</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+Programs often use files to fetch configuration information, access hardware or
+write logs. Sometimes, a program attempts to reach such files incorrectly. A
+tool called <c>strace</c> was created to help deal with this. <c>strace</c>
+traces system calls (hence the name) which include calls that use the memory and
+files. For our example, we're going to take a program foobar2. This is an
+updated version of foobar. However, during the change over to foobar2, you
+notice all your configurations are missing!  In foobar version 1, you had it
+setup to say "foo", but now it's using the default "bar".
+</p>
+
+<pre caption="Foobar2 With an invalid configuration">
+$ <i>./foobar2</i>
+Configuration says: bar
+</pre>
+
+<p>
+Our previous configuration specifically had it set to foo, so let's use
+<c>strace</c> to find out what's going on.
+</p>
+
+</body>
+</section>
+<section>
+<title>Using strace to track the issue</title>
+<body>
+
+<p>
+We make <c>strace</c> log the results of the system calls. To do this, we run
+<c>strace</c> with the -o[file] arguments. Let's use it on foobar2 as shown.
+</p>
+
+<pre caption="Running foobar2 through strace">
+# <i>strace -ostrace.log ./foobar2</i>
+</pre>
+
+<p>
+This creates a file called <path>strace.log</path> in the current directory. We
+check the file, and shown below are the relevant parts from the file.
+</p>
+
+<pre caption="A Look At the strace Log">
+open(".foobar2/config", O_RDONLY)       = 3
+read(3, "bar", 3)                       = 3
+</pre>
+
+<p>
+Aha! So There's the problem. Someone moved the configuration directory to
+<path>.foobar2</path> instead of <path>.foobar</path>. We also see the program
+reading in "bar" as it should. In this case, we can recommend the ebuild
+maintainer to put a warning about it. For now though, we can copy over the
+config file from <path>.foobar</path> and modify it to produce the correct
+results.
+</p>
+
+</body>
+</section>
+<section>
+<title>Conclusion</title>
+<body>
+
+<p>
+<c>strace</c> is a great way at seeing what the kernel is doing to with the
+filesystem. Another program exists to help users see what the kernel is doing,
+and help with kernel debugging.  This program is called <c>dmesg</c>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Kernel Debugging With dmesg</title>
+<section>
+<title>dmesg Introduction</title>
+<body>
+
+<p>
+<c>dmesg</c> is a system program created with debugging kernel operation. It
+basically reads the kernel messages and keeps them in buffer, letting the user
+see them later on. Here's an example of what a dmesg output looks like:
+</p>
+
+<pre caption="dmesg sample output">
+SIS5513: IDE controller at PCI slot 0000:00:02.5
+SIS5513: chipset revision 208
+SIS5513: not 100% native mode: will probe irqs later
+SIS5513: SiS 961 MuTIOL IDE UDMA100 controller
+ide0: BM-DMA at 0x4000-0x4007, BIOS settings: hda:DMA, hdb:DMA
+ide1: BM-DMA at 0x4008-0x400f, BIOS settings: hdc:DMA, hdd:DMA
+Probing IDE interface ide0...
+input: ImPS/2 Generic Wheel Mouse on isa0060/serio1
+hda: WDC WD800BB-60CJA0, ATA DISK drive
+hdb: CD-RW 52X24, ATAPI CD/DVD-ROM drive
+ide0 at 0x1f0-0x1f7,0x3f6 on irq 14
+Probing IDE interface ide1...
+hdc: SAMSUNG DVD-ROM SD-616T, ATAPI CD/DVD-ROM drive
+hdd: Maxtor 92049U6, ATA DISK drive
+ide1 at 0x170-0x177,0x376 on irq 15
+hda: max request size: 128KiB
+hda: 156301488 sectors (80026 MB) w/2048KiB Cache, CHS=65535/16/63,
+UDMA(100)
+hda: cache flushes not supported
+hda: hda1
+hdd: max request size: 128KiB
+hdd: 39882528 sectors (20419 MB) w/2048KiB Cache, CHS=39566/16/63,
+UDMA(66)
+hdd: cache flushes not supported
+hdd: unknown partition table
+hdb: ATAPI 52X CD-ROM CD-R/RW drive, 2048kB Cache, UDMA(33)
+Uniform CD-ROM driver Revision: 3.20
+hdc: ATAPI 48X DVD-ROM drive, 512kB Cache, UDMA(33)
+ide-floppy driver 0.99.newide
+libata version 1.11 loaded.
+usbmon: debugs is not available
+</pre>
+
+<p>
+The dmesg displayed here is my machine's bootup. You can see the hard disks and
+input devices being initialized.  While what you see here seems relatively
+harmless, <c>dmesg</c> is also good at showing when things go wrong. Let's take
+for example an IPAQ 1945 I have. After a couple of minutes of inactivity, the
+device powers off. Now, I have the device connected into the USB port in the
+front of my system. Now, I want to copy over some files using libsynCE, so I go
+ahead and initiate a connection:
+</p>
+
+<pre caption="IPAQ connection attempt">
+# <i>synce-serial-start</i>
+/usr/sbin/pppd: In file /etc/ppp/peers/synce-device: unrecognized option
+'/dev/tts/USB0'
+
+synce-serial-start was unable to start the PPP daemon!
+</pre>
+
+<p>
+The connection fails, as we see here, and we assume that only the screen is in
+powersave mode, and that maybe the connection is faulty.  In order to see what
+truly happened, we can use <c>dmesg</c>.  Now, <c>dmesg</c> tends to give a
+rather large ammount of output. One can use the <c>tail</c> command to help
+keep the output down:
+</p>
+
+<pre caption="Adjusting the output ammount with tail">
+$ <i>dmesg | tail -n 4</i>
+usb 1-1.2: PocketPC PDA converter now attached to ttyUSB0
+usb 1-1.2: USB disconnect, address 11
+PocketPC PDA ttyUSB0: PocketPC PDA converter now disconnected from ttyUSB0
+ipaq 1-1.2:1.0: device disconnected
+</pre>
+
+<p>
+This gives us the last 4 lines of the <c>dmesg</c> output. Now, this is enough
+to give us some information on the situation. It seems that in the first 2
+lines, the pocketpc is recognized as connected. However, in the last 2 lines, it
+appears to have been disconnected. With this information we check the pocketpc
+again, and find out it is powered off, and now know about the powersave mode. We
+can use this information to turn the feature off, or be aware of it next time.
+While this is a somewhat simple example, it does go to show how well
+<c>dmesg</c> can work. However, in more complex examples (such as kernel bugs),
+the entire <c>dmesg</c> output may be required. To obtain that, simple redirect
+to a log file as such:
+</p>
+
+<pre caption="Saving dmesg output to a log">
+$ <i>dmesg > dmesg.log</i>
+</pre>
+
+<p>
+You can then attach this to a bug report, or post it online somewhere for
+collaborative debugging sessions.
+</p>
+
+</body>
+</section>
+<section>
+<title>Conclusion</title>
+<body>
+
+<p>
+Now that we've taken a look at a few ways to debug runtime and kernel errors,
+let's take a look at how to handle emerge errors.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Handling emerge Errors</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+<c>emerge</c> errors, such as the one displayed earlier, can be a major cause
+of frustration for users. Reporting them is considered crucial for maintaining
+the health of Gentoo. Let's take a look at a sample ebuild, foobar2, which
+contains some build errors.
+</p>
+
+</body>
+</section>
+<section id="emerge_error">
+<title>Evaluating emerge Errors</title>
+<body>
+
+<p>
+Let's take a look at this very simple <c>emerge</c> error:
+</p>
+
+<pre caption="emerge Error">
+gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2-7.o foobar2-7.c
+gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2-8.o foobar2-8.c
+gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2-9.o foobar2-9.c
+gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2.o foobar2.c
+foobar2.c:1:17: ogg.h: No such file or directory
+make: *** [foobar2.o] Error 1
+
+!!! ERROR: sys-apps/foobar2-1.0 failed.
+!!! Function src_compile, Line 19, Exitcode 2
+!!! Make failed!
+!!! If you need support, post the topmost build error, NOT this status message
+</pre>
+
+<p>
+The program is compiling smoothly when it suddenly stops and presents an error
+message. This particular error can be split into 3 different sections, The
+compile messages, the build error, and the emerge error message as shown below.
+</p>
+
+<pre caption="Parts of the error">
+<comment>(Compilation Messages)</comment>
+gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2-7.o foobar2-7.c
+gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2-8.o foobar2-8.c
+gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2-9.o foobar2-9.c
+gcc -D__TEST__ -D__GNU__ -D__LINUX__ -L/usr/lib -I/usr/include -L/usr/lib/nspr/ -I/usr/include/fmod   -c -o foobar2.o foobar2.c
+
+<comment>(Build Error)</comment>
+foobar2.c:1:17: ogg.h: No such file or directory
+make: *** [foobar2.o] Error 1
+
+<comment>(emerge Error)</comment>
+!!! ERROR: sys-apps/foobar2-1.0 failed.
+!!! Function src_compile, Line 19, Exitcode 2
+!!! Make failed!
+!!! If you need support, post the topmost build error, NOT this status message
+</pre>
+
+<p>
+The compilation messages are what lead up to the error. Most often, it's good to
+at least include 10 lines of compile information so that the developer knows
+where the compilation was at when the error occurred.
+</p>
+
+<p>
+Make errors are the actual error and the information the developer needs. When
+you see "make: ***", this is often where the error has occurred. Normally, you
+can copy and paste 10 lines above it and the developer will be able to address
+the issue. However, this may not always work and we'll take a look at an
+alternative shortly.
+</p>
+
+<p>
+The emerge error is what <c>emerge</c> throws out as an error. Sometimes, this
+might also contain some important information. Often people make the mistake of
+posting the emerge error and that's all. This is useless by itself, but with
+make error and compile information, a developer can get what application and
+what version of the package is failing. As a side note, make is commonly used as
+the build process for programs (<b>but not always</b>). If you can't find a
+"make: ***" error anywhere, then simply copy and paste 20 lines before the
+emerge error. This should take care of most all build system error messages. Now
+let's say the errors seem to be quite large. 10 lines won't be enough to catch
+everything. That's where PORT_LOGDIR comes into play.
+</p>
+
+</body>
+</section>
+<section>
+<title>emerge and PORT_LOGDIR</title>
+<body>
+
+<p>
+PORT_LOGDIR is a portage variable that sets up a log directory for separate
+emerge logs. Let's take a look and see what that entails. First, run your emerge
+with PORT_LOGDIR set to your favorite log location. Let's say we have a
+location <path>/var/log/portage</path>. We'll use that for our log directory:
+</p>
+
+<note>
+In the default setup, <path>/var/log/portage</path> does not exist, and you will
+most likely have to create it. If you do not, portage will fail to write the
+logs.
+</note>
+
+<pre caption="emerge-ing With PORT_LOGDIR">
+# <i>PORT_LOGDIR=/var/log/portage emerge foobar2</i>
+</pre>
+
+<p>
+Now the emerge fails again. However, this time we have a log we can work with,
+and attach to the bug later on. Let's take a quick look at our log directory.
+</p>
+
+<pre caption="PORT_LOGDIR Contents">
+# <i>ls -la /var/log/portage</i>
+total 16
+drwxrws---   2 root root 4096 Jun 30 10:08 .
+drwxr-xr-x  15 root root 4096 Jun 30 10:08 ..
+-rw-r--r--   1 root root 7390 Jun 30 10:09 2115-foobar2-1.0.log
+</pre>
+
+<p>
+The log files have the format [counter]-[package name]-[version].log. Counter
+is a special variable that is meant to state this package as the n-th package
+you've emerged. This prevents duplicate logs from appearing. A quick look at
+the log file will show the entire emerge process. This can be attached later
+on as we'll see in the bug reporting section. Now that we've safely obtained
+our information needed to report the bug we can continue to do so. However,
+before we get started on that, we need to make sure no one else has reported
+the issue.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

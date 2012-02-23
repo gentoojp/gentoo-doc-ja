@@ -1,0 +1,907 @@
+<?xml version='1.0' encoding="UTF-8"?>
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/printing-howto.xml,v 1.25 2006/09/10 12:21:32 idani Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/printing-howto.xml" lang="ja">
+<title>Gentoo 印刷環境構築ガイド</title> 
+
+<author title="Author">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+<author title="翻訳">
+  <mail link="pocali77@hotmail.com">hibou</mail>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+<author title="翻訳">
+  <mail link="murakami.taku@gmail.com">Taku Murakami</mail>
+</author>
+
+<abstract>
+このドキュメントでは、CUPSとSambaを用いたプリンタのインストールとメンテナンスを説明します。
+ローカルとネットワーク両方のインストールをカバーしており、他のOSからのプリンタの共有方法についても知ることが出来ます。
+</abstract> 
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2.92</version>
+<date>2006-09-03</date>
+
+<!-- Original revision: 1.60 -->
+
+<chapter> 
+<title>印刷とGentoo Linux</title> 
+<section>
+<title>適切なツールを使う</title>
+<body> 
+
+<p>
+Linuxには素晴らしいプリンタのサポートがあります。印刷を行うための適切なツールはCUPS（<uri link="http://www.cups.org">Common Unix Printing System</uri>）と呼ばれています。
+プロジェクトが始まった1999年から、CUPSのインストールとメンテナンスは劇的に改善されました。
+</p>
+
+<p>
+このドキュメントではCUPSを使ってローカルやネットワーク上のプリンタをセットアップする方法を説明します。
+プロジェクトがより進んだ使用法に関する<uri link="http://www.cups.org/documentation.php">素晴らしいドキュメント</uri>を提供しているので、細かい部分までは説明しません。
+</p> 
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>カーネルの設定</title>
+<section>
+<title>初めに</title>
+<body>
+
+<p>
+プリンタをシステムにインストールしたいのなら、プリンタがどのようにしてシステムと接続されているかを知る必要があります。
+LPTやUSBの様にローカルポートで接続されていますか？それともネットワークでですか？
+そしてもしネットワークで接続されているのなら、Internet Printing Protocol（IPP）を使っていますか？
+それともMicrosoft Windows SMB-CIFS Protocol（Microsoft Windows Sharing）を通して接続されていますか？
+</p>
+
+<p>
+次の数章で必要となる最小限のカーネル設定を説明します。
+もちろん、これはプリンタの接続方法によって異なるので、分かり易いように説明を別けています。
+</p>
+
+<ul>
+  <li><uri link="#lpt">ローカル接続のプリンタ（LPT）</uri></li>
+  <li><uri link="#usb">ローカル接続のプリンタ（USB）</uri></li>
+  <li><uri link="#ipp">リモート接続のプリンタ（IPP）</uri></li>
+  <li><uri link="#smb-cifs">リモート接続のプリンタ（SMB-CIFS）</uri></li>
+</ul>
+
+<p>
+<path>/usr/src/linux</path>へ移動して、カーネル設定を行うために<c>make menuconfig</c>を実行します。
+カーネル設定に<c>genkernel</c>を使用したのなら、抜けがないか確認するためだけにこれらの段階を行うべきです。
+</p>
+
+<p>
+次の設定例では、必要なサポートをモジュールではなく、<e>カーネル内部に</e>追加します。
+これは強制ではなく、モジュールでのサポートを簡単に扱うことが出来るのならそちらでも構いません。
+その後で適切なモジュールを読み込むことを忘れないでください。
+また、これは2.6カーネルでの設定例です。
+2.4ユーザはどこかにある適切な設定を探さなければなりません。
+</p>
+
+<p>
+ではカーネルを設定（もしくは確認）するために、適切な章へ進みましょう。
+</p>
+
+</body>
+</section>
+<section id="lpt">
+<title>ローカル接続のプリンタ（LPT）</title>
+<body>
+
+<p>
+LPTポートは一般的にパラレルプリンタポートを識別するために使用されます。
+まずパラレルポートサポートを有効にし、パラレルプリンタサポートを有効にした後に、（SPARCユーザで無いのならば）PC-styleパラレルポートサポートを有効にします。
+</p>
+
+<pre caption="パラレルポートプリンタの設定">
+Device Drivers --&gt;
+  &lt;*&gt; Parallel port support
+  &lt;*&gt;   PC-style hardware
+
+Device Drivers --&gt;
+  Character Devices --&gt;
+    &lt;*&gt; Parallel printer support
+    [*]      IEEE 1284 transfer modes)
+</pre>
+
+<note>
+<c>Parallel port support</c>で他のオプションを有効にしなければならないユーザが居るかもしれません。
+より詳しい情報はカーネル設定の<c>ヘルプ</c>機能を確認してください。
+</note>
+
+<p>
+これだけです。
+カーネル設定を終了し、カーネルを再構築します。
+忘れずに新しいカーネルイメージを<path>/boot</path>にコピー（そして必要なら<path>/boot</path>をマウント）し、再起動する前にブートローダーの設定を更新してください。
+</p>
+
+<p>
+では<uri link="#cups">CUPSのインストールと設定</uri>に進みましょう。
+</p>
+
+</body>
+</section>
+<section id="usb">
+<title>ローカル接続のプリンタ（USB）</title>
+<body>
+
+<p>
+USBでの印刷を行うには、USBサポートとUSBプリンタサポートが必要です。
+</p>
+
+<pre caption="USBポートプリンタサポート">
+Device Drivers --&gt;
+  USB Support --&gt;
+    &lt;*&gt; Support for Host-side USB
+    <comment>(...)</comment>
+    --- USB Host Controller Drivers
+    <comment>(システムが使用しているHCDを選択してください。どれを選べばよいのか分からないのなら、別のターミナルで"lspci -v | grep HCI"を実行します。)</comment>
+    &lt;*&gt; EHCI HCD (USB 2.0) support <comment>(もしくは)</comment>
+    &lt;*&gt; OHCI HCD support           <comment>(もしくは)</comment>
+    &lt;*&gt; UHCI HCD (most Intel and VIA) support
+    <comment>(...)</comment>
+    &lt;*&gt; USB Printer support
+</pre>
+
+<p>
+これだけです。
+カーネル設定を終了し、カーネルを再構築します。
+忘れずに新しいカーネルイメージを<path>/boot</path>にコピー（そして必要なら<path>/boot</path>をマウント）し、再起動する前にブートローダーの設定を更新してください。
+</p>
+
+<p>
+では<uri link="#cups">CUPSのインストールと設定</uri>に進みましょう。
+</p>
+
+</body>
+</section>
+<section id="ipp">
+<title>リモート接続のプリンタ（IPP）</title>
+<body>
+
+<p>
+Internet Printing Protocolを通してのネットワーク印刷を行いたいのなら、カーネルはネットワークサポートを有効にしているだけでよいのです。
+既に設定済みであると仮定して、<uri link="#cups">CUPSのインストールと設定</uri>に進みましょう。
+</p>
+
+</body>
+</section>
+<section id="smb-cifs">
+<title>リモート接続のプリンタ（SMB-CIFS）</title>
+<body>
+
+<p>
+カーネルがSMB CIFSをサポートしなければなりません。
+</p>
+
+<pre caption="SMB-CIFSプリンタ設定">
+File systems --&gt;
+  Network File Systems --&gt;
+    &lt;*&gt; SMB file system support (to mount Windows shares etc.)
+    &lt;*&gt; CIFS support (advanced network file system for Samba, Windows and other CIFS compliant servers)
+</pre>
+
+<p>
+これだけです。
+カーネル設定を終了し、カーネルを再構築します。
+忘れずに新しいカーネルイメージを<path>/boot</path>にコピー（そして必要なら<path>/boot</path>をマウント）し、再起動する前にブートローダーの設定を更新してください。
+</p>
+
+<p>
+では<uri link="#cups">CUPSのインストールと設定</uri>に進みましょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="cups">
+<title>CUPSのインストールと設定</title>
+<section>
+<title>インストール</title>
+<body>
+
+<p>
+GentooでのCUPSのインストールはとても簡単です。
+CUPSにはあなたが興味を示すかもしれないいくらかの追加機能があります。
+これらの機能を有効化したり無効化したりするには、関係するUSEフラグを使用します。
+</p>
+
+<table>
+<tr>
+  <th>USEフラグ</th>
+  <th>CUPSへの影響</th>
+</tr>
+<tr>
+  <ti>nls</ti>
+  <ti>
+    多言語サポートを有効化します。nlsを利用すると、現地語化の成果を利用できるようになります。そのため、CUPSをあなたの母国語で利用することが出来ます。
+  </ti>
+</tr>
+<tr>
+  <ti>pam</ti>
+  <ti>
+    印刷ジョブ認証をPluggable Authentication Modules(PAM)を通して行いたいのなら、CUPSでPAMサポートを有効にすることにより実現できます。
+  </ti>
+</tr>
+<tr>
+  <ti>samba</ti>
+  <ti>
+    ローカル接続のプリンタをSMB-CIFSプロトコルを通してネットワーク上のWindowsシステムと共有したいのなら、もしくはWindowsシステムに接続されている共有プリンタを利用したいのなら、SAMBAサポートを有効にする必要があります。
+  </ti>
+</tr>
+<tr>
+  <ti>slp</ti>
+  <ti>
+    管理された環境下では、プリンタを他人にサービスとして提供したいと思うかもしれません。Service Location Protocolを使用することによって、システムのサービスを簡単に検索したり設定したりすることが出来ます。プリンタがサービスとして利用できるか、そのようにしたいのならこのUSEフラグを有効にします。
+  </ti>
+</tr>
+<tr>
+  <ti>ssl</ti>
+  <ti>
+    リモート認証やプライバシー保護を行いたいのなら、暗号化された印刷セッションを行うSecure Socket Layerを有効にする必要があります。SSLのサポートはネットワークに参加している全てのシステムが利用できなければなりません。
+  </ti>
+</tr>
+</table>
+
+<p>
+現在のUSEフラグを確認してください。
+現在のUSEフラグとは別の設定をCUPSのみに行いたいのなら、適当なUSEフラグを<path>/etc/portage/package.use</path>に追加します。
+</p>
+
+<pre caption="CUPSのUSEフラグ設定">
+# <i>emerge -pv cups</i>
+[ebuild N     ] net-print/cups-1.1.23-r1  +nls +pam -samba -slp +ssl 0 kB
+
+<comment>(例えば、CUPSのSAMBAサポートを有効にするならこのようにします)</comment>
+# <i>vim /etc/portage/package.use</i>
+net-print/cups samba
+</pre>
+
+<p>
+満足のいく結果になったのなら、Portageを使ってCUPSをインストールします。
+</p>
+
+<pre caption="CUPSのインストール">
+# <i>emerge cups</i>
+</pre>
+
+<p>
+USBプリンタを使用していてカーネルモジュールとしてサポートが必要な場合は、ビルド工程で<c>rc-update add coldplug default</c>を実行するように伝えられるでしょう。
+これは起動時にどんなUSBカーネルモジュールでも自動的にロードされるようにします。
+</p>
+
+<p>
+プリンタがシステムに直接接続されているのなら、CUPSが起動時に自動的に読み込まれるようにする必要があります。
+CUPSを起動する前にプリンタが接続されていて電源が入っていることを確認してください。
+</p>
+
+<pre caption="CUPSが自動起動するようにする">
+# <i>/etc/init.d/cupsd start</i>
+# <i>rc-update add cupsd default</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>設定</title>
+<body>
+
+<p>
+<path>/etc/cups/cupsd.conf</path>にあるCUPSサーバの初期設定は、ほとんどのユーザにとっては十分です。
+ですが、いくらかのユーザはCUPS設定にいくつかの変更が必要かもしれません。
+</p>
+
+<p>
+次の章では時々使用されるいくつかの変更を紹介します。
+</p>
+
+<ul>
+  <li>
+    <uri link="#remote_usage">リモートプリンタ接続</uri>では、現在のLinuxワークステーションに接続されているプリンタを他のシステムから使用できるようにします。
+  </li>
+  <li>
+    <uri link="#remote_admin">CUPSリモート管理</uri>では、リモートシステムからCUPSの管理を行うことが出来るようにします。
+  </li>
+  <li>
+    <uri link="#windows_pcl">Windows PCLドライバサポートの有効化</uri>では、Windows PCLドライバをサポートするようにCUPSを設定します。WindowsシステムでSamba共有プリンタを使用したいのならこれが役に立ちます。
+  </li>
+  <li>
+    <uri link="#setup_remote">リモートプリンタの設定</uri>では、他のシステムに接続されたプリンタ（Windows共有を除く）を使用するようにシステムを設定します。
+  </li>
+</ul>
+
+</body>
+</section>
+<section id="remote_usage">
+<title>リモートプリンタ接続</title>
+<body>
+
+<p>
+IPPを通して他のシステムからプリンタを使用できるようにしたいのなら、<path>/etc/cups/cupsd.conf</path>でプリンタへのアクセスを明確に許可する必要があります。
+もしSAMBAを使ってプリンタを共有したいのなら、この変更は不要です。
+</p>
+
+<p>
+お気に入りのエディタで<path>/etc/cups/cupsd.conf</path>を開き、システムがプリンタに接続できるように<c>Allow</c>行を追加します。
+次の例では、IPアドレスが<c>192.168.0</c>で始まる全てのシステムにプリンタへのアクセスを許可します。
+</p>
+
+<pre caption="プリンタへのリモートアクセスの許可">
+&lt;Location /&gt;
+Order Deny,Allow
+Deny From All
+Allow From 127.0.0.1
+<i>Allow From 192.168.0.*</i>
+&lt;/Location&gt;
+</pre>
+
+<p>
+また、ネットワーク上の別マシンから送られてくる印刷要求に応答できるよう、
+CUPSが待ち受けるポートを指定する必要もあるでしょう。
+</p>
+
+<pre caption="/etc/cups/cupsd.confでポートの設定">
+Port 631
+<comment>(次の2行を必ずコメントアウトします)</comment>
+#Listen 127.0.0.1:631
+#Listen localhost:631
+</pre>
+
+</body>
+</section>
+<section id="remote_admin">
+<title>CUPSリモート管理</title>
+<body>
+
+<p>
+もしリモート管理に興味があるのなら、CUPS管理へのアクセスをlocalhostだけでなく他のシステムからも許可する必要があります。
+<path>/etc/cups/cupsd.conf</path>を編集し、必要なシステムのアクセスを許可します。
+例えば、IPアドレスが192.168.0.3のシステムのアクセスを許可するには以下のようにします
+</p>
+
+<pre caption="/etc/cups/cupsd.confでリモートアクセスを許可">
+&lt;Location /admin&gt;
+<comment>(...)</comment>
+Order Deny,Allow
+Deny From All
+Allow From 127.0.0.1
+<i>Allow From 192.168.0.3</i>
+&lt;/Location&gt;
+</pre>
+
+<p>
+<path>/etc/cups/cupsd.conf</path>を変更した後は、忘れずに<c>/etc/init.d/cupsd restart</c>を実行してCUPSを再起動してください。
+</p>
+
+</body>
+</section>
+<section id="windows_pcl">
+<title>Windows PCLドライバサポートの有効化</title>
+<body>
+
+<p>
+PCLドライバはプリンタサーバにrawデータを送信します。
+CUPSでraw印刷を有効にするには、<path>/etc/cups/mime.types</path>を編集して<c>application/octet-stream</c>の行をコメント解除する必要があります。
+その後<path>/etc/cups/mime.convs</path>を編集し<c>application/octet-stream</c>の行をコメント解除する必要があります。
+</p>
+
+<pre caption="raw印刷サポートの有効化">
+# <i>vim /etc/cups/mime.types</i>
+<comment>(ファイルに含まれる行をコメント解除)</comment>
+application/octet-stream
+
+# <i>vim /etc/cups/mime.convs</i>
+<comment>(ファイルに含まれる行をコメント解除)</comment>
+application/octet-stream     application/vnd.cups-raw    0    -
+</pre>
+
+<p>
+<path>/etc/cups/cupsd.conf</path>を変更した後は、忘れずに<c>/etc/init.d/cupsd restart</c>を実行してCUPSを再起動してください。
+</p>
+
+</body>
+</section>
+<section id="setup_remote">
+<title>リモートプリンタの設定</title>
+<body>
+
+<p>
+プリンタがリモートのCUPSサーバに接続されているのなら、<path>/etc/cups/client.conf</path>を変更することによって簡単にリモートプリンタを使用できるように設定することが出来ます。
+</p>
+
+<p>
+プリンタが<c>printserver.mydomain</c>というシステムに接続されていると仮定し、<path>/etc/cups/client.conf</path>をお気に入りのエディタで開いて<c>ServerName</c>を設定します。
+</p>
+
+<pre caption="client.confの編集">
+# <i>vim /etc/cups/client.conf</i>
+
+<comment>(printserver.mydomainの部分を実際に使用するプリンタサーバ名に置き換えてくださ)</comment>
+ServerName <i>printserver.mydomain</i>
+</pre>
+
+<p>
+リモートシステムにはあなたが使用するデフォルトの印刷設定があります。
+もしデフォルトの印刷設定を変更したいのなら、<c>lpoptions</c>を使用します。
+</p>
+
+<pre caption="デフォルトプリンタの変更">
+<comment>(まず利用可能なプリンタの一覧を表示します)</comment>
+# <i>lpstat -a</i>
+hpljet5p accepting requests since Jan 01 00:00
+hpdjet510 accepting requests since Jan 01 00:00
+
+<comment>(HP LaserJet 5Pをデフォルトプリンタに設定します)</comment>
+# <i>lpoptions -d hpljet5p</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="configure_printer">
+<title>プリンタの設定</title>
+<section>
+<title>初めに</title>
+<body>
+
+<p>
+設定したいプリンタが異なったプリンタサーバを通してリモートで使用する物なら、以下の作業は必要ありません。
+その代わり、<uri link="#setup_remote">リモートプリンタの設定</uri>を読んでください。
+</p>
+
+</body>
+</section>
+<section>
+<title>プリンタの検出</title>
+<body>
+
+<p>
+USBプリンタを持っているか、パラレルポートプリンタの電源がLinuxシステム起動時にONになっていたのなら、カーネルからプリンタの検出が完了したという情報を受け取るでしょう。
+ですが、これは単に目安のためだけであり、必要ではありません。
+</p>
+
+<pre caption="カーネル情報の取得">
+<comment>(パラレルポートプリンタ用)</comment>
+$ <i>dmesg | grep -i print</i>
+parport0: Printer, Hewlett-Packard HP LaserJet 2100 Series
+
+<comment>(USBプリンタ用)</comment>
+$ <i>lsusb</i>
+<comment>(...)</comment>
+Bus 001 Device 007: ID 03f0:1004 Hewlett-Packard DeskJet 970c/970cse
+</pre>
+
+</body>
+</section>
+<section>
+<title>プリンタのインストール</title>
+<body>
+
+<p>
+プリンタをシステムにインストールするには、ブラウザを起動して<uri link="http://localhost:631">http://localhost:631</uri>へアクセスします。
+CUPSウェブインターフェースが表示されるでしょう。
+ここでCUPSに関する全ての管理作業を行うことが出来ます。
+</p>
+
+<p>
+<e>Administration</e>に行き、rootのログインとパスワード情報を入力します。
+管理インターフェースにたどり着いたら、<e>Add Printer</e>をクリックします。
+以下の情報を入力する新しい画面が表示されるでしょう。
+</p>
+
+<ul>
+  <li>
+    <e>spooler name</e>は、システムがプリンタを識別するために使用される、短くて分かり易い名前です。この名前にはスペースや特殊記号を含めるべきではありません。例えば、HP LaserJet 5Pでは<c>hpljet5p</c>のようにします。
+  </li>
+  <li>
+    <e>location</e>は、プリンタが物理的に存在する場所です（例えば、部屋の中や、キッチンの右手にある皿洗い機のとなり、等）。これはそれぞれのプリンタを管理するのに役立ちます。
+  </li>
+  <li>
+    <e>description</e>にはプリンタの詳細を記述します。一般的には完全なプリンタ名（"HP LaserJet 5P"など）が使われます。
+  </li>
+</ul>
+
+<p>
+次の画面ではプリンタが接続されているデバイスを尋ねられます。
+いくつかのデバイスを選択することが出来ます。
+次の表ではいくつかの利用可能なデバイスを紹介しますが、リストは完全ではありません。
+</p>
+
+<table>
+<tr>
+  <th>デバイス</th>
+  <th>詳細</th>
+</tr>
+<tr>
+  <ti>AppSocket/HP JetDirect</ti>
+  <ti>
+    この特別なデバイスはHP JetDirectソケットを通したネットワークプリンタを利用できるようにします。特定のプリンタのみがサポートしています。
+  </ti>
+</tr>
+<tr>
+  <ti>Internet Printing Protocol (IPP or HTTP)</ti>
+  <ti>
+    直接（IPP）もしくはHTTPのIPPプロトコルを通してリモートプリンタへアクセスするにはこれを使用します。
+  </ti>
+</tr>
+<tr>
+  <ti>LPD/LPR Host or Printer</ti>
+  <ti>
+    プリンタがリモートのLPD/LPRサーバに接続されているのならこれを選択します。
+  </ti>
+</tr>
+<tr>
+  <ti>Parallel Port #1</ti>
+  <ti>
+    プリンタがローカルのパラレルポート(LPT)に接続されているのならこれを選択します。プリンタが自動検出されれば、プリンタ名がデバイスに追加されます。
+  </ti>
+</tr>
+<tr>
+  <ti>USB Printer #1</ti>
+  <ti>
+    プリンタがローカルのUSBポートに接続されているのならこれを選択します。プリンタ名が自動的にデバイス名に追加されているでしょう。
+  </ti>
+</tr>
+</table>
+
+<p>
+リモートプリンタをインストールするのなら、プリンタのURIを尋ねられるでしょう。
+</p>
+
+<ul>
+  <li>
+    LPDプリンタサーバは<c>lpd://hostname/queue</c>を必要とします。
+  </li>
+  <li>
+    HP JetDirectプリンタは<c>socket://hostname</c>を必要とします。
+  </li>
+  <li>
+    IPPプリンタは<c>ipp://hostname/printers/printername</c>もしくは<c>http://hostname:631/ipp/queue</c>を必要とします。
+    <!-- If for some reason a user wants to use HP's internal ipp syntax,
+    they'd use ipp://hostname/ipp/<name> , which used to be mentioned here.
+    However, this document describes using CUPS' ipp syntax, so that one was
+    dropped in favor of the correct working syntax, which is the first
+    example. -->
+  </li>
+</ul>
+
+<p>
+次に、隣の画面にあるプリンタの製造元とモデルタイプ、そしてモデルナンバーを選択します。
+多くのプリンタでは複数のドライバがあるでしょう。
+どれか1つを選択するか、<uri link="http://www.linuxprinting.org/printer_list.cgi">LinuxPrinting.org's Printer List</uri>で最適なドライバを検索します。
+ドライバは後で簡単に変更することが出来ます。
+</p>
+
+<p>
+ドライバが選択されたら、プリンタが正常にシステムに追加されたと表示されるでしょう。
+管理インターフェースのプリンタ管理ページに行って<c>Configure Printer</c>を選ぶことにより、プリンタ設定（解像度、用紙サイズなど）を変更することが出来ます。
+</p>
+
+</body>
+</section>
+<section>
+<title>プリンタのテストと再設定</title>
+<body>
+
+<p>
+プリンタが正常に動作しているか確認するために、プリンタ管理ページへ行き、プリンタを選択して<c>Print Test Page</c>をクリックします。
+</p>
+
+<p>
+プリンタが正常に動作していないようなら、<c>Modify Printer</c>をクリックしてプリンタを再設定します。
+最初のインストールと同じ画面が表示されますが、デフォルトは現在の設定になっています。
+</p>
+
+<p>
+何故プリンタが動作しないのかさっぱり分からないのなら、<path>/var/log/cups/error_log</path>を見ることによって手がかりが掴めるかもしれません。
+次の例ではパーミッションエラーがあることが分かります。
+もしかすると<path>/etc/cups/cupsd.conf</path>での<c>Allow</c>設定が間違っているのかもしれません。
+</p>
+
+<pre caption="CUPSエラーの検索">
+# <i>tail /var/log/cups/error_log</i>
+<comment>(...)</comment>
+E [11/Jun/2005:10:23:28 +0200] [Job 102] Unable to get printer status (client-error-forbidden)!
+</pre>
+
+</body>
+</section>
+<section>
+<title>最適なドライバのインストール</title>
+<body>
+
+<p>
+多くのプリンタドライバがあります。
+プリンタ用の最も最適なドライバを捜すために、<uri link="http://www.linuxprinting.org/printer_list.cgi">LinuxPrinting Printer List</uri>を訪れてください。
+どのドライバがサイトの推奨なのか知るために、ブランドと機種を選択します。
+例えば、HP LaserJet 5Pでは、サイトの推奨は<c>ljet4</c>ドライバです。
+</p>
+
+<p>
+サイトからPPDファイルを<path>/usr/share/cups/model</path>へダウンロードし、
+rootで<c>/etc/init.d/cupsd restart</c>を実行します。
+これはドライバをCUPSウェブインターフェースから利用できるようにします。
+では上で述べたようにしてプリンタを再設定しましょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>特別なプリンタドライバを使用する</title>
+<section>
+<title>初めに</title>
+<body>
+
+<p>
+いくらかのプリンタでは特別なドライバが必要か、上で説明した一般的な設定過程では有効にならない追加機能を提供します。
+この章ではプリンタの選択とGentoo Linuxでの利用法を説明します。
+</p>
+
+<p>
+以下のプリンタやドライバについて説明します。
+</p>
+
+<ul>
+  <li><uri link="#gimp-print">Gimp-Printドライバ</uri></li>
+  <li><uri link="#hplip">HPLIPドライバ</uri> (HPOJやHPIJSに反します)</li>
+  <li><uri link="#pnm2ppa">PNM2PPAドライバ</uri></li>
+</ul>
+
+</body>
+</section>
+<section id="gimp-print">
+<title>Gimp-Printドライバ</title>
+<body>
+
+<p>
+<uri link="http://gimp-print.sf.net">gimp-print</uri>ドライバは高品質、オープンソースなプリンタドライバです。
+これはCUPS、ghostscript、The Gimp、そして他のアプリケーションをサポートする様々なCanon、Epson、HP、Lexmark、Sony、Olympus、そしてPCLプリンタをサポートしています。
+</p>
+
+<p>
+GentooのPortageツリーにはgimp-printドライバのebuildが含まれています。
+<c>emerge</c>を使用するだけでインストールすることが出来ます。
+ebuildはかなり多くのUSEフラグ（<c>cups</c>や<c>ppds</c>など）に反応することに注意してください。
+少なくともこれら2つのフラグは有効にしなければなりません。
+</p>
+
+<pre caption="gimp-printドライバのインストール">
+# <i>emerge gimp-print</i>
+</pre>
+
+<p>
+emergeが完了したら、Gimp-PrintドライバはCUPSウェブインターフェースで利用できるようになります。
+</p>
+
+</body>
+</section>
+<section id="hplip">
+<title>HPLIPドライバ</title>
+<body>
+
+<p>
+<uri link="http://hpinkjet.sf.net">HPLIP Project</uri>はhpijsドライバを含み、スキャナサポートや様々な複合機器用のサービスツールを含んでいます。
+印刷をサポートするために、<c>ppds</c>USEフラグを有効に<e>しなければなりません</e>。
+</p>
+
+<pre caption="hplipドライバのインストール">
+<comment>（ppds USEフラグが有効になっているか確認してください）</comment>
+# <i>emerge -vp hplip</i>
+These are the packages that I would merge, in order:
+
+Calculating dependencies ...done!
+[ebuild  N    ] net-print/hplip-0.9.5  +X +cups +foomaticdb <comment>+ppds</comment> -qt -scanner -snmp +usb 9,255 kB
+
+Total size of downloads: 9,255 kB
+
+# <i>emerge hplip</i>
+# <i>/etc/init.d/hplip start</i> 
+# <i>/etc/init.d/cupsd restart</i>
+# <i>rc-update add hplip default</i> 
+</pre>
+
+<p>
+emergeが完了したら、プリンタドライバはCUPSウェブインターフェースで利用できるようになります。
+</p>
+
+</body>
+</section>
+<section id="pnm2ppa">
+<title>PNM2PPAドライバ</title>
+<body>
+
+<p>
+PPAとは、プリンタの代わりにlow-levelプロセスをシステムに送信することに焦点を置いたHPの技術です。
+これを使うことにより、プリンタを安価にすることが出来ますが、より多くのリソースを消費します。
+</p>
+
+<p>
+<uri link="http://www.linuxprinting.org/printer_list.cgi">LinuxPrinting</uri>で<uri link="http://pnm2ppa.sourceforge.net/">pnm2ppa</uri>ドライバが最適であると表示されたのなら、<c>pnm2ppa</c>フィルタをインストールする必要があります。
+</p>
+
+<pre caption="pnm2ppaフィルタのインストール">
+# <i>emerge pnm2ppa</i>
+</pre>
+
+<p>
+インストールが完了したら、プリンタに適したPPDファイルを<uri link="http://www.linuxprinting.org/printer_list.cgi">LinuxPrinting</uri>サイトからダウンロードし、<path>/usr/share/cups/model</path>に置きます。次に、上で述べた手順に従ってプリンタを設定します。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="windows">
+<title>Microsoft Windowsとの印刷</title>
+<section>
+<title>WindowsクライアントをIPPに設定</title>
+<body>
+
+<p>
+Microsoft WindowsはIPPをサポートしています(Windows 9xとMEユーザは<uri link="http://support.microsoft.com/default.aspx?scid=kb;en-us;294439">これ</uri>をインストールする必要があります)。
+Linuxに接続されたプリンタをWindowsにインストールするには、<c>プリンタの追加</c>ウィザードを起動して<c>ネットワークプリンタ</c>を選択します。
+URIを尋ねられたら、<c>http://hostname:631/printers/queue</c>を使用します。
+</p>
+
+<p>
+システムがプリンタに<uri link="#remote_usage">到達できる</uri>か確かめてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>WindowsクライアントをSamba共有プリンタに設定</title>
+<body>
+
+<p>
+プリンタをSMB-CIFSネットワークで共有するには、SAMBAがインストールされていて正しく設定されている必要があります。
+この設定方法はこのドキュメントの範囲外ですが、SAMBAでプリンタを共有する設定について簡単に説明します。
+</p>
+
+<p>
+<path>/etc/samba/smb.conf</path>をお気に入りのエディタで開いて<c>[printers]</c>を以下のように追加します。
+</p>
+
+<pre caption="[printers]の追加">
+[printers]
+  comment      = All printers
+  path         = /var/spool/samba
+  browseable   = no
+  guest ok     = no
+  writable     = no
+  printable    = yes
+  public       = yes
+  printer name = hpljet5p
+</pre>
+
+<p>
+では<path>smb.conf</path>ファイル内の<c>[global]</c>の一番上まで移動しましょう。
+<c>printcap name</c>と<c>printing</c>を<c>cups</c>に設定します。
+</p>
+
+<pre caption="[global]の変更">
+[global]
+  <comment>(...)</comment>
+  printcap name = <i>cups</i>
+  printing      = <i>cups</i>
+</pre>
+
+<p>
+CUPSで<uri link="#windows_pcl">Windows PCLドライバ</uri>のサポートを有効にしたか確認してください。
+では、<c>smb</c>サービスを再起動して変更を有効にします。
+</p>
+
+</body>
+</section>
+<section>
+<title>LinuxクライアントをWindowsプリントサーバに設定</title>
+<body>
+
+<p>
+何よりもまず、プリンタがWindowsシステムで共有されているか確認してください。
+</p>
+
+<p>
+次に、CUPSウェブインターフェースで、上で説明したようにしてプリンタを設定します。
+CUPSが<c>Windows Printer via SAMBA</c>という別のドライバを追加したことに気がつくでしょう。
+これを選択し、URIに<c>smb://username:password@workgroup/server/printername</c>もしくは<c>smb://server/printername</c>を使用します。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>印刷関連のアプリケーション</title>
+<section>
+<title>初めに</title>
+<body>
+
+<p>
+プリンタの設定を手伝ってくれたり、追加の印刷フィルタを使ったり、印刷能力に新しい機能を追加したりと行ったことを行う多くのツールが存在します。
+この章ではそれらの内のいくつかを紹介します。
+この一覧は完全ではなく、それぞれのツールについて事細かく議論することもしません。
+</p>
+
+</body>
+</section>
+<section>
+<title>Gtk-LP - Gtkによって作られたプリンタ設定ツール</title>
+<body>
+
+<p>
+<uri link="http://gtklp.sourceforge.net/index.shtml">Gtk-LP</uri>を使えば、スタンドアロンのGtkアプリケーションからプリンタのインストール、修正、そして設定を行うことが出来ます。
+これはCUPSを使用し、CUPSの標準的な機能を全て提供します。
+CUPSウェブインターフェースが嫌いだったり、毎日の印刷ルーチンのためのスタンドアロンアプリケーションが欲しいのなら、使ってみる価値はあります。
+</p>
+
+<p>
+インストールするには、<c>gtklp</c>をemergeします。
+</p>
+
+<pre caption="Gtk-LPのインストール">
+# <i>emerge gtklp</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>トラブルシューティング</title>
+<section>
+<title>Error: Unable to convert file 0 to printable format</title>
+<body>
+
+<p>
+印刷にトラブルがあり、<path>/var/log/cups/error_log</path>に以下のメッセージがあるとします。
+</p>
+
+<pre caption="エラーログ">
+Unable to convert file 0 to printable format
+</pre>
+
+<p>
+この場合には、<c>cups</c> USEフラグを付けて<c>ghostscript-esp</c>を再emergeする必要があります。
+<path>/etc/make.conf</path>のUSEフラグに<c>cups</c>を追加するか、以下のようにして<c>ghostscript-esp</c>のみに有効にすることが出来ます。
+</p>
+
+<pre caption="cupsをghostscript-espに追加">
+# <i>echo "app-text/ghostscript-esp cups" &gt;&gt; /etc/portage/package.use</i>
+</pre>
+
+<p>
+その後<c>ghostscript-esp</c>をemergeします。
+終了したら、<c>cupsd</c>を忘れずに再起動してください。
+</p>
+
+<pre caption="cupsdの再起動">
+# <i>/etc/init.d/cupsd restart</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+</guide>

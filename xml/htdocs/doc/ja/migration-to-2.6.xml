@@ -1,0 +1,1106 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/migration-to-2.6.xml,v 1.12 2009/08/24 15:32:35 shindo Exp $ -->
+
+<guide>
+
+<title>Gentoo Linux 2.6完全移行ガイド</title>
+
+<author title="Author">
+	<mail link="dsd@gentoo.org">Daniel Drake</mail>
+</author>
+<author title="Contributor">
+	<mail link="sergey_zlodey@mail.ru">Sergey Galkin</mail>
+</author>
+<author title="Contributor">
+	<mail link="svyatogor@gentoo.org">Sergey Kuleshov</mail>
+</author>
+<author title="Editor">
+	<mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+<author title="Editor">
+	<mail link="bennyc@gentoo.org">Benny Chuang</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+
+
+<abstract>
+このドキュメントはLinux 2.4からLinux 2.6、devfsからudev、OSSからALSA、そしてLVMからLVM2への移行をお手伝いします。
+</abstract>
+
+<version>3</version>
+<date>2011-12-26</date>
+
+<!-- Original revision: 1.30 -->
+
+<chapter>
+<title>はじめに</title>
+
+<section>
+<title>Linux 2.6で何が新しくなるの？</title>
+<body>
+
+<p>
+これは答えにくい質問です。
+Linux 2.6は２年以上の急速な開発と新機能安定化の成果であり、その構造は2.4とはかなり異なっています。
+主要な変更点のいくつかを以下に挙げます。
+</p>
+
+<ul>
+  <li>
+    スケジューラ/即応性の改良: Linuxはデスクトップシステムにおいてとてもスムーズで、高負荷時に2.4に比べて非常にうまく対処します
+</li>
+  <li>
+    スケーラビリティ: Linuxは、いまや(小さな埋め込みデバイスから大規模マルチプロセッサシステムまで)非常に守備範囲が広くなりました
+  </li>
+  <li>パフォーマンス: 一般的なアプリケーションからのスループットがより改良されました</li>
+  <li>
+    ハードウェアサポート: Linuxは、いまや他のどのOSよりもたくさんのアーキテクチャやハードウェアデバイスを、複雑な設定を必要とせずにサポートします
+</li>
+</ul>
+
+<p>
+Joseph Pranevichは、ざっと読みたくなる、とても詳細な<uri link="http://www.kniggit.net/wwol26.html">The Wonderful World Of Linux 2.6</uri>(訳注：すばらしいLinux 2.6の世界)を書きました。
+もしもっと技術的詳細に興味があるのなら、<uri
+link="http://www.codemonkey.org.uk/docs/post-halloween-2.6.txt">The post-halloween document</uri>を参照することができます。
+ですがこれはやや時代遅れであるということを心にとめておいてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>Gentooと2.6</title>
+<body>
+
+<p>
+Gentoo Linuxの2005.0から、デフォルトカーネルが最新の2.6シリーズになりました。
+システムのデフォルトプロファイルは<path>/etc/make.profile</path>にあり、2005.0以降では<path>/usr/portage/profiles/default-linux/x86/2005.0</path>へのシンボリックリンクとなっていて、様々な重要な設定を行っています。
+</p>
+
+<p>
+2.4のプロファイルを使っているのなら、以下のようにして2.6カーネルをサポートする物に変更してください。
+</p>
+
+<pre caption="プロファイルの変更">
+# <i>rm -f /etc/make.profile</i>
+# <i>ln -snf /usr/portage/profiles/default-linux/x86/2005.1 /etc/make.profile</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>udevって何？</title>
+<body>
+
+<p>
+従来、Gentooはユーザーに<path>/dev</path>ディレクトリを管理するために<e>devfs</e>を使うよう指示していました。
+それは(カーネルを通して)システムアプリケーションがハードウェアと通信できるために一連のデバイスインタフェースを含んでいます。
+</p>
+
+<p>
+<e>devfs</e>はよい設計思想ですが、いくらかの内在的な問題があり、そのため2.6.13からはメインのstableツリーから完全に削除されました。
+</p>
+
+<p>
+<e>udev</e>はデバイスノードを管理する新しい方法です。
+これまでのデバイスマネージャの問題に対処し、さらにそれ以外の問題も解決しようと試みています。
+</p>
+
+<p>
+以上の説明では、十分な情報ではないかもしれませんが、心配する必要はありません。
+精力的に開発を進めているGentoo開発者達はdevfsからの移行をとても簡単にすることに力を注いでいます。
+より詳しい情報は<uri link="/doc/en/udev-guide.xml">Gentoo udev Guide</uri><uri link="/doc/ja/udev-guide.xml">(日本語訳)</uri>を参照してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>ALSAとは何ですか？</title>
+<body>
+
+<p>
+Linux 2.4では、サウンドカードを動作させるためにおそらくOSS(open sound system)ドライバを使っていたことでしょう。
+OSSは、より新しくかつ良いサウンドドライバセットに置き換えられました。それがALSAです。
+</p>
+
+<p>
+ALSA(拡張Linuxサウンドアーキテクチャ:Advanced Linux Sound Architecture)は、Linux 2.6カーネルが提供する、新しく改良されたAPIを使う新しいサウンドドライバセットです。
+適切なカーネル設定を行うことでOSSアプリケーションとの下位互換性を実現します。
+</p>
+
+<note>
+もしサウンド/オーディオハードウェアを持っていないなら、このドキュメントのALSA関連の説明は飛ばしてしまって差し支えありません。
+</note>
+
+</body>
+</section>
+<section>
+<title>LVMとは何ですか？</title>
+<body>
+
+<p>
+<e>論理ボリューム管理:Logical Volume Management</e> (LVM)はディスクストレージをとても柔軟な方法で管理することができるツールのセットです。
+特に、パーティションの強力な操作(再起動無しでサイズ変更など)を可能にし、デバイス交換のような操作を比較的簡単にします。
+LVMは標準のパーティションベースのディスク管理の代替手段としての役割を果たします。
+</p>
+
+<p>
+LVMのサポートは従来Linux 2.4で行われてきました。
+Linux 2.6は<e>LVM2</e>と呼ばれるLVMの新しいバージョンを取り入れています。
+移行過程ではユーザレベルツールの新しいバージョンをインストールすることが必要ですが(このドキュメントの後の方で取り上げます)、データは完全なまま残ります。
+</p>
+
+<p>
+<e>現在データストレージ管理にLVMを使用していなければ、LVM2への移行は必要ありません。</e>
+この場合、このドキュメントのLVM/LVM2に関する部分は無視しても問題ありません。
+Linux 2.6への更新には、データをLVMパーティションへ管理することは必要では<e>ありません</e>。
+以前からしてきたように、データを標準のパーティションフォーマットで管理することもできます。
+</p>
+
+<p>
+現在LVMユーザではないけれども、LVM2は役に立ちそうだと考えるなら、<uri link="/doc/en/lvm2.xml">Gentoo LVM2 Installation Guide</uri><uri link="/doc/ja/lvm2.xml">(日本語訳)</uri>に従って、後でディスクをこのフォーマットへ変換することができます。
+今のところは、2.6への円滑な移行作業を進行することに集中しましょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>準備</title>
+<section>
+<title>システムをアップデートする</title>
+<body>
+
+<p>
+Linux 2.6に取り込まれた変更の一部には、ベースシステムアプリケーションにも変更が必要なものがあります。
+このまま続ける前に、システムを比較的最新の状態にすべきで、それを間違いなく確実にするには、最新にアップデート可能なすべてのworldパッケージとシステムパッケージを更新してください。
+</p>
+
+<p>
+特に、以下のパッケージは最新の安定バージョンを使うようにしてください。
+</p>
+
+<ul>
+  <li><c>sys-apps/baselayout</c></li>
+  <li><c>sys-apps/util-linux</c></li>
+  <li>
+    <c>sys-kernel/genkernel</c> (手動設定ではなくgenkernelを使いたい時のみ)
+</li>
+</ul>
+
+<pre caption="全てのworldパッケージを更新">
+# <i>emerge --sync</i>
+# <i>emerge -ua world</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>modutilsとmodule-init-toolsのどちらを使うべきか</title>
+<body>
+
+<p>
+<c>sys-apps/modutils</c>は、Linux 2.4に<c>modprobe</c>、<c>rmmod</c>、そして<c>insmod</c>などのツールを提供するパッケージです。
+</p>
+
+<p>
+Linux 2.6では新しいモジュール形式を取り入れたため、モジュールを扱う新しいツールが必要になります。
+これらは<c>sys-apps/module-init-tools</c>パッケージに含まれています。
+</p>
+
+<p>
+ではmodutilsを削除し、module-init-toolsをインストールしましょう。
+</p>
+
+<pre caption="modutilsからmodule-init-toolsへ切り替え">
+# <i>emerge --unmerge sys-apps/modutils</i>
+# <i>emerge module-init-tools</i>
+</pre>
+
+<note>
+ご心配なく - modutilsをunmergeしても、module-init-toolsがLinux 2.4向けに下位互換機能を提供するので、Linux 2.4を起動してそのカーネルのモジュールを操作することもできます。
+</note>
+
+<note>
+上記の理由により、すでにmodule-init-toolsがインストールされていて、既存のLinux 2.4カーネルで動作中かもしれません。
+この場合、この作業に関して心配する必要はありません。
+システムは既にLinux 2.6モジュールを扱う準備ができているのです。
+</note>
+
+</body>
+</section>
+<section>
+<title>udevのインストール</title>
+<body>
+
+<p>
+ここで必要とされる設定は何もありません。単に<c>emerge</c>を使ってudevをインストールします。
+</p>
+
+<pre caption="udevのインストール">
+# <i>emerge -a udev</i>
+</pre>
+
+<p>
+udevとdevfsの違いに関するより詳細な情報は<uri link="/doc/en/udev-guide.xml">Gentoo udev Guide</uri><uri link="/doc/ja/udev-guide.xml">(日本語訳)</uri>をお読みください。
+</p>
+
+</body>
+</section>
+<section>
+<title>必要なデバイスノードの確認</title>
+<body>
+
+<p>
+システムが起動する時、システムはいくつかの必要なデバイスノードを要求します。
+udevはカーネルに組み込まれていないため、すぐには有効になりません。
+これに対処するためには、必要なデバイスノードが物理的にディスク上に存在している状態にしなければなりません。
+</p>
+
+<p>
+インストールstageファイルは最初のインストール中に必要なデバイスを作成します。
+しかし、何人かのユーザは、そうはならないと報告しています。
+この機会に必要なデバイスファイルの存在を確認して、なかったら作成しましょう。
+</p>
+
+<p>
+動作中のデバイスマネージャが<path>/dev</path>にマウントされているので、ユーザは/devに直接アクセスすることができません。
+そのためrootパーティションを別の位置にbindマウントし、そこから<path>/dev</path>ディレクトリにアクセスしましょう。
+</p>
+
+<pre caption="rootパーティションをbindマウントし、静的デバイスを表示">
+# <i>mkdir -p /mnt/temp</i>
+# <i>mount --rbind / /mnt/temp</i>
+# <i>cd /mnt/temp/dev</i>
+# <i>ls -l console null</i>
+</pre>
+
+<p>
+上記の<e>ls</e>コマンドが<c>console</c>か<c>null</c>のどちらかが存在しないと返したなら、以下のようにして手動で作成しなければなりません。
+</p>
+
+<pre caption="存在しないconsoleとnullノードを作成">
+# <i>mknod -m 660 console c 5 1</i>
+# <i>mknod -m 660 null c 1 3</i>
+</pre>
+
+<p>
+これらのデバイスを作成しなくても、マウントしたrootパーティションをマウント解除しましょう。
+</p>
+
+<pre caption="bindマウントしたrootをマウント解除">
+# <i>cd</i>
+# <i>umount /mnt/temp</i>
+# <i>rmdir /mnt/temp</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>ALSAユーティリティのインストール</title>
+<body>
+
+<p>
+ALSAは、アプリケーションがALSA APIを利用可能になるように、複数のパッケージをインストールする必要があります。
+これらのパッケージでmixerとボリュームレベルを制御できるようにもなります。
+以下のようにして必要なユーティリティをインストールしましょう。
+</p>
+
+<pre caption="ALSAユーティリティとライブラリのインストール">
+# <i>emerge -a alsa-lib alsa-utils alsa-tools alsa-headers alsa-oss</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Linux 2.6ソースのインストール</title>
+
+<section>
+<title>カーネルの選択とインストール</title>
+<body>
+
+<p>
+まず最初にするべきことは選択した2.6カーネルのソースをインストールすることです。
+Gentooがサポートする2つの2.6カーネルは現在<e>gentoo-sources</e>(デスクトップ用)と<e>hardened-sources</e>(サーバ用)です。
+その他の物も利用可能です。
+選択肢については<uri link="/doc/en/gentoo-kernel.xml">Gentoo Linux Kernel Guide</uri><uri link="/doc/ja/gentoo-kernel.xml">(日本語訳)</uri>を見てください。
+</p>
+
+<p>
+このガイドでは、例として<c>gentoo-sources</c>を利用します。
+以下のようにして<c>emerge</c>ユーティリティを使って選択したカーネルのソースをインストールします。
+</p>
+
+<pre caption="gentoo-sourcesのインストール">
+# <i>emerge -a gentoo-sources</i>
+These are the packages that I would merge, in order:
+Calculating dependencies ...done!
+[ebuild  NS   ] sys-kernel/gentoo-sources-2.6.10-r4
+
+Do you want me to merge these packages? [Yes/No] <i>y</i>
+</pre>
+
+<p>
+上記<c>emerge</c>コマンドの実行時、2.4バージョンのgentoo-sources（<c>gentoo-sources-2.4.26</c>など）をインストールしようとしているなら、現在使用しているプロファイルはLinux 2.6ユーザ向けに設計されていません。
+<uri link="/doc/en/gentoo-upgrading.xml">Gentoo Upgrading Document</uri><uri link="/doc/ja/gentoo-upgrading.xml">（日本語訳）</uri>に従って2.6ベースのプロファイルに変更し、2.6カーネルソースのインストールを再試行してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>/usr/src/linuxシンボリックリンクの更新</title>
+<body>
+
+<p>
+Gentooユーティリティの様々なコンポーネントが、現在実行中の(または、コンパイルをしようと考えている)カーネルソースへのシンボリックリンクである<path>/usr/src/linux</path>に依存しています。
+</p>
+
+<p>
+では先ほどインストールしたカーネルを示すように<path>/usr/src/linux</path>を更新しましょう。
+例に続いてください。
+</p>
+
+<pre caption="/usr/src/linuxソフトリンクの更新">
+# <i>cd /usr/src</i>
+# <i>ln -sfn linux-2.6.10-gentoo-r4 linux</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="pitfalls">
+<title>Linux 2.6移行手順での既知の落とし穴</title>
+<section>
+<body>
+
+<p>
+カーネルの設定で行き詰る前に、Linux 2.6に移行する際に陥りやすいよくある間違いを詳しく説明しようと思います。
+これらのポイントの中には新しいカーネルを設定する方法を左右するものがあります。
+</p>
+
+<note>
+移行作業に関連することばかりではありませんが、すべてをここでまとめて説明します。
+余裕のあるときに見直してもかまいません。
+</note>
+
+</body>
+</section>
+<section>
+<title>2.4の.configで"make oldconfig"を使ってはいけません</title>
+<body>
+
+<note>
+これが何を意味するか理解できなくても、心配しないでください。
+このガイドに正しく従えばこの間違いは起こさないでしょう。
+</note>
+
+<p>
+2.4からは多くの変更があるので、本当にたくさんの質問を受けることでしょう。
+それでも2.4のconfigで<c>make oldconfig</c>をやってみる多く人は、使えないカーネル(例えばスクリーンに何も映らない、キーボードからの入力を受け付けないなど)を作成することでしょう。
+トラブルを回避するために、今回だけは従来の<c>menuconfig</c>設定方法を使ってください。
+</p>
+
+</body>
+</section>
+<section>
+<title>CD/DVDの書き込みにide-scsiを使ってはいけません</title>
+<body>
+
+<p>
+Linux 2.4では、良いCD/DVDの書き込み結果を得る唯一の方法は、(かなり醜悪な実装である)<c>ide-scsi</c>エミュレーションを有効にすることでした。
+ありがたいことに、Linux 2.6のIDEレイヤーはCD/DVDの書き込みをもっと上手にサポートするために拡張されました。
+</p>
+
+<p>
+CDの書き込みのために余計なオプションを有効にする必要はありません。
+以前のように<c>ide-scsi</c>を有効に<e>しない</e>ようにしてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>PCスピーカーは今や設定可能なオプションです</title>
+<body>
+
+<p>
+新しいPCスピーカーオプション(<c>CONFIG_INPUT_PCSPKR</c>)を特に設定しない限りは、普通のコンソールビープ(もしくはその他の全てのPCスピーカーからの反応)を得ることはできません。
+</p>
+
+<pre caption="PCスピーカーオプションの位置">
+Device Drivers  ---&gt;
+ Input device support  ---&gt;
+  [*] Misc
+   &lt;*&gt;   PC Speaker support
+</pre>
+
+<note>
+"PCスピーカー"とは、システム起動時に一度鳴るアナログスピーカーを言っているのであり、音楽を演奏したりするために使われる普通のサウンドハードウェアのことを言っているのではありません。
+</note>
+
+</body>
+</section>
+<section>
+<title>新しいUSBストレージブロックデバイスドライバは時々不安定です</title>
+<body>
+
+<p>
+ごく最近、新しいUSBストレージブロックデバイスドライバがカーネルに追加されました。
+これを書いている時には、このドライバ("ub")はまだ初期段階にあり、何人かのユーザが信頼できないと指摘しています。
+USBハードディスク、USBフラッシュディスク、USBカードリーダー、もしくはUSBデジタルカメラへのアクセスに問題があるなら、古いSCSIスタイルのドライバに戻してみてください。
+</p>
+
+<pre caption="ubを無効にする">
+Device Drivers  ---&gt;
+ Block devices  ---&gt;
+  &lt; &gt; Low Performance USB Block driver
+</pre>
+
+<note>
+古いSCSIスタイルのドライバ(USB Mass Storage support)は初期設定では有効になっています。
+それは"Device Drivers --&gt; USB support"で見つけることができますが、ubが存在している時には動作しないでしょう。
+</note>
+
+</body>
+</section>
+<section>
+<title>usbdevfsはusbfsに改名されました</title>
+<body>
+
+<p>
+USBデバイスファイルシステムがマウントされるように<path>/etc/fstab</path>ファイルを編集しているなら、ファイルシステムタイプを<e>usbdevfs</e>から<e>usbfs</e>へと変更する必要があります。
+</p>
+
+<note>
+最近の2.4カーネルは"usbdevfs"と同様に"usbfs"も利用できますので、これを行うことによって互換性が失われることはありません。
+</note>
+
+</body>
+</section>
+<section>
+<title>Xの実行優先度を調整してはいけません</title>
+<body>
+
+<p>
+もしデスクトップ2.4ユーザなら、場合によってはデスクトップ性能が向上するよう見えるため、Xを高い優先度で実行するようにシステムをハックしているかもしれません。
+</p>
+
+<p>
+2.6ではデスクトップ性能に影響する多くのスケジューラの変更がありました。
+引き続きXを高い優先度で実行させる場合、そうなる(ディスプレイサーバは、とても高い優先度で実行される)ことになっているのに、あえてすることになり、CPUがXに過剰に長い時間費やされたりXだけに費やされるので、音が途切れたり、アプリケーションの起動が遅くなったりすることに気づくでしょう。
+</p>
+
+<p>
+Linux 2.6では、もはや応答性をよくするためにデスクトップアプリケーションの優先度を調整する必要はありません。
+"優先度調整"ハックをやめてください！
+</p>
+
+</body>
+</section>
+<section>
+<title>X11設定ファイルはこれからPS/2とUSBマウス用に/dev/input/miceを使います</title>
+<body>
+
+<p>
+初期設定でのudev設定による変更の一つに、マウスデバイスノードの構成の違いがあります。
+以前は、<path>/dev/psaux</path>や<path>/dev/mouse</path>といったノードを使っていたでしょう。
+これからは<path>/dev/input/mouse0</path>、<path>/dev/input/mouse1</path>、そして全てのマウスの動作を混合する集合<path>/dev/input/mice</path>といったノードを使います。
+</p>
+
+<p>
+古いXの設定は一般的に<path>/dev/mouse</path>か<path>/dev/psaux</path>を参照しているので、X11を起動しようとした時に以下のようなエラーが表示されるかもしれません。
+</p>
+
+<pre caption="udevシステムでXを初めて起動した時に起きる一般的なエラー">
+(EE) xf86OpenSerial: Cannot open device /dev/mouse
+	No such file or directory.
+(EE) Mouse0: cannot open input device
+(EE) PreInit failed for input device "Mouse0"
+No core pointer
+</pre>
+
+<p>
+これを訂正するには、X11設定をテキストエディタで開き、マウスの<e>InputDevice</e>セクションで<path>/dev/input/mice</path>を使うように更新してください。
+以下がその例です。
+</p>
+
+<pre caption="X11設定ファイルを開く">
+# <i>nano -w /etc/X11/xorg.conf</i>
+</pre>
+
+<note>
+まだXFree86を使っているなら、設定ファイルは<path>/etc/X11/XF86Config</path>です。
+</note>
+
+<pre caption="マウスのInputDeviceセクションの例">
+Section "InputDevice"
+	Identifier  "Mouse0"
+	Driver      "mouse"
+	Option      "Protocol" "auto"
+	Option      "Device" "/dev/input/mice"
+EndSection
+</pre>
+
+<note>
+もしシリアルマウスを使っているのなら、新しいデバイスパスは<path>/dev/ttyS0</path>の代わりに<path>/dev/tts/0</path>になります。
+</note>
+
+</body>
+</section>
+<section>
+<title>シリアルATA(SATA)ドライバの新版はデバイスに異なった名前を付けます</title>
+<body>
+
+<p>
+Linux 2.4環境で初版のシリアルATAドライバを使っていたなら、シリアルATAデバイスが<path>/dev/hde</path>といった名前になっていることに気が付くでしょう。
+</p>
+
+<p>
+Linux 2.6は、SCSIサブシステムを基にしたシリアルATAドライバの新版(libata)を導入しています。
+これらのドライバはSCSIを基にしているため、シリアルATAディスクはSCSIデバイスとして表示されます。
+最初のシリアルATAディスクは<path>/dev/sda</path>という名前になります。
+これを反映するように<path>/etc/fstab</path>を更新する必要がありますし、後ほどカーネルブートパラメータのroot/real_rootを選ぶ際に気にとめておく必要があります。
+</p>
+
+<note>
+libataはLinux 2.4の最近のバージョンに移植されたので、すでに新しいデバイス命名規則に馴染みがあるかもしれません。
+</note>
+
+</body>
+</section>
+<section>
+<title>bootsplashはもはや維持されていません</title>
+<body>
+
+<p>
+<c>gentoo-sources-2.4</c>カーネルを使っていたのなら、カラフルなフレームバッファコンソールのために<e>bootsplash</e>機能を使っていたかもしれません。
+</p>
+
+<p>
+bootsplashの開発者は、設計上の問題によりプロジェクトに興味を無くしたようです。
+しかし、Gentoo開発者の<e>Michał Januszewski</e>は、後継となる<c>gensplash</c>を開発中で、これはgentoo-sources-2.6カーネルに含まれています。
+どのようにしてgensplashを動作させるのかについて習熟するためにMichałの<uri link="http://dev.gentoo.org/~spock/projects/gensplash/archive/gensplash-in-5-easy-steps.txt">
+Gensplash in 5 easy steps</uri>ドキュメントを読むことができます。
+</p>
+
+</body>
+</section>
+<section>
+<title>I2Cドライバはカーネルに含まれます</title>
+<body>
+
+<p>
+システム温度と電力レベルを監視するために<c>lm-sensors</c>を使っているなら、以前はハードウェアサポートを得るために<c>i2c</c>パッケージをインストールする必要がありました。
+</p>
+
+<p>
+I2Cハードウェアドライバは現在Linux 2.6カーネルに含まれており、外部のi2cパッケージは要求されません。
+忘れずにカーネル設定で希望するI2Cデバイスのサポートをコンパイルするようにしてください。
+そうすればいつも通りに<c>lm-sensors</c>を使用することができます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="conf">
+<title>カーネルの設定、ビルド、インストール</title>
+<section>
+<body>
+
+<p>
+Linux 2.4と同様に、新規カーネルビルドを行うための2つの方法があります。
+</p>
+
+<ol>
+  <li>
+    一般的な方法は手動でカーネルを設定することです。
+    大変だと感じるかもしれませんが、自分のシステム構成が分かっているのであれば好ましい方法です。
+    手動でカーネルを設定しようと思うなら、<uri link="#manual">次の章</uri>へと進んでください。
+  </li>
+  <li>
+    もう一つの方法はカーネルを自動的に設定、コンパイル、そしてインストールまで行ってくれる<c>genkernel</c>ユーティリティを使うことです。
+    <c>genkernel</c>を使おうと思うなら、次の章は飛ばして<uri link="#genkernel">genkernelを使う</uri>まで進んでください。
+  </li>
+</ol>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="manual">
+<title>一般的な方法: 手動設定</title>
+<section>
+<title>カーネルの設定</title>
+<body>
+
+<p>
+ではカーネルを設定しましょう。いつもの通りmenuconfigを開きます。
+</p>
+
+<pre caption="menuconfigの起動">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+おそらく2.4カーネルを設定するのでmenuconfigを使うことに慣れているかもしれません。
+幸運にも、操作性はほとんど変わっていません。ですが、カーネルオプションがより体系化され、それに加え2.4にはなかった<e>たくさん</e>の新しいオプションが追加されたことに気付くでしょう。
+</p>
+
+<p>
+以下の重要なカーネルオプションを有効にしてください。
+</p>
+
+<pre caption="必要なカーネルオプション">
+File systems ---&gt;
+  Pseudo Filesystems ---&gt;
+    [*] /proc file system support
+    [*] Virtual memory file system support (former shm fs)
+    
+<comment>(以下はudevに必要です)</comment>
+General setup  ---&gt;
+ [*] Support for hot-pluggable devices
+
+<comment>(以下はALSAに必要です)</comment>
+Device Drivers  ---&gt;
+ Sound  ---&gt;
+  &lt;*&gt; Sound card support
+  Advanced Linux Sound Architecture  ---&gt;
+   &lt;M&gt; Advanced Linux Sound Architecture
+   &lt;M&gt; Sequencer support
+   &lt;M&gt; OSS Mixer API
+   [*] OSS Sequencer API
+<comment>   (そしてサブメニューからあなたのサウンドカードを忘れずに選んでください)</comment>
+
+<comment>(以下はLVMを使ったディスク管理に必要です)</comment>
+Device Drivers  ---&gt;
+ Multi-device support (RAID and LVM)  ---&gt;
+  [*] Multiple devices driver support (RAID and LVM)
+   &lt;*&gt;   Device mapper support
+</pre>
+
+<warn>
+以前は<path>/dev</path>ファイルシステムのサポートを含めていたかもしれません。(今はOBSOLETE(古い方式)の印が付いています。)
+devfsを有効にしてはいけません。今後devfsに代わって使用する、udevパッケージをインストールしました。
+</warn>
+
+<p>
+更に、利用するファイルシステムと、システムに存在するハードウェアのサポートを忘れずに有効にしてください。
+高速DMAディスクアクセスによる恩恵を受けたいなら、マザーボードのIDEコントローラーサポートを有効にしてください。
+詳細な内容は<uri link="/doc/en/handbook/index.xml">Gentoo Handbook</uri><uri link="/doc/ja/handbook/index.xml">(日本語訳)</uri>の<uri link="/doc/en/handbook/handbook-x86.xml?part=1&amp;chap=7">Configuring the Kernel</uri><uri link="/doc/ja/handbook/handbook-x86.xml?part=1&amp;chap=7">(日本語訳)</uri>セクションを参照してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>カーネルのビルド</title>
+<body>
+
+<p>
+カーネルの設定を行ったので、コンパイル処理を始めることができます。
+</p>
+
+<pre caption="カーネルソースのコンパイル">
+# <i>make &amp;&amp; make modules_install</i>
+</pre>
+
+<note>
+Linux 2.4ソースでは<c>make dep</c>を実行しなければならなかったことを思い出すかもしれません。
+これはもはや必要とされていません。
+</note>
+
+<p>
+カーネルのコンパイルが完了するまで(読みやすくなったコンパイル出力を眺めながら)待っていてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>カーネルのインストール</title>
+<body>
+
+<p>
+次のステップでは<path>/boot</path>パーティションをマウントしてカーネルイメージを上書きします。
+その後ブートローダの設定を手動で更新しなければなりません。
+</p>
+
+<pre caption="カーネルのインストール">
+# <i>mount /boot</i>
+# <i>cp arch/i386/boot/bzImage /boot/bzImage-2.6.10-gentoo-r4</i>
+</pre>
+
+<p>
+上記の説明は例に過ぎず、<uri link="/doc/en/handbook/index.xml">Gentoo Handbook</uri><uri link="/doc/ja/handbook/index.xml">(日本語訳)</uri>(<uri link="/doc/en/handbook/handbook-x86.xml?part=1&amp;chap=7">Configuring the Kernel</uri><uri link="/doc/ja/handbook/handbook-x86.xml?part=1&amp;chap=7">(日本語訳)</uri>の章を見てください)の説明に従った更新手続きを行うべきです。
+</p>
+
+<p>
+ブートローダの設定を変更するときは、2.4カーネルを指す古い記述を削除してはいけません。
+こうすることで、どちらかが動作しなかった場合に、両者を簡単に切り替えられるでしょう。
+</p>
+
+<p>
+では<uri link="#modules">モジュールの設定</uri>章へ進んでください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="genkernel">
+<title>もう一つの方法: genkernelを使う</title>
+<section>
+<body>
+
+<p>
+もしカーネルを手動設定する代わりにgenkernelを使いたいなら、嬉しい知らせがあります。
+genkernelを使って2.6カーネルを作成する方法は、以前の2.4カーネルとほとんど同じです。
+</p>
+
+<p>
+以下のようにしてgenkernelを呼び出します。
+</p>
+
+<pre caption="一般的な引数でgenkernelを呼び出す">
+# <i>genkernel --udev --menuconfig --bootloader=grub all</i>
+</pre>
+
+<p>
+上の例では、(望むなら)カーネルの設定を調整できるようにするためにmenuconfigを開き、コンパイル後にgrubブートローダの設定を更新するgenkernelの機能も利用します。
+</p>
+
+<p>
+あなたに合ったgenkernel引数を選ぶべきですが、<c>--udev</c>引数を含めることを忘れないでください。
+追加の情報は<uri link="/doc/en/genkernel.xml">Gentoo Linux Genkernel Guide</uri><uri link="/doc/ja/genkernel.xml">(日本語訳)</uri>と<uri link="/doc/en/handbook/index.xml">Gentoo Handbook</uri><uri link="/doc/ja/handbook/index.xml">(日本語訳)</uri>の<uri link="/doc/en/handbook/handbook-x86.xml?part=1&amp;chap=7">Configuring the Kernel</uri><uri link="/doc/ja/handbook/handbook-x86.xml?part=1&amp;chap=7">(日本語訳)</uri>の章を参照してください。
+</p>
+
+<p>
+ブートローダの設定を自分で設定することをにしたのなら、忘れずに<c>udev</c>カーネルパラメータを書いてください。
+以下に<e>grub</e>の設定例を示しますが、忘れずに<e>real_root</e>パラメータをシステムに合わせてください。
+</p>
+
+<pre caption="genkernel + udev用のGRUB設定例">
+title Gentoo Linux (2.6 kernel)
+root (hd0,0)
+kernel /kernel-2.6.10-gentoo-r4 <i>udev</i> root=/dev/ram0 init=/linuxrc ramdisk=8192 real_root=/dev/sda3
+initrd /initrd-2.6.10-gentoo-r4
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="modules">
+<title>モジュールの設定</title>
+
+<section>
+<title>外部モジュールのインストール</title>
+<body>
+
+<p>
+多くのユーザはカーネルツリー外でビルドされたカーネルモジュールにさらに依存しています。
+よくある例ではATIもしくはNvidiaのバイナリグラフィックドライバです。
+<path>/usr/src/linux</path>にある2.6ソース向けにコンパイルしたモジュールをインストールする必要があります。
+これは2.4で使い慣れている全ての外部モジュールをインストールするために<c>emerge パッケージ名</c>を使うよくある状況です。
+</p>
+
+<p>
+詳しい情報は<uri link="/doc/en/handbook/index.xml">Gentoo Handbook</uri><uri link="/doc/ja/handbook/index.xml">(日本語訳)</uri>の<uri link="/doc/en/handbook/handbook-x86.xml?part=1&amp;chap=7">Configuring the Kernel</uri><uri link="/doc/ja/handbook/handbook-x86.xml?part=1&amp;chap=7">(日本語訳)</uri>の章を参照してください
+</p>
+
+</body>
+</section>
+<section>
+<title>自動的に読み込まれるモジュール</title>
+<body>
+
+<p>
+いくつかのカーネルコンポーネントを(カーネル組み込みではなく)モジュールとしてコンパイルするようにしたかもしれません。そして、それらモジュールが、2.4でしたように起動時に自動的に読み込まれて欲しいでしょう。
+また、外部モジュールをportageツリーからインストールした(上で記述したように)ならそれらも自動的に読み込まれて欲しいと思うかもしれません。
+</p>
+
+<p>
+自動的に読みこませるには<path>/etc/conf.d/modules</path>をお好きなテキストエディタで開いて自動的に読み込まれて欲しいモジュールの名前を記述するだけです。
+</p>
+
+<pre caption="nanoで自動的に読み込まれるモジュールの一覧を開く">
+# <i>nano -w /etc/conf.d/modules</i>
+</pre>
+
+<pre caption="3c59xとnvidiaモジュールを読み込む例">
+modules="<i>3c59x nvidia</i>"
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>LVMからLVM2への移行</title>
+<section>
+<title>LVM2ツールへの更新</title>
+<body>
+
+<note>
+ディスクの管理にLVMを使用していなければ、この章を飛ばして次へ進んでも構いません。
+</note>
+
+<p>
+幸運なことに、LVM1ユーザツールからLVM2バージョンへの更新はとても簡単です。
+</p>
+
+<pre caption="ユーザツールをLVM1からLVM2へと更新">
+# <i>emerge --unmerge lvm-user</i>
+# <i>emerge lvm2</i>
+</pre>
+
+<note>
+<c>lvm-user</c>自体では2.4カーネルに対応していないので、もし、2.4カーネルが起動するように戻すことを考えているならば、<c>lvm-user</c>を再度emergeする必要があります。
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Linux 2.6を起動</title>
+<section>
+<body>
+
+<p>
+さぁLinux 2.6を起動させましょう。全てのアプリケーションを終了して以下のように再起動してください。
+</p>
+
+<pre caption="再起動">
+# <i>umount /boot</i>
+# <i>reboot</i>
+</pre>
+
+<p>
+ここまでこのドキュメントに従ってきたなら、再起動時に、ブートローダによるLinux 2.4かLinux 2.6のどちらを起動するかの選択肢があります。
+Linux 2.6を選択します。
+</p>
+
+<p>
+いったんシステムが起動したら、動作しているか確認してください。
+カーネル設定でミスをしたのなら、ご心配なく、<uri link="#conf">カーネルの設定、ビルド、インストール</uri>の章まで戻って、変更を加え、再コンパイルし、新しいカーネルイメージをインストールして、再起動、そしてその後再度試してみてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>ALSAの設定とミュート解除</title>
+<body>
+
+<p>
+ではALSAの設定を仕上げて、オーディオチャンネルのミュート解除をしましょう。
+ALSAパッケージはこの工程を比較的簡単にする便利なユーティリティを提供します。
+</p>
+
+<pre caption="自動ALSA設定ユーティリティの呼び出し">
+# <i>alsaconf</i>
+</pre>
+
+<p>
+この処理は簡単です。
+<e>/etc/modules.d/alsa</e>ファイルを自動更新できるようにし、その後ALSAに再読み込みさせます。
+alsaconfはその後終了しますが、システムに複数のサウンドデバイスがインストールされている場合にはその数分だけ実行する必要があります。
+</p>
+
+<p>
+ボリュームが終了時に保存され起動時に復元されるように、ここで<c>alsasound</c>をbootランレベルに追加してください。
+</p>
+
+<pre caption="alsasoundをbootランレベルに追加">
+# <i>rc-update add alsasound boot</i>
+</pre>
+
+<note>
+<c>alsaconf</c>ユーティリティはサウンドデバイスの最初のボリュームレベルを設定します。
+なにか不適当な設定があれば、<c>alsamixer</c>ユーティリティを使うことでいつでも修正できます。
+</note>
+</body>
+</section>
+<section>
+<title>もう何か問題が発生してますか？</title>
+<body>
+
+<p>
+もし発生しているなら、移行後すぐに直面する問題を解決するのに参考になる<uri link="#pitfalls">Linux 2.6移行手順での既知の落とし穴</uri>をこの時点で読み返してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ヘッダファイルとNPTL</title>
+<section>
+<body>
+
+<p>
+既にLinux 2.6を稼動させて、すべての問題を解決してしまっていることでしょう。
+ではユーザースペースアプリケーションが新しいLinux 2.6の機能を利用するように、Linuxカーネルヘッダファイルとglibcの再マージをしましょう。
+</p>
+
+<pre caption="linux-headersの更新">
+# <i>emerge -u linux-headers</i>
+</pre>
+
+<p>
+ヘッダパッケージを更新した後は、通常はglibcを再マージするべきです。
+興味を持つと思われる新機能の一つにNPTLがあります。
+NPTLとは、より高速なスレッドの作成と消去を特色とする、Linux 2.6で提供される新しいスレッドモデルです。
+ほとんどのシステムで大した違いはありませんが、移行作業中の今のうちに有効にしたいと思うでしょう。
+NPTLを有効にするには、<path>/etc/make.conf</path>を編集し、USE変数に<e>nptl</e>を追加します。
+</p>
+
+<warn>
+"nptlonly"フラグも有効にしたいのなら、今後2.4カーネルを起動することはできなくなることに気をつけてください。
+</warn>
+
+<p>
+ではglibcを再マージしましょう(NPTLを有効にしないことにしたとしても、これはするべきです)。
+</p>
+
+<pre caption="新しいカーネルヘッダ向けにglibcを再インストール">
+# <i>emerge -a glibc</i>
+</pre>
+
+<p>
+NPTLを有効にしても、今あるバイナリは再コンパイルされるまではNPTLを使いません。
+ですが、NPTL対応した後にコンパイルされたバイナリはNPTLを<e>使うようになります。</e>
+今すぐ、全てのバイナリを再コンパイルしたいならば、例えば以下のようにします。
+</p>
+
+<pre caption="システムの全てのパッケージを再コンパイル">
+# <i>emerge -e world</i>
+</pre>
+
+<p>
+もう一つの選択肢として、パッケージの新しいバージョンがリリースされたときに、それに更新するにつれて、システムを"自然に"NPTL対応にすることもできます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>備考</title>
+<section>
+<title>何か問題はありますか？</title>
+<body>
+
+<p>
+これまでのびっくりするほどの量のLinux 2.6への移行作業で、以前はうまく動作していたものが期待した通りに機能しないことがときどきあるのは、仕方のないことです。
+</p>
+
+<p>
+2.6カーネルについて何か問題があり、そしてその問題がLinux 2.4では起こらないと確認したなら、<uri link="http://bugs.gentoo.org">Bugzilla</uri>でバグを報告してください。
+私たちがその報告を調査し、オリジナルのカーネルの問題であることがわかったら、本家カーネルのbugzillaへレポートを提出するようお願いするかもしれません。
+</p>
+
+</body>
+</section>
+<section>
+<title>締めくくり</title>
+<body>
+
+<p>
+きっと移行がスムーズに完了し、2.4を超えるLinux 2.6がもたらす恩恵を享受していることでしょう。
+</p>
+
+<p>
+このドキュメントがまだ未完成の時に有効に「テスト済み」としてくれたり、以降作業がどのように行われたかについてフィードバックを送信してくれた多くのユーザにお礼を言えてとても嬉しいです。
+全てのメールに返信できず申し訳なく思っています（とてもたくさんありました！）が、それら全てを一つずつ読み、このドキュメントをより洗練された物にしました。
+2.6に強化されたシステムをお楽しみください :)
+</p>
+
+</body>
+</section>
+<section>
+<title>Linux 2.4をシステムから削除する</title>
+<body>
+
+<p>
+しばらくの間2.6を運用していると、もはやLinux 2.4を使う必要がないと思うかもしれません。
+システムを整理する手順を以下に示します。
+<e>今後2.4を確実に使いたくない、必要としない場合のみこのセクションの手順に従ってください。</e>
+</p>
+
+<p>
+2.4カーネルソースコードはいつものようにemergeユーティリティを使うことで削除することができます。
+例えば、vanilla-sourcesとgentoo-sourcesの2.4バージョンをインストールしているとして、2.6バージョンはそのままにしておきながら、2.4バージョンを削除するために、以下のコマンドを使用します。
+</p>
+
+<pre caption="例: Linux 2.4ソースを削除">
+# <i>emerge --unmerge =vanilla-sources-2.4.* =gentoo-sources-2.4.*</i>
+</pre>
+
+<p>
+Portageはインストールした2.4カーネルソースを完全には削除しません。
+なぜなら、コンパイル中に一時ファイルが作成されたからです。
+以下のコマンドでこれらの残骸を削除しても差し支え有りません。
+</p>
+
+<pre caption="残った一時ファイルを削除">
+# <i>rm -rf /usr/src/linux-2.4.*</i>
+</pre>
+
+<p>
+さらに、2.4カーネルのインストールに関係するモジュールと情報ファイルはもはや必要ないので、削除することができます。
+</p>
+
+<pre caption="以前にインストールした2.4モジュールの削除">
+# <i>rm -rf /lib/modules/2.4.*</i>
+</pre>
+
+<p>
+起動に使用していた2.4カーネルバイナリも安全に削除することができます。
+<c>/boot</c>パーティションをマウントし、カーネルイメージを削除してください。
+これらの削除されるカーネルイメージを参照しないようにブートローダの設定も更新するべきです。
+</p>
+
+<p>
+一部のLinux 2.4ユーザは、Linux 2.6が持つ新しいオーディオ能力から恩恵を受けるために、既に<c>alsa-driver</c>パッケージをインストールしているかもしれません。
+もしあなたがそのユーザの中の一人で、かつこのドキュメントのはじめにある2.6カーネルソースでのALSA構築(<c>alsa-driver</c>パッケージを使わない)のアドバイスにしたがったなら、今後起こりうる衝突をさけるためにalsa-driverを削除しても問題ありません。
+</p>
+
+<p>
+さらに、<c>lm-sensors</c>ユーザはハードウェアドライバを提供するために<c>i2c</c>パッケージを使用していたでしょう。
+既に述べたように、I2Cドライバは現在カーネルに組み込まれているので、今後起こりうる衝突を避けるためにlm-sensorsパッケージも削除してよいです。
+</p>
+
+<p>
+devfs管理デーモンである<c>devfsd</c>もまた削除しても構いません。
+これからはデバイス管理に<c>udev</c>を使用します。
+</p>
+
+<pre caption="alsa-driver、i2c、devfsdの削除">
+# <i>emerge --unmerge alsa-driver i2c devfsd</i>
+</pre>
+
+<p>
+LVM2ユーザであれば、LVM2が備える利点の恩恵を得るために、LVM2データ形式にデータを変換したいでしょう。
+しかし、この作業を行うと2.4カーネルからはLVMデータへアクセスできなくなります。
+引き続き変換作業をしたいなら(これは完全に自由選択です！)、それを行う方法は<c>vgconvert</c>のマニュアルページを調べてください。
+例を以下に示します。<c>main</c>はボリュームグループ名です。
+</p>
+
+<pre caption="LVM1ボリュームをLVM2形式に変換">
+# <i>vgconvert -M2 main</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+</guide>

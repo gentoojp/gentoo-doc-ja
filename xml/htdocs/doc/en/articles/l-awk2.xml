@@ -1,0 +1,625 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/l-awk2.xml,v 1.7 2011/09/04 17:53:41 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide disclaimer="articles">
+<title>Awk by example, Part 2</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+
+<abstract>
+In this sequel to his previous intro to awk, Daniel Robbins continues to explore
+awk, a great language with a strange name. Daniel will show you how to handle
+multi-line records, use looping constructs, and create and use awk arrays. By
+the end of this article, you'll be well versed in a wide range of awk features,
+and you'll be ready to write your own powerful awk scripts.
+</abstract>
+
+<!-- The original version of this article was published on IBM developerWorks,
+and is property of Westtech Information Services. This document is an updated
+version of the original article, and contains various improvements made by the
+Gentoo Linux Documentation team -->
+
+<version>1.4</version>
+<date>2005-10-31</date>
+
+<chapter>
+<title>Records, loops, and arrays</title>
+<section>
+<title>Multi-line records</title>
+<body>
+
+<p>
+Awk is an excellent tool for reading in and processing structured data, such as
+the system's <path>/etc/passwd</path> file. <path>/etc/passwd</path> is the UNIX
+user database, and is a colon-delimited text file, containing a lot of important
+information, including all existing user accounts and user IDs, among other
+things. In <uri link="/doc/en/articles/l-awk1.xml">my previous article</uri>, I
+showed you how awk could easily parse this file. All we had to do was to set the
+FS (field separator) variable to ":".
+</p>
+
+<p>
+By setting the FS variable correctly, awk can be configured to parse almost any
+kind of structured data, as long as there is one record per line. However, just
+setting FS won't do us any good if we want to parse a record that exists over
+multiple lines. In these situations, we also need to modify the RS record
+separator variable. The RS variable tells awk when the current record ends and a
+new record begins.
+</p>
+
+<p>
+As an example, let's look at how we'd handle the task of processing an address
+list of Federal Witness Protection Program participants:
+</p>
+
+<pre caption="Sample entry from Federal Witness Protection Program participants list">
+Jimmy the Weasel
+100 Pleasant Drive
+San Francisco, CA 12345
+
+Big Tony
+200 Incognito Ave.
+Suburbia, WA 67890
+</pre>
+
+<p>
+Ideally, we'd like awk to recognize each 3-line address as an individual record,
+rather than as three separate records. It would make our code a lot simpler if
+awk would recognize the first line of the address as the first field ($1), the
+street address as the second field ($2), and the city, state, and zip code as
+field $3. The following code will do just what we want:
+</p>
+
+<pre caption="Making one field from the address">
+BEGIN {
+    FS="\n"
+    RS=""
+}
+</pre>
+
+<p>
+Above, setting FS to "\n" tells awk that each field appears on its own line. By
+setting RS to "", we also tell awk that each address record is separated by a
+blank line. Once awk knows how the input is formatted, it can do all the parsing
+work for us, and the rest of the script is simple. Let's look at a complete
+script that will parse this address list and print out each address record on a
+single line, separating each field with a comma.
+</p>
+
+<pre caption="Complete script">
+BEGIN {
+    FS="\n"
+    RS=""
+}
+{ print $1 ", " $2 ", " $3 }
+</pre>
+
+
+<p>
+If this script is saved as <path>address.awk</path>, and the address data is
+stored in a file called <path>address.txt</path>, you can execute this script by
+typing <c>awk -f address.awk address.txt</c>. This code produces the following
+output:
+</p>
+
+<pre caption="The script's output">
+Jimmy the Weasel, 100 Pleasant Drive, San Francisco, CA 12345
+Big Tony, 200 Incognito Ave., Suburbia, WA 67890
+</pre>
+
+</body>
+</section>
+<section>
+<title>OFS and ORS</title>
+<body>
+
+<p>
+In address.awk's print statement, you can see that awk concatenates (joins)
+strings that are placed next to each other on a line. We used this feature to
+insert a comma and a space (", ") between the three address fields that appeared
+on the line. While this method works, it's a bit ugly looking. Rather than
+inserting literal ", " strings between our fields, we can have awk do it for us
+by setting a special awk variable called OFS. Take a look at this code snippet.
+</p>
+
+<pre caption="Sample code snippet">
+print "Hello", "there", "Jim!"
+</pre>
+
+<p>
+The commas on this line are not part of the actual literal strings. Instead,
+they tell awk that "Hello", "there", and "Jim!" are separate fields, and that
+the OFS variable should be printed between each string. By default, awk produces
+the following output:
+</p>
+
+<pre caption="Output produced by awk">
+Hello there Jim!
+</pre>
+
+<p>
+This shows us that by default, OFS is set to " ", a single space. However, we
+can easily redefine OFS so that awk will insert our favorite field separator.
+Here's a revised version of our original <path>address.awk</path> program that
+uses OFS to output those intermediate ", " strings:
+</p>
+
+<pre caption="Redefining OFS">
+BEGIN {
+    FS="\n"
+    RS=""
+    OFS=", "
+}
+{ print $1, $2, $3 }
+</pre>
+
+<p>
+Awk also has a special variable called ORS, called the "output record
+separator". By setting ORS, which defaults to a newline ("\n"), we can control
+the character that's automatically printed at the end of a print statement. The
+default ORS value causes awk to output each new print statement on a new line.
+If we wanted to make the output double-spaced, we would set ORS to "\n\n". Or,
+if we wanted records to be separated by a single space (and no newline), we
+would set ORS to " ".
+</p>
+
+</body>
+</section>
+<section>
+<title>Multi-line to tabbed</title>
+<body>
+
+<p>
+Let's say that we wrote a script that converted our address list to a
+single-line per record, tab-delimited format for import into a spreadsheet.
+After using a slightly modified version of <path>address.awk</path>, it would
+become clear that our program only works for three-line addresses. If awk
+encountered the following address, the fourth line would be thrown away and not
+printed:
+</p>
+
+<pre caption="Sample entry">
+Cousin Vinnie
+Vinnie's Auto Shop
+300 City Alley
+Sosueme, OR 76543
+</pre>
+
+<p>
+To handle situations like this, it would be good if our code took the number of
+records per field into account, printing each one in order. Right now, the code
+only prints the first three fields of the address. Here's some code that does
+what we want:
+</p>
+
+<pre caption="Improved code">
+BEGIN { 
+    FS="\n" 
+    RS="" 
+    ORS="" 
+} 
+ 
+{  
+    x=1 
+    while ( x&lt;NF ) { 
+        print $x "\t" 
+        x++ 
+    } 
+    print $NF "\n" 
+} 
+</pre>
+
+<p>
+First, we set the field separator FS to "\n" and the record separator RS to ""
+so that awk parses the multi-line addresses correctly, as before. Then, we set
+the output record separator ORS to "", which will cause the print statement to
+not output a newline at the end of each call. This means that if we want any
+text to start on a new line, we need to explicitly write print "\n".
+</p>
+
+<p>
+In the main code block, we create a variable called x that holds the number of
+current field that we're processing. Initially, it's set to 1. Then, we use a
+while loop (an awk looping construct identical to that found in the C language)
+to iterate through all but the last record, printing the record and a tab
+character. Finally, we print the last record and a literal newline; again, since
+ORS is set to "", print won't output newlines for us. Program output looks like
+this, which is exactly what we wanted:
+</p>
+
+<pre caption="Our intended output. Not pretty, but tab delimited for easy import into a spreadsheet">
+Jimmy the Weasel        100 Pleasant Drive      San Francisco, CA 12345 
+Big Tony        200 Incognito Ave.      Suburbia, WA 67890
+Cousin Vinnie   Vinnie's Auto Shop      300 City Alley  Sosueme, OR 76543
+</pre>
+
+</body>
+</section>
+<section>
+<title>Looping constructs</title>
+<body>
+
+<p>
+We've already seen awk's while loop construct, which is identical to its C
+counterpart. Awk also has a "do...while" loop that evaluates the condition at
+the end of the code block, rather than at the beginning like a standard while
+loop. It's similar to "repeat...until" loops that can be found in other
+languages. Here's an example:
+</p>
+
+<pre caption="do...while example">
+{
+    count=1
+    do {
+        print "I get printed at least once no matter what" 
+    } while ( count != 1 )
+}
+</pre>
+
+<p>
+Because the condition is evaluated after the code block, a "do...while" loop,
+unlike a normal while loop, will always execute at least once. On the other
+hand, a normal while loop will never execute if its condition is false when the
+loop is first encountered.
+</p>
+
+</body>
+</section>
+<section>
+<title>for loops</title>
+<body>
+
+<p>
+Awk allows you to create for loops, which like while loops are identical to
+their C counterpart:
+</p>
+
+<pre caption="Example loop">
+for ( initial assignment; comparison; increment ) {
+    code block
+}
+</pre>
+
+<p>
+Here's a quick example:
+</p>
+
+<pre caption="Quick example">
+for ( x = 1; x &lt;= 4; x++ ) {
+    print "iteration",x
+}
+</pre>
+
+<p>
+This snippet will print:
+</p>
+
+<pre caption="Output of the above snippet">
+iteration 1
+iteration 2
+iteration 3
+iteration 4
+</pre>
+
+</body>
+</section>
+<section>
+<title>Break and continue</title>
+<body>
+
+<p>
+Again, just like C, awk provides break and continue statements. These statements
+provide better control over awk's various looping constructs. Here's a code
+snippet that desperately needs a break statement:
+</p>
+
+<pre caption="Code snippet needing a break statement">
+while (1) {
+    print "forever and ever..."
+}
+</pre>
+
+<p>
+Because 1 is always true, this while loop runs forever. Here's a loop that only
+executes ten times:
+</p>
+
+<pre caption="Loop that executes only 10 times">
+x=1
+while(1) {
+    print "iteration",x
+    if ( x == 10 ) {
+        break
+    }
+    x++
+}
+</pre>
+
+<p>
+Here, the break statement is used to "break out" of the innermost loop. "break"
+causes the loop to immediately terminate and execution to continue at the line
+after the loop's code block.
+</p>
+
+<p>
+The continue statement complements break, and works like this:
+</p>
+
+<pre caption="The continues statement complementing break">
+x=1
+while (1) {
+    if ( x == 4 ) {
+        x++
+        continue
+    }
+    print "iteration",x
+    if ( x > 20 ) {
+        break
+    }
+    x++
+}
+</pre>
+
+<p>
+This code will print "iteration 1" through "iteration 21", except for "iteration
+4". If iteration equals 4, x is incremented and the continue statement is
+called, which immediately causes awk to start to the next loop iteration without
+executing the rest of the code block. The continue statement works for every
+kind of awk iterative loop, just as break does. When used in the body of a for
+loop, continue will cause the loop control variable to be automatically
+incremented. Here's an equivalent for loop:
+</p>
+
+<pre caption="Equivalent for loop">
+for ( x=1; x&lt;=21; x++ ) {
+    if ( x == 4 ) {
+        continue
+    }
+    print "iteration",x
+}
+</pre>
+
+<p>
+It wasn't necessary to increment x just before calling continue as it was in our
+while loop, since the for loop increments x automatically.
+</p>
+
+</body>
+</section>
+<section>
+<title>Arrays</title>
+<body>
+
+<p>
+You'll be pleased to know that awk has arrays. However, under awk, it's
+customary to start array indices at 1, rather than 0:
+</p>
+
+<pre caption="Sample awk arrays">
+myarray[1]="jim"
+myarray[2]=456
+</pre>
+
+<p>
+When awk encounters the first assignment, myarray is created and the element
+myarray[1] is set to "jim". After the second assignment is evaluated, the array
+has two elements.
+</p>
+
+<p>
+Once defined, awk has a handy mechanism to iterate over the elements of an
+array, as follows:
+</p>
+
+<pre caption="Iterating over arrays">
+for ( x in myarray ) {
+    print myarray[x]
+}
+</pre>
+
+<p>
+This code will print out every element in the array myarray. When you use this
+special "in" form of a for loop, awk will assign every existing index of myarray
+to x (the loop control variable) in turn, executing the loop's code block once
+after each assignment. While this is a very handy awk feature, it does have one
+drawback -- when awk cycles through the array indices, it doesn't follow any
+particular order. That means that there's no way for us to know whether the
+output of above code will be:
+</p>
+
+<pre caption="Output of above code">
+jim
+456
+</pre>
+
+<p>
+or
+</p>
+
+<pre caption="Other output of above code">
+456
+jim
+</pre>
+
+<p>
+To loosely paraphrase Forrest Gump, iterating over the contents of an array is
+like a box of chocolates -- you never know what you're going to get. This has
+something to do with the "stringiness" of awk arrays, which we'll now take a
+look at. 
+</p>
+
+</body>
+</section>
+<section>
+<title>Array index stringiness</title>
+<body>
+
+<p>
+<uri link="/doc/en/articles/l-awk1.xml">In my previous article</uri>, I showed
+you that awk actually stores numeric values in a string format. While awk
+performs the necessary conversions to make this work, it does open the door for
+some odd-looking code:
+</p>
+
+<pre caption="Odd looking code">
+a="1"
+b="2"
+c=a+b+3
+</pre>
+
+<p>
+After this code executes, c is equal to 6. Since awk is "stringy", adding
+strings "1" and "2" is functionally no different than adding the numbers 1 and
+2. In both cases, awk will successfully perform the math. Awk's "stringy" nature
+is pretty intriguing -- you may wonder what happens if we use string indexes for
+arrays. For instance, take the following code:
+</p>
+
+<pre caption="Sample code">
+myarr["1"]="Mr. Whipple"
+print myarr["1"]
+</pre>
+
+<p>
+As you might expect, this code will print "Mr. Whipple". But how about if we
+drop the quotes around the second "1" index?
+</p>
+
+<pre caption="Dropping the qoutes code">
+myarr["1"]="Mr. Whipple"
+print myarr[1]
+</pre>
+
+
+<p>
+Guessing the result of this code snippet is a bit more difficult. Does awk
+consider myarr["1"] and myarr[1] to be two separate elements of the array, or do
+they refer to the same element? The answer is that they refer to the same
+element, and awk will print "Mr. Whipple", just as in the first code snippet.
+Although it may seem strange, behind the scenes awk has been using string
+indexes for its arrays all this time!
+</p>
+
+<p>
+After learning this strange fact, some of us may be tempted to execute some
+wacky code that looks like this:
+</p>
+
+<pre caption="Wacky code">
+myarr["name"]="Mr. Whipple"
+print myarr["name"]
+</pre>
+
+<p>
+Not only does this code not raise an error, but it's functionally identical to
+our previous examples, and will print "Mr. Whipple" just as before! As you can
+see, awk doesn't limit us to using pure integer indexes; we can use string
+indexes if we want to, without creating any problems. Whenever we use
+non-integer array indices like myarr["name"], we're using associative arrays.
+Technically, awk isn't doing anything different behind the scenes than when we
+use a string index (since even if you use an "integer" index, awk still treats
+it as a string). However, you should still call 'em associative arrays -- it
+sounds cool and will impress your boss. The stringy index thing will be our
+little secret. ;) 
+</p>
+
+</body>
+</section>
+<section>
+<title>Array tools</title>
+<body>
+
+<p>
+When it comes to arrays, awk gives us a lot of flexibility. We can use string
+indexes, and we aren't required to have a continuous numeric sequence of indices
+(for example, we can define myarr[1] and myarr[1000], but leave all other
+elements undefined). While all this can be very helpful, in some circumstances
+it can create confusion. Fortunately, awk offers a couple of handy features to
+help make arrays more manageable.
+</p>
+
+<p>
+First, we can delete array elements. If you want to delete element 1 of your
+array fooarray, type:
+</p>
+
+<pre caption="Deleting array elements">
+delete fooarray[1]
+</pre>
+
+<p>
+And, if you want to see if a particular array element exists, you can use the
+special "in" boolean operator as follows:
+</p>
+
+<pre caption="Checking if a particular array element exists">
+if ( 1 in fooarray ) {
+    print "Ayep!  It's there."
+} else {
+    print "Nope!  Can't find it."
+}
+</pre>
+
+</body>
+</section>
+<section>
+<title>Next time</title>
+<body>
+
+<p>
+We've covered a lot of ground in this article. Next time, I'll round out your
+awk knowledge by showing you how to use awk's math and string functions and how
+to create your own functions. I'll also walk you through the creation of a
+checkbook balancing program. Until then, I encourage you to write some of your
+own awk programs, and to check out the following resources.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Resources</title>
+<section>
+<body>
+
+<ul>
+  <li>
+    Read Daniel's other awk articles on developerWorks: Common threads: Awk by
+    example, <uri link="l-awk1.xml">Part 1</uri> and <uri link="l-awk3.xml">Part
+    3</uri>.
+  </li>
+  <li>
+    If you'd like a good old-fashioned book, O'Reilly's <uri
+    link="http://www.oreilly.com/catalog/sed2/">sed &amp; awk, 2nd Edition</uri>
+    is a wonderful choice.
+  </li>
+  <li>
+    Be sure to check out the <uri
+    link="http://www.faqs.org/faqs/computer-lang/awk/faq/">comp.lang.awk
+    FAQ</uri>. It also contains lots of additional awk links.
+  </li>
+  <li>
+    Patrick Hartigan's <uri link="http://sparky.rice.edu/~hartigan/awk.html">awk
+    tutorial</uri> is packed with handy awk scripts.  
+  </li>
+  <li>
+    <uri link="http://www.tasoft.com/tawk.html">Thompson's TAWK Compiler</uri>
+    compiles awk scripts into fast binary executables. Versions are available
+    for Windows, OS/2, DOS, and UNIX.
+  </li>
+  <li>
+    <uri link="http://www.gnu.org/software/gawk/manual/gawk.html">The GNU Awk
+    User's Guide</uri> is available for online reference.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+</guide>
+

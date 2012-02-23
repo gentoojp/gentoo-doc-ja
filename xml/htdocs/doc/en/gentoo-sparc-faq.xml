@@ -1,0 +1,588 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-sparc-faq.xml,v 1.19 2010/03/03 03:16:37 nightmorph Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<guide>
+<title>Gentoo Linux/SPARC Frequently Asked Questions</title>
+
+<author title="SPARC Developer">
+  <mail link="weeve"/>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This FAQ is designed to help answer the most commonly asked questions about
+Gentoo/SPARC and Linux on SPARC architecture.  Feel free to send revisions and
+corrections to the Gentoo/SPARC team or the doc team.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.12</version>
+<date>2010-03-02</date>
+
+<faqindex>
+<title>Questions</title>
+<section>
+<title>Documentation Notes</title>
+<body>
+
+<p>
+These are some notes to elaborate on acronyms and terms used in this document.
+</p>
+
+<p>
+When mentioning <c>SPARC</c>, this refers to the type of <c>sun4x</c> system.
+SPARC represents the <c>sun4u</c> architecture seen in the UltraSPARC series of
+systems (Ultras, Blades, SunFires, etc). Older 32-bit systems are no longer
+supported by the Gentoo/SPARC team.
+</p>
+
+<p>
+Acronyms: <c>OBP</c> = OpenBoot PROM, <c>SS</c> = SPARCstation.
+</p>
+
+</body>
+</section>
+</faqindex>
+
+<chapter>
+<title>Installation</title>
+<section>
+<title>How do I install/use my SPARC over a serial console?</title>
+<body>
+
+<p>
+First, make sure you do not have a keyboard and monitor plugged in. OBP will
+use the monitor for output by default if either are plugged in. You will need a
+null modem cable or a regular serial cable with a null modem adapter to be able
+to view output.
+</p>
+
+<p>
+Standard serial port settings:
+</p>
+
+<ul>
+  <li>9600 baud</li>
+  <li>8 data bits</li>
+  <li>None for parity</li>
+  <li>1 stop bits</li>
+</ul>
+
+<p>
+Below is a list of commonly used programs for viewing a serial console. Check
+to see if your serial console application has the ability to send a break, as
+it can be very useful on a SPARC. The break signal on a serial console is the
+equivalent to issuing the Stop+A command on the keyboard.
+</p>
+
+<table>
+<tr>
+  <th>Linux</th>
+  <th>Windows</th>
+</tr>
+<tr>
+  <ti>Minicom</ti>
+  <ti>Hyperterm</ti>
+</tr>
+<tr>
+  <ti>Kermit</ti>
+  <ti>TeraTerm Pro</ti>
+</tr>
+<tr>
+  <ti>Console</ti>
+  <ti></ti>
+</tr>
+<tr>
+  <ti>Seyon</ti>
+  <ti></ti>
+</tr>
+</table>
+
+</body>
+</section>
+
+<section>
+<title>I have a CRT/LCD monitor attached to my SPARC that selects a resolution
+my monitor can't handle when the kernel boots. How do I get a visible and/or
+non-distorted display on my monitor?</title>
+<body>
+
+<p>
+This problem is a result of the framebuffer support the Linux kernel loads at
+boot time, and the modelines available on SPARC systems.  Here we will assume
+your monitor and video card will agree on a resolution of 1024 by 768 at a
+refresh rate of 60 Hz. In OBP, you can set the resolution by adjusting the
+setting for <c>output-device</c>. To view the current setting, use the command:
+</p>
+
+<pre caption="View current settings">
+ok <i>printenv output-device</i>
+
+<comment>&lt;output-device&gt;        &lt;screen&gt;          &lt;screen&gt;</comment>
+</pre>
+
+<p>
+Now, to set this so it will start the display using the above mentioned
+resolution, we will use the <c>setenv</c> command as follows:
+</p>
+
+<pre caption="Setting display">
+ok <i>setenv output-device screen:r1024x768x60</i>
+
+output-device =       screen:r1024x768x60
+</pre>
+
+<p>
+In order for this to take effect, you will need to reset the machine:
+</p>
+
+<pre caption="Resetting the machine">
+ok <i>reset</i>
+</pre>
+
+<p>
+Additionally, for users using the onboard video card based on the ATI Mach64
+chipset (Ultra 5/10 and Blade 100/150), you will want to append the following
+to your kernel boot options:
+</p>
+
+<pre caption="Appending a kernel boot option">
+video=atyfb:1024x768@60
+</pre>
+
+<p>
+If you are booting from SILO, you can append the above string onto the end of a
+given boot image. The following example would be if you were booting from the
+LiveCD.
+</p>
+
+<pre caption="Booting a Gentoo LiveCD">
+boot: <i>gentoo video=atyfb:1024x768@60</i>
+</pre>
+
+<p>
+If you were booting from the network, you would append the string onto the end
+of the boot net command in OBP as illustrated below:
+</p>
+
+<pre caption="Booting from the net">
+ok <i>boot net video=atyfb:1024x768@60</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>I'm new to SPARC and am not sure what kernel options to use,
+HELP!</title>
+<body>
+
+<p>
+Most of the time, the default kernel options will be acceptable for hardware
+support. You will need to make sure that <c>virtual memory</c> and <c>/proc
+filesystem</c> support is enabled in the kernel as instructed in the <uri
+link="/doc/en/handbook/handbook-sparc.xml">Installation Handbook</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>How do I dual boot Gentoo Linux/SPARC with Solaris?</title>
+<body>
+
+<p>
+Dual booting Gentoo/SPARC and Solaris can be done one of two ways. The two ways
+are: having both Gentoo/SPARC and Solaris on the same drive, or having them on
+separate drives. Below are example SILO configurations for each scenario. In the
+example configs, the following things are assumed:
+</p>
+
+<p>
+Single Drive Setup:
+</p>
+
+<ul>
+  <li>Boot drive is SCSI ID 0</li>
+  <li>Gentoo boots from partition 1</li>
+  <li>Solaris boots from partition 5</li>
+</ul>
+
+<p>
+Separate Drive Setup:
+</p>
+
+<ul>
+  <li>Second drive is SCSI ID 1</li>
+  <li>Gentoo is on SCSI ID 0</li>
+  <li>Solaris is on SCSI ID 1</li>
+  <li>boot-device in OBP is SCSI ID 0</li>
+</ul>
+
+
+<pre caption="Sample silo.conf for a single drive installation">
+<comment># Generic config options</comment>
+partition = 1
+timeout = 50
+
+<comment># Gentoo/SPARC options</comment>
+image = /boot/vmlinux
+    label = linux
+    root=/dev/sda4
+
+<comment># Solaris options</comment>
+other=5
+    label = Solaris
+</pre>
+
+<pre caption="Sample silo.conf for separate disk installation">
+<comment># Generic config options</comment>
+parition = 1
+timeout = 50
+
+<comment># Gentoo/SPARC options</comment>
+image = /boot/vmlinux
+    label = linux
+    root=/dev/sda4
+
+<comment># Solaris options</comment>
+other = /sbus/espdma/esp/sd@1,0;1
+    label = solaris
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Hardware</title>
+<section>
+<title>Will Gentoo run on my SPARC?</title>
+<body>
+
+<p>
+It depends on the type of SPARC, but chances are yes. One exception seems to be
+the SPARC based laptops from Tadpole, particularly the newer models. If you
+have a working Tadpole on Gentoo/SPARC, please contact us and let us know the
+details on the model and anything special needed to get it to work.
+</p>
+
+<p>
+The Gentoo/SPARC team maintains a <uri
+link="/proj/en/base/sparc/sunhw.xml">hardware compatibility list</uri> for
+SPARC64 systems. In general, support for SPARC64 systems is good enough to
+allow some users to run it successfully in production environments.
+</p>
+
+</body>
+</section>
+<section>
+<title>What additional hardware is supported under Gentoo/SPARC?</title>
+<body>
+
+<p>
+For a list of additionally supported Sun hardware, consult the following list
+from the <uri link="http://www.ultralinux.org/faq.html#q_2_2.">UltraLinux
+homepage</uri>.
+</p>
+
+<p>
+A partial list of Sun devices which do NOT currently have support under
+Gentoo/SPARC or SPARC/Linux in general are:
+</p>
+
+<ul>
+  <li>SunPCI cards</li>
+  <li>SBUS or PCI PCMCIA controllers</li>
+  <li>Smart card readers on some Sun Blade workstations</li>
+  <li>Floppy drive on some Sun Blade workstations</li>
+</ul>
+
+<p>
+Also, the Gentoo/SPARC team maintains a <uri
+link="/proj/en/base/sparc/hwlist.xml">list of non-Sun PCI hardware that has
+been tested on Gentoo/SPARC</uri>. To submit additions to the list, email
+<mail>sparc@gentoo.org</mail> with the information on the hardware as displayed
+in the existing hardware list.
+</p>
+
+</body>
+</section>
+<section>
+<title>How do I know which SPARC I have?</title>
+<body>
+
+<p>
+The <uri link="http://www.ultralinux.org/faq.html#q_2_1">UltraLinux FAQ</uri>
+has the answer.
+</p>
+
+</body>
+</section>
+<section>
+<title>My box has more than one Sun Ethernet device. Why do they all have the
+same MAC address and how do I fix it?</title>
+<body>
+
+<p>
+First, the reason they all they all have the same setting is due to a value in
+OpenBoot PROM (OBP). The story goes that in times past, it was assumed that if a
+host had multiple interfaces, the interfaces would not reside on the same
+Ethernet and therefore having the MAC address unique to a machine rather than to
+a NIC wouldn't be a problem. As time went on and different technologies
+developed, the opposite was proven.
+</p>
+
+<p>
+As for fixing the issue, there are two ways to it; from OBP and from Linux. The
+OBP variable <c>local-mac-address?</c> controls this behavior. The following
+commands will help you to determine what <c>local-mac-address?</c> is set to:
+</p>
+
+<pre caption="View local-mac-address? setting from OBP">
+ok <i>printenv local-mac-address?</i>
+local-mac-address? =  false
+</pre>
+
+<pre caption="View local-mac-address? setting from Linux">
+# <i>eeprom local-mac-address?</i>
+local-mac-address?=false
+</pre>
+
+<p>
+As you'll notice from the samples above, <c>local-mac-address?</c> is set to
+<b>false</b>. This will cause all interfaces on a SPARC to use the same MAC
+address. To change this behavior, use either of the commands below (depending
+on whether you do it from OBP or Linux):
+</p>
+
+<pre caption="Set local-mac-address? from OBP">
+ok <i>setenv local-mac-address?=true</i>
+local-mac-address? =  true
+</pre>
+
+<pre caption="Set local-mac-address? from Linux">
+# <i>eeprom local-mac-address?=true</i>
+</pre>
+
+<p>
+Note that you may need to reboot to see the changes take affect.
+</p>
+
+</body>
+</section>
+<section>
+<title>Is SPARC big-endian or little-endian?</title>
+<body>
+
+<p>
+The version supported by Gentoo/SPARC (v9) is bi-endian. It uses big-endian
+instructions, but can access data in little-endian byte-order, such as PCI
+devices, which are little-endian by nature.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Applications</title>
+<section>
+<title>
+How do I get Xorg to find a usable modeline on my Ultra 5/10 or Blade 100/150?
+</title>
+<body>
+
+<p>
+The ATI Framebuffer normally expects a PC's BIOS to set the Reference Clock
+speed for the video card. However, on non-x86 architectures, this doesn't
+happen. So what needs to be done is to set the Reference Clock speed in the
+<path>/etc/X11/xorg.conf</path>.
+</p>
+
+<p>
+In the "Device" section of your <path>/etc/X11/xorg.conf</path>, you will
+want to add a line similar to the following:
+</p>
+
+<pre caption="Add to xorg.conf">
+Option      "reference_clock"   "28.636 MHz"
+</pre>
+
+<p>
+Other common speeds are 14.318 MHz and 29.5 MHz. If you have issues you might
+want to try without a similar setting first.
+</p>
+
+</body>
+</section>
+<section>
+<title>How come package foo is masked on SPARC?</title>
+<body>
+
+<p>
+Chances are this is due to the fact that none of the Gentoo/SPARC developers
+have gotten around to testing this yet, and/or the package is currently marked
+with the <c>~sparc</c> keyword (meaning it's in a testing phase).
+</p>
+
+<p>
+If you still want to install the package, you can follow the instructions from
+the <uri link="/doc/en/handbook/handbook-sparc.xml?part=3&amp;chap=3">Portage
+Handbook</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>How can I help get package foo marked stable?</title>
+<body>
+
+<p>
+If you want to help ensure a package gets marked stable in a timely fashion,
+particularly if it's an application with a small userbase (i.e.
+net-im/bitlbee), install the package and test to make sure it works. If it
+appears to be working well, feel free to file a bug via the
+<uri link="http://bugs.gentoo.org">Gentoo Bugzilla</uri> and assign it to the
+Gentoo/SPARC team.
+</p>
+
+</body>
+</section>
+<section>
+<title>I tried to emerge a package, but emerge failed complaining that a
+dependency is masked. How can I fix this?</title>
+<body>
+
+<p>
+This is a bug. Please file a bug report via the <uri
+link="http://bugs.gentoo.org">Gentoo Bugzilla</uri> for the Gentoo/SPARC team
+indicating what package you tried to emerge, the error message emerge gave you,
+and the output of <c>emerge --info</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Why am I getting an error related to 32/64-bit when compiling a
+kernel?</title>
+<body>
+
+<p>
+The way SPARC/Linux handles the cross-compiler has changed with 2.6.25 (<uri
+link="http://git.kernel.org/?p=linux/kernel/git/torvalds/linux-2.6.git;a=commitdiff;h=54cd6ddec77b75e6926d73d263aec72255b24030">commit</uri>),
+thus when building a recent kernel you'd get the following error message:
+</p>
+
+<pre caption="SPARC/Linux compile error message">
+CHK     include/linux/version.h 
+CHK     include/linux/utsrelease.h 
+CC      arch/sparc64/kernel/asm-offsets.s 
+arch/sparc64/kernel/asm-offsets.c:1: error: -m64 is not supported by this configuration 
+arch/sparc64/kernel/asm-offsets.c:1: error: -mlong-double-64 not allowed with -m64 
+arch/sparc64/kernel/asm-offsets.c:1: error: -mcmodel= is not supported on 32 bit systems 
+make[1]: *** [arch/sparc64/kernel/asm-offsets.s] Error 1 
+make: *** [prepare0] Error 2
+</pre>
+
+<p>
+Because, for the moment (there's an <b>experimental</b> <uri
+link="/proj/en/base/sparc/multilib.xml">multilib</uri> profile),
+Gentoo/SPARC native compiler can't generate 64-bit code (that's what
+sys-devel/kgcc64 is for).
+</p>
+
+<p>
+What you need to do is to tell the SPARC/Linux Makefile what is your
+cross-compiler's binary, by issuing the following commands:
+</p>
+
+<pre caption="Gentoo/SPARC kernel >=2.6.25 kernel compilation">
+# <i>cd /usr/src/linux</i>
+# <i>make CROSS_COMPILE=sparc64-unknown-linux-gnu-</i>
+# <i>make CROSS_COMPILE=sparc64-unknown-linux-gnu- image modules_install</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Miscellaneous</title>
+<section>
+<title>I'm interested in becoming more involved with Gentoo/SPARC. How do I go
+about doing that?</title>
+<body>
+
+<p>
+There are various ways to improve the project:
+</p>
+
+<ul>
+  <li>The best way is to become an <uri
+    link="/proj/en/base/sparc/at/index.xml">Arch Tester</uri>, and aid the
+    developers with package testing.
+  </li>
+  <li>File bug reports such as <uri
+    link="http://dev.gentoo.org/~tcunha/reports/imlate-sparc.txt">stable, and
+    keyword</uri> requests.
+  </li>
+  <li>Join the <uri
+    link="irc://irc.gentoo.org/gentoo-sparc">#gentoo-sparc</uri> IRC channel
+    on the FreeNode IRC network.
+  </li>
+  <li>Make use of the <uri
+    link="http://forums.gentoo.org/viewforum.php?f=27">Gentoo/SPARC forum</uri>.
+  </li>
+  <li>Propose solutions for Gentoo/SPARC related bugs via the <uri
+    link="http://bugs.gentoo.org">Gentoo Bugzilla</uri>. The bugs will be
+    assigned, or CCed to sparc@gentoo.org.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Additional Resources</title>
+<section>
+<title>Where can I get more help or information about SPARC/Linux?</title>
+<body>
+
+<ul>
+  <li>
+    <uri link="http://docs.sun.com/app/docs/coll/216.2">OBP Reference
+    Guide</uri> - Sun's guide to the OpenBoot PROM
+  </li>
+  <li>
+    <uri link="http://www.sunstuff.org">OSIAH</uri> - Online Sun Information
+    Archive
+  </li>
+  <li>
+    <uri link="http://www.obsolyte.com">Obsolyte</uri> - Information on older
+    SPARC systems and links to a lot of other great SPARC related sites
+  </li>
+  <li>
+    <uri link="http://docs.sun.com">Sun Microsystems Documentation</uri> -
+    Additional hardware and software information for SPARC systems, including
+    instructions for flashing OBP
+  </li>
+  <li>
+    <uri link="http://sunsolve.sun.com">Sunsolve</uri> - Great resource for Sun
+    hardware documentation
+  </li>
+  <li>
+    <uri link="http://www.ultralinux.org">UltraLinux Homepage</uri> - Homepage
+    of the SPARC/Linux port
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

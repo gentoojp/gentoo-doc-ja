@@ -1,0 +1,1399 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/lpi-101-fundamentals-p1.xml,v 1.7 2011/09/04 17:53:41 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide disclaimer="articles">
+<title>LPI certification 101 (release 2) exam prep, Part 1</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<!--<author title="Editor">
+  <mail link="curtis119@gentoo.org">M Curtis Napier</mail>
+</author>-->
+
+<abstract>
+In this tutorial, we'll introduce you to bash (the standard Linux shell), show 
+you how to take full advantage of standard Linux commands like ls, cp, and mv,
+explain inodes and hard and symbolic links, and much more. By the end of this
+tutorial, you'll have a solid grounding in Linux fundamentals and will even be
+ready to begin learning some basic Linux system administration tasks.
+</abstract>
+
+<!-- The original version of this article was first published on IBM 
+developerWorks, and is property of Westtech Information Services. This 
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>1.4</version>
+<date>2005-10-12</date>
+
+<chapter>
+<title>Before You Start</title>
+<section>
+<title>About this tutorial</title>
+<body>
+
+<p>
+Welcome to "Linux fundamentals," the first of four tutorials designed to prepare
+you for the Linux Professional Institute's 101 exam. In this tutorial, we'll
+introduce you to bash (the standard Linux shell), show you how to take full
+advantage of standard Linux commands like ls, cp, and mv, explain inodes and
+hard and symbolic links, and much more. By the end of this tutorial, you'll have
+a solid grounding in Linux fundamentals and will even be ready to begin learning
+some basic Linux system administration tasks. By the end of this series of
+tutorials (eight in all), you'll have the knowledge you need to become a Linux
+Systems Administrator and will be ready to attain an LPIC Level 1 certification
+from the Linux Professional Institute if you so choose.
+</p>
+
+<p>
+This particular tutorial (Part 1) is ideal for those who are new to Linux, or
+those who want to review or improve their understanding of fundamental Linux
+concepts like copying and moving files, creating symbolic and hard links, and
+using Linux' standard text-processing commands along with pipelines and
+redirection. Along the way, we'll share plenty of hints, tips, and tricks to
+keep the tutorial meaty and practical, even for those with a good amount of
+previous Linux experience. For beginners, much of this material will be new, but
+more experienced Linux users may find this tutorial to be a great way of
+rounding out their fundamental Linux skills.
+</p>
+
+<p>
+For those who have taken the release 1 version of this tutorial for reasons
+other than LPI exam preparation, you probably don't need to take this one.
+However, if you do plan to take the exams, you should strongly consider reading
+this revised tutorial.
+</p>
+
+</body>
+</section>
+<section>
+<title>About the author</title>
+<body>
+
+<p>
+Residing in Albuquerque, New Mexico, Daniel Robbins is the Chief Architect of
+Gentoo Linux an advanced ports-based Linux meta distribution. He also writes
+articles, tutorials, and tips for the IBM developerWorks Linux zone and Intel
+Developer Services and has also served as a contributing author for several
+books, including Samba Unleashed and SuSE Linux Unleashed. Daniel enjoys
+spending time with his wife, Mary, and his daughter, Hadassah. You can contact
+Daniel at drobbins@gentoo.org.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Introducing bash</title>
+<section>
+<title>The shell</title>
+<body>
+
+<p>
+If you've used a Linux system, you know that when you log in, you are greeted by
+a prompt that looks something like this:
+</p>
+
+<pre caption="The prompt">
+$
+</pre>
+
+<p>
+The particular prompt that you see may look quite different. It may contain your
+systems host name, the name of the current working directory, or both. But
+regardless of what your prompt looks like, there's one thing that's certain. The
+program that printed that prompt is called a "shell," and it's
+very likely that your particular shell is a program called <c>bash</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Are you running bash?</title>
+<body>
+
+<p>
+You can check to see if you're running <c>bash</c> by typing:
+</p>
+
+<pre caption="The SHELL variable">
+$ <i>echo $SHELL</i>
+/bin/bash
+</pre>
+
+<p>
+If the above line gave you an error or didn't respond similarly to our example,
+then you may be running a shell other than bash. In that case, most of this
+tutorial should still apply, but it would be advantageous for you to switch to
+<c>bash</c> for the sake of preparing for the 101 exam. <!-- (The next tutorial
+in this series, on basic administration, covers changing your shell using the
+<c>chsh</c> command.) -->
+</p>
+
+</body>
+</section>
+<section>
+<title>About bash</title>
+<body>
+
+<p>
+Bash, an acronym for "Bourne-again shell," is the default shell on
+most Linux systems. The shell's job is to obey your commands so that you can
+interact with your Linux system. When you're finished entering commands, you may
+instruct the shell to exit or logout, at which point you'll be returned to a
+login prompt.
+</p>
+
+<p>
+By the way, you can also log out by pressing control-D at the bash prompt.
+</p>
+
+</body>
+</section>
+<section>
+<title>Using "cd"</title>
+<body>
+
+<p>
+As you've probably found, staring at your bash prompt isn't the most exciting
+thing in the world. So, let's start using bash to navigate around our file 
+system. At the prompt, type the following (without the <c>$</c>):
+</p>
+
+<pre caption="Changing directories">
+$ <i>cd /</i>
+</pre>
+
+<p>
+We've just told bash that you want to work in /, also known as the root
+directory; all the directories on the system form a tree, and / is considered
+the top of this tree, or the root. cd sets the directory where you are currently
+working, also known as the "current working directory."
+</p>
+
+</body>
+</section>
+<section>
+<title>Paths</title>
+<body>
+
+<p>
+To see bash's current working directory, you can type:
+</p>
+
+<pre caption="Present Working Directory">
+$ <i>pwd</i>
+/
+</pre>
+
+<p>
+In the above example, the / argument to <c>cd</c> is called a <e>path</e>. It
+tells cd where we want to go. In particular, the / argument is an 
+<e>absolute</e> path, meaning that it specifies a location relative to the 
+root of the file system tree.
+</p>
+
+</body>
+</section>
+<section>
+<title>Absolute paths</title>
+<body>
+
+<p>
+Here are some other absolute paths:
+</p>
+
+<pre caption="Example absolute paths">
+/dev
+/usr
+/usr/bin
+/usr/local/bin
+</pre>
+
+<p>
+As you can see, the one thing that all absolute paths have in common is that
+they begin with /. With a path of /usr/local/bin, we're telling cd to enter the 
+/ directory, then the usr directory under that, and then local and bin. Absolute
+paths are always evaluated by starting at / first.
+</p>
+
+</body>
+</section>
+<section>
+<title>Relative paths</title>
+<body>
+
+<p>
+The other kind of path is called a <e>relative path</e>. <c>Bash</c>, <c>cd</c>,
+and other commands always interpret these paths relative to the current 
+directory. Relative paths never begin with a /. So, if we're in /usr:
+</p>
+
+<pre caption="Changing directories with absolute paths">
+$ <i>cd /usr</i>
+</pre>
+
+<p>
+Then, we can use a relative path to change to the /usr/local/bin directory:
+</p>
+
+<pre caption="Changing directories with relative paths">
+$ <i>cd local/bin</i>
+$ <i>pwd</i>
+/usr/local/bin
+</pre>
+
+</body>
+</section>
+<section>
+<title>Using ..</title>
+<body>
+
+<p>
+Relative paths may also contain one or more .. directories. The .. directory is
+a special directory that points to the parent directory. So, continuing from the
+example above:
+</p>
+
+<pre caption="Using the 'parent directory' notation">
+$ <i>pwd</i>
+/usr/local/bin
+$ <i>cd ..</i>
+$ <i>pwd</i>
+/usr/local
+</pre>
+
+<p>
+As you can see, our current directory is now /usr/local. We were able to go 
+"backwards" one directory, relative to the current directory that
+we were in.
+</p>
+
+<p>
+In addition, we can also add .. to an existing relative path, allowing us to go
+into a directory that's alongside one we are already in, for example:
+</p>
+
+<pre caption="Using the parent directory notation in relative paths">
+$ <i>pwd</i>
+/usr/local
+$ <i>cd ../share</i>
+$ <i>pwd</i>
+/usr/share
+</pre>
+
+</body>
+</section>
+<section>
+<title>Relative path examples</title>
+<body>
+
+<p>
+Relative paths can get quite complex. Here are a few examples, all without the
+resultant target directory displayed. Try to figure out where you'll end up
+after typing these commands:
+</p>
+
+<pre caption="Relative path examples">
+$ <i>cd /bin</i>
+$ <i>cd ../usr/share/zoneinfo</i>
+
+
+$ <i>cd /usr/X11R6/bin</i>
+$ <i>cd ../lib/X11</i>
+
+
+$ <i>cd /usr/bin</i>
+$ <i>cd ../bin/../bin</i>
+</pre>
+
+<p>
+Now, try them out and see if you got them right :)
+</p>
+
+</body>
+</section>
+<section>
+<title>Understanding .</title>
+<body>
+
+<p>
+Before we finish our coverage of cd, there are a few more things I need to
+mention. First, there is another special directory called ., which means 
+"the current directory". While this directory isn't used with the
+cd command, it's often used to execute some program in the current directory,
+as follows:
+</p>
+
+<pre caption="Running a program from the current location">
+$ <i>./myprog</i>
+</pre>
+
+<p>
+In the above example, the myprog executable residing in the current working
+directory will be executed.
+</p>
+
+</body>
+</section>
+<section>
+<title>cd and the home directory</title>
+<body>
+
+<p>
+If we wanted to change to our home directory, we could type:
+</p>
+
+<pre caption="Go to the HOME directory">
+$ <i>cd</i>
+</pre>
+
+<p>
+With no arguments, cd will change to your home directory, which is /root for
+the superuser and typically /home/username for a regular user. But what if we
+want to specify a file in our home directory? Maybe we want to pass a file
+argument to the <c>myprog</c> command. If the file lives in our home directory,
+we can type:
+</p>
+
+<pre caption="Execute a program in the current directory">
+$ <i>./myprog /home/drobbins/myfile.txt</i>
+</pre>
+
+<p>
+However, using an absolute path like that isn't always convenient. Thankfully,
+we can use the ~ (tilde) character to do the same thing:
+</p>
+
+<pre caption="Using the 'home directory' notation">
+$ <i>./myprog ~/myfile.txt</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Other users' home directories</title>
+<body>
+
+<p>
+Bash will expand a lone ~ to point to your home directory, but you can also use
+it to point to other users' home directories. For example, if we wanted to refer
+to a file called fredsfile.txt in Fred's home directory, we could type:
+</p>
+
+<pre caption="Example use of the 'home directory' notation">
+$ <i>./myprog ~fred/fredsfile.txt</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>Using Linux Commands</title>
+<section>
+<title>Introducing ls</title>
+<body>
+
+<p>
+Now, we'll take a quick look at the ls command. Very likely, you're already
+familiar with ls and know that typing it by itself will list the contents of the
+current working directory:
+</p>
+
+<pre caption="Listing files">
+$ <i>cd /usr</i>
+$ <i>ls</i>
+X11R6      doc         i686-pc-linux-gnu  lib      man          sbin   ssl
+bin        gentoo-x86  include            libexec  portage      share  tmp
+distfiles  i686-linux  info               local    portage.old  src
+</pre>
+
+<p>
+By specifying the -a option, you can see all of the files in a directory,
+including hidden files: those that begin with .. As you can see in the following
+example, ls -a reveals the . and .. special directory links:
+</p>
+
+<pre caption="Listing files, including hidden ones">
+$ <i>ls -a</i>
+.      bin        gentoo-x86         include  libexec  portage      share  tmp
+..     distfiles  i686-linux         info     local    portage.old  src
+X11R6  doc        i686-pc-linux-gnu  lib      man      sbin         ssl
+</pre>
+
+</body>
+</section>
+<section>
+<title>Long directory listings</title>
+<body>
+
+<p>
+You can also specify one or more files or directories on the <c>ls</c> command 
+line. If you specify a file, <c>ls</c> will show that file only. If you specify
+a directory, <c>ls</c> will show the <e>contents</e> of the directory. The
+<c>-l</c> option comes in very handy when you need to view permissions,
+ownership, modification time, and size information in your directory listing.
+</p>
+
+<p>
+In the following example, we use the <c>-l</c> option to display a full listing
+of my /usr directory.
+</p>
+
+<pre caption="Listing files with all information">
+$ <i>ls -l /usr</i>
+drwxr-xr-x    7 root     root          168 Nov 24 14:02 X11R6
+drwxr-xr-x    2 root     root        14576 Dec 27 08:56 bin
+drwxr-xr-x    2 root     root         8856 Dec 26 12:47 distfiles
+lrwxrwxrwx    1 root     root            9 Dec 22 20:57 doc -&gt; share/doc
+drwxr-xr-x   62 root     root         1856 Dec 27 15:54 gentoo-x86
+drwxr-xr-x    4 root     root          152 Dec 12 23:10 i686-linux
+drwxr-xr-x    4 root     root           96 Nov 24 13:17 i686-pc-linux-gnu
+drwxr-xr-x   54 root     root         5992 Dec 24 22:30 include
+lrwxrwxrwx    1 root     root           10 Dec 22 20:57 info -&gt; share/info
+drwxr-xr-x   28 root     root        13552 Dec 26 00:31 lib
+drwxr-xr-x    3 root     root           72 Nov 25 00:34 libexec
+drwxr-xr-x    8 root     root          240 Dec 22 20:57 local
+lrwxrwxrwx    1 root     root            9 Dec 22 20:57 man -&gt; share/man
+lrwxrwxrwx    1 root     root           11 Dec  8 07:59 portage -&gt; gentoo-x86/
+drwxr-xr-x   60 root     root         1864 Dec  8 07:55 portage.old
+drwxr-xr-x    3 root     root         3096 Dec 22 20:57 sbin
+drwxr-xr-x   46 root     root         1144 Dec 24 15:32 share
+drwxr-xr-x    8 root     root          328 Dec 26 00:07 src
+drwxr-xr-x    6 root     root          176 Nov 24 14:25 ssl
+lrwxrwxrwx    1 root     root           10 Dec 22 20:57 tmp -&gt; ../var/tmp
+</pre>
+
+<p>
+The first column displays permissions information for each item in the listing.
+I'll explain how to interpret this information in a bit. The next column lists
+the number of links to each file system object, which we'll gloss over now but
+return to later. The third and fourth columns list the owner and group,
+respectively. The fifth column lists the object size. The sixth column is the
+"last modified" time or "mtime" of the object. The
+last column is the object's name. If the file is a symbolic link, you'll see a
+trailing -&gt; and the path to which the symbolic link points.
+</p>
+
+</body>
+</section>
+<section>
+<title>Looking at directories</title>
+<body>
+
+<p>
+Sometimes, you'll want to look at a directory, rather than inside it. For these
+situations, you can specify the <c>-d</c> option, which will tell ls to look at
+any directories that it would normally look inside:
+</p>
+
+<pre caption="Listing directories">
+$ <i>ls -dl /usr /usr/bin /usr/X11R6/bin ../share</i>
+drwxr-xr-x    4 root     root           96 Dec 18 18:17 ../share
+drwxr-xr-x   17 root     root          576 Dec 24 09:03 /usr
+drwxr-xr-x    2 root     root         3192 Dec 26 12:52 /usr/X11R6/bin
+drwxr-xr-x    2 root     root        14576 Dec 27 08:56 /usr/bin
+</pre>
+
+</body>
+</section>
+<section>
+<title>Recursive and inode listings</title>
+<body>
+
+<p>
+So you can use <c>-d</c> to look at a directory, but you can also use <c>-R</c>
+to do the opposite: not just look inside a directory, but recursively look
+inside all the files and directories inside that directory! We won't include any
+example output for this option (since it's generally voluminous), but you may
+want to try a few <c>ls -R</c> and <c>ls -Rl</c> commands to get a feel for how
+this works.
+</p>
+
+<p>
+Finally, the <c>-i</c> ls option can be used to display the inode numbers of the
+file system objects in the listing:
+</p>
+
+<pre caption="Listing inodes">
+$ <i>ls -i /usr</i>
+   1409 X11R6        314258 i686-linux           43090 libexec        13394 sbin
+   1417 bin            1513 i686-pc-linux-gnu     5120 local          13408 share
+   8316 distfiles      1517 include                776 man            23779 src
+     43 doc            1386 info                 93892 portage        36737 ssl
+  70744 gentoo-x86     1585 lib                   5132 portage.old      784 tmp
+</pre>
+
+</body>
+</section>
+<section>
+<title>Understanding inodes</title>
+<body>
+
+<p>
+Every object on a file system is assigned a unique index, called an <e>inode</e>
+number. This might seem trivial, but understanding inodes is essential to
+understanding many file system operations. For example, consider the . and .. 
+links that appear in every directory. To fully understand what a .. directory
+actually is, we'll first take a look at /usr/local's inode number:
+</p>
+
+<pre caption="Listing inode for a directory">
+$ <i>ls -id /usr/local</i>
+   5120 /usr/local
+</pre>
+
+<p>
+The /usr/local directory has an inode number of 5120. Now, let's take a look at
+the inode number of /usr/local/bin/..:
+</p>
+
+<pre caption="Listing inode for a directory">
+$ <i>ls -id /usr/local/bin/..</i>
+   5120 /usr/local/bin/..
+</pre>
+
+<p>
+As you can see, /usr/local/bin/.. has the same inode number as /usr/local!
+Here's how can we come to grips with this shocking revelation. In the past,
+we've considered /usr/local to be the directory itself. Now, we discover that
+inode 5120 is in fact the directory, and we have found two directory entries
+(called "links") that point to this inode. Both /usr/local and /usr/local/bin/..
+are links to inode 5120. Although inode 5120 only exists in one place on disk,
+multiple things link to it. Inode 5120 is the actual entry on disk.
+</p>
+
+<p>
+ In fact, we can see the total number of times that inode 5120 is referenced by
+using the <c>ls -dl</c> command:
+</p>
+
+<pre caption="Listing inode reference">
+$ <i>ls -dl /usr/local</i>
+drwxr-xr-x    8 root     root          240 Dec 22 20:57 /usr/local
+</pre>
+
+<p>
+If we take a look at the second column from the left, we see that the directory
+/usr/local (inode 5120) is referenced eight times. On my system, here are the
+various paths that reference this inode:
+</p>
+
+<pre caption="Inode references">
+/usr/local
+/usr/local/.
+/usr/local/bin/..
+/usr/local/games/..
+/usr/local/lib/..
+/usr/local/sbin/..
+/usr/local/share/..
+/usr/local/src/..
+</pre>
+
+</body>
+</section>
+<section>
+<title>mkdir</title>
+<body>
+
+<p>
+Let's take a quick look at the mkdir command, which can be used to create new
+directories. The following example creates three new directories, tic, tac, and
+toe, all under /tmp:
+</p>
+
+<pre caption="Creating directories">
+$ <i>cd /tmp</i>
+$ <i>mkdir tic tac toe</i>
+</pre>
+
+<p>
+By default, the mkdir command doesn't create parent directories for you; the
+entire path up to the next-to-last element needs to exist. So, if you want to
+create the directories <path>won/der/ful</path>, you'd need to issue three
+separate <c>mkdir</c> commands:
+</p>
+
+<pre caption="Creating parent directories">
+$ <i>mkdir won/der/ful</i>
+mkdir: cannot create directory `won/der/ful': No such file or directory
+$ <i>mkdir won</i>
+$ <i>mkdir won/der</i>
+$ <i>mkdir won/der/ful</i>
+</pre>
+
+<p>
+However, mkdir has a handy -p option that tells mkdir to create any missing
+parent directories, as you can see here:
+</p>
+
+<pre caption="Creating parent directories in one go">
+$ <i>mkdir -p easy/as/pie</i>
+</pre>
+
+<p>
+All in all, pretty straightforward. To learn more about the mkdir command, type
+<c>man mkdir</c> to read the manual page. This will work for nearly all commands
+covered here (for example, <c>man ls</c>), except for cd, which is built-in to
+bash.
+</p>
+
+</body>
+</section>
+<section>
+<title>touch</title>
+<body>
+
+<p>
+Now, we're going to take a quick look at the <c>cp</c> and <c>mv</c> commands,
+used to copy, rename, and move files and directories. To begin this overview,
+we'll first use the <c>touch</c> command to create a file in /tmp:
+</p>
+
+<pre caption="Creating a file">
+$ <i>cd /tmp</i>
+$ <i>touch copyme</i>
+</pre>
+
+<p>
+The touch command updates the "mtime" of a file if it exists
+(recall the sixth column in <c>ls -l</c> output). If the file doesn't exist,
+then a new, empty file will be created. You should now have a 
+<path>/tmp/copyme</path> file with a size of zero. 
+</p>
+
+</body>
+</section>
+<section>
+<title>echo</title>
+<body>
+
+<p>
+Now that the file exists, let's add some data to the file. We can do this using
+the echo command, which takes its arguments and prints them to standard output.
+First, the echo command by itself:
+</p>
+
+<pre caption="Creating a file using 'echo'">
+$ <i>echo "firstfile"</i>
+firstfile
+</pre>
+
+<p>
+Now, the same echo command with output redirection:
+</p>
+
+<pre caption="Using output redirection">
+$ <i>echo "firstfile" &gt; copyme</i>
+</pre>
+
+<p>
+The greater-than sign tells the shell to write echo's output to a file called
+copyme. This file will be created if it doesn't exist, and will be overwritten
+if it does exist. By typing <c>ls -l</c>, we can see that the copyme file is 10
+bytes long, since it contains the word firstfile and the newline character:
+</p>
+
+<pre caption="Viewing file information">
+$ <i>ls -l copyme</i>
+-rw-r--r--    1 root     root           10 Dec 28 14:13 copyme
+</pre>
+
+</body>
+</section>
+<section>
+<title>cat and cp</title>
+<body>
+
+<p>
+To display the contents of the file on the terminal, use the cat command:
+</p>
+
+<pre caption="Viewing file contents">
+$ <i>cat copyme</i>
+firstfile
+</pre>
+
+<p>
+Now, we can use a basic invocation of the <c>cp</c> command to create a copiedme
+file from the original copyme file:
+</p>
+
+<pre caption="Copying files">
+$ <i>cp copyme copiedme</i>
+</pre>
+
+<p>
+Upon investigation, we find that they are truly separate files; their inode numbers are different:
+</p>
+
+<pre caption="Checking inode differences">
+$ <i>ls -i copyme copiedme</i>
+  648284 copiedme   650704 copyme
+</pre>
+
+</body>
+</section>
+<section>
+<title>mv</title>
+<body>
+
+<p>
+Now, let's use the mv command to rename "copiedme" to
+"movedme". The inode number will remain the same; however, the
+filename that points to the inode will change.
+</p>
+
+<pre caption="Renaming a file">
+$ <i>mv copiedme movedme</i>
+$ <i>ls -i movedme</i>
+  648284 movedme
+</pre>
+
+<p>
+A moved file's inode number will remain the same as long as the destination file
+resides on the same file system as the source file. We'll take a closer look at
+file systems in Part 3 of this tutorial series.
+</p>
+
+<p>
+While we're talking about mv, let's look at another way to use this command. mv,
+in addition to allowing us to rename files, also allows us to move one or more
+files to another location in the directory hierarchy. For example, to move
+<path>/var/tmp/myfile.txt</path> to <path>/home/drobbins</path> (which happens
+to be my home directory,) I could type:
+</p>
+
+<pre caption="Moving a file to a different location">
+$ <i>mv /var/tmp/myfile.txt /home/drobbins</i>
+</pre>
+
+<p>
+After typing this command, myfile.txt will be moved to
+<path>/home/drobbins/myfile.txt</path>. And if <path>/home/drobbins</path> is on
+a different file system than <path>/var/tmp</path>, the mv command will handle
+the copying of myfile.txt to the new file system and erasing it from the old
+file system. As you might guess, when myfile.txt is moved between file systems,
+the myfile.txt at the new location will have a new inode number. This is because
+every file system has its own independent set of inode numbers.
+</p>
+
+<p>
+We can also use the mv command to move multiple files to a single destination
+directory. For example, to move myfile1.txt and myarticle3.txt to 
+/home/drobbins, I could type:
+</p>
+
+<pre caption="Moving multiple files">
+$ <i>mv /var/tmp/myfile1.txt /var/tmp/myarticle3.txt /home/drobbins</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>Creating Links and Removing Files</title>
+<section>
+<title>Hard links</title>
+<body>
+
+<p>
+We've mentioned the term "link" when referring to the relationship
+between directory entries (the "names" we type) and inodes (the
+index numbers on the underlying file system that we can usually ignore.) There are
+actually two kinds of links available on Linux. The kind we've discussed so far
+are called <e>hard links</e>. A given inode can have any number of hard links,
+and the inode will persist on the file system until the all the hard links
+disappear. When the last hard link disappears and no program is holding the file
+open, Linux will delete the file automatically. New hard links can be created
+using the <c>ln</c> command:
+</p>
+
+<pre caption="Linking files">
+$ <i>cd /tmp</i>
+$ <i>touch firstlink</i>
+$ <i>ln firstlink secondlink</i>
+$ <i>ls -i firstlink secondlink</i>
+  15782 firstlink    15782 secondlink
+</pre>
+
+<p>
+As you can see, hard links work on the inode level to point to a particular file.
+On Linux systems, hard links have several limitations. For one, you can only
+make hard links to files, not directories. That's right; even though . and ..
+are system-created hard links to directories, you (even as the
+"root" user) aren't allowed to create any of your own. The second
+limitation of hard links is that they can't span file systems. This means that
+you can't create a link from /usr/bin/bash to /bin/bash if your / and /usr
+directories exist on separate file systems.
+</p>
+
+</body>
+</section>
+<section>
+<title>Symbolic links</title>
+<body>
+
+<p>
+In practice, symbolic links (or <e>symlinks</e>) are used more often than hard
+links. Symlinks are a special file type where the link refers to another file by
+name, rather than directly to the inode. Symlinks do not prevent a file from
+being deleted; if the target file disappears, then the symlink will just be
+unusable, or broken.
+</p>
+
+<p>
+A symbolic link can be created by passing the -s option to ln.
+</p>
+
+<pre caption="Viewing symbolic links">
+$ ln -s secondlink thirdlink
+$ ls -l firstlink secondlink thirdlink
+-rw-rw-r--    2 agriffis agriffis        0 Dec 31 19:08 firstlink
+-rw-rw-r--    2 agriffis agriffis        0 Dec 31 19:08 secondlink
+lrwxrwxrwx    1 agriffis agriffis       10 Dec 31 19:39 thirdlink -&gt; secondlink
+</pre>
+
+<p>
+Symbolic links can be distinguished in <c>ls -l</c> output from normal files in
+three ways. First, notice that the first column contains an l character to
+signify the symbolic link. Second, the size of the symbolic link is the number
+of characters in the target (<c>secondlink</c>, in this case). Third, the last
+column of the output displays the target filename preceded by a cute little -&gt;.
+</p>
+
+</body>
+</section>
+<section>
+<title>Symlinks in-depth</title>
+<body>
+
+<p>
+Symbolic links are generally more flexible than hard links. You can create a
+symbolic link to any type of file system object, including directories. And
+because the implementation of symbolic links is based on paths (not inodes),
+it's perfectly fine to create a symbolic link that points to an object on 
+another physical file system. However, this fact can also make symbolic links
+tricky to understand.
+</p>
+
+<p>
+Consider a situation where we want to create a link in /tmp that points to 
+/usr/local/bin. Should we type this:
+</p>
+
+<pre caption="Linking directories, first attempt">
+$ <i>ln -s /usr/local/bin bin1</i>
+$ <i>ls -l bin1</i>
+lrwxrwxrwx    1 root     root           14 Jan  1 15:42 bin1 -&gt; /usr/local/bin
+</pre>
+
+<p>
+Or alternatively:
+</p>
+
+<pre caption="Linking directories, second attempt">
+$ <i>ln -s ../usr/local/bin bin2</i>
+$ <i>ls -l bin2</i>
+lrwxrwxrwx    1 root     root           16 Jan  1 15:43 bin2 -&gt; ../usr/local/bin
+</pre>
+
+<p>
+As you can see, both symbolic links point to the same directory. However, if our
+second symbolic link is ever moved to another directory, it will be
+"broken" because of the relative path:
+</p>
+
+<pre caption="Breaking a symbolic link">
+$ <i>ls -l bin2</i>
+lrwxrwxrwx    1 root     root           16 Jan  1 15:43 bin2 -&gt; ../usr/local/bin
+$ <i>mkdir mynewdir</i>
+$ <i>mv bin2 mynewdir</i>
+$ <i>cd mynewdir</i>
+$ <i>cd bin2</i>
+bash: cd: bin2: No such file or directory
+</pre>
+
+<p>
+Because the directory /tmp/usr/local/bin doesn't exist, we can no longer change
+directories into bin2; in other words, bin2 is now broken.
+</p>
+
+<p>
+For this reason, it is sometimes a good idea to avoid creating symbolic links
+with relative path information. However, there are many cases where relative
+symbolic links come in handy. Consider an example where you want to create an
+alternate name for a program in /usr/bin:
+</p>
+
+<pre caption="Viewing file information for keychain">
+# <i>ls -l /usr/bin/keychain</i> 
+-rwxr-xr-x    1 root     root        10150 Dec 12 20:09 /usr/bin/keychain
+</pre>
+
+<p>
+As the root user, you may want to create an alternate name for 
+"keychain", such as "kc". In this example, we have
+root access, as evidenced by our bash prompt changing to "#". We
+need root access because normal users aren't able to create files in /usr/bin.
+As root, we could create an alternate name for keychain as follows:
+</p>
+
+<pre caption="Symlinking keychain">
+# <i>cd /usr/bin</i>
+# <i>ln -s /usr/bin/keychain kc</i>
+# <i>ls -l keychain</i>
+-rwxr-xr-x    1 root     root        10150 Dec 12 20:09 /usr/bin/keychain
+# <i>ls -l kc</i>       
+lrwxrwxrwx    1 root     root           17 Mar 27 17:44 kc -&gt; /usr/bin/keychain
+</pre>
+
+<p>
+In this example, we created a symbolic link called kc that points to the file
+/usr/bin/keychain.
+</p>
+
+<p>
+While this solution will work, it will create problems if we decide that we want
+to move both files, /usr/bin/keychain and /usr/bin/kc to /usr/local/bin:
+</p>
+
+<pre caption="Moving the symbolic link">
+# <i>mv /usr/bin/keychain /usr/bin/kc /usr/local/bin</i>
+# <i>ls -l /usr/local/bin/keychain</i>
+-rwxr-xr-x    1 root     root        10150 Dec 12 20:09 /usr/local/bin/keychain
+# <i>ls -l /usr/local/bin/kc</i>
+lrwxrwxrwx    1 root     root           17 Mar 27 17:44 kc -&gt; /usr/bin/keychain
+</pre>
+
+<p>
+Because we used an absolute path in our symbolic link, our kc symlink is still
+pointing to /usr/bin/keychain, which no longer exists since we moved
+/usr/bin/keychain to /usr/local/bin.
+</p>
+
+<p>
+That means that kc is now a broken symlink. Both relative and absolute paths in
+symbolic links have their merits, and you should use a type of path that's
+appropriate for your particular application. Often, either a relative or absolute
+path will work just fine. The following example would have worked even after both
+files were moved:
+</p>
+
+<pre caption="Moving files around with symlinks">
+# <i>cd /usr/bin</i>
+# <i>ln -s keychain kc</i>
+# <i>ls -l kc</i>
+lrwxrwxrwx    1 root     root            8 Jan  5 12:40 kc -&gt; keychain
+# <i>mv keychain kc /usr/local/bin</i>
+# <i>ls -l /usr/local/bin/keychain</i>
+-rwxr-xr-x    1 root     root        10150 Dec 12 20:09 /usr/local/bin/keychain
+# <i>ls -l /usr/local/bin/kc</i>
+lrwxrwxrwx    1 root     root           17 Mar 27 17:44 kc -&gt; keychain
+</pre>
+
+<p>
+Now, we can run the keychain program by typing /usr/local/bin/kc.
+/usr/local/bin/kc points to the program keychain in the same directory as kc.
+</p>
+
+</body>
+</section>
+<section>
+<title>rm</title>
+<body>
+
+<p>
+Now that we know how to use cp, mv, and ln, it's time to learn how to remove
+objects from the file system. Normally, this is done with the <c>rm</c> command.
+To remove files, simply specify them on the command line:
+</p>
+
+<pre caption="Removing files">
+$ <i>cd /tmp</i>
+$ <i>touch file1 file2</i>
+$ <i>ls -l file1 file2</i>
+-rw-r--r--    1 root     root            0 Jan  1 16:41 file1
+-rw-r--r--    1 root     root            0 Jan  1 16:41 file2
+$ <i>rm file1 file2</i>
+$ <i>ls -l file1 file2</i>
+ls: file1: No such file or directory
+ls: file2: No such file or directory
+</pre>
+
+<p>
+Note that under Linux, once a file is rm'ed, it's typically gone forever. For
+this reason, many junior system administrators will use the -i option when
+removing files. The -i option tells rm to remove all files in interactive mode
+-- that is, prompt before removing any file. For example:
+</p>
+
+<pre caption="Removing files and ask for confirmation">
+$ <i>rm -i file1 file2</i>
+rm: remove regular empty file `file1'? y
+rm: remove regular empty file `file2'? y
+</pre>
+
+<p>
+In the above example, the rm command prompted whether or not the specified files
+should *really* be deleted. In order for them to be deleted, I had to type
+"y" and Enter twice. If I had typed "n", the file
+would not have been removed. Or, if I had done something really wrong, I could
+have typed Control-C to abort the rm -i command entirely -- all before it is
+able to do any potential damage to my system.
+</p>
+
+<p>
+If you are still getting used to the rm command, it can be useful to add the
+following line to your ~/.bashrc file using your favorite text editor, and then
+log out and log back in. Then, any time you type rm, the bash shell will convert
+it automatically to an rm -i command. That way, rm will always work in
+interactive mode:
+</p>
+
+<pre caption="Setting the 'rm -i' alias">
+<i>alias rm="rm -i"</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>rmdir</title>
+<body>
+
+<p>
+To remove directories, you have two options. You can remove all the objects
+inside the directory and then use <c>rmdir</c> to remove the directory itself:
+</p>
+
+<pre caption="Removing directories">
+$ <i>mkdir mydir</i>
+$ <i>touch mydir/file1</i>
+$ <i>rm mydir/file1</i>
+$ <i>rmdir mydir</i>
+</pre>
+
+<p>
+This method is commonly referred to as "directory removal for
+suckers." All real power users and administrators worth their salt use
+the much more convenient <c>rm -rf</c> command, covered next.
+</p>
+
+<p>
+The best way to remove a directory is to use the <e>recursive force</e> options
+of the rm command to tell rm to remove the directory you specify, as well as all
+objects contained in the directory:
+</p>
+
+<pre caption="Removing a complete directory">
+$ <i>rm -rf mydir</i>
+</pre>
+
+<p>
+Generally, rm -rf is the preferred method of removing a directory tree. Be very
+careful when using rm -rf, since its power can be used for both good and evil :)
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>Using Wild cards</title>
+<section>
+<title>Introducing Wild cards</title>
+<body>
+
+<p>
+In your day-to-day Linux use, there are many times when you may need to perform
+a single operation (such as rm) on many file system objects at once. In these
+situations, it can often be cumbersome to type in many files on the command line:
+</p>
+
+<pre caption="Removing individual files">
+$ <i>rm file1 file2 file3 file4 file5 file6 file7 file8</i>
+</pre>
+
+<p>
+To solve this problem, you can take advantage of Linux' built-in wild card
+support. This support, also called "globbing" (for historical
+reasons), allows you to specify multiple files at once by using a <e>wildcat
+pattern</e>. Bash and other Linux commands will interpret this pattern by
+looking on disk and finding any files that match it. So, if you had files file1
+through file8 in the current working directory, you could remove these files by
+typing:
+</p>
+
+<pre caption="Removing files using shell completion">
+$ <i>rm file[1-8]</i>
+</pre>
+
+<p>
+Or if you simply wanted to remove all files whose names begin with file as well
+as any file named file, you could type:
+</p>
+
+<pre caption="Removing files using shell completion with the * glob">
+$ <i>rm file*</i>
+</pre>
+
+<p>
+The * wildcat matches any character or sequence of characters, or even
+"no character." Of course, glob wildcards can be used for more
+than simply removing files, as we'll see in the next panel.
+</p>
+
+</body>
+</section>
+<section>
+<title>Understanding non-matches</title>
+<body>
+
+<p>
+If you wanted to list all the file system objects in /etc beginning with g as
+well as any file called g, you could type:
+</p>
+
+<pre caption="Example use of the * glob">
+$ <i>ls -d /etc/g*</i>
+/etc/gconf  /etc/ggi  /etc/gimp  /etc/gnome  /etc/gnome-vfs-mime-magic  /etc/gpm  /etc/group  /etc/group-
+</pre>
+
+<p>
+Now, what happens if you specify a pattern that doesn't match any file system
+objects? In the following example, we try to list all the files in /usr/bin that
+begin with asdf and end with jkl, including potentially the file asdfjkl:
+</p>
+
+<pre caption="Another example of the * glob">
+$ <i>ls -d /usr/bin/asdf*jkl</i>
+ls: /usr/bin/asdf*jkl: No such file or directory
+</pre>
+
+<p>
+Here's what happened. Normally, when we specify a pattern, that pattern matches
+one or more files on the underlying file system, and <e>bash replaces the 
+pattern with a space-separated list of all matching objects</e>. However, when 
+the pattern doesn't produce any matches, <e>bash leaves the argument, wild 
+cards and all, as-is</e>. So, then ls can't find the file /usr/bin/asdf*jkl 
+and it gives us an error. The operative rule here is that <e>glob patterns 
+are expanded only if they match objects in the file system</e>. Otherwise 
+they remain as is and are passed literally to the program you're calling.
+</p>
+
+</body>
+</section>
+<section>
+<title>Wild card syntax: * and ?</title>
+<body>
+
+<p>
+Now that we've seen how globbing works, we should look at wild card syntax. You
+can use special characters for wild card expansion:
+</p>
+
+<p>
+* will match zero or more characters. It means "anything can go here,
+including nothing". Examples:
+</p>
+
+<ul>
+  <li>
+    /etc/g* matches all files in /etc that begin with g, or a file called g.
+  </li>
+  <li>
+    /tmp/my*1 matches all files in /tmp that begin with my and end with 1,
+    including the file my1.
+  </li>
+</ul>
+
+<p>
+? matches any single character. Examples:
+</p>
+
+<ul>
+  <li>
+    myfile? matches any file whose name consists of myfile followed by a
+    single character
+  </li>
+  <li>
+    /tmp/notes?txt would match both /tmp/notes.txt and /tmp/notes_txt, if they
+    exist
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Wild card syntax: []</title>
+<body>
+
+<p>
+This wild card is like a ?, but it allows more specificity. To use this wild card,
+place any characters you'd like to match inside the []. The resultant expression
+will match a single occurrence of any of these characters. You can also use - to
+specify a range, and even combine ranges. Examples:
+</p>
+
+<ul>
+  <li>
+    myfile[12] will match myfile1 and myfile2. The wild card will be expanded
+    as long as at least one of these files exists in the current directory.
+  </li>
+  <li>
+    [Cc]hange[Ll]og will match Changelog, ChangeLog, changeLog, and changelog.
+    As you can see, using bracket wild cards can be useful for matching
+    variations in capitalization.
+  </li>
+  <li>
+    ls /etc/[0-9]* will list all files in /etc that begin with a number.
+  </li>
+  <li>
+    ls /tmp/[A-Za-z]* will list all files in /tmp that begin with an upper or
+    lower-case letter.
+  </li>
+</ul>
+
+<p>
+The [!] construct is similar to the [] construct, except rather than matching
+any characters inside the brackets, it'll match any character, as long as it is
+not listed between the [! and ]. Example:
+</p>
+
+<ul>
+  <li>
+    rm myfile[!9] will remove all files named myfile plus a single character,
+    except for myfile9
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Wild card caveats</title>
+<body>
+
+<p>
+Here are some caveats to watch out for when using wild cards. Since bash treats
+wild card-related characters (?, [, ], and *) specially, you need to take 
+special care when typing in an argument to a command that contains these 
+characters. For example, if you want to create a file that contains the 
+string [fo]*, the following command may not do what you want:
+</p>
+
+<pre caption="Wrong use of special characters">
+$ <i>echo [fo]* &gt; /tmp/mynewfile.txt</i>
+</pre>
+
+<p>
+If the pattern [fo]* matches any files in the current working directory, then
+you'll find the names of those files inside /tmp/mynewfile.txt rather than a
+literal [fo]* like you were expecting. The solution? Well, one approach is to
+surround your characters with single quotes, which tell bash to perform
+absolutely no wild card expansion on them:
+</p>
+
+<pre caption="Escaping special characters">
+$ <i>echo '[fo]*' &gt; /tmp/mynewfile.txt</i>
+</pre>
+
+<p>
+Using this approach, your new file will contain a literal [fo]* as expected.
+Alternatively, you could use backslash escaping to tell bash that [, ], and *
+should be treated literally rather than as wild cards:
+</p>
+
+<pre caption="Escapting special characters, second possibility">
+$ <i>echo \[fo\]\* &gt; /tmp/mynewfile.txt</i>
+</pre>
+
+<p>
+Both approaches (single quotes and backslash escaping) have the same effect.
+Since we're talking about backslash expansion, now would be a good time to
+mention that in order to specify a literal \, you can either enclose it in 
+single quotes as well, or type \\ instead (it will be expanded to \).
+</p>
+
+<note>
+Double quotes will work similarly to single quotes, but will still
+allow bash to do some limited expansion. Therefore, single quotes are your best
+bet when you are truly interested in passing literal text to a command. For more
+information on wild card expansion, type <c>man 7 glob</c>. For more information
+on quoting in bash, type <c>man 8 glob</c> and read the section titled QUOTING.
+If you're planning to take the LPI exams, consider this a homework assignment :)
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Summary and Resources</title>
+<section>
+<title>Summary</title>
+<body>
+
+<p>
+Congratulations; you've reached the end of our review of Linux fundamentals! I
+hope that it has helped you to firm up your foundational Linux knowledge. The
+topics you've learned here, including the basics of bash, basic Linux commands,
+links, and wild cards, have laid the groundwork for our next tutorial on basic
+administration, in which we'll cover topics like regular expressions, ownership
+and permissions, user account management, and more.
+</p>
+
+<p>
+By continuing in this tutorial series, you'll soon be ready to attain your LPIC
+Level 1 Certification from the Linux Professional Institute. Speaking of LPIC
+certification, if this is something you're interested in, then we recommend that
+you study the Resources in the next panel, which have been carefully selected to
+augment the material covered in this tutorial.
+</p>
+
+</body>
+</section>
+<section>
+<title>Resources</title>
+<body>
+
+<p>
+In the "Bash by example" article series on developerWorks, Daniel shows you how
+to use bash programming constructs to write your own bash scripts. This series
+(particularly Parts 1 and 2) will be good preparation for the LPIC Level 1 exam:
+</p>
+
+<ul>
+  <li>
+    <uri link="/doc/en/articles/bash-by-example-p1.xml">Bash by example, Part
+    1: Fundamental programming in the Bourne-again shell</uri>
+  </li>
+  <li>
+    <uri link="/doc/en/articles/bash-by-example-p2.xml">Bash by example, Part
+    2: More bash programming fundamentals</uri>
+  </li>
+  <li>
+    <uri link="/doc/en/articles/bash-by-example-p3.xml">Bash by example, Part
+    3: Exploring the ebuild system</uri>
+  </li>
+</ul>
+
+<p>
+If you're a beginning or intermediate Linux user, you really owe it to yourself
+to check out the Technical FAQ for Linux users, a 50-page in-depth list of
+frequently-asked Linux questions, along with detailed answers. The FAQ itself is
+in PDF (Acrobat) format.
+</p>
+
+<p>
+If you're not too familiar with the vi editor, see the developerWorks tutorial
+Intro to vi. This tutorial gives you a gentle yet fast-paced introduction to
+this powerful text editor. Consider this must-read material if you don't know
+how to use vi.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

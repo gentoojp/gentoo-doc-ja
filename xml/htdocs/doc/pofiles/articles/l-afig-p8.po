@@ -1,0 +1,570 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-23 10:54+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/articles/l-afig-p8.xml:7
+#, no-wrap
+msgid "Advanced filesystem implementor's guide, Part 8"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/articles/l-afig-p8.xml:20
+#, no-wrap
+msgid ""
+"With the 2.4 release of Linux come many new filesystem possibilities, \n"
+"including Reiserfs, XFS, GFS, and others. These filesystems sound cool, but\n"
+"what exactly can they do, what are they good at, and exactly how do you go\n"
+"about safely using them in a production Linux environment? Daniel Robbins \n"
+"answers these questions by showing you how to set up these new advanced \n"
+"filesystems under Linux 2.4. In this installment, Daniel continues his look\n"
+"at ext3, a new improved version of ext2 with journaling capabilities. He \n"
+"reveals all the inside information on ext3, and demonstrates some shockingly \n"
+"good ext3 data=journal interactive performance numbers.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/l-afig-p8.xml:35
+#, no-wrap
+msgid "Introduction"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:40
+#, no-wrap
+msgid ""
+"I'm going to be honest. For this article, I was planning to show you how to get\n"
+"ext3 up and running on your system. Although that's what I said I'd do, I'm not\n"
+"going to do it. Andrew Morton's excellent \"Using the ext3 filesystem in 2.4\n"
+"kernels\" page (see <uri link=\"#resources\">Resources</uri> later in this\n"
+"article) already does a great job of explaining how to ext3-enable your system,\n"
+"so there's no need for me to repeat all the basics here. Instead, I'm going to\n"
+"delve into some meatier ext3 topics, ones that I think you'll find very useful.\n"
+"After you read this article, when you're ready to get ext3 up and running, head\n"
+"over to Andrew's page.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/l-afig-p8.xml:56
+#, no-wrap
+msgid "2.4 kernel update"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:61
+#, no-wrap
+msgid ""
+"First, let's start with a 2.4 kernel update. I last discussed 2.4 kernel\n"
+"stability when I was covering ReiserFS. Way back then, finding a stable 2.4\n"
+"kernel was a challenge, and I recommended sticking with the known and at that\n"
+"time bleeding-edge 2.4.4-ac9 kernel -- especially for anyone planning to use\n"
+"the ReiserFS filesystem in a production environment. As you might guess, a lot\n"
+"has happened since 2.4.4-ac9, and it's definitely time to start looking at\n"
+"newer kernels.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:71
+#, no-wrap
+msgid ""
+"With kernel 2.4.10, the 2.4 series reached a new level of performance and\n"
+"scalability (something that we've been anticipating for a long time). So, what\n"
+"happened to allow Linux 2.4 to finally grow up? In an acronym, VM.  Linus,\n"
+"recognizing that the 2.4 series wasn't performing spectacularly, ripped out\n"
+"Linux's problematic VM code and replaced it with a lean and mean VM\n"
+"implementation from Andrea Archangeli. Andrea's new VM implementation (which\n"
+"first appeared in 2.4.10) was really great; it really sped up the kernel and\n"
+"made the entire system more responsive. 2.4.10 was definitely a major turning\n"
+"point in 2.4 Linux kernel development; up until then, things weren't looking\n"
+"very good, and many of us were wondering why we weren't FreeBSD developers.  We\n"
+"all should thank Linus for his heroism in making such a major (but sorely\n"
+"needed) change in the 2.4 stable kernel series.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:86
+#, no-wrap
+msgid ""
+"Since Andrea's new VM code needed a bit of time to be integrated seamlessly\n"
+"with the rest of the kernel, use 2.4.13+. Even better, use 2.4.16+, since the\n"
+"rock-solid ext3 filesystem code was finally integrated into the official Linus\n"
+"kernel starting with the 2.4.15-pre2 release. There's no reason to avoid using\n"
+"2.4.16+ kernel, and it'll make your job of getting ext3 up and running that\n"
+"much easier. If you do use a 2.4.16+ kernel, just remember that it's no longer\n"
+"necessary to apply the ext3 patch as described on Andrew's page (see <uri\n"
+"link=\"#resources\">Resources</uri>).  Linus already added it for you. :)\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:97
+#, no-wrap
+msgid ""
+"You'll notice that I recommend using 2.4.16+ rather than 2.4.15+, and with good\n"
+"reason. With the release of kernel 2.4.15-pre9, a really ugly filesystem\n"
+"corruption bug was introduced to the kernel. It took until 2.4.16-pre1 for the\n"
+"problem to be identified and fixed, resulting in a span of kernels (including\n"
+"2.4.15) that should be avoided at all costs. Choosing a 2.4.16+ kernel allows\n"
+"you to avoid this bad batch entirely.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/l-afig-p8.xml:110
+#, no-wrap
+msgid "Laptops...beware?"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:115
+#, no-wrap
+msgid ""
+"Ext3 has a stellar reputation for being a rock-solid filesystem, so I was\n"
+"surprised to learn that quite a few laptop users were having filesystem\n"
+"corruption problems when they switched to ext3. In general, it's tempting to\n"
+"react to these kinds of reports by avoiding ext3 entirely; however, after\n"
+"asking around, I discovered that the disk corruption problems that people were\n"
+"experiencing had nothing to do with ext3 itself, but were being caused by\n"
+"certain laptop hard drives.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-afig-p8.xml:127
+#, no-wrap
+msgid "The write cache"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:131
+#, no-wrap
+msgid ""
+"You may not know this, but most modern hard drives have something called a\n"
+"\"write cache\", used by the hard drive to collect pending write operations. By\n"
+"putting pending writes into a cache, the hard drive firmware can then reorder\n"
+"and group them so that they're written to disk in the fastest possible way.\n"
+"The write cache is generally considered to be a very good thing (read Linus'\n"
+"explanation and opinion of write caching in <uri\n"
+"link=\"#resources\">Resources</uri>).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:141
+#, no-wrap
+msgid ""
+"Unfortunately, certain laptop hard drives now on the market have the dubious\n"
+"feature of ignoring any official ATA request to flush their write cache to\n"
+"disk. This isn't a wonderful design feature, although it has been allowed by\n"
+"the ATA spec up until recently. With these types of drives, there's no way for\n"
+"the kernel to guarantee that a particular block has actually been recorded to\n"
+"the disk platters. Although this sounds like a thorny problem, this particular\n"
+"issue by itself is probably not the cause of the data corruption problems that\n"
+"people have been experiencing.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:152
+#, no-wrap
+msgid ""
+"However, it gets worse. Some modern laptop hard drives have an even nastier\n"
+"habit of throwing away their write cache whenever the system is rebooted or\n"
+"suspended. Obviously, if a hard drive has both of these problems, it's going to\n"
+"regularly corrupt data, and there's nothing that Linux can do to prevent it\n"
+"from doing so.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:160
+#, no-wrap
+msgid ""
+"So, what's the solution? If you have a laptop, tread carefully. Back up all\n"
+"your important files before making any major change to your filesystems. If you\n"
+"experience data corruption problems that seem to fit the pattern of what I\n"
+"described above, particularly with ext3, then remember that it may be your\n"
+"laptop hard drive that's at fault. In that case, you may want to contact your\n"
+"laptop manufacturer and inquire about getting a replacement drive. Hopefully,\n"
+"in a few months time, these flaky hard drives will be pulled from the market\n"
+"and we'll never need to worry about this issue again.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:171
+#, no-wrap
+msgid ""
+"Now that I've scared you out of your minds, let's take a look at ext3's various\n"
+"data journaling options.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/l-afig-p8.xml:180
+#, no-wrap
+msgid "Journaling options and write latency"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:185
+#, no-wrap
+msgid ""
+"Ext3 allows you to choose from one of three data journaling modes at filesystem\n"
+"mount time: data=writeback, data=ordered, and data=journal.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:190
+#, no-wrap
+msgid ""
+"To specify a journal mode, you can add the appropriate string (data=journal,\n"
+"for example) to the options section of your /etc/fstab, or specify the -o\n"
+"data=journal command-line option when calling mount directly. If you'd like to\n"
+"specify the data journaling method used for your root filesystem (data=ordered\n"
+"is the default), you can to use a special kernel boot option called rootflags.\n"
+"So, if you'd like to put your root filesystem into full data journaling mode,\n"
+"add rootflags=data=journal to your kernel boot options.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-afig-p8.xml:202
+#, no-wrap
+msgid "data=writeback mode"
+msgstr ""
+
+#.  Change the below link to
+#. xmlified gentoo article when available 
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:206
+#, no-wrap
+msgid ""
+"In data=writeback mode, ext3 doesn't do any form of data journaling at all,\n"
+"providing you with similar journaling found in the XFS, JFS, and ReiserFS\n"
+"filesystems (metadata only). As I explained in my  <uri\n"
+"link=\"http://www-128.ibm.com/developerworks/linux/library/l-fs7.html\"> previous\n"
+"article</uri>, this could allow recently modified files to become corrupted in\n"
+"the event of an unexpected reboot. Despite this drawback, data=writeback mode\n"
+"should give you the best ext3 performance under most conditions. \n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-afig-p8.xml:219
+#, no-wrap
+msgid "data=ordered mode"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:223
+#, no-wrap
+msgid ""
+"In data=ordered mode, ext3 only officially journals metadata, but it logically\n"
+"groups metadata and data blocks into a single unit called a transaction. When\n"
+"it's time to write the new metadata out to disk, the associated data blocks are\n"
+"written first. data=ordered mode effectively solves the corruption problem\n"
+"found in data=writeback mode and most other journaled filesystems, and it does\n"
+"so without requiring full data journaling.  In general, data=ordered ext3\n"
+"filesystems perform slightly slower than data=writeback filesystems, but\n"
+"significantly faster than their full data journaling counterparts.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:234
+#, no-wrap
+msgid ""
+"When appending data to files, data=ordered mode provides all of the integrity\n"
+"guarantees offered by ext3's full data journaling mode. However, if part of a\n"
+"file is being overwritten and the system crashes, it's possible that the region\n"
+"being written will contain a combination of original blocks interspersed with\n"
+"updated blocks. This is because data=ordered provides no guarantees as to which\n"
+"blocks are overwritten first, so you can't assume that just because overwritten\n"
+"block x was updated, that overwritten block x-1 was updated as well. Instead,\n"
+"data=ordered leaves the write ordering up to the hard drive's write cache. In\n"
+"general, this limitation doesn't end up negatively impacting people very often,\n"
+"since file appends are generally much more common than file overwrites. For\n"
+"this reason, data=ordered mode is a good higher-performance replacement for\n"
+"full data journaling.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/articles/l-afig-p8.xml:251
+#, no-wrap
+msgid "data=journal mode"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:255
+#, no-wrap
+msgid ""
+"data=journal mode provides full data and metadata journaling. All new data is\n"
+"written to the journal first, and then to its final location. In the event of a\n"
+"crash, the journal can be replayed, bringing both data and metadata into a\n"
+"consistent state.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:262
+#, no-wrap
+msgid ""
+"Theoretically, data=journal mode is the slowest journaling mode of all, since\n"
+"data gets written to disk twice rather than once. However, it turns out that in\n"
+"certain situations, data=journal mode can be blazingly fast. Andrew Morton,\n"
+"after hearing reports on LKML that ext3 data=journal filesystems were giving\n"
+"people unbelievably great interactive filesystem performance, decided to put\n"
+"together a little test. First, he created simple shell script designed to write\n"
+"data to a test filesystem as quickly as possible:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-afig-p8.xml:271
+#, no-wrap
+msgid "Rapid writing"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-afig-p8.xml:272
+#, no-wrap
+msgid ""
+"while true\n"
+"do\n"
+"        dd if=/dev/zero of=largefile bs=16384 count=131072\n"
+"done\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:279
+#, no-wrap
+msgid ""
+"While data was being written to the test filesystem, he attempted to read \n"
+"16MB of data from another ext2 filesystem on the same disk, timing the \n"
+"results:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-afig-p8.xml:284
+#, no-wrap
+msgid "Reading a 16MB file"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-afig-p8.xml:285
+#, no-wrap
+msgid "<i>$ time cat 16-meg-file > /dev/null</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:289
+#, no-wrap
+msgid ""
+"The results were astounding. data=journal mode allowed the 16-meg-file to be\n"
+"read from 9 to over 13 times faster than other ext3 modes, ReiserFS, and even\n"
+"ext2 (which has no journaling overhead):\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/l-afig-p8.xml:296
+#, no-wrap
+msgid "Written-to-filesystem"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/l-afig-p8.xml:297
+#, no-wrap
+msgid "16-meg-read-time (seconds)"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/l-afig-p8.xml:300
+#, no-wrap
+msgid "ext2"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/l-afig-p8.xml:301
+#, no-wrap
+msgid "78"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/l-afig-p8.xml:304
+#, no-wrap
+msgid "ReiserFS"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/l-afig-p8.xml:305
+#, no-wrap
+msgid "67"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/l-afig-p8.xml:308
+#, no-wrap
+msgid "ext3 data=ordered"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/l-afig-p8.xml:309
+#, no-wrap
+msgid "93"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/l-afig-p8.xml:312
+#, no-wrap
+msgid "ext3 data=writeback"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/l-afig-p8.xml:313
+#, no-wrap
+msgid "74"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/l-afig-p8.xml:316
+#, no-wrap
+msgid "ext3 data=journal"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/articles/l-afig-p8.xml:317
+#, no-wrap
+msgid "<c>7</c>"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:322
+#, no-wrap
+msgid ""
+"Andrew repeated this test, but tried to read a 16MB file from the test\n"
+"filesystem (rather than a different filesystem), and he got identical results.\n"
+"So, what does this mean? Somehow, ext3's data=journal mode is incredibly\n"
+"well-suited to situations where data needs to be read from and written to disk\n"
+"at the same time. Therefore, ext3's data=journal mode, which was assumed to be\n"
+"the slowest of all ext3 modes in nearly all conditions, actually turns out to\n"
+"have a major performance advantage in busy environments where interactive IO\n"
+"performance needs to be maximized. Maybe data=journal mode isn't so sluggish\n"
+"after all!\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:334
+#, no-wrap
+msgid ""
+"Andrew is still trying to figure out exactly why data=journal mode is doing so\n"
+"much better than everything else. When he does, he may be able to add the\n"
+"necessary tweaks to the rest of ext3 so that data=writeback and data=ordered\n"
+"modes see some benefit as well.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/l-afig-p8.xml:345
+#, no-wrap
+msgid "data=journal tweaks"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:350
+#, no-wrap
+msgid ""
+"Some people have had a particular performance problem when using ext3's\n"
+"data=journal mode on busy servers -- busy NFS servers, in particular. Every\n"
+"thirty seconds, the server experiences a huge storm of disk-writing activity,\n"
+"causing the system to nearly grind to a halt. If you experience this problem,\n"
+"it's easy to fix. Simply type the following command as root to tweak Linux's\n"
+"dirty buffer-flushing algorithm:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/articles/l-afig-p8.xml:358
+#, no-wrap
+msgid "Tweaking bdflush"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/articles/l-afig-p8.xml:359
+#, no-wrap
+msgid "<i>$ echo 40 0 0 0 60 300 60 0 0 > /proc/sys/vm/bdflush</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:363
+#, no-wrap
+msgid ""
+"These new bdflush settings will cause kupdate to run every 0.6 seconds rather\n"
+"than every 5 seconds. In addition, they tell the kernel to flush a dirty buffer\n"
+"after 3 seconds rather than 30, the default. By flushing recently-modified data\n"
+"to disk more regularly, these write storms can be avoided. It's slightly less\n"
+"efficient to do things this way, since the kernel will have fewer opportunities\n"
+"to combine writes. But for a busy server, writes will happen more consistently,\n"
+"and interactive performance will be greatly improved. \n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/l-afig-p8.xml:377
+#, no-wrap
+msgid "Conclusion"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/articles/l-afig-p8.xml:382
+#, no-wrap
+msgid ""
+"We've now concluded our coverage of ext3. Join me in my next article as we\n"
+"explore the many wonders of... XFS!\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/articles/l-afig-p8.xml:391
+#, no-wrap
+msgid "Resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-afig-p8.xml:411
+#, no-wrap
+msgid ""
+"    Visit Andrew Morton's <uri\n"
+"    link=\"http://www.zip.com.au/~akpm/linux/ext3/ext3-usage.html\">ext3 and 2.4\n"
+"    usage page</uri> to complete your ext3 setup.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-afig-p8.xml:416
+#, no-wrap
+msgid ""
+"    Find out more about using ext3 with 2.4 kernels at Andrew Morton's <uri\n"
+"    link=\"http://www.zip.com.au/~akpm/linux/ext3/\">ext3 for 2.4</uri> page.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-afig-p8.xml:420
+#, no-wrap
+msgid ""
+"    Learn more about the strange laptop hard drive corruption problems by\n"
+"    reading <uri\n"
+"    link=\"http://www.kerneltraffic.org/kernel-traffic/kt20011015_137.html\">\n"
+"    Kernel Traffic's summary</uri>.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/articles/l-afig-p8.xml:437
+#, no-wrap
+msgid ""
+"    To keep abreast of the latest ext3 developments, be sure to visit the <uri\n"
+"    link=\"https://listman.redhat.com/pipermail/ext3-users/\">ext3-users mailing\n"
+"    list archive</uri>. Of course, you can also <uri\n"
+"    link=\"https://listman.redhat.com/mailman/listinfo/ext3-users\">\n"
+"    subscribe</uri>.\n"
+"  "
+msgstr ""

@@ -1,0 +1,360 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-portage-files.xml,v 1.7 2011/08/24 22:06:54 naota Exp $ -->
+
+<sections>
+
+<abstract>
+一度でもPortageのことを深く知りたいと思ったら、portageのファイルとデータがどこに保存されているか知るべきです。
+</abstract>
+
+
+<version>2</version>
+<date>2011-03-02</date>
+
+<!-- Original revision: 1.21 -->
+<!-- Translator: kobayashi -->
+
+
+<section>
+<title>Portageファイル</title>
+<subsection>
+<title>設定指示子</title>
+<body>
+
+<p>
+Portageの初期設定は<path>/etc/make.globals</path>にあります。
+その初期設定を見ると、Portageの全ての設定が変数を通して制御されることがわかるでしょう。
+Portageがどのような変数を受け付け、それらが何を意味するのかは後述します。
+</p>
+
+<p>
+多くの設定指示子がアーキテクチャ間で異なるため、Portageにはプロファイルの一部としての初期設定ファイルもあります。
+プロファイルの位置は、<path>/etc/make.profile</path>シンボリックリンクのリンク先です。
+Portageの設定は、プロファイルとその親ディレクトリにあるすべてのプロファイルにある<path>make.defaults</path>ファイルで設定されます。
+プロファイルや<path>/etc/make.profile</path>ディレクトリについては後でより詳しく説明します。
+</p>
+
+<p>
+もし設定変数を変更しようとしているのなら、<path>/etc/make.globals</path>や<path>make.defaults</path>を改変<e>してはいけません</e>。
+代わりに、これらのファイルより優先される<path>/etc/make.conf</path>を使用してください
+また、<path>/usr/share/portage/config/make.conf.example</path>というファイルも見つけるでしょう。
+その名前が示すように、これは単なるサンプルファイルで、Portageはこのファイルを読み込みません。
+</p>
+
+<p>
+Portage設定変数を環境変数で定義することもできますが、私たちはお勧めしません。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>プロファイルの詳細な情報</title>
+<body>
+
+<p>
+<path>/etc/make.profile</path>ディレクトリについては既に触れています。
+そうです。正確にはディレクトリではなく、プロファイルへのシンボリックリンクで、初期設定とは別の場所に独自のプロファイルを作成して、そこをリンクが指すようにすることもできますが、初期設定では、<path>/usr/portage/profiles</path>の下のプロファイルを指しています。
+このシンボリックリンクが指すプロファイルは、システムに適したプロファイルです。
+</p>
+
+<p>
+プロファイルには、Portage用のアーキテクチャ固有の情報が含まれています。
+例えば、プロファイルに一致するシステムに含まれるパッケージのリストや、動作しない(もしくはマスクされた)パッケージのリストなどといったものです。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>ユーザ指定の設定</title>
+<body>
+
+<p>
+ソフトウェアのインストールに関するPortageの振舞いを変更したいときには、<path>/etc/portage</path>にあるファイルを編集することになります。
+<path>/etc/portage</path>内のファイルを利用することが<e>強く推奨され</e>ており、環境変数によって上書きすることは<e>全く推奨されていません</e>。
+</p>
+
+<p>
+<path>/etc/portage</path>ディレクトリ内には以下のファイルを作成することができます。
+</p>
+
+<ul>
+  <li>
+    <path>package.mask</path> はPortageに決してインストールして欲しくないパッケージのリストです。
+  </li>
+  <li>
+    <path>package.unmask</path> はGentoo開発者達が全く推奨していなくてもインストールをできるようにするパッケージのリストです。
+  </li>
+  <li>
+    <path>package.accept_keywords</path> はシステムやアーキテクチャに(未だ)対応していなくてもインストールできるようにするパッケージのリストです。
+  </li>
+  <li>
+    <path>package.use</path> は、システム全体で使用しているUSEフラグではなく、特定のパッケージに対して使用するUSEフラグのリストです。
+  </li>
+</ul>
+
+<p>
+これらはファイルである必要はありません。
+パッケージごとにひとつのファイルを持つディレクトリであっても大丈夫です。
+<path>/etc/portage</path>ディレクトリに関するより多くの情報と作成できるファイルの完全なリストはPortageのmanページで見つけることができます。
+</p>
+
+<pre caption="Portageのmanページを読む">
+$ <i>man portage</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Portageファイルとディレクトリの場所を変更する</title>
+<body>
+
+<p>
+前に説明したように設定ファイルはどこにでも置けるわけではありません。
+Portageはいつも決まった位置から設定ファイルを探すからです。
+しかし、Portageには、その他多くの様々な用途向けに決まった位置があります。
+ビルド用ディレクトリ、ソースコードの保管場所、Portageツリーの位置などです。
+</p>
+
+<p>
+これら全ての用途向けに、よく知られた初期設定の位置がありますが、<path>/etc/make.conf</path>を通して、好みに合わせて変更することができます。
+この章の残りで、Portageが使用する特定用途の位置は何があるかと、ファイルシステム上でのその位置の変更方法を説明します。
+</p>
+
+<p>
+ですが、リファレンスとして使用されるようには意図されていません。
+もし100%網羅した文書が必要なら、Portageと<path>make.conf</path>のmanページを調べてください。
+</p>
+
+<pre caption="Portageとmake.confのmanページを読む">
+$ <i>man portage</i>
+$ <i>man make.conf</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>ファイルを保管する</title>
+<subsection>
+<title>Portageツリー</title>
+<body>
+
+<p>
+Portageツリーの初期設定位置は、<path>/usr/portage</path>です。
+これはPORTDIR変数で定義されています。
+もしPortageツリーを(この変数を変更することで)どこか別の位置に保管するときは、それに応じて、<path>/etc/make.profile</path>のシンボリックリンクを変更することを忘れないでください。
+</p>
+
+<p>
+もしPORTDIR変数を変更したなら、PORTDIRの変更に関する影響を気にしなくてもいいように、以下の変数も同様に変更した方がいいでしょう。
+このPORTDIRの変更によって、PortageのPKGDIR、DISTDIR、RPMDIR変数の扱い方に影響を与えます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>ビルド済みのバイナリ</title>
+<body>
+
+<p>
+Portageは初期設定ではビルド済みバイナリを利用しないにもかかわらず、ビルド済みバイナリ用の広範なサポート機能を持っています。
+Portageにビルド済みパッケージで作業するよう指示したときは、<path>/usr/portage/packages</path>から探そうとします。
+この位置はPKGDIR変数で定義されます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>ソースコード</title>
+<body>
+
+<p>
+アプリケーションのソースコードは初期設定では<path>/usr/portage/distfiles</path>に保持されます。
+この位置はDISTDIR変数で定義されます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Portageデータベース</title>
+<body>
+
+<p>
+Portageはシステムの状態（どんなパッケージがインストールされているか、どのパッケージに何のファイルが含まれているか、など）を<path>/var/db/pkg</path>に保存します。
+これらのファイルを手動で変更しては<e>いけません</e>。
+Portageのシステムに関する情報を破壊することになるでしょう。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Portageキャッシュ</title>
+<body>
+
+<p>
+Portageキャッシュ（修正を加えた時間、仮想、依存ツリー情報の修正）は<path>/var/cache/edb</path>に保存されます。
+この位置は本当にキャッシュであり、Portage関連のアプリケーションを実行していないのなら削除することが出来ます。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>ソフトウェアのビルド</title>
+<subsection>
+<title>一時的なPortageファイル</title>
+<body>
+
+<p>
+Portageの一時ファイルは初期設定では<path>/var/tmp</path>に保持されます。
+これはPORTAGE_TMPDIR変数で定義されます。
+</p>
+
+<p>
+PORTAGE_TMPDIR変数を変更するなら、PORTAGE_TMPDIRの変更に関する影響を気にしなくてもいいように、次の変数も変更した方がいいでしょう。
+これは、PortageのBUILD_PREFIX変数の扱い方に影響を及ぼします。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>ビルドに使用するディレクトリ</title>
+<body>
+
+<p>
+Portageは、各々のパッケージがemergeされるごとに専用のビルドディレクトリを<path>/var/tmp/portage</path>内に作ります。
+この位置はBUILD_PREFIX変数で定義されます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>有効なファイルシステム名前空間</title>
+<body>
+
+<p>
+初期設定ではPortageは、すべてのファイルをルート（<path>/</path>）を基点するファイルシステム名前空間にインストールしますが、ROOT環境変数を設定することで変更することができます。
+これは、新規のビルドイメージを作成するときに役に立ちます。(訳注: ROOT環境変数を変更して、仮の名前空間にインストールして確認してみる場合など)
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>ロギング機能</title>
+<subsection>
+<title>ebuildロギング</title>
+<body>
+
+<p>
+Portageはebuildごとのログファイルを作成することができます。
+しかし、この機能は、PORT_LOGDIR変数にPortage（portageユーザ）が書き込み可能な位置を設定しているときだけ有効になります。
+初期設定ではこの変数は設定されていません。
+もしPORT_LOGDIRが設定されていないならば、現在のロギングシステムではまったくビルドログを受け取れないでしょう。
+ですが、新しい<c>elog</c>から何らかのログを受け取っているかもしれません。
+PORT_LOGDIRをきちんと定義しelogを使用する場合、以下で説明されるように、ビルドログやelogによって保存されるログを取得することができます。
+
+</p>
+
+<p>
+Portageは<e>elog</e>の利用による、きめ細かなロギングの管理方法を提供します。
+</p>
+
+<ul>
+  <li>
+    PORTAGE_ELOG_CLASSES: これはどんな種類のメッセージが記録されるか設定するものです。
+    <c>info</c>、<c>warn</c>、 <c>error</c>、<c>log</c>、<c>qa</c>を、スペースで区切ってどんな組み合せでも利用できます。
+    <ul>
+      <li><c>info</c>: ebulidによって出力される"einfo"メッセージを記録する</li>
+      <li><c>warn</c>: ebulidによって出力される"ewarn"メッセージを記録する</li>
+      <li><c>error</c>: ebulidによって出力される"eerror"メッセージを記録する</li>
+      <li><c>log</c>: いくつかのebulidの中で見受けられる"elog"メッセージを記録する</li>
+      <li><c>qa</c>: ebulidによって出力される"QA Notice"メッセージを記録する</li>
+    </ul>
+  </li>
+  <li>
+    PORTAGE_ELOG_SYSTEM: ここではログを処理するためのモジュールを選択します。
+    左側を空欄にすると、ロギングは行われません。
+    <c>save</c>、<c>custom</c>、<c>syslog</c>、<c>mail</c>、<c>save_summary</c>、<c>mail_summary</c>を、スペースで区切ってでどんな組合せでも利用できます。
+    elogを使用するためには、少なくともひとつのモジュールを選ばなくてはなりません。
+    <ul>
+      <li>
+<c>save</c>: これは$PORT_LOGDIRが定義されていないとき、<path>$PORT_LOGDIR/elog</path>、もしくは <path>/var/log/portage/elog</path>にパッケージごとひとつのログを保存します。
+      </li>
+      <li>
+<c>custom</c>: $PORTAGE_ELOG_COMMANDでユーザが定義したコマンドにすべてのメッセージを渡します。これについては後述します。
+      </li>
+      <li>
+<c>syslog</c>: インストールされているシステムロガーにメッセージを送ります。
+      </li>
+      <li>
+<c>mail</c>: $PORTAGE_ELOG_MAILURI（これについては後述します）でユーザが定義したメールサーバにすべてのメッセージを渡します。
+elogのメール機能は&gt;=<c>portage-2.1.1</c>が必要です。
+      </li>
+      <li>
+<c>save_summary</c>: <c>save</c>と似ていますが、$PORT_LOGDIRが定義されていないとき、すべてのメッセージを<path>$PORT_LOGDIR/elog/summary.log</path>か<path>/var/log/portage/elog/summary.log</path>に追記します。
+      </li>
+      <li>
+<c>mail_summary</c>: <c>mail</c>と似ていますが、emergeが終了すると、すべてのメッセージを1通のメールにして送信します。
+      </li>
+    </ul>
+  </li>
+  <li>
+    PORTAGE_ELOG_COMMAND: これは<c>custom</c>が有効のときにのみ使用されます。
+    ここにはログメッセージを処理するためのコマンドを記述します。
+    次の2つの変数が使用できることに注意してください。
+    ${PACKAGE}はパッケージの名前とバージョンです。一方、${LOGFILE}はログファイルの絶対パスです。
+    ここでは使用方法の一例を示します。
+    <ul>
+      <li>
+        PORTAGE_ELOG_COMMAND="/path/to/logger -p '\${PACKAGE}' -f '\${LOGFILE}'"
+      </li>
+    </ul>
+  </li>
+  <li>
+    PORTAGE_ELOG_MAILURI: これは、アドレス、ユーザ、パスワード、メールサーバ、ポート番号といった、<c>mail</c>モジュールの設定を含みます。
+    デフォルトの設定は"root@localhost localhost"です。
+  </li>
+  <li>
+    これは特定のポート（デフォルトはポート25です）に対してユーザ名とパスワード認証を必要とするSMTPサーバの例です。
+    <ul>
+      <li>
+PORTAGE_ELOG_MAILURI="user@some.domain
+username:password@smtp.some.domain:995"
+      </li>
+    </ul>
+  </li>
+  <li>
+    PORTAGE_ELOG_MAILFROM: ログメールの"from"アドレスを設定できます。
+    設定していな場合のデフォルトは"portage"です。
+  </li>
+  <li>
+    PORTAGE_ELOG_MAILSUBJECTでログメールの件名を設定できます。
+    次の2つの変数を使用できることに注目してください。
+    ${PACKAGE}は、パッケージの名前とバージョンを表示します。
+    一方、${HOST}は、Portageが動作しているホストの完全修飾ドメイン名になります。
+  </li>
+  <li>
+    次は使用方法の一例です。
+    <ul>
+      <li>
+PORTAGE_ELOG_MAILSUBJECT="package \${PACKAGE} was merged on \${HOST}
+with some messages"
+      </li>
+    </ul>
+  </li>
+</ul>
+
+<impo>
+Portage-2.0.*で<c>enotice</c>を使用している場合、elogとは互換性がないため、完全にenoticeを削除しなければなりません。
+</impo>
+
+</body>
+</subsection>
+</section>
+</sections>

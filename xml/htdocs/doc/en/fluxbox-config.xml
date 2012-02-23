@@ -1,0 +1,694 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/fluxbox-config.xml,v 1.35 2011/09/04 17:53:40 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>The Fluxbox Configuration HOWTO</title>
+
+<author title="Author">
+  <mail link="smithj@gentoo.org">Jonathan Smith</mail>
+</author>
+<author title="Editor">
+  <mail link="alin@gentoo.org">Alin Dobre</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+<author title="Contributor">
+  <mail link="lack"/>
+</author>
+
+<abstract>
+This howto will show you how to set up the Fluxbox window manager for X11.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.0 -->
+<license/>
+
+<version>1.13</version>
+<date>2009-08-01</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>Introduction to the Fluxbox window manager</title>
+<body>
+
+<p>
+For those who are unfamiliar with Linux's desktop model, window managers (WMs)
+are the applications which are run by X11 to manage other graphical programs.
+WMs control where each window is placed, its size, and which desktop(s) have
+access to it. This can be done automatically via a set of user-defined rules or
+can be done at runtime with the mouse and possibly keyboard shortcuts,
+depending on the specific WM.
+</p>
+
+<p>
+Some WMs, however, take on more functionality than just window management.
+Fluxbox also provides a platform for launching applications, configuring
+keyboard shortcuts and background images, as well as displaying information
+with the slit. GNOME's default WM, Metacity, does not include these things, but
+they are available through other GNOME programs. Thus, one cannot truly say
+that Fluxbox is a lightweight WM. However, since Fluxbox includes everything
+necessary for a basic desktop, many people use it in place of larger desktop
+suites like GNOME or KDE.
+</p>
+
+<p>
+To make things even more confusing, however, Fluxbox can replace the default WM
+for GNOME or KDE. For example, some people find that Metacity, GNOME's window
+manager, simply does not have the flexibility they need, but that Fluxbox does
+not have all the built-in applications and integration they desire from a
+complete desktop environment. Thus, a person could use Fluxbox to manage the
+windows and GNOME for the rest. Note, however, that with this setup there are
+some issues caused by overlapping feature sets.
+</p>
+
+<p>
+Fluxbox can also be expanded by third party software. This is often ideal in
+situations where hardware resources are limited, or even just as a matter of
+personal taste.
+</p>
+
+<p>
+This guide is aimed at those who are new to Fluxbox, curious, or who
+are just wanting to get more out of the Gentoo/Fluxbox experience. This guide
+will also illustrate how to get more (yet quite optional) functionality by
+using third party programs which work well with Fluxbox.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Installing Fluxbox</title>
+<section>
+<title>Base installation</title>
+<body>
+
+<p>
+First, make sure you've installed a working X environment, as shown in the <uri
+link="/doc/en/xorg-config.xml">X Server Configuration HOWTO</uri>.
+</p>
+
+<p>
+Before you install Fluxbox, you should take a look at some of the available USE
+flags.
+</p>
+
+<p>
+While the <c>gnome</c> and <c>kde</c> USE flags are provided to give
+compatibility with these environments, it has been the author's experience that
+these USE flags are not needed. If you desire qt, gtk+, or any KDE/GNOME utility
+then you are free to emerge and configure those independently. The <c>gnome</c>
+and <c>kde</c> flags simply add support for the respective protocols, and do not
+depend on external libraries. However, they do increase the Fluxbox binary
+size.
+</p>
+
+<p>
+There is also a <c>vim-syntax</c> flag to make configuration easier later on.
+This flag will install <c>fluxbox-syntax</c>, a special Fluxbox color scheme for
+<c>vim</c>. This enables users to more readily see the contents of their keys
+and init files for Fluxbox. It's a tiny extension for vim, so it's highly
+recommended.
+</p>
+
+<p>
+Finally, there are two flags that customize the functionality of Fluxbox,
+<c>slit</c> and <c>toolbar</c>. These flags are provided so that users who don't
+need the <uri
+link="http://fluxbox-wiki.org/index.php?title=Faqs#What_is_the_slit">slit</uri>
+or the <uri link="http://fluxbox.org/features/">toolbar</uri> can compile
+Fluxbox without them. This is useful if you want to run an extremely minimal
+environment, or if you plan to use different applications that provide these
+features, such as standalone panels or docks.
+</p>
+
+<p>
+Once you've decided on your USE flags, add them to
+<path>/etc/portage/package.use</path>:
+</p>
+
+<pre caption="Example: adding USE flags">
+# <i>echo "x11-wm/fluxbox -gnome -kde truetype vim-syntax" >> /etc/portage/package.use</i>
+</pre>
+
+<p>
+It is also necessary to have a program lock the X display to prevent
+unauthorized access, so it would be wise to also emerge <c>xlockmore</c>. The
+vast majority of users will also want the ability to set their own background,
+so we will emerge <c>eterm</c>, which doubles as a nice X11 terminal.
+</p>
+
+<pre caption="Emerging Fluxbox">
+# <i>emerge fluxbox xlockmore eterm</i>
+</pre>
+
+<p>
+Well, that's it; Fluxbox is now installed! However, it is likely that you will
+not be able to use it efficiently with just those tools. The following sections
+will help install other potentially necessary packages, and configure Fluxbox
+and the third party programs to work for you. Keep in mind that all these steps
+are optional, so feel free to pick and choose.
+</p>
+
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring Fluxbox</title>
+<section>
+<title>Preparing X11</title>
+<body>
+
+<p>
+Fluxbox is simply another program that X11 runs. If desired, one can
+<c>startx</c> and then type <c>fluxbox</c> at an xterm. However, this is
+annoying to say the least. If one does not desire to boot to the GUI, but
+instead wants to start X11 manually, it is possible to have X automatically
+load Fluxbox by executing, as a normal (non-root) user:
+</p>
+
+<pre caption="Editing your xinit">
+$ <i>echo "exec startfluxbox" > ~/.xinitrc</i>
+</pre>
+
+<p>
+This is also not ideal for most users, as they want to have the desktop
+environment all the time; it is a pain to <c>startx</c> if it is desired to use
+a GUI everytime you boot. It also presents a security risk to the unaware. If
+one locks the X11 display using <c>xlock</c>, but run X11 from a console, then
+someone with physical access to the computer can switch to that console, kill
+X11, and use your account. The only way to prevent this is to either background
+X11 or run it in screen, detach the screen, and then logout of the console, a
+tedious task at best. If one uses a graphical login manager, this problem does
+not exist. However, you will be running X11 as root, which may be a bad thing.
+There are, as of this writing, no exploits that the author is aware of for the
+current version, but if one is concerned, then either not use X11 or use the
+above method with screen. Note that this is not a Fluxbox issue, but affects
+X11 itself.
+</p>
+
+<!--
+thanks to Josh Nichols for helping cleanup this section. see comment #4 on bug
+87330
+-->
+
+<p>
+There are a number of graphical login managers to choose from; we will be using
+<uri link="http://slim.berlios.de">SLiM</uri>. You may use another manager at
+your option, but SLiM works well for Fluxbox, as well as any other environments
+you may have installed such as GNOME, KDE, or Xfce.
+</p>
+
+<pre caption="Login Manager">
+# <i>emerge slim</i>
+# <i>rc-update add xdm default</i>
+</pre>
+
+<impo>
+Be sure to emerge <c>slim</c> and add <b>xdm</b> to the bootscript, and not the
+other way around! Switching these will cause failure. We will also need to
+modify one system-wide config file:
+</impo>
+
+<pre caption="Editing /etc/conf.d/xdm">
+DISPLAYMANAGER="slim"
+</pre>
+
+</body>
+</section>
+<section>
+<title>Themes and Artwork</title>
+<body>
+
+<p>
+This section can be skipped if one truly wants a minimal footprint. However, it
+is nice to allow users to customize their WM's appearance. Themes specific to
+Fluxbox, Gentoo artwork for any WM, and themes that can be used on any *box WM
+will be installed.
+</p>
+
+<pre caption="Installing styles and artwork">
+# <i>emerge commonbox-styles commonbox-styles-extra \
+  fluxbox-styles-fluxmod gentoo-artwork</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Running Fluxbox for the first time</title>
+<body>
+
+<p>
+Now you are ready to run Fluxbox for the first time. It will create a directory
+called <path>~/.fluxbox/</path> in your home directory, which is where Fluxbox
+stores all its settings, and populate it with some default values.
+</p>
+
+<pre caption="Starting Fluxbox from the console">
+$ <i>startx</i>
+</pre>
+
+<p>
+If you've installed SLiM or another display manager, start it by becoming root
+and running:
+</p>
+
+<pre caption="Starting the display manager">
+# <i>/etc/init.d/xdm start</i>
+</pre>
+
+<p>
+Then choose Fluxbox as your session and login with your regular user.
+</p>
+
+<p>
+Once Fluxbox is running, it will look pretty plain. You should see a blank
+desktop with a toolbar at the bottom. You can then right-click anywhere on your
+desktop to bring up the menu. From there you should be able to start up any X
+applications you would like to run, or open up a terminal from which you can run
+anything you like.
+</p>
+
+</body>
+</section>
+<section>
+<title>Fluxbox Keys</title>
+<body>
+
+<p>
+Fluxbox comes with a very weak set of default keysets. It enables a user to
+switch windows and desktops, and no more. Before changing it, there are a few
+things necessary to know. In the Fluxbox keys file, there are some strange
+modifiers. Mod1 is commonly known as the "Alt" key, and Mod4 is the unspeakable
+(windows) key. Control and Shift are Control and Shift. However, it is usually
+best to use Alt/Windows keys because other X11 programs tend to use Control and
+Shift for their own shortcuts.
+</p>
+
+<p>
+All of these are independent, so feel free to leave out anything not desired,
+or modify this to your own needs. This guide uses what the author assumes to be
+the most common programs, so also substitute the name of the package used if it
+differs from what appears here. For more information, read the man page for
+Fluxbox.
+</p>
+
+<p>
+So, with that out of the way, fire up a text editor (non-root user), point it
+to <path>~/.fluxbox/keys</path>, and lets upgrade those shortcuts!
+</p>
+
+<pre caption="Modifying Keyboard Shortcuts">
+<comment># locks X11 display to the current user</comment>
+Mod4 l   :ExecCommand xlock
+
+<comment># opens a number of programs with quickkeys. These are just examples, I am sure
+# you get the point...</comment>
+Mod1 f   :ExecCommand firefox
+Mod1 t   :ExecCommand thunderbird
+Mod1 o   :ExecCommand oowriter
+Mod1 v   :ExecCommand gvim
+
+<comment># Fluxbox has no sound control, so we need to do a hack to get one
+# (assumes alsa usage. if you use oss, then you are on your own)</comment>
+Mod1 e   :ExecCommand Eterm -name alsa -e alsamixer
+
+<comment># This launches fbrun, which in turn launches other programs</comment>
+Mod1 r   :ExecCommand fbrun
+
+<comment># Program Control. It just makes life simpler...</comment>
+Mod1 4   :Close
+Mod1 m   :Minimize
+
+<comment># if you have aterm (emerge x11-terms/aterm), then this opens a really nice
+# transparent aterm with no borders, fitting nicely with 1024x768
+# resolution, while still leaving room for conky. Once again, feel free to
+# modify.</comment>
+Mod1 a   :ExecCommand aterm -name aterm -sl 3000 -tr +sb -sr -sk -bg black -fg \
+white -fade 90 -bl -tn xterm -fn \
+-misc-fixed-medium-r-normal-*-*-120-*-*-c-*-iso8859-15 -g 116x57
+
+<comment># similar to the above, but opens a transparent rooted terminal. you must, of
+# course, know the root password to use this</comment>
+Mod1 s   :ExecCommand aterm -name aterm -sl 3000 -tr +sb -sr -sk -bg black -fg \
+white -fade 90 -bl -tn xterm -fn \
+-misc-fixed-medium-r-normal-*-*-120-*-*-c-*-iso8859-15 -g 116x57 -e su -
+</pre>
+
+</body>
+</section>
+<section>
+<title>System Monitor</title>
+<body>
+
+<p>
+It is a common desire to setup a system monitor for X11 on desktop systems.
+Gkrellm is a commonly used monitor, but in the spirit of Fluxbox minimalism, we
+are going to use a simpler monitor: <c>conky</c>. If desired, use another
+monitor; there are plenty of HOWTOs elsewhere.
+</p>
+
+<pre caption="Installing conky">
+# <i>emerge conky</i>
+</pre>
+
+<p>
+The default config file for Conky is rather weak, but more info can be found by
+reading the manpage or the <uri link="/doc/en/conky-howto.xml">Gentoo Linux
+Conky Howto</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Icons</title>
+<body>
+
+<p>
+Fluxbox does not come with a utility or program to draw icons to the desktop;
+everything is handled by keyboard shortcuts, or the right-click menu. iDesk is a
+program that can be used to fulfill this need. It is aimed at users of minimal
+WMs like ourselves who want to display icons in the root window, and it even
+supports funky graphic effects like transparency! Despite its name, iDesk is
+not affiliated with Apple or Mac (to the best of the author's knowledge).
+Installing iDesk is as simple as:
+</p>
+
+<pre caption="Installing idesk">
+# <i>emerge idesk</i>
+</pre>
+
+<!--
+if someone wants to write a better description of idesk, feel free. it would be
+appreciated!
+-->
+
+<p>
+Once installed, it will be necessary to configure iDesk so that it is able to
+display the icons we desire. Its configuration file can be found at
+<path>~/.ideskrc</path>. This is a rather lengthy task, and can't be well
+covered in this guide. The following resources might be useful in order to help
+you configure iDesk: <c>man idesk</c>, <uri
+link="http://idesk.sourceforge.net/wiki/index.php/Idesk-usage">iDesk's Usage
+Guide</uri> and this <uri
+link="http://forums.gentoo.org/viewtopic-t-87262.html">thread in the Gentoo
+Forums</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Graphical File Manager Options</title>
+<body>
+
+<p>
+It is important to note that Gentoo does not need a file manager. It is
+perfectly possible, and indeed simpler (in the author's humble opinion), to do
+all the file manipulation by command-line. However, not everyone agrees...
+</p>
+
+<p>
+Many users who are new to Gentoo/Fluxbox are put off by the lack of a graphical
+file manager such as <c>nautilus</c> in Gnome. Fluxbox itself does not provide
+such a program, but as always, it is simple to acquire one. There are many
+choices, but this guide will present three, one for the <uri
+link="#gentoo">minimalist</uri> who likes text only and two for the user who
+likes <uri link="#rox">icons</uri> to <uri link="#thunar">click</uri>. It is
+also possible, of course, to install all three and try them out.
+</p>
+
+</body>
+</section>
+<section id="gentoo">
+<title>Gentoo File Manager - Minimalism</title>
+<body>
+
+<p>
+Gentoo is a file manager which seeks to provide the benefits of a GUI interface
+without all the bloat which is commonly associated with such interfaces.
+</p>
+
+<pre caption="Installing the Gentoo File Manager">
+# <i>emerge gentoo</i>
+</pre>
+
+<note>
+The Gentoo file manager is a separate project from the Gentoo Linux
+distribution. For more information on this, see the Gentoo <uri
+link="/main/en/name-logo.xml#doc_chap4">Name and Logo Usage Guidelines</uri>.
+</note>
+
+<p>
+The Gentoo file manager aims to be fully configurably via GUI, so feel free to
+tweak.
+</p>
+
+
+</body>
+</section>
+<section id="rox">
+<title>Rox File Manager - Includes Icons</title>
+<body>
+
+<p>
+Rox is a file manager which uses icons as well as text and is much more like
+Windows' Explorer.
+</p>
+
+<pre caption="Installing the Rox File Manager">
+# <i>emerge rox</i>
+</pre>
+
+<p>
+Rox behaves much like "traditional" file managers, so its interface
+should be intuitive. If not, there always are manpages.
+</p>
+
+</body>
+</section>
+<section id="thunar">
+<title>Thunar File Manager</title>
+<body>
+
+<p>
+<uri link="http://thunar.xfce.org/">Thunar</uri> is a lightweight, fast file
+manager that, like Rox, behaves much like "traditional" file managers. It
+includes icons and text, and it's easy to use. Though originally designed for
+<uri link="http://www.xfce.org">Xfce</uri>, it's a nice complement to a
+Fluxbox-based system.
+</p>
+
+<pre caption="Installing Thunar">
+# <i>emerge -avt thunar</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Picture Viewer</title>
+<body>
+
+<p>
+Many WMs come with utilities to view pictures in a directory. These applications
+are small and lightweight, and do not allow for editing (which is assumed to be
+done by the <c>gimp</c> or similar). This is necessary if you use a command
+line, <c>gentoo</c>, or <c>rox</c> for a file manager. Though <c>thunar</c> can
+display image thumbnails, a separate lightweight image viewer is still a good
+idea.
+</p>
+
+<pre caption="Installing gqview">
+# <i>emerge gqview</i>
+</pre>
+
+<p>
+<c>gqview</c> can be launched in any directory, and can browse through any
+supported picture format.
+</p>
+
+</body>
+</section>
+<section>
+<title>Setting a theme, background, and a startup script</title>
+<body>
+
+<p>
+Fluxbox has a number of themes that can be accessed by the right click menu,
+then "Fluxbox menu," and "System Styles." These themes usually set their own
+background, which is either a single color or a gradient of some type. Most
+people prefer to set their own background, and keep it no matter what theme
+they chose. To do so, we need to edit another of Fluxbox's files, which governs
+startup behavior. So fire up that text editor again, and point it to
+<path>~/.fluxbox/startup</path>.
+</p>
+
+<p>
+If this file exists, then clear it. Add the following to the newly created
+file, uncommenting as needed, and filling in values for the CAPS.
+</p>
+
+<pre caption="Editing Startup scripts for Fluxbox">
+<comment># Gentoo's Fluxbox startup script
+
+# Programs which need to run constantly, as opposed to a one time execution,
+# need "&amp;" at the end of the command.
+
+# Show the Fluxbox splash-screen
+#fbsetbg -C /usr/share/fluxbox/splash.jpg
+
+# This sets a background. You must have a program setup to do this
+# (x11-terms/eterm is recommended)
+#fbsetbg -f PATH_TO_IMAGE
+
+# Custom fonts directory
+#xset +fp PATH_TO_FONT_DIRECTORY
+
+# Starts the icons program
+#idesk &amp;
+
+# This MUST be the last command!</comment>
+exec /usr/bin/fluxbox -log ~/.fluxbox/log
+</pre>
+
+</body>
+</section>
+<section>
+<title>Menu generation</title>
+<body>
+
+<p>
+The author uses a text editor to create menus. If this sounds appealing to you,
+please skip this section and proceed to <uri link="#manual_menu">editing menus
+by hand</uri>.
+</p>
+
+<p>
+It is possible to edit <path>~/.fluxbox/menu</path> by hand after using an
+automatic generator (see next section), to either add packages or delete those
+which aren't used. Note that if something is deleted from this menu, it does
+not delete the package from the system, just from the individual user's menu.
+The program can still be run by command-line.
+</p>
+
+<p>
+There is a program already on your system called <c>fluxbox-generate_menu</c>,
+which can be used to generate menus. To run it (as a non-root user):
+</p>
+
+<pre caption="Generating menus">
+$ <i>fluxbox-generate_menu -is -ds</i>
+</pre>
+
+<p>
+It is recommended that you use <c>fluxbox-generate_menu -is -ds</c> instead of
+other programs, which do not understand Gentoo's directory structure.
+</p>
+
+<p>
+This can also be done from the Fluxbox menu itself. There is usually an entry
+in the "Fluxbox" menu called "Regen Menu" which will re-run this script, looking
+for any new applications that have been installed since the last time you ran
+it.
+</p>
+
+<note>
+It is possible to use this method to auto-generate menus and still have some
+manual control over your menu. Creating and editing
+<path>~/.fluxbox/usermenu</path> by hand (see the next section for syntax) will
+give a user a personalized menu which will not be erased the next time the
+script is run.
+</note>
+
+</body>
+</section>
+<section id="manual_menu">
+<title>Editing Menus by Hand</title>
+<body>
+
+<p>
+Fluxbox's menu is a text file that follows a quite simple syntax, described in
+this section. The default menu definition is present in the
+<path>~/.fluxbox/menu</path> file.
+</p>
+
+<p>
+Menu entries for executing applications are defined by the <c>[exec]</c>
+element. You can define an entry, either under the <c>[begin]</c> definition
+(the menu root), or between a <c>[submenu]</c> and its corresponding
+<c>[end]</c> line (submenu definitions), for example:
+</p>
+
+<pre caption="Defining new menu entries">
+# Custom fluxbox menu
+[begin] (Fluxbox)
+  <comment>(...)</comment>
+  [exec] (XTerm White on Black) {xterm -ls -fg white -bg black}
+  <comment>(...)</comment>
+  [submenu] (More terminals)
+    [exec] (Aterm default) {aterm}
+    [exec] (Rxvt default) {rxvt}
+  [end]
+  <comment>(...)</comment>
+[end]
+</pre>
+
+<p>
+The root menu definition begins with the <c>[begin]</c> tag, followed by its
+name, between parentheses and ends with its corresponding <c>[end]</c> tag. All
+the menu commands (called here, tags) are enclosed by square brackets, menu
+names will be enclosed between parentheses and the actual commands are enclosed
+between braces. Comments are allowed in this file, for lines beginning with
+<c>#</c>.
+</p>
+
+<p>
+In the example shown above, the first <c>[exec]</c> line defines a new entry
+named "XTerm White on Black", which will execute the <c>xterm -ls -fg white -bg
+black</c> as if from a command line. Next is a submenu which is defined using
+the <c>[submenu]</c> tag, and after that a section called "More terminals",
+with two more <c>[exec]</c> commands. Any submenu definition must have its
+corresponding <c>[end]</c> tag.
+</p>
+
+<p>
+There are other menu commands that you can use in your
+<path>~/.fluxbox/menu</path> file. Please read the <uri
+link="http://fluxbox.org/docbook.php">official documentation</uri>
+available online for more information.
+</p>
+
+</body>
+</section>
+
+<section>
+<title>Resources</title>
+<body>
+
+<ul>
+  <li>The <uri link="http://fluxbox-wiki.org">Fluxbox wiki</uri></li>
+  <li>Fluxbox developers and users in #fluxbox on irc.freenode.net</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Summary</title>
+<body>
+
+<p>
+Congratulations! Fluxbox is now installed, configured, and ready to go. If any
+questions or suggestions come to mind, please email the author and/or file a
+bug report at Gentoo's <uri link="http://bugs.gentoo.org">Bugzilla</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

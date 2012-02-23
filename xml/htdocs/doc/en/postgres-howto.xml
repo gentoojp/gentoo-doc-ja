@@ -1,0 +1,839 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/postgres-howto.xml,v 1.9 2011/09/15 20:36:20 swift Exp $ -->
+
+<guide lang="en">
+<title>PostgreSQL Quick Start Guide</title>
+
+<author title="Author">
+  <mail link="titanofold@gentoo.org">Aaron W. Swenson</mail>
+</author>
+<author title="Editor">
+  <mail link="pgsql-bugs@gentoo.org">Mikkel A. Clausen</mail>
+</author>
+
+
+<abstract>
+This is a quick start guide to PostgreSQL. It covers emerging PostgreSQL and
+configuring it. This is complementary to the official documentation, but does
+not supplant it.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>9</version>
+<date>2011-09-15</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>A Little Bit About PostgreSQL</title>
+<body>
+
+<p>
+<uri link="http://www.postgresql.org">PostgreSQL</uri> is a free and open source
+relational database management system (RDBMS). It supports such things as
+transactions, schemata and foreign keys, and is often touted to more strictly
+adhere to the SQL standards and to be more secure, by default, than any other
+database, commercial or otherwise.
+</p>
+
+<p>
+Visit the <uri link="http://www.postgresql.org/about/">About</uri> page on
+postgresql.org for more information.
+</p>
+
+</body>
+</section>
+<section>
+<title>What This Article Will Cover</title>
+<body>
+
+<p>
+This article will guide you through the Gentoo specific steps to install the
+PostgreSQL RDBMS.
+</p>
+
+<p>
+The Ebuilds covered by this article are <uri
+link="http://packages.gentoo.org/package/dev-db/postgresql-docs">dev-db/postgresql-docs</uri>,
+<uri
+link="http://packages.gentoo.org/package/dev-db/postgresql-base">dev-db/postgresql-base</uri>
+and <uri
+link="http://packages.gentoo.org/package/dev-db/postgresql-server">dev-db/postgresql-server</uri>.
+</p>
+
+<p>
+This article assumes that you will be installing the latest, stable version of
+PostgreSQL; at the time of this writing, the version was 9.0.3. Adjust the
+commands in this article as necessary for your specific version.
+</p>
+
+<impo>
+The 8.2 branch will have its upstream support dropped in December of 2011. Start
+planning your migration now.
+</impo>
+
+</body>
+</section>
+<section>
+<title>About the Ebuilds</title>
+<body>
+
+<p>
+The PostgreSQL ebuilds in Portage feature slotting based on the major version.
+This allows you to have two major versions of PostgreSQL operating
+simultaneously; 8.4 and 9.0 libraries and servers can be installed and serve at
+the same time. This is useful in such circumstances where you need to move data
+from an older database to a new database, or need to have a production and a
+testing database on the same machine. Also, this prevents a database,
+corresponding libraries or executables from being overwritten by an incompatible
+update. That would require migration which is described in this guide.
+</p>
+
+<p>
+Additionally, bug and security fixes, which are delivered via minor version
+updates, can be applied without fear of corrupting the database or the
+PostgreSQL installation itself; 9.0.2 can be updated to 9.0.3 as they are
+guaranteed to be compatible and require no more interaction from you than to
+emerge it and restart the server process &mdash; neither migration,
+reconfiguration nor initialization are necessary.
+</p>
+
+<p>
+Read the <uri link="http://www.postgresql.org/support/versioning">PostgreSQL
+Versioning Policy</uri> for more information.
+</p>
+
+</body>
+</section>
+<section>
+<title>What this Article Will Not Cover</title>
+<body>
+
+<p>
+There is quite a bit that will not be covered. The <uri
+link="http://www.postgresql.org/docs/">official documentation</uri> is somewhere
+in the neighborhood of 2,000 pages. So, a lot of details will be left out in
+this quick start guide. Only Gentoo specific issues will be covered and some
+basic configuration guidelines.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="installation">
+<title>Installation</title>
+<section>
+<title>The Obsolete Ebuilds</title>
+<body>
+
+<p>
+If you have any of the following ebuilds installed, then you have an older,
+obsolete Gentoo installation of PostgreSQL and should migrate now:
+dev-db/postgresql-libs, dev-db/postgresql-client, dev-db/libpq and/or
+dev-db/postgresql.
+</p>
+
+<p>
+This article does cover <uri link="#oldmigration">migrating</uri> from the old
+ebuilds to the new ones.
+</p>
+
+</body>
+</section>
+<section>
+<title>USE Flags</title>
+<body>
+
+<table>
+  <tr>
+    <th>USE Flag</th>
+    <th>Meaning</th>
+  </tr>
+  <tr>
+    <ti>doc</ti>
+    <ti>
+      Include the <uri link="http://www.postgresql.org/docs/">online
+      documentation</uri> to be stored on your system
+    </ti>
+  </tr>
+  <tr>
+    <ti>kerberos</ti>
+    <ti>Support for utilizing Kerberos for authentication.</ti>
+  </tr>
+  <tr>
+    <ti>ldap</ti>
+    <ti>
+      Support for utilizing LDAP authentication and connection parameter lookup.
+    </ti>
+  </tr>
+  <tr>
+    <ti>nls</ti>
+    <ti>
+      Enable the ability to display messages in a language other than
+      English. Used in conjunction with the Portage variable LINGUAS.
+    </ti>
+  </tr>
+  <tr>
+    <ti>pam</ti>
+    <ti>
+      Support for utilizing Pluggable Authentication Modules for authentication.
+    </ti>
+  </tr>
+  <tr>
+    <ti>perl</ti>
+    <ti>
+      Enable support for using Perl to write functions and trigger procedures.
+    </ti>
+  </tr>
+  <tr>
+    <ti>pg-intdatetime (Deprecated)</ti>
+    <ti>
+      Use the newer, high resolution, 64-bit integer method for formatting
+      timestamps instead of the older, floating point method. Unless you had a
+      previous installation that utilized the deprecated method, leave this
+      enabled. (See note.)
+    </ti>
+  </tr>
+  <tr>
+    <ti>pg_legacytimestamp</ti>
+    <ti>
+      Use the older, floating-point method for formatting timestamps instead of
+      the higher resolution 64-bit integer method. Unless you had a previous
+      installation that utilized this deprecated method, leave this USE flag
+      disabled. (See note.)
+    </ti>
+  </tr>
+  <tr>
+    <ti>python</ti>
+    <ti>
+      Enable support for using Python to write functions and trigger procedures.
+    </ti>
+  </tr>
+  <tr>
+    <ti>readline</ti>
+    <ti>
+      You really want this enabled. Disabling removes command line editing and
+      history in psql.
+    </ti>
+  </tr>
+  <tr>
+    <ti>selinux</ti>
+    <ti>
+      Install respective SELinux policy. This can only be enabled by using the
+      SELinux profile.
+    </ti>
+  </tr>
+  <tr>
+    <ti>ssl</ti>
+    <ti>Enable support for SSL connections.</ti>
+  </tr>
+  <tr>
+    <ti>tcl</ti>
+    <ti>
+      Enable support for using Tcl to write functions and trigger procedures.
+    </ti>
+  </tr>
+  <tr>
+    <ti>threads</ti>
+    <ti>
+      Make the client libraries thread-safe. The rest of your system must be
+      thread-safe as well.
+    </ti>
+  </tr>
+  <tr>
+    <ti>uuid</ti>
+    <ti>
+      Include support to generate a 128 bit random unique identifier. This is
+      useful for merging databases together so the chances of collisions become
+      extremely low.
+    </ti>
+  </tr>
+  <tr>
+    <ti>xml</ti>
+    <ti>Enable SQL/XML support.</ti>
+  </tr>
+  <tr>
+    <ti>zlib</ti>
+    <ti>Support for compressed archives in pg_dump and pg_restore.</ti>
+  </tr>
+</table>
+
+<note>
+Flipping the 'pg-intdatetime' or the 'pg_legacytimestamp' will require you to do
+a dump and restore if any of your databases utilize timestamps. The two methods
+are incompatible with each other.
+</note>
+
+</body>
+</section>
+<section>
+<title>Start Emerging</title>
+<body>
+
+<pre caption="Emerging PostgreSQL server">
+# <i>emerge -av dev-db/postgresql-server</i>
+
+[ebuild N ] dev-db/postgresql-docs-9.0.3 0 kB
+[ebuild N ]dev-db/postgresql-base-9.0.3 USE="doc nls pam readline ssl zlib
+  -kerberos -ldap -pg_legacytimestamp -threads" LINGUAS="-af -cs -de -es -fa -fr
+  -hr -hu -it -ko -nb -pl -pt_BR -ro -ru -sk -sl -sv -tr -zh_CN -zh_TW" 0 kB
+[ebuild N ] dev-db/postgresql-server-9.0.3 USE="doc nls perl python
+  -pg_legacytimestamp (-selinux) -tcl -uuid -xml" LINGUAS="-af -cs -de -es -fa
+  -fr -hr -hu -it -ko -nb -pl -pt_BR -ro -ru -sk -sl -sv -tr -zh_CN -zh_TW" 0 kB
+</pre>
+
+<p>
+You may receive a notice regarding that any of the above packages are blocked by
+any or all of the following packages: dev-db/postgresql-libs,
+dev-db/postgresql-client, dev-db/libpq or dev-db/postgresql. These packages are
+<b>not maintained</b> and obsoleted. Refer to the section on <uri
+link="#oldmigration">migration</uri> for how to handle this situation.
+</p>
+
+</body>
+</section>
+<section>
+<title>Preparing to Initialize the Database Cluster</title>
+<body>
+
+<p>
+Once the packages have finished emerging, you may want to edit
+<path>/etc/conf.d/postgresql-9.0</path>. There are three lines that effect the
+defaults of the server and <b>cannot</b> be changed later without deleting the
+directory that contains the database cluster and reinitializing.
+</p>
+
+<p>
+<e>PGDATA</e> defines where to place the configuration files. <e>DATA_DIR</e>
+defines where to create the database cluster and related
+files. <e>PG_INITDB_OPTS</e> may contain any <uri
+link="http://www.postgresql.org/docs/current/static/app-initdb.html">extra
+options</uri> you would care to set. The extra options are <b>not</b> required
+as the reasonable defaults are, ahem, reasonable.
+</p>
+
+<p>
+In the following example, <e>PGDATA</e> states that the configuration files are
+to be located in <path>/etc/postgresql-9.0/</path>. <e>DATA_DIR</e> states that
+the database cluster should be installed to
+<path>/var/lib/postgresql/9.0/data/</path>, which is the default. If you decide
+to stray from the default, bear in mind that it is a <b>very good idea</b> to
+keep the major version in the path. <e>PG_INITDB_OPTS</e> states that the
+default locale should be <e>en_US.UTF-8</e>. That is, U.S. English ordering and
+formatting, and UTF-8 character encoding.
+</p>
+
+<pre caption="Example contents of /etc/conf.d/postgresql-9.0">
+<comment># Location of configuration files</comment>
+PGDATA="/etc/postgresql-9.0/"
+
+<comment># Where the data directory is located/to be created</comment>
+DATA_DIR="/var/lib/postgresql/9.0/data"
+
+<comment># Additional options to pass to initdb.
+# See 'man initdb' for available options.</comment>
+PG_INITDB_OPTS="--locale=en_US.UTF-8"
+</pre>
+
+<note>
+This only determines the default locale and character encoding. You can specify
+different locales and/or character encodings at database creation time
+(<c>CREATE DATABASE</c>) in the same database cluster.
+</note>
+
+<p>
+There are six locale options that can be set to override <e>--locale=</e>. The
+following table lists the six options that, if used, are to be formatted as:
+<c>--option=lo_LO.ENCODING</c>.
+</p>
+
+<table>
+  <tr>
+    <th>Option</th>
+    <th>Effects</th>
+  </tr>
+  <tr>
+    <ti>lc-collate</ti>
+    <ti>String sort order</ti>
+  </tr>
+  <tr>
+    <ti>lc-ctype</ti>
+    <ti>
+      Character classification (What is a letter?  Its upper-case equivalent?)
+    </ti>
+  </tr>
+  <tr>
+    <ti>lc-messages</ti>
+    <ti>Language of messages</ti>
+  </tr>
+  <tr>
+    <ti>lc-monetary</ti>
+    <ti>Formatting of currency amounts</ti>
+  </tr>
+  <tr>
+    <ti>lc-numeric</ti>
+    <ti>Formatting of numbers</ti>
+  </tr>
+  <tr>
+    <ti>lc-time</ti>
+    <ti>Formatting of dates and times</ti>
+  </tr>
+</table>
+
+<p>
+So, if you would like the default to be English, but you want messages in, say,
+Swedish, then your <e>PG_INITDB_OPTS</e> would look like so:
+</p>
+
+<pre caption="Example">
+PG_INITDB_OPTS="--locale=en_US.UTF-8 --lc-messages=sv_SE.UTF-8"
+</pre>
+
+<p>
+A complete list of language and character encodings supported by the server can
+be found in the documentation, but your system must also support the respective
+languages and character encodings. Compare the output of <c>locale -a</c> to the
+<uri
+link="http://www.postgresql.org/docs/current/static/multibyte.html">encodings</uri>
+in the documentation.
+</p>
+
+<p>
+You can change your locale and encoding selections at database <uri
+  link="http://www.postgresql.org/docs/current/static/sql-createdatabase.html">creation
+  time.</uri> In order to change the locale for a database after you have
+created it, you must drop the database and start over again.  
+</p>
+
+<pre caption="Finalize the installation">
+# <i>emerge --config dev-db/postgresql-server:9.0</i>
+</pre>
+
+<p>
+This will create the database cluster and store all the related server files
+into <e>PGDATA</e> and <e>DATA_DIR</e>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuration</title>
+<section>
+<title>Where the Configuration Files are Located</title>
+<body>
+
+<p>
+This time the focus is upon the files in the <e>PGDATA</e> directory,
+<path>/etc/postgresql-9.0</path>, instead with primary focus on the
+<path>postgresql.conf</path> and <path>pg_hba.conf</path> files.
+</p>
+
+</body>
+</section>
+<section>
+<title>postgresql.conf</title>
+<body>
+
+<p>
+This is the main configuration file. The line that you may find of immediate
+interest is <e>listen_addresses</e>. This variable defines to which addresses
+PostgreSQL will bind. By default, only localhost and the Unix socket are
+bound. Changing <e>listen_addresses</e> is not enough to enable remote
+connections. That will be covered in the next section. The <uri
+link="http://www.postgresql.org/docs/current/static/runtime-config.html">official
+documentation</uri> is fairly easy to understand and is exhaustive on all the
+settings available. It would behoove you to read that in addition to what is
+covered here as some things may change.
+</p>
+
+<p>
+Of secondary interest is the logging destination. By default, everything is
+logged to <path>postmaster.log</path> in the <e>DATA_DIR</e> directory. There is
+an entire subsection of <path>postgresql.conf</path> that covers a slew of
+options for how, what and where to log. The subsection is marked: ERROR
+REPORTING AND LOGGING.
+</p>
+
+<p>
+Other than <e>listen_addresses</e> and the logging options, the rest of the
+defaults in <path>postgresql.conf</path> are reasonable enough to get you going.
+</p>
+
+</body>
+</section>
+<section>
+<title>pg_hba.conf</title>
+<body>
+
+<p>
+The <path>pg_hba.conf</path> file states who is allowed to connect to the
+database server and which authentication method must be used to establish the
+connection. Again, the documentation is quite exhaustive on the settings and
+what they all mean, but a few things are covered here for clarification.
+</p>
+
+<pre caption="Default pg_hba.conf">
+<comment># TYPE  DATABASE    USER        CIDR-ADDRESS          METHOD
+
+# "local" is for Unix domain socket connections only</comment>
+local   all         all                               trust
+<comment># IPv4 local connections:</comment>
+host    all         all         127.0.0.1/32          trust
+<comment># IPv6 local connections:</comment>
+host    all         all         ::1/128               trust
+</pre>
+
+<p>
+As has been mentioned before, by default the server is secure. Kind of. There is
+only one database role that is available for log in by default:
+<e>postgres</e>. And, the only way to initiate a connection to the database is
+through the <path>/var/run/postgresql/.s.PGSQL.5432</path> Unix socket, which is
+owned by the <e>postgres</e> system user and system group, or via localhost. Now
+for the "kind of" bit: Any user on the system can make a connection to the
+database through the localhost. Even as the <e>postgres</e> database superuser.
+</p>
+
+<p>
+To make a connection through the Unix socket, however, the users &mdash;
+including the users for other services such as <e>apache</e> &mdash; must be in
+the <e>postgres</e> system group. Use <c>gpasswd -a <e>user</e> postgres</c> to
+add <e>user</e> to the <e>postgres</e> group.  Users not in the <e>postgres</e>
+group will be rejected with "Permission denied".
+</p>
+
+<warn>
+Never disable the Unix socket entirely. The initscripts require access to it in
+order to operate properly. The method can be changed freely.
+</warn>
+
+<p>
+The <e>trust</e> method is what allows any user to log on as any user without a
+password. It specifies just what it implies: Trust all connections for the given
+type to the given database from the given database user (but not the system
+user) from the given location without a password. This is what allows any user
+on the system to log on as any user through the localhost connection from the
+get go. This is not as dangerous as it seems, but does pose a serious security
+risk in most circumstances.
+</p>
+
+<p>
+The two methods you will most likely use are: <e>password</e> and
+<e>md5</e>. The password method only specifies that a password is required to
+start the connection and the password is sent "in-the-clear". This method is
+fine when such information will never leave the machine, such as connecting via
+the Unix socket or localhost. The md5 method is like password, but protects the
+password by using an md5 hash. This is what you want to use whenever the
+password is going to traverse a network.
+</p>
+
+<p>
+At this point, this author would like to bring your attention to the last two
+lines, four lines including comments, of the <path>pg_hba.conf</path>
+file. PostgreSQL has native support for IPv6 regardless of your desires for such
+support. Additionally, IPv4 addresses are automatically mapped to IPv6
+addresses, <e>i.e.</e>, 127.0.0.1 will be mapped to ::FFFF:127.0.0.1 and as
+"pure" IPv6 ::FFFF:7F00:0001.
+</p>
+
+<p>
+There seems to be some misunderstanding, though, as to how host names are mapped
+to IP addresses. Let us take a look at the <path>/etc/hosts</path> file.
+</p>
+
+<pre caption="Example /etc/hosts">
+<comment># IPv4 and IPv6 localhost aliases</comment>
+127.0.0.1       localhost
+::1             localhost
+</pre>
+
+<p>
+From the example above you can see that both an IPv4 and an IPv6 IP address are
+mapped to localhost. When <c>psql</c> refers to this file, it will grab the
+first match and use that as the address; in this case 127.0.0.1. When PostgreSQL
+parses this, it will match the IPv6 formatted address as well,
+e.g. ::ffff:127.0.0.1. If, however, the IPv6 address appears first, then
+<c>psql</c> will map to ::1 alone; ::1 is not the same as ::ffff:127.0.0.1. As
+such, if you do not have ::1 as a permitted means of access, <c>psql</c> will
+not be able to establish a connection. Furthermore, your kernel needs to support
+the IPv6 protocol.
+</p>
+
+<p>
+So, it is better to specify IP addresses alone to <c>psql</c> and in
+<path>pg_hba.conf</path> rather than to rely on <path>/etc/hosts</path> to be
+ordered properly, and it removes any doubt as to which IP addresses are allowed
+or to which server you will connect.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Starting the Server</title>
+<section>
+<title>Give It a Go!</title>
+<body>
+
+<p>
+Now start PostgreSQL and set the password for the database superuser
+<e>postgres</e>. The commands are to be performed as 'root' in the following
+code listing:
+</p>
+
+<pre caption="Starting the Server">
+<comment>(Change 'trust' to 'password' for the localhost connections.)</comment>
+# <i>nano -w /etc/postgresql-9.0/pg_hba.conf</i>
+# <i>/etc/init.d/postgresql-9.0 start</i>
+postgresql-9.0  | * Starting PostgreSQL ...                             [ ok ]
+
+<comment>(Open a connection to the server and set the password.)</comment>
+# <i>psql -U postgres</i>
+psql (9.0.3)
+Type "help" for help.
+
+postgres=# <i>\password</i>
+Enter new password:
+Enter it again:
+postgres=# <i>\q</i>
+
+<comment>(Change 'trust' to 'password' for the local connection.)</comment>
+# <i>nano -w /etc/postgresql-9.0/pg_hba.conf</i>
+# <i>/etc/init.d/postgresql-9.0 reload</i>
+postgresql-9.0 | * Reloading PostgreSQL configuration ...               [ ok ]
+# <i>rc-update add postgresql-9.0 default</i>
+ * service postgresql-9.0 added to runlevel default
+</pre>
+
+<p>
+At this point you are ready to continue on with the official <uri
+link="http://www.postgresql.org/docs/current/static/tutorial.html">PostgreSQL
+Tutorial</uri>. The tutorial will guide you through creating roles, databases,
+schemata and all that fun and useful stuff.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="migrating">
+<title>Migrating PostgreSQL</title>
+<section>
+<title>When You Need to Migrate</title>
+<body>
+
+<p>
+There are only two reasons you would need to perform a migration: When moving
+from one major version to another, <e>e.g.</e>, from PostgreSQL 8.4.7 to 9.0.3,
+but not from 9.0.2 to 9.0.3; or when switching from the deprecated
+floating-point timestamp format to the new 64-bit integer timestamp format.
+</p>
+
+<note>
+You will need to migrate your database when you move from the obsolete ebuilds
+&mdash; dev-db/libpq, dev-db/postgresql, dev-db/postgresql-libs, and
+dev-db/postgresql-client &mdash; to the new ebuilds &mdash;
+dev-db/postgresql-docs, dev-db/postgresql-base and dev-db/postgresql-server.
+</note>
+
+</body>
+</section>
+<section id="post90">
+<title>Post-9.0 Migration</title>
+<body>
+
+<p>
+<e>pg_upgrade</e>, a new utility that comes along with 9.0 and later, simplifies
+the migration process rather drastically.
+</p>
+
+<p>
+However, there are two caveats with using pg_upgrade. Firstly, it does not
+support configuration files being in a different directory than where the data
+is stored. This can be resolved by using symbolic links. Lastly, you can only
+use it to migrate from a database from 8.3 or newer. If you have an older
+database you will need to follow the <uri link="#pre90">Pre-9.0 Migration</uri>
+instructions.
+</p>
+
+<pre caption="Migrating with pg_upgrade">
+<comment>(Stop the servers you're going to migrate from and to.)</comment>
+# <i>/etc/init.d/postgresql-8.4 stop</i>
+# <i>/etc/init.d/postgresql-9.0 stop</i>
+# <i>ln -s /etc/postgresql-8.4/*.conf /var/lib/postgresql/8.4/data/</i>
+# <i>ln -s /etc/postgresql-9.0/*.conf /var/lib/postgresql/9.0/data/</i>
+
+<comment>(Change the method of database user 'postgres' to trust on local
+connections on all databases.)</comment>
+# <i>nano -w /etc/postgresql-8.4/pg_hba.conf</i>
+# <i>nano -w /etc/postgresql-9.0/pg_hba.conf</i>
+
+<comment>You may need to change the permissions of '/var/lib/postgresql/' before
+you perform the next step.</comment>
+# <i>su - postgres</i>
+$ <i>pg_upgrade -u postgres \
+  -d /var/lib/postgresql/8.4/data -D /var/lib/postgresql/9.0/data \
+  -b /usr/lib/postgresql-8.4/bin -B /usr/lib/postgresql-9.0/bin</i>
+<comment>(Perform the tasks pg_upgrade tells you to do , if any.)</comment>
+$ <i>logout</i>
+
+<comment>(Remove the symbolic links  we created earlier.)</comment>
+# <i>rm /var/lib/postgresql/8.4/data/*.conf</i>
+# <i>rm /var/lib/postgresql/9.0/data/*.conf</i>
+# <i>/etc/init.d/postgresql-9.0 start</i>
+</pre>
+
+</body>
+</section>
+<section id="pre90">
+<title>Pre-9.0 Migration: With the New Ebuilds</title>
+<body>
+
+<p>
+Because the new ebuilds feature a more advanced slotting method than the
+previous ones, the downtime is quite minimal, most likely minutes rather than
+hours.
+</p>
+
+<p>
+In the following examples, it is assumed that you are using the default
+locations and port settings, and that you are migrating from 8.3 to 8.4. Adjust
+accordingly if you have deviated from the default.
+</p>
+
+<p>
+If you have not already done so, follow the <uri
+link="#installation">installation instructions</uri> before starting the
+migration. Such a compile may hamper performance on the database server but it
+can keep going.
+</p>
+
+<p>
+A couple of files need to be tweaked before beginning the migration. Edit
+<e>PGPORT</e> in the <path>/etc/conf.d/postgresql-8.4</path> configuration file
+to 6543. (Any port number other than what your old installation is bound to will
+do.)
+</p>
+
+<p>
+Next, edit <path>/etc/postgresql-8.3/pg_hba.conf</path> so that only the
+database superuser <e>postgres</e> can access the database cluster via the Unix
+socket.
+</p>
+
+<pre caption="Migrate with the New Ebuilds">
+# <i>cp -p /etc/postgresql-8.3/pg_hba.conf /etc/postgresql-8.4/</i>
+
+<comment>(The following should be safe. Read the documentation to be sure.)</comment>
+# <i> cp -p /etc/postgresql-8.3/postgresql.conf /etc/postgresql-8.4/</i>
+<comment>
+(Don't forget to copy over any other configuration files that you may need.)
+</comment>
+# <i>/etc/init.d/postgresql-8.3 reload</i>
+# <i>/etc/init.d/postgresql-8.4 start</i>
+
+<comment>(Begin piping the data from the old cluster to the new cluster.)</comment>
+# <i>pg_dumpall -U postgres -p 5432 | psql -U postgres -d postgres -p 6543</i>
+# <i>/etc/init.d/postgresql-8.3 stop</i>
+# <i>/etc/init.d/postgresql-8.4 stop</i>
+
+<comment>(Edit PGPORT back to 5432.)</comment>
+# <i>nano -w /etc/conf.d/postgresql-8.4</i>
+
+<comment>(Allow users access once more.)</comment>
+# <i>nano -w /etc/postgresql-8.4/pg_hba.conf</i>
+# <i>/etc/init.d/postgresql-8.4 start</i>
+# <i>rc-update del postgresql-8.3 &amp;&amp; rc-update add postgresql-8.4 default</i>
+</pre>
+
+<p>
+Hopefully everything went according to plan and you have a successfully updated
+server that contains precisely the same data, bit for bit, as the old server.
+</p>
+
+</body>
+</section>
+<section id="oldmigration">
+<title>Pre-9.0 Migration: From the Obsolete Ebuilds</title>
+<body>
+
+<p>
+You will need to schedule some downtime for your server. The old ebuilds
+<b>cannot</b> be installed at the same time as the new ebuilds. As such, assume
+that the server will have to be down for a few hours. Maybe for the weekend,
+even.
+</p>
+
+<p>
+Before starting, you will need to deny access to the server, so that no changes
+are made. You may also want to backup your <path>postgresql.conf</path> and
+<path>pg_hba.conf</path> and any other configuration file that you deem
+important.
+</p>
+
+<pre caption="Steps to Migrate from the Obsolete Ebuilds">
+# <i>pg_dumpall -U postgres > backup_file</i>
+# <i>/etc/init.d/postgresql stop</i>
+# <i>emerge -C dev-db/postgresql dev-db/libpq dev-db/postgresql-client \
+  dev-db/postgresql-client</i>
+<comment>
+(Follow the steps detailed in this article for installing and configuring the
+server.)
+</comment>
+# <i>/etc/init.d/postgresql-8.4 start</i>
+# <i>psql -f backup_file postgres</i>
+</pre>
+
+<p>
+You may break some packages that were built against those packages, but once you
+have installed dev-db/postgresql-base and/or dev-db/postgresql-server you can
+run <c>revdep-rebuild</c> to reemerge any packages that may have been broken.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Utilities</title>
+<section>
+<title>pgAdmin III</title>
+<body>
+
+<p>
+<uri link="http://www.pgadmin.org/">pgAdmin III</uri> is a graphical utility
+for managing PostgreSQL.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Troubleshooting</title>
+<section>
+<title>Server Lacks Instrumentation Functions</title>
+<body>
+
+<p>
+This problem is easy to solve. What is difficult about it is finding the
+answer. What is required is an import from a file that already exists on the
+storage drive: <path>adminpack.sql</path>. To resolve this issue, run this
+command:
+</p>
+
+<pre caption="Command to Add Instrumentation Functions">
+# <i>psql -U postgres --file /usr/share/postgresql-9.0/contrib/adminpack.sql</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,207 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/portage-utils.xml,v 1.1 2006/09/10 15:31:38 idani Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/portage-utils.xml" lang="ja">
+
+<title>Portage-utils</title>
+
+<author title="Author">
+  <mail link="rane@gentoo.org">ﾅ「kasz Damentko</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+<author title="Editor">
+  <mail link="vanquirius@gentoo.org">Marcelo Gﾃｳes</mail>
+</author>
+<author title="翻訳">
+  <mail link="murakami.taku@gmail.com">Taku Murakami</mail>
+</author>
+
+<abstract>
+このガイドでは、
+C言語で書かれた高速なPortageヘルパーアプリケーションであるportage-utilsの一般的な使用方法を取り上げています。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.1</version>
+<date>2006-05-01</date>
+
+<!-- Original revision: 1.2 -->
+
+<chapter>
+<title>はじめに</title>
+<section>
+<body>
+
+<p>
+<c>portage-utils</c>とは、C言語で書かれた非常に高速なユーティリティ集です。
+これは、類似機能を提供する<c>gentoolkit</c>よりも高速で、
+限定的ながらもその代替手段になることを意味します。
+但し、<c>portage-utils</c>が<c>gentoolkit</c>に取って代わるものではないことは認識しておいて下さい。 
+このユーティリティは、<c>gentoolkit</c>で提供される同等のものよりも効率的で、
+Portageを繰り返し呼び出す必要があるスクリプトで用いるのに適しているかもしれません。
+
+但し、<c>portage-utils</c>では同等の機能性が提供されているわけではありません。
+<c>portage-utils</c>ではeclassが全く考慮されず、
+また<c>revdep-rebuild</c>や<c>glsa-check</c>のようなツールは提供されていません。
+</p>
+
+<p>
+<c>gentoolkit</c>に関するより詳細な情報は、
+<uri link="/doc/en/gentoolkit.xml">Gentoolkit</uri> guide<uri link="/doc/ja/gentoolkit.xml">(日本語訳)</uri>を参照して下さい。
+</p>
+
+<p>
+<c>portage-utils</c>に含まれるアプリケーションの完全な一覧を参照するには、
+<c>man q</c>もしくは<c>q --help</c>と入力します。各ユーティリティに関しては、
+ユーティリティごとに記述されているmanページを参照して下さい。このガイドは、
+最も役立つ機能に関して簡潔なリファレンスになることを単に目的としており、
+各アプリケーションに関する全ての情報を網羅しているわけではありません。
+</p>
+
+<p>
+<c>portage-utils</c>を使用する最初のステップは、パッケージをインストールすることです。
+</p>
+
+<pre caption="portage-utilsのインストール">
+# <i>emerge portage-utils</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>使用法</title>
+<section>
+<title>ファイルが属するパッケージの検索方法</title>
+<body>
+
+<p>
+<c>qfile</c>により、ファイルが属するパッケージを検索できます。 
+</p>
+
+<pre caption="ファイルが属するパッケージの検索">
+$ <i>qfile /etc/fonts/fonts.conf</i>
+media-libs/fontconfig (/etc/fonts/fonts.conf)
+$ <i>qfile /usr/share/keymaps/atari/atari-uk-falcon.map.gz</i>
+sys-apps/kbd (/usr/share/keymaps/atari/atari-uk-falcon.map.gz)
+</pre>
+
+</body>
+</section>
+<section>
+<title>パッケージの整合性を確認する</title>
+<body>
+
+<p>
+あるパッケージによりインストールされたファイルのMD5 sumもしくはmtimeを確認したければ、
+<c>qcheck</c>アプリケーションを使用することにより、これを達成できます。
+</p>
+
+<pre caption="パッケージの整合性をチェック">
+$ <i>qcheck portage-utils</i>
+Checking app-portage/portage-utils-0.1.13 ...
+  * 36 out of 36 files are good
+</pre>
+
+<p>
+当然、インストール後に変更されたファイルであれば、ここで全て報告されるでしょう。
+インストール後に手動で編集した設定ファイルが報告されても、特に心配ありません。
+</p>
+
+</body>
+</section>
+<section>
+<title>別のパッケージに依存するパッケージをリスト化する</title>
+<body>
+
+<p>
+当然、あるパッケージに依存する全てのパッケージをリスト化してくれるアプリケーションも存在します。
+これは、<c>qdepends</c>を使用することにより達成されます。<c>-a</c>フラグを使えば、
+パッケージに関する全てのDEPEND、RDEPEND、PDEPEND情報を表示できます。
+</p>
+
+<pre caption="あるパッケージに依存するパッケージのリスト化">
+$ <i>qdepends -a pygtk</i>
+ * DEPEND
+dev-python/pygtk-2.8.2: &gt;=dev-lang/python-2.3 &gt;=x11-libs/gtk+-2.8.0
+&gt;=dev-libs/glib-2.8.0 &gt;=x11-libs/pango-1.10.0 &gt;=dev-libs/atk-1.8.0
+&gt;=gnome-base/libglade-2.5.0 &gt;=dev-python/pycairo-0.9.0 dev-python/numeric
+virtual/opengl dev-python/pyopengl &gt;=x11-libs/gtkglarea-1.99
+&gt;=dev-util/pkgconfig-0.9 sys-devel/patch
+ * RDEPEND
+dev-python/pygtk-2.8.2: &gt;=dev-lang/python-2.3 &gt;=x11-libs/gtk+-2.8.0
+&gt;=dev-libs/glib-2.8.0 &gt;=x11-libs/pango-1.10.0 &gt;=dev-libs/atk-1.8.0
+&gt;=gnome-base/libglade-2.5.0 &gt;=dev-python/pycairo-0.9.0 dev-python/numeric
+virtual/opengl dev-python/pyopengl &gt;=x11-libs/gtkglarea-1.99
+ * PDEPEND
+</pre>
+
+</body>
+</section>
+<section>
+<title>あるebuildに属するファイルをリスト化する</title>
+<body>
+
+<p>
+<c>qlist</c>により、あるebuildに属する全てのファイルをリスト化できます。
+</p>
+
+<pre caption="あるebuildファイルに属するファイルのリスト化">
+$ <i>qlist vim</i>
+/usr/bin/gvim
+/usr/bin/gvimdiff
+/usr/bin/evim
+/usr/bin/eview
+/usr/bin/gview
+/usr/bin/rgvim
+[...]
+</pre>
+
+</body>
+</section>
+<section>
+<title>特定のUSEフラグを使用するパッケージを検索する</title>
+<body>
+
+<p>
+これは<c>quse</c>により達成できますが、rootとして実行する必要があります。
+ebuildのキャッシュを初めて作成/更新するのに、時間がかかるかもしれません。
+</p>
+
+<pre caption="'firefox' USEフラグと共にコンパイルされているパッケージの検索">
+# <i>quse firefox</i>
+app-office/openoffice/openoffice-2.0.2_rc1.ebuild binfilter curl eds firefox gnome gtk java kde ldap mozilla xml2 
+dev-haskell/gtk2hs/gtk2hs-0.9.10.ebuild doc glade gnome mozilla firefox 
+dev-java/swt/swt-3.1-r1.ebuild accessibility cairo firefox gnome mozilla 
+[...]
+</pre>
+
+</body>
+</section>
+<section>
+<title>パッケージサイズを調査する</title>
+<body>
+
+<p>
+これは<c>qsize</c>により達成でき、非常に簡単です。
+</p>
+
+<pre caption="パッケージサイズの調査">
+$ <i>qsize vim</i>
+app-editors/gvim-6.4: 10 files, 7 non-files, 2327.516 KB
+app-editors/vim-6.4: 6 files, 2 non-files, 2058.14 KB
+app-editors/vim-core-6.4: 1024 files, 68 non-files, 10950.984 KB
+[...]
+</pre>
+
+</body>
+</section>
+</chapter>
+</guide>

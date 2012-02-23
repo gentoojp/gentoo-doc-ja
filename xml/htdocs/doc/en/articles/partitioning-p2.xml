@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/partitioning-p2.xml,v 1.8 2010/03/03 03:39:17 nightmorph Exp $ -->
+
+<guide disclaimer="articles">
+<title>Partitioning in action, Part 2</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<!--<author title="Editor">
+  <mail link="nightmorph"/>
+</author>-->
+
+<abstract>
+In this second tip on changing partition layout on a running system, Daniel
+Robbins shows you how to move /tmp and /var to their own shared partition. He
+also covers several tricks of the trade to minimize downtime and avoid making
+costly mistakes.
+</abstract>
+
+<!-- The original version of this article was first published on IBM
+developerWorks, and is property of Westtech Information Services. This
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>1.4</version>
+<date>2010-03-02</date>
+
+<chapter>
+<title>Consolidating data</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+In my <uri link="/doc/en/articles/partitioning-p1.xml">last tip</uri>, we
+successfully moved <path>/home</path> to a new partition. Now, it's time to
+learn how to consolidate often-modified files onto a new partition. Why would
+we want to do this? Here's an example. Often-modified files contribute heavily
+to fragmentation. One of the best ways to contain fragmentation is to store
+often-modified files on their own partition. That way, the other partitions are
+unaffected by the fragmentation caused by the heavily modified files. In
+concept, this is easy to understand, but how do you actually go about doing it?
+</p>
+
+<p>
+First, you must create a new partition for the specific purpose of storing
+frequently modified files. You might want to locate this partition on a
+separate disk to enhance performance. Then, I'll walk you through the steps
+required to move both <path>/tmp</path> and <path>/var</path> to this new
+partition.
+</p>
+
+<warn>
+The following technique describes how to move a partition(s). Although this
+technique is designed so that you can "back out" of a failed partition move, it
+doesn't protect against user error. In other words, any time that you format
+partitions or copy large numbers of files, there's a possibility that you will
+type the wrong thing, causing lots of data to be destroyed. For this reason,
+it's highly recommended that you <e>take appropriate steps to back up all
+critical files before proceeding</e>.
+</warn>
+
+</body>
+</section>
+<section>
+<title>Create a filesystem on the new partition</title>
+<body>
+
+<p>
+The first step of this process is to create a new partition that's big enough
+to hold <path>/var</path> and <path>/tmp</path>, with a little extra space left
+over. You'll need either an additional drive, or a spare (unused) partition
+that will house the often-modified files. If you do need to use <c>fdisk</c> or
+<c>cfdisk</c> to create the partition, you'll need to reboot once. Then, it's
+time to format the new partition as follows (it's OK to be in multiuser mode
+while you do this; I'll let you know when to switch to single-user):
+</p>
+
+<pre caption="Creating the filesystem">
+# <i>mkfs.ext2 /dev/???</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Mount it to /mnt/rwstorage</title>
+<section>
+<body>
+
+<p>
+As in my previous tip, <path>???</path> should be replaced with the device name
+for the new, empty partition that you are creating. Accidentally typing the
+wrong name will destroy data on an existing partition, so be careful! After
+typing this command, you'll have a brand-new ext2 filesystem on the new
+partition. We're almost ready to mount it, but first, let's make a new mount
+point.
+</p>
+
+<pre caption="Creating the mount point">
+# <i>mkdir /mnt/rwstorage</i>
+</pre>
+
+<p>
+I chose the name <path>rwstorage</path> to remind us that this particular
+partition is going to be specifically used to house files that are read from
+and written to frequently. To mount the partition, type:
+</p>
+
+<pre caption="Mounting the partition">
+# <i>mount /dev/??? /mnt/rwstorage</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Creating a new /tmp</title>
+<section>
+<body>
+
+<p>
+The partition is now mounted and we're ready to create our new
+<path>/tmp</path> directory:
+</p>
+
+<pre caption="Creating the new /tmp">
+# <i>cd /mnt/rwstorage</i>
+# <i>mkdir tmp</i>
+# <i>chmod 1777 tmp</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Drop to single-user mode</title>
+<section>
+<body>
+
+<p>
+Our new directory at <path>/mnt/rwstorage/tmp</path> has the right permissions
+for a temporary directory. Now, drop to single-user mode, since we must copy
+over <path>/var</path>. As usual, we've delayed our drop to single-user mode to
+the last possible moment. Right now, we don't want any programs reading or
+writing files in <path>/var</path>, so we have to stop all daemons, disconnect
+all users, and do some quick maintenance by typing:
+</p>
+
+<pre caption="Entering single-user mode">
+# <i>init 1</i>
+</pre>
+
+<p>
+If you're prompted to enter a password to perform system maintenance, do so.
+You should now have a root shell, and all unnecessary daemons will be stopped.
+Create a new location for our <path>/var</path> files by typing:
+</p>
+
+<pre caption="Creating the new directory">
+# <i>cd /mnt/rwstorage</i>
+# <i>mkdir var</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Copy /var</title>
+<section>
+<body>
+
+<p>
+Default permissions on our new <path>/mnt/newstorage/var</path> directory
+should be correct, so now we're ready to copy all of our original
+<path>/var</path> data over to the new partition:
+</p>
+
+<pre caption="Copying the data">
+# <i>cd /var </i>
+# <i>cp -ax * /mnt/rwstorage/var</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Back up and create symlinks</title>
+<section>
+<body>
+
+<p>
+After this command completes, you'll have an exact copy of <path>/var</path> at
+<path>/mnt/rwstorage/var</path>. Now, you may be asking how exactly we get
+Linux to use <path>/mnt/rwstorage/var</path> and
+<path>/mnt/rwstorage/tmp</path> instead of the defaults in the root directory.
+This is easily done by the use of symbolic links -- we'll create the new
+symbolic links, <path>/tmp</path> and <path>/var</path>, which point to the
+correct directories in <path>/mnt/rwstorage</path>. First, let's back up the
+original directories:
+</p>
+
+<pre caption="Backing up the directories">
+# <i>cd /</i>
+# <i>mv var var.old</i>
+# <i>mv tmp tmp.old</i>
+</pre>
+
+<p>
+The last line probably isn't necessary, since it's very likely that you don't
+have anything important in <path>/tmp</path>, but we're playing it safe. Now,
+let's create the symlinks:
+</p>
+
+<pre caption="Creating the symlinks">
+# <i>cd /</i>
+# <i>ln -s /mnt/rwstorage/var /var</i>
+# <i>ln -s /mnt/rwstorage/tmp /tmp</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Finishing touches to /etc/fstab</title>
+<section>
+<body>
+
+<p>
+Now, when any user or program uses <path>/var</path>, they'll automatically be
+transported to <path>/mnt/rwstorage/var</path>! Likewise for <path>/tmp</path>.
+We have one step left; however, it can be safely performed in multiuser mode.
+It's time to get Apache running again, and to allow all your users to log back
+in. Exit from runlevel 1 by pressing <c>CTRL-D</c>. The system should start up
+normally. Log in as root.
+</p>
+
+<p>
+The final thing we must do is configure <path>/etc/fstab</path> so that
+<path>/dev/???</path> is mounted at <path>/mnt/rwstorage</path>. You must add a
+line like the following to your <path>/etc/fstab</path>:
+</p>
+
+<pre caption="Configuring fstab">
+/dev/???   /mnt/rwstorage   ext2   defaults   1   2
+</pre>
+
+<impo>
+If you are using a kernel version in the 2.3+ range, it's very likely that you
+have a line in your <path>/etc/fstab</path> that looks like this:
+</impo>
+
+<pre caption="Shared memory">
+none   /var/shm   shm   defaults   0   0
+</pre>
+
+<p>
+This line enables shared memory on your system, and by default it gets mounted
+in <path>/var</path>. In order for this line to work properly, it must appear
+after the line you just added. That way, when Linux starts up,
+<path>/mnt/rwstorage</path> will get mounted first (enabling /var). Then, and
+only then, will the shm device get mounted at <path>/var/shm</path>, which is
+really <path>/mnt/rwstorage/var/shm</path>. Make sure the lines are in this
+order:
+</p>
+
+<pre caption="Enabling shared memory">
+/dev/???        /mnt/rwstorage  ext2    defaults       1     2
+none            /var/shm        shm     defaults       0     0
+</pre>
+
+<p>
+After saving the changes to <path>/etc/fstab</path>, your system has been
+successfully upgraded! After verifying that everything is working properly,
+you'll want to remove the <path>/tmp.old</path> and <path>/var.old</path>
+backup directories. Congratulations -- you've successfully reconfigured your
+system's partitions for optimum performance.
+</p>
+
+</body>
+</section>
+<section id="resources">
+<title>Resources</title>
+<body>
+
+<ul>
+  <li>
+    In <uri link="/doc/en/articles/partitioning-p1.xml">Partitioning in action:
+    Moving /home</uri>, I show you step-by-step how to move <path>/home</path>
+    to a new partition.
+  </li>
+  <li>
+    In <uri link="/doc/en/articles/maximum-swappage.xml">Maximum
+    swappage</uri>, I show how to dramatically increase swap performance under
+    Linux.
+  </li>
+  <li>
+    In <uri link="/doc/en/articles/partition-planning-tips.xml">Partition planning
+    tips</uri>, I share several ways of effectively organizing your partition
+    layout.
+  </li>
+  <li>
+    I always recommend checking out the <uri
+    link="http://tldp.org/docs.html#howto">howtos</uri> at <uri
+    link="http://tldp.org/">The Linux Documentation Project</uri> -- they're a
+    valuable resource.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>About the author</title>
+<body>
+
+<p>
+Daniel Robbins lives in Albuquerque, New Mexico. He was the President/CEO of
+Gentoo Technologies Inc., the Chief Architect of the Gentoo Project and is a
+contributing author of several books published by MacMillan: Caldera OpenLinux
+Unleashed, SuSE Linux Unleashed, and Samba Unleashed. Daniel has been involved
+with computers in some fashion since the second grade when he was first exposed
+to the Logo programming language and a potentially lethal dose of Pac Man. This
+probably explains why he has since served as a Lead Graphic Artist at SONY
+Electronic Publishing/Psygnosis. Daniel enjoys spending time with his wife Mary
+and his new baby daughter, Hadassah. You can contact Daniel at
+<mail>drobbins@gentoo.org</mail>.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,217 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/ati-faq.xml,v 1.11 2006/05/14 18:02:51 idani Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/ati-faq.xml" lang="ja">
+<title>Gentoo Linux ATI FAQ</title>
+<author title="Author">
+  <mail link="lu_zero@gentoo.org">Luca Barbato</mail>
+</author>
+<author title="Editor">
+  <mail link="peesh@gentoo.org">Jorge Paulo</mail>
+</author>
+<author title="Editor">
+  <mail link="blubber@gentoo.org">Tiemo Kieft</mail>
+</author>
+<author title="翻訳">
+  <mail link="tami3@anet.ne.jp">ＴａＭｉ</mail>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+
+<abstract>
+このFAQはATIボードにおける、DRIとX11に関するインストールと設定の問題をユーザが回避するお手伝いをします。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.0.19</version>
+<date>2006-05-14</date>
+
+<!-- Original revision: 1.38 -->
+
+<chapter>
+<title>ハードウェアサポート</title>
+<section>
+<title>私のATIボードはサポートされていますか？</title>
+<body>
+
+<p>
+たくさんのATIボード(しかし全部ではありません)の少なくとも2Dアクセラレーション機能は<uri link="http://www.freedesktop.org/Software/xorg">xorg-x11</uri>でサポートされています。
+3D機能はxorg-x11の一部である<uri link="http://dri.sf.net">DRIプロジェクト</uri>か、ATIの<uri link="http://mirror.ati.com/support/drivers/linux/radeon-linux.html">ソース未公開のドライバ</uri>によって提供されています。
+</p>
+
+<table>
+<tr>
+  <th>GPU</th>
+  <th>一般名</th>
+  <th>サポート</th>
+</tr>
+<tr>
+  <ti>Rage128</ti>
+  <ti>Rage128</ti>
+  <ti>xorg DRI</ti>
+</tr>
+<tr>
+  <ti>R100</ti>
+  <ti>Radeon7xxx, Radeon64</ti>
+  <ti>xorg DRI</ti>
+</tr>
+<tr>
+  <ti>R200, R250, R280</ti>
+  <ti>Radeon8500, Radeon9000, Radeon9200</ti>
+  <ti>xorg DRI, ATI DRI</ti>
+</tr>
+<tr>
+  <ti>R300, R400, R500</ti>
+  <ti>Radeon 9500 - x800</ti>
+  <ti>xorg 2D, ATI DRI</ti>
+</tr>
+</table>
+
+</body>
+</section>
+<section>
+<title>
+私はAll-In-Wonder/Vivoボードを持っています。これらのボードのマルチメディア機能はサポートされていますか？
+</title>
+<body>
+
+<p>
+マルチメディア機能は<uri link="http://gatos.sf.net">GATOSプロジェクト</uri>によってサポートされています。
+これらのドライバはまもなくxorgツリーに取り入れられます。
+</p>
+
+</body>
+</section>
+<section>
+<title>私はx86ベースのアーキテクチャを使っていません。どんな方法がありますか？</title>
+<body>
+
+<p>
+X11はPPCやAlphaプラットフォームでもx86とほとんど同じようにサポートされています。
+ですが、ATIのソース未公開のドライバはPPCやAlphaをサポートしていないため、R300グラフィックプロセスユニット（GPU）の3D機能を使うことは出来ません。
+もしあなたがそのようなカードを持っていてX11でサポートして欲しいのであれば、<uri link="http://www.ati.com">ATI</uri> にスペックを公開するようにお願いしましょう。
+AMD64向けのソース未公開のドライバはリリースされているので、AMD64ユーザはx86ユーザと同じ機能を使用することが出来ます。
+</p>
+
+<impo>
+AMD64チップセットでagpgartを有効にするために、K8 IOMMUサポートを無効にしなければなりません。
+</impo>
+
+</body>
+</section>
+<section>
+<title>ノートパソコンのATI Mobilityシリーズはサポートされていますか？</title>
+<body>
+
+<p>
+サポートされていると思いますが、チップが持っている番号がOEM PCIのものであるため、設定に問題が出るかもしれません。
+ほとんどの場合、自分で設定ファイルを書くか<c>xorgconfig</c>ユーティリティを使うことになるかもしれません。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>インストール</title>
+<section>
+<title>パッケージ</title>
+<body>
+
+<ul>
+  <li><c>xorg-x11</c>ebuildはX11を提供します。</li>
+  <li>
+    2.6.xカーネルでは、DRIモジュールはカーネルでビルドするか、<c>x11-drm</c>ebuildによって提供されます。
+  </li>
+  <li>
+    2.4.xカーネルシリーズでは<c>x11-drm</c>ebuildを使用しなければいけません
+  </li>
+  <li>
+    <c>ati-drivers</c>ebuildは、ATIのソース未公開のXドライバと、2.4と2.6シリーズカーネルの両方用のカーネルモジュールを提供します。
+  </li>
+
+</ul>
+
+<impo> 
+ATIの<e>内部</e>agpgartサポートをLinuxカーネルの物の代わりに使用したいなら、カーネル設定内のagpgartドライバとチップセット特有のドライバはモジュールとしてビルドしなければなりません。
+</impo>
+
+<pre caption="ドライバのインストール">
+<comment>(X11にRage128ドライバとモジュールをインストールしたい場合)</comment>
+# <i>VIDEO_CARDS="rage128" emerge x11-drm</i>
+<comment>(Radeonシリーズの場合)</comment>
+<comment>(R100、R200、R250、R280のみで、まだR300はサポートされていません)</comment>
+# <i>VIDEO_CARDS="radeon" emerge x11-drm</i>
+<comment>(ATIのソース未公開のドライバをインストールする)</comment>
+<comment>(R200、R250、R280、R300のみ)</comment>
+# <i>emerge ati-drivers</i>
+<comment>(X11のみをインストールし、どのカーネルモジュールもインストールしない場合)</comment>
+# <i>emerge xorg-x11</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>設定</title>
+<body>
+
+<p>
+<path>xorg.conf</path>設定ファイルの作成のために<c>xorgcfg</c>や<c>xorgconfig</c>を使用することが推奨されています。
+その他には、Xorg自動設定オプションを使ってもよいでしょう。
+</p>
+
+<pre caption="Xの自動設定">
+# <i>X -configure</i>
+</pre>
+
+<p>
+基本的な設定ファイルである<c>xorg.conf</c>についてもっと知りたい場合は、<uri link="/doc/en/xorg-config.xml">X サーバー設定ガイド</uri><uri link="/doc/ja/xorg-config.xml">(日本語訳)</uri>を参照してください。
+</p>
+
+<note>
+<c>ati-drivers</c>パッケージをインストールしたのなら<c>fglrxconfig</c>も使うことができます。
+</note>
+
+<impo>
+PPCユーザは<c>Xorgautoconfig</c>ebuildをemergeし、スタンドアロンな設定ツールである<c>Xorgautoconfig</c>を使うこともできますが、必須ではありません。
+</impo>
+
+</body>
+</section>
+<section>
+<title>OpenGLへの切り替え</title>
+<body>
+
+<p>
+Xがインストールされ、設定が完了し、起動しているのなら、ATI OpenGLライブラリを使用することが出来ます。
+</p>
+
+<pre caption="eselectの実行">
+# <i>eselect opengl set ati</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>他の情報</title>
+<section>
+<body>
+
+<p>
+ATIのグラフィックカードを設定するより多くの情報については、<uri link="/doc/en/dri-howto.xml">Hardware Acceleration Guide</uri>(<uri link="/doc/ja/dri-howto.xml">日本語訳</uri>)をお読みください。
+</p>
+
+<p>
+Gentoo LinuxとATI Radeonバイナリドライバに関するより多くの情報は<uri link="http://odin.prohosting.com/wedge01/gentoo-radeon-faq.html">Wedge Unofficial Gentoo ATI Radeon FAQ</uri>で見ることが出来ます。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

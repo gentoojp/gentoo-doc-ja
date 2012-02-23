@@ -1,0 +1,3817 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/gentoo-security.xml,v 1.11 2003/12/07 02:34:12 nakano Exp $ -->
+
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<guide link="/doc/ja/gentoo-security.xml">
+<title>Gentoo Linux セキュリティ・ガイド</title>
+<author title="Author">
+  <mail link="kn@insecurity.dk">Kim Nielsen</mail>
+</author>
+<author title="Editor"><!-- zhen@gentoo.org -->
+  John P. Davis
+</author>
+<author title="Editor">
+  <mail link="stocke2@gentoo.org">Eric R. Stockbridge</mail>
+</author>
+<author title="Editor">
+  <mail link="carl@gentoo.org">Carl Anderson</mail>
+</author>
+<author title="Editor">
+  <mail link="peesh@gentoo.org">Jorge Paulo</mail>
+</author>
+<author title="Editor">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Editor">
+  <mail link="bennyc@gentoo.org">Benny Chuang</mail>
+</author>
+<author title="Editor">
+  <mail link="jaervosz@itu.dk">Sune Jeppesen</mail>
+</author>
+<author title="Editor">
+  <mail link="blubber@gentoo.org">Tiemo Kieft</mail>
+</author>
+<author title="Editor">
+	<mail link="klasikahl@gentoo.org">Zack Gilburd</mail>
+</author>
+<author title="翻訳">
+	<mail link="hagi@p1d.com">萩原佳明</mail>
+</author>
+
+<license/>
+
+<abstract>
+このドキュメントでは、Gentoo Linuxのセキュリティを高める方法を順を追って説明します。
+</abstract>
+
+<version>0.4.13</version>
+<date>December 04, 2003</date>
+<!-- Original revision: 1.36 -->
+
+<chapter>
+<title>はじめに</title>
+<section>
+<body>
+
+<p>
+このガイドはGentoo Linuxをサーバ環境で利用している人や、もうちょっとセキュアにしておきたいんだけどな、という人のために書かれています。
+</p>
+
+<note>
+このガイドを読み終わってGentooのセキュリティ関連のことをもっと知りたくなったら、 <uri link="http://www.gentoo.org/proj/en/hardened/">Hardened Gentoo Project</uri>のページも見てみてください。
+</note>
+
+</body>
+</section>
+
+<!--
+<section>
+<title>このガイドでは、今後以下のようなことについて取り上げる予定です:</title>
+<body>
+
+<p>
+バージョン0.6 (バックアップ)
+</p>
+<ul>
+<li>arpwatch</li>
+<li>SystemImagerを使ったシステム全体のバックアップ</li>
+<li>tarを使った部分バックアップ</li>
+<li>PostgreSQLのバックアップ</li>
+</ul>
+
+
+<p>
+バージョン0.8 (侵入テスト)
+</p>
+<ul>
+<li>リモート監査</li>
+<li>ネットワークの監査</li>
+<li>ホストマシンの監査</li>
+<li>ソフトウエアの監査</li>
+</ul>
+
+
+<p>
+バージョン1.0 (被害を受けた場合)
+</p>
+<ul>
+<li>インシデントの報告方法</li>
+<li>犯罪性の調査</li>
+<li>証拠が消されていない状態でシステムのイメージを作成する(ddを使用)</li>
+<li>パケット情報の収集(tcpdumpを使用)</li>
+<li>・・・その他いろいろ・・・</li>
+<li>システムの復旧</li>
+</ul>
+
+<note>
+各バージョンではそれぞれひとつの話題に専念していることに注意してください。それぞれ目的に沿った内容のみを取り上げることで、混乱しないようにするためです。
+</note>
+
+</body>
+</section>
+-->
+</chapter>
+
+<chapter>
+<title>インストールの前に考慮すべきこと</title>
+<section>
+<title>物理的なセキュリティ</title>
+<body>
+
+<p>
+いくら堅牢な設定を施しても、アタッカーがあなたのマシンに物理的に触れることができるようなら、
+そんなものはいとも簡単に回避されてしまいます。ハードウエアが気軽にアクセスできるような場所に設置されていませんか？　
+鍵がかかるサーバ・クローゼットに置かれているようなら安心でしょう。
+鍵がかかるケースに入れておくのも良いアイデアですね。
+最高のセキュリティを確保しようと思うなら、ハードディスクからしか起動できないようにBIOSを設定しておくべきです。
+フロッピーやCD-ROMからは起動できないようにしてしまいましょう。
+もっとしつこいくらいちゃんとしたいなら、BIOSパスワードを設定するのも良いと思います。
+BIOSパスワードは、ラップトップPCを使っているユーザーにも試してもらいたいですね。
+</p>
+
+</body>
+</section>
+<section>
+<title>起動するデーモンやサービスを決定</title>
+<body>
+
+<p>
+どんなサービスが起動していなければいけないのか、どんなサービスが起動していると良いと思うのか、
+それぞれ文書化しましょう。こうしておくと、あなたのシステムのパーティション案を考えるときに参考になります。
+また、侵入検知にどういう方法を取るか考えるときにもラクになります。
+もちろん、使っているコンピュータが1台または数台でそれを使うのが自分だけなら、
+わざわざ文書化する必要はありません。例)いまからファイアーウォール用のコンピュータをセットアップする予定で、
+そのマシンで動かすつもりのサービスは<e>何もない</e>(でもひょっとしたらsshdぐらいは動かすかもしれない)ような場合。
+</p>
+
+<p>
+起動するサービスやsshdの現在のバージョンを文書化しておきましょう。
+そうすれば、sshdにセキュリティホールが見つかったときにどのシステムをアップグレードすべきなのかすぐにわかります。
+また、誰がこのシステムにアクセスできるようにするのか決定するときにも役に立ちます。
+</p>
+
+</body>
+</section>
+<section>
+<title>パーティション計画</title>
+<body>
+
+<p>
+必勝法：
+</p>
+
+<ul>
+<li>
+	ユーザーが書き込める全てのディレクトリ(<path>/home</path>や<path>/tmp</path>や<path>/var</path>)は、
+	それぞれ別のパーティションにした上で、quotaを有効にすべきです。
+	Portageはソースをコンパイルする際に<path>/var/tmp</path>を使うので、
+	このディレクトリが含まれるパーティションは大きめにしておく必要があります。
+	こうしておけば、ユーザーが<path>/</path>パーティションをいっぱいにしてしまう心配を減らすことができます。
+</li>
+<li>
+	ディストリビューション標準以外のソフトをインストールするディレクトリは、別のパーティションにするべきです。
+	<uri link="http://www.pathname.com/fhs/">FHS(File Hierarchy Standard)</uri>に従えば、
+	このディレクトリは<path>/opt</path>か<path>/usr/local</path>になります。
+	これらのディレクトリを別パーティションにしておけば、システムを再インストールすることになっても、
+	別途インストールしたソフトウエアは消されずにすみます。
+</li>
+<li>
+	変更されることのないデータはそれ用のパーティションに移動しておき、
+	そのパーティションはリードオンリーでマウントしましょう。
+	もっと厳密にやりたいなら、これらの変更されることのないデータはCD-ROMのような書き込みのできないメディアに保存することを検討しても良いでしょう。
+</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>rootアカウント</title>
+<body>
+
+<p>
+'root'というアカウントはシステムの中で最も強いユーザーで、必要なとき以外はこのアカウントを使ってはいけません。
+アタッカーにroot権限を奪取された場合、そのシステムはもう信用できません。
+そうなった場合は再インストールしてください。
+</p>
+
+<p>
+'root'に関する必勝法
+</p>
+
+<ul>
+<li>
+	日々使用するアカウントを必ず作りましょう。
+	そのユーザーがrootになれる必要があるなら、そのアカウントをwheelグループに追加しましょう。
+	wheelグループに追加しておけば、その一般ユーザーはsuコマンドでrootになれます。
+</li>
+<li>
+	Xなどのユーザーアプリケーションをrootで起動するのは禁止です。
+</li>
+<li>
+	rootとしてログインした後は毎回絶対パスを使いましょう。
+	rootユーザーが使っていると思っているアプリケーションが、実は別の場所に置かれた別のアプリケーションだということはありえます。
+	たとえば誰かが勝手にPATHの設定を変えておいたとします。
+	このときrootが<c>su -</c>を使わずにsuした場合、rootユーザーはそのユーザーのPATHの設定を引き継ぐことになります。
+</li>
+<li>
+	あるユーザーが使わなくてはいけないroot権限を必要とするコマンドがそれほど多くないようなら、<c>sudo</c>を利用することも検討してください。
+	ただし、sudoの利用は慎重に！
+</li>
+<li>
+	rootとしてログインしているときは端末をそのままにして席を離れてはいけません。
+</li>
+</ul>
+
+<p>
+Gentooでは<c>su</c>しようとする一般ユーザーに対して、
+よく用いられる方法で制限をかけています。
+デフォルトのPAMの設定では、wheelグループに属していないユーザーはsuできません。
+</p>
+
+</body>
+</section>
+<section>
+<title>セキュリティポリシー</title>
+<body>
+
+<p>
+何故セキュリティポリシーが必要なのか。それにはいくつか理由があります。
+</p> 
+
+<ul>
+<li>
+	あなたが何をもってセキュアだと定義しているかわからなければ、
+	あるネットワークについてそれがセキュアだと主張することはできません。
+</li>
+<li>
+	潜在的なアタッカーを見つけたり、ネットワーク障害を解決したり、監査を行うためには、
+	ネットワークトラフィックの盗聴やプライベートなホームディレクトリを見ることは不可欠です。
+	そしてほとんどの国で、ユーザーの同意なしにこれらのことを行うのは違法です。
+	現在約60%のアタックが内部犯行であることから考えると、
+	あなたが目を光らせておくことは重要です。
+</li>
+<li>
+	セキュリティがなぜ大事かということや、
+	どうやってあなたのユーザーが自分自身や同僚を守るのか説明することもなしに、
+	ユーザーがセキュリティのことを考えてくれるなどと期待することは不可能です。
+</li>
+<li>
+	良いガイドラインやネットワークに関する文書はいつだって役に立ちます。たとえどんなものであるにせよ。
+</li>
+<li>
+	あなたのネットワークの設定やあなたが提供しているサービスがわからない限り、
+	警察や連邦法執行機関はあなたのためにアタッカーを捕まえることはできません。
+</li>
+<li>
+	アタックがあったら何をしますか？　その場合に何をするのか、誰にそのことを伝えるのか、
+	あらかじめ決めておかないといけません。毎回毎回警察やCERTに連絡するだけですか？　
+	たぶん相手にしてもらえないでしょうね！
+</li>
+</ul>
+
+<p>
+というわけで、複数のユーザーが使うシステムのポリシーを決めておくことがなぜ大事なのか、
+ユーザー教育がなぜ大事なのか、よくわかってもらえたと思います。
+</p>
+
+<p>
+ポリシーというのは、「誰が」、「どこで」、「なぜ」、「何を」ということをQ&amp;A形式で書いた文書のことです。
+あなたのシステムやネットワークを使うユーザーに、読んでもらい、理解してもらい、サインしてもらう必要があります。
+なぜポリシーにサインが必要なのか、ポリシーに直接反するような行動を取ったらどういうことになるのか、
+ユーザーにポリシーを理解してもらう手助けをすることはとても重要です
+(ポリシーに違反したらどうなるかは、ポリシー自体に明記しておくべきです)。
+ユーザーへの説明は繰り返し行いましょう。少なくとも1年に1回は。
+それはユーザーに思い出してもらうためと言うより、ポリシーは変更できるものだからです。
+</p>
+
+<note>
+ポリシーは読みやすいものを作ること。また、各話題ごとに正確なものにしておくこと。
+</note>
+
+<p>
+ポリシーの大部分は直接OS上で、もしくはファイアーウォール越しに強制することができます。
+しかし、一部はそうではありません。
+</p>
+
+<p>
+セキュリティポリシーには、少なくとも以下の項目がなくてはいけません：
+</p>
+
+<ul>
+<li>利用方針</li>
+<li>
+  <ul>
+  <li>スクリーンセーバー</li>
+  <li>パスワードの取り扱い</li>
+  <li>ソフトウエアのダウンロードとインストール</li>
+  <li>ユーザーを監視する場合、その情報</li>
+  <li>アンチウイルスソフトの使用</li>
+  </ul>
+</li>
+<li>機密情報の取り扱い(紙であれデジタルであれ、書類すべて)</li>
+<li>
+  <ul>
+  <li>デスクを綺麗にすることと、機密情報を鍵をかけて保存すること</li>
+  <li>席を立つ前はPCの電源を落とすこと</li>
+  <li>暗号の使用</li>
+  <li>信頼できる同僚との鍵の取り扱い</li>
+  <li>旅行時の機密情報の取り扱い</li>
+  </ul>
+</li>
+<li>旅行時のコンピュータ機器の取り扱い</li>
+<li>
+  <ul>
+  <li>旅行中やホテル滞在中のラップトップPCの取り扱い</li>
+  </ul>
+</li>
+</ul>
+
+<p>
+IT関連スタッフ向けのポリシーは、一般ユーザーとは少し違うものになります。
+</p>
+
+<p>
+セキュリティポリシーは膨大なものになりがちで、新しい情報を追加してもすぐに忘れられてしまうものです。
+IT関連スタッフ向けのポリシーは、一般向けユーザー用に作られたポリシーを含むことになるでしょう。
+そのため、セキュリティポリシーを小さく分割して作っておくのはうまいやり方だと思います。
+たとえば、「利用方針に関するポリシー」、「パスワードに関するポリシー」、「メールに関するポリシー」、「リモートアクセスに関するポリシー」などなど。
+</p>
+
+<p>
+セキュリティポリシーの例は<uri 
+link="http://www.sans.org/resources/policies/">The SANS Security Policy 
+Project</uri>にあります。あなたのネットワークがそれほど大きくなく、
+これらのポリシーではやりすぎだと思われるようなら<uri 
+link="http://www.cis.ohio-state.edu/cgi-bin/rfc/rfc2196.html">Site Security 
+Handbook</uri>(訳注：日本語訳が<uri 
+link="http://www.ipa.go.jp/security/rfc/RFC2196-00JA.html">サイトセキュリティハンドブック</uri>にあります)を見てください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>インストール中、そしてインストール後にセキュリティを高める方法</title>
+<section>
+<title>USEフラグ</title>
+<body>
+
+<p>
+<path>make.conf</path>にはユーザーが定義したUSEフラグが、
+<path>/etc/make.profile/make.defaults</path>にはGentoo Linux用のデフォルトのUSEフラグが、
+それぞれ定義されています。このガイドにとって重要なフラグは、
+<c>pam</c>(Pluggable Authentication Modules)、<c>tcpd</c>(TCP wrappers)、それから<c>ssl</c>(Secure 
+Socket Layer)です。これらのフラグはすべてデフォルトで有効になっています。
+</p>
+
+</body>
+</section>
+<section>
+<title>GRUBパスワード</title>
+<body>
+
+<p>
+GRUBがパスワードを使うように設定ファイル(<path>/boot/grub/grub.conf</path>)を編集する場合、
+平文でパスワードを設定する方法と、ソルト(salt)付きのMD5でパスワードを設定する方法の、
+ふたつのやり方があります。
+</p>
+
+<pre caption="/boot/grub/grub.conf">
+timeout 5
+password changeme
+</pre>
+
+<p>
+こうしておくと<c>changeme</c>というパスワードが追加され、
+パスワードが入力されないと単にデフォルトの設定で起動するようになります。
+</p>
+
+<p>
+MD5形式のパスワードを追加したい場合は、
+<path>/etc/shadow</path>と同様のフォーマットであるcryptフォーマット(<c>man crypt</c>)にパスワードをコンバートする必要があります。
+詳しくは<c>man crypt</c>を参照してください。
+<e>changeme</e>を暗号化すると、$1$T7/dgdIJ$dJM.n2wZ8RG.oEiIOwJUs.となるでしょう。
+</p>
+
+<p>
+直接GRUBのシェルを使ってこういう風にコンバートすることもできます：
+</p>
+
+<pre caption="GRUBのシェルでmd5crypt">
+#<i>/sbin/grub</i>
+
+    GRUB  version 0.92  (640K lower / 3072K upper memory)
+
+   [ Minimal BASH-like line editing is supported.  For the first word, TAB
+     lists possible command completions.  Anywhere else TAB lists the possible
+     completions of a device/filename. ]
+
+grub> <i>md5crypt</i>
+
+Password: <i>********</i>
+<codenote>changemeと入力</codenote>
+Encrypted: $1$T7/dgdIJ$dJM.n2wZ8RG.oEiIOwJUs.
+
+grub> <i>quit</i>
+</pre>
+
+<p>
+次にパスワードを<path>/boot/grub/grub.conf</path>にコピー&amp;ペーストします。
+</p>
+
+<pre caption="/boot/grub/grub.conf">
+timeout 5
+password --md5 $1$T7/dgdIJ$dJM.n2wZ8RG.oEiIOwJUs.
+</pre>
+
+<p>
+マシンが遠方にあってキーボードからの入力なしで再起動しなくてはいけない場合、
+timeoutを5秒に設定しておくととても便利です。
+<path>info grub</path>と実行してGRUBのパスワードについてもっと学んでみてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>LILOパスワード</title>
+<body>
+
+<p>
+LILOにもパスワードを設定する方法がふたつあります。
+ただしこちらの場合は、イメージごとに設定する方法と、全イメージ共通で設定する方法のふたつで、どちらも平文でパスワードを設定することになります。
+</p>
+
+<p>
+全イメージ共通の設定は、設定ファイルの先頭に記述します：
+</p>
+
+<pre caption="/etc/lilo.conf">
+password=changeme
+restricted
+delay=3
+</pre>
+
+<p>
+もしくは、イメージごとに設定します。
+</p>
+
+<pre caption="/etc/lilo.conf">
+image=/boot/bzImage
+      read-only
+      password=changeme
+      restricted
+</pre>
+
+<p>
+<c>restricted</c>オプションが指定されていないと、
+毎回パスワード入力のプロンプトが表示されてしまいます。
+</p>
+
+<p>
+<path>lilo.conf</path>に設定した新しい情報を反映させるには、
+<c>/sbin/lilo</c>を実行する必要があります。
+</p>
+
+</body>
+</section>
+<section>
+<title>コンソールのセキュリティを高める</title>
+<body>
+
+<p>
+<path>/etc/securetty</path>を編集することで、
+どの<c>TTY</c>(ターミナル)デバイスからrootがログインできるようにするか指定することができます。
+</p>
+
+<p>
+<c>vc/1</c>以外の行を全てコメントアウトしてしまうのがオススメです。
+こうしておけば、一度に1回、ひとつの端末でしかrootでログインできなくなります。
+</p>
+
+<note>
+この場合でも、wheelグループに所属しているユーザーは<c>su -</c>とすれば別のTTYでrootになることができます。
+</note>
+
+
+<pre caption="/etc/securetty">
+vc/1
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>いつもより多めにログを取る</title>
+<section>
+<body>
+
+<p>
+詳細なログを取るようにすれば、いままさに行われようとしているアタックやすでに成功した侵入に関して、
+警告やエラーを見つけることができます。アタッカーたちは、
+実際にアタックする前にネットワークをスキャンしたり調査したりするものです。
+</p>
+
+<p>
+ログファイルが読みやすくて扱いやすいということも、同様に不可欠なことです。
+Gentoo Linuxでは、インストール時に3種類のログ記録ソフトから選べるようになっています。
+</p>
+
+</body>
+</section>
+<section>
+<title>ロギング：syslogd</title>
+<body>
+
+<p>
+syslogdは一般的に最も有名なLinux/UNIXのログ記録ソフトです。
+syslogdはログのローテーションを行いません。
+<path>/etc/logrotate.conf</path>を設定してcronに<path>/usr/sbin/logrotate</path>を追加すれば、
+ログのローテートができるようになります(訳注：そのためには<c>emerge logrotate</c>としてlogrotateをインストールしておく必要があります)。
+どの程度の頻度でログをローテートすべきかは、そのシステムの負荷によります。
+</p>
+
+<p>
+以下は標準の<path>syslog.conf</path>にいくつか機能を追加したものです。
+<c>cron</c>や<c>tty</c>の行のコメントアウトを外して、リモートのログサーバを追加しました。
+今後もっとセキュリティを高めようと思うなら、ログを2個所で記録するようにしても良いでしょう。
+</p>
+
+<pre caption="/etc/syslog.conf">
+#  /etc/syslog.conf     Configuration file for syslogd.
+#
+#                       For more information see syslog.conf(5)
+#                       manpage.
+#                       This is from Debian, we are using it for now
+#                       Daniel Robbins, 5/15/99
+
+#
+# まずは標準のログファイルをいくつか。ファシリティによるログ。
+#
+
+auth,authpriv.*                 /var/log/auth.log
+*.*;auth,authpriv.none          -/var/log/syslog
+cron.*                         /var/log/cron.log
+daemon.*                        -/var/log/daemon.log
+kern.*                          -/var/log/kern.log
+lpr.*                           -/var/log/lpr.log
+mail.*                          /var/log/mail.log
+user.*                          -/var/log/user.log
+uucp.*                          -/var/log/uucp.log
+local6.debug                    /var/log/imapd.log
+
+#
+# メールシステム用のログ。
+# 解析スクリプトを書きやすくするため別ファイルに。
+#
+mail.info                       -/var/log/mail.info
+mail.warn                       -/var/log/mail.warn
+mail.err                        /var/log/mail.err
+
+# ニュースシステムINN用のログ
+#
+news.crit                       /var/log/news/news.crit
+news.err                        /var/log/news/news.err
+news.notice                     -/var/log/news/news.notice
+
+#
+# 「全部盛り」なログファイル
+#
+*.=debug;\
+        auth,authpriv.none;\
+        news.none;mail.none     -/var/log/debug
+*.=info;*.=notice;*.=warn;\
+        auth,authpriv.none;\
+        cron,daemon.none;\
+        mail,news.none          -/var/log/messages
+
+#
+# emergとalertはログインしているユーザー全員に。
+#
+*.emerg                         *
+*.=alert                        *
+
+#
+# ログがコンソールに表示されているのが好きなのですが、
+# いつもは触らない仮想コンソールにのみ表示するようにします。
+#
+daemon,mail.*;\
+       news.=crit;news.=err;news.=notice;\
+       *.=debug;*.=info;\
+       *.=notice;*.=warn       /dev/tty8
+
+#リモートのログサーバをセットアップ
+*.*                        @logserver
+
+# "xconsole"ユーティリティ用の名前付きパイプ。
+# 利用する際は"xconsole"を"-file"オプション付きで起動する必要あり：
+# 
+#    $ xconsole -file /dev/xconsole [...]
+#
+# NOTE: 以下はうまく調節してください。そうしないと、ある程度忙しいサイトの場合
+#       気がヘンになってしまうかもしれません・・・
+#
+#daemon.*,mail.*;\
+#       news.crit;news.err;news.notice;\
+#       *.=debug;*.=info;\
+#       *.=notice;*.=warn       |/dev/xconsole
+
+local2.*                -/var/log/ppp.log
+</pre>
+
+<p>
+アタッカーはログファイルを編集したり削除することで、自分の痕跡を消そうとします。
+別のマシン(ひとつでも複数でも)でもログを取るようにすることで、
+アタッカーに対する敷居を高くすることができます。
+syslogdに関する詳細な情報はマニュアルページを見てください(<path>man syslog</path>)(訳注：<path>man syslogd</path>の方が適切だと思います)。
+</p>
+
+</body>
+</section>
+<section>
+<title>Metalog</title>
+<body>
+
+<p>
+Frank Denis氏作の<uri link="http://metalog.sourceforge.net">Metalog</uri>はログをリモートサーバに送ることはできませんが、
+そのパフォーマンスとログを記録する際の柔軟性において他を上回っています。
+Metalogでは、プログラム名や緊急度、ファシリティ(syslogdと同様)でログの指定をできる他、
+正規表現を書いたり特定のパターンにマッチした場合に外部スクリプトを呼び出したりすることもできます。
+そういう処理が必要な場合は大変重宝します。
+</p> 
+
+<p>
+標準の設定でも基本的には十分です。
+もしパスワード入力ミスがあった場合に毎回メールが送られてくるようにしたければ、以下のスクリプトを使ってみてください。
+</p>
+
+<p>
+Postfix用：
+</p>
+
+<pre caption = "Postfix用/usr/local/sbin/mail_pwd_failures.sh">
+#! /bin/sh
+echo "$3" | mail -s "Warning (program : $2)" root
+</pre>
+
+<p>
+qmail用：
+</p>
+
+<pre caption = "qmail用/usr/local/sbin/mail_pwd_failures.sh">
+#!/bin/sh
+echo "To: root
+Subject:Failure (Warning: $2) 
+$3
+" | /var/qmail/bin/qmail-inject -f root
+</pre>
+
+<p>
+<c>/bin/chmod +x /usr/local/sbin/mail_pwd_failures.sh</c>として、
+このスクリプトを実行可能にすることを忘れずに。
+</p>
+
+<p>
+次に以下のように、
+"Password failures"の下にあるcommandの行のコメントアウトを外します：
+</p>
+
+<pre caption="/etc/metalog.conf">
+command  = "/usr/local/sbin/mail_pwd_failures.sh"
+</pre>
+
+</body>
+</section>
+<section>
+
+<title>syslog-ng</title>
+<body>
+
+<p>
+syslog-ngは、多少の違いはあるものの、syslogとMetalogの両方が提供する機能を備えています。
+レベルとcontentによってフィルタしたあとにログに落せます(Metalogのように)し、syslogのようにリモートへログを送れます。
+syslogdからのログ(Solarisからのログでさえ)を記録できますし、TTYへログを書き込めます。
+プログラムの実行ができ、ログサーバとして動作させることもできます。
+syslog-ngは基本的には、柔軟な設定が行え、ふたつのログ記録ソフトがミックスされた、最高のものだと思います。
+</p>
+
+<p>
+基本的な設定ファイルに少しだけ変更を加えてみました。
+</p>
+
+<pre caption="/etc/syslog-ng/syslog-ng.conf">
+options { long_hostnames(off); sync(0); };
+
+#どこからログを読むのか決める
+source src { unix-stream("/dev/log"); internal(); };
+source kernsrc { file("/proc/kmsg"); };
+
+#記録先を設定する
+destination authlog { file("/var/log/auth.log"); };
+destination syslog { file("/var/log/syslog"); };
+destination cron { file("/var/log/cron.log"); };
+destination daemon { file("/var/log/daemon.log"); };
+destination kern { file("/var/log/kern.log"); };
+destination lpr { file("/var/log/lpr.log"); };
+destination user { file("/var/log/user.log"); };
+destination mail { file("/var/log/mail.log"); };
+
+destination mailinfo { file("/var/log/mail.info"); };
+destination mailwarn { file("/var/log/mail.warn"); };
+destination mailerr { file("/var/log/mail.err"); };
+
+destination newscrit { file("/var/log/news/news.crit"); };
+destination newserr { file("/var/log/news/news.err"); };
+destination newsnotice { file("/var/log/news/news.notice"); };
+
+destination debug { file("/var/log/debug"); };
+destination messages { file("/var/log/messages"); };
+destination console { usertty("root"); };
+destination console_all { file("/dev/tty12"); };
+destination xconsole { pipe("/dev/xconsole"); };
+
+#フィルタを作る
+filter f_auth { facility(auth); };
+filter f_authpriv { facility(auth, authpriv); };
+filter f_syslog { not facility(authpriv, mail); };
+filter f_cron { facility(cron); };
+filter f_daemon { facility(daemon); };
+filter f_kern { facility(kern); };
+filter f_lpr { facility(lpr); };
+filter f_mail { facility(mail); };
+filter f_user { facility(user); };
+filter f_debug { not facility(auth, authpriv, news, mail); };
+filter f_messages { level(info..warn) 
+	and not facility(auth, authpriv, mail, news); };
+filter f_emergency { level(emerg); };
+
+filter f_info { level(info); };
+filter f_notice { level(notice); };
+filter f_warn { level(warn); };
+filter f_crit { level(crit); };
+filter f_err { level(err); };
+filter f_failed { match("failed"); };
+filter f_denied { match("denied"); };
+
+#フィルタと記録先を関連付ける
+log { source(src); filter(f_authpriv); destination(authlog); };
+log { source(src); filter(f_syslog); destination(syslog); };
+log { source(src); filter(f_cron); destination(cron); };
+log { source(src); filter(f_daemon); destination(daemon); };
+log { source(kernsrc); filter(f_kern); destination(kern); };
+log { source(src); filter(f_lpr); destination(lpr); };
+log { source(src); filter(f_mail); destination(mail); };
+log { source(src); filter(f_user); destination(user); };
+log { source(src); filter(f_mail); filter(f_info); destination(mailinfo); };
+log { source(src); filter(f_mail); filter(f_warn); destination(mailwarn); };
+log { source(src); filter(f_mail); filter(f_err); destination(mailerr); };
+
+log { source(src); filter(f_debug); destination(debug); };
+log { source(src); filter(f_messages); destination(messages); };
+log { source(src); filter(f_emergency); destination(console); };
+
+#デフォルトのログ
+log { source(src); destination(console_all); };
+</pre>
+
+<p>
+とても設定をしやすいものの、設定ファイルが膨大なため設定忘れもしやすいです。
+作者によれば、暗号化、認証、圧縮、
+MAC(Mandatory Access Control)を将来実装するとのことです。
+これらの機能があれば、ネットワーク用のログ記録ソフトとしては最高のものになります。
+なぜなら、アタッカーがログを盗み見ることができなくなるからです。
+</p>
+
+<p>
+さらにsyslog-ngにはもうひとつ利点があります。なんと、rootとして走らせなくても良いのです！
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>パーティションのマウント</title>
+<section>
+<body>
+
+<p>
+<c>ext2</c>や<c>ext3</c>、<c>ReiserFS</c>を使用しているなら、
+<path>/etc/fstab</path>でいくつか設定できることがあります。
+以下がそのオプションです：
+</p>
+
+<ul>
+<li>
+	<c>nosuid</c> - SUIDビットを無視して、通常のファイルと同様に扱う
+</li>
+<li>
+	<c>noexec</c> - そのパーティションにあるファイルの実行を禁止する
+</li>
+<li>
+	<c>nodev</c> - デバイスの作成をできないようにする
+</li>
+</ul>
+
+<p>
+残念ながら、パスを直接指定せずに実行すればこれらの設定を回避することができます。
+とはいえ、<path>/tmp</path>をnoexecでマウントしておけば、
+スクリプト・キディーたちの攻撃の99%は回避できるでしょう。
+彼等が使う攻撃用コードは、直接<path>/tmp</path>から実行するように作られているからです。
+</p>
+
+<pre caption="/etc/fstab">
+/dev/sda1 /boot ext2 noauto,noatime 1 1
+/dev/sda2 none swap sw 0 0
+/dev/sda3 / reiserfs notail,noatime 0 0
+/dev/sda4 /tmp reiserfs notail,noatime,nodev,nosuid,noexec 0 0
+/dev/sda5 /var reiserfs notail,noatime,nodev 0 0
+/dev/sda6 /home reiserfs notail,noatime,nodev,nosuid 0 0
+/dev/sda7 /usr reiserfs notail,noatime,nodev,ro 0 0
+/dev/cdroms /cdrom0 /mnt/cdrom iso9660 noauto,ro 0 0
+proc /proc proc defaults 0 0
+</pre>
+
+<warn>
+<path>/tmp</path>を<c>noexec</c>モードでマウントしておくことで、
+ある種のスクリプトが実行されることをちゃんと防ぐことができます。
+</warn>
+
+<note>
+quotaについては<uri link="#doc_chap6_sect3">quotaの節</uri>をご覧ください。
+</note>
+
+<note>
+私は<path>/var</path>を、通常ファイルが実行されることがないにもかかわらずnoexecやnosuid付きでマウントしていません。
+qmailは<path>/var/qmail</path>にインストールされますが、ここからファイルが実行される必要があり、
+また、SUIDされたファイルがひとつあります。
+それから私は<path>/usr</path>をリードオンリーでマウントしています。
+というのも、私はGentooをアップデートするとき以外、ここに何も書き込まないからです。
+そういう場合は一度読み書きモードでシステムをマウントしたあと、Gentooをアップデートし、再度リードオンリーでマウントします。
+</note>
+
+<note>
+qmailをインストールしない場合でも、Gentooでは<path>/var/tmp</path>にebuildを作成するため、
+ここに実行ファイルを置けるようにしなくてはいけません。
+ただ、どうしても<path>/var</path>を<c>noexec</c>モードでマウントしたければ、別のパスを使うように設定することもできます。
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ユーザーやグループに対する制限</title>
+<section>
+<title>/etc/security/limits.conf</title>
+<body>
+
+<p>
+リソースの制限をすることは、ローカルユーザーのDoS攻撃を防ぎたい場合や、
+グループやユーザーに最大同時ログイン数の制限を加えたい場合にとても有効です。
+</p>
+
+<pre caption="/etc/security/limits.conf">
+*    soft core      0
+*    hard core      0
+*    hard nproc     15
+*    hard rss       10000
+*    -    maxlogins 2
+@dev hard core      100000
+@dev soft nproc     20
+@dev hard nproc     35
+@dev -    maxlogins 10
+</pre>
+
+<p>
+<c>nproc</c>や<c>maxlogins</c>を0に設定するぐらいなら、その代わりにユーザーを削除すべきでしょう。
+上に載せたサンプルは<c>dev</c>グループの設定ですが、ここではプロセス数、コアファイルの大きさ、<c>maxlogins</c>の制限をしています。
+これ以外の項目については、デフォルトのままです。
+</p>
+
+<note>
+<path>/etc/security/limits.conf</path>はPAMパッケージの一部なので、
+PAMを使うパッケージにしか適用されません。
+</note>
+
+
+</body>
+</section>
+<section>
+<title>/etc/limits</title>
+<body>
+
+<p>
+<path>/etc/limits</path>は、制限を行うための<path>/etc/security/limits.conf</path>とよく似ています。
+唯一の違いはフォーマットですが、制限できる対象がユーザー、もしくはワイルドカードでの指定だけになっています。
+グループを制限対象にすることはできません。
+以下のちょっと緩めの設定を見てみてください：
+</p>
+
+<pre caption="/etc/limits">
+*   L2 C0 U15 R10000
+kn L10 C100000 U35
+</pre>
+
+<p>
+ここではデフォルトの設定と、knというユーザーの設定をしています。
+limitsはsys-apps/shadowパッケージの一部です。
+<path>make.conf</path>で<c>pam</c>を無効にしていたり、
+PAMを適切に設定していないなら、
+このファイルでリミットの設定をする必要はありません。
+</p>
+
+</body>
+</section>
+<section>
+<title>quota</title>
+<body>
+
+<warn>
+使用するファイルシステムでquotaのサポートが有効になっているか確認してくさだい。
+ReiserFSでは使用できません！
+</warn>
+
+<p>
+ファイルシステムにquotaを設定しておけばユーザーがディスクをあふれさせることを防げますし、
+また、一切書き込めないようにすることもできます。
+quotaはカーネルで有効に設定され、マウントポイントに対して付与されます。
+設定するカーネルオプションは、<c>File systems→Quota support</c>にあります。
+以下の設定を行ったあとカーネルを再構築して、新しいカーネルが使われるように再起動してください。
+</p>
+
+<p>
+まず<c>emerge quota</c>でquotaをインストールします。
+次に以下のように<path>/etc/fstab</path>を編集して、
+ディスクの使用を制限したいパーティションに<c>usrquota</c>と<c>grpquota</c>を設定します。
+</p>
+
+<pre caption="/etc/fstab">
+/dev/sda1 /boot ext2 noauto,noatime 1 1
+/dev/sda2 none swap sw 0 0
+/dev/sda3 / reiserfs notail,noatime 0 0
+/dev/sda4 /tmp ext3 notail,noatime,nodev,nosuid,noexec,usrquota,grpquota 0 0
+/dev/sda5 /var ext3 notail,noatime,nodev,usrquota,grpquota 0 0
+/dev/sda6 /home ext3 notail,noatime,nodev,nosuid,usrquota,grpquota 0 0
+/dev/sda7 /usr reiserfs notail,noatime,nodev,ro	0 0
+/dev/cdroms/cdrom0 /mnt/cdrom iso9660 noauto,ro 0 0
+proc /proc proc defaults 0 0
+</pre>
+
+<p>
+quotaを有効にしたい全てのパーティションのルートディレクトリに、
+quota用のファイル(<path>quota.user</path>や<path>quota.group</path>)を置いてください。
+</p>
+
+<pre caption="quota用ファイルを作成">
+# <i>touch /tmp/quota.user</i>
+# <i>touch /tmp/quota.group</i>
+# <i>chmod 600 /tmp/quota.user</i>
+# <i>chmod 600 /tmp/quota.group</i>
+</pre>
+
+<p>
+この作業はquotaを有効にした全てのパーティションで行う必要があります。
+quota用のファイルを追加して設定を行ったら、
+<c>quota</c>の起動スクリプトをデフォルトのランレベルに追加しないといけません。
+</p>
+
+<pre caption="quotaをデフォルトのランレベルに追加">
+# <i>rc-update add quota default</i>
+</pre>
+
+<p>
+それから、以下の行を<path>/etc/crontab</path>に追加して、
+週に一度quotaのチェックが実行されるようにします。
+</p>
+
+<pre caption="crontabにquotaのチェックを追加">
+0 3 * * 0 /sbin/quotacheck -avug.
+</pre>
+
+<p>
+マシンを再起動したら、今度はユーザーとグループに対してquotaの設定をしなくてはいけません。
+<c>edquota -u kn</c>とすれば$EDITORで設定されたエディタ(デフォルトではnano)が起動し、
+knというユーザーに対してquotaの設定をできます。
+<c>edquota -g</c>とすれば同じことをグループに対して行えます。
+</p>
+
+<pre caption="ユーザーkn用のquotaを設定">
+Quotas for user kn: 
+/dev/sda4: blocks in use: 2594, limits (soft = 5000, hard = 6500) 
+         inodes in use: 356, limits (soft = 1000, hard = 1500)
+</pre>
+
+<p>
+詳細な情報は<c>man edquota</c>か<uri 
+link="http://www.tldp.org/HOWTO/mini/Quota.html">Quota mini howto</uri>で見てください(訳注：日本語訳が<uri 
+link="http://www.linux.or.jp/JF/JFdocs/Quota/">http://www.linux.or.jp/JF/JFdocs/Quota/</uri>にあります)。
+</p>
+
+</body>
+</section>
+<section>
+<title>/etc/login.defs</title>
+<body>
+	    
+<p>
+たとえば2週間ごとにユーザーにパスワードを変更させたいなら、<c>PASS_MAX_DAYS</c>を14に、
+<c>PASS_WARN_AGE</c>を7に設定すると良いでしょう。
+パスワードを総当たり攻撃されてしまえば、どんなパスワードでも破られるのは時間の問題なので、
+あなた自身も有効期限付きのパスワードを使うべきです。
+<c>LOG_OK_LOGINS</c>もyesに設定しておくべきでしょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>/etc/login.access</title>
+<body>
+
+<p>
+<path>login.access</path>ファイルもsys-apps/shadowパッケージの一部で、
+ログインアクセスをコントロールするテーブルを提供します。
+このテーブルは誰がログインできて誰がログインできないかを、ユーザー名、グループ名、ホスト名で指定するのに使います。
+デフォルトの状態では、そのシステムのユーザーは全員ログインできるように設定されていて、
+このファイルにはコメントとサンプルしか入っていません。
+あなたがサーバやワークステーションのセキュリティを強化しようとしているかどうかに関わらず、
+あなた(つまり、管理者)以外の人がコンソールにアクセスできないようにこのファイルを設定してください。
+</p>
+
+<note>
+このファイルでの設定はrootには適用されません。
+</note>
+
+<pre caption="/etc/login.access">
+-:ALL EXCEPT wheel sync:console
+-:wheel:ALL EXCEPT LOCAL .gentoo.org
+</pre>
+
+<impo>
+これらのオプションを設定するときには注意してください。
+誤って設定してしまうと、rootでのアクセス権を持たない限りマシンにアクセスできなくなってしまいます。
+</impo>
+
+<note>
+SSHのデフォルトの設定では<c>/bin/loginを</c>実行しないようになっているため、
+login.accessを設定してもSSHでのアクセスには適用されません。
+<path>/etc/ssh/sshd_config</path>で<c>UseLogin yes</c>と設定すれば/bin/loginが実行されるようになるため、
+login.accessでの設定が有効になります。
+</note>
+
+<p>
+上の設定では、wheelグループのメンバーはローカルから、もしくはgentoo.orgドメイン経由でしかログインできないように設定しています。
+多少神経質な設定になっていますが、後で後悔するより良いと思います。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ファイルのパーミッション</title>
+<section>
+<title>「誰でも読める」ということ</title>
+<body>
+
+<p>
+設定ファイルやパスワードに一般ユーザーがアクセスできるようにすべきではあません。
+アタッカーはデータベースやWebサイトからパスワードを盗み、そのパスワードを使ってデータを読めないような状態にしたり、最悪の場合削除してしまったりできます。
+だから、パーミッションを適切に設定することは大事なのです。
+もし、あるファイルを使うのがrootだけならそのファイルのパーミッションを<c>0600</c>に設定し、
+<c>chown</c>を使って適切なユーザーがそのファイルを所有するようにしてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>「誰でも書き込める」、「同じグループのユーザーなら書き込める」ということ</title>
+<body>
+
+<pre caption="誰でも読み書きできてしまうファイルやディレクトリを探す">
+# <i>/usr/bin/find / -type f \( -perm -2 -o -perm -20 \) \ 
+   -exec ls -lg {} \; 2>/dev/null >writable.txt</i>
+# <i>/usr/bin/find / -type d \( -perm -2 -o -perm -20 \) \ 
+   -exec ls -ldg {} \; 2>/dev/null >>writable.txt</i>
+</pre>
+
+<p>
+上のコマンドを実行すると、同じグループのユーザーが書き込めたり誰でも書き込めたりするファイルのリストが、
+パーミッション付きで膨大なリストになります。
+リストされたパーミッションをチェックし、
+<c>/bin/chmod o-w</c>を実行して誰でも書けるという状態を取り除いてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>SUIDもしくはSGIDされたファイル</title>
+<body>
+
+<p>
+ファイルにSUIDビットやSGIDビットをセットすると、実際にそのファイルを実行するユーザーの権限ではなく、
+そのファイルを<e>所有</e>しているユーザーやグループの権限で実行することができるようになります。
+通常、これらのビットはrootではないとできない作業を行うために使用されます。
+このようなファイルは(もしそのファイルにセキュリティホールがあれば)ローカル環境でroot権限を乗っ取られることにもなりかねません。
+こういうSUIDビットやSGIDビットが立ったファイルは危険なため、
+極力無効にしなくてはいけません。
+そのファイルを使うことがないなら<c>chmod 0</c>とするか、
+そのファイルが含まれるパッケージをunmergeしてしまってください(<c>qpkg -f</c>とするとどのパッケージにファイルが含まれるのか調べられます。
+qpkgコマンドがインストールされていないなら<c>emerge gentoolkit</c>としてインストールしてください)。
+もしくは、単純にchmod -sとやってSUIDビットを落としても良いでしょう。
+</p>
+
+<pre caption="SUIDされたファイルの検索">
+# <i>/usr/bin/find / -type f \( -perm -004000 -o -perm -002000 \) \ 
+  -exec ls -lg {} \; 2>/dev/null >suidfiles.txt</i>
+</pre>
+
+<p>
+上のコマンドを実行すると、SUIDもしくはSGIDされたファイルがすべて表示されます。
+</p>
+
+<pre caption="SUIDされたバイナリの一覧">
+/bin/su
+/bin/ping
+/bin/mount
+/bin/umount
+/var/qmail/bin/qmail-queue
+/usr/bin/chfn
+/usr/bin/chsh
+/usr/bin/crontab
+/usr/bin/chage
+/usr/bin/expiry
+/usr/bin/sperl5.6.1
+/usr/bin/newgrp
+/usr/bin/passwd
+/usr/bin/gpasswd
+/usr/bin/procmail
+/usr/bin/suidperl
+/usr/lib/misc/pt_chown
+/usr/sbin/unix_chkpwd
+/usr/sbin/traceroute
+/usr/sbin/pwdb_chkpwd
+</pre>
+
+<p>
+デフォルトの状態では、Gentoo Linuxにはそれほど多くのSUIDされたファイルは存在しませんが(何をインストールしたかによります)、
+上のような感じでリスト化しておくと良いでしょう。
+ほとんどのコマンドは一般ユーザーが使うようなものではなく、rootだけが使うべきものです。
+<c>ping</c>、<c>mount</c>、<c>umount</c>、<c>chfn</c>、<c>chsh</c>、<c>newgrp</c>、
+<c>suidperl</c>、<c>pt_chown</c>、<c>traceroute</c>の各ファイルについては、
+<c>chmod -s</c>を実行してSUIDビットをオフにしてください。
+<c>su</c>、<c>qmail-queue</c>、<c>unix_chkpwd</c>についてはSUIDビットを落としてはいけません。
+これらのファイルのSUIDビットを落としてしまうとsuできなくなったりメールが受けとれなくなったりします。
+SUIDビットを落とすことで、一般ユーザーが(もちろんアタッカーも)これらのファイルを通じてroot権限を奪うことを防げます。
+</p>
+
+<p>
+私のシステムに存在するSUIDビットの立ったファイルは、<c>su</c>、<c>passwd</c>、
+<c>gpasswd</c>、<c>qmail-queue</c>、<c>unix_chkpwd</c>、そして<c>pwdb_chkpwd</c>と、たったこれだけです。
+もしあなたがXを使っているなら、XはSUIDビットが立ったファイルへのアクセスが必要なのでもう少しこういうファイルがあるかもしれません。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>PAM (Pluggable Authentication Modules)</title>
+<section>
+<body>
+
+<p>
+PAMはいろいろなプログラムの認証部分の機能を肩代わりしてくれる、共有ライブラリのセットです。
+<c>pam</c>のUSEフラグはデフォルトで有効になっています。
+Gentoo Linuxで用意されているPAMの設定はとてもよく出来たものですが、もちろん、いつだってこういうことは改善の余地があります。
+まずはcracklibをインストールしてください(訳注：<path>/usr/portage/profiles/default-x86-1.4/packages</path>によれば、
+少くともx86用Gentoo Linux 1.4では、systemパッケージとしてデフォルトでインストールされるようです)。
+</p>
+
+<pre caption="cracklibをインストール">
+# <i>emerge cracklib</i>
+</pre>
+
+<pre caption="/etc/pam.d/passwd">
+auth	 required pam_pwdb.so shadow nullok
+account	 required pam_pwdb.so
+password required pam_cracklib.so difok=3 retry=3 minlen=8 dcredit=2 ocredit=2 
+password required pam_pwdb.so md5 use_authtok
+session	 required pam_pwdb.so
+</pre>
+
+<p>
+cracklibをインストールして上のように設定しておくと、
+ユーザーは「最低8文字」「2文字以上の数字を含む」「2文字以上の記号を含む」「以前のパスワードと3文字以上違う文字を含む」というパスワードを設定しないといけなくなります。
+こうしておけばユーザーは良いパスワードを利用することを迫られます(パスワードポリシー)。
+詳細なオプションは<uri 
+link="http://www.kernel.org/pub/linux/libs/pam/Linux-PAM-html/pam-6.html#ss6.3">PAM</uri>にあるドキュメントを参考にしてください。
+</p>
+
+<pre caption="/etc/pam.d/sshd">
+auth      required pam_pwdb.so nullok 
+auth      required pam_shells.so
+auth      required pam_nologin.so
+auth      required pam_env.so
+account   required pam_pwdb.so
+password required pam_cracklib.so difok=3 retry=3 minlen=8 dcredit=2 ocredit=2 use_authtok
+password  required pam_pwdb.so shadow md5
+session   required pam_pwdb.so
+session   required pam_limits.so
+</pre>
+
+<p>
+<path>/etc/pam.d</path>で個々に設定されていないサービスに対しては、
+<path>/etc/pam.d/other</path>のルールが適用されます。
+デフォルトの設定では当然すべて拒否されるようになっています。
+ただ、私はログをたくさん溜めるのが好きなので、
+<c>pam_warn.so</c>を追加することにしています。
+PAMに関する最後の設定は<path>/etc/security/limits.conf</path>で制御される<c>pam_limits</c>です。
+これに関しては<uri link="#doc_chap6_sect1">/etc/security/limits.confの節</uri>を参考にしてください。
+</p>
+
+<pre caption="/etc/pam.d/other">
+auth     required pam_deny.so 
+auth     required pam_warn.so 
+account  required pam_deny.so 
+account  required pam_warn.so 
+password required pam_deny.so 
+password required pam_warn.so 
+session  required pam_deny.so 
+session  required pam_warn.so
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>TCP Wrappers</title>
+<section>
+<body>
+
+<p>
+通常、各サービスへのアクセスをコントロールするにはinetd(Gentooには含まれていません)を使用しますが、
+xinetdなどを使うことで同様のことができます。
+</p>
+
+<note>
+各サービスは(xinetdの設定内で)tcpdから起動されている必要があります。
+詳しくはxinetdの章を見てください。
+</note>
+
+<pre caption="/etc/hosts.deny">
+ALL:PARANOID
+</pre>
+
+<pre caption="/etc/hosts.allow">
+ALL: LOCAL @wheel
+time: LOCAL, .gentoo.org
+</pre>
+
+<p>
+見てわかるとおり<path>/etc/login.access</path>のフォーマットと良く似ています。
+tcpdはすべてのサービスに対して使えるというわけではなく、
+またそれら個々のサービスはそれぞれ、セキュリティ的には別次元で動作しています(訳注：たとえばechoサービスとtelnetサービスでは、考慮すべきセキュリティが違うということだと思います)。
+これらの設定はTCP Wrappersを使用するサービスでのみ有効になります。
+</p>
+
+<p>
+サービスにアクセスがあったときに特定のコマンドを起動させることも可能です(ダイアルアップユーザーの中継を有効にした場合に使えるでしょう)。
+ただし人間は問題を解決しようとしてそれ以上の問題を作ってしまいがちなので、そういうことはしない方が良いでしょう。
+たとえば。denyに設定したルールに誰かが引っかかった場合、そのたびにメールを送るスクリプトを起動するように設定したとします。
+この場合アタッカーはあなたのマシンのdenyルールに引っかかり続けることで、
+簡単にDoS攻撃をすることができます。
+こうなってしまうとI/O負荷は大きくなってしまうやらメールは溜まってしまうやらでもう大変です。
+そういう設定はしないようにしましょうね！　詳しくは<c>man 5 hosts_access</c>を参照してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>カーネルのセキュリティ</title>
+<section>
+<title>使わない機能は削る</title>
+<body>
+
+<p>
+カーネル構築の基本原則は、必要としないものは全て削除することです。そ
+うすれば小さなカーネルを構築できますし、
+ドライバや他の機能の中に眠っている脆弱性も削ることができます。
+</p>
+
+<p>
+それから、できればローダブルモジュールのサポートもオフにしてください。
+ローダブルモジュールをサポートしないようにしていてもモジュールを追加することは可能ですが(rootkitなど)、
+カーネルモジュールを経由してrootkitを仕込もうとする普通のアタッカーににとっては少々荷が重いでしょう。 
+</p>
+
+</body>
+</section>
+<section>
+<title>/proc (カーネル用のフラグ)</title>
+<body>
+
+<p>
+<path>/proc</path>ファイルシステムや<c>sysctl</c>を使用することで、
+多くのカーネルパラメータを変更することができます。
+</p>
+
+<p>
+オン・ザ・フライで動的にカーネルのパラメータや設定を変更するためには、
+カーネルで<c>CONFIG_SYSCTL</c>が定義されている必要があります。
+2.4系のカーネルではデフォルトで定義されています。
+</p>
+
+<pre caption="pingパケットを無視">
+# <i>/bin/echo "1" &gt; /proc/sys/net/ipv4/icmp_echo_ignore_all</i>
+</pre>
+
+<p>
+こうしておくと、すべてのタイプ0のICMPパケット、つまりすべてのpingを無視するようにカーネルを設定できます。
+なぜこういう設定をするかというと、ICMPメッセージを載せたIPのパケットには、
+あなたが思っているよりずっと多くの情報が含まれているからです。
+管理者はpingを診断ツールとして使うのでpingが通らないと文句を言ってくると思います。
+でも外の人がpingを打てるようにしておく理由はないですよね？　ただ、内部の人がpingを使えると有用な場合があるのも事実です。
+そういう場合はファイアーウォールでタイプ0のICMPパケットを無効にすれば良いです。
+</p>
+
+<pre caption="ブロードキャストpingを無視">
+# <i>/bin/echo "1" &gt; /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts</i>
+</pre>
+
+<p>
+ブロードキャスト・メッセージに応答しないようにして、Smurf攻撃から身を守ります。
+Smurf攻撃はタイプ0のICMPメッセージ(ping)を、あるネットワークのブロードキャストアドレス宛てに送ることで実現します。
+通常、アタッカーは偽造した送信元アドレスになりすましてこの攻撃を行います。
+対象ネットワーク上のすべてのコンピュータがpingのメッセージに応答することになり、
+その結果なりすましに使用されたホストのネットワーク負荷が膨大なものになってしまうわけです。
+</p>
+
+<pre caption="ソースルーティングされたパケットを使えないように">
+# <i>/bin/echo "0" &gt; /proc/sys/net/ipv4/conf/all/accept_source_route</i>
+</pre>
+
+<p>
+ソースルーティングされたパケットは受け付けないようにしましょう。
+ソースルーティングされたパケットを使うことで、本当は全然別のところからのトラフィックを、
+あたかもあなたの内部ネットワークからやってきたかのように偽装することができます。
+アタッカーはあなたのネットワークを乗っ取れるのです。
+ソースルーティングが本来あるべき形で使われることは稀です。使えないようにしておきましょう。
+</p>
+
+<pre caption="リダイレクトに応えないように">
+# <i>/bin/echo "0" &gt; /proc/sys/net/ipv4/conf/all/accept_redirects</i>
+</pre>
+
+<p>
+ICMPのリダイレクト要求を拒否します。ICMPリダイレクトでルーテイングテーブルを変更することもできます。
+きっとイヤなところにルーティング先を変更されるんでしょう。
+</p>
+
+<pre caption="不正なエラーメッセージに対する防御">
+# <i>/bin/echo "1" &gt; /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses</i>
+</pre>
+
+<p>
+嘘っぱちのエラーメッセージ応答に対する防御を有効にします。
+</p>
+
+<pre caption="リバースパスをフィルタできるように">
+# <i>for i in /proc/sys/net/ipv4/conf/*; do
+        /bin/echo "1" > $i/rp_filter
+done</i>
+</pre>
+
+<note>
+IPフォーワーディングをオンにしていれば、ここでやることと同じ結果になります。
+</note>
+
+<p>
+リバースパスをフィルタできるようにします。
+こうしておくと、送信元アドレスのルーティングテーブルエントリがそのパケットの到着したNICと合致しないようなパケットを自動的に弾くことができるので、
+入ってくるパケットが正当な送信元アドレスを持つパケットだと保証することができます。
+この設定をしておくとIPの偽造を防ぐことができるので、セキュリティ的なアドバンテージになります。
+</p>
+
+<warn>
+ただしこの設定は、非対称なルーティング(あなたがあるホストに送るパケットが通る経路と、
+そのホストからあなた宛てに来るパケットの通る経路が違う)を使用しているネットワークで問題を起こす可能性があります。
+また、複数のNICを差して複数のIPアドレスを持っているルータではないホストでも、
+同様に問題が起こる可能性があります。
+</warn>
+
+<pre caption="偽造/ソースルーティング/リダイレクト、といったパケットをすべて記録">
+# <i>/bin/echo "1" &gt; /proc/sys/net/ipv4/conf/all/log_martians</i>
+</pre>
+
+<p>
+偽造されたパケット、ソースルーティングされたパケット、そしてリダイレクトされたパケットを記録します。
+</p>
+
+<pre caption="IPフォーワーディングを無効に">
+# <i>/bin/echo "0" &gt; /proc/sys/net/ipv4/ip_forward</i>
+</pre>
+
+<p>
+IPフォーワーディングをちゃんと無効にしておきます。
+マルチホームホストでないならこの機能は不要です。
+</p>
+
+<p>
+これら全ての設定はマシンの再起動時にリセットされてしまいます。
+ですから、下記のスクリプトを<c>rc-update add procparam default</c>で必要なランレベルに追加して、
+<c>chmod +x /etc/init.d/procparam</c>で実行できるようにしておくことを勧めます。
+</p>
+
+<pre caption="/etc/init.d/procparam">
+#!/sbin/runscript
+
+depend() {
+ use checkroot
+}
+
+start() {
+ ebegin "Setting /proc options."
+ /bin/echo "1" > /proc/sys/net/ipv4/icmp_echo_ignore_all
+ /bin/echo "1" > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
+ /bin/echo "0" > /proc/sys/net/ipv4/conf/all/accept_source_route
+ /bin/echo "0" > /proc/sys/net/ipv4/conf/all/accept_redirects
+ /bin/echo "1" > /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses
+ for i in /proc/sys/net/ipv4/conf/*; do
+   /bin/echo "1" > $i/rp_filter
+ done
+ /bin/echo "1" > /proc/sys/net/ipv4/conf/all/log_martians
+ /bin/echo "0" > /proc/sys/net/ipv4/ip_forward
+ eend 0
+}
+</pre>
+
+</body>
+</section>
+<section>
+<title>Grsecurity</title>
+<body>
+
+<p>
+<uri link="http://grsecurity.net">Grsecurity</uri>が提供しているパッチはGentooの各カーネルソースに標準で適用されていますが、
+デフォルトではオフになっています。
+以下のようにすれば使用可能です：
+</p>
+
+<p>
+まず普通にカーネルの構築をします。次にGrsecurityオプションを選んでCustomizedを選択し、以下のオプションを有効にしてください：
+</p>
+
+<ul>
+<li>Buffer Overflow Protection</li>
+<li>
+  <ul>
+  <li>Openwall non-executable stack</li>
+  <li>GCC trampoline support</li>
+  </ul>
+</li>
+<li>Filesystem Protections</li>
+<li>
+  <ul>
+  <li>Proc restrictions</li>
+  <li>Linking restrictions</li>
+  <li>Secure file descriptors</li>
+  <li>Chroot jail restrictions (このオプション以下にあるオプションも全て有効に)</li>
+  </ul>
+</li>
+<li>Kernel Auditing</li>
+<li>
+  <ul>
+  <li>Log execs within chroot</li>
+  <li>(Un)Mount logging</li>
+  <li>Signal logging</li>
+  <li>Fork failure logging</li>
+  <li>Log set*ids to root</li>
+  <li>Time change logging</li>
+  </ul>
+</li>
+<li>Executable Protections</li>
+<li>
+  <ul>
+  <li>Dmesg restriction</li>
+  <li>Randomized PIDs</li>
+  <li>
+		Altered default IPC permissions 
+		(正常に動いているプログラムが問題を起こす可能性もあります)
+	</li>
+  <li>Restricted ptrace</li>
+  </ul>
+</li>
+<li>Network Protections</li>
+<li>
+  <ul>
+  <li>Randomized IP IDs</li>
+  <li>Randomized TCP source ports</li>
+  <li>Altered Ping IDs.</li>
+  <li>Randomized TTL</li>
+  </ul>
+</li>
+<li>Miscellaneous Features</li>
+<li>
+  <ul>
+  <li>
+		BSD-style coredumps (<path>core.namedのような名前のコアファイルを作ります</path>)
+	</li>
+  </ul>
+</li>
+</ul>
+
+<p>
+以上の設定が終わったらコンパイルして、セキュリティが高められたカーネルをインストールしてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>Kerneli</title>
+<body>
+
+<p>
+<uri link="http://www.Kerneli.org">Kerneli</uri>は、
+既存のカーネルに暗号化機能を追加するパッチです。
+このパッチを適用することで、「cryptographic ciphers」、「digest algorithms」、
+「cryptographic loop filters」といった新しいオプションが現れます。
+</p>
+
+<warn>
+Kerneliのパッチはまだ最新のカーネルに対応した安定版がありません。
+利用する際は注意してください。
+</warn>
+
+</body>
+</section>
+<section>
+<title>その他のカーネルパッチ</title>
+<body>
+
+<ul>
+<li>
+	<uri link="http://www.openwall.com">The OpenWall Project</uri> 
+	(2.4系カーネル用ではありません)
+</li>
+<li><uri link="http://www.lids.org">Linux Intrusion Detection System</uri></li>
+<li><uri link="http://www.rsbac.org">Rule Set Based Access Control</uri></li>
+<li>
+	<uri link="http://www.nsa.gov/selinux">NSA's security enhanced kernel</uri>
+	</li>
+<li><uri link="http://sourceforge.net/projects/wolk/">Wolk</uri></li>
+</ul>
+
+<p>
+ま、きっともっとあると思うんですけどね。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>各サービスをセキュアに</title>
+<section>
+<title>xinetdを使う</title>
+<body>
+
+<p>
+xinetdはinetd(Gentooには入ってません)に取ってかわるもので、インターネットサービスのデーモンです。
+xinetdには接続元ホストのアドレスやアクセス時間に基づいてアクセス制限する機能があります。
+またxinetdは、「サーバがスタートした時間」、「接続元ホストのアドレス」、
+「接続したユーザー名」、「サーバが起動していた時間」、「要求されたアクション」など、
+さまざまなログを取ることができます。
+</p>
+
+<p>
+他の全てのサービスと同様、デフォルトで良い設定になっていることが重要です。
+しかし<c>xinetd</c>はroot権限で動作し、
+あなたがあまり動作について詳しくないであろうプロトコルをサポートしているので、使わない方が良いと思います。 
+ただ、とにかく使ってみたいという場合は以下のようにすることでセキュアにできると思います：
+</p>
+
+<pre caption="xinetdのインストール">
+# <i>emerge xinetd tcp-wrappers</i>
+</pre>
+
+<p>
+で、設定ファイルを編集します：
+</p>
+
+<pre caption="/etc/xinetd.conf">
+defaults
+{
+ only_from      = localhost
+ instances      = 10
+ log_type       = SYSLOG authpriv info
+ log_on_success = HOST PID
+ log_on_failure = HOST
+ cps            = 25 30
+}
+
+# 以下はpserver(cvs)をxinetd経由で起動する設定です：
+# 最高10インスタンス(1度に接続できるのは10接続だけ)
+# pserverはTCPでのみ応答する
+# cvsというユーザーでこのサービスが動作するようにする
+# インターフェースをひとつのIPに固定
+# 10.0.0.*というアドレスからのみ接続できる
+# 開発者がcvsを使えるのは午前8時から午後5時の間だけ
+# TCP Wrappersを使う(<path>/etc/hosts.allow</path>と
+# <path>/etc/hosts.deny</path>でアクセス制限をします)
+# マシンのmax_load(訳注：1分間のロードアベレージ)を1.0に設定
+# disableフラグはすでにデフォルトでnoになっていますが、
+# 実際にdisableにしたいときのためにオプションを付けておくのが好ましいです
+service cvspserver
+{
+ socket_type    = stream
+ protocol       = tcp
+ instances      = 10
+ protocol       = tcp
+ wait           = no
+ user           = cvs
+ bind           = 10.0.0.2
+ only_from      = 10.0.0.0
+ access_times   = 8:00-17:00
+ server         = /usr/sbin/tcpd
+ server_args    = /usr/bin/cvs --allow-root=/mnt/cvsdisk/cvsroot pserver
+ max_load       = 1.0
+ log_on_failure += RECORD
+ disable        = no
+}
+</pre>
+
+<p>
+詳しくは<c>man 5 xinetd.conf</c>を参照してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>SSH</title>
+<body>
+
+<p>
+OpenSSHをセキュアにするために必要な設定は、公開鍵認証を使った、
+より強い認証方法を使用するようにするだけです。
+あまりにも多くのサイト(<uri>http://www.sourceforge.net</uri>や<uri>http://www.php.net</uri>、
+<uri>http://www.apache.org</uri>)が、
+パスワードの漏洩や貧弱なパスワードのために侵入を経験しています。
+</p>
+
+<pre caption="/etc/ssh/sshd_config">
+#バージョン2のプロトコルのみ有効に
+Protocol 2
+
+#直接rootでアクセスするのは禁止
+PermitRootLogin no
+
+#RSA公開鍵認証を有効に
+RSAAuthentication yes
+PubkeyAuthentication yes
+AuthorizedKeysFile      .ssh/authorized_keys
+
+#.rhostファイルや通常のパスワード認証を無効に
+RhostsAuthentication no
+PasswordAuthentication no
+PermitEmptyPasswords no
+
+AllowHosts *.gentoo.org
+
+#wheelグループかadminグループに所属しているユーザーにのみアクセス権を与える
+AllowGroups wheel admin
+
+#上記グループに所属している人のうち、knとbsのみ実際にアクセス可能
+AllowUsers kn bs
+
+#ログのレベルを指定
+SyslogFacility AUTH
+LogLevel INFO
+
+#IPアドレスを割り当てる
+ListenAddress 127.0.0.1
+</pre>
+
+<p>
+あとはあなたのユーザー全員に、
+以下のコマンドを使って(そのユーザーがサーバにログインしたいマシンで)鍵を作ってもらうだけです。
+</p>
+
+<pre caption="RSA形式の鍵ペアを作成">
+# <i>/usr/bin/ssh-keygen -t rsa</i>
+</pre>
+
+<p>
+パスフレーズを入力します。
+</p>
+
+<pre caption="ssh-keygenの出力">
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/kn/.ssh/id_rsa):<c>[enterを押してください]</c>
+Created directory '/home/kn/.ssh'.
+Enter passphrase (empty for no passphrase): <c>[パスフレーズを入力します]</c>
+Enter same passphrase again: <c>[再度パスフレーズを入力します]</c>
+Your identification has been saved in /home/kn/.ssh/id_rsa.
+Your public key has been saved in /home/kn/.ssh/id_rsa.pub.
+The key fingerprint is:
+07:24:a9:12:7f:83:7e:af:b8:1f:89:a3:48:29:e2:a4 kn@knielsen
+</pre>
+
+<p>
+こうするとあなたの<path>~/.ssh/</path>ディレクトリ内に、
+<path>id_rsa</path>と<path>id_rsa.pub</path>というふたつのファイルが追加されます。
+<path>id_rsa</path>というファイルはあなたの秘密鍵なので他の人にアクセスされないようにしてください。
+もうひとつの<path>id_rsa.pub</path>はアクセスしたい各サーバに置いておきます。
+鍵(訳注：公開鍵(<path>id_rsa.pub</path>)の方です)をサーバにあるホームディレクトリの<path>~/.ssh/authorized_keys</path>に追加すれば、
+そのサーバにログインすることができるでしょう。
+</p>
+
+<p>
+今後、あなたのユーザーはこの秘密鍵をちゃんと保管しなくてはいけません。
+いつも持ち歩くメディアに入れておくか自分たちのワークステーョンのみに保存しておきます(ということを<uri 
+link="#doc_chap2_sect5">パスワード</uri>のポリシーに追加しておきましょう)。
+</p>
+
+<p>
+詳細な情報は<uri link="http://www.openssh.org">OpenSSH</uri>のサイト(訳注：日本語版は<uri 
+link="http://www.openssh.org/ja/">http://www.openssh.org/ja/</uri>)にあります。
+</p>
+
+</body>
+</section>
+<section>
+<title>X</title>
+<body>
+
+<p>
+XFreeは、デフォルトではXサーバとして動作するように設定されています。
+Xは暗号化されていないTCP接続を使用してXクライアントの接続を待っているので危険です。
+</p>
+
+<impo>
+Xサーバの機能を必要としないなら無効にしておきましょう！
+</impo>
+
+<p>
+ただし、もしあなたのワークステーションをXサーバにしておく必要があるのなら、
+<c>/usr/X11R6/bin/xhost</c>コマンドは注意して使ってください。
+このコマンドを使うと、他のホスト上のXクライアントがあなたのディスプレイに接続できるようになります。
+他のマシンからXアプリケーションを使う必要があってネットワーク越しでしか使用できない場合、このコマンドは便利だと思います。
+このコマンドは<c>/usr/X11R6/bin/xhost +ホスト名</c>という風に使います。
+</p>
+
+<warn>
+<c>xhost +</c>という機能(訳注：ホスト名なしで+のみ)は絶対に使わないようにしてください！　
+こうすると誰でもあなたのXをコントロールすことができるようになります。
+アタッカーがあなたのXへアクセスできれば、キーストロークを記録してあなたのデスクトップを操作できます。
+このコマンドを使うときは必ずホストを指定するようにしてください。
+</warn>
+
+<p>
+もっとセキュアにする方法は、<c>startx -- -nolisten tcp</c>とすることでTCPでの接続を無効にするか、
+もしくは設定を変更して最初からこの機能を無効にしてしまうことです。
+</p>
+
+<pre caption="/usr/X11R6/bin/startx">
+defaultserverargs="-nolisten tcp"
+</pre>
+
+<p>
+新しいバージョンのXFreeをemergeするときに<path>startx</path>が上書きされないようにするには、
+このファイルを保護しなくてはいけません。
+以下の行を<path>/etc/make.conf</path>に追加してください：
+</p>
+
+<pre caption = "/etc/make.conf">
+CONFIG_PROTECT_MASK="/usr/X11R6/bin/startx"
+</pre>
+
+<p>
+グラフィカル・ログインを利用しているなら、ちょっと違うことをしないといけません。
+</p>
+
+<p><c>gdm</c>(Gnome Display Manager)の場合</p>
+
+<pre caption="/etc/X11/gdm/gdm.conf">
+[server-Standard]
+command=/usr/X11R6/bin/X -nolisten tcp
+</pre>
+
+<p><c>xdm</c>(X Display Manager)と<c>kdm</c>(KDE Display Manager)の場合</p>
+
+<pre caption="/etc/X11/xdm/Xservers">
+:0 local /usr/bin/X11/X -nolisten tcp 
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>FTP</title>
+<body>
+<p>
+基本的に、FTP(ファイル転送プロトコル)を使うというのはいただけません。
+データを暗号化しないし、待ち受けポートをふたつも使うし(通常は20番と21番)、
+アタッカーが(Warez交換のために)探してる匿名ログインをサポートしてるし。
+FTPのプロトコルにはいくつかセキュリティ上の問題があるので、
+できれば代わりに<c>sftp</c>かHTTPを使うべきです。
+それが無理なら、できるだけセキュアにしておいて備えをしておきましょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>Pure-FTPd</title>
+<body>
+
+<p>
+Pure-FTPdはTrollFTPDから枝分かれしたソフトです。
+Frank Denis氏により、セキュリティ上の理由で変更や機能が追加されています。
+</p>
+
+<p>
+<c>AUTH</c>オプションを有効にしてバーチャルユーザー(システムアカウントは使わないこと)を使用しましょう。
+<c>-lpuredb:/etc/pureftpd.pdb</c>オプションを設定し、
+<c>/usr/bin/pure-pw</c>にユーザーを指定しておきます。
+</p>
+
+<pre caption="/etc/conf.d/pure-ftpd">
+AUTH="-lpuredb:/etc/pureftpd.pdb"
+
+## その他もろもろ ##
+MISC_OTHER="-A -E -X -U 177:077 -d -4 -L100:5 -I 15"
+</pre>
+
+<p>
+<c>MISC_OTHER</c>を設定して、匿名ユーザーを禁止したり(<c>-E</c>)、
+全員がchrootするようにしたり(<c>-A</c>)「.(ドット)」で始まるファイルの読み書きを禁止したり(<c>-X</c>)、
+アイドルタイムの上限を設定したり(<c>-I</c>)、再帰処理を制限したり(<c>-L</c>)、
+ちゃんとした<c>umask</c>を使用したりするようにしましょう。
+</p>
+
+<warn>
+<c>-w</c>オプションと<c>-W</c>オプションは絶対に使っちゃ<e>ダメ</e>です！　
+Warezなサイトを作りたいなら、ここでこのガイド読むの止めちゃてください！
+</warn>
+
+<p>
+<uri>http://www.pureftpd.org</uri>に行けばドキュメントが見つかります。
+</p>
+
+</body>
+</section>
+<section>
+<title>ProFTPD</title>
+<body>
+
+<p>
+ProFTPDにはいくつかセキュリティ上の問題がありましたが、そのほとんどは解決された模様です。
+いくつかセキュリティを高める設定をしておきます：
+</p>
+
+<pre caption="/etc/proftpd/proftpd.conf">
+ServerName "My ftp daemon"
+#サーバを特定できる情報は見せない
+ServerIdent on "Go away"
+
+#バーチャルユーザーの作成をやりやすく
+RequireValidShell off
+
+#システムとは別のユーザー/グループのファイルを使用する(passwdファイルはcryptフォーマットです)
+AuthUserFile "/etc/proftpd/passwd"
+AuthGroupFile "/etc/proftpd/group"
+
+# パーミッション関連
+Umask 077
+
+# タイムアウトとリソースの制限
+MaxInstances 30
+MaxClients 10 "Only 10 connections allowed"
+MaxClientsPerHost 1 "You have already logged on once"
+MaxClientsPerUser 1 "You have already logged on once"
+TimeoutStalled 10
+TimeoutNoTransfer 20
+TimeoutLogin 20
+
+#全員chrootする
+DefaultRoot ~
+
+#rootとして起動しない
+User  nobody
+Group nogroup
+
+#全転送を記録する
+TransferLog /var/log/transferlog
+
+#グロブの問題(訳注：DoS攻撃が可能な問題のことだと思います)に対処
+DenyFilter \*.*/
+</pre>
+
+<p>
+<uri>http://www.proftpd.org</uri>に行けばドキュメントが見つかります(訳注：少し古いですが<uri>http://www.infoscience.co.jp/technical/proftpd/</uri>に設定内容に関する日本語訳があります)。
+</p>
+
+</body>
+</section>
+<section>
+<title>vsftpd</title>
+<body>
+
+<p>
+vsftpd(とてもセキュアなftpという意味)は小さなFTPデーモンで、
+デフォルトの設定も良い感じです。
+vsftpdはシンプルで、Pure-FTPdやProFTPDが持っているような多くの機能(バーチャルユーザーなど)はありません。
+</p>
+
+<pre caption="/etc/vsftpd">
+anonymous_enable=NO
+local_enable=YES
+
+#リードオンリー
+write_enable=NO
+
+#転送ログを取れるようにする
+xferlog_std_format=YES
+
+idle_session_timeout=20
+data_connection_timeout=20
+nopriv_user=nobody
+
+chroot_list_enable=YES
+chroot_list_file=/etc/vsftpd/chrootlist
+
+ls_recurse_enable=NO
+</pre>
+
+<p>
+見てのとおり個々にパーミッションを設定したりchrootしたりといったことはできません。
+が、匿名ユーザー用の設定となると、とても良い感じになります。
+時にはアノニマス(匿名)FTPサーバを用意するのはとても良いことですが(オープンソースなものを共有したり)、
+vsftpdはこういったとき、本当にいい仕事をします。
+</p>
+
+</body>
+</section>
+<section>
+<title>Apache</title>
+<body>
+
+<p>
+Apache(1.3.26)はかなり親切な設定ファイルを持つようになりました。
+ただし多少の作業を行うともっと良くなります。
+ひとつのアドレスでだけ待ち受けるようにしたり、余分な情報を漏らさないようにしたり。
+設定ファイルに追加するべきものは・・・：
+</p>
+
+<p>
+<path>/etc/make.conf</path>で<c>ssl</c>を無効にしていないようであれば、
+Apacheをインストールする前にSSLを有効にしたサーバを作れるようにしておきましょう。
+以下の行を追加しておけば大丈夫です。
+</p>
+
+<pre caption="/etc/conf.d/apache">
+HTTPD_OPTS="-D SSL"
+</pre>
+
+<p>
+(訳注：実は大丈夫ではありません。まず、Apacheをインストールした後、<c>emerge 
+mod_ssl</c>でmod_sslをインストールする必要があります。その後、
+<path>/etc/conf.d/apache</path>を編集してAPACHE_OPTS="-D SSL"を追加してください。
+また2002.11.07時点でのApacheのebuildは1.3.27-r1ですが、
+そもそもUSEにsslが含まれているか見ていないようです)
+</p>
+
+<p>
+(訳注その2：2003.11.02現在ではApacheのバージョンは2.0.48が最新です。
+このため別途mod_ssslをインストールする必要はなくなりました。
+ただしここに書かれている設定内容は微妙に実際の設定内容と違うので、
+設定ファイルのコメント等を参考に適切な設定を行ってください)
+</p>
+
+<pre caption="/etc/apache/conf/apache.conf">
+#特定のIPアドレスでのみ待ち受けるようにする
+Listen 127.0.0.1
+BindAddress 127.0.0.1
+#nobodyとnogroupを使うのはよろしくありません
+#他の全てのサービスはrootでは走っていませんし
+#(apacheというグループに所属したapacheというユーザーを追加しましょう)
+User apache
+Group apache
+#Apacheのバージョンがバレないようにする
+ServerSignature Off
+ServerTokens min
+</pre>
+
+<p>
+Apacheは<c>--enable-shared=max</c>と<c>--enable-module=all</c>が指定された状態でコンパイルされます。
+デフォルトでは全てのモジュールが使えるようになっているので、
+使わないモジュールは全て、
+<c>LoadModule</c>セクション(<c>LoadModule</c>と<c>AddModule</c>)でコメントアウトしておきましょう。
+<c>/etc/init.d/apache restart</c>を実行してサービスを再起動してください。
+</p>
+
+<p>
+<uri>http://www.apache.org</uri>に行けばドキュメントが見つかります(訳注：<uri>http://www.apache.jp/</uri>に日本語の情報があります)。
+</p>
+
+</body>
+</section>
+
+<section>
+<title>qmail</title>
+<body>
+
+<p>
+qmailは最もセキュアなメールサーバだと見なされています。
+qmailはセキュリティを念頭に(ま、ちょっとやり過ぎなぐらい)書かれています。
+デフォルトではメールを転送しませんし、1996年以降セキュリティホールは見つかっていません。
+さ、<c>emerge qmail</c>で設定しましょう！
+</p>
+
+</body>
+</section>
+<section>
+<title>BIND</title>
+<body>
+
+<impo>
+BINDは、軽々しく扱うにはちょっと困るようなひどいセキュリティの歴史で知られています。
+他の全てのサービスと同様、絶対にrootとして動作させては<e>ダメ</e>です。
+ですから、このサービスのデフォルト設定を変更しないでください。
+</impo>
+
+<p>
+<uri 
+link="http://www.isc.org/products/BIND/bind9.html">Internet Software Consortium</uri>に行けばドキュメントが見つかりますし、
+<path>doc/arm</path>にBIND 9の管理者リファレンスマニュアルがあります(訳注：
+日本語で読める情報としては<uri>http://www.linux.or.jp/JF/JFdocs/DNS-HOWTO.html</uri>が参考になると思います)。
+</p>
+
+<!--
+デフォルト状態のGentooではこのサービスに関して設定が何もされていませんから、
+あなたが管理するDNSゾーンについては<path>/etc/bind/named.conf</path>を編集する必要があります。
+ですがDNSサーバだけではなく、そのプロトコルにもセキュリティ上の問題は存在していますので、
+きちんとした設定をしないといけません。
+</impo>
+
+<p>
+よく、なぜdjbdns(D.J.Bernstein氏によるとてもセキュアなDNSサーバ)を使わないかと聞かれるんですが、
+答えは以下の通りです──BINDには、IPv6のサポートのように、djbdnsには無い機能があるから(とりあえず、
+パッチなしの状態では)。
+</p>
+
+<pre caption="/etc/bind/named.conf">
+#アクセス制限用の設定
+acl "mynet" { 10.0.0.0/24; };
+
+options {
+  directory "/var/bind";
+  pid-file "/var/run/named/named.pid";
+#mynetからのクエリのみ許可
+  allow-query { "mynet"; };
+#ゾーン転送は禁止
+  allow-transfer { none; };
+  forward only;
+  forwarders { 10.0.0.2; };
+#再帰的な問い合わせはmynetからのみ許可
+  recursion no;
+  allow-recursion { mynet; };
+#待ち受けるインターフェースを指定
+  listen-on { 10.0.0.1; };
+#バージョンはヒミツ
+  version "Go away";
+};
+
+key "rndc-key" {
+  algorithm hmac-md5;
+  secret "o1BYkYC+bXeZgHDsrVBwRQ==";
+};
+
+#localhostからの、キーを使った制御のみ可能
+controls {
+  inet 127.0.0.1 port 953
+  allow { 127.0.0.1; } keys { "rndc-key"; };
+};
+</pre>
+
+<p>
+以上がデフォルトで使うと良い設定ファイルです。
+ですが、BINDバージョン9には、なんとchroot機能があります。
+これを使わない手はありません。
+以下のようにすれば、chrootされたBINDを作れます。
+</p>
+
+<pre caption="chroot環境の準備">
+# <i>mkdir -p /chroot</i>
+# <i>mkdir /chroot/dns</i>
+# <i>mkdir /chroot/dns/dev</i>
+# <i>mkdir /chroot/dns/etc</i>
+# <i>mkdir /chroot/dns/var</i>
+# <i>mkdir /chroot/dns/var/run</i>
+# <i>mkdir /chroot/dns/var/run/named</i>
+# <i>chown -R named:named /chroot/dns/var/run/named</i>
+# <i>cp -R /etc/bind /chroot/dns/etc/.</i>
+# <i>cp /etc/localtime /chroot/dns/etc/localtime</i>
+# <i>cp -R /var/bind /chroot/dns/var/.</i>
+# <i>mknod /chroot/dns/dev/zero c 1 5</i>
+# <i>chmod 666 /chroot/dns/dev/zero</i>
+# <i>mknod /chroot/dns/dev/random c 1 8</i>
+# <i>chmod 666 /chroot/dns/dev/random</i>
+# <i>cp -a /dev/log /chroot/dns/dev/log</i>
+# <i>cd /chroot/dns</i>
+# <i>chattr +i etc etc/localtime var</i>
+</pre>
+
+<p>
+上のようにすると<path>/chroot</path>にchrootされた環境が作られます。
+あとは起動スクリプトを、この新しい環境をサポートするように書き直すだけです。
+<path>/etc/init.d/named</path>を編集し、start関数のところに<c>-t /chroot/dns</c>を追加してください。
+stop関数が<path>/chroot/var/run/named/named.pid</path>にあるPIDファイルちゃんと見つけられるようにするのも良いと思います。
+変更が終わったらDNSサーバを再起動しましょう。
+</p>
+
+<note>
+アタッカーは、運が良ければchrootされたjailを破ることができます(これを避ける方法は、
+カーネルパッチの章を見てください)。
+</note>
+-->
+
+</body>
+</section>
+<section>
+<title>djbdns</title>
+<body>
+
+<p>
+djbdnsについては、実際のところあまり言うことがありません。
+あえて言うなら、作者がdjbdnsがセキュアであることに関して、喜んで<uri 
+link="http://cr.yp.to/djbdns/guarantee.html">お金</uri>をかけてるという点でしょうか。
+というわけなので<uri>http://www.djbdns.org/</uri>に行って試してみてください(訳注：日本語で読める情報が<uri>http://djbdns.qmail.jp/</uri>にあります)。
+BIND 9とは随分やり方が違いますが、そのうちコツが分かると思います。
+</p>
+
+</body>
+</section>
+<section>
+<title>Samba</title>
+<body>
+
+<p>
+SambaはマイクロソフトやNovellのネットワークとファイル共有をできるプロトコルです。
+ですから、インターネット上で使っては<e>いけません</e>。
+とはいえ、それでも、セキュアにすることは必要です。
+</p>
+
+<pre caption="/etc/samba/smb.conf">
+[global]
+  #待ち受けるインターフェースを指定
+  interfaces = eth0 10.0.0.1/32
+
+  #ちゃんと暗号化パスワードを使う
+  encrypt passwords = yes
+  directory security mask = 0700
+
+  #10.0.0.*からの通信のみ許可
+  hosts allow = 10.0.0.
+
+  #ユーザー認証を有効に
+  #(shareモードで使ってはダメです)
+  security = user
+  
+  #特権アカウントは接続禁止
+  invalid users = root @wheel
+
+  #smbが共有の際に表示する最大サイズ(サイズを制限するわけではない)
+  max disk size = 102400
+
+  #パスワードポリシーをちゃんとする
+  min password length = 8
+  null passwords = no
+
+  #PAMを使う(PAMのサポートが追加されてるなら)
+  obey pam restrictions = yes
+  pam password change = yes
+</pre>
+
+<p>
+共有ごとにパーミッションがきちんと設定されていることを確認してください。
+また、<uri link="http://www.samba.org">ドキュメント</uri>も読んでください(訳注：<uri>http://www.samba.gr.jp/</uri>でドキュメントの翻訳が行われています)。
+</p>
+
+<p>
+では、Sambaサーバを再起動して、
+このサービスにアクセスするユーザーを追加してください。
+<path>/usr/bin/smbpasswd</path>を-aオプション付きで実行すれば大丈夫です。
+</p>
+
+</body>
+</section>
+<section>
+<title>chroot環境、もしくはバーチャルサーバ</title>
+<body>
+
+<p>
+サービスをchrootした状態で提供すれば、アクセスされても良い情報にだけアクセスできるように、
+そしてrootアクセスにつながるようなアクセス権(や情報)の取得をできないように、
+サービス(やユーザー)の環境を制限することができます。
+サービスをroot以外のユーザー(nobody、apache、namedなど)の権限で動作させておけば、
+アタッカーはそのユーザーに権限があるファイルにしかアクセスできません。
+ということは、たとえそのサービスにセキュリティ上の問題があっても、アタッカーはroot権限を得ることはできないということです。
+</p>
+
+<p>
+Pure-FTPdやBINDなどのいくつかのサービスはchrootの機能を持っていますが、
+そうではないサービスもあります。
+使おうとしているサービスがchroot機能を持っているなら使いましょう。
+しかし、そうではない場合は、自分でなんとかしないといけません。
+では、とりあえずのchrootの理解のために、どうやってchroot環境を作るのかご覧に入れましょう。
+BASHでやってみます(わかりやすいように)。
+</p>
+
+<p>
+<path>/chroot</path>という名前のディレクトリを作ります(<c>mkdir chroot</c>)。
+そして、BASHがどんな共有ライブラリとダイナミックリンクしてコンパイルされているか調べます(-static付きでコンパイルされているならこのステップは不要です)。
+</p>
+
+<p>
+以下のコマンドでBASHが使っているライブラリのリストが得られます。
+</p>
+
+<pre caption="使っているライブラリのリストを得る">
+# <i>ldd /bin/bash</i>
+  libncurses.so.5 => /lib/libncurses.so.5 (0x4001b000)
+  libdl.so.2 => /lib/libdl.so.2 (0x40060000)
+  libc.so.6 => /lib/libc.so.6 (0x40063000)
+  /lib/ld-linux.so.2 => /lib/ld-linux.so.2 (0x40000000)
+</pre>
+
+<p>
+では、BASHのための環境を作りましょう。
+</p>
+
+<pre caption="BASHのためのchroot環境を作成">
+# <i>mkdir /chroot/bash</i>
+# <i>mkdir /chroot/bash/bin</i>
+# <i>mkdir /chroot/bash/lib</i>
+</pre>
+
+<p>
+次にBASHが使用しているファイル(<path>/lib</path>の中のもの)をchrootしたlibにコピーし、
+BASH自身を同じくchrootしたbinディレクトリにコピーします。
+こうすると、多少使えない機能はありますが、バッチリ同じ環境ができあがります。
+コピーが終わったら次のようにしてください──<c>chroot /chroot/bash</c>。
+<path>/</path>ディレクトリにいるというプロンプトが返ってきたら成功です！　
+うまくいかないときは、どのファイルが足りないか教えてくれるハズです。
+共有ライブラリの中にはお互いに依存しあっているものもあります。
+</p>
+
+<p>
+chroot環境の中では<c>echo</c>以外は何も動作しないことに気がつくと思います(訳注：echo以外でも、BASHの組み込みコマンドなら動作します)。
+これはchroot環境の外にあるコマンドを何も使えないので、
+BASHと<c>echo</c>しか機能として組み込まれていないからです。
+</p>
+
+<p>
+基本的には、こういう風にすれば他のサービスでもchroot環境を作ることができます。
+BASHとの違いは、デバイスファイルや<path>/etc</path>内にある設定ファイルを必要とすることがままあることです。
+とりあえずそれらをchroot環境内にコピー(デバイスファイルは<c>cp -a</c>でコピーできます)して、
+起動スクリプトを編集してサービスが実行される前にchrootを使うように変更してください。
+あるサービスに関して、どのデバイスファイルや設定ファイルが必要なのか見極めるのはとても難しいことです。
+こういうときは<c>strace</c>コマンドが便利です。
+使いたいサービスを<c>/usr/bin/strace</c> bashという風に起動して、openやreadやstat、はたまたconnectしてる様子を観察してください。
+どんなファイルをコピーすれば良いかの糸口を示してくれるでしょう。
+とはいいつつも、だいたいの場合は、passwdファイル(そのサービスで使わないユーザーは削除してください。
+もちろん編集するのはコピーです)と<path>/dev/zero</path>、<path>/dev/log</path>、
+そして<path>/dev/random</path>があれば大丈夫でしょう。
+</p>
+
+<p>
+セキュアな環境を作るもうひとつの方法は、バーチャルサーバ環境を使うことです。
+これは既存のLinuxをコピーし、バーチャルモードで起動します。
+つまり、もしサーバが乗っ取られてもそれは単にバーチャルサーバが乗っ取られたということに過ぎず、
+実環境が乗っ取られることにはなりません。
+</p>
+
+<p>
+バーチャルサーバの例：
+</p>
+
+<ul>
+<li>
+	<uri link="http://user-mode-linux.sourceforge.net">User-Mode Linux</uri>のサイトと、
+	それに関するドキュメント<uri link="http://www.gentoo.org/doc/uml.html">User-Mode 
+	Linux</uri>
+</li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ファイアーウォール</title>
+<section>
+<title>ファイアーウォールというもの</title>
+<body>
+
+<p>
+よく、ファイアーウォールがあればセキュリティは完璧だと思っている人がいますが、
+それは間違っています。ファイアーウォールの設定を間違っていると、
+ファイアーウォールがない場合よりもセキュリティ上の問題が大きくなる場合がほとんどです。
+ファイアーウォールもソフトウエアのひとつなので、他のいろいろなソフトウエアと同様の扱い方をする必要があります。
+ファイアーウォールにもバグ(要するにセキュリティホール)はありえるのですから。
+</p>
+
+<p>
+なので、実際に導入する前に考えましょう！　本当にファイアーウォールが必要ですか？　
+必要だと思うのなら、どういう風に動作すべきか、それはどんなファイアーウォールか、
+誰が操作をするのか、ポリシーに書き加えることを考えなくてはいけません。でも、とりあえずまず、このガイドを読んでください。
+</p>
+
+<p>
+ファイアーウォールにはふたつの用途があります：
+</p>
+
+<ul>
+<li>ユーザー(ワームやアタッカー)が入って来ないようにする</li>
+<li>ユーザー(従業員や子供)が出て行かないようにする</li>
+</ul>
+
+<p>
+基本的に、ファイアーウォールは3種類に分けられます：
+</p>
+
+<ul>
+<li>パケットフィルタ</li>
+<li>サーキットリレー</li>
+<li>アプリケーションゲートウェイ</li>
+</ul>
+
+<p>
+ファイアーウォールを動かすマシンでは他のサービスを動かしてはいけません(動かすとしても<c>sshd</c>だけです)。
+マシンはこのガイドが推奨するやり方でセキュアにしてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>パケットフィルタ</title>
+<body>
+
+<p>
+すべてのネットワークトラフィックはパケットの形を取ります。
+大きなトラフィックは扱いやすいように小さなパケットに分けられ、
+目的の場所に届いてから再度組み立てられます。
+全てのパケットには、どのように、そしてどこにパケットが届けられるべきかの情報が含まれています。
+これらの情報こそ、まさにファイアーウォールが利用するものです。フィルタリングは以下に基づいて行われます：
+</p>
+
+<ul>
+<li>送信元/送信先IPアドレスに基づいた許可または禁止</li>
+<li>送信元/送信先ポートに基づいた許可または禁止</li>
+<li>使用されているプロトコルに基づいた許可または禁止</li>
+<li>特定のプロトコルに含まれるフラグに基づいた許可または禁止</li>
+</ul>
+
+<p>
+基本的にフィルタリングはパケットのヘッダ情報にのみ基づき行われ、
+パケットの中身には一切関知しません。
+</p>
+
+<p>
+短所：
+</p>
+
+<ul>
+<li>
+	パケット中のアドレスの情報は虚偽のものだったり、送信元により、
+	いわゆる<e>偽造された</e>ものだったりする
+</li>
+<li>
+	許可されたパケットの中には、
+	アタッカーがサービスやファイアーウォールにある既知のバグを利用するための、
+	データやリクエストが含まれている可能性がある
+</li>
+<li>一般的にSingle Point of Failureである(訳注：つまり「蟻の穴から堤も崩れる」ということが往々にしてある、ということ)</li>
+</ul>
+
+<p>
+長所：
+</p>
+
+<ul>
+<li>簡単なので実装が容易</li>
+<li>
+	実際にアタックされる前にその徴候に対して警告を出すことが可能
+	(例：ポートスキャンの検知)
+</li>
+<li>SYNアタックをうまく防げる</li>
+</ul>
+
+<p>
+Linuxで利用されているパケットフィルタの例：
+</p>
+
+<ul>
+<li>
+	<uri link="http://www.iptables.org">iptables</uri>(訳注：<uri 
+	link="http://www.linux.or.jp/JF/JFdocs/packet-filtering-HOWTO-7.html">Linux 2.4 Packet Filtering HOWTO: iptables 
+	を使う</uri>が参考になると思います)
+</li>
+<li>
+	<uri link="http://www.linuxdocs.org/HOWTOs/IPCHAINS-HOWTO.html">ipchains</uri>(訳注：日本語訳が<uri>http://www.linux.or.jp/JF/JFdocs/IPCHAINS-HOWTO.html</uri>にあります)
+</li>
+<li>
+	<uri link="http://www.smoothwall.org">SmoothWall</uri>(訳注：パケットフィルタのソフトではなく、ファイアーウォールとして簡単に使えるディストリビューション)</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>サーキットリレー</title>
+<body>
+
+<p>
+サーキットレベルゲートウェイとも呼ばれますが、
+データが実際にやり取りされる前にコネクションの妥当性をチェックすることができるファイアーウォールです。
+これはつまり、パケットの許可/禁止の決定は単純にパットのヘッダに基づいて行うものの、
+そのコネクションが妥当なものかどうかは、セッションが確立されデータが交換される前の段階で、
+事前に設定されたルールに基づいて決定されるということです。フィルタリングは以下に基づいて行われます：
+</p>
+
+<ul>
+<li>送信元/送信先アドレス</li>
+<li>送信元/送信先ポート</li>
+<li>時刻</li>
+<li>プロトコル</li>
+<li>ユーザー</li>
+<li>パスワード</li>
+</ul>
+
+<p>
+全てのトラフィックは認可され、点検されていて、不要なトラフィックは破棄することができます。
+</p>
+
+<p>
+短所：
+</p>
+
+<ul>
+<li>
+	トランスポート層で動作し、実際に通信処理を提供するためには、
+	事実上プログラムを修正する必要がある場合もある
+</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>アプリケーションゲートウェイ</title>
+<body>
+
+<p>
+アプリケーションレベルゲートウェイはアプリケーションのプロクシであり、
+クライアントに代わってリモートのシステムとデータをやり取りします。
+アプリケーションゲートウェイを利用することで、DMZ(De-Militarized Zone、非武装地帯：ファイアーウォール越しに到達することのできる、
+プライベートネットワークの一角)やファイアーウォールの背後から、
+実際には外側と接続することなしに外部とアクセスすることができます。フィルタリングは以下に基づいて行われます：
+</p>
+
+<ul>
+<li>送信元/送信先IPアドレスに基づく許可/禁止</li>
+<li>パケットの内容</li>
+<li>ファイルの種類や拡張子によるアクセス制限</li>
+</ul>
+
+<p>
+長所：
+</p>
+
+<ul>
+<li>ファイルをキャッシュできるのでネットワークのパフォーマンスを向上できる</li>
+<li>全てのコネクションに対して詳細なログを取ることが可能</li>
+<li>完全に拡張可能(プロクシサーバの中にはキャッシュされたデータを「共有」することが可能なものもある)</li>
+<li>外側と直接には通信しない</li>
+<li>その場でパケットの中身を変更することも可能</li>
+</ul>
+
+<p>
+短所：
+</p>
+
+<ul>
+<li>設定が複雑</li>
+</ul>
+
+<p>
+アプリケーションゲートウェイはrootとして動作させる必要もなければ、
+ゲートウェイの背後にあるホストはインターネットから直接到達不可能なので、
+最もセキュアな解決法だと見なされています。
+</p>
+
+<p>
+フリーなアプリケーションゲートウェイの例：
+</p>
+
+<ul>
+<li><uri link="http://www.squid-cache.org/">Squid</uri></li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>iptables</title>
+<body>
+
+<p>
+iptablesを動作させるためには、カーネルでiptablesが使えるようになっていないといけません。
+私はiptablesをモジュールとして追加し(<c>iptables</c>のコマンドは必要なときに呼び出されます)、
+カーネルを再コンパイルしました。
+iptables用にどうカーネルを設定すれば良いかについてもっと知りたい場合は、
+<uri link="http://iptables-tutorial.frozentux.net/chunkyhtml/kernelsetup.html">Iptables 
+Tutorial Chapter 2: Preparations</uri>をどうぞ。カーネルをコンパイルしたあとは(もしくはコンパイルしている最中に)、
+<c>iptables</c>のコマンドを追加してください。
+単に<c>emerge iptables</c>とすれば動くでしょう。
+</p>
+
+<p>
+では、<c>iptables -L</c>としてiptablesが動作しているか確認してください。
+失敗するようなら何かが間違っているわけで、再度設定をチェックする必要があります。
+</p>
+
+<p>
+iptablesはLinux 2.4系カーネルの、新しくて非常に進化したパケットフィルタです。
+Linux 2.2系カーネルで利用されていた、以前のipchainsパケットフィルタの後継にあたります。
+大きな改良点としては、iptablesではステートフルなパケットフィルタリングが可能だという点が挙げられます。
+ステートフルなパケットフィルタリングを使えば、
+確立状態になったそれぞれのTCPコネクションを追跡し続けることができます。
+</p>
+
+<p>
+TCPコネクションはパケットの集合によって成り立っています。
+それぞれのパケットには、送信元アドレス、送信先アドレス、そしてシーケンス番号が含まれており、
+このおかげでそれぞれのパケットは再構築することが可能で、データを忘れてしまったりしません。
+UDPがコネクションレスなプロトコルであるのと対照的に、TCPはコネクション型のプロトコルです。
+</p>
+
+<p>
+TCPパケットのヘッダを解析することで、ステートフル・パケットフィルタは、
+受信したTCPパケットがすでに確立したコネクションの一部なのかどうか判断することが可能で、
+また、そのパケットを許可するか拒否するか決定することができます。
+</p>
+
+<p>
+ステートレスなパケットフィルタを相手にする場合、
+TCPのパケットヘッダに細工をして本来拒否されるべきパケットを許可されるよう、パケットフィルタを騙すことができます。
+TCPヘッダのSYNフラグ等を細工するとこのようなことが可能なのです。
+ステートフルなパケットフィルタの場合は、
+こういう、既に確立しているコネクションの一部ではないパケットを拒否することが可能です。
+このため「ステルススキャン」に遭ってしまう可能性もなくなります。
+なぜなら、この手のスキャンのパケットは、確立したコネクションの一部ではないからです。
+</p>
+
+<p>
+iptablesには他にもNAT(Network Address Translation)やレートリミットのような機能もあります。
+レートリミット機能は、
+SYNアタックのような特定のDoS攻撃(サービス拒否攻撃)を防ぐにはもってこいです。
+</p>
+
+<p>
+TCPの接続は、いわゆる3ウェイハンドシェイクによって確立されます。
+TCPの接続を確立しようとする場合、クライアントからサーバへ、
+SYNフラグがセットされたパケットが送られます。
+SYNパケットを受信すると、サーバはクライアントへSYN+ACKパケットを返します。
+SYN+ACKパケットを受け取ったクライアントは、3番目のパケットになるACKパケットを送り、
+このパケットが事実上接続の証明書のような役割を果たすわけです。
+</p>
+
+<p>
+SYNフラッド攻撃とは、SYNパケットは送るもののSYN+ACKパケットに応えない、
+とう方法で実行されます。クライアント側はそもそも返答を必要としませんから、
+嘘の送信元IPアドレスを使ったパケットを偽造することができます。
+サーバ側のシステムはSYNパケットを受け取ると、
+そのエントリーをハーフオープンなコネクションのキュー(待ち行列)に加え、
+キューからエントリーが削除されるまでは、最終パケットであるACKパケットを待ちます。
+キューには一定個数のスロットが存在しますが、すべてのスロットが埋まってしまうと、
+もうそれ以上新しいコネクションをオープンできなくなります。
+指定されたタイムアウトの時間を経過してもACKパケットが到着しなかった場合、エントリーは自動的にキューから削除されます。
+タイムアウトの設定は様々ですが、一般的には30秒から60秒、あるいはもう少し大きい値に設定されます。
+クライアント側がそれぞれ送信元IPアドレスが異なる大量のSYNパケットを偽造し、
+そのパケットを攻撃対象のIPアドレス宛てへ可能な限りのスピードで送信して攻撃を始めれば、
+その攻撃によりキューはハーフオープン状態のコネクションで一杯になってしまい、
+その結果本来そのサーバへと接続を確立するはずだった他のクライアントが接続できなくなってしまいます。
+</p>
+
+<p>
+こういうときはレートリミットを使えば簡単です。<c>-m limit --limit 1/s</c>とすることで、
+どんな割合でSYNパケットを受け付けるか、制限することができます。
+この例では1秒間にひとつのSYNパケットしか受け付けないように制限するので、
+こちらのリソースをSYNフラッドから守れるわけです。
+</p>
+
+<p>
+では、実践編に入りましょうか！
+</p>
+
+<p>
+カーネルにiptablesがロードされると、5つの場所にルールを設置するフックが用意されます。
+それぞれ、<c>INPUT</c>、<c>OUTPUT</c>、<c>FORWARD</c>、<c>PREROUTING</c>、
+そして<c>POSTROUTING</c>という名前です。これらはチェインと呼ばれ、一連のルールを作ります。
+それぞれのルールでは、あるパケットのヘッダがそのルールに見合うかどうか調べられ、
+見合うパケットであった場合はそこで処理されます。
+あるルールがパケットにマッチしなかった場合、そのチェインの次のルールが調査さます。
+</p>
+
+<p>
+ルールは上記の5つのチェインに直接追加することもできますし、
+新しくチェインを作成してそれを既存のチェインにルールとして追加することも可能です。
+iptablesは以下のオプションをサポートしています。
+</p>
+
+<table border="0">
+<tr>
+	<th>オプション:</th>
+	<th>その説明:</th>
+</tr>
+<tr>
+	<ti>-A</ti>
+	<ti>追加</ti>
+</tr>
+<tr>
+	<ti>-D</ti>
+	<ti>削除</ti>
+</tr>
+<tr>
+	<ti>-I</ti>
+	<ti>挿入</ti>
+</tr>
+<tr>
+	<ti>-R</ti>
+	<ti>置き換え</ti>
+</tr>
+<tr>
+	<ti>-L</ti>
+	<ti>一覧表示</ti>
+</tr>
+<tr>
+	<ti>-F</ti>
+	<ti>チェインの中にあるルール、もしくは全てのルールの削除</ti>
+</tr>
+<tr>
+	<ti>-Z</ti>
+	<ti>あるチェイン、もしくは全てのチェインのカウンタをゼロに</ti>
+</tr>
+<tr>
+	<ti>-C</ti>
+	<ti>パケットをチェインでチェック</ti>
+</tr>
+<tr>
+	<ti>-N</ti>
+	<ti>ユーザー定義チェインを作成</ti>
+</tr>
+<tr>
+	<ti>-X</ti>
+	<ti>ユーザー定義チェインを削除</ti>
+</tr>
+<tr>
+	<ti>-P</ti>
+	<ti>ターゲットのチェインのポリシーを変更</ti>
+</tr>
+<tr>
+	<ti>-E</ti>
+	<ti>チェイン名を変更</ti>
+</tr>
+<tr>
+	<ti>-p</ti>
+	<ti>プロトコル</ti>
+</tr>
+<tr>
+	<ti>-s</ti>
+	<ti>送信元アドレス/ネットマスク</ti>
+</tr>
+<tr>
+	<ti>-d</ti>
+	<ti>送信先アドレス/ネットマスク</ti>
+</tr>
+<tr>
+	<ti>-i</ti>
+	<ti>入力の名前(インターフェース名)</ti>
+</tr>
+<tr>
+	<ti>-o</ti>
+	<ti>出力の名前(インターフェース名)</ti>
+</tr>
+<tr>
+	<ti>-j</ti>
+	<ti>処理の内容(ルールのターゲット)</ti>
+</tr>
+<tr>
+	<ti>-m</ti>
+	<ti>拡張されたマッチ(拡張モジュールと共に使用)</ti>
+</tr>
+<tr>
+	<ti>-n</ti>
+	<ti>アドレスやポートを数字で表示</ti>
+</tr>
+<tr>
+	<ti>-t</ti>
+	<ti>適用するテーブル</ti>
+</tr>
+<tr>
+	<ti>-v</ti>
+	<ti>冗長モード</ti>
+</tr>
+<tr>
+	<ti>-x</ti>
+	<ti>数字を拡張(厳密な数字で表示)</ti>
+</tr>
+<tr>
+	<ti>-f</ti>
+	<ti>フラグメントされた2番目以降にのみマッチ</ti>
+</tr>
+<tr>
+	<ti>-V</ti>
+	<ti>バージョンを表示</ti>
+</tr>
+<tr>
+	<ti>--line-numbers</ti>
+	<ti>一覧表示の際に行番号を表示</ti>
+</tr>
+</table>
+
+<p>
+まずはiptablesに慣れるために、
+こちらにやってくるICMPパケットをブロックしてみましょう。
+</p>
+
+<pre caption="すべてのICMPパケットをブロック">
+# <i>iptables -A INPUT -p icmp -j DROP</i>
+</pre>
+
+<p>
+最初にどのチェインに追加するか指定します。次にプロトコルを指定し、
+それからターゲットを指定します。タゲットにはユーザー定義のチェイン、
+もしくは<c>ACCEPT</c>、 <c>DROP</c>、 <c>REJECT</c>、 <c>LOG</c>、 <c>QUEUE</c>、
+<c>MASQUERADE</c>という特別なターゲットのうちひとつを指定できます。
+ここでは、クライアントに応答を返さずにパケットを破棄する<c>DROP</c>を使います。
+</p>
+
+<p>
+では、<c>ping localhost</c>としてみてください。iptablesがマシンに入ってくる全てのICMPパケットをブロックしているので、
+何も応答を得られないはずです。他のマシンにpingを打つこともできません。
+返答用のICMPパケットも拒否されるからです。
+ではチェインを初期化して、またICMPを使えるようにしましょう。
+</p>
+
+<pre caption="全ルールをフラッシュ">
+# <i>iptables -F</i>
+</pre>
+
+<p>
+今度はiptablesのステートフルなパケットフィルタリングの部分に注目してみましょう。
+eth0に入ってくるパケットに対してステートフルな検査をしたいなら、
+以下のようにしましょう：
+</p>
+
+<pre caption="すでに確立されたパケットに起因するパケットを許可">
+# <i>iptables -A INPUT -i eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT</i>
+</pre>
+
+<p>
+こうすると既に確立された接続のパケットとINPUTチェインに関係するパケットを許可することができます。
+またつい先程説明したように<c>iptables -A INPUT -i eth0 -m state --state INVALID -j 
+DROP</c>とするとパケットの状態リストにないパケットをすべて破棄することができます。
+iptablesでステートフルなパケットフィルタリングが可能なのは、
+state拡張モジュールをロードしているからです。
+他のマシンからの接続をあなたのマシンへ受け付けたいなら、<c>--state NEW</c>とすれば良いでしょう。
+iptablesにはさまざまな用途に使えるモジュールが揃っています。いくつか例を挙げると: 
+</p>
+
+<table border="0">
+<tr>
+	<th>マッチングを拡張するモジュール</th>
+	<th>説明</th>
+	<th>拡張オプション</th>
+</tr>
+<tr>
+	<ti>mac</ti>
+	<ti>入力パケットのMACアドレスに対するマッチング拡張</ti>
+	<ti>--mac-source</ti>
+</tr>
+<tr>
+	<ti>state</ti>
+	<ti>ステートフルな検査を有効に</ti>
+	<ti>--state (stateに使用できるのはESTABLISHED、RELATED、INVALID、NEWです)</ti>
+</tr>
+<tr>
+	<ti>limit</ti>
+	<ti>レートのリミット</ti>
+	<ti>--limit、--limit-burst</ti>
+</tr>
+<tr>
+	<ti>owner</ti>
+	<ti>作成されたパケットのさまざまな特性とのマッチングを試行する</ti>
+	<ti>
+		--uid-owner ユーザーID --gid-owner グループID --pid-owner プロセスID 
+		--sid-owner セッションID
+	</ti>
+</tr>
+<tr>
+	<ti>unclean</ti>
+	<ti>パケットに対して様々な正当性チェックを行う</ti><ti></ti>
+</tr>
+</table>
+
+<p>
+ユーザー定義チェインを作成し、
+既存のチェインに適用してみてください：
+</p>
+
+<pre caption="ユーザー定義チェインを作成">
+<codenote>ひとつのルールを含んだ新しいチェインを作成する</codenote>
+# <i>iptables -X mychain</i>
+# <i>iptables -N mychain</i>
+# <i>iptables -A mychain -i eth0 -m state --state ESTABLISHED,RELATED -j ACCEPT</i>
+<codenote>デフォルトポリシーは、全ての出力パケットを許可し、入力パケットを破棄する</codenote>
+# <i>iptables -P OUTPUT ACCEPT</i>
+# <i>iptables -P INPUT DROP</i>
+<codenote>作成したチェインをINPUTチェインに追加する</codenote>
+# <i>iptables -A INPUT -j mychain</i>
+</pre>
+
+<p>
+INPUTチェインにルールを追加すると、次のようなポリシーになります──出力は全て許可し、
+入力は全て拒否する。
+</p>
+
+<p>
+<uri link="http://www.iptables.org/documentation/index.html#HOWTO">Netfilter/iptables documentation</uri>に行けばドキュメントが見つかります(訳注：リンク先の文書のうちいくつかは、
+<uri link="http://www.linux.or.jp/JF/">JF</uri>で日本語訳が見つかると思います)。
+</p>
+
+<p>
+では、ここまでの全てが入った例を見てみましょう。ここでの私のファイアーウォール/ゲートウェイのポリシーはというと：
+</p>
+
+<ul>
+<li>ファイアーウォールへの通信はSSH(22番ポート)のみ許可</li>
+<li>
+	ローカルネットワークはHTTP、HTTPS、
+	それからSSHでの通信を許可する必要がある(ので、DNSも必要)
+</li>
+<li>
+	特定のペイロードを持ったICMPの通信は禁止。もちろん、
+	いくつかのICMP通信は許可する必要がある
+</li>
+<li>ポートスキャンを検知し、検知したらログを取る</li>
+<li>SYNアタックから身を守る</li>
+<li>これ以外の通信は破棄し、ログを取る</li>
+</ul>
+
+<pre caption="/etc/init.d/firewall">
+#!/sbin/runscript
+IPTABLES=/sbin/iptables
+IPTABLESSAVE=/sbin/iptables-save
+IPTABLESRESTORE=/sbin/iptables-restore
+FIREWALL=/etc/firewall.rules
+DNS1=212.242.40.3
+DNS2=212.242.40.51
+#内部ネットワーク
+IIP=10.0.0.2
+IINTERFACE=eth0
+LOCAL_NETWORK=10.0.0.0/24
+#外部ネットワーク
+OIP=217.157.156.144
+OINTERFACE=eth1
+
+opts="${opts} showstatus panic save restore showoptions rules"
+
+depend() {
+  need net procparam
+}
+
+rules() {
+  stop
+  ebegin "Setting internal rules"
+
+  einfo "Setting default rule to drop"
+  $IPTABLES -P FORWARD DROP
+  $IPTABLES -P INPUT   DROP
+  $IPTABLES -P OUTPUT  DROP
+
+  #デフォルトルール
+  einfo "Creating states chain"
+  $IPTABLES -N allowed-connection
+  $IPTABLES -F allowed-connection
+  $IPTABLES -A allowed-connection -m state --state ESTABLISHED,RELATED -j ACCEPT
+  $IPTABLES -A allowed-connection -i $IINTERFACE -m limit -j LOG --log-prefix \ 
+      "Bad packet from ${IINTERFACE}:"
+  $IPTABLES -A allowed-connection -j DROP
+
+  #ICMPでの通信
+  einfo "Creating icmp chain"
+  $IPTABLES -N icmp_allowed
+  $IPTABLES -F icmp_allowed
+  $IPTABLES -A icmp_allowed -m state --state NEW -p icmp --icmp-type \ 
+      time-exceeded -j ACCEPT
+  $IPTABLES -A icmp_allowed -m state --state NEW -p icmp --icmp-type \ 
+      destination-unreachable -j ACCEPT
+  $IPTABLES -A icmp_allowed -p icmp -j LOG --log-prefix "Bad ICMP traffic:"
+  $IPTABLES -A icmp_allowed -p icmp -j DROP
+
+  #入力トラフィック
+  einfo "Creating incoming ssh traffic chain"
+  $IPTABLES -N allow-ssh-traffic-in
+  $IPTABLES -F allow-ssh-traffic-in
+  #FLOOD攻撃を防ぐ
+  $IPTABLES -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags \ 
+      ALL RST --dport ssh -j ACCEPT
+  $IPTABLES -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags \ 
+      ALL FIN --dport ssh -j ACCEPT
+  $IPTABLES -A allow-ssh-traffic-in -m limit --limit 1/second -p tcp --tcp-flags \ 
+      ALL SYN --dport ssh -j ACCEPT
+  $IPTABLES -A allow-ssh-traffic-in -m state --state RELATED,ESTABLISHED -p tcp --dport ssh -j ACCEPT
+
+
+  #出力トラフィック
+  einfo "Creating outgoing ssh traffic chain"
+  $IPTABLES -N allow-ssh-traffic-out
+  $IPTABLES -F allow-ssh-traffic-out
+  $IPTABLES -A allow-ssh-traffic-out -p tcp --dport ssh -j ACCEPT
+
+  einfo "Creating outgoing dns traffic chain"
+  $IPTABLES -N allow-dns-traffic-out
+  $IPTABLES -F allow-dns-traffic-out
+  $IPTABLES -A allow-dns-traffic-out -p udp -d $DNS1 --dport domain \ 
+      -j ACCEPT
+  $IPTABLES -A allow-dns-traffic-out -p udp -d $DNS2 --dport domain \ 
+     -j ACCEPT
+
+  einfo "Creating outgoing http/https traffic chain"
+  $IPTABLES -N allow-www-traffic-out
+  $IPTABLES -F allow-www-traffic-out
+  $IPTABLES -A allow-www-traffic-out -p tcp --dport www -j ACCEPT
+  $IPTABLES -A allow-www-traffic-out -p tcp --dport https -j ACCEPT
+
+  #ポートスキャンを検知
+  einfo "Creating portscan detection chain"
+  $IPTABLES -N check-flags
+  $IPTABLES -F check-flags
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL FIN,URG,PSH -m limit \ 
+      --limit 5/minute -j LOG --log-level alert --log-prefix "NMAP-XMAS:" 
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL FIN,URG,PSH -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL ALL -m limit --limit \ 
+      5/minute -j LOG --log-level 1 --log-prefix "XMAS:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL ALL -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG \ 
+      -m limit --limit 5/minute -j LOG --log-level 1 --log-prefix "XMAS-PSH:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL NONE -m limit \ 
+      --limit 5/minute -j LOG --log-level 1 --log-prefix "NULL_SCAN:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags ALL NONE -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags SYN,RST SYN,RST -m limit \ 
+      --limit 5/minute -j LOG --log-level 5 --log-prefix "SYN/RST:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags SYN,RST SYN,RST -j DROP
+  $IPTABLES -A check-flags -p tcp --tcp-flags SYN,FIN SYN,FIN -m limit \ 
+      --limit 5/minute -j LOG --log-level 5 --log-prefix "SYN/FIN:"
+  $IPTABLES -A check-flags -p tcp --tcp-flags SYN,FIN SYN,FIN -j DROP
+
+  #INVALIDステートをINPUTチェインに追加して適用
+  einfo "Applying chains to INPUT"
+  $IPTABLES -A INPUT -m state --state INVALID -j DROP
+  $IPTABLES -A INPUT -j icmp_allowed 
+  $IPTABLES -A INPUT -j check-flags
+  $IPTABLES -A INPUT -i lo -j ACCEPT
+  $IPTABLES -A INPUT -j allow-ssh-traffic-in
+  $IPTABLES -A INPUT -j allowed-connection
+
+  einfo "Applying chains to FORWARD"
+  $IPTABLES -A FORWARD -m state --state INVALID -j DROP
+  $IPTABLES -A FORWARD -j icmp_allowed 
+  $IPTABLES -A FORWARD -j check-flags
+  $IPTABLES -A FORWARD -o lo -j ACCEPT
+  $IPTABLES -A FORWARD -j allow-ssh-traffic-in
+  $IPTABLES -A FORWARD -j allow-www-traffic-out
+  $IPTABLES -A FORWARD -j allowed-connection
+
+  einfo "Applying chains to OUTPUT"
+  $IPTABLES -A OUTPUT -m state --state INVALID -j DROP
+  $IPTABLES -A OUTPUT -j icmp_allowed
+  $IPTABLES -A OUTPUT -j check-flags
+  $IPTABLES -A OUTPUT -o lo -j ACCEPT
+  $IPTABLES -A OUTPUT -j allow-ssh-traffic-out
+  $IPTABLES -A OUTPUT -j allow-dns-traffic-out
+  $IPTABLES -A OUTPUT -j allow-www-traffic-out
+  $IPTABLES -A OUTPUT -j allowed-connection
+
+  #クライアントがNAT(Network Address Translation)を通して通信できるようにする
+  $IPTABLES -t nat -A POSTROUTING -o $IINTERFACE -j MASQUERADE 
+  eend $?
+}
+
+start() {
+  ebegin "Starting firewall"
+  if [ -e "${FIREWALL}" ]; then
+    restore
+  else
+    einfo "${FIREWALL} does not exists. Using default rules."
+    rules
+  fi
+  eend $?
+}
+
+stop() {
+  ebegin "Stopping firewall"
+  $IPTABLES -F
+  $IPTABLES -t nat -F
+  $IPTABLES -X
+  $IPTABLES -P FORWARD ACCEPT
+  $IPTABLES -P INPUT   ACCEPT
+  $IPTABLES -P OUTPUT  ACCEPT
+  eend $?
+}
+
+showstatus() {
+  ebegin "Status"
+  $IPTABLES -L -n -v --line-numbers
+  einfo "NAT status"
+  $IPTABLES -L -n -v --line-numbers -t nat
+  eend $?
+}
+
+panic() {
+  ebegin "Setting panic rules"
+  $IPTABLES -F
+  $IPTABLES -X
+  $IPTABLES -t nat -F
+  $IPTABLES -P FORWARD DROP
+  $IPTABLES -P INPUT   DROP
+  $IPTABLES -P OUTPUT  DROP
+  $IPTABLES -A INPUT -i lo -j ACCEPT
+  $IPTABLES -A OUTPUT -o lo -j ACCEPT
+  eend $?
+}
+
+save() {
+  ebegin "Saving Firewall rules"
+  $IPTABLESSAVE &gt; $FIREWALL
+  eend $?
+}
+
+restore() {
+  ebegin "Restoring Firewall rules"
+  $IPTABLESRESTORE &lt; $FIREWALL
+  eend $?
+}
+
+restart() {
+  svc_stop; svc_start
+}
+
+showoptions() {
+  echo "Usage: $0 {start|save|restore|panic|stop|restart|showstatus}"
+  echo "start)      will restore setting if exists else force rules"
+  echo "stop)       delete all rules and set all to accept"
+  echo "rules)      force settings of new rules"
+  echo "save)       will store settings in ${FIREWALL}"
+  echo "restore)    will restore settings from ${FIREWALL}"
+  echo "showstatus) Shows the status" 
+}
+</pre>
+
+<p>
+ファイアーウォール構築に関する大まかなアドバイス：
+</p>
+
+<ol>
+<li>実装する前にファイアーウォールのポリシーを作りましょう</li>
+<li>シンプルに！</li>
+<li>
+	各プロトコルがどういう風に動作するか知りましょう(<uri 
+	link="http://www.ietf.org/">RFC</uri>(Request For Comments)を読んでください)
+</li>
+<li>ファイアーウォールはrootで動いているソフトのうちのひとつだということを忘れないでください</li>
+<li>作ったファイアーウォールはテストしましょう</li>
+</ol>
+
+<p>
+iptablesは理解するのが難しいとか設定に時間がかかりすぎると思ったら、<uri 
+link="http://www.shorewall.net">Shorewall</uri>という親切なファイアーウォールを使っても良いでしょう。
+ファイアーウォールのルールの作成には基本的にiptablesが使われていますが、
+ルールの作成に特化し、特にプロトコルを問いません。
+</p>
+
+</body>
+</section>
+<section>
+<title>Squid</title>
+<body>
+
+<p>
+Squidはとても強力なプロクシサーバで、以下のようなことに基づいて通信をフィルタすることができます──時間、
+パスやURIの正規表現、送信元/送信先IPアドレス、ドメイン、ブラウザ、認証されたユーザー名、
+MIMEタイプ、そしてポート番号(プロトコル)。
+いくつかの機能を忘れてしまってるような気もしますが、
+全機能のリストを作るのは至難の技です。
+</p> 
+
+<p>
+以下の例では、ポルノサイトのフィルタの代わりにバナーのフィルタを扱います。
+というのも、Gentoo.orgがポルノサイトとしてリストされるのは<e>ナシ</e>だからです。
+それに、あなたのために良いサイトをいくつか見つける時間もないわけで。
+</p>
+
+<p>
+ここでは、以下のようなポリシーに従います：
+</p>
+
+<ul>
+<li>
+	就業時間(月金の8時から17時と土曜の8時から13時)のネットサーフィン(HTTP/HTTPS)は許可、
+	残業中ならサーフィンしてる場合じゃないので仕事しましょう
+</li>
+<li>
+	ダウンロードは禁止(.exe、.com、.arj、.zip、.asf、.avi、.mpg、.mpegなど)
+</li>
+<li>
+	バナーはキライなので、
+	フィルタして透明なGIFファイルに変換(ここが腕の見せどころですね！)
+</li>
+<li>これ以外の通信やインターネットからの通信は禁止</li>
+</ul>
+
+<p>
+これは<e>カンタン</e>な4つのステップで実現します。
+</p>
+
+<pre caption="/etc/squid/squid.conf">
+# IPアドレスとポートを割り当てる
+http_port 10.0.2.1:3128
+
+# 基本設定
+hierarchy_stoplist cgi-bin ?
+acl QUERY urlpath_regex cgi-bin \?
+no_cache deny QUERY
+
+# 基本的なアクセス制限用リスト
+acl all src 0.0.0.0/0.0.0.0
+acl manager proto cache_object
+acl localhost src 127.0.0.1/255.255.255.255
+
+# 誰がこのプロクシサーバにアクセスできるのか追加
+acl localnet src 10.0.0.0/255.255.0.0
+
+# それからポートについても
+acl SSL_ports port 443
+acl Safe_ports port 80
+acl Safe_ports port 443
+acl purge method PURGE
+
+# URLを正規表現に基づいてアクセス制限
+acl archives urlpath_regex "/etc/squid/files.acl"
+acl url_ads url_regex "/etc/squid/banner-ads.acl"
+
+# 時間や曜日に基づいてアクセス制限
+acl restricted_weekdays time MTWHF 8:00-17:00
+acl restricted_weekends time A 8:00-13:00
+
+acl CONNECT method CONNECT
+
+# manager権限でのアクセスはローカルホストからのみ許可
+http_access allow manager localhost
+http_access deny manager
+
+# PURGE(訳注：キャッシュ内のオブジェクトの削除)要求はローカルホストからのみ許可
+http_access allow purge localhost
+http_access deny purge
+
+# 不明なポートへのリクエストは禁止
+http_access deny !Safe_ports
+
+# SSLとして設定したポート以外のCONNECT要求は禁止
+http_access deny CONNECT !SSL_ports
+
+# ここから、私独自の設定です
+
+# バナーを除去した後に表示されるページを追加
+deny_info NOTE_ADS_FILTERED url_ads
+
+# で、それらを拒否
+http_access deny url_ads
+
+# すべてのアーカイブへのアクセスを禁止
+http_access deny archives
+
+# 就業時間のみしかアクセスできなくする
+http_access allow localnet restricted_weekdays
+http_access allow localnet restricted_weekends
+
+# 残りは全て禁止
+http_access deny all
+</pre>
+
+<p>
+次にユーザーにダウンロードさせたくないファイルのリストを埋めます。
+私は、zip、viv、exe、mp3、rar、ace、avi、mov、mpg、mpe、au、ra、arj、tar、gz、それからzという拡張子を持つファイルをリストに入れました。
+</p>
+
+<pre caption="/etc/squid/files.acl">
+\.[Zz][Ii][pP]$
+\.[Vv][Ii][Vv].*
+\.[Ee][Xx][Ee]$
+\.[Mm][Pp]3$
+\.[Rr][Aa][Rr]$
+\.[Aa][Cc][Ee]$
+\.[Aa][Ss][Ff]$
+\.[Aa][Vv][Ii]$
+\.[Mm][Oo][Vv]$
+\.[Mm][Pp][Gg]$
+\.[Mm][Pp][Ee][Gg]$
+\.[Aa][Uu]$
+\.[Rr][Aa]$
+\.[Aa][Rr][Jj]$
+\.[Tt][Aa][Rr]$
+\.[GgZz]$
+\.[Zz]$
+</pre>
+
+<note>
+[]の中に各文字の大文字と小文字が入っていますよね？　
+これはaviファイルを要求する代わりにAvIファイルを要求されてスリ抜けられてしまう、ということを防ぐためです。
+</note>
+
+<p>
+次にバナーを検知するための正規表現を追加します。
+あなたは私よりもっとうまくやれると思います：
+</p>
+
+<pre caption="/etc/squid/banner-ads.acl">
+/adv/.*\.gif$
+/[Aa]ds/.*\.gif$
+/[Aa]d[Pp]ix/
+/[Aa]d[Ss]erver
+/[Aa][Dd]/.*\.[GgJj][IiPp][FfGg]$
+/[Bb]annerads/
+/adbanner.*\.[GgJj][IiPp][FfGg]$
+/images/ad/
+/reklame/
+/RealMedia/ads/.*
+^http://www\.submit-it.*
+^http://www\.eads.*
+^http://ads\.
+^http://ad\.
+^http://ads02\.
+^http://adaver.*\.
+^http://adforce\.
+adbot\.com
+/ads/.*\.gif.*
+_ad\..*cgi
+/Banners/
+/SmartBanner/
+/Ads/Media/Images/
+^http://static\.wired\.com/advertising/
+^http://*\.dejanews\.com/ads/
+^http://adfu\.blockstackers\.com/
+^http://ads2\.zdnet\.com/adverts
+^http://www2\.burstnet\.com/gifs/
+^http://www.\.valueclick\.com/cgi-bin/cycle
+^http://www\.altavista\.com/av/gifs/ie_horiz\.gif
+</pre>
+
+<p>
+で、仕上げとして。バナーを除去したあとに表示したいファイルがこれです。
+基本的には、4x4の透明なGIF画像が入った途中までのHTMLファイルです。
+</p>
+
+<pre caption="/etc/squid/errors/NOTE_ADS_FILTERED">
+&lt;HTML&gt;
+&lt;HEAD&gt;
+&lt;META HTTP-EQUIV="REFRESH" CONTENT="0; URL=http://localhost/images/4x4.gif"&gt;
+&lt;TITLE>ERROR: The requested URL could not be retrieved&lt;/TITLE&gt;
+&lt;/HEAD&gt;
+&lt;BODY&gt;
+&lt;H1&gt;Add filtered!&lt;/H1&gt;
+</pre>
+
+<note>
+&lt;HTML&gt;と&lt;BODY&gt;タグを閉じないでください。それはSquidがやってくれます。
+</note>
+
+<p>
+以上のようにSquidには沢山の可能性があり、
+フィルタとプロクシに関して非常に有効です。
+他に複数のSquidプロクシを用意して大規模ネットワークに対応させることも可能です。
+ここで私が挙げた設定は、1から20ユーザーぐらいの小規模ネットワーク向けです。
+</p>
+
+<p>
+しかし、Squidがどこか安全な場所に置かれていて、外部から誰もアクセスできないようになっているなら、
+パケットフィルタ(iptables)とアプリケーションゲートウェイ(Squid)の組み合わせは、
+恐らく一番良い解決策でしょう。
+もちろん内部からのアタックには気を付ける必要はありますが。
+</p>
+
+<p>
+では、クライアントのブラウザでプロクシサーバを使うように設定してください。
+ここで設定したゲートウェイは、
+プロクシ経由でない接続を一切禁止します。
+</p>
+
+<note>
+Mozillaを使っている場合は、Edit→Preferences→Advanced→Proxiesから設定できます。
+</note>
+
+<p>
+iptablesを使ってすべての外向きトラフィックを透過的にSquidに向けることも可能です。
+ゲートウェイのFORWARD、
+もしくはPREROUTINGルールに以下を追加してください：
+</p>
+
+<pre caption="プロクシサーバへのポートフォワーディングを有効に">
+# <i>iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to proxyhost:3128</i>
+# <i>iptables -t nat -A PREROUTING -p tcp --dport 443 -j DNAT --to proxyhost:3128</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>さて、ここまでで私たちは何を学んだんでしょうか？</title>
+<body>
+
+<p>
+私たちが学んだことは：
+</p>
+
+<ol>
+<li>
+	ファイアーウォールはそれ自体が脅威になりうる。
+	不適切な設定をされたファイアーウォールなら無い方がマシ
+</li>
+<li>基本的なゲートウェイの構築方法と、透過的なプロクシの構築方法</li>
+<li>許可したいプロトコルについて知ることが良いファイアーウォールのカギ</li>
+<li>
+	IPのトラフィックはいつも正当なデータばかりが含まれているわけではない。
+	例) ICMPパケットはペイロードを持つ場合もある
+</li>
+<li>SYNアタックの防ぎ方</li>
+<li>
+	イヤな画像やウイルスのダウンロードからHTTPトラフィックをフィルタする方法
+</li>
+<li>
+	パケットフィルタとアプリケーションゲートウェイを組み合わせると制御がしやすい
+</li>
+</ol>
+
+<p>
+さあ、もし<e>本当</e>に必要なら、自分のニーズに合ったファイアーウォールを作りましょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>侵入検知</title>
+<section>
+<title>AIDE (Advanced Intrusion Detection Environment)</title>
+<body>
+
+<p>
+AIDEは(Tripwireの代わりとして使えるフリーの)ホストベース侵入検知システムです。
+あなたが既にTripwireのことを知っているなら、
+AIDEの設定ファイルは全然難しくありません。
+</p>
+
+<p>
+設定ファイルは、正規表現、マクロ、それからファイルやディレクトリに対するルールで出来ています。
+マクロには以下のようなものがあります：
+</p>
+
+<table border="0">
+<tr>
+	<th>マクロ</th>
+	<th>意味</th>
+	<th>書き方</th>
+</tr>
+<tr>
+	<ti>ifdef</ti>
+	<ti>定義されていれば</ti>
+	<ti>@@ifdef "name"</ti>
+</tr>
+<tr>
+	<ti>ifndef</ti>
+	<ti>定義されていなければ</ti>
+	<ti>@@ifndef "name"</ti>
+</tr>
+<tr>
+	<ti>define</ti>
+	<ti>変数を定義</ti>
+	<ti>@@define "name" "value"</ti>
+</tr>
+<tr>
+	<ti>undef</ti>
+	<ti>変数を未定義に</ti>
+	<ti>@@undef "name"</ti>
+</tr>
+<tr>
+	<ti>ifhost</ti>
+	<ti>指定されたホストで動作しているなら</ti>
+	<ti>@@ifhost "hostname"</ti>
+</tr>
+<tr>
+	<ti>ifnhost</ti>
+	<ti>指定されたホストで動作していないなら</ti>
+	<ti>@@ifnhost "hostname"</ti>
+</tr>
+<tr>
+	<ti>endif</ti>
+	<ti>
+		endifは上に挙げたdefineとundef以外のいずれかのマクロの後で使う必要があります
+	</ti>
+	<ti>@@endif</ti>
+</tr>
+</table>
+
+<p>
+Gentooが動いているマシンが複数あってすべてのマシンにAIDEをインストールしようと思っているなら、
+これらのマクロはとても便利です。しかしすべてのマシンで同じサービスを動作させることはないでしょうし、
+もっと言えば、すべてのユーザーが同じサービスを動作させてるわけではないでしょう。
+</p>
+
+<p>
+次にファイルやディレクトリのチェックに使用するフラグを見てみましょう。
+フラグは、パーミッション、ファイルの属性、暗号化ハッシュやチェックサムといったものがあります。
+</p>
+
+<table border="0">
+<tr>
+	<th>フラグ</th>
+	<th>意味</th>
+</tr>
+<tr>
+	<ti>p</ti>
+	<ti>パーミッション</ti>
+</tr>
+<tr>
+	<ti>i</ti>
+	<ti>iノード</ti>
+</tr>
+<tr>
+	<ti>n</ti>
+	<ti>リンク数</ti>
+</tr>
+<tr>
+	<ti>u</ti>
+	<ti>ユーザー</ti>
+</tr>
+<tr>
+	<ti>g</ti>
+	<ti>グループ</ti>
+</tr>
+<tr>
+	<ti>s</ti>
+	<ti>サイズ</ti>
+</tr>
+<tr>
+	<ti>b</ti>
+	<ti>ブロック数</ti>
+</tr>
+<tr>
+	<ti>m</ti>
+	<ti>mtime</ti>
+</tr>
+<tr>
+	<ti>a</ti>
+	<ti>atime</ti>
+</tr>
+<tr>
+	<ti>c</ti>
+	<ti>ctime</ti>
+</tr>
+<tr>
+	<ti>S</ti>
+	<ti>サイズの増加をチェック</ti>
+</tr>
+<tr>
+	<ti>md5</ti>
+	<ti>MD5形式のチェックサム</ti>
+</tr>
+<tr>
+	<ti>sha1</ti>
+	<ti>SHA1形式のチェックサム</ti>
+</tr>
+<tr>
+	<ti>rmd160</ti>
+	<ti>RMD160形式のチェックサム</ti>
+</tr>
+<tr>
+	<ti>tiger</ti>
+	<ti>Tiger形式のチェックサム</ti>
+</tr>
+<tr>
+	<ti>R</ti>
+	<ti>p+i+n+u+g+s+m+c+md5と同じ</ti>
+</tr>
+<tr>
+	<ti>L</ti>
+	<ti>p+i+n+u+gと同じ</ti>
+</tr>
+<tr>
+	<ti>E</ti>
+	<ti>
+		何も指定しないのと同じ(訳注：原文はEmpty Groupです。
+		ファイルの属性等についてはチェックされませんが、
+		ファイルの存在自体のチェックはできるようです)
+	</ti>
+</tr>
+<tr>
+	<ti>&gt;</ti>
+	<ti>ログファイルのようにどんどん大きくなるもの用。p+u+g+i+n+Sと同じ</ti>
+</tr>
+</table>
+
+<p>
+AIDEがmhashサポート付きでコンパイルされているなら、他にもいくか使えるフラグがあります(訳注：2003.11.04時点の最新版であるaide-0.9.ebuildでは、デフォルトでmhashサポートが有効になります)。
+</p>
+
+<table border="0">
+<tr>
+	<th>フラグ</th>
+	<th>意味</th>
+</tr>
+<tr>
+	<ti>haval</ti>
+	<ti>HAVAL形式のチェックサム</ti>
+</tr>
+<tr>
+	<ti>gost</ti>
+	<ti>GOST形式のチェックサム</ti>
+</tr>
+<tr>
+	<ti>crc32</ti>
+	<ti>CRC32形式のチェックサム</ti>
+</tr>
+</table>
+
+<p>
+上記フラグを組み合わせることで、独自のルールを作ることも可能です：
+</p>
+
+<pre caption="AIDE用のルールを作成">
+All=R+a+sha1+rmd160
+Norm=s+n+b+md5+sha1+rmd160
+</pre>
+
+<p>
+設定ファイルを作成するために必要な最後の項目は、
+どうやってファイルやディレクトリにルールを適用するかということです。
+基本的には、単にファイル名やディレクトリ名と、それに対応するルールを書けば大丈夫です。
+あなたが何か特別な設定をしない限り、AIDEは再帰的にすべてのファイルをチェック対象に追加してくれます。
+</p>
+
+<table border="0">
+<tr>
+	<th>フラグ</th>
+	<th>意味</th>
+</tr>
+<tr>
+	<ti>!</ti>
+	<ti>このファイルやディレクトリを無視</ti>
+</tr>
+<tr>
+	<ti>=</ti>
+	<ti>このディレクトリを追加。ただしサブディレクトリは無視</ti>
+</tr>
+</table>
+
+<p>
+では、出来上がった例を見てみましょう。
+</p>
+
+<pre caption="/etc/aide/aide.conf">
+@@ifndef TOPDIR
+@@define TOPDIR /
+@@endif
+
+@@ifndef AIDEDIR 
+@@define AIDEDIR /etc/aide
+@@endif
+
+@@ifhost smbserv
+@@define smbactive
+@@endif
+
+# 読み込まれるデータベースの場所
+database=file:@@{AIDEDIR}/aide.db
+
+# 書き込まれるデータベースの場所
+database_out=file:aide.db.new
+
+verbose=20
+report_url=stdout
+
+# ルールを定義
+All=R+a+sha1+rmd160
+Norm=s+n+b+md5+sha1+rmd160
+
+@@{TOPDIR} Norm
+!@@{TOPDIR}etc/aide
+!@@{TOPDIR}dev
+!@@{TOPDIR}proc
+!@@{TOPDIR}root
+!@@{TOPDIR}tmp
+!@@{TOPDIR}var/log
+!@@{TOPDIR}var/run
+!@@{TOPDIR}usr/portage
+@@ifdef smbactive
+!@@{TOPDIR}etc/smb/private/secrets.tdb
+@@endif
+=@@{TOPDIR}home Norm
+</pre>
+
+<p>
+上記の例では、どこをトップディレクトリにするか、
+AIDEのディレクトリがどこにあるかなどのマクロを設定しています。
+AIDEはファイルの改竄チェックをする際<path>/etc/aide/aide.db</path>を使いますが、
+データベースの更新や新規作成時には<path>/etc/aide/aide.db.new</path>に情報を記録します。
+つまり、古いデータベースファイルを自動的には上書きしないということです。
+<c>report_url</c>オプションはまだ実装されていません。ただし作者によると、
+メールで通知したり、スクリプトを実行したりといったことが出来るようになるようです。
+</p>
+
+<p>
+設定が終わったら、<c>aide -i</c>を実行してデータベースファイルを作成しなくてはいけません。
+データベースファイルが出来たら<path>/etc/aide/aide.db.new</path>を<path>/etc/aide/aide.db</path>にコピーして、
+チェック用のコマンドをcronに追加しましょう。
+rootで<c>crontab -e</c>としてください。
+</p>
+
+<note>
+マシンのCPUやディスクの速度や指定したフラグによっては、
+多少の時間がかかる場合があります。
+</note>
+
+<pre caption="AIDEをcronに登録">
+0 3   * * * /usr/bin/aide -u
+</pre>
+
+<note>
+root宛てのメールを読めるようにするのを忘れないでください。
+そうしないと、AIDEが何をレポートしても気が付かない、なんてことになります。
+</note>
+
+<p>
+今回の設定では毎日午前3時にチェックされます。こうしたのは仕事してるユーザーの邪魔をしたくなかったからです。
+<c>-C</c>(チェック)オプションではなく<c>-u</c>(更新)オプションを使っていることに注意してください。
+なぜなら<c>-u</c>オプションでもチェックは行われ、オリジナルのデータベースファイルが上書きされることもないので、
+変更が検出された場合は単にファイルをコピーすれば良く時間の節約になるからです。
+実際にコピーする前には、あなた自身がその変更を行ったのか、それともアタッカーが行ったのか、
+ちゃんとチェックしてくださいね！
+</p>
+
+<p>
+さて、実はデータベースファイルをローカルに保存することには少し問題があります。
+なぜならアタッカーは(AIDEがインストールされていることがわかれば)、
+ほぼ確実にデータベースファイルを変更、更新するか、<path>/usr/bin/aide</path>自体を修正してしまうからです。
+なので、CDなどのメディアに.dbファイルとAIDEのバイナリのコピーを保存しておきましょう。
+</p>
+
+<p>
+<uri link="http://www.cs.tut.fi/~rammer/aide.html">AIDE</uri>のページを見れば情報が見つかります。
+</p>
+
+</body>
+</section>
+<section>
+<title>Snort</title>
+<body>
+
+<p>
+Snortはネットワーク侵入検知システム(NIDS)です。
+Snortをインストールして設定したい場合は以下の例を参考にしてください。
+</p>
+
+<pre caption="snortというユーザーをシステムに追加">
+# useradd snort -d /var/log/snort -s /dev/null
+# chown -R snort /var/log/snort
+</pre>
+
+<pre caption="/etc/conf.d/snort">
+PIDFILE=/var/run/snort_eth0.pid
+MODE="full"
+NETWORK="10.0.0.0/24"
+LOGDIR="/var/log/snort"
+CONF=/etc/snort/snort.conf
+SNORT_OPTS="-D -s -u snort -dev -l $LOGDIR -h $NETWORK -c $CONF"
+</pre>
+
+<pre caption="/etc/snort/snort.conf">
+<codenote>ステップ1</codenote>
+var HOME_NET 10.0.0.0/24
+var EXTERNAL_NET any
+var SMTP $HOME_NET
+var HTTP_SERVERS $HOME_NET
+var SQL_SERVERS $HOME_NET
+var DNS_SERVERS [10.0.0.2/32,212.242.40.51/32]
+var RULE_PATH ./
+
+<codenote>ステップ2</codenote>
+preprocessor frag2
+preprocessor stream4: detect_scans detect_state_problems detect_scans disable_evasion_alerts
+preprocessor stream4_reassemble: ports all
+preprocessor http_decode: 80 8080 unicode iis_alt_unicode double_encode iis_flip_slash full_whitespace
+preprocessor rpc_decode: 111 32771
+preprocessor bo: -nobrute
+preprocessor telnet_decode
+
+<codenote>ステップ3</codenote>
+include classification.config
+
+<codenote>ステップ4</codenote>
+include $RULE_PATH/bad-traffic.rules
+include $RULE_PATH/exploit.rules
+include $RULE_PATH/scan.rules
+include $RULE_PATH/finger.rules
+include $RULE_PATH/ftp.rules
+include $RULE_PATH/telnet.rules
+include $RULE_PATH/smtp.rules
+include $RULE_PATH/rpc.rules
+include $RULE_PATH/rservices.rules
+include $RULE_PATH/dos.rules
+include $RULE_PATH/ddos.rules
+include $RULE_PATH/dns.rules
+include $RULE_PATH/tftp.rules
+include $RULE_PATH/web-cgi.rules
+include $RULE_PATH/web-coldfusion.rules
+include $RULE_PATH/web-iis.rules
+include $RULE_PATH/web-frontpage.rules
+include $RULE_PATH/web-misc.rules
+include $RULE_PATH/web-attacks.rules
+include $RULE_PATH/sql.rules
+include $RULE_PATH/x11.rules
+include $RULE_PATH/icmp.rules
+include $RULE_PATH/netbios.rules
+include $RULE_PATH/misc.rules
+include $RULE_PATH/attack-responses.rules
+include $RULE_PATH/backdoor.rules
+include $RULE_PATH/shellcode.rules
+include $RULE_PATH/policy.rules
+include $RULE_PATH/porn.rules
+include $RULE_PATH/info.rules
+include $RULE_PATH/icmp-info.rules
+include $RULE_PATH/virus.rules
+# include $RULE_PATH/experimental.rules
+include $RULE_PATH/local.rules
+</pre>
+
+<pre caption="/etc/snort/classification.config">
+config classification: not-suspicious,Not Suspicious Traffic,3
+config classification: unknown,Unknown Traffic,3
+config classification: bad-unknown,Potentially Bad Traffic, 2
+config classification: attempted-recon,Attempted Information Leak,2
+config classification: successful-recon-limited,Information Leak,2
+config classification: successful-recon-largescale,Large Scale Information Leak,2
+config classification: attempted-dos,Attempted Denial of Service,2
+config classification: successful-dos,Denial of Service,2
+config classification: attempted-user,Attempted User Privilege Gain,1
+config classification: unsuccessful-user,Unsuccessful User Privilege Gain,1
+config classification: successful-user,Successful User Privilege Gain,1
+config classification: attempted-admin,Attempted Administrator Privilege Gain,1
+config classification: successful-admin,Successful Administrator Privilege Gain,1
+
+# 新規classification
+config classification: rpc-portmap-decode,Decode of an RPC Query,2
+config classification: shellcode-detect,Executable code was detected,1
+config classification: string-detect,A suspicious string was detected,3
+config classification: suspicious-filename-detect,A suspicious filename was detected,2
+config classification: suspicious-login,An attempted login using a suspicious username was detected,2
+config classification: system-call-detect,A system call was detected,2
+config classification: tcp-connection,A TCP connection was detected,4
+config classification: trojan-activity,A Network Trojan was detected, 1
+config classification: unusual-client-port-connection,A client was using an unusual port,2
+config classification: network-scan,Detection of a Network Scan,3
+config classification: denial-of-service,Detection of a Denial of Service Attack,2
+config classification: non-standard-protocol,Detection of a non-standard protocol or event,2
+config classification: protocol-command-decode,Generic Protocol Command Decode,3
+config classification: web-application-activity,access to a potentially vulnerable web application,2
+config classification: web-application-attack,Web Application Attack,1
+config classification: misc-activity,Misc activity,3
+config classification: misc-attack,Misc Attack,2
+config classification: icmp-event,Generic ICMP event,3
+config classification: kickass-porn,SCORE! Get the lotion!,1
+</pre>
+
+<p>
+詳しくは<uri link="http://www.snort.org">Snort</uri>のWebサイトを参照してください。
+</p>
+
+</body>
+</section>
+
+</chapter>
+</guide>

@@ -1,0 +1,671 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/linux-kernel-compiling.xml,v 1.4 2010/12/10 09:00:54 nightmorph Exp $ -->
+
+<guide disclaimer="articles">
+<title>Compiling the Linux kernel</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<!-- xmlified by: Joshua Saddler (nightmorph@gentoo.org) -->
+
+<abstract>
+Daniel Robbins introduces the Linux kernel, and then walks you through locating
+and downloading sources, configuring the kernel, compiling and installing the
+kernel, and boot configuration.
+</abstract>
+
+<!-- The original version of this article was first published on IBM 
+developerWorks, and is property of Westtech Information Services. This 
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>2</version>
+<date>2010-12-10</date>
+
+<chapter>
+<title>Introducing the kernel</title>
+<section>
+<title>The kernel is... Linux!</title>
+<body>
+
+<p>
+What do you think of when you hear the word "Linux"? When I hear it, I
+typically think of an entire Linux distribution and all the cooperating
+programs that make the distribution work.
+</p>
+
+<p>
+However, you may be surprised to find out that, technically, Linux is a kernel,
+and a kernel only. While the other parts of what we commonly call "Linux" (such
+as a shell and compiler) are essential parts of a distribution, they are
+technically separate from Linux (the kernel). While many people use the word
+"Linux" to mean "Linux-based distribution," everyone can at least agree that
+the Linux kernel is the <e>heart</e> of every distribution.
+</p>
+
+</body>
+</section>
+<section>
+<title>Interfacing with hardware</title>
+<body>
+
+<p>
+The primary role of the Linux kernel is to interface directly with the hardware
+in your system. The kernel provides a <e>layer of abstraction</e> between the
+raw hardware and application programs.  This way, the programs themselves do
+not need to know the details of your specific motherboard chipset or disk
+controller -- they can instead operate at the higher level of reading and
+writing files to disk, for example.
+</p>
+
+</body>
+</section>
+<section>
+<title>CPU abstraction</title>
+<body>
+
+<p>
+The Linux kernel also provides a level of abstraction on top of the
+processor(s) in your system -- allowing for multiple programs to appear to run
+simultaneously. Linux does this by allowing several UNIX <e>processes</e> to
+run at once -- and the kernel takes care of giving each one a fair share of the
+processor(s).
+</p>
+
+<p>
+A Linux kernel can support either a single or multiple CPUs -- and the kernel
+that you are using now is either uniprocessor-aware (UP-aware) or symmetric
+multiprocessor-aware (SMP-aware). If you happen to have an SMP motherboard, but
+you're using a UP kernel, Linux won't "see" your extra processors! To fix this,
+you'll want to compile a special SMP kernel for your hardware. Currently, SMP
+kernels will also work on uniprocessor systems, but at a slight performance
+hit.
+</p>
+
+</body>
+</section>
+<section>
+<title>Abstracting I/O</title>
+<body>
+
+<p>
+The kernel also handles the much-needed task of abstracting all forms of file
+I/O. Imagine what would happen if every program had to interface with your
+particular hardware directly -- if you changed disk controllers, all your
+programs would stop working!  Fortunately, the Linux kernel follows the UNIX
+model of providing a simple abstraction of disk I/O that all programs can use.
+That way, your favorite database doesn't need to be concerned whether it is
+storing data on an IDE disk, a SCSI RAID array, or a network-mounted file
+system.
+</p>
+
+</body>
+</section>
+<section>
+<title>Networking Central</title>
+<body>
+
+<p>
+One of Linux's main claims to fame is its robust networking, especially TCP/IP
+support. And, if you guessed that the TCP/IP stack is in the Linux kernel,
+you're right! The kernel provides a nice, high-level interface for programs
+that want to send data over the network. Behind the scenes, the Linux kernel
+interfaces directly with your particular ethernet card or modem, and handles
+the low-level Internet communication details.
+</p>
+
+</body>
+</section>
+<section>
+<title>Networking goodies</title>
+<body>
+
+<p>
+One of the greatest things about Linux is all of the useful features that are
+available in the kernel, especially those related to networking. For example,
+you can configure a kernel that will allow your entire home network to access
+the Internet via your Linux modem -- this is called IP Masquerading, or IP NAT
+(network address translating).
+</p>
+
+<p>
+Additionally, the Linux kernel can be configured to export or mount
+network-based NFS file systems, allowing for other UNIX machines on your LAN to
+easily share data with your Linux system.
+</p>
+
+</body>
+</section>
+<section>
+<title>Booting, part 1</title>
+<body>
+
+<p>
+When you turn on your Linux-based system, the kernel is loaded from disk to
+memory by a boot loader, such as LILO. At this point, the kernel takes control
+of your system. The first thing it does is detect and initialize all the
+hardware that it finds -- and it has been compiled to support. Once the
+hardware has been initialized properly, it is then ready to run processes. The
+first process it runs is called <c>init</c>, which is located in
+<path>/sbin</path>. Then, <c>init</c> starts additional processes, as
+specified in <path>/etc/inittab</path>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Booting, part 2</title>
+<body>
+
+<p>
+<c>init</c> typically starts several copies of a program called <c>getty</c>,
+which waits for logins from the console. After <c>getty</c> successfully
+processes a login request, your default shell is loaded (which is typically
+<c>bash</c>). Once you're in bash, you have the power to launch any program
+you'd like.
+</p>
+
+<p>
+While all these new processes are started, the kernel is still in control,
+carefully time-slicing the CPU so that each process has a fair share. In
+addition, the kernel continues to provide hardware abstraction and networking
+services for the various running processes.
+</p>
+
+</body>
+</section>
+<section>
+<title>Introducing... modules!</title>
+<body>
+
+<p>
+All recent Linux kernels support kernel modules. Kernel modules are really neat
+things -- they're pieces of the kernel that reside on disk, until needed. As
+soon as the kernel needs the functionality of a particular module, it's loaded
+from disk, automatically integrated with the kernel, and available for use.  In
+addition, if a kernel module hasn't been used for several minutes, the kernel
+can voluntarily unload it from memory -- something that's called
+"autocleaning."
+</p>
+
+</body>
+</section>
+<section>
+<title>Modules, part deux</title>
+<body>
+
+<p>
+Kernel modules live in <path>/lib/modules</path>, and each module has a
+<path>.o</path> or <path>.ko</path> at the end of its name. As you may guess,
+modules each represent a particular component of kernel functionality -- one
+module may provide FAT filesystem support, while another may support a
+particular ISA ethernet card.
+</p>
+
+<p>
+Modules allow you to have a low kernel memory footprint. You can create a
+kernel that contains only the features necessary for booting your computer, and
+all other features can be loaded from modules on demand. Because the kernel
+autocleans any modules it loads, your system's memory can be put to good use.
+</p>
+
+</body>
+</section>
+<section>
+<title>Modules -- important stuff!</title>
+<body>
+
+<p>
+You can't put <e>everything</e> in a module. Because modules are stored on
+disk, your bootable kernel image needs to have compiled-in support for your
+disk controller as well as for your native file system (typically the ext2
+filesystem). If you don't have these essential components compiled into your
+kernel image (but compile them as modules instead), then your kernel won't have
+the necessary ability to load these modules from disk -- creating a rather ugly
+chicken-and-egg problem!
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Locating and downloading sources</title>
+<section>
+<title>Kernel versions</title>
+<body>
+
+<p>
+To compile a recent kernel, you need to download the sources first. But before
+you download the kernel sources, you need to know what you're looking for. The
+first question to ask yourself is this -- do you want to use a stable or
+<e>experimental</e> kernel?
+</p>
+
+<p>
+Stable kernels always have an even second digit -- for example, 2.0.38, 2.2.15,
+2.2.18, and 2.4.1 are all considered "stable" kernels (due to the 0, 2, 2, and
+4, respectively.) If you'd like to test out an experimental kernel, you'll
+typically look for the highest-numbered kernel that has an odd second number.
+For example, 2.3.99 and 2.1.38 are both experimental kernels (due to their 3
+and 1, respectively).
+</p>
+
+</body>
+</section>
+<section>
+<title>Kernel version history</title>
+<body>
+
+<p>
+The 2.2 series is considered a modern, stable kernel. If "modern" and "stable"
+are things that sound good to you, look for a 2.2 kernel with the highest third
+number you can find (2.2.16 is the most recent version at the moment).
+</p>
+
+<p>
+While the 2.2 series kernel was being developed, the 2.3 series began. This
+series was created to serve as a testing ground for new, advanced features that
+would eventually show up in the stable 2.4 series. As of right now, the 2.3
+series has already reached 2.3.99, and 2.3 development has stopped. These days,
+developers are working on getting the 2.4.0 <e>test</e> kernels into shape. If
+you'd like to be on the cutting-edge, you'll want to try the most recent
+2.4.0-test kernel you can get your hands on. 
+</p>
+
+</body>
+</section>
+<section>
+<title>2.4 kernel warning</title>
+<body>
+
+<p>
+Once a <e>real</e> 2.4 series kernel comes out (like 2.4.0), don't assume that
+the kernel is ready for use on a mission-critical system like a server. Even
+though 2.4 is supposed to be a stable series, early 2.4 kernels are likely to
+be not quite up to snuff. As is often the case in the computer industry, the
+first version of anything can have fairly sizable bugs. While this may not be a
+problem if you're testing the kernel on your home workstation, it is a risk you
+may want to avoid when you machine provides valuable services to others.
+</p>
+
+</body>
+</section>
+<section>
+<title>Downloading the kernel</title>
+<body>
+
+<p>
+If you simply want to compile a new version of your installed kernel (for
+example, to enable SMP support), then no downloading is necessary -- skip past
+this and the next section.
+</p>
+
+<p>
+You can find kernels at <uri>http://www.kernel.org/pub/linux/kernel</uri>.
+When you go there, you'll find the kernel sources organized into several
+different directories, based on kernel version (v2.2, v2.3, etc.) Inside each
+directory, you'll find files labelled "<path>linux-x.y.z.tar.gz</path>" and
+"<path>linux-x.y.z.tar.bz2</path>". These are the Linux kernel sources. You'll
+also see files labelled "<path>patch-x.y.z.gz</path>" and
+"<path>patch-x.y.z.bz2</path>". These files are patches that can be used to
+update the previous version of complete kernel sources. If you want to compile
+a new kernel release, you'll need to download one of the "linux" files.
+</p>
+
+</body>
+</section>
+<section>
+<title>Unpacking the kernel</title>
+<body>
+
+<p>
+If you downloaded a new kernel from kernel.org, now it's time to unpack it. To
+do so, <c>cd</c> into <path>/usr/src</path>. If there is an existing
+<path>linux</path> directory there, move it to <path>linux.old</path> (<c>mv
+linux linux.old</c>, as root.)
+</p>
+
+<p>
+Now, it's time to extract the new kernel. While still in <path>/usr/src</path>,
+type:
+</p>
+
+<pre caption="Extracting with gzip">
+# <i>tar -xzvf /path/to/my/kernel-x.y.z.tar.gz</i>
+</pre>
+
+<p>
+or
+</p>
+
+<pre caption="Extracting with bzip2">
+# <i>tar -xvjf /path/to/my/kernel-x.y.z.tar.bz2</i>
+</pre>
+
+<p>
+Depending on whether your sources are compressed with <c>gzip</c> or
+<c>bzip2</c>. After typing this, your new kernel sources will be extracted into
+a new <path>linux</path> directory. Beware: the full kernel sources typically
+occupy more than 50 megabytes on disk!
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring the kernel</title>
+<section>
+<title>Let's talk configuration</title>
+<body>
+
+<p>
+Before you compile your kernel, you need to configure it. Configuration is your
+opportunity to control exactly what kernel features are enabled (and disabled)
+in your new kernel. You'll also be in control of what parts get compiled into
+the kernel binary image (which gets loaded at boot-time), and what parts get
+compiled into load-on-demand kernel module files.
+</p>
+
+<p>
+The old-fashioned way of configuring a kernel was a tremendous pain, and
+involved entering <path>/usr/src/linux</path> and typing <c>make config</c>.
+While <c>make config</c> still works, please don't try to use this method to
+configure your kernel -- unless you like answering hundreds (yes, hundreds!) of
+yes/no questions on the command line.
+</p>
+
+</body>
+</section>
+<section>
+<title>The New Way to configure</title>
+<body>
+
+<p>
+We more modern folks, instead of typing <c>make config</c>, type either <c>make
+menuconfig</c> or <c>make xconfig</c>. If you'd like to configure your kernel,
+type one of these options. If you type <c>make menuconfig</c>, you'll get a
+nice text-based color menu system that you can use to configure the kernel. If
+you type <c>make xconfig</c>, you'll get a very nice X-based GUI that can be
+used to configure various kernel options. Here's a screenshot of <c>make
+menuconfig</c>:
+</p>
+
+<figure link="/images/docs/l-kernel.gif" caption="menuconfig in action"/>
+
+<p>
+When using <c>make menuconfig</c>, options that have a <c>&lt; &gt;</c> to
+their left can be compiled as a module. When the option is highlighted, hit the
+space bar to toggle whether the option is deselected (<c>&lt; &gt;</c>),
+selected to be compiled into the kernel image (<c>&lt;*&gt;</c>) or selected to
+be compiled as a module (<c>&lt;M&gt;</c>).
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuration tips</title>
+<body>
+
+<p>
+There are tons of kernel options, and there's no room to explain them all here
+-- so please take advantage of the kernel's built-in help functionality. Almost
+every option is described in at least some detail, and each one normally
+contains the line "If you don't know what this means, type Y (or N)." These
+hints keep you out of trouble if you happen to have no clue what a particular
+option actually does. To access help, highlight the option you have a question
+about and press the "?" key.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Compiling and installing the kernel</title>
+<section>
+<title>make dep; make clean</title>
+<body>
+
+<p>
+Once your kernel is configured, it's time to get it compiled.  Before we can
+compile it, we need to generate dependency information and also clean out any
+old "compiled stuff." This can be accomplished by typing: <c>make dep; make
+clean</c> while in <path>/usr/src/linux</path>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Make bzImage</title>
+<body>
+
+<p>
+Now, it's time to compile the actual binary kernel image. Type <c>make
+bzImage</c>. After several minutes, compilation will complete and you'll find
+the bzImage file in <path>/usr/src/linux/arch/i386/boot</path> (for an x86 PC
+kernel).  We'll show you how to install the new kernel image in a bit, but now
+it's time for the modules.
+</p>
+
+</body>
+</section>
+<section>
+<title>Compiling modules</title>
+<body>
+
+<p>
+Now that the bzImage is done, it's time to compile the modules.  Even if you
+didn't enable any modules when you configured the kernel, don't skip this step
+-- it's good to get into the habit of compiling modules immediately after a
+bzImage. And, if you really have no modules enabled for compilation, this step
+will go really quickly. Type <c>make modules; make modules_install</c>.  This
+will cause the modules to be compiled and then installed into
+<path>/usr/lib/&lt;kernelversion&gt;</path>.
+</p>
+
+<p>
+Congratulations! Your kernel is now fully compiled, and your modules are all
+compiled and installed. Now, it's time to reconfigure LILO so that you can boot
+the new kernel.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Boot configuration</title>
+<section>
+<title>LILO introduction</title>
+<body>
+
+<p>
+It's finally time to reconfigure LILO so that it loads the new kernel. LILO is
+the most popular Linux boot loader, and is used by all popular Linux
+distributions. The first thing you'll want to do is take a look at your
+<path>/etc/lilo.conf</path> file.  It will contain a line that says something
+like <c>image=/vmlinuz</c> This line tells LILO where it should look for the
+kernel.
+</p>
+
+</body>
+</section>
+<section>
+<title>Boot configuration, part 2</title>
+<body>
+
+<p>
+To configure LILO to boot the new kernel, you have two options.  The first is
+to overwrite your existing kernel -- this is risky unless you have some kind of
+emergency boot method, such a boot disk with this particular kernel on it.
+</p>
+
+<p>
+The safer option is to configure LILO so that it can boot either the new or the
+old kernel. LILO can be configured to boot the new kernel by default, but still
+provide a way for you to select your older kernel if you happen to run into
+problems. This is the recommended option, and the one we'll show you how to
+perform.
+</p>
+
+</body>
+</section>
+<section>
+<title>Boot configuration, part 3</title>
+<body>
+
+<p>
+Your <path>lilo.conf</path> may look like this:
+</p>
+
+<pre caption="/etc/lilo.conf">
+boot=/dev/hda
+delay=20
+vga=normal
+root=/dev/hda1
+read-only
+
+image=/vmlinuz
+label=linux
+</pre>
+
+<p>
+To add a new boot entry to your <path>lilo.conf</path>, do the following.
+First, copy <path>/usr/src/linux/arch/i386/boot/bzImage</path> to a file on
+your root partition, such as <path>/vmlinuz2</path>. Once it's there, duplicate
+the last three lines of your <path>lilo.conf</path> and add them again to the
+end of the file... we're almost there...
+</p>
+
+</body>
+</section>
+<section>
+<title>Boot configuration, part 4</title>
+<body>
+
+<p>
+Now, your <path>lilo.conf</path> should look like this:
+</p>
+
+<pre caption="the new lilo.conf">
+boot=/dev/hda
+delay=20
+vga=normal
+root=/dev/hda1
+read-only
+
+image=/vmlinuz
+label=linux
+
+image=/vmlinuz
+label=linux
+</pre>
+
+<p>
+Now, change the first <c>image=</c> line to read <c>image=/vmlinuz2</c>. Next,
+change the <e>second</e> <c>label=</c> line to read <c>label=oldlinux</c>.
+Also, make sure there is a <c>delay=20</c> line near the top of the file -- if
+not, add one. If there is, make sure the number is at least twenty.
+</p>
+
+</body>
+</section>
+<section>
+<title>Boot configuration, part 5</title>
+<body>
+
+<p>
+Your <e>final</e> <path>lilo.conf</path> file will look something like this:
+</p>
+
+<pre caption="The final lilo.conf">
+boot=/dev/hda
+delay=20
+vga=normal
+root=/dev/hda1
+read-only
+
+image=/vmlinuz2
+label=linux
+
+image=/vmlinuz
+label=oldlinux
+</pre>
+
+<p>
+After doing all this, you'll need to run <c>lilo</c> as root.  This is very
+important! If you don't do this, the booting process won't work. Running
+<c>lilo</c> will give it an opportunity to update its boot map.
+</p>
+
+</body>
+</section>
+<section>
+<title>Boot configuration, an explanation</title>
+<body>
+
+<p>
+Now for an explanation of our changes. This <path>lilo.conf</path> file was set
+up to allow you to boot two different kernels. It'll allow you to boot your
+original kernel, located at <path>/vmlinuz</path>. It'll also allow you to boot
+your new kernel, located at <path>/vmlinuz2</path>. By default, it will try to
+boot your new kernel (because the image/label lines for the new kernel appear
+first in the configuration file).
+</p>
+
+<p>
+If, for some reason, you need to boot the old kernel, simply reboot your
+computer and hold down the Shift key. LILO will detect this, and allow you to
+type in the label of the image you'd like to boot. To boot your old kernel,
+you'd type <c>oldlinux</c>, and hit enter. To see a list of possible labels,
+you'd hit TAB.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Resources</title>
+<section>
+<body>
+
+<p>
+Congratulations on compiling your own kernel! I hope everything went well. Here
+are some related resources where you can learn more about kernel compilation:
+</p>
+
+<ul>
+<!-- not accessible as of 2010; bug 348329
+  <li>
+    <uri link="http://www.tldp.org/HOWTO/Kernel-HOWTO/">The Linux Kernel
+    HOWTO</uri>, another good resource for kernel compilation instructions.
+  </li> -->
+<!-- not accessible  <li>
+    <uri link="http://www.tldp.org/HOWTO/LILO-crash-rescue-HOWTO/">The LILO,
+    Linux Crash Rescue HOW-TO</uri>, which shows you how to create an emergency
+    Linux boot disk.
+  </li> -->
+  <li>
+    <uri link="http://www.kernel.org">www.kernel.org</uri>, the site that hosts
+    the Linux Kernel archives.
+  </li>
+  <li>
+    <uri link="http://kernelnewbies.org/FAQ">The Kernel Newbies</uri> FAQs.
+    Kernel Newbies is an excellent resource for learning how to <uri
+    link="http://kernelnewbies.org/FAQ/KernelCompilation">compile the
+    kernel</uri>, as well as learning how the different pieces work. The site
+    also provides a detailed yet easy-to-read overview of the <uri
+    link="http://kernelnewbies.org/LinuxChanges">changes</uri> between each new
+    kernel release.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/new-upgrade-to-gentoo-1.4.xml,v 1.18 2011/09/04 17:53:40 swift Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+
+<title>Gentoo 1.4 Upgrade Guide</title>
+
+<author title="Author">
+  <mail link="rac@gentoo.org">Robert Coie</mail>
+</author>
+<author title="Copy Editor">
+  <mail link="avenj@gentoo.org">Jon Portnoy</mail>
+</author>
+
+<abstract>
+A method for upgrading older Gentoo installations in place to Gentoo 1.4
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>0.4</version>
+<date>2005-07-02</date>
+
+<chapter>
+<title>Before you begin</title>
+<section>
+<title>Be prepared</title>
+<body>
+
+<p>
+As with any major upgrade to the core of your Gentoo system, there is always the
+possibility that unforeseen problems will ensue. It is always prudent to back
+up all important data before beginning this process. If possible, try to
+allocate a large block of time for this upgrade, so that you will not feel
+rushed. All the software on your machine will need to be recompiled.
+</p>
+
+</body>
+</section>
+<section>
+<title>Other options</title>
+<body>
+
+<p>
+This is not the only way to upgrade your system. You can install a new 1.4
+system onto a separate partition and reuse some of your system configuration
+instead. This method also has the advantage that you can always go back to your
+old system in the meantime as a fallback. You may also decide to simply not
+upgrade your system. If you decide you want to upgrade in place, read on.
+</p>
+
+</body>
+</section>
+<section>
+<title>General notes</title>
+<body>
+
+<p>
+Whenever the code listings suggest running the <c>emerge</c> command, it is
+always a good idea to make a test run of the command using the <c>-p</c> or
+<c>--pretend</c> option to make sure that the command will do what you expect it
+to do.
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>Upgrading in place</title>
+<section>
+<title>Get Portage as current as possible</title>
+<body>
+
+<p>
+Some of the syntax of current ebuilds is unreadable by older versions of
+Portage. If you don't have at least Portage 2.0.44, try upgrading Portage.
+</p>
+
+<pre caption="Updating Portage">
+# <i>emerge --sync</i>
+# <i>emerge -u portage</i>
+</pre>
+
+<note>
+If your Portage version is very old, you may get an error message containing the
+phrase "unscriptable object". Read and follow the instructions in
+<path>/usr/portage/sys-apps/portage/files/README.RESCUE</path>. Your Portage
+install should then be current.
+</note>
+
+</body>
+</section>
+<section>
+<title>Preparing GCC for cohabitation</title>
+<body>
+
+<p>
+You will be installing a newer version of GCC during this upgrade. Versions of
+GCC older than 2.95.3-r8 are not designed to have multiple versions of GCC
+installed. You must therefore upgrade GCC to at least version 2.95.3-r8. This
+will also have the beneficial side-effect of installing the <c>gcc-config</c>
+package on your system, which can be used to switch back and forth between
+various installed versions of GCC.
+</p>
+
+<pre caption="Updating GCC">
+# <i>emerge -u gcc</i>
+</pre>
+
+<p>
+You can now check to see if gcc-config is working properly:
+</p>
+
+<pre caption="Verifying GCC profile">
+# <i>gcc-config --get-current-profile</i>
+</pre>
+
+<p>
+This should return i686-pc-linux-gnu-2.95.3 on most x86 systems. Older systems
+may return i586-pc-linux-gnu-2.95.3.
+</p>
+
+</body>
+</section>
+<section>
+<title>Installing GCC 3</title>
+<body>
+
+<p>
+Now you can install a newer version of GCC without damaging your current
+compiler. Look in <path>/usr/portage/sys-devel/gcc</path> for a version of the
+GCC ebuild that is at least 3.2.1-r6. Choose the highest version that is marked
+stable for your architecture. To see if an ebuild is considered stable for your
+architecture, look for the KEYWORDS line in the ebuild file. If it has your
+architecture listed without a ~ in front of it, it is considered stable.
+Assuming 3.2.2 is the most current stable version, we first need to remove the
+glibc dependency from gcc.
+</p>
+
+<p>
+Edit <path>/usr/portage/sys-devel/gcc/gcc-3.2.2.ebuild</path> and search for the
+line containing <c>DEPEND</c>. Remove the <c>glibc</c> dependency and save the
+ebuild.
+</p>
+
+<pre caption="Editing gcc-3.2.2.ebuild">
+# <i>vim /usr/portage/sys-devel/gcc/gcc-3.2.2.ebuild</i>
+</pre>
+
+<p>
+Now install the latest GCC version on your system:
+</p>
+
+<pre caption="Install the latest GCC">
+# <i>USE="-java" emerge /usr/portage/sys-devel/gcc/gcc-3.2.2.ebuild</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Changing profiles</title>
+<body>
+
+<p>
+Now you need to change two sets of profiles: your gcc-config profile and your
+Portage profile.
+</p>
+
+<pre caption="Change the Portage profile">
+# <i>cd /etc</i>
+# <i>rm make.profile</i>
+<comment>(Replace "x86" with your architecture)</comment>
+# <i>ln -s ../usr/portage/profiles/default-x86-1.4 make.profile</i>
+</pre>
+
+<pre caption="Change the GCC profile">
+<comment>(Note the one for the version you just emerged, use it below)</comment>
+# <i>gcc-config --list-profiles</i>
+<comment>(Replace with the version you noted above)</comment>
+# <i>gcc-config i686-pc-linux-gnu-3.2.2</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Recompile toolchain</title>
+<body>
+
+<p>
+Now you need to recompile your core toolchain with your new compiler. If you
+are continuing in the same shell, you need to run <c>source /etc/profile</c> as
+gcc-config instructed you to. Then emerge glibc and binutils using your new
+compiler:
+</p>
+
+<pre caption="Rebuilding the toolchain">
+# <i>emerge glibc binutils</i>
+</pre>
+
+<warn>
+It is quite likely that you will upgrade glibc from a 2.2 or older version to
+2.3. Do not downgrade glibc afterwards. Any software you have compiled against
+glibc 2.3 will stop working, and this can make your system unusable.
+</warn>
+
+</body>
+</section>
+<section>
+<title>Recompiling everything with your new compiler</title>
+<body>
+
+<p>
+Now you may recompile everything on your system with your new compiler:
+</p>
+
+<pre caption="Rebuilding the entire system">
+# <i>emerge -e world</i>
+</pre>
+
+<note>
+If this command fails at any point due to errors, you
+can use <c>emerge --resume</c> to continue the process where
+you left off.  This requires Portage 2.0.47 or later.
+</note>
+
+</body>
+</section>
+</chapter>
+</guide>

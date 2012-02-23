@@ -1,0 +1,440 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-install-system.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.55</version>
+<date>November 6, 2004</date>
+
+<section>
+<title>Chrooting</title>
+<subsection>
+<title>Optional: Selecting Mirrors</title>
+<body>
+
+<p>
+If you have booted from a Gentoo LiveCD, you are able to use <c>mirrorselect</c>
+to update <path>/etc/make.conf</path> so fast mirrors are used for both Portage
+and source code (of course in case you have a working network connection):
+</p>
+
+<warn>
+An error within mirrorselect might make it output garbage after the 
+GENTOO_MIRRORS statement. Please open <path>/mnt/gentoo/etc/make.conf</path> 
+and remove the garbage at the end of the GENTOO_MIRRORS statement if applicable.
+</warn>
+
+<pre caption="Selecting fast mirrors">
+# <i>mirrorselect -a -s4 -o | grep 'GENTOO_MIRRORS=' &gt;&gt; /mnt/gentoo/etc/make.conf</i>
+</pre>
+
+<p>
+If for some reason <c>mirrorselect</c> fails, don't panic. This step is
+completely optional, the default values suffice.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Copy DNS Info</title>
+<body>
+
+<p>
+One thing still remains to be done before we enter the new environment and that
+is copying over the DNS information in <path>/etc/resolv.conf</path>. You need
+to do this to ensure that networking still works even after entering the new
+environment. <path>/etc/resolv.conf</path> contains the nameservers for your
+network.
+</p>
+
+<pre caption="Copy over DNS information">
+<comment>(The "-L" option is needed to make sure we don't copy a symbolic link)</comment>
+# <i>cp -L /etc/resolv.conf /mnt/gentoo/etc/resolv.conf</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Mounting the proc Filesystem</title>
+<body>
+
+<p>
+Mount the <path>/proc</path> filesystem on <path>/mnt/gentoo/proc</path> to
+allow the installation to use the kernel-provided information even within the
+chrooted environment.
+</p>
+
+<pre caption="Mounting /proc">
+# <i>mount -t proc none /mnt/gentoo/proc</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Entering the new Environment</title>
+<body>
+
+<p>
+Now that all partitions are initialized and the base environment
+installed, it is time to enter our new installation environment by
+<e>chrooting</e> into it. This means that we change from the current
+installation environment (LiveCD or other installation medium) to your
+installation system (namely the initialized partitions).
+</p>
+
+<p>
+This chrooting is done in three steps. First we will change the root
+from <path>/</path> (on the installation medium) to <path>/mnt/gentoo</path> 
+(on your partitions) using <c>chroot</c>. Then we will create a new environment
+using <c>env-update</c>, which essentially creates environment variables.
+Finally, we load those variables into memory using <c>source</c>.
+</p>
+
+<pre caption = "Chrooting into the new environment">
+# <i>chroot /mnt/gentoo /bin/bash</i>
+# <i>env-update</i>
+ * Caching service dependencies...
+# <i>source /etc/profile</i>
+</pre>
+
+<p>
+Congratulations! You are now inside your own Gentoo Linux environment.
+Of course it is far from finished, which is why the installation still
+has some sections left :-)
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Optional: Updating the Portage tree</title>
+<body>
+
+<p>
+If you haven't installed a Portage snapshot in the previous chapter, you must
+download a recent Portage tree from the Internet. <c>emerge --sync</c> does this
+for you. Other users should skip this and continue with <uri
+link="#configure_USE">Configuring the USE variable</uri>.
+</p>
+
+<pre caption="Updating the Portage tree">
+# <i>emerge --sync</i>
+</pre>
+
+<p>
+Portage uses the RSYNC protocol for updating the Portage tree. If the above
+command fails due to your firewall, use <c>emerge-webrsync</c>  which
+downloads and installs a Portage snapshot for you using the regular HTTP
+protocol.
+</p>
+
+<pre caption="Updating the Portage tree with emerge-webrsync">
+# <i>emerge-webrsync</i>
+</pre>
+
+<p>
+If you are warned that a new Portage version is available and that you should
+update Portage, you should ignore it. Portage will be updated for you later
+on during the installation.
+</p>
+
+</body>
+</subsection>
+<subsection id="configure_USE">
+<title>Configuring the USE variable</title>
+<body>
+
+<p>
+<c>USE</c> is one of the most powerful variables Gentoo provides to its users.
+Several programs can be compiled with or without optional support for certain
+items. For instance, some programs can be compiled with gtk-support, or with
+qt-support. Others can be compiled with or without SSL support. Some programs
+can even be compiled with framebuffer support (svgalib) instead of X11 support
+(X-server).
+</p>
+
+<p>
+Most distributions compile their packages with support for as much as possible,
+increasing the size of the programs and startup time, not to mention an enormous
+amount of dependencies. With Gentoo you can define what options a package 
+should be compiled with. This is where <c>USE</c> comes into play.
+</p>
+
+<p>
+In the <c>USE</c> variable you define keywords which are mapped onto
+compile-options. For instance, <e>ssl</e> will compile ssl-support in the
+programs that support it. <e>-X</e> will remove X-server support (note the minus
+sign in front). <e>gnome gtk -kde -qt</e> will compile your programs with gnome
+(and gtk) support, and not with kde (and qt) support, making your system fully
+tweaked for GNOME.
+</p>
+
+<p>
+The default <c>USE</c> settings are placed in
+<path>/etc/make.profile/make.defaults</path>. What you place in
+<path>/etc/make.conf</path> is calculated against these defaults settings. If
+you add something to the <c>USE</c> setting, it is added to the default list. If
+you remove something from the <c>USE</c> setting (by placing a minus sign in
+front of it) it is removed from the default list (if it was in the default list
+at all). <e>Never</e> alter anything inside the <path>/etc/make.profile</path>
+directory; it gets overwritten when you update Portage!
+</p>
+
+<p>
+A full description on <c>USE</c> can be found in the second part of the Gentoo
+Handbook, <uri link="?part=2&amp;chap=2">USE flags</uri>. A full description on
+the available USE flags can be found on your system in
+<path>/usr/portage/profiles/use.desc</path>. 
+</p>
+
+<pre caption="Viewing available USE flags">
+# <i>less /usr/portage/profiles/use.desc</i>
+<comment>(You can scroll using your arrow keys, exit by pressing 'q')</comment>
+</pre>
+
+<p>
+As an example we show a <c>USE</c> setting for a KDE-based system with DVD, ALSA
+and CD Recording support:
+</p>
+
+<pre caption="Opening /etc/make.conf">
+# <i>nano -w /etc/make.conf</i>
+</pre>
+
+<pre caption="USE setting">
+USE="-gtk -gnome qt kde dvd alsa cdr"
+</pre>
+
+<p>
+You will probably only use one or maybe two locales on your system. Up until now
+after compiling <c>glibc</c> a full set of all available locales will be
+created. As of now you can activate the <c>userlocales</c> USE flag and specify
+only the locales you will need in <path>/etc/locales.build</path>.
+</p>
+
+<pre caption="Activate the userlocales USE flag especially for glibc">
+# <i>mkdir /etc/portage</i>
+# <i>echo "sys-libs/glibc userlocales" >> /etc/portage/package.use</i>
+</pre>
+
+<p>
+Now specify the locales you want to be able to use:
+</p>
+
+<pre caption="nano -w /etc/locales.build">
+en_US/ISO-8859-1
+en_US.UTF-8/UTF-8
+de_DE/ISO-8859-1
+de_DE@euro/ISO-8859-15
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Optional: Using Distributed Compiling</title>
+<body>
+
+<p>
+If you are interested in using a collection of systems to help in compiling your
+system you might want to take a look at our <uri
+link="/doc/en/distcc.xml">DistCC Guide</uri>. By using <c>distcc</c> you can use
+the processing power of several systems to aid you with the installation.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Differences between Stage1, Stage2 and Stage3</title>
+<body>
+
+<p>
+Now take a seat and think of your previous steps. We asked you to
+select a <e>stage1</e>, <e>stage2</e> or <e>stage3</e> and warned you
+that your choice is important for further installation steps. Well, this
+is the first place where your choice defines the subsequent steps.
+</p>
+
+<ul>
+<li>
+  If you chose <e>stage1</e>, then you have to follow <e>both</e> steps in
+  this chapter (starting with <uri link="#doc_chap3">Progressing from Stage1 
+  to Stage2</uri>)
+</li>
+<li>
+  If you chose <e>stage2</e> you only can skip the first step
+  and immediately start with the second one (<uri link="#doc_chap4">Progressing
+  from Stage2 to Stage3</uri>)
+</li>
+<li>
+  If you chose <e>stage3</e> (either with or without GRP) then you can skip both
+  steps and continue with <uri link="?part=1&amp;chap=7">Configuring the 
+  Kernel</uri>
+</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Progressing from Stage1 to Stage2</title>
+<subsection>
+<title>Introduction to Bootstrapping</title>
+<body>
+
+<p>
+So, you want to compile everything from scratch? Okay then :-)
+</p>
+
+<p>
+In this step, we will <e>bootstrap</e> your Gentoo system. This takes a
+long time, but the result is a system that has been optimized from the
+ground up for your specific machine and needs.
+</p>
+
+<p>
+<e>Bootstrapping</e> means building the GNU C Library, GNU Compiler
+Collection and several other key system programs. 
+</p>
+
+<p>
+Before starting the bootstrap, we list a couple of options you might or
+might not want. If you do not want to read those, continue with <uri
+link="#bootstrap">Bootstrapping the System</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Optional: Downloading the Sources First</title>
+<body>
+
+<p>
+If you haven't copied over all source code before, then the bootstrap
+script will download all necessary files. It goes without saying that
+this only works if you have a working network connnection :-) If you want to 
+download the source code first and later bootstrap the system (for instance 
+because you don't want to have your internet connection open during the 
+compilation) use the <e>-f</e> option of the bootstrap script, which will 
+fetch (hence the letter <e>f</e>) all source code for you.
+</p>
+
+<pre caption = "Downloading the necessary sources">
+# <i>cd /usr/portage</i>
+# <i>scripts/bootstrap.sh -f</i>
+</pre>
+
+</body>
+</subsection>
+<subsection id="bootstrap">
+<title>Bootstrapping the System</title>
+<body>
+
+<p>
+Okay then, take your keyboard and punch in the next commands to start
+the bootstrap. Then go amuse yourself with something else because this step 
+takes quite some time to finish.
+</p>
+
+<pre caption = "Bootstrapping the system">
+# <i>cd /usr/portage</i>
+# <i>scripts/bootstrap.sh</i>
+</pre>
+
+<p>
+Now continue with the next step, <uri link="#doc_chap4">Progressing from Stage2
+to Stage3</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Progressing from Stage2 to Stage3</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+If you are reading this section, then you have a bootstrapped system
+(either because you bootstrapped it previously, or you are using a
+<e>stage2</e>). Then it is now time to build all system packages.
+</p>
+
+<p>
+<e>All</e> system packages? No, not really. In this step, you will build
+the system packages of which there are no alternatives to use.
+Some system packages have several alternatives (such as system loggers)
+and as Gentoo is all about choices, we don't want to force one upon you.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Optional: Viewing what will be done</title>
+<body>
+
+<p>
+If you want to know what packages will be installed, execute <c>emerge
+--pretend system</c>. This will list all packages that will be built. As this
+list is pretty big, you should also use a pager like <c>less</c> or
+<c>more</c> to go up and down the list.
+</p>
+
+<pre caption = "View what 'emerge system' will do">
+# <i>emerge --pretend system | less</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Optional: Downloading the Sources</title>
+<body>
+
+<p>
+If you want <c>emerge</c> to download the sources before you continue
+(for instance because you don't want the internet connection to be left
+open while you are building all packages) you can use the <e>--fetchonly</e>
+option of <c>emerge</c> which will fetch all sources for you. 
+</p>
+
+<pre caption = "Fetching the sources">
+# <i>emerge --fetchonly system</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Building the System</title>
+<body>
+
+<p>
+To start building the system, execute <c>emerge system</c>. Then go do
+something to keep your mind busy, because this step takes a long time to 
+complete.
+</p>
+
+<pre caption = "Building the System">
+# <i>emerge system</i>
+</pre>
+
+<p>
+You can for now safely ignore any warnings about updated configuration files
+(and running <c>etc-update</c>). When your Gentoo system is fully installed and
+booted, do read our documentation on <uri
+link="?part=3&amp;chap=2#doc_chap3">Configuration File Protection</uri>.
+</p>
+
+<p>
+When the build process has completed, continue with <uri
+link="?part=1&amp;chap=7">Configuring the Kernel</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+
+</sections>

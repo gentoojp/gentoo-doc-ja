@@ -1,0 +1,1363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/diskless-howto.xml,v 1.37 2011/10/30 11:56:08 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Diskless Nodes with Gentoo</title>
+
+<author title="Researcher">
+  <mail link="ma53@drexel.edu">Michael Andrews</mail>
+</author>
+<author title="Editor">
+  <mail link="unsolo@sysrq.no">Kristian Jerpetjoen</mail>
+</author>
+<author title="Reviewer">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Reviewer">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+
+<abstract>
+This HOWTO will help you create setup diskless nodes with Gentoo Linux.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2</version>
+<date>2011-10-30</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>About this HOWTO</title>
+<body>
+
+<p>
+This HOWTO will help you setup <e>diskless</e> workstations based on the Gentoo
+Linux distribution. We intend to make this as user friendly as possible and
+cater to the Linux newbie, because every one of us was one at a certain point :)
+While an experienced user could easily tie the multiple HOWTOs available on
+diskless nodes and networking together we hope that this guide can ease the
+installation for all interested users, geeks or not.
+</p>
+
+</body>
+</section>
+<section>
+<title>What is a diskless machine?</title>
+<body>
+
+<p>
+A diskless machine is a PC without any of the usual boot devices such as hard
+disks, floppy drives or CD-ROMs. The diskless node boots off the network and
+needs a server that will provide it with storage space as a local hard disk
+would. From now on we call the server the <e>master</e>, while the diskless
+machine gets called the <e>slave</e> (what's in a name :). The slave node needs
+a network adapter that supports PXE booting or Etherboot; check <uri
+link="http://www.etherboot.org">Etherboot.org</uri> for support listings. Most
+modern cards support PXE and many built-in adapters on motherboards will also
+work.
+</p>
+
+</body>
+</section>
+<section>
+<title>Before you start</title>
+<body>
+
+<p>
+You should have Gentoo installed on your master node and enough space on the
+master to store the file systems of the slave nodes you want to host. Also make
+sure you have one interface to the internet separated from the local area
+connection.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring the master and the slaves</title>
+<section>
+<title>About kernels</title>
+<body>
+
+<p>
+The kernel is the software that sits between your hardware and all other
+software you have loaded on your machine, essentially the heart of a kernel
+based operating system.  When your computer is started, the BIOS executes the
+instructions found at the reserved boot space of your hard drive. These
+instructions are typically a boot loader that loads your kernel. After your
+kernel has been loaded all processes are handled by the kernel.
+</p>
+
+<p>
+For more information on kernels and kernel configuration you might want to check
+out the <uri link="http://www.tldp.org/HOWTO/Kernel-HOWTO.html">kernel
+HOWTO</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring the master kernel</title>
+<body>
+
+<p>
+The master kernel can be as large and as customized as you would like but there
+are a few required kernel options you need to select. Go into your kernel
+configuration menu by typing:
+</p>
+
+<pre caption="Editing the master's kernel configuration">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+You should get a grey and blue GUI that offers a safe alternative to manually
+editing the <path>/usr/src/linux/.config</path> file.  If your kernel is
+currently functioning well you might want to save the current configuration file
+by exiting the GUI and type:
+</p>
+
+<pre caption="Backing up the master's kernel configuration">
+# <i>cp .config .config_working</i>
+</pre>
+
+<p>
+Go into the following sub-menus and make sure the listed items are checked as
+built-in (and <e>NOT</e> as modular).  The options show below are taken from the
+2.6.10 kernel version. If you use a different version, the text or sequence
+might differ. Just make sure you select at least those shown below.
+</p>
+
+<pre caption="master's kernel options">
+Code maturity level options  ---&gt;
+  [*] Prompt for development and/or incomplete code/drivers
+
+Device Drivers ---&gt;
+  Networking options ---&gt;
+    &lt;*&gt; Packet socket
+    &lt;*&gt; Unix domain sockets
+    [*] TCP/IP networking
+    [*]   IP: multicasting
+    [ ] Network packet filtering (replaces ipchains)
+
+File systems ---&gt;
+  Network File Systems  ---&gt;
+    &lt;*&gt; NFS server support
+    [*]   Provide NFSv3 server support
+
+<comment>
+If you want to access the internet through your master node and/or have a
+secure firewall make sure to add support for iptables
+</comment>
+  [*] Network packet filtering (replaces ipchains)
+  IP: Netfilter Configuration  ---&gt;
+    &lt;*&gt; Connection tracking (required for masq/NAT)
+    &lt;*&gt; IP tables support (required for filtering/masq/NAT)
+</pre>
+
+<p>
+If you want to use packet filtering, you can add the rest as modules later.
+Make sure to read the <uri
+link="/doc/en/security/security-handbook.xml?part=1&amp;chap=12">Gentoo Security
+Handbook Chapter about Firewalls</uri> on how to set this up properly.
+</p>
+
+<note>
+These kernel configuration options should only be added to your system specific
+configuration options and are not meant to completely replace your kernel
+configuration.
+</note>
+
+<p>
+After you have re-configured the master's kernel you will want to rebuild it:
+</p>
+
+<pre caption="Recompiling the master's kernel and modules">
+# <i>make &amp;&amp; make modules_install</i>
+<comment>(Make sure /boot is mounted before copying to it)</comment>
+# <i>cp arch/i386/boot/bzImage /boot/bzImage-master</i>
+</pre>
+
+<p>
+Then add an entry for that new kernel into <path>lilo.conf</path> or
+<path>grub.conf</path> depending on which bootloader you are using and make the
+new kernel the default one. Now that the new bzImage has been copied into your
+boot directory all you will have to do is reboot the system in order to load
+these new options.
+</p>
+
+</body>
+</section>
+<section>
+<title>About the slave kernel</title>
+<body>
+
+<p>
+It is recommended that you compile the slave kernel without any modules, since
+loading and setting them up via remote boot is a difficult and unnecessary
+process. Additionally, the slave kernel should be as small and compact as
+possible in order to efficiently boot from the network. We are going to compile
+the slave's kernel in the same place where the master was configured.
+</p>
+
+<p>
+To avoid confusion and wasting time it is probably a good idea to backup the
+master's configuration file by typing:
+</p>
+
+<pre caption="Backing up the master's kernel configuration">
+# <i>cp /usr/src/linux/.config /usr/src/linux/.config_master</i>
+</pre>
+
+<p>
+Now we will want to configure the slave's kernel in the same fashion we
+configured the master's kernel.  If you want to start with a fresh configuration
+file you can always recover the default <path>/usr/src/linux/.config</path> file
+by typing:
+</p>
+
+<pre caption="Getting a clean kernel configuration">
+# <i>cd /usr/src/linux</i>
+# <i>cp .config_master .config</i>
+</pre>
+
+<p>
+Now go into the configuration GUI by typing:
+</p>
+
+<pre caption="Editing the slave's kernel configuration">
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+You will want to make sure you select the following options as built-in and
+<e>NOT</e> as kernel modules:
+</p>
+
+<pre caption="slave's kernel options">
+Code maturity level options  ---&gt;
+  [*] Prompt for development and/or incomplete code/drivers
+
+Device Drivers ---&gt;
+  [*] Networking support
+  Networking options ---&gt;
+    &lt;*&gt; Packet socket
+    &lt;*&gt; Unix domain sockets
+    [*] TCP/IP networking
+    [*]   IP: multicasting
+    [*]   IP: kernel level autoconfiguration
+    [*]     IP: DHCP support (NEW)
+
+File systems ---&gt;
+  Network File Systems  ---&gt;
+    &lt;*&gt; file system support
+    [*]   Provide NFSv3 client support
+    [*]   Root file system on NFS
+</pre>
+
+<note>
+An alternative to having an dhcp server is setting up a BOOTP server.
+</note>
+
+<impo>
+It is important that you add your network adapter into the kernel (and not as a
+module) on the nodes. Using modules however is generally not a problem for
+diskless nodes.
+</impo>
+
+<p>
+Now the slave's kernel needs to be compiled.  You have to be careful here
+because you don't want to mess up the modules (if any) you have built for the
+master:
+</p>
+
+<pre caption="Compiling the slave kernel">
+# <i>cd /usr/src/linux</i>
+# <i>make</i>
+</pre>
+
+<p>
+Now create the directory on the master that will be used to hold slaves' files
+and required system files. We use <path>/diskless</path> but you may choose any
+location you like.  Now copy the slave's bzImage into the <path>/diskless</path>
+directory:
+</p>
+
+<note>
+If you are using different architectures you might want to save each config into
+<path>.config_arch</path>. Do the same with the images: save them into the
+<path>/diskless</path> as <path>bzImage_arch</path>.
+</note>
+
+<pre caption="Copying the slave kernel">
+# <i>mkdir /diskless</i>
+# <i>cp /usr/src/linux/arch/i386/boot/bzImage /diskless</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Configuring a preliminary slave file system</title>
+<body>
+
+<p>
+The master and slave filesystems can be tweaked and changed a lot.  Right now we
+are only interested in getting a preliminary filesystem of appropriate
+configuration files and mount points. First we need to create a directory within
+<path>/diskless</path> for the first slave.  Each slave needs it's own root file
+system because sharing certain system files will cause permission problems and
+hard crashes.  You can call these directories anything you want but I suggest
+using the slaves IP addresses as they are unique and not confusing.  The static
+IP of our first slave will be, for instance, <c>192.168.1.21</c>:
+</p>
+
+<pre caption="Creating a remote root directory">
+# <i>mkdir /diskless/192.168.1.21</i>
+</pre>
+
+<p>
+Various configuration files in <path>/etc</path> need to be altered to work on
+the slave.  Copy the master's <path>/etc</path> directory onto your new slave
+root by typing:
+</p>
+
+<pre caption="Creating /etc for the slave's filesystem">
+# <i>cp -r /etc /diskless/192.168.1.21/etc</i>
+</pre>
+
+<p>
+Still this filesystem isn't ready because it needs various mount points and
+directories. To create them, type:
+</p>
+
+<pre caption="Creating mount points and directories in the slave's filesystem">
+# <i>mkdir /diskless/192.168.1.21/home</i>
+# <i>mkdir /diskless/192.168.1.21/dev</i>
+# <i>mkdir /diskless/192.168.1.21/proc</i>
+# <i>mkdir /diskless/192.168.1.21/tmp</i>
+# <i>mkdir /diskless/192.168.1.21/mnt</i>
+# <i>chmod a+w /diskless/192.168.1.21/tmp</i>
+# <i>mkdir /diskless/192.168.1.21/mnt/.initd</i>
+# <i>mkdir /diskless/192.168.1.21/root</i>
+# <i>mkdir /diskless/192.168.1.21/sys</i>
+# <i>mkdir /diskless/192.168.1.21/var</i>
+# <i>mkdir /diskless/192.168.1.21/var/empty</i>
+# <i>mkdir /diskless/192.168.1.21/var/lock</i>
+# <i>mkdir /diskless/192.168.1.21/var/log</i>
+# <i>mkdir /diskless/192.168.1.21/var/run</i>
+# <i>mkdir /diskless/192.168.1.21/var/spool</i>
+# <i>mkdir /diskless/192.168.1.21/usr</i>
+# <i>mkdir /diskless/192.168.1.21/opt</i>
+</pre>
+
+<p>
+Most of these "stubs" should be recognizable to you; stubs like
+<path>/dev</path>, <path>/proc</path> or <path>/sys</path> will be populated
+when the slave starts, the others will be mounted later. You should also change
+the <path>/diskless/192.168.1.21/etc/conf.d/hostname</path> file to reflect the
+hostname of the slave. Binaries, libraries and other files will be populated
+later in this HOWTO right before you attempt to boot the slave.
+</p>
+
+<p>
+Even though <path>/dev</path> is populated by <c>udev</c> later on, you need to
+create the <path>console</path> entry. If not, you will receive the error
+"unable to open initial console".
+</p>
+
+<pre caption="Creating console entry in the /dev">
+# <i>mknod /diskless/192.168.1.21/dev/console c 5 1</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring the DHCP server</title>
+<section>
+<title>About the DHCP server</title>
+<body>
+
+<p>
+DHCP stands for Dynamic Host Configuration Protocol.  The DHCP server is the
+first computer the slaves will communicate with when they PXE boot.  The primary
+purpose of the DHCP server is to assign IP addresses.  The DHCP server can
+assign IP addresses based on hosts ethernet MAC addresses.  Once the slave has
+an IP address, the DHCP server will tell the slave where to get its initial file
+system and kernel.
+</p>
+
+</body>
+</section>
+<section>
+<title>Before you get started</title>
+<body>
+
+<p>
+There are several things you will want to make sure are working before you
+begin.  First check your network connectivity:
+</p>
+
+<pre caption="Checking networking configurations">
+# <i>ifconfig eth0 multicast</i>
+# <i>ifconfig -a</i>
+</pre>
+
+<p>
+You will want to make sure you have have an <e>eth0</e> device running.  It
+should look something like this:
+</p>
+
+<pre caption="A properly working eth0 device">
+eth0      Link encap:Ethernet  HWaddr 00:E0:83:16:2F:D6
+          inet addr:192.168.1.1  Bcast:192.168.1.255  Mask:255.255.255.0
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:26460491 errors:0 dropped:0 overruns:2 frame:0
+          TX packets:32903198 errors:0 dropped:0 overruns:0 carrier:1
+          collisions:0 txqueuelen:100
+          RX bytes:2483502568 (2368.4 Mb)  TX bytes:1411984950 (1346.5 Mb)
+          Interrupt:18 Base address:0x1800
+</pre>
+
+<p>
+It's important that it says <e>MULTICAST</e>, if it doesn't then you will have
+to recompile your kernel to include multicast support.
+</p>
+
+</body>
+</section>
+<section>
+<title>Installing the DHCP server</title>
+<body>
+
+<p>
+If your network does not already have a DHCP server installed  you will need to
+install one:
+</p>
+
+<pre caption="Installing the dhcp server">
+# <i>emerge dhcp</i>
+</pre>
+
+<p>
+If your network already has a DHCP server installed you will have to edit the
+configuration file to get the PXE boot to function correctly.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring the DHCP server</title>
+<body>
+
+<p>
+There is only one configuration file you will have to edit before starting the
+DHCP server: <path>/etc/dhcp/dhcpd.conf</path>.  Copy and edit the provided
+sample file:
+</p>
+
+<pre caption="Editing the dhcp server's configuration file">
+# <i>cp /etc/dhcp/dhcpd.conf.sample /etc/dhcp/dhcpd.conf</i>
+# <i>nano -w /etc/dhcp/dhcpd.conf</i>
+</pre>
+
+<p>
+The general layout of the file is set up in an indented fashion and looks like
+this:
+</p>
+
+<pre caption="Sample dhcpd.conf layout">
+<comment># global options here</comment>
+ddns-update-style none;
+shared-network LOCAL-NET {
+<comment># shared network options here</comment>
+subnet 192.168.1.0 netmask 255.255.255.0 {
+<comment>    # subnet network options here</comment>
+    host slave{
+<comment>        # host specific options here</comment>
+    }
+    group {
+<comment>        # group specific options here</comment>
+    }
+}
+}
+</pre>
+
+<p>
+The <c>shared-network</c> block is optional and should be used for IPs you want
+to assign that belong to the same network topology.  At least one <c>subnet</c>
+must be declared and the optional <c>group</c> block allows you to group options
+between items. A good example of <path>dhcpd.conf</path> looks like this:
+</p>
+
+<pre caption="Sample dhcpd.conf">
+#
+# Sample dhcpd.conf for diskless clients
+#
+
+# Disable dynamic DNS
+ddns-update-style none;
+
+# Assume one default gateway for IP traffic will do
+option routers 192.168.1.1;
+
+# Provide DNS info to clients
+option domain-name-servers 192.168.1.1;
+option domain-name "mydomain.com";
+
+# Specify the TFTP server to be used
+next-server 192.168.1.1;
+
+# Declare a vendor-specific option buffer for PXE clients:
+# Code 1: Multicast IP address of boot file server
+# Code 2: UDP port that client should monitor for MTFTP responses
+# Code 3: UDP port that MTFTP servers are using to listen for MTFTP requests
+# Code 4: Number of seconds a client must listen for activity before trying
+#         to start a new MTFTP transfer
+# Code 5: Number of seconds a client must listen before trying to restart
+#         a MTFTP transfer
+
+option space PXE;
+option PXE.mtftp-ip               code 1 = ip-address;
+option PXE.mtftp-cport            code 2 = unsigned integer 16;
+option PXE.mtftp-sport            code 3 = unsigned integer 16;
+option PXE.mtftp-tmout            code 4 = unsigned integer 8;
+option PXE.mtftp-delay            code 5 = unsigned integer 8;
+option PXE.discovery-control      code 6 = unsigned integer 8;
+option PXE.discovery-mcast-addr   code 7 = ip-address;
+
+# Declare the subnet where our diskless nodes will live
+subnet 192.168.1.0 netmask 255.255.255.0 {
+
+  # Provide PXE clients with appropriate information
+  class "pxeclient" {
+    match if substring(option vendor-class-identifier, 0, 9) = "PXEClient";
+    vendor-option-space PXE;
+
+    # At least one of the vendor-specific PXE options must be set in
+    # order for the client boot ROMs to realize that we are a PXE-compliant
+    # server.  We set the MCAST IP address to 0.0.0.0 to tell the boot ROM
+    # that we can't provide multicast TFTP.
+
+    option PXE.mtftp-ip 0.0.0.0;
+
+    # This is the name of the file the boot ROMs should download.
+    filename "pxelinux.0";
+  }
+
+  # Provide Etherboot clients with appropriate information
+  class "etherboot" {
+    match if substring(option vendor-class-identifier, 0, 9) = "Etherboot";
+    filename "vmlinuz_arch";
+  }
+
+  # Add one host declaration for each diskless host
+  host slave21 {
+    hardware ethernet 00:02:A5:04:3B:66;
+    fixed-address 192.168.1.21;
+  }
+}
+</pre>
+
+<note>
+There is nothing prohibiting the use of both PXE boot and Etherboot together.
+The above Code Listing is merely an example; if you have issues, please consult
+the DHCPd documentation.
+</note>
+
+<p>
+The IP address after <c>next-server</c> will be asked for the specified
+<c>filename</c>. This IP address should be the IP of the tftp server, usually
+the same as the master's IP address.  The <c>filename</c> is relative to the
+<path>/diskless</path> directory (this is due to the tftp server specific
+options which will be covered later).  Inside the <c>host</c> block, the
+<c>hardware ethernet</c> option specifies a MAC address, and
+<c>fixed-address</c> assigns a fixed IP address to that particular MAC address.
+There is a pretty good man page on <path>dhcpd.conf</path> with options that are
+beyond the scope of this HOWTO.  You can read it by typing:
+</p>
+
+<pre caption="Viewing the man pages for dhcpd.conf">
+# <i>man dhcpd.conf</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Starting the DHCP server</title>
+<body>
+
+<p>
+Before you start the dhcp initialisation script edit the
+<path>/etc/conf.d/dhcp</path> file so that it looks something like this:
+</p>
+
+<pre caption="Sample /etc/conf.d/dhcp">
+IFACE="eth0"
+<comment># insert any other options needed</comment>
+</pre>
+
+<p>
+The <c>IFACE</c> variable is the device you wish to run your DHCP server on, in
+our case <c>eth0</c>. Adding more arguments to the <c>IFACE</c> variable can be
+useful for a complex network topology with multiple Ethernet cards. To start the
+dhcp server type:
+</p>
+
+<pre caption="Starting the dhcp server on the master">
+# <i>/etc/init.d/dhcp start</i>
+</pre>
+
+<p>
+To add the dhcp server to your start-up scripts type:
+</p>
+
+<pre caption="Adding the dhcp server to the master's default run level">
+# <i>rc-update add dhcp default</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Troubleshooting the DHCP server</title>
+<body>
+
+<p>
+To see if a node boots you can take a look at <path>/var/log/messages</path>.
+If the node successfully boots, the <path>messages</path> file should have some
+lines at the bottom looking like this:
+</p>
+
+<pre caption="Sample log file entries created by dhcp">
+DHCPDISCOVER from 00:00:00:00:00:00 via eth0
+DHCPOFFER on 192.168.1.21 to 00:00:00:00:00:00 via eth0
+DHCPREQUEST for 192.168.1.21 from 00:00:00:00:00:00 via eth0
+DHCPACK on 192.168.1.21 to 00:00:00:00:00:00 via eth0
+</pre>
+
+<note>
+This log file can also help you discover the slaves' MAC addresses.
+</note>
+
+<p>
+If you get the following message it probably means there is something wrong in
+the configuration file but that the DHCP server is broadcasting correctly.
+</p>
+
+<pre caption="Sample dhpc server error">
+no free leases on subnet LOCAL-NET
+</pre>
+
+<p>
+Every time you change the configuration file you must restart the DHCP server.
+To restart the server type:
+</p>
+
+<pre caption="Restarting the dhcp server on the master">
+# <i>/etc/init.d/dhcpd restart</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring the TFTP server and PXE Linux Bootloader and/or Etherboot</title>
+<section>
+<title>About the TFTP server</title>
+<body>
+
+<p>
+TFTP stands for Trivial File Transfer Protocol.  The TFTP server is going to
+supply the slaves with a kernel and an initial filesystem.  All of the slave
+kernels and filesystems will be stored on the TFTP server, so it's probably a
+good idea to make the master the TFTP server.
+</p>
+
+</body>
+</section>
+<section>
+<title>Installing the TFTP server</title>
+<body>
+
+<p>
+A highly recommended tftp server is available as the tftp-hpa package.  This
+tftp server happens to be written by the author of SYSLINUX and it works very
+well with pxelinux. To install simply type:
+</p>
+
+<pre caption="Installing the tfp server">
+# <i>emerge tftp-hpa</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Configuring the TFTP server</title>
+<body>
+
+<p>
+Edit <path>/etc/conf.d/in.tftpd</path>.  You need to specify the tftproot
+directory with <c>INTFTPD_PATH</c> and any command line options with
+<c>INTFTPD_OPTS</c>.  It should look something like this:
+</p>
+
+<pre caption="Sample /etc/conf.d/in.tftpd">
+INTFTPD_PATH="/diskless"
+INTFTPD_OPTS="-l -v -s ${INTFTPD_PATH}"
+</pre>
+
+<p>
+The <c>-l</c> option indicates that this server listens in stand alone mode so
+you don't have to run inetd. The <c>-v</c> indicates that log/error messages
+should be verbose.  The <c>-s /diskless</c> specifies the root of your tftp
+server.
+</p>
+
+</body>
+</section>
+<section>
+<title>Starting the the TFTP Server</title>
+<body>
+
+<p>
+To start the tftp server type:
+</p>
+
+<pre caption="Starting the master's tftp server">
+# <i>/etc/init.d/in.tftpd start</i>
+</pre>
+
+<p>
+This should start the tftp server with the options you specified in the
+<path>/etc/conf.d/in.tftpd</path>. If you want this server to be automatically
+started at boot type:
+</p>
+
+<pre caption="Adding the tftp server to the master's default run level">
+# <i>rc-update add in.tftpd default</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>About PXELINUX</title>
+<body>
+
+<p>
+This section is not required if you are only using Etherboot.  PXELINUX is the
+network bootloader equivalent to LILO or GRUB and will be served via TFTP.  It
+is essentially a tiny set of instructions that tells the client where to locate
+its kernel and initial filesystem and allows for various kernel options.
+</p>
+
+</body>
+</section>
+<section>
+<title>Before you get started</title>
+<body>
+
+<p>
+You will need to get the pxelinux.0 file which comes in the SYSLINUX package by
+H. Peter Anvin.  You can install this package by typing:
+</p>
+
+<pre caption="Installing syslinux">
+# <i>emerge syslinux</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Setting up PXELINUX</title>
+<body>
+
+<note>
+This isn't needed for Etherboot
+</note>
+
+<p>
+Before you start your tftp server you need to setup pxelinux.  First copy the
+pxelinux binary into your <path>/diskless</path> directory:
+</p>
+
+<pre caption="Setting up the remote bootloader">
+# <i>cp /usr/share/syslinux/pxelinux.0 /diskless</i>
+# <i>mkdir /diskless/pxelinux.cfg</i>
+# <i>touch /diskless/pxelinux.cfg/default</i>
+</pre>
+
+<p>
+This will create a default bootloader configuration file.  The binary
+<path>pxelinux.0</path> will look in the <path>pxelinux.cfg</path> directory for
+a file whose name is the client's IP address in hexadecimal. If it does not find
+that file it will remove the rightmost digit from the file name and try again
+until it runs out of digits. Versions 2.05 and later of syslinux first perform a
+search for a file named after the MAC address. If no file is found, it starts
+the previously mentioned discovery routine. If none is found, the
+<path>default</path> file is used.
+</p>
+
+<pre caption="Files that PXE looks for in pxelinux.cfg/ in sequence">
+<comment>(Leading 01 means Ethernet, next bytes match our slave's MAC address)</comment>
+01-00-40-63-c2-ca-c9
+
+<comment>(Assigned IP in hexadecimal)</comment>
+C0A80115
+C0A8011
+C0A801
+C0A80
+C0A8
+C0A
+C0
+C
+
+default
+</pre>
+
+<note>
+These are all in lowercase.
+</note>
+
+<p>
+Let's start with the <path>default</path> file:
+</p>
+
+<pre caption="Sample pxelinux.cfg/default">
+DEFAULT /bzImage
+APPEND ip=dhcp root=/dev/nfs nfsroot=192.168.1.1:/diskless/192.168.1.21
+</pre>
+
+<p>
+The <c>DEFAULT</c> tag directs pxelinux to the kernel bzImage that we compiled
+earlier.  The <c>APPEND</c> tag appends kernel initialisation options. Since we
+compiled the slave kernel with <c>NFS_ROOT_SUPPORT</c>, we will specify the
+nfsroot here.  The first IP is the master's IP and the second IP is the
+directory that was created in <path>/diskless</path> to store the slave's
+initial filesystem.
+</p>
+
+</body>
+</section>
+
+<section>
+<title>About Etherboot</title>
+<body>
+
+<note>
+This isn't required if you are using PXE boot.
+</note>
+
+<p>
+Etherboot boots network boot images from a TFTP server. As the PXE this is
+equivalent to LILO or GRUB. The <c>mknbi</c> utility enables you to create
+different images using different options.
+</p>
+
+</body>
+</section>
+<section>
+<title>Before you get started</title>
+<body>
+
+<p>
+You will need to get the <c>mknbi</c> (utility for making tagged kernel images
+useful for netbooting) package to create your Etherboot images. This tool will
+create a preconfigured kernel image from your original kernel. This contains the
+boot options as shown further down.
+</p>
+
+<pre caption="Installing mknbi">
+# <i>emerge mknbi</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Setting up Etherboot</title>
+<body>
+
+<p>
+In this section we will create a simple etherboot image. As the dhcp server
+gives out the clients root-path in the "option root-path" dhcp.conf, we do not
+have to include this here. More details can be found in the mknbi manual.
+</p>
+
+<pre caption="mknbi manual">
+# <i>man mknbi</i>
+</pre>
+
+<p>
+Making the boot images. This will create a ELF bootable image capable of passing
+dhcp and the rootpath to the kernel. Also forcing the kernel to browse the
+network for a dhcp server.
+</p>
+
+<pre caption="making netboot images">
+# <i>mkelf-linux -ip=dhcp /diskless/bzImage &gt; /diskless/vmlinuz </i>
+</pre>
+
+<note>
+For the arch specific images you have to type <c>bzImage_arch</c> and
+<c>vmlinuz_arch</c>.
+</note>
+
+</body>
+</section>
+<section>
+<title>Troubleshooting the network boot process</title>
+<body>
+
+<p>
+There are a few things you can do to debug the network boot process.  Primarily
+you can use a tool called <c>tcpdump</c>.  To install <c>tcpdump</c> type:
+</p>
+
+<pre caption="Installing tcpdump">
+# <i>emerge tcpdump</i>
+</pre>
+
+<p>
+Now you can listen to various network traffic and make sure your client/server
+interactions are functioning.  If something isn't working there are a few things
+you might want to check.  First make sure that the client/server is physically
+connected properly and that the networking cables are not damaged.  If your
+client/server is not receiving requests on a particular port make sure that
+there is no firewall interference.  To listen to interaction between two
+computers type:
+</p>
+
+<pre caption="Listening to client and server interaction via tcpdump">
+# <i>tcpdump host </i><comment>client_ip</comment><i> and </i><comment>server_ip</comment>
+</pre>
+
+<p>
+You can also use <c>tcpdump</c> to listen on particular port such as the tftp
+port by typing:
+</p>
+
+<pre caption="Listening to the tftp server">
+# <i>tcpdump port 69</i>
+</pre>
+
+<p>
+A common error you might receive is: "PXE-E32: TFTP open time-out".  This is
+probably due to firewall issues.  If you are using <c>TCPwrappers</c>, you might
+want to check <path>/etc/hosts.allow</path> and <path>etc/hosts.deny</path> and
+make sure that they are configured properly.  The client should be allowed to
+connect to the server.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring the NFS server</title>
+<section>
+<title>About the NFS server</title>
+<body>
+
+<p>
+NFS stands for Network File System.  The NFS server will be used to serve
+directories to the slave. This part can be somewhat personalized later, but
+right now all we want is a preliminary slave node to boot diskless.
+</p>
+
+</body>
+</section>
+<section>
+<title>About Portmapper</title>
+<body>
+
+<p>
+Various client/server services do not listen on a particular port, but instead
+rely on RPCs (Remote Procedure Calls).  When the service is initialised it
+listens on a random port and then registers this port with the Portmapper
+utility.  NFS relies on RPCs and thus requires Portmapper to be running before
+it is started.
+</p>
+
+</body>
+</section>
+<section>
+<title>Before you start</title>
+<body>
+
+<p>
+The NFS Server needs kernel level support so if you don't have this you should
+recompile your master's kernel.  To double check your master's kernel
+configuration type:
+</p>
+
+<pre caption="Checking for NFS specific options">
+# <i>grep NFS /usr/src/linux/.config_master</i>
+</pre>
+
+<p>
+You should see output that looks something like this if your kernel has been
+properly configured:
+</p>
+
+<pre caption="Proper NFS specific options in the master's kernel configuration">
+CONFIG_PACKET=y
+# CONFIG_PACKET_MMAP is not set
+# CONFIG_NETFILTER is not set
+CONFIG_NFS_FS=y
+CONFIG_NFS_V3=y
+# CONFIG_NFS_V4 is not set
+# CONFIG_NFS_DIRECTIO is not set
+CONFIG_NFSD=y
+CONFIG_NFSD_V3=y
+# CONFIG_NFSD_V4 is not set
+# CONFIG_NFSD_TCP is not set
+</pre>
+
+</body>
+</section>
+<section>
+<title>Installing the NFS server</title>
+<body>
+
+<p>
+The NFS package that can be acquired through portage by typing:
+</p>
+
+<pre caption="Installing nfs-utils">
+# <i>emerge nfs-utils</i>
+</pre>
+
+<p>
+This package will emerge a portmapping utility, nfs server, and nfs client
+utilities and will automatically handle initialisation dependencies.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring the NFS server</title>
+<body>
+
+<p>
+There are three major configuration files you will have to edit:
+</p>
+
+<pre caption="Nfs configuration files">
+/etc/exports
+/diskless/192.168.1.21/etc/fstab
+/etc/conf.d/nfs
+</pre>
+
+<p>
+The <path>/etc/exports</path> file specifies how, to who and what to export
+through NFS.  The slave's fstab will be altered so that it can mount the NFS
+filesystems that the master is exporting.
+</p>
+
+<p>
+A typical <path>/etc/exports</path> for the master should look something like
+this:
+</p>
+
+<pre caption="Sample master /etc/exports">
+<comment># one line like this for each slave</comment>
+/diskless/192.168.1.21   192.168.1.21(sync,rw,no_root_squash,no_all_squash)
+<comment># common to all slaves</comment>
+/opt   192.168.1.0/24(sync,ro,no_root_squash,no_all_squash)
+/usr   192.168.1.0/24(sync,ro,no_root_squash,no_all_squash)
+/home  192.168.1.0/24(sync,rw,no_root_squash,no_all_squash)
+<comment># if you want to have a shared log</comment>
+/var/log   192.168.1.21(sync,rw,no_root_squash,no_all_squash)
+</pre>
+
+<p>
+The first field indicates the directory to be exported and the next field
+indicates to who and how. This field can be divided in two parts: who should be
+allowed to mount that particular directory, and what the mounting client can do
+to the filesystem: <c>ro</c> for read only, <c>rw</c> for read/write;
+<c>no_root_squash</c> and <c>no_all_squash</c>  are important for diskless
+clients that are writing to the disk, so that they don't get "squashed" when
+making I/O requests.  The slave's fstab file,
+<path>/diskless/192.168.1.21/etc/fstab</path>, should look like this:
+</p>
+
+<pre caption="Sample slave fstab">
+<comment># these entries are essential</comment>
+master:/diskless/192.168.1.21   /         nfs     sync,hard,intr,rw,nolock,rsize=8192,wsize=8192    0 0
+master:/opt                     /opt      nfs     sync,hard,intr,ro,nolock,rsize=8192,wsize=8192    0 0
+master:/usr                     /usr      nfs     sync,hard,intr,ro,nolock,rsize=8192,wsize=8192    0 0
+master:/home                    /home     nfs     sync,hard,intr,rw,nolock,rsize=8192,wsize=8192    0 0
+none                            /proc     proc    defaults                                     0 0
+<comment># useful but superfluous</comment>
+master:/var/log                 /var/log  nfs     hard,intr,rw                                 0 0
+</pre>
+
+<p>
+In this example, <e>master</e> is just the hostname of the master but it could
+easily be the IP of the master.  The first field indicates the directory to be
+mounted and the second field indicates where.  The third field describes the
+filesystem and  should be NFS for any NFS mounted directory. The fourth field
+indicates various options that will be used in the mounting process (see
+mount(1) for info on mount options).  Some people have had difficulties with
+soft mount points so we made them all hard, but you should look into various
+<path>/etc/fstab</path> options to make your cluster more efficient.
+</p>
+
+<p>
+The last file you should edit is <path>/etc/conf.d/nfs</path> which describes a
+few options for nfs when it is initialised and looks like this:
+</p>
+
+<pre caption="Sample master /etc/conf.d/nfs">
+# Config file for /etc/init.d/nfs
+
+# Number of servers to be started up by default
+RPCNFSDCOUNT=8
+
+# Options to pass to rpc.mountd
+RPCMOUNTDOPTS=""
+</pre>
+
+<p>
+You should change <c>RPCNFSDCOUNT</c> to the number of diskless nodes on the
+network.
+</p>
+
+</body>
+</section>
+<section>
+<title>Starting the NFS server</title>
+<body>
+
+<p>
+You should start the nfs server with its init script located in
+<path>/etc/init.d</path> by typing:
+</p>
+
+<pre caption="Starting the master's nfs server">
+# <i>/etc/init.d/nfs start</i>
+</pre>
+
+<p>
+If you want to this script to start when the system boots simply type:
+</p>
+
+<pre caption="Adding the nfs server to the master's default run level">
+# <i>rc-update add nfs default</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Completing the slave filesystem</title>
+<section>
+<title>Copy the missing files</title>
+<body>
+
+<p>
+We will now make the slave's file system in sync with the master's and provide
+the necessary binaries while still preserving slave specific files.
+</p>
+
+<pre caption="Creating a slave filesystem">
+# <i>rsync -avz /bin /diskless/192.168.1.21</i>
+# <i>rsync -avz /sbin /diskless/192.168.1.21</i>
+# <i>rsync -avz /lib /diskless/192.168.1.21</i>
+</pre>
+
+<note>
+The reason for rsync -avz instead of cp is to maintain symlinks and permissions.
+</note>
+
+</body>
+</section>
+<section>
+<title>Configure diskless networking</title>
+<body>
+
+<p>
+In order to prevent the networking initscript from killing the connection to
+your NFS server, you will need to add an option to <path>/etc/conf.d/net</path>
+on your diskless client's filesystem.
+</p>
+
+<pre caption="Editing /etc/conf.d/net">
+<comment>(Add this to the existing options for your diskless client's interface)</comment>
+config_eth0=( "noop" )
+</pre>
+
+<note>
+For more information, please read
+<path>/usr/share/doc/openrc-*/net.example.bz2</path>.
+</note>
+
+</body>
+</section>
+<section>
+<title>Initialisation scripts</title>
+<body>
+
+<p>
+You need as many init scripts under
+<path>/diskless/192.168.1.21/etc/runlevels</path> as you need services on your
+diskless nodes. It all depends on what you want your slaves to do.
+</p>
+
+<warn>
+Do not use the <c>rc-update</c> program to add or remove scripts from the slave
+runlevels when logged on your master. This would change your master runlevels.
+You need to create the links manually or log into your slave nodes using ssh or
+connect a screen and keyboard to your slave.
+</warn>
+
+<pre caption="Typical slave runlevels">
+/diskless/192.168.1.21/etc/runlevels/:
+total 16
+drwxr-xr-x    2 root     root         4096 2003-11-09 15:27 boot
+drwxr-xr-x    2 root     root         4096 2003-10-01 21:10 default
+drwxr-xr-x    2 root     root         4096 2003-03-13 19:05 nonetwork
+drwxr-xr-x    2 root     root         4096 2003-02-23 12:26 single
+
+/diskless/192.168.1.21/etc/runlevels/boot:
+total 0
+lrwxrwxrwx    1 root     root           20 2003-10-18 17:28 bootmisc -> /etc/init.d/bootmisc
+lrwxrwxrwx    1 root     root           19 2003-10-18 17:28 checkfs -> /etc/init.d/checkfs
+lrwxrwxrwx    1 root     root           17 2003-10-18 17:28 clock -> /etc/init.d/clock
+lrwxrwxrwx    1 root     root           22 2003-10-18 17:28 domainname -> /etc/init.d/domainname
+lrwxrwxrwx    1 root     root           20 2003-10-18 17:28 hostname -> /etc/init.d/hostname
+lrwxrwxrwx    1 root     root           22 2003-10-18 17:28 localmount -> /etc/init.d/localmount
+lrwxrwxrwx    1 root     root           19 2003-10-18 17:28 modules -> /etc/init.d/modules
+lrwxrwxrwx    1 root     root           18 2003-10-18 17:28 net.lo -> /etc/init.d/net.lo
+lrwxrwxrwx    1 root     root           20 2003-10-18 17:28 netmount -> /etc/init.d/netmount
+lrwxrwxrwx    1 root     root           21 2003-10-18 17:28 rmnologin -> /etc/init.d/rmnologin
+lrwxrwxrwx    1 root     root           19 2003-10-18 17:28 urandom -> /etc/init.d/urandom
+
+/diskless/192.168.1.21/etc/runlevels/default:
+total 0
+lrwxrwxrwx    1 root     root           23 2003-10-18 17:28 consolefont -> /etc/init.d/consolefont
+lrwxrwxrwx    1 root     root           19 2003-10-18 17:28 distccd -> /etc/init.d/distccd
+lrwxrwxrwx    1 root     root           19 2003-10-18 17:28 keymaps -> /etc/init.d/keymaps
+lrwxrwxrwx    1 root     root           17 2003-10-18 17:28 local -> /etc/init.d/local
+lrwxrwxrwx    1 root     root           16 2003-10-18 17:28 sshd -> /etc/init.d/sshd
+lrwxrwxrwx    1 root     root           21 2003-10-18 17:28 syslog-ng -> /etc/init.d/syslog-ng
+lrwxrwxrwx    1 root     root           17 2003-10-18 17:28 vixie-cron -> /etc/init.d/vixie-cron
+
+/diskless/192.168.1.21/etc/runlevels/nonetwork:
+total 0
+lrwxrwxrwx    1 root     root           17 2003-10-18 17:28 local -> /etc/init.d/local
+
+/diskless/192.168.1.21/etc/runlevels/single:
+total 0
+</pre>
+
+<p>
+Now is a good time to boot your slave and cross your fingers. It works?
+Congratulations, you are now the proud owner of (a) diskless node(s) :)
+</p>
+
+</body>
+</section>
+
+<!--
+
+<section>
+<title>An alternative : ClusterNFS</title>
+<body>
+
+<warn>
+This is mentioned only because a reviewer of this document is using this
+solution. Be aware that Gentoo <e>does not</e> support ClusterNFS. It is not in
+portage and requires changes to a baselayout init script. <b>Use at your own
+risks</b>.
+</warn>
+
+<p>
+If you don't fancy having a distinct root for each slave because it needs some
+maintenance when upgrading files from the master directories, you could share
+the same root across all nodes, master and slaves included. This means all your
+machines need to be compatible because you will have only one set of binaries.
+You also need to be aware that this might have security issues because all of
+your master root will be exported through NFS.
+</p>
+
+<p>
+If you still want to try out this alternative, visit the ClusterNFS <uri
+link="http://clusternfs.sourceforge.net/">home page</uri>, download the
+software and read the doc.
+</p>
+
+<p>
+To make it short, all files are shared and the files that need to be different
+between master and all slaves are copied to <path>file$$CLIENT$$</path>. When a
+slave requests <path>file</path>, ClusterNFS will notice the existence of
+<path>file$$CLIENT$$</path> and send it instead. Files that need to be
+different on each node are copied to <path>file$$IP=192.168.1.21$$</path>.
+The same applies to directories.
+</p>
+
+<p>
+Very shortly, this is what differs from the installation procedure described
+above:
+</p>
+
+<ul>
+  <li>You do not need NFS server support in your master kernel</li>
+  <li>Install ClusterNFS <e>after</e> you emerge nfs-utils</li>
+  <li>Make slave copies of files and directories as described below</li>
+  <li>Do not create a root dir for each node</li>
+  <li>Export only / in your <path>/etc/exports</path> file</li>
+  <li>
+    Only mount / via NFS in the slave <path>/etc/fstab$$CLIENT$$</path> file
+  </li>
+  <li>Edit <path>/etc/init.d/nfs</path> as described below</li>
+  <li>
+    Edit <path>/etc/conf.d/local.start$$CLIENT$$</path> as described below
+  </li>
+</ul>
+
+<pre caption="Files that need to be different between master and slaves">
+/etc/conf.d/local.start$$CLIENT$$
+/etc/conf.d/local.stop$$CLIENT$$<comment> (Probably empty)</comment>
+/etc/crontab$$CLIENT$$<comment> (Probably empty, master takes care of chores)</comment>
+/etc/exports$$CLIENT$$<comment> (Empty, slaves do not export NFS mounts)</comment>
+/etc/fstab$$CLIENT$$
+/etc/hostname$$IP=192.168.1.21$$<comment> (Name your slaves)</comment>
+/etc/mtab$$IP=192.168.1.21$$
+/etc/runlevels$$CLIENT$$<comment> (Clean separation between master and slave boot scripts)</comment>
+/tmp$$IP=192.168.1.21$$
+/var$$IP=192.168.1.21$$<comment> (Create subdirs as in /var)</comment>
+</pre>
+
+<pre caption="Editing /etc/init.d/nfs">
+        ebegin "Starting NFS daemon"
+        start-stop-daemon - -start - -quiet - -exec \
+<comment># Add - -translate-names option</comment>
+                $nfsd - - - -translate-names
+        eend $? "Error starting NFS daemon"
+         # Check if we support NFSv3
+        ebegin "Starting NFS mountd"
+<comment># Comment the following two lines (ClusterNFS only knows NFS v2)</comment>
+#       rpcinfo -u localhost nfs 3 &amp;&gt;/dev/null || \
+#               RPCMOUNTDOPTS="$RPCMOUNTDOPTS - -no-nfs-version 3"
+        start-stop-daemon - -start - -quiet - -exec \
+                $mountd - - $RPCMOUNTDOPTS 1&gt;&amp;2
+        eend $? "Error starting NFS mountd"
+</pre>
+
+</body>
+</section>
+-->
+
+</chapter>
+</guide>

@@ -1,0 +1,252 @@
+<?xml version='1.0' encoding="UTF-8"?>
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/ldapdns-guide.xml,v 1.1 2006/04/29 05:36:50 idani Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/ldapdns-guide.xml" lang="ja">
+<title>Gentoo LDAP-DNSガイド</title>
+
+<author title="Author">
+  <mail link="fnjordy@gmail.com">Steve-o</mail>
+</author>
+<author title="Editor">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="翻訳">
+<mail link="murakami.taku@gmail.com">村上 卓</mail>
+</author>
+
+<abstract>
+ldapdnsを使えば、ネットワークに対しDNSサービスを簡単に提供できます。使用されるDNSレコードは、
+LDAP環境内部に格納されます。このドキュメントでは、
+このためのOpenLDAPとldapdnsの設定方法を説明します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>0.2</version>
+<date>2006-03-25</date>
+
+<!-- Original revision: 1.1 -->
+
+<chapter>
+<title>はじめに</title>
+<section>
+<body>
+
+<p>
+ldapdnsとは、DNSサービスをネットワークに提供してくれる軽量なサーバです。DNSサービスがあれば、
+中央管理されたルールのもとでホスト名を管理できます。また、それはシステムの追加/削除、
+もしくはホスト名が変更される度に発生する退屈な<path>/etc/hosts</path>の更新作業から開放してくれます。
+</p>
+
+<p>
+ldapdnsパッケージは、LDAPサービスを使用し全てのDNSレコードを格納します(簡単に説明すれば、
+DNSレコードとはホスト名とIPアドレスを1行で表現します)。
+LDAPとは、階層的に表されたナレッジベース(ディレクトリ)から情報を取得するための標準プロトコルです。
+Linuxで最もよく知られたLDAPサービスには、無償のLDAP実装であるOpenLDAPがあります。
+</p>
+
+<p>
+この手頃な小ガイドにより、最小限の労力でDNSサービスをネットワークにセットアップできるはずです。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ldapdnsを設定する</title>
+<section>
+<body>
+
+<p>
+はじめに、<c>net-dns/ldapdns</c>をインストールします。
+</p>
+
+<pre caption="ldapdnsのインストール">
+# <i>emerge net-dns/ldapdns</i>
+</pre>
+
+<p>
+次に、<c>ldapdns</c>を構成しDNSレコードをネットワークに提供します。
+ここでは、以下の構文を取る<c>ldapdns-conf</c>を使用します。
+</p>
+
+<pre caption="ldapdns-confの構文">
+ldapdns-conf acct logacct /path yourip ldaphost dn [suffix]
+</pre>
+
+<table>
+<tr>
+  <th>キーワード</th>
+  <th>説明</th>
+  <th>例</th>
+</tr>
+<tr>
+  <ti>acct</ti>
+  <ti>ldapdnsを実行するユーザ名</ti>
+  <ti>ldapdns</ti>
+</tr>
+<tr>
+  <ti>logacct</ti>
+  <ti>ldapdnsのロギングを実行するユーザ名</ti>
+  <ti>dnslog</ti>
+</tr>
+<tr>
+  <ti>/path</ti>
+  <ti>ldapdns用にchrootするホームディレクトリ</ti>
+  <ti><path>/var/lib/ldapdns</path></ti>
+</tr>
+<tr>
+  <ti>yourip</ti>
+  <ti>リッスンするIPアドレス</ti>
+  <ti>127.0.0.1</ti>
+</tr>
+<tr>
+  <ti>ldaphost</ti>
+  <ti>LDAPサービス用のアドレス</ti>
+  <ti><c>ldapi://%2fvar%2frun%2fopenldap%2fslapd.sock</c></ti>
+</tr>
+<tr>
+  <ti>dn</ti>
+  <ti>LDAPログイン・クレデンシャル</ti>
+  <ti>cn=Manager,dc=<c>yourdomain</c></ti>
+</tr>
+<tr>
+  <ti>suffix</ti>
+  <ti>オプションで、全てのクエリーに追加されるデフォルトldapパス</ti>
+  <ti>ou=Machines,dc=<c>yourdomain</c></ti>
+</tr>
+</table>
+
+<p>
+IPアドレス<c>127.0.0.1</c>を全てのホストが到達可能なIPアドレスに置き換え、
+<c>yourdomain</c>の代わりに必要なドメイン名を忘れずに指定して下さい。
+</p>
+
+<pre caption="ldapdns-confの実行例">
+# <i>ldapdns-conf ldapdns dnslog /var/lib/ldapdns 127.0.0.1 ldapi://%2fvar%2frun%2fopenldap%2fsldapd.sock cn=Manager,dc=yourdomain ou=Machines,dc=yourdomain</i>
+</pre>
+
+<p>
+それでは、LDAPログインのパスワードを設定します。
+</p>
+
+<pre caption="LDAPログインのパスワードを設定">
+# <i>echo YourSecretPassword &gt; /var/lib/ldapdns/root/password</i>
+# <i>chmod 0400 /var/lib/ldapdns/root/password</i>
+</pre>
+
+<p>
+認証方法にsimpleを、そしてLDAPスキーマにcosineがそれぞれ使用されるようldapdnsを構成して下さい。
+</p>
+
+<pre caption="ldapdnsの構成">
+# <i>echo simple &gt; /var/lib/ldapdns/env/LDAP_AUTH</i>
+# <i>echo cosine &gt; /var/lib/ldapdns/env/SCHEMA</i>
+</pre>
+
+<p>
+オプションで、サービス用のe-mailアドレスを設定できます。
+</p>
+
+<pre caption="ホスト管理者のe-mailアドレスの設定">
+# <i>echo YourMail@address &gt; /var/lib/ldapdns/env/HOSTMASTER</i>
+</pre>
+
+<p>
+監視スキャンに対しサービスを追加し、起動していないのであればサービス監視プログラムを起動します。
+</p>
+
+<pre caption="監視サービスの管理">
+# <i>ln -s /var/lib/ldapdns /service</i>
+# <i>/etc/init.d/svscan start</i>
+# <i>rc-update add svscan default</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>OpenLDAPを構成する</title>
+<section>
+<body>
+
+<p>
+それでは、DNSスキーマと一緒にOpenLDAPを設定します。
+<path>/etc/openldap/sldap.conf</path>をお気に入りのエディタで開き、以下の3行が記入されていることを確認して下さい。
+</p>
+
+<pre caption="/etc/openldap/sldap.confの編集">
+include         /etc/openldap/schema/cosine.schema
+include         /etc/openldap/schema/inetorgperson.schema
+include         /etc/openldap/schema/nis.schema
+</pre>
+
+<p>
+<c>ldapdns-conf</c>を使用し前もって定義しておいたベースdnで、LDAPを起動します。
+これを達成するには、DNS情報が書き込まれた<path>bootstrap.ldif</path>ファイル(単なる名称です)をはじめに作成します。
+</p>
+
+<p>
+例として、
+架空のドメイン<c>cherchetoujours.org</c>用の<uri link="bootstrap.ldif.txt">bootstrap.ldif</uri>を載せておきます。
+</p>
+
+<p>
+この情報を使ってLDAPをブートストラップします。
+</p>
+
+<pre caption="LDAPのブートストラップ">
+# <i>ldapadd -x -D "cn=Manager,dc=yourdomain" -W -f bootstrap.ldif</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>インストールをテストする</title>
+<section>
+<body>
+
+<p>
+以上で、全ての設定が完了しました。<c>nslookup</c>(<c>net-dns/bind-tools</c>の一部です)を使用し、
+セットアップをテストしてみましょう。
+</p>
+
+<pre caption="ldapdnsの設定をテスト">
+# <i>nslookup ns1.yourdomain</i>
+ Note:  nslookup is deprecated and may be removed from future releases.
+ Consider using the `dig' or `host' programs instead.  Run nslookup with
+ the `-sil[ent]' option to prevent this message from appearing.
+ Server:         <i>127.0.0.1</i>
+ Address:        <i>127.0.0.1#53</i>
+
+ Name:   ns1.example.com
+ Address: <comment>(サーバのIPアドレス)</comment>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>リソース</title>
+<section>
+<body>
+
+<p>
+ldapdnsプロジェクトの<uri link="http://cvs.lp.se/doc/ldapdns/README.configure.gz">README.configure.gz</uri>ファイル
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

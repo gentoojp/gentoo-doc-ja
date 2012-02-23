@@ -1,0 +1,296 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-portage-ebuild.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.3</version>
+<date>October 24, 2004</date>
+
+<section>
+<title>Emerge and Ebuild</title>
+<body>
+
+<p>
+The <c>ebuild</c> application is a lower level interface to the Portage system.
+Using this application you can execute specific actions against a given ebuild.
+For instance, you can perform the individual merging steps by yourself.
+</p>
+
+<p>
+Using <c>ebuild</c> is more for development purposes; more information about
+<c>ebuild</c> can therefore be found in the <uri
+link="/proj/en/devrel/handbook/handbook.xml">Developers Handbook</uri>. However,
+we will explain what ebuild instances are invoked by Portage during the merge
+process of a certain software title, and how to invoke the post-configuration
+steps some ebuilds allow you to perform.
+</p>
+
+</body>
+</section>
+<section>
+<title>Manually Installing Software</title>
+<subsection>
+<title>Fetching the Sources &amp; Checksumming</title>
+<body>
+
+<p>
+Whenever you invoke <c>ebuild</c> against a given ebuild file, it will verify if
+the checksums of all involved files are equal to those given in the 
+accompanying <path>Manifest</path> or 
+<path>files/digest-&lt;name&gt;-&lt;version&gt;</path> file. This 
+happens after the sources have been fetched.
+</p>
+
+<p>
+To fetch the sources using <c>ebuild</c>, run:
+</p>
+
+<pre caption="Fetching the sources">
+# <i>ebuild path/to/ebuild fetch</i>
+</pre>
+
+<p>
+If the ebuild's md5sum does not match the one listed in the
+<path>Manifest</path> file, or one of the downloaded sources don't match those
+listed in the <path>files/digest-&lt;package&gt;</path> file, you will receive 
+an error similar to this:
+</p>
+
+<pre caption="Ebuild checksum failure">
+!!! File is corrupt or incomplete. (Digests do not match)
+>>> our recorded digest: db20421ce35e8e54346e3ef19e60e4ee
+>>>  your file's digest: f10392b7c0b2bbc463ad09642606a7d6
+</pre>
+
+<p>
+The subsequent line will mention the erroneous file. 
+</p>
+
+<p>
+If you are certain that the sources you've fetched and the ebuild itself are
+valid, you can regenerate the <path>Manifest</path> and
+<path>digest-&lt;package&gt;</path> file using <c>ebuild</c>'s digest
+functionality:
+</p>
+
+<pre caption="Regenerate Manifest and digest">
+# <i>ebuild path/to/ebuild digest</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Unpacking the Sources</title>
+<body>
+
+<p>
+To unpack the sources in <path>/var/tmp/portage</path> (or any other directory
+location you have specified in <path>/etc/make.conf</path>), run <c>ebuild</c>'s
+unpack functionality:
+</p>
+
+<pre caption="Unpacking the sources">
+# <i>ebuild path/to/ebuild unpack</i>
+</pre>
+
+<p>
+This will execute the ebuild's src_unpack() function (which defaults to plain
+extraction if no src_unpack() function is defined). It is also in this step that
+all necessary patches are applied.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Compiling the Sources</title>
+<body>
+
+<p>
+The next step in the merge process is to compile the sources. The
+<c>ebuild</c>'s compile functionality takes care of this step by executing the
+src_compile() function in the ebuild. This also includes the configure steps if
+appropriate.
+</p>
+
+<pre caption="Compiling the sources">
+# <i>ebuild path/to/ebuild compile</i>
+</pre>
+
+<p>
+You are advised to edit the ebuild's src_compile() function if you want to
+change the compilation instructions. However, you can also trick Portage into
+believing that the <c>ebuild</c> application has finished the compile steps. Run
+all necessary commands yourself and create an empty file called
+<path>.compiled</path> in the working directory:
+</p>
+
+<pre caption="Informing Portage about the finished compilation jobs">
+# <i>touch .compiled</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Installing the Files in a Temporary Location</title>
+<body>
+
+<p>
+In the next step Portage will install all necessary files in a temporary
+location. This directory will then contain all files that are to be merged on
+the live filesystem. You can accomplish this by running <c>ebuild</c>'s install
+functionality, which executes the ebuild's src_install() function:
+</p>
+
+<pre caption="Installing the files">
+# <i>ebuild path/to/ebuild install</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Merging the Files onto the Live Filesystem</title>
+<body>
+
+<p>
+The final step is to merge all files onto the live filesystem and register those
+in the Portage backend. <c>ebuild</c> calls this step "qmerge" and involves the
+following steps:
+</p>
+
+<ul>
+  <li>Execute the pkg_preinst() function if specified</li>
+  <li>Copy over all files to the live filesystem</li>
+  <li>Register the files in the Portage backend</li>
+  <li>Execute the pkg_postinst() function if specified</li>
+</ul>
+
+<p>
+Run <c>ebuild</c>'s qmerge functionality to accomplish these steps:
+</p>
+
+<pre caption="Merging the files on the live filesystem">
+# <i>ebuild path/to/ebuild qmerge</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Cleaning the Temporary Directory</title>
+<body>
+
+<p>
+Finally you can clean the temporary directory using <c>ebuild</c>'s clean
+functionality:
+</p>
+
+<pre caption="Cleaning the temporary directory">
+# <i>ebuild path/to/ebuild clean</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Additional Ebuild Features</title>
+<subsection>
+<title>Running all Merge-related Commands</title>
+<body>
+
+<p>
+Using <c>ebuild</c>'s merge functionality you can run the fetch, unpack,
+compile, install and qmerge commands in one go:
+</p>
+
+<pre caption="Installing software">
+# <i>ebuild path/to/ebuild merge</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Performing Configuration Actions</title>
+<body>
+
+<p>
+Some applications include instructions that configure the package further on
+your system. These instructions can be interactive and are therefore not 
+automatically executed. To run these configuration steps, which are enlisted in
+the ebuild's (optional) config() function, use <c>ebuild</c>'s config
+functionality:
+</p>
+
+<pre caption="Configuring a package">
+# <i>ebuild path/to/ebuild config</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Building an (RPM) Package</title>
+<body>
+
+<p>
+You can instruct Portage to create a binary package of an ebuild or even an RPM
+file. Use <c>ebuild</c>'s package or rpm functionality to create these archives.
+There are a few differences between those functionalities though:
+</p>
+
+<ul>
+  <li>
+    The package functionality is a lot like the merge functionality, executing
+    all necessary steps (fetch, unpack, compile, install) before creating the
+    package
+  </li>
+  <li>
+    The rpm functionality builds an RPM package from the files created
+    <e>after</e> having run <c>ebuild</c>'s install functionality
+  </li>
+</ul>
+
+<pre caption="Creating packages">
+<comment>(For a Portage-compatible binary package)</comment>
+# <i>ebuild path/to/ebuild package</i>
+
+<comment>(For an RPM package)</comment>
+# <i>ebuild path/to/ebuild rpm</i>
+</pre>
+
+<p>
+The created RPM file however does not contain the ebuild's dependency
+information.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>More Information</title>
+<subsection>
+<body>
+
+<p>
+Please consult the following man pages for more information about Portage, the
+ebuild application and the ebuild files:
+</p>
+
+<pre caption="Man pages">
+$ <i>man portage</i>    <comment>(Portage itself)</comment>
+$ <i>man emerge</i>     <comment>(The emerge command)</comment>
+$ <i>man ebuild</i>     <comment>(The ebuild command)</comment>
+$ <i>man 5 ebuild</i>   <comment>(The ebuild file syntax)</comment>
+</pre>
+
+<p>
+You will also find more development-related information in the <uri
+link="/proj/en/devrel/handbook/handbook.xml">Developers Handbook</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

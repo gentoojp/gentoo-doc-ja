@@ -1,0 +1,408 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/kde-split-ebuilds.xml,v 1.4 2006/02/13 15:46:28 idani Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/kde-split-ebuilds.xml">
+
+<title>KDE 分割 ebuild ガイド</title>
+
+<author title="Author">
+  <mail link="danarmak@gentoo.org">Dan Armak</mail>
+</author>
+<author title="Editor">
+  <mail link="greg_g@gentoo.org">Gregorio Guidi</mail>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+
+<abstract>
+KDE3.4では、Portageに「分割ebuild」が導入されました。
+このドキュメントでは、移行の理由と、移行によって利用できる機能、そして古い「一体」ebuildからの更新方法について説明します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.7</version>
+<date>2005-11-30</date>
+
+<!-- Original revision: 1.10 -->
+
+<chapter>
+<title>分割 KDE Ebuild</title>
+<section>
+<title>これは何？</title>
+<body>
+
+<p>
+2005年1月までは、Portageにある唯一のKDE ebuildは「一体となっている」物でした。
+すなわち、たった15個のebuild（kdebaseやkdenetworkなど）しかなく、それぞれがとても多くのアプリケーションをインストールしていました。
+実際には、それらアプリケーションはお互いに依存しているわけではないのにです。
+これは明らかに最善ではない状況で、とてもGentoo的ではありませんが、長い間我慢されてきました。
+</p>
+
+<p>
+新しい「分割」ebuild（konquerorやkmailなど）は、それぞれのKDEアプリケーションごとに分かれたebuildを提供することによってこの状況を改善しました。
+これにより、総数330に及ぶ新しいebuildがkde-baseカテゴリに追加されました。
+</p>
+
+<p>
+KDE 3.4と3.5向けの一体となっているebuildの提供は続いており、分割の物と綺麗に相互作用します。
+ですが、分割ebuildは新しいデフォルトであり、KDE 4.0では一体となっているebuildは提供されないでしょう。
+</p>
+
+<p>
+最後に、Koffice用の分割ebuildがあると言うことに言及するでしょう。
+これらはkwordやkugarを分割パッケージとして提供します。
+</p>
+
+</body>
+</section>
+<section>
+<title>分割ebuildをインストールするには</title>
+<body>
+
+<p>
+これを書いている時点での最新のstableなKDEリリースは3.4.3です。
+最新のunstableな（マスクされた）KDEリリースは3.5.0_beta2です。
+どちらのリリースにも、分割、一体の両方のebuildがPortageに存在します。
+</p>
+
+<ul>
+  <li>
+    kmailといった特定のパッケージをemergeするには、単に<c>emerge kmail</c>とします。
+  </li>
+  <li>
+    最小のKDEセッションへログインするための基本KDE環境をemergeするには、<c>emerge kdebase-startkde</c>とします。
+  </li>
+  <li>
+    最後に、一体パッケージと全く同じ物、例えば<c>kdebase</c>を含む全てのアプリケーションを分割ebuildを使用して得るためには、<c>emerge kdebase-meta</c>（もしくはkdepim-metaなど）を使用することができます。完全に全てのKDE分割ebuildを得るには、<c>emerge kde-meta</c>とします。
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>一体ebuildから分割ebuildへの更新方法</title>
+<body>
+
+<p>
+KDE 3.3.xがインストールされているなら、単に<c>emerge kde-meta</c>を行うだけで、現在インストールされている物を妨げることなく3.4.xの分割ebuildをインストールすることが出来ます。3.5.xでも同じです。
+</p>
+
+<p>
+KDE 3.4.xの一体ebuildがインストールされているなら、分割ebuildをemergeする前に一体ebuildをunmergeしなければなりません。
+ですが、この過程はそれぞれの一体ebuildについて一つずつ行われます。
+KDEの全てを一度にunmergeする必要はありません。
+</p>
+
+<p>
+疑うのであれば、一体ebuildと分割ebuildにはお互いにブロックし合っていると言うことを思い出してください。
+Portageは不正な状態が作成されることを許さないので、どんなemergeやunmergeでも大丈夫なのです。
+</p>
+
+</body>
+</section>
+<section>
+<title>分割ebuildの利点</title>
+<body>
+
+<p>
+分割ebuildへと移行することによって得ることができる利益には以下のような物があります。
+</p>
+
+<ul>
+  <li>
+    マイナーKDEリリース間では、ほとんどのKDEパッケージは全く更新されません。
+    例えば、3.3.1から3.3.2への更新では、320あるパッケージの内変更があったのは100もありません。
+    パッケージを分割することによって、実際に変更があったパッケージだけの新しいebuildを作ることができ、更新のコンパイルにかかる時間を（この例では）3分の2以上短縮することができます。
+  </li>
+  <li>
+    パッチは普通特定のパッケージに影響します。
+    分割ebuildでは、これらはテストすることができ、承認とcommitがより早くなり、開発者達はより少ない労力でそれを行えるようになります。そして、上記のように、ユーザが更新にかける時間は短くなるでしょう。
+    これはセキュリティ更新に特に重要です。
+  </li>
+  <li>
+    他のデスクトップや軽量なウィンドウマネージャのユーザは、kdebaseやkdepimの残りの（巨大な）オーバーヘッド無しに、必要な少しのKDEアプリケーションをemergeすることができます。
+  </li>
+  <li>
+    ユーザはインストールしたパッケージを良く設定することができます。これを行いたいであろう理由には以下のような物があります。
+    <ul>
+      <li>
+        コンパイル時間は気になる物です。実際にはkonqueror、kmail、そしてkopeteが必要な時に、<c>emerge kdebase kdepim kdenetwork</c>を実行するととても長い時間がかかります。その上、CPU時間は金なり、であるはずです。
+      </li>
+      <li>
+        ディスクの使用も気になります。必要でないそれぞれのパッケージはディスクセクタの多くを占拠します。より多くの空き容量があるディスクは良い物です。それは高速で、幸せなディスクです。
+      </li>
+      <li>
+        システムのセキュリティについても気になります。インストールされた全てのソフトウェアには潜在的な脆弱性があり、必要でないソフトウェアをインストールしたままにしておく理由はありません。
+      </li>
+      <li>
+        あなたは<uri link="/main/en/philosophy.xml">Gentoo Way</uri>を忠実に守っており、パッケージをバンドルしてユーザに強要するのに我慢できません。（私たちもです）
+      </li>
+    </ul>
+  </li>
+  <li>
+    最後に、分割ebuildは、USEフラグを使ってコンパイル時間をより柔軟な物にすることもできます。
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>分割・一体ebuildの相互運用</title>
+<body>
+
+<p>
+分割や一体ebuildは自由に混ぜ合わせることができます。
+唯一の制限は、一体ebuildは、それが提供する分割ebuildと同時にはインストールできないと言うことです。
+ebuild内で依存関係によるブロックがあるので、好きなようにemergeすることができます。
+</p>
+
+<p>
+ですが、普通は、そのような混合設定を使う理由はありません。
+実際、とてもコンパイルが遅いマシン（mips）の様な特別な場合を除いて、必要な分割ebuildを使用すべきです。
+</p>
+
+<p>
+分割ebuildはデフォルトのebuildでもあります。
+これはつまり、他のebuildがKDEアプリケーションに依存しているときには、分割ebuildをインストールするだろうと言うことです。
+しかし、一体ebuildも依存関係を満たすため、一体ebuildを手動でemergeし、その後それに依存するebuildをemergeすることもできます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>パフォーマンスの問題</title>
+<section>
+<title>なぜ分割ebuildは遅いのか</title>
+<body>
+
+<p>
+分割ebuildは一体ebuildよりもemergeにかかる時間が長いと以前から<uri link="http://bugs.gentoo.org/show_bug.cgi?id=11123">言われています</uri>。
+理由は、それぞれのパッケージごとに行う解凍や設定の実行に関するオーバーヘッドです。
+完全な<c>emerge kde-meta</c>は、以前の受け入れがたいほど長い時間がかかっていた<c>emerge kde</c>よりもさらに20～30%時間がかかります。
+</p>
+
+<p>
+その上、今のところ分割ebuildはいつも<c>make -f admin/Makefile.cvs</c>（これはautoconfやautomake、そしていくつかのkde特有のスクリプトの実行を意味します）を実行します。
+これは更に設定を実行するのとだいたい同じくらい速度を低下させます。
+</p>
+
+<p>
+最後に、分割ebuildは巨大なtarballから特定のファイルを取り出す必要があります。
+これは専用の小さなtarballから取り出すよりも遅いです。
+ですが、KDE 3.xのautotoolsベースのビルドシステム向けにそのような小さなtarballを作成することは難しいことです。
+</p>
+
+<p>
+分割ebuildは、実際に更新が必要なパッケージのみを更新するので、KDEの更新にかかるコンパイル時間を大幅に削減することができます。
+この効果をここで改めて言う価値があります。
+そのようなアップデートにおける分割ebuildの個々のパッケージの恩恵は、最初のインストール中に受ける、オーバーヘッドを目立たなくします。
+</p>
+
+<p>
+最後に、KDEの全てをインストールすることは、利用可能なパッケージを探してみたり、マルチユーザ環境を構築したいのなら意味をなします。
+ですが、ほとんどの人は利用可能な300以上のKDEアプリケーションの内ほんのわずかしか使わないでしょう。
+古いマシンの所有者のような本当にコンパイル時間を気にする人は誰でも、オーバーヘッドに出くわして時間を失うよりも、パッケージを選択的にインストールしてより多くの時間を得ることができます。
+</p>
+
+</body>
+</section>
+<section>
+<title>分割ebuildを高速化させるには</title>
+<body>
+
+<p>
+分割ebuildのパフォーマンス問題のほぼ大部分はautotoolsに関係があります。
+これは、KDE 3.xで使用されるビルドシステム、<c>./configure;make;make install</c>を管理するautoconf、automake、そしてその他のツールを指します。
+</p>
+
+<p>
+KDE 4は（私たちが今言える限りでは）完全に新しいビルドシステムを採用するでしょう。
+これは、とりわけ<c>make -f admin/Makefile.common; ./configure</c>と同じくらい時間を大幅に削減するでしょう。
+（もしあれば、）その設定スクリプトと同等のものを生成するコストを下げることによって、それぞれの分割ebuildの小さなtarballの作成をうまくいけば、とても容易にしてくれることでしょう。
+</p>
+
+<p>
+これまでは、confcacheはautoconfが作成した設定スクリプトを繰り返し実行する手間を減らす方法だと見なされていました。
+confcacheは設定テストの結果をキャッシュする手法です。
+ですが、stableな（2.0）Portageツリーではconfcacheはもはや実装されていません。
+将来同じ物が追加されたとしても、すぐにはKDE ebuildで使用できるようにはならないでしょう。
+私たちはKDE 4を待つことを選択するでしょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>分割ebuild FAQ</title>
+<section>
+<title>なぜいくつかの分割ebuildには最新のebuildが無いのですか？</title>
+<body>
+
+<p>
+先に説明したとおり、全てのアプリケーションがKDEのマイナーリリース間で実際に更新されるわけではありません。
+そのため、全てのアプリケーションが新しいebuildに更新されるわけではないのです。
+たとえば、libkdenetworkは3.5.0_beta2では更新されていないので、最新の利用可能なebuildは3.5_beta1リリースの物です。
+</p>
+
+<p>
+これは更新に掛かるコンパイルの時間を減らします。
+もしlibkdenetwork-3.5.0_beta2のebuildを作成すれば、3.5_beta1のebuildと全く同じ物をインストールするでしょう。
+様々な依存関係は正しく更新されます（すなわち、どのebuildもlibkdenetwork-3.5.0_beta2に依存していません）。
+</p>
+
+</body>
+</section>
+<section>
+<title>DO_NOT_COMPILEと何が違うのですか？</title>
+<body>
+
+<p>
+DO_NOT_COMPILEとはKDEビルドシステム内部の環境変数です。
+これはコンパイルからサブディレクトリを選択的に無効化することができます。
+一部のユーザは一体KDEビルドの一部をコンパイルするためにこれを使用していました。
+例えば、<c>DO_NOT_COMPILE=konqueror emerge kdebase</c>を実行するとkonquerorアプリケーション無しにkdebaseをインストールします。
+</p>
+
+<p>
+しかし、DO_NOT_COMPILEはパッケージマネージャの自動ビルド作業に干渉するつもりは決してありませんでした。
+これは(訳注:Portageと連携して)動作せず、システムを破壊する可能性があり、決してサポートされていませんでした。
+全ての人にこれの使用を控えるよう要求します。
+</p>
+
+<p>
+以下はDO_NOT_COMPILEを使用することによって発生する問題の一部です。
+</p>
+
+<ul>
+  <li>
+    これはPortageの依存関係の追跡を完全に破壊します。
+    PortageはDO_NOT_COMPILEを認識することができず、一体パッケージが全部揃ってインストールされ、他のパッケージの依存関係を満たすことができると考えます。
+    その為、他のパッケージがemergeできなかったり、起動できなかったりする場合があります。
+  </li>
+  <li>
+    これは、KDEモジュールの全ての異なって存在しているサブディレクトリの名前と意味をユーザが知っていなければなりません。
+    KDE開発者でもない限り、これを知っているユーザはほとんどおらず、その為DO_NOT_COMPILEを正しく使用することができません。
+  </li>
+  <li>
+    KDEモジュールサブディレクトリはお互いに依存しあっており、特定のビルド命令を要求し、インストールされていないとしても他のディレクトリが存在していることを要求します。
+    分割ebuildが正常に動作するために私たちは多大なる努力を注ぎ込みました。
+    DO_NOT_COMPILEは同じ結果を得るための十分なツールとはほとんど言えません。たとえユーザが十分な知識を持っていたとしてもです。
+    これを行うことでできることはいくつかのアプリケーションをコンパイルしないようにすることだけです。
+    kdebaseやkdepimの様なモジュールからいくつかの選択したアプリケーションをインストールするためにこれを利用することはほとんど不可能です。
+  </li>
+  <li>
+    もし昨日kmailをインストールして、今日はkornを追加しようという作業を、DO_NOT_COMPILEを使って行うなら、kmailの再コンパイルが必要です。
+    これはつまり、DO_NOT_COMPILEはどんなときでも分割ebuildよりかなり遅くなると言うことです。
+  </li>
+  <li>
+    DO_NOT_COMPILEは個々のKDEアプリケーションに含まれる（GRPといった）コンパイル済みのパッケージには使用できません。
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Gentoo KDEメンテナに多大なる負担を強いることになるのではないですか？</title>
+<body>
+
+<p>
+この質問は驚くほど聞かれます。
+私はユーザの皆さんが私たちメンテナに対し思いやりをもってくださっていて嬉しく思います。
+この機会に、私たちは自由意思で分割ebuildを導入していると言うことを説明させてください。
+そしてこの機会を逃すと話すことができなくなってしまいますので。
+分割ebuildを導入することで、メンテナンスをうまく行い続けることができると我々は考えています。
+</p>
+
+<p>
+完全を期するため、他のアーキテクチャ所属のメンテナは、実は多くの分割ebuildのテストやキーワード付けと言った作業負荷の増加について不満を持っていたと言うことを言っておきます。
+私たちはこれを解決するために努力しており、それが一体ebuildがKDE 3.4でまだ利用できるという一番の理由です。
+</p>
+
+</body>
+</section>
+<section>
+<title>古い形式（一体）のebuildは削除してしまうのですか？</title>
+<body>
+
+<p>
+最終的にはそうするつもりです。
+しかし、全てのKDE 3.xリリースでは一体と分割ebuildのどちらも利用できるでしょう。
+</p>
+
+<p>
+もし分割ebuildよりも一体の方が好みなら、その理由を<uri link="http://bugs.gentoo.org">私たちまで伝えてください</uri>。
+</p>
+
+</body>
+</section>
+<section>
+<title>ebuildが多すぎます！どうしたら私は必要な物を見つけることができますか？</title>
+<body>
+
+<p>
+さて、何よりもまず、もしお探しのパッケージがkdebaseから入手できることを知っているのなら、一体の<c>kdebase</c>をemerge下のとほぼ同じ結果を得ることができる<c>emerge kdebase-meta</c>を使用することができます。
+その為、分割ebuildのせいで物事が実際に悪くなってしまうことはありません。
+</p>
+
+<p>
+もちろん、パッケージを検索するいつもの方法の全ても利用できます。
+もしGnomeアプリケーションだったebuildを探すのにはどうしますか？
+少なくとも、探しているアプリケーションの名前を知っておく必要があります。
+</p>
+
+<p>
+この状況は、もしかすると、いくつかの-meta ebuildをさらに導入することによって改善されるかもしれません。
+これらは単に依存関係を列挙しているだけなので、私たちには何も負担になりません。
+これはまだ決定されていません。
+また、この拡張を行う前にPortageが機能を追加するのも良いでしょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>与えられたパッケージから得ることができる全ての分割ebuildの一覧を表示したりunmergeしたりするためにはどうすればよいのですか？</title>
+<body>
+
+<p>
+ここでの目標は、例えばkdebaseの一体ebuildから得ることができる分割ebuildの一覧を表示することです。
+繰り返しますが、適切な方法（<uri link="/proj/en/glep/glep-0021.html">GLEP 21</uri>など）がこの問題を解決します。
+しかし、現在では、ある程度KDEのeclassesの実装の詳細まで手を染める必要があります。
+その為、スクリプトでこれらのアプローチのいくつかを使っているのなら、それを私たちに教えてください。
+</p>
+
+<p>
+kde-function.eclassは、get-parent-package()とget-child-packages()という機能を定義していて、この2つが変換する機能を持っています。
+これら2つの機能はこの作業をebuildや外部のbashスクリプトから行うための正しい方法です。
+以下はその例です。
+</p>
+
+<pre caption="kde-functions機能の使用例">
+$ <i>function die() { echo $@; } # レポートエラーを呼び出します</i>
+$ <i>source /usr/portage/eclass/kde-functions.eclass</i>
+$ <i>get-parent-package konqueror # 動作しません。完全な名前を指定する必要があります</i>
+<i>Package konqueror not found in KDE_DERIVATION_MAP, please report bug # エラーが表示されました</i>
+$ <i>get-parent-package kde-base/konqueror # 完全なパッケージ名です</i>
+<i>kde-base/kdebase # 結果が表示されました</i>
+$ <i>get-child-packages kde-base/kdebase</i>
+<i> # (パッケージの長い一覧が表示されます)</i>
+</pre>
+
+<p>
+もしスクリプトがbashでないのなら、前述の機能を使って、KDE_DERIVATION_MAP変数の（複数行の）定義を取り出すためにkde-functions.eclassをgrepすることができます。
+この変数には空白で区切られた単語の一覧が含まれており、それぞれの2つの連続した単語は親のパッケージと子となる分割ebuildを関連づけています。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

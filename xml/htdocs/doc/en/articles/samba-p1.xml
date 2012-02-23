@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/samba-p1.xml,v 1.5 2011/09/04 17:53:41 swift Exp $ -->
+
+<guide disclaimer="articles">
+<title>Introduction to Samba, Part 1</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<!-- <author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author> -->
+
+<abstract>
+Samba is an incredible tool for anyone who uses both Unix and Windows. By
+implementing the SMB/CIFS protocol for Unix, Samba allows Unix systems to share
+their resources with standard Windows clients.  In this introductory article,
+Daniel Robbins introduces you to what Samba can do. The focus will be on key
+concepts. (He'll step you through the setup process in his next article.) By the
+end of this article, you'll have a good understanding of what Samba does, and
+how it goes about doing it.
+</abstract>
+
+<!-- The original version of this article was first published on IBM
+developerWorks, and is property of Westtech Information Services. This document
+is an updated version of the original article, and contains various improvements
+made by the Gentoo Linux Documentation team -->
+
+<version>1.0</version>
+<date>2005-10-06</date>
+
+<chapter>
+<title>Key concepts</title>
+<section>
+<title>Show me Samba</title>
+<body>
+
+<p>
+First, I'm going to show you a bunch of screenshots from one of my Windows NT
+boxes named kompressor. These screenshots demonstrate what a fully-configured
+Samba system looks like from the Windows side.  They'll give you a real-world
+grasp of what Samba can do.
+</p>
+
+<p>
+I currently have three machines set up on my internal LAN:
+</p>
+
+<ul>
+  <li><b>ntbox</b> (a Windows NT Workstation)</li>
+  <li><b>freebox</b> (a FreeBSD server)</li>
+  <li>
+    <b>kompressor</b> (the Windows NT Workstation that I use as my primary
+    desktop)
+  </li>
+</ul>
+
+<p>
+In this environment, I use Samba extensively to share files, print, and even run
+Windows applications directly from freebox (Unix).  Here's a screenshot showing
+the contents of kompressor's Network Neighborhood:
+</p>
+
+<figure link="/images/docs/l-samba-1.gif" caption="kompressor's Network
+Neighborhood"/>
+
+<p>
+As you can see, both ntbox and kompressor are visible, which is no surprise
+since they are both NT Workstations. What is rather unusual, however, is the
+fact that I can see freebox as well.  Because freebox is running Samba, I can
+see it under Network Neighborhood on every Windows machinethat is part of my
+"GENTOO" Windows workgroup.
+</p>
+
+<p>
+Now it's time to take a look at what's "inside" freebox. The following window
+pops up after double-clicking on the freebox icon: 
+</p>
+
+<figure link="/images/docs/l-samba-2.gif" caption="SMB/CIFS shares 
+on freebox"/>
+
+<p>
+In this window you can see a bunch of what are called "shares".  More
+specifically, they're called SMB/CIFS shares and contain parts of freebox's file
+system that are accessible through the network.
+</p>
+
+<note>
+I should mention that SMB stands for Server Message Block, the original name for
+the protocol used to share files on Windows. CIFS stands for the Common Internet
+File System, Microsoft's new acronym describing the more recent version of this
+protocol. 
+</note>
+
+<p>
+On freebox, Samba has been specifically configured to create only those
+particular shares that you see above. The drobbins share contains the contents
+of my home directory. I like to store all my files on freebox (under Unix) to
+keep things centralized and easy to manage. One of the wonderful things about
+Samba is that it allows administrators to centralize the storage of user files
+rather than providing each user with two separate file locations for Windows and
+Unix. 
+</p>
+
+</body>
+</section>
+<section>
+<title>Samba printing</title>
+<body>
+
+<p>
+In addition to standard shares (which act as virtual directories), you can also
+see a printer share called nec. Another really great feature of Samba is that
+you can share printers the same way you can from any Windows machine. Nec is my
+NEC SuperScript 870 laser printer, which is hooked up to freebox and set up as a
+standard Unix lpd-based printer. Samba allows this printer to be used by Windows
+clients just like a standard Windows network printer would.
+</p>
+
+<p>
+You may be wondering how the printer driver situation is handled since the
+printer is running under Unix. Good question. On freebox, nec is set up as a
+standard, parallel port-based printer running in "raw" mode. In other words, any
+print jobs sent to nec are handed directly to the printer as is, without any
+filtering or data massaging.
+</p>
+
+<p>
+On kompressor, nec is configured as an NEC SuperScript 870 network printer. When
+I print to it, the local NT printer driver generates the appropriate binary data
+for nec, which is then automatically spooled over the network to Samba running
+on freebox. Samba then automatically inserts this data untouched into nec's
+queue, and my printer begins printing the job.
+</p>
+
+<p>
+I should note that unfortunately my NEC SuperScript 870 is not a Postscript
+printer; it uses Adobe's proprietary PrintGear technology. While my printer is
+not fully supported under Unix, it still works perfectly when printing from
+Windows (this is because all the printer-specific data is generated on the
+Windows side, using the Windows driver). Ironically, since GhostScript (a
+freely-available PostScript-compatible interpreter available for Unix) does not
+know how to produce PrintGear output, I can only print plain ASCII text or 300
+dpi PCL4-based documents from the Unix side; but from the Windows side, the
+Windows NT driver allows me to print at a full 600 dpi. I don't find this
+cumbersome at the moment because I do most of my printing from Windows. Although
+in the future it would be nice to have a printer that has Postscript built-in so
+that I can use the printer's full functionality from Unix as well.
+</p>
+
+</body>
+</section>
+<section>
+<title>Samba shares</title>
+<body>
+
+<p>
+OK, now it's time to move on to the next screen shot. This one illustrates the
+contents of the drobbins share on freebox, which is configured to share my Unix
+home directory. All the files listed in the window actually reside on freebox
+but are directly accessible from my Windows NT client machines. Being able to
+integrate Windows and Unix is wonderful stuff!
+</p>
+
+<figure link="/images/docs/l-samba-3.gif" caption="My home 
+directory on freebox, accessed from kompressor"/>
+
+</body>
+</section>
+<section>
+<title>Understanding Samba</title>
+<body>
+
+<p>
+To show you more about how Samba works internally, I'm going to give you a very
+simplified explanation of what happened behind the scenes when I poked around in
+the Network Neighborhood. I should first explain something about my current
+Windows session. Since I am running Windows NT Workstation, I had to log in to
+gain access to the machine. For this NT session I logged in to the local machine
+with the username "Administrator" and the password "mypass". If I were running
+Windows 95 or 98, the standard Windows networking drivers would have asked me
+for a username or password as well. Under Windows 95 and 98, this password isn't
+really used to determine who can access the local machine; rather, it is cached
+and used to connect to network resources.
+</p>
+
+<p>
+Of course, Windows NT is extremely secure compared to Windows 95 and 98 and will
+not allow you to use the machine unless you supply a valid username and
+password. After kompressor validated my username and password against its local
+security database, it allowed me to begin using Windows. Kompressor will also
+use my username and password to try to automatically authenticate itself when I
+connect to password-protected network resources. 
+</p>
+
+</body>
+</section>
+<section>
+<title>Browsing the network</title>
+<body>
+
+<p>
+When I clicked on Network Neighborhood, a window containing a list of all
+Windows-compatible machines on my network popped up.  For this to happen,
+kompressor contacted freebox behind the scenes to obtain a "browse list" of all
+the Windows-compatible machines on the current subnet. Kompressor contacted
+freebox because I configured freebox's Samba so that it would become "local
+master browser" on my network (which means that freebox manages the list of
+network resources that appear in Network Neighborhood).
+</p>
+
+<p>
+The next thing I did was double-click on freebox, which caused a new window to
+appear and display all of the shares on freebox. For kompressor to receive this
+information it connected to a special hidden share on freebox (called IPC$) as
+the guest user, and downloaded the names and types of all the available shares.
+In the next article, when we configure Samba, we will need to put an option in
+Samba's configuration file that specifies which Unix account is equivalent to
+NT's "guest" user. If this isn't set up correctly, you will not be able to
+browse any of the resources on a Samba machine. This is also worth mentioning
+because it shows that you don't need any special permission to view the SMB/CIFS
+shares on a Samba server, noteworthy for security purposes.
+</p>
+
+<p>
+I was now able to click on the drobbins share to display the contents of my home
+directory. While this happened automatically and without any fuss, it's
+important to understand the hidden conversation between freebox and kompressor
+that ultimately granted me access to the drobbins share. But before we get into
+that, let's quickly discuss some Samba security issues.
+</p>
+
+</body>
+</section>
+<section>
+<title>Samba security</title>
+<body>
+
+<p>
+When I configured Samba I set up the drobbins share to be password protected;
+even though I'm on my own private LAN, I still like to keep things locked down
+to a certain extent. At the same time I set up two Samba users: drobbins and
+administrator. I set their passwords to match those on my NT Workstations for
+consistency. For the drobbins share, my security policy is as follows: if you
+are a valid Samba user, and you supply the correct password for that user, you
+will be allowed access to the drobbins share. So, both administrator and
+drobbins will be granted access as long as the user also supplies the correct
+password for their account.
+</p>
+
+<p>
+Now, back to the conversation between freebox and kompressor.  Because I logged
+in as administrator, double-clicking on the drobbins share caused Windows NT to
+automatically try to authenticate me to Samba by sending the username
+"administrator" and the password "mypass" to freebox. Samba then checked these
+values against its internal security database (which is separate from the
+standard Unix <c>passwd</c> database), thereby verifying the username and
+password.  After seeing that the username/password combo checked out, Samba
+granted me access.
+</p>
+
+<p>
+You may be wondering why Samba has its own unique password database.  Why
+doesn't it just use the standard Unix password to authenticate the administrator
+user? While it used to be possible to do this when Windows transmitted passwords
+in plain-text, all modern versions of Windows now transmit SMB/CIFS passwords in
+an encrypted form that is not compatible with the standard Unix password hash.
+In other words, there is no way for Samba to use the standard Unix <c>passwd</c>
+hash to verify that a Windows encrypted password is correct. Fortunately, Samba
+provides numerous ways to synchronize these two databases so that a system
+administrator's life doesn't get too confusing.
+</p>
+
+</body>
+</section>
+<section>
+<title>Samba from the Unix side</title>
+<body>
+
+<p>
+Now that we've seen Samba from the Windows side, it's time to take a look at
+Samba from the Unix side. First some general information. The main Web site for
+Samba is <uri>http://fi.samba.org</uri>, and the current production version of
+Samba is 2.0.7, as of April 25, 2000, which we will be using in this series.
+Since some of you may be installing Samba from RPM, others may be trying to get
+Samba to run under FreeBSD or Solaris (rather than Linux), and a good number of
+you may be compiling Samba from scratch, there is likely to be some variability
+in file locations. (Samba's default file locations are configurable at
+compile-time.) On some systems certain files will be in
+<path>/usr/local/</path>, while on other systems they may end up somewhere else.
+I will be referring to configuration files by their filename (rather than their
+full path) to avoid any inconsistencies.
+</p>
+
+<p>
+If you compile and install Samba from the original sources, Samba's
+configuration file can be found at <path>/usr/local/samba/etc/smb.conf</path>.
+However, if you install the software from binary RPM or another Linux packaging
+format, you'll likely find <path>smb.conf</path> in <path>/etc</path>. This all
+gets confusing very fast. In order to make things easier I'll review the
+locations of files when Samba is compiled from sources and everything is
+installed into its default location in <path>/usr/local/samba</path>. Please
+note that the purpose of this section is simply to get you familiar with the
+Unix-side configuration of Samba and is not intended to step you through the
+compilation process, which will be covered in the next article. Right now we're
+just getting you warmed up! Here are the default locations of files after a
+clean Samba compile and install:
+</p>
+
+<p>
+<path>/usr/local/samba/bin</path> contains all the Samba binary executables. In
+2.0.7, the main Samba executables are called <c>smbd</c> and <c>nmbd</c>.
+<c>smbd</c> is designed to provide SMB/CIFS file-sharing services, while
+<c>nmbd</c> performs WINS-related functions by facilitating IP address lookups
+for NetBIOS names. There are also a host of other utilities, including
+<c>smbclient</c>, an ftp-like tool that can be used to connect and interact with
+SMB/CIFS shares, and <c>testparm</c>, a handy utility that checks to make sure
+that Samba's main configuration file has correct syntax.
+</p>
+
+<p>
+<path>/usr/local/samba/etc</path> contains <path>smb.conf</path>, the main Samba
+configuration file. <path>smb.conf</path> is a very important file, containing
+almost all of Samba's configuration options. In this file you'll find settings
+to control global Samba functionality as well as configuration options to enable
+the sharing of specific directory trees and printers. As you gain experience
+with Samba, you'll supplement your <path>smb.conf</path> file with additional
+configuration options that fine-tune Samba to your particular site.
+</p>
+
+<p>
+One of the major complaints about Samba is that the smb.conf file has a
+relatively high learning curve. While this is true, remember that Samba is not
+just a simple network file sharing program. It has the responsibility of
+sensibly integrating two significantly different systems: Windows and Unix.
+Sometimes the configuration process will seem tricky, but do not fear. When you
+have everything working perfectly, it will all be worth it!
+</p>
+
+<p>
+<path>/usr/local/samba/private</path> contains <path>smbpasswd</path>, Samba's
+encrypted password file.
+</p>
+
+<note>
+In <path>smb.conf</path>, Samba can be configured so that it will only listen
+for connections on particular network interfaces or accept connections only from
+particular subnets or IP addresses.  These methods can be used to enhance
+security even further.
+</note>
+
+<p>
+I mentioned earlier that Samba has its own password store that is unique from
+the standard Unix <c>passwd</c> database. In the <path>smbpasswd</path> file
+Samba stores all users and workstations (and their associated passwords) that
+are allowed to access Samba's shares. Individual shares can be further locked
+down to particular users and groups. To modify the <path>smbpasswd</path> file,
+the identically-named binary executable <c>smbpasswd</c> is used.
+</p>
+
+<p>
+<path>/usr/local/samba/var</path> contains Samba's two log files,
+<path>log.smb</path> and <path>log.nmb</path>. As you may have guessed,
+<path>log.smb</path> is the log file for <c>smbd</c> while <path>log.nmb</path>
+is <c>nmbd</c>'s log file.
+</p>
+
+<p>
+<path>/usr/local/samba/swat</path> contains files used for SWAT.  SWAT is the
+Samba Web Administration Tool, and is a neat little web application that allows
+administrators to remotely manage their Samba network. We won't be covering SWAT
+in this series, but you can find more information on SWAT in SWAT's main page
+(see <uri link="#resources">Resources</uri>).
+</p>
+
+</body>
+</section>
+<section>
+<title>What's next</title>
+<body>
+
+<p>
+We've covered a lot of Samba's key functionality and key concepts.  We've also
+seen an overview of Samba's Unix-side file structure.  In my next article I'll
+walk you through the process of setting up Samba on your own system. Unlike this
+article, which focused more on concepts, the <uri
+link="/doc/en/articles/samba-p2.xml">next article</uri> will have more of a
+HOWTO style.  Now that we've covered key concepts, it's time to pick up the
+pace. See you
+then!
+</p>
+
+</body>
+</section>
+<section id="resources">
+<title>Resources</title>
+<body>
+
+<ul>
+  <li>The main <uri link="http://fi.samba.org">Samba</uri> web site</li>
+  <li><uri link="http://linuxguy.net/samba.htm">Samba</uri> by Ed Weinberg</li>
+  <li>
+    <e><uri link="http://www.amazon.com/exec/obidos/ASIN/0672318628/">Samba
+    Unleashed</uri></e>, by Steve Litt, with contributions from Daniel Robbins
+  </li>
+  <li>
+    <e><uri link="http://www.oreilly.com/catalog/samba/">Using Samba</uri></e>
+    (O'Reilly Publishing; 1999)
+  </li>
+  <li>
+    <uri link="http://jazz.external.hp.com/src/samba/">Samba/iX</uri>: Samba
+    support on MPE/iX 6.0
+  </li>
+  <li>
+    The <uri link="http://fi.samba.org/docs/swat_ssl.html">SWAT</uri> main page
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

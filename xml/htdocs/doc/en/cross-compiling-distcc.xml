@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/cross-compiling-distcc.xml,v 1.5 2011/09/04 17:53:40 swift Exp $ -->
+
+<guide>
+<title>DistCC Cross-compiling Guide</title>
+
+<author title="Author">
+  <mail link="agaffney@gentoo.org">Andrew Gaffney</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+
+<abstract>
+This guide shows you how to set up distcc for cross-compiling across different
+processor architectures.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>1.3</version>
+<date>2006-02-17</date>
+
+<chapter>
+<title>Cross-compiling with distcc</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+<c>distcc</c> is a tool that lets you share the burden of software compiling
+across several networked computers. As long as the networked boxes are all using
+the same toolchain built for the same processor architecture, no special
+<c>distcc</c> setup is required. But what do you do if you need to compile for a
+different architecture using differing computers? This guide will show you how
+to configure <c>distcc</c> to compile for different architectures.
+</p>
+
+</body>
+</section>
+<section>
+<title>Emerge the needed utilities</title>
+<body>
+
+<p>
+First, you will need to emerge <c>crossdev</c> on all the machines that will be
+involved in the compiling process. <c>crossdev</c> is a tool that makes building
+cross-architecture toolchains easy. It was originally written by <mail
+link="kumba@gentoo.org">Joshua Kinard</mail> and was re-written from the ground
+up by <mail link="vapier@gentoo.org">Mike Frysinger</mail>. Its usage is
+straightforward: <c>crossdev -t sparc</c> will build a full cross-toolchain
+targetting the Sparc architecture. This includes binutils, gcc, glibc, and
+linux-headers. If you need more help, try running <c>crossdev --help</c>.
+Obviously, you will need to emerge the proper cross-toolchain on all the helper
+boxes.
+</p>
+
+<p>
+Next, you will need to emerge <c>distcc</c> on all the machines that will be
+involved in the process. This includes the box that will run emerge and the
+boxes with the cross-compilers. Please see the <uri
+link="/doc/en/distcc.xml">Gentoo Distcc Documentation</uri> for more
+information on setting up and using <c>distcc</c>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Arch-specific notes</title>
+<body>
+
+<p>
+If you are cross-compiling between different subarchitectures for Intel x86
+(e.g. i586 and i686), you must still build a full cross-toolchain for the
+desired CHOST, or else the compilation will fail. This is because i586 and i686
+are actually different CHOSTs, despite the fact that they are both considered
+"x86." Please keep this in mind when you build your cross-toolchains. For
+example, if the target box is i586, this means that you must build i586
+cross-toolchains on your i686 helper boxes.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring distcc to cross-compile correctly</title>
+<body>
+
+<p>
+In the default distcc setup, cross-compiling will <e>not</e> work properly. The
+problem is that many builds just call <c>gcc</c> instead of the full compiler
+name (e.g. <c>sparc-unknown-linux-gnu-gcc</c>). When this compile gets
+distributed to a distcc helper box, the native compiler gets called instead of
+your shiny new cross-compiler.
+</p>
+
+<p>
+Fortunately, there is a workaround for this little problem. All it takes is a
+wrapper script and a few symlinks on the box that will be running
+<c>emerge</c>. I'll use my Sparc box as an example. Wherever you see
+<c>sparc-unknown-linux-gnu</c> below, you will want to insert your own CHOST
+(<c>x86_64-pc-linux-gnu</c> for an AMD64 box, for example). When you first
+emerge distcc, the <path>/usr/lib/distcc/bin</path> directory looks like this:
+</p>
+
+<note>
+The following instructions are to be performed only on the box running the
+emerge. Do not perform these steps on the helper boxes.
+</note>
+
+<pre caption="Available compilers">
+# <i>cd /usr/lib/distcc/bin</i>
+# <i>ls -l</i>
+total 0
+lrwxrwxrwx  1 root root 15 Dec 23 20:13 c++ -&gt; /usr/bin/distcc
+lrwxrwxrwx  1 root root 15 Dec 23 20:13 cc -&gt; /usr/bin/distcc
+lrwxrwxrwx  1 root root 15 Dec 23 20:13 g++ -&gt; /usr/bin/distcc
+lrwxrwxrwx  1 root root 15 Dec 23 20:13 gcc -&gt; /usr/bin/distcc
+lrwxrwxrwx  1 root root 15 Dec 23 20:13 sparc-unknown-linux-gnu-c++ -&gt; /usr/bin/distcc
+lrwxrwxrwx  1 root root 15 Dec 23 20:13 sparc-unknown-linux-gnu-g++ -&gt; /usr/bin/distcc
+lrwxrwxrwx  1 root root 15 Dec 23 20:13 sparc-unknown-linux-gnu-gcc -&gt; /usr/bin/distcc
+</pre>
+
+<p>
+Here is what you want to do:
+</p>
+
+<pre caption="Modifying distcc">
+# <i>rm c++ g++ gcc cc</i>
+</pre>
+
+<p>
+Next, we'll create the new script on this box. Fire up your favorite editor and
+create a file with the following text in it, then save it as
+<path>sparc-unknown-linux-gnu-wrapper</path>. Remember to change the CHOST (in
+this case, <c>sparc-unknown-linux-gnu</c>) to the actual CHOST of the box that
+will be running the emerge.
+</p>
+
+<pre caption="The new wrapper script">
+#!/bin/bash
+exec /usr/lib/distcc/bin/sparc-unknown-linux-gnu-g${0:$[-2]} "$@"
+</pre>
+
+<p>
+Next, we'll make the script executable and create the proper symlinks:
+</p>
+
+<pre caption="Creating the symlinks">
+# <i>chmod a+x sparc-unknown-linux-gnu-wrapper</i>
+# <i>ln -s sparc-unknown-linux-gnu-wrapper cc</i>
+# <i>ln -s sparc-unknown-linux-gnu-wrapper gcc</i>
+# <i>ln -s sparc-unknown-linux-gnu-wrapper g++</i>
+# <i>ln -s sparc-unknown-linux-gnu-wrapper c++</i>
+</pre>
+
+<p>
+When you're done, <path>/usr/lib/distcc/bin</path> will look like this:
+</p>
+
+<pre caption="A proper set of compilers">
+# <i>ls -l</i>
+total 4
+lrwxrwxrwx  1 root root 25 Jan 18 14:20 c++ -&gt; sparc-unknown-linux-gnu-wrapper
+lrwxrwxrwx  1 root root 25 Jan 18 14:20 cc -&gt; sparc-unknown-linux-gnu-wrapper
+lrwxrwxrwx  1 root root 25 Jan 18 14:20 g++ -&gt; sparc-unknown-linux-gnu-wrapper
+lrwxrwxrwx  1 root root 25 Jan 18 14:20 gcc -&gt; sparc-unknown-linux-gnu-wrapper
+lrwxrwxrwx  1 root root 15 Nov 21 10:42 sparc-unknown-linux-gnu-c++ -&gt; /usr/bin/distcc
+lrwxrwxrwx  1 root root 15 Nov 21 10:42 sparc-unknown-linux-gnu-g++ -&gt; /usr/bin/distcc
+lrwxrwxrwx  1 root root 15 Jul 27 10:52 sparc-unknown-linux-gnu-gcc -&gt; /usr/bin/distcc
+-rwxr-xr-x  1 root root 70 Jan 18 14:20 sparc-unknown-linux-gnu-wrapper
+</pre>
+
+<p>
+Congratulations; you now have a (hopefully) working cross-distcc setup.
+</p>
+
+</body>
+</section>
+<section>
+<title>How this works</title>
+<body>
+
+<p>
+When <c>distcc</c> is called, it checks to see what it was called as (e.g.
+<c>i686-pc-linux-gnu-gcc</c>, <c>sparc-unknown-linux-gnu-g++</c>, etc.) When
+distcc then distributes the compile to a helper box, it passes along the name
+it was called as. The distcc daemon on the other helper box then looks for a
+binary with that same name. If it sees just <c>gcc</c>, it will look for
+<c>gcc</c>, which is likely to be the native compiler on the helper box, if it
+is not the same architecture as the box running <c>emerge</c>. When the
+<e>full</e> name of the compiler is sent (e.g.
+<c>sparc-unknown-linux-gnu-gcc</c>), there is no confusion.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,371 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-system.xml,v 1.29 2011/10/19 13:30:13 naota Exp $ -->
+
+<!-- Original revision: 1.120 -->
+<!-- Translator: igarashi -->
+<!-- Translator: Taku Murakami -->
+<!-- Translator: naota -->
+
+<sections>
+
+<abstract>
+stage3のインストール及び設定が済めば、Gentoo base systemを自由に使えるようになります。
+本章では、そこまでの進め方を説明します。
+</abstract>
+
+<version>12</version>
+<date>2011-08-22</date>
+
+<section>
+<title>chrootする</title>
+<subsection>
+<title>自由選択: ミラーサイトの選択</title>
+<body>
+
+<p>
+すばやくソースコードをダウンロードするために、一番回線速度が速いミラーサイトを選択することをお勧めします。
+Portageは、GENTOO_MIRRORS変数を<path>make.conf</path>ファイルから参照し、その変数に羅列されいているミラーサイトを使用します。
+Gentooサイトの<uri link="/main/en/mirrors.xml">mirror list</uri>
+<uri link="/main/ja/mirrors.xml">(日本語訳)</uri>を参照し、(高確率で一番速いサイトとしての)一番近い一つのミラーサイト(もしくは複数のミラーサイト)を探すことができます。
+しかし、お望みのミラーサイトを選択するのに使いやすいインターフェースを備える<c>mirrorselect</c>というすばらしいツールを提供しています。
+選択したいミラーまでカーソルを動かしスペースキーを押して一つまたはそれ以上のミラーを選択してください。
+</p>
+
+<pre caption="GENTOO_MIRRORS変数用にmirrorselectを使用する">
+# <i>mirrorselect -i -o &gt;&gt; /mnt/gentoo/etc/make.conf</i>
+</pre>
+
+<p>
+<path>make.conf</path>での2番目に重要な設定は、SYNC変数の設定です。
+この変数には、Portageツリーを更新するときに使用したいrsyncサーバを設定します。
+(Portageツリーとは、Portageがソフトウェアをダウンロードしてインストールのに必要な情報の全てが書かれているebuildや、スクリプトの集まりです。)
+自分でSYNCサーバを手作業で指定できますが、<c>mirrorselect</c>はその作業を以下のように簡単にします。
+</p>
+
+<pre caption="mirrorselectを使ってrsyncミラーを選択する">
+# <i>mirrorselect -i -r -o &gt;&gt; /mnt/gentoo/etc/make.conf</i>
+</pre>
+
+<p>
+<c>mirrorselect</c>を実行した後、<path>/mnt/gentoo/etc/make.conf</path>内の設定が重複していないかを確認したほうがよいでしょう。
+</p>
+
+<note>
+<path>make.conf</path>にSYNCのサーバを自分で設定したいのであれば、<uri link="/main/en/mirrors-rsync.xml">community mirrors list</uri>を参考にして自分に近いミラーを選択するのがよいでしょう。
+単一のホストからなるミラーではなく、<c>rsync.us.gentoo.org</c>のような<e>輪番</e>のものを選ぶことを推奨します。
+そうすると負荷を分散し、あるサーバがオフラインになった場合でもフェイルセーフになります。
+</note>
+
+</body>
+</subsection>
+<subsection>
+<title>DNS情報をコピーする</title>
+<body>
+
+<p>
+新しい環境に入る前にしなければならないことが、まだ一つ残っています。
+それは、新しい環境でもネットワーク環境が確実に動くようにするために、
+<path>/etc/resolv.conf</path>にあるDNS情報を、新しい環境にコピーすることです。
+<path>/etc/resolv.conf</path>にはあなたのネットワーク環境における
+ネームサーバーの情報が含まれています。
+</p>
+
+<pre caption="DNS情報をコピーする">
+<comment>("-L"オプションは、シンボリックリンクをコピーしないようにするために必要です)</comment>
+# <i>cp -L /etc/resolv.conf /mnt/gentoo/etc/</i>
+</pre>
+
+</body>
+</subsection>
+<subsection test="not(func:keyval('arch')='IA64')">
+<title>/procと/devファイルシステムのマウント</title>
+<body>
+
+<p>
+これからすぐ、Linuxのルートを新しい場所へと変更します。
+新しい環境がうまく動作することを確かめるために、いくつかのファイルシステムを新しい場所から見えるようにしておく必要があります。
+</p>
+
+<p>
+chroot後の環境でもカーネルが提供する情報を参照できるようにするために、
+<path>/mnt/gentoo/proc</path>に<path>/proc</path>ファイルシステムをマウントしてください。
+それから、<path>/dev</path>ファイルシステムをbindマウントします。
+</p>
+
+<pre caption="/procと/devのマウント">
+# <i>mount -t proc none /mnt/gentoo/proc</i>
+# <i>mount --rbind /dev /mnt/gentoo/dev</i>
+</pre>
+
+</body>
+</subsection>
+<subsection test="func:keyval('arch')='IA64'">
+<title>/proc、/sys、/devファイルシステムのマウント</title>
+<body>
+
+<p>
+chroot後の環境でもカーネルが提供する情報を参照できるようにするために、
+<path>/mnt/gentoo/proc</path>に<path>/proc</path>ファイルシステムをマウントしてください。
+それから、<path>/dev</path>、<path>/sys</path>ファイルシステムをbindマウントします。
+</p>
+
+<pre caption="/proc、/sys、/devのマウント">
+# <i>mount -t proc none /mnt/gentoo/proc</i>
+# <i>mount --rbind /dev /mnt/gentoo/dev</i>
+# <i>mount --rbind /sys /mnt/gentoo/sys</i>
+</pre>
+
+</body>
+</subsection>
+
+<subsection>
+<title>新しい環境に入る</title>
+<body>
+
+<p>
+さて、全てのパーティションは初期化され、ベース環境はインストールされました。
+ついに、あなたは<e>chroot</e>により新たにインストールされた環境に入ります。
+これは、現在のインストーラの環境(インストールCDやその他のインストールメディア)から、
+あなたのインストールした環境(すなわち初期化されたパーティション)に移行することを意味します。
+</p>
+
+<p>
+このchrootの過程は3段階のステップからなります。
+まず最初に、<c>chroot</c>によって、ルートディレクトリを(インストールメディア上の)<path>/</path> から、(あなたのパーティション上にある)<path>/mnt/gentoo</path>に変更します。次に、システムファイルの環境変数を更新するコマンドenv-updateを使って、新しい環境をつくります。最後に、<c>source</c>コマンドでこれらの変数をメモリ上に読み込みます。
+</p>
+
+<pre caption = "新しい環境にchrootする">
+# <i>chroot /mnt/gentoo /bin/bash</i>
+# <i>env-update</i>
+>> Regenerating /etc/ld.so.cache...
+# <i>source /etc/profile</i>
+# <i>export PS1="(chroot) $PS1"</i>
+</pre>
+
+<p>
+おめでとうございます!あなたは自分のGentoo Linux環境に入ることができました。
+もちろん、まだいくつかのセクションが残っており、完了までは程遠いのですが:-)
+</p>
+
+</body>
+</subsection>
+</section>
+
+<section>
+<title>Portageシステムの設定</title>
+<subsection>
+<title>Portageツリーの更新</title>
+<body>
+
+<p>
+ここで、Portageツリーを最新状態に更新すべきです。
+<c>emerge --sync</c>が、これを行います。
+</p>
+
+<pre caption="Portageツリーの更新">
+# <i>emerge --sync</i>
+<comment>(一部のフレームバッファやシリアルコンソールなどの低速な端末を使用している場合、この工程にかかる時間を短くするために、--quietオプションを以下のように追加してもよいです。)</comment>
+# <i>emerge --sync --quiet</i>
+</pre>
+
+<p>
+rsync通信を遮断してしまうファイアウォールの環境内にいる場合は、代わりに<c>emerge-webrsync</c>を使用します。それは、portageのスナップショットをダウンロードしてインストールします。
+</p>
+
+<p>
+Portageの新しいバージョンが利用可能で、新しいものに更新すべきであることを警告されたら、<c>emerge --oneshot portage</c>を使用してすぐに更新すべきです。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>適切なprofileの選択</title>
+<body>
+
+<p>
+まず、所定の位置にあるちょっとした定義について説明します。
+</p>
+
+<p>
+profileは、すべてのGentooシステムにとって根幹を成すものです。
+USE、CFLAGSやその他の重要な変数の初期設定値を指定しているだけでなく、
+システムの状態を特定範囲内のパッケージバージョンに留めておく役目もあります。
+これは、Gentoo開発者によってすべて整備されています。
+</p>
+
+<p>
+以前は、ユーザがそういったprofileを触ることはありませんでした。
+しかし、場合によってはprofileの変更が必要と判断される事もあるかもしれません。
+</p>
+
+<p>
+以下のコマンドで、現在使用中のprofileが何であるかを確認することができます。
+</p>
+
+<pre caption="システムprofileの検証">
+# <i>eselect profile list</i>
+Available profile symlink targets:
+  [1]   <keyval id="profile"/> *
+  [2]   <keyval id="profile"/>/desktop
+  [3]   <keyval id="profile"/>/server
+</pre>
+
+<p>
+デフォルトのprofileでは、Linux 2.6系システムのものが提供されています。
+これは推奨の設定ですが、別のprofileを使うという選択肢もあります。
+</p>
+
+<p>
+アーキテクチャによっては、<c>desktop</c>と<c>server</c> subprofileを利用できる場合があります。
+<c>eselect profile list</c>>を実行することで、利用可能なプロファイルがすべて表示されます。
+</p>
+
+<p>
+アーキテクチャで利用可能なprofileを確認したら、お好みで別のprofileを使用することもできます。
+</p>
+
+<pre caption="profileの変更">
+<i>eselect profile set 2</i>
+</pre>
+
+<p test="func:keyval('arch')='AMD64'">
+32ビットアプリケーション･ライブラリが存在しない、純粋の64ビット環境がほしいなら、
+non-multilib profileを使用して下さい。
+</p>
+
+<pre test="func:keyval('arch')='AMD64'" caption="Switching to a non-multilib profile">
+<i>eselect profile list</i>
+Available profile symlink targets:
+  [1]   <keyval id="profile"/> *
+  [2]   <keyval id="profile"/>/desktop
+  [3]   <keyval id="profile"/>/no-multilib
+  [4]   <keyval id="profile"/>/server
+<comment>(Choose the no-multilib profile)</comment>
+# <i>eselect profile set 3</i>
+<comment>(Verify the change)</comment>
+# <i>eselect profile list</i>
+Available profile symlink targets:
+  [1]   <keyval id="profile"/>
+  [2]   <keyval id="profile"/>/desktop
+  [3]   <keyval id="profile"/>/no-multilib *
+  [4]   <keyval id="profile"/>/server
+
+</pre>
+
+<note>
+<c>developer</c> subprofileは特にGentoo Linuxの開発作業のためにものです。
+一般的な開発環境の設定を助けるものでは<e>ありません</e>。
+</note>
+
+</body>
+</subsection>
+<subsection id="configure_USE">
+<title>USE変数の設定</title>
+<body>
+
+<p>
+<c>USE</c>はGentooがユーザに提供する最もパワフルな変数の一つです。
+プログラムの中には、特定のフラグを設定することによって、副次的なサポートを有効にしたり無効にしたりできるものがあります。
+たとえばGTKサポートもしくはQtサポートを有効にしてコンパイルすることができるプログラムがあります。他には、SSLサポートを有効にするか無効にするか、
+X11サポート(X-server)の替わりにフレームバッファサポート(svgalib)
+を有効にするか、などがあります。
+</p>
+
+<p>
+多くのディストリビューションは、パッケージをありったけのサポートを有効にしてコンパイルしているため、依存関係が膨大になってしまっていることは言うまでもなく、
+プログラムのサイズや起動時間までも増大させてしまっています。
+Gentooならば、パッケージをコンパイルするときにつけるべきオプションを
+自分で定義することができます。これには<c>USE</c>フラグが一役買っています。
+</p>
+
+<p>
+<c>USE</c>変数には、コンパイルオプションに対応するキーワードを定義します。
+たとえば、<e>ssl</e>はプログラムに備わるSSLサポートをコンパイルします。
+<e>-X</e>はXサーバのサポートを削除します。(キーワードの前にマイナス記号をつけます。)<e>gnome gtk -kde -qt4</e>は、
+GNOME(とGTK)サポートを有効にし、KDE(とQt)サポートを無効にしてプログラムをコンパイルします。システムを完全にGNOME向けに調整します。
+</p>
+
+<p>
+初期の<c>USE</c>設定は、使用しているprofileの<path>make.defaults</path>ファイルにあります。
+<path>make.defaults</path>は、<path>/etc/make.profile</path>シンボリックリンクが指すディレクトリと、同じくすべてのその親ディレクトリで見つかります。
+初期の<c>USE</c>設定は、それら<path>make.defaults</path>ファイルのすべての<c>USE</c>設定を組み合わせたものになります。
+<path>/etc/make.conf</path>に記述した内容は、これらの初期設定に反映されます。
+もし<c>USE</c>設定に何かを追加した場合、それは初期設定リストに追加されます。
+もし何かを(マイナス記号を頭につけることで)USE設定から取り除いた場合、
+それは(リストにあれば)初期設定リストから取り除かれます。
+<e>決して</e>、<path>/etc/make.profile</path>ディレクトリ以下の内容を変更しないでください。Portageをアップデートするときに、上書きされてしまいます!
+</p>
+
+<p>
+Gentooハンドブックの第二部にある<uri link="?part=2&amp;chap=2">USEフラグ</uri>に、<c>USE</c>についての詳細な解説があります。また、システムにある<path>/usr/portage/profiles/use.desc</path>に、使用可能なUSEフラグについての詳細な解説があります。
+</p>
+
+<pre caption="使用可能なUSEフラグの参照">
+# <i>less /usr/portage/profiles/use.desc</i>
+<comment>(矢印キーを使用してスクロールし、'q'キーで終了します)</comment>
+</pre>
+
+<p>
+DVD、ALSA、CD-Rサポートを含むKDEベースのシステムのための<c>USE</c>フラグの例を以下に示します。
+</p>
+
+<pre caption="/etc/make.confを開く">
+# <i>nano -w /etc/make.conf</i>
+</pre>
+
+<pre caption="USEフラグの設定">
+USE="-gtk -gnome qt4 kde dvd alsa cdr"
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>自由選択: glibcのロケール</title>
+<body>
+
+<p>
+あなたは、おそらくシステムで一つないし二つのロケールだけしか使用しないでしょう。
+<path>/etc/locale.gen</path>で必要なロケールを指定できます。
+</p>
+
+<pre caption="/etc/locale.genを開く">
+# <i>nano -w /etc/locale.gen</i>
+</pre>
+
+<p>
+以下のロケール指定は、関連する文字符号(UTF-8のような)を含む、英語(アメリカ)とドイツ語(ドイツ)ロケールを生成する例です(訳注: 日本語訳には日本語に関するロケールも追加しています)。
+</p>
+
+<pre caption="ロケールの指定">
+en_US ISO-8859-1
+en_US.UTF-8 UTF-8
+de_DE ISO-8859-1
+de_DE@euro ISO-8859-15
+ja_JP.EUC-JP/EUC-JP
+ja_JP.UTF-8/UTF-8
+ja_JP/EUC-JP
+</pre>
+
+<p>
+次のステップでは、<c>locale-gen</c>を実行します。これにより、
+<path>/etc/locale.gen</path>ファイルで指定した全てのロケールが生成されます。
+</p>
+
+<pre caption="locale-genの実行">
+# <i>locale-gen</i>
+</pre>
+
+<p>
+では、<uri link="?part=1&amp;chap=7">カーネル設定</uri>へ進んでください。
+</p>
+
+</body>
+</subsection>
+</section>
+
+</sections>

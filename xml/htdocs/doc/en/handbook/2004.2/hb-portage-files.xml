@@ -1,0 +1,267 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-portage-files.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.4</version>
+<date>October 23, 2004</date>
+
+<section>
+<title>Portage Files</title>
+<subsection>
+<title>Configuration Directives</title>
+<body>
+
+<p>
+Portage comes with a default configuration stored in
+<path>/etc/make.globals</path>. When you take a look at it, you'll notice that
+all Portage configuration is handled through variables. What variables Portage
+listens to and what they mean are described later.
+</p>
+
+<p>
+Since many configuration directives differ between architectures, Portage also
+has a default configuration file inside your profile:
+<path>/etc/make.profile/make.defaults</path>. We'll explain more about profiles
+and the <path>/etc/make.profile</path> directory later on.
+</p>
+
+<p>
+If you're planning on changing a configuration variable, <e>don't</e> alter
+<path>/etc/make.globals</path> or <path>/etc/make.profile/make.defaults</path>. 
+Instead use <path>/etc/make.conf</path> which has precedence over
+the previous files. You'll also find a <path>/etc/make.conf.example</path>. As 
+the name implies, this is merely an example file - Portage does not read in 
+this file.
+</p>
+
+<p>
+You can also define a Portage configuration variable as an environment variable,
+but we don't recommend this.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Profile-Specific Information</title>
+<body>
+
+<p>
+We've already encountered the <path>/etc/make.profile</path> directory. Well, 
+this isn't exactly a directory but a symbolic link to a profile, by default one
+inside <path>/usr/portage/profiles</path> although you can create your own 
+profiles elsewhere and point to them. The profile this symlink points to is the
+profile to which your system adheres.
+</p>
+
+<p>
+A profile contains architecture-specific information for Portage, such as a 
+list of packages that belong to the system corresponding with that profile,
+a list of packages that don't work (or are masked-out) for that profile, etc.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>User-Specific Configuration</title>
+<body>
+
+<p>
+When you need to override Portage's behaviour regarding the installation of
+software, you will end up editing files within <path>/etc/portage</path>. You
+are <e>highly recommended</e> to use files within <path>/etc/portage</path> and
+<e>highly discouraged</e> to override the behaviour through environment
+variables!
+</p>
+
+<p>
+Within <path>/etc/portage</path> you can create the following files:
+</p>
+
+<ul>
+  <li>
+    <path>package.mask</path> which lists the packages you never want Portage to
+    install
+  </li>
+  <li>
+    <path>package.unmask</path> which lists the packages you want to be able to
+    install even though the Gentoo developers highly discourage you from
+    emerging them
+  </li>
+  <li>
+    <path>package.keywords</path> which lists the packages you want to be able
+    to install even though the package hasn't been found suitable for your 
+    system or architecture (yet)
+  </li>
+  <li>
+    <path>package.use</path> which lists the USE flags you want to use for
+    certain packages without having the entire system use those USE flags
+  </li>
+</ul>
+
+<p>
+More information about the <path>/etc/portage</path> directory and a full list
+of possible files you can create can be found in the Portage man page:
+</p>
+
+<pre caption="Reading the Portage man page">
+$ <i>man portage</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Changing Portage File &amp; Directory Locations</title>
+<body>
+
+<p>
+The previously mentioned configuration files cannot be stored elsewhere -
+Portage will always look for those configuration files at those exact locations.
+However, Portage uses many other locations for various purposes: build
+directory, source code storage, Portage tree location, ...
+</p>
+
+<p>
+All these purposes have well-known default locations but can be altered to your
+own taste through <path>/etc/make.conf</path>. The rest of this chapter explains
+what special-purpose locations Portage uses and how to alter their placement on
+your filesystem.
+</p>
+
+<p>
+This document isn't meant to be used as a reference though. If you need 100%
+coverage, please consult the Portage and <path>make.conf</path> man pages:
+</p>
+
+<pre caption="Reading the Portage and make.conf man pages">
+$ <i>man portage</i>
+$ <i>man make.conf</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Storing Files</title>
+<subsection>
+<title>The Portage Tree</title>
+<body>
+
+<p>
+The Portage tree default location is <path>/usr/portage</path>. This is defined
+by the PORTDIR variable. When you store the Portage tree elsewhere (by altering
+this variable), don't forget to change the <path>/etc/make.profile</path>
+symbolic link accordingly.
+</p>
+
+<p>
+If you alter the PORTDIR variable, you might want to alter the following
+variables as well since they will not notice the PORTDIR change. This is due to
+how Portage handles variables: PKGDIR, DISTDIR, RPMDIR.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Prebuilt Binaries</title>
+<body>
+
+<p>
+Even though Portage doesn't use prebuilt binaries by default, it has extensive
+support for them. When you ask Portage to work with prebuilt packages, it will
+look for them in <path>/usr/portage/packages</path>. This location is defined by
+the PKGDIR variable. 
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Source Code</title>
+<body>
+
+<p>
+Application source code is stored in <path>/usr/portage/distfiles</path> by
+default. This location is defined by the DISTDIR variable.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>RPM Files</title>
+<body>
+
+<p>
+Even though Portage cannot use RPM files, it is able to generate them using the
+<c>ebuild</c> command (see <uri link="?part=3&amp;chap=6">The Ebuild
+Application</uri>). The default location where Portage stores RPM files is 
+<path>/usr/portage/rpm</path> and is defined by the RPMDIR variable.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Building Software</title>
+<subsection>
+<title>Temporary Portage Files</title>
+<body>
+
+<p>
+Portage's temporary files are stored in <path>/var/tmp</path> by default. This 
+is defined by the PORTAGE_TMPDIR variable.
+</p>
+
+<p>
+If you alter the PORTAGE_TMPDIR variable, you might want to alter the following
+variables as well since they will not notice the PORTAGE_TMPDIR change. This 
+is due to how Portage handles variables: BUILD_PREFIX.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Building Directory</title>
+<body>
+
+<p>
+Portage creates specific build directories for each package it emerges inside
+<path>/var/tmp/portage</path>. This location is defined by the BUILD_PREFIX
+variable.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Live Filesystem Location</title>
+<body>
+
+<p>
+By default Portage installs all files on the current filesystem 
+(<path>/</path>), but you can change this by setting the ROOT environment 
+variable. This is useful when you want to create new build images.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Logging Features</title>
+<subsection>
+<title>Ebuild Logging</title>
+<body>
+
+<p>
+Portage can create per-ebuild logfiles, but only when the PORT_LOGDIR variable
+is set to a location that is writable by Portage (the portage user). By default
+this variable is unset.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

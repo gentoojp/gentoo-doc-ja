@@ -1,0 +1,492 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2007.0/hb-install-ppc-kernel.xml,v 1.17 2008/01/12 22:51:32 neysx Exp $ -->
+
+<sections>
+
+<version>8.5</version>
+<date>2008-01-12</date>
+
+<section>
+<title>Timezone</title>
+<body>
+
+<p>
+You first need to select your timezone so that your system knows where it is
+located. Look for your timezone in <path>/usr/share/zoneinfo</path>, then copy
+it to <path>/etc/localtime</path>. Please avoid the
+<path>/usr/share/zoneinfo/Etc/GMT*</path> timezones as their names do not
+indicate the expected zones. For instance, <path>GMT-8</path> is in fact
+GMT+8.
+</p>
+
+<pre caption="Setting the timezone information">
+# <i>ls /usr/share/zoneinfo</i>
+<comment>(Suppose you want to use GMT)</comment>
+# <i>cp /usr/share/zoneinfo/GMT /etc/localtime</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Installing the Kernel Sources</title>
+<subsection>
+<title>Choosing a Kernel</title>
+<body>
+
+<p>
+The core around which all distributions are built is the Linux kernel. It is the
+layer between the user programs and your system hardware. Gentoo provides its
+users several possible kernels to choose from. A full listing with description 
+is available at the 
+<uri link="/doc/en/gentoo-kernel.xml">Gentoo Kernel Guide</uri>. 
+</p>
+
+<p>
+We suggest using <c>gentoo-sources</c> on PPC, which is a recent 2.6 kernel.
+</p>
+
+<pre caption="Installing a kernel source">
+# <i>emerge --usepkg gentoo-sources</i>
+</pre>
+
+<p>
+If you take a look in <path>/usr/src</path> you should see a symlink named
+<path>linux</path> pointing to your current kernel source. In this case, the
+installed kernel source points to <c>gentoo-sources-<keyval
+id="kernel-version"/></c>. Your version may be different, so keep this in mind.
+</p>
+
+<pre caption="Viewing the kernel source symlink">
+# <i>ls -l /usr/src/linux</i>
+lrwxrwxrwx    1 root     root           22  Mar 18 16:23 /usr/src/linux -&gt; linux-<keyval id="kernel-gentoo"/>
+</pre>
+
+<p>
+Now it is time to configure and compile your kernel source. You can use 
+<c>genkernel</c> for this, which will build a generic kernel as used by the 
+Installation CD. We explain the "manual" configuration first though, as it is
+a more efficient configuration.
+</p>
+
+<p>
+If you want to manually configure your kernel, continue now with <uri
+link="#manual">Default: Manual Configuration</uri>. If you want to use 
+<c>genkernel</c> you should read <uri link="#genkernel">Alternative: Using 
+genkernel</uri> instead.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="manual">
+<title>Default: Manual Configuration</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Manually configuring a kernel is often seen as the most difficult procedure a
+Linux user ever has to perform. Nothing is less true -- after configuring a
+few kernels you won't even remember that it was difficult ;)
+</p>
+
+<p>
+However, one thing <e>is</e> true: you must know your system when you start
+configuring a kernel manually. Most information can be gathered by emerging 
+pciutils (<c>emerge --usepkg pciutils</c>) which contains the program 
+<c>lspci</c>. You will now be able to use <c>lspci</c> within the chrooted
+environment. You may safely ignore any <e>pcilib</e> warnings (such as pcilib:
+cannot open /sys/bus/pci/devices) that <c>lspci</c> throws out. Alternatively,
+you can run <c>lspci</c> from a <e>non-chrooted</e> environment. The results
+are the same. You can also run <c>lsmod</c> to see what kernel modules the 
+Installation CD uses (it might provide you with a nice hint on what to enable).
+Another place to look for clues as to what components to enable is to check the
+kernel message logs from the successful boot that got you this far.  Type
+<c>dmesg</c> to see these kernel messages.
+</p>
+
+<p>
+Now, go to your kernel source directory, it's time to configure your kernel.
+Start by configuring a kernel that will boot on most 32 Bit PowerPC machines
+by first running <c>make pmac32_defconfig</c>. After the default configuration
+has been generated, run <c>make menuconfig</c> to start an ncurses-based
+configuration menu.
+</p>
+
+<pre caption="Invoking menuconfig">
+# <i>cd /usr/src/linux</i>
+# <i>make pmac32_defconfig</i>
+# <i>make menuconfig</i>
+</pre>
+
+<p>
+You will be greeted with several configuration sections. We'll first list some
+options you must activate (otherwise Gentoo will not function, or not function
+properly without additional tweaks).
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating Required Options</title>
+<body>
+
+<p>
+First of all, activate the use of development and experimental code/drivers.
+You need this, otherwise some very important code/drivers won't show up:
+</p>
+
+<pre caption="Selecting experimental code/drivers">
+General setup ---&gt;
+  [*] Prompt for development and/or incomplete code/drivers
+</pre>
+
+<p>
+Now go to <c>File Systems</c> and select support for the filesystems you use.
+<e>Don't</e> compile them as modules, otherwise your Gentoo system will not be
+able to mount your partitions. Also select the <c>/proc file system</c> and
+<c>Virtual memory</c>.  Make sure that you also enable support for Amiga
+partitions if you are using a Pegasos, or Macintosh partitions if you are using
+an Apple computer.
+</p>
+
+<pre caption="Selecting necessary file systems">
+File systems ---&gt;
+  Pseudo Filesystems ---&gt;
+<comment>(/proc may already be forced on by your configuration, if so, you'll see --- instead)</comment>
+    [*] /proc file system support
+    [*] Virtual memory file system support (former shm fs)
+  Partition Types ---&gt;
+    [*] Advanced partition support
+    [*]   Amiga partition table support
+    [*]   Macintosh partition map support
+
+<comment>(Select one or more of the following options as needed by your system)</comment>
+  &lt;*&gt; Reiserfs support
+  &lt;*&gt; Ext3 journalling file system support
+  &lt;*&gt; Second extended fs support
+  &lt;*&gt; XFS filesystem support
+</pre>
+
+<p>
+Users of NewWorld and OldWorld machines will want HFS support as well.  OldWorld
+users require it for copying compiled kernels to the MacOS partition. NewWorld
+users require it for configuring the special Apple_Bootstrap partition:
+</p>
+
+<pre caption="Activating HFS support">
+File Systems ---&gt;
+  Miscellaneous filesystems ---&gt;
+    &lt;M&gt; Apple Macintosh file system support
+    &lt;M&gt; Apple Extended HFS file system support
+</pre>
+
+<p>
+If you are using PPPoE to connect to the Internet or you are using a dial-up
+modem, you will need the following options in the kernel:
+</p>
+
+<pre caption="Selecting PPPoE necessary drivers">
+Device Drivers ---&gt;
+  Network device support ---&gt;
+    &lt;*&gt; PPP (point-to-point protocol) support
+    &lt;*&gt;   PPP support for async serial ports
+    &lt;*&gt;   PPP support for sync tty ports
+</pre>
+
+<p>
+The two compression options won't harm but are not always needed.  The <c>PPP
+over Ethernet</c> option might only be used by <c>ppp</c> when configured to
+perform kernel mode PPPoE.
+</p>
+
+<p>
+Don't forget to include support in the kernel for your ethernet card!  Most
+newer Apple computers use the SunGEM ethernet driver.  Older iMacs commonly use
+the BMAC driver.
+</p>
+
+<pre caption="Selecting the network driver">
+Device Drivers ---&gt;
+  Network device support ---&gt;
+    Ethernet (10 or 100Mbit) ---&gt;
+      [*] Ethernet (10 or 100Mbit)
+      &lt;*&gt;   Generic Media Independent Interface device support
+      &lt;*&gt;   MACE (Power Mac ethernet) support
+      &lt;*&gt;   BMAC (G3 ethernet) support
+      &lt;*&gt;   Sun GEM support
+</pre>
+
+<p>
+At this time, full kernel preemption may still be unstable on PPC and may cause
+compilation failures and random segfaults.  It is <e>strongly</e> suggested
+that you do not use this feature.  Both <e>Voluntary Preemption</e> and 
+<e>No Forced Preemption</e> should be safe.
+</p>
+
+<pre caption="Ensure the Preemptible Kernel Option is Off">
+Kernel options ---&gt;
+<comment>(Select One)</comment>
+  Preemption Model 
+    (X) No Forced Preemption (Server)
+    (X) Voluntary Kernel Preemption (Desktop)
+</pre>
+
+<p>
+If you're booting from Firewire, you'll need to enable these options. If you do
+not want to compile in support, you'll need to include these modules and their
+dependencies in an initrd.
+</p>
+
+<pre caption="Enable support for firewire devices on boot">
+Device Drivers ---&gt;
+  IEEE 1394 (FireWire) support ---&gt;
+    &lt;*&gt; IEEE 1394 (FireWire) support
+    &lt;*&gt;   OHCI-1394 support
+    &lt;*&gt;   SBP-2 support (Harddisks etc.)
+</pre>
+
+<p>
+If you're booting from USB, you'll need to enable these options.  If you do not
+want to compile in support, you'll need to include these modules and their
+dependencies in an initrd.
+</p>
+
+<pre caption="Enable support for USB devices on boot">
+Device Drivers ---&gt;
+  USB support ---&gt;
+    &lt;*&gt; Support for Host-side USB
+    &lt;*&gt;   OHCI HCD support
+    &lt;*&gt;   USB Mass Storage support
+</pre>
+
+<p>
+Do not turn off kernel framebuffer support as it is required for a successful
+boot.  If you are using an NVIDIA based chipset, you should use the Open Firmware
+framebuffer.  If you are using an ATI based chipset, you should select the
+framebuffer driver based upon your chipset (Mach64, Rage128 or Radeon).
+</p>
+
+<pre caption="Choosing a Framebuffer Driver">
+Device Drivers ---&gt;
+  Graphics support ---&gt;
+    &lt;*&gt; Support for frame buffer devices
+    [*] Open Firmware frame buffer device support
+    &lt;*&gt; ATI Radeon display support
+    &lt;*&gt; ATI Rage128 display support
+    &lt;*&gt; ATI Mach64 display support
+    Console display driver support ---&gt;
+      &lt;*&gt; Framebuffer Console support
+</pre>
+
+<note>
+If you select more than one framebuffer device, it may default to a less than
+optimal driver.  Either use only one framebuffer device or specify which
+to use by passing the driver to use to the kernel on boot by appending a video
+line such as: <c>video=radeonfb</c>.
+</note>
+
+<p>
+When you're done configuring your kernel, continue with <uri
+link="#compiling">Compiling and Installing</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection id="compiling">
+<title>Compiling and Installing</title>
+<body>
+
+<p>
+Now that your kernel is configured, it is time to compile and install it. Exit 
+the configuration menu and run the following commands:
+</p>
+
+<pre caption="Compiling the kernel">
+# <i>make &amp;&amp; make modules_install</i>
+</pre>
+
+<p>
+When the kernel has finished compiling, copy the kernel image to
+<path>/boot</path> as shown below. If you have a separate boot partition, as
+on Pegasos computers, be sure that it is mounted properly. If you are using 
+BootX to boot, we'll copy the kernel later.
+</p>
+
+<p>
+Yaboot and BootX expect to use an uncompressed kernel unlike many other
+bootloaders. The uncompressed kernel is called vmlinux and it is placed in
+<path>/usr/src/linux</path> after the kernel has finished compiling. If you are
+using a Pegasos machine, the Pegasos firmware requires a compressed kernel
+called zImage which can be found in
+<path>/usr/src/linux/arch/powerpc/boot/images</path>.
+</p>
+
+<pre caption="Installing the kernel">
+# <i>cd /usr/src/linux</i>
+<comment>Note, your kernel version might be different</comment>
+<comment>(Apple/IBM)</comment>
+# <i>cp vmlinux /boot/<keyval id="kernel-name"/></i>
+<comment>(Pegasos)</comment>
+# <i>cp arch/powerpc/boot/images/zImage /boot/<keyval id="kernel-name"/></i> 
+</pre>
+
+<p>
+Now continue with <uri link="#kernel_modules">Installing Separate Kernel
+Modules</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="kernel_modules">
+<title>Installing Separate Kernel Modules</title>
+<subsection>
+<title>Configuring the Modules</title>
+<body>
+
+<p>
+You should list the modules you want automatically loaded in
+<path>/etc/modules.autoload.d/kernel-2.6</path>. You can add extra options to
+the modules if required.
+</p>
+
+<p>
+To view all available modules, run the following <c>find</c> command. Don't
+forget to substitute "&lt;kernel version&gt;" with the version of the kernel you
+just compiled:
+</p>
+
+<pre caption="Viewing all available modules">
+# <i>find /lib/modules/&lt;kernel version&gt;/ -type f -iname '*.o' -or -iname '*.ko'</i>
+</pre>
+
+<p>
+For instance, to automatically load the <c>3c59x</c> module, edit the
+<path>kernel-2.6</path> file and add the module to it, one module on a line.
+</p>
+
+<pre caption="Editing /etc/modules.autoload.d/kernel-2.6">
+# <i>nano -w /etc/modules.autoload.d/kernel-2.6</i>
+</pre>
+
+<pre caption="/etc/modules.autoload.d/kernel-2.6">
+3c59x
+</pre>
+
+<p>
+Continue the installation with <uri link="?part=1&amp;chap=8">Configuring 
+your System</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="genkernel">
+<title>Alternative: Using genkernel</title>
+<body>
+
+<p>
+Now that your kernel source tree is installed, it's now time to compile your
+kernel by using our <c>genkernel</c> script to automatically build a kernel for
+you. <c>genkernel</c> works by configuring a kernel nearly identically to the
+way our Installation CD kernel is configured. This means that when you use
+<c>genkernel</c> to build your kernel, your system will generally detect all
+your hardware at boot-time, just like our Installation CD does. Because
+genkernel doesn't require any manual kernel configuration, it is an ideal
+solution for those users who may not be comfortable compiling their own
+kernels.
+</p>
+
+<p>
+Now, let's see how to use genkernel. First, emerge the genkernel ebuild:
+</p>
+
+<pre caption="Emerging genkernel">
+# <i>emerge --usepkg genkernel</i>
+</pre>
+
+<p>
+Next, copy over the kernel configuration used by the Installation CD to the 
+location where genkernel looks for the default kernel configuration:
+</p>
+
+<pre caption="Copying over the Installation CD kernel config">
+# <i>zcat /proc/config.gz > /usr/share/genkernel/ppc/kernel-config-2.6</i>
+</pre>
+
+<p>
+If you are using firewire or USB to boot, you'll need to add modules to the 
+initrd.  Edit <path>/usr/share/genkernel/ppc/modules_load</path> and change
+<c>MODULES_FIREWIRE="ieee1394 ohci1394 sbp2"</c> for firewire support or
+<c>MODULES_USB="usbcore ohci-hcd ehci-hcd usb-storage"</c> for USB support.
+</p>
+
+<p>
+Before compiling your sources, the fstab needs a slight adjustment. The rest of
+the fstab will be completed during a later step, so don't worry about the
+details now. If you did not create a separate boot partition (NOT bootstrap,
+that's different), remove the line referencing <path>/boot</path> from
+<path>/etc/fstab</path>. This will need to be done on most Apple computers.
+</p>
+
+<pre caption="Removing /boot from /etc/fstab on machines without a boot partition">
+# <i>nano -w /etc/fstab</i>
+<comment>Remove this line</comment>
+/dev/BOOT		/boot		ext2		noauto,noatime	1 2
+</pre>
+
+<p>
+Now, compile your kernel sources by running <c>genkernel --genzimage all</c>.
+For Pegasos, we will need to use a different config and create a zImage instead
+of the vmlinux kernel used on Apple machines. Be aware, as <c>genkernel</c> 
+compiles a kernel that supports almost all hardware, this compilation can take 
+quite a while to finish!
+</p>
+
+<p>
+Note that, if your partition where the kernel should be located doesn't use ext2
+or ext3 as filesystem you might need to manually configure your kernel using
+<c>genkernel --menuconfig all</c> and add support for your 
+filesystem <e>in</e> the kernel (i.e. <e>not</e> as a module). Users of EVMS2 or
+LVM2 will probably want to add <c>--evms2</c> or <c>--lvm2</c> as an argument as
+well.
+</p>
+
+<pre caption="Running genkernel">
+# <i>genkernel all</i>
+</pre>
+
+<pre caption="Running genkernel on the Pegasos">
+# <i>genkernel --genzimage --kernel-config=/usr/share/genkernel/ppc/Pegasos all</i>
+</pre>
+
+<p>
+Once <c>genkernel</c> completes, a kernel, full set of modules and 
+<e>initial root disk</e> (initrd) will be created. We will use the kernel 
+and initrd when configuring a boot loader later in this document. Write
+down the names of the kernel and initrd as you will need them when writing
+the bootloader configuration file. The initrd will be started immediately after 
+booting to perform hardware autodetection (just like on the Installation CD) 
+before your "real" system starts up.  Be sure to also copy down the required
+boot arguments, these are required for a successful boot with genkernel.
+</p>
+
+<pre caption="Checking the created kernel image name and initrd">
+<comment>Note, your kernel version might be different</comment>
+# <i>ls /boot/kernel-genkernel-ppc-<keyval id="kernel-gentoo"/> /boot/initramfs-genkernel-ppc-<keyval id="kernel-gentoo"/></i>
+</pre>
+
+<p>
+Now continue with <uri link="?part=1&amp;chap=8">Configuring your System</uri>.
+</p>
+
+</body>
+</section>
+</sections>
+

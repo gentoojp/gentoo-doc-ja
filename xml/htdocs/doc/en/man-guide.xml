@@ -1,0 +1,428 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/man-guide.xml,v 1.6 2011/09/04 17:53:40 swift Exp $ -->
+
+<guide lang="en">
+<title>Gentoo Man Guide</title>
+
+<author title="Author">
+  <mail link="chriswhite@gentoo.org">Chris White</mail>
+</author>
+
+<abstract>
+This guide shows how to navigate man pages using man.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2</version>
+<date>2006-06-18</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>The man program</title>
+<body>
+
+<p>
+Everyone at some point in their linux life has used it. "It" is the <c>man</c>
+command. However, while the man program itself appears to be rather simplistic
+in its construct, it has a few extra abilities than just simply scrolling
+through the page. This document hopes to help shed some light on these
+capabilities.
+</p>
+
+</body>
+</section>
+<section>
+<title>Man layout</title>
+<body>
+
+<p>
+Man pages are mainly stored in the <path>/usr/share/man</path> directory.
+However, as long as a man page is located in the <c>MANPATH</c> environment
+variable, man will be able to pick it up. Gentoo will generally store
+<c>MANPATH</c> variables in <path>/etc/env.d</path>. Within these directories
+are some folders with the structure manX where X is the section number. For
+example, a standard man layout might look like so:
+</p>
+
+<pre caption="Standard man structure">
+$ <i>ls /usr/share/man | grep man</i>
+man0p
+man1
+man1p
+man2
+man3
+man3p
+man4
+man5
+man6
+man7
+man8
+man9
+mann
+</pre>
+
+<p>
+The actual section numbering appears fairly standard. However, notice that
+there is a <path>mann</path> and some <path>man#p</path> folders. The following
+table lists the above man page directories and what is contained within them:
+</p>
+
+<table>
+<tr>
+  <th>Man Directory</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti>man0p</ti>
+  <ti>
+    The <c>p</c> here stands for POSIX, as with the other directories with p in
+    their names. Man pages in this directory describe the functionality of
+    various POSIX header files.
+  </ti>
+</tr>
+<tr>
+  <ti>man1</ti>
+  <ti>
+    This section is for standard commands. Most programs will put their man
+    pages here, so this section tends to be the largest.
+  </ti>
+</tr>
+<tr>
+  <ti>man1p</ti>
+  <ti>
+    This section describes the POSIX versions of the commands described in 1p.
+    Since it only describes basic commands, it is much smaller than man1.
+  </ti>
+</tr>
+<tr>
+  <ti>man2</ti>
+  <ti>This section describes Linux kernel system calls.</ti>
+</tr>
+<tr>
+  <ti>man3</ti>
+  <ti>This section describes standard c library functions.</ti>
+</tr>
+<tr>
+  <ti>man4</ti>
+  <ti>
+    This section describes special devices. These devices are generally kernel
+    oriented, but <c>Xorg-X11</c> has entries in here as well.
+  </ti>
+</tr>
+<tr>
+  <ti>man5</ti>
+  <ti>
+    This section describes both the makeup of certain files and what files a
+    program uses. Those of you reading this document may be familiar with
+    references to <c>man 5 portage</c> for a description of the <c>portage</c>
+    file structure, and <c>man 5 make.conf</c> for <path>make.conf</path>
+    makeup.
+  </ti>
+</tr>
+<tr>
+  <ti>man6</ti>
+  <ti>This section introduces games and other special toys.</ti>
+</tr>
+<tr>
+  <ti>man7</ti>
+  <ti>
+    This section describes standards and other miscellaneous items. These
+    standards can include things such as charsets, SQL statements, ISO
+    standards and regular expressions.
+  </ti>
+</tr>
+<tr>
+  <ti>man8</ti>
+  <ti>
+    This section describes administrative commands (those usually run by the
+    root user).
+  </ti>
+</tr>
+<tr>
+  <ti>man9</ti>
+  <ti>
+    This section is somewhat sparse, but is meant to contain documentation for
+    various parts of the kernel.
+  </ti>
+</tr>
+<tr>
+  <ti>mann</ti>
+  <ti>
+    This section is mainly used by <c>Tcl/Tk</c>. The <c>n</c> stands for new.
+  </ti>
+</tr>
+</table>
+
+<p>
+While this is not an extensive and detailed list, it does cover the man pages
+that most people will be interested in. However, sometimes you can find out
+what a section does as easily as looking at this table. The next chapter will
+look at using man to traverse this layout.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Working with the man layout</title>
+<section>
+<title>Browsing the man layout</title>
+<body>
+
+<p>
+Now that we understand the man layout, we can begin to look it over for
+commands. Sometimes we may need to narrow down what man page we want. The first
+way would be addressing by section. To found out a description of a section,
+once can use  <c>man section intro</c> like so:
+</p>
+
+<pre caption="Using man intro to describe a section">
+$ <i>man 3 intro</i>
+<comment>(Output slightly modified to fit the document properly)</comment>
+INTRO(3)               Linux Programmer's Manual                INTRO(3)
+
+
+
+NAME
+       intro - Introduction to library functions
+
+DESCRIPTION
+       This chapter describes all library functions excluding the library
+       functions described in chapter 2, which implement system calls.
+       There are various function groups which can be identified by a
+       letter which is appended to the chapter number:
+....
+</pre>
+
+<p>
+Unfortunately, this doesn't always work! However, luckily for us there is
+another way to search for commands that may return multiple results (such as a
+library call and system command having the same name). To do so, we use the
+<c>-K</c> parameter to man like so:
+</p>
+
+<pre caption="Using man -K to search by string">
+$ <i>man -K sleep</i>
+/usr/share/man/man0p/time.h.0p.gz? [ynq] <i>n</i>
+/usr/share/man/man0p/unistd.h.0p.gz? [ynq] <i>n</i>
+/usr/share/man/man2/alarm.2.gz? [ynq] <i>n</i>
+/usr/share/man/man2/pause.2.gz? [ynq] <i>n</i>
+/usr/share/man/man2/futex.2.gz? [ynq] <i>n</i>
+/usr/share/man/man2/nanosleep.2.gz? [ynq] <i>y</i>
+/usr/share/man/man2/semop.2.gz? [ynq] <i>q</i>
+</pre>
+
+<p>
+Sometimes the output may be a lot larger. In this case it might be better to
+specify more specific keywords. Now that we know where to find the man page,
+the next section will look at viewing the man page.
+</p>
+
+</body>
+</section>
+<section>
+<title>Viewing man pages</title>
+<body>
+
+<p>
+Viewing man pages can be done in 2 ways, first is with <c>man [man page
+name]</c>. The second way is <c>man [section] [man page name]</c>. Let's take
+<c>bc</c> for example. I can view either the first man page that comes up on
+<c>bc</c> (which would be section 1, because it is the lowest section
+containing a man page on <c>bc</c>):
+</p>
+
+<pre caption="Viewing the default man page">
+$ <i>man bc</i>
+bc(1)                                            bc(1)
+
+
+NAME
+       bc - An arbitrary precision calculator language
+...
+</pre>
+
+<p>
+However, what if I want the POSIX version? Then I can use the second form:
+</p>
+
+<pre caption="Viewing a specific man page by section">
+$ <i>man 1p bc</i>
+BC(P)        POSIX Programmer's Manual           BC(P)
+
+
+NAME
+       bc - arbitrary-precision arithmetic language
+...
+</pre>
+
+<p>
+And the man page is displayed. Now that we have the man page up, it's time to
+work with it. The next section will look at navigation and searching.
+</p>
+
+</body>
+</section>
+<section>
+<title>Navigating and searching man pages</title>
+<body>
+
+<p>
+Navigating a man page is fairly simple. To move up and down line by line, use
+the up and down arrow keys. To move up page by page, you can use the page up
+and page down keys. Do however note that these navigation instructions assume
+the environmental <c>PAGER</c> variable is set to use the default pager,
+<c>less</c>. Less also has a few other commands for navigation, but the arrow
+keys usually suffice:
+</p>
+
+<pre caption="Additional less navigation keys">
+  e  ^E  j  ^N  CR  *  Forward  one line   (or N lines).
+  y  ^Y  k  ^K  ^P  *  Backward one line   (or N lines).
+  f  ^F  ^V  SPACE  *  Forward  one window (or N lines).
+  b  ^B  ESC-v      *  Backward one window (or N lines).
+  z                 *  Forward  one window (and set window to N).
+  w                 *  Backward one window (and set window to N).
+  ESC-SPACE         *  Forward  one window, but don't stop at end-of-file.
+  d  ^D             *  Forward  one half-window (and set half-window to N).
+  u  ^U             *  Backward one half-window (and set half-window to N).
+  ESC-)  RightArrow *  Left  one half screen width (or N positions).
+  ESC-(  LeftArrow  *  Right one half screen width (or N positions).
+  F                    Forward forever; like "tail -f".
+</pre>
+
+<p>
+Searching, however, is more interesting. The two most basic searches are
+<c>/pattern</c> and <c>?pattern</c>. The first version searches forwards, and
+the second searches backwards. <c>pattern</c> is a regular expression pattern
+that is described in <c>man 7 regex</c>. Let's take for example searching for
+the <c>-D</c> option to <c>emerge</c>. First, bring up the emerge man page:
+</p>
+
+<pre caption="Bringing up the emerge man page">
+$ <i>man emerge</i>
+</pre>
+
+<p>
+Then, at the screen, press the <c>/</c> key to bring up the entry prompt to
+search forwards and enter in our search pattern:
+</p>
+
+<pre caption="Bringing up the forward search prompt">
+     gracefully handles updating installed packages to newer releases as well.
+     It handles both source and binary packages, and it can be used to create
+     binary packages for distribution.
+
+EBUILDS, TBZ2S, CLASSES AND DEPENDENCIES
+/<i>\-D</i>
+</pre>
+
+<note>
+The <c>\</c> is done to escape the <c>-</c> sign, which would normally be used
+as part of a regular expression.
+</note>
+
+<p>
+This will search the man page, and bring the searched item into focus:
+</p>
+
+<pre caption="Forward search results">
+  --deep (-D)
+        When used in conjunction with --update, this flag forces emerge to consider the entire
+        dependency tree of packages, instead of checking only the immediate dependencies of
+        the packages.  As an example, this catches updates in libraries that are not directly
+        listed in the  dependencies of a package.
+</pre>
+
+<p>
+If you hit a search result by accident and want to continue searching for the
+same results, simply press the <c>/</c> key again, and press enter (i.e. don't
+put a pattern it). This will cause the search to default to the last pattern
+used. Now with some man pages, options are listed, then explained later on.
+Take the <c>man 5 portage</c> man page. It lists the files used, then explains
+their usage. Searching forward a few times would return the results, but
+there's an easier way to handle this, with the second search form, backwards
+searching. Let's use this to find the description on
+<path>package.unmask</path>. First, bring up <c>man 5 portage</c>:
+</p>
+
+<pre caption="Bringing up the man 5 portage man page">
+$ <i>man 5 portage</i>
+</pre>
+
+<p>
+Now press <c>SHIFT+g</c>. This will bring you to the end of the page:
+</p>
+
+<pre caption="End of the man page after SHIFT+g">
+SEE ALSO
+       emerge(1), ebuild(1), ebuild(5), make.conf(5)
+
+Portage 2.0.51        Jan 2004            PORTAGE(5)
+lines 418-442/442 (END)
+</pre>
+
+<p>
+Now we'll go ahead and enter the pattern to search for with the <c>?pattern</c>
+backwards search option. First press the <c>?</c> key to bring up the prompt,
+and then enter in <c>package.unmask</c>, our query:
+</p>
+
+<pre caption="Specifying our search">
+SEE ALSO
+       emerge(1), ebuild(1), ebuild(5), make.conf(5)
+
+Portage 2.0.51        Jan 2004           PORTAGE(5)
+?<i>package.unmask</i>
+</pre>
+
+<p>
+Then hit enter to bring up the result:
+</p>
+
+<pre caption="Our search result">
+  package.unmask
+       Just like package.mask above, except here you list packages you want to unmask.
+       Useful for overriding the global  package.mask  file (see below).  Note that
+       this does not override packages that are masked via KEYWORDS.
+...
+</pre>
+
+<p>
+And the search is complete! Note that just as with <c>/</c>, using <c>?</c>
+search with no pattern will use the last pattern to search.
+</p>
+
+</body>
+</section>
+<section>
+<title>Conclusion</title>
+<body>
+
+<p>
+This concludes the man guide. This will hopefully shed some light on navigating
+man pages, and maybe even give a few new tips to the more experienced users.
+For those who prefer alternate means of navigating man pages, the following are
+also available:
+</p>
+
+<ul>
+  <li>app-text/man2html - a program for converting man pages to html</li>
+  <li>app-text/tkman - a tk based man page browser</li>
+</ul>
+
+<p>
+Also the <c>KDE</c> web browser <c>Konqueror</c> can browse man pages using the
+<c>man:</c> syntax in the address bar.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

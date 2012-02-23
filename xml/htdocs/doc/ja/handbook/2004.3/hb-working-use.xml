@@ -1,0 +1,398 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-working-use.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+<!-- Original revision: 1.24 -->
+
+<sections>
+
+<version>1.21</version>
+<date>2004-10-21</date>
+
+<section>
+<title>USEフラグとは</title>
+<subsection>
+<title>USEフラグの背景</title>
+<body>
+
+<p>
+Gentooをインストールするとき(または他のディストリビューション、
+OSをインストールする場合も含めて)利用する環境により異なる選択をすることなります。
+サーバー向けのセットアップはワークステーションのそれとはちがいます。
+ゲーム用マシンと3Dレンダリングワークステーションも違いがあります。
+</p>
+
+<p>
+このことは、インストールするパッケージの選択だけでなく、
+パッケージがサポートする機能にも当てはまります。
+もし、OpenGLが必要ないのであれば、面倒な思いをしながらOpenGLをインストールしたり、
+他のほとんどのパッケージでOpenGLサポートをつけてビルドする必要はないのです。
+もしKDEを使いたくない場合、KDEサポートがなくてもちゃんと動くパッケージ
+にわざわざKDEサポートつけてパッケージをコンパイル必要はありますか?
+</p>
+
+<p>
+ユーザーが何をインストール/有効にして、何をそうしないのか決めやすいよう
+簡単にユーザーの環境を指定する方法が必要となりました。
+この方法によりユーザーは本当に必要なものを決めることになり、
+またパッケージ管理システムであるPortageの判定処理が軽減されるのです。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>USEフラグの定義</title>
+<body>
+
+<p>
+USEフラグについて話をはじめましょう。
+フラグはあるコンセプトのサポートと依存関係をあらわしたものです。
+もしあるUSEフラグを定義すると、Portageに選んだキーワードに対応するよう伝えられます。
+もちろん、これによりパッケージに対する依存情報も変更されます。
+</p>
+
+<p>
+一つ<c>kde</c>というキーワードの例を挙げてみましょう。
+<c>USE</c>変数のなかにこのキーワードが設定されていなければ、
+<e>オプション</e>でKDEサポートをもつパッケージはKDEサポート<e>なし</e>でコンパイルされます。
+オプションでKDEへの依存関係があるパッケージの場合、
+(依存関係のため)KDEライブラリー<e>なし</e>でインストールされます。
+もし、<c>kde</c>キーワードを指定している場合、
+こうしたパッケージはKDEサポート付でインストールされ、
+依存関係に従ってKDEライブラリーもインストールされます。
+</p>
+
+<p>
+正しくキーワードを設定することで、必要に応じたシステムが得られるのです。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>どんなUSEフラグがあるのか</title>
+<body>
+
+<p>
+USEフラグには二つのタイプがあります:<e>グローバル</e>と<e>ローカル</e>USEフラグです。
+</p>
+
+<ul>
+<li>
+<e>グローバル</e>USEフラグはいくつかのパッケージで使われ、
+システム全体に影響するものです。これが普通USEフラグと呼ばれるものです。
+</li>
+<li>
+<e>ローカル</e>USEフラグは単独パッケージが対象で、そのパッケージ特有の判断に使われます。
+</li>
+</ul>
+
+<p>
+使用可能なグローバルUSEフラグのリストは
+<uri link="/dyn/use-index.xml">オンライン</uri>
+か
+<path>/usr/poratge/profiles/use.desc</path>
+にあります。
+リストのほんの一部を紹介します。
+</p>
+
+<pre caption="使用可能なUSEフラグの抜粋">
+gtk     - Adds support for x11-libs/gtk+ (The GIMP Toolkit)
+gtk2    - Use gtk+-2.0.0 over gtk+-1.2 in cases where a program supports both.
+gtkhtml - Adds support for gnome-extra/gtkhtml
+guile   - Adds support for dev-util/guile (interpreter for Scheme)
+icc     - Use the Intel C++ Compiler if the package supports it
+icc-pgo - Enable PGO data generation or use when use icc.
+imap    - Adds support for IMAP
+</pre>
+
+<p>
+使用可能なローカルUSEフラグは
+<path>/usr/portage/profiles/use.local.desc</path>
+にあります。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>USEフラグを使いこなす</title>
+<subsection>
+<title>永続的なUSEフラグ宣言</title>
+<body>
+
+<p>
+USEフラグの重要性が認識されたところで、
+USEフラグを宣言する方法についてお伝えしましょう。
+</p>
+
+<p>
+すでに触れたように、すべてのUSEフラグは<c>USE</c>変数のなかで宣言されています。
+ユーザーがUSEフラグを調べたり、選んだりしやすいよう、
+<e>デフォルト</e>のUSEセッティングが提供されています。
+このセッティングはGentooユーザーが一般的に使用すると考えられるUSEフラグを集めたものです。
+このデフォルトのセッティングは
+<path>/etc/make.profile/make.defaults</path>
+ファイルで宣言されています。
+デフォルトのセッティングを見てみましょう。
+</p>
+
+<pre caption="x86システム上の/etc/make.profile/make.defaults USE変数">
+USE="x86 oss apm arts avi berkdb crypt cups encode foomaticdb gdbm gif gpm
+     gtk gtk2 imlib jpeg kde gnome libg++ libwww mad mikmod motif mpeg ncurses
+     nls oggvorbis opengl pam pdflib png python qt quicktime readline sdl
+     slang spell ssl svga tcpd truetype X xml2 xmms xv zlib"
+</pre>
+
+<p>
+今見たように、この変数はすでにかなり多くのキーワードが含まれています。
+しかし、あなたの希望の<c>USE</c>変数にあわせるため
+<path>/etc/make.profile/make.defaults</path>
+ファイルを変更していは<b>いけません</b>。
+このファイルの変更はPoratgeアップデートの際に元に戻ってしまいます!
+</p>
+
+<p>
+このデフォルトセッティングを変えるためには、
+<c>USE</c>変数にキーワードを追加か削除をしなくてはなりません。
+これはUSE変数を<path>/etc/make.conf</path>に設定することでシステム全体に行われます。
+この変数に必要な追加USEフラグを加えるか、必要のないUSEフラグを外せばよいだけです。
+USEフラグを外すためにはキーワードの前に"-"(マイナス記号)をつけてください。
+</p>
+
+<p>
+たとえば、KDEとQTサポートを外してLDAPサポートをつけるには、
+次のように<c>USE</c>を<path>etc/make.conf</path>に宣言します。
+</p>
+
+<pre caption="/etc/make.conf でのUSE設定例">
+USE="-kde -qt ldap"
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>個々のパッケージに対するUSEフラグ宣言</title>
+<body>
+
+<p>
+一つか二つほどのアプリケーションに対しあるUSEフラグを宣言したいが
+システム全体には適用したくない、という場合です。
+これには(存在しなければ)
+<path>/etc/portage</path>
+ディレクトリを作成します。そして
+<path>/etc/portage/package.use</path>
+を編集します。
+</p>
+
+<p>
+たとえば<c>berkdb</c>はパッケージ全体的に適用したくないが、
+<c>mysql</c>だけには適用したい場合、次のように書き加えます。
+</p>
+
+<pre caption="/etc/portage/package.use 例">
+dev-db/mysql berkdb
+</pre>
+
+<p>
+明示的にUSEフラグを<e>無効</e>にすることもできます。
+たとえばPHPに対して<c>java</c>を無効にしたい場合です。
+</p>
+
+<pre caption="/etc/portage/package.use 2番目の例">
+dev-php/php -java
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>一時的なUSEフラグ宣言</title>
+<body>
+
+<p>
+あるUSEの設定を一回だけ使いたいといったことがときにはあります。
+<path>/etc/make.conf</path>を二度(変更して元に戻す)編集する代わりに、
+USE変数を環境変数として宣言することもできます。
+ただし、再emergeしたりアップデートする場合(明示的に行うときとシステムアップデート両方の場合)、
+は変更は破棄されてしまうのでご注意ください。
+</p>
+
+<p>
+mozilla のインストールする間USEの設定から一時的にjavaを除く例です。
+</p>
+
+<pre caption="環境変数としてUSEを使う">
+# <i>USE="-java" emerge mozilla</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>USEフラグの継承</title>
+<body>
+
+<p>
+いくつかのパッケージはUSEフラグに影響されるだけでなく、USEフラグを提供します。
+その種のパッケージをインストールしたときには、
+USE設定に提供されたUSEフラグが追加されます。
+提供されるUSEフラグを見るには、
+<path>/etc/make.profile/use.defaults</path>
+を調べてください。
+</p>
+
+<pre caption="/etc/make.profile/use.defaultsの抜粋">
+gnome           gnome-base/gnome
+gtk             x11-libs/gtk+
+qt              x11-libs/qt
+kde             kde-base/kdebase
+motif           x11-libs/openmotif
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>優先順位</title>
+<body>
+
+<p>
+当然のことながら、USEの設定では
+どの設定が優先するのかという順位付けがあります。
+また、<c>java</c>が宣言されているか確かめるためだけに
+<c>USE="-java"</c>の設定もしたくないでしょう。
+USE設定の優先順位は、下のような順番になっています
+(最初のものが低い優先度です)。
+</p>
+
+<ol>
+  <li>
+    <path>/etc/make.profile/make.defaults</path>でのデフォルトUSE設定
+  </li>
+  <li>
+    <path>/etc/make.profile/use.defaults</path>にあるパッケージがインストールされたときに
+    継承されるUSE設定    
+  </li>
+  <li>
+    <path>/etc/make.conf</path> でのユーザー設定
+  </li>
+  <li>
+    <path>/etc/portage/package.use</path> でのユーザー設定
+  </li>
+  <li>
+    User-defined USE setting as environment variable
+    ユーザーによる環境変数としてのUSE設定
+  </li>
+</ol>
+
+<p>
+最終的なPortageの<c>USE</c>設定を確認するためには<c>emerge info</c>を実行してください。
+これにより(<c>USE</c>設定を含んだ)Portageに関連するすべての変数のリストが表示されます。
+
+</p>
+
+<pre caption="emerge infoを実行する">
+# <i>emerge info</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>システム全体を新しいUSEフラグに対応させるには</title>
+<body>
+
+<p>
+もしUSEフラグを新しくしシステム全体を新しいフラグに対応させたい場合、
+<c>emerge</c>の<c>--newuse</c>オプションを使用してください。
+</p>
+
+<pre caption="システム全体を再構築する">
+# <i>emerge --update --deep --newuse world</i>
+</pre>
+
+<p>
+次に新しいUSEフラグにより不要になった、「古い」条件付き依存関係をPortageのdepclean
+により削除してください。
+</p>
+
+<warn>
+<c>emerge depclean</c>は危険な動作します。注意深く行わなければいけません。
+「不要」なパッケージのリストは二重にチェックをし予期しないパッケージ削除がないようにしてください。
+次の例では削除を避けリストだけ表示されるよう<c>-p</c>スイッチを追加しています。
+</warn>
+
+<pre caption="不要パッケージの削除">
+# <i>emerge -p depclean</i>
+</pre>
+
+<p>
+depcleanが終了したならば、削除された可能性のあるパッケージから提供されている共有オブジェクトとの動的リンク再構築するために<c>revdep-rebuild</c>を実行してください。
+<c>revdep-rebuild</c>は<c>gentoolkit</c>パッケージの一部として提供されています。
+まず、このパッケージをemergeすることを忘れないでください。
+</p>
+
+<pre caption="revdep-rebuildの実行">
+# <i>revdep-rebuild</i>
+</pre>
+
+<p>
+すべておわると、システムは新しいUSEフラグの設定になっています。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>パッケージ固有のUSEフラグ</title>	
+<subsection>
+<title>使用可能なUSEフラグの表示</title>
+<body>
+
+<p>
+<c>mozilla</c>を例にとってみましょう: どんなUSEフラグが利用できるのか、
+調べるためには<c>emerge</c>に<c>--pretend</c>と<c>--verbose</c>オプションをつけてください。
+</p>
+
+<pre caption="USEフラグの表示">
+# <i>emerge --pretend --verbose mozilla</i>
+These are the packages that I would merge, in order:
+
+Calculating dependencies ...done!
+[ebuild  N    ] net-www/mozilla-1.5-r1 +java +crypt -ipv6 -gtk2 +ssl +ldap 
++gnome -debug +mozcalendar -mozaccess -mozxmlterm -moznoirc -moznomail
+-moznocompose -moznoxft 
+</pre>
+
+<p>
+こうしたことができるのは<c>emrege</c>だけではありません。
+<c>etcat</c>と呼ばれる専用のツールがあります。
+これは<c>gentoolkit</c>パッケージの一部です。
+まずは<c>gentoolkit</c>をインストールしてください。
+</p>
+
+<pre caption="gentoolkitのインストール">
+# <i>emerge gentoolkit</i>
+</pre>
+
+<p>
+USEフラグをみるために<c>etcat</c>を<c>uses</c>付で実行します。
+<c>gunumeric</c>の例です。
+</p>
+
+<pre caption="使用されているUSE-flagsを見るためにetcatを使用する">
+# <i>etcat uses gnumeric</i>
+[ Colour Code : <i>set</i> <comment>unset</comment> ]
+[ Legend      : (U) Col 1 - Current USE flags        ]
+[             : (I) Col 2 - Installed With USE flags ]
+
+ U I [ Found these USE variables in : app-office/gnumeric-1.2.0 ]
+ - - <comment>libgda</comment>  : Adds GNU Data Access (CORBA wrapper) support for gnumeric
+ - - <comment>gnomedb</comment> : unknown
+ + + <i>python</i>  : Adds support/bindings for the Python language
+ + + <i>bonobo</i>  : Adds support for gnome-base/bonobo (Gnome CORBA interfaces)
+</pre>
+
+</body>
+</subsection>
+</section>
+</sections>

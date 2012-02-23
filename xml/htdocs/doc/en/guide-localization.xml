@@ -1,0 +1,568 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/guide-localization.xml,v 1.63 2011/09/12 19:42:27 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoo Linux Localization Guide</title>
+<author title="Author">
+  Alexander Holler
+</author>
+<author title="Translator/Editor">
+  <mail link="slucy@uchicago.edu">Steven Lucy</mail>
+</author>
+<author title="Editor">
+  <mail link="bennyc@gentoo.org">Benny Chuang</mail>
+</author>
+<author title="Editor">
+  <mail link="pylon@gentoo.org">Lars Weiler</mail>
+</author>
+<author title="Editor">
+  <mail link="dertobi123@gentoo.org">Tobias Scherbaum</mail>
+</author>
+<author title="Editor">
+  <mail link="flammie@gentoo.org">Flammie Pirinen</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+<author title="Editor">
+  <mail link="klondike"/>
+</author>
+
+<abstract>
+This guide should help users localize their Gentoo Linux distribution to any
+European locale. It uses Germany as a case-study, since it is translated from
+the German doc. Includes configuration for use of the euro currency symbol.
+</abstract>
+
+<version>2</version>
+<date>2011-09-12</date>
+
+<chapter>
+<title>Time zone</title>
+<section>
+<body>
+
+<p>
+In order to keep time properly, you need to select your timezone so that your
+system knows where it is located. Look for your timezone in
+<path>/usr/share/zoneinfo</path>. You then set your timezone in
+<path>/etc/timezone</path>. Please avoid the
+<path>/usr/share/zoneinfo/Etc/GMT*</path> timezones as their names do not
+indicate the expected zones. For instance, <path>GMT-8</path> is in fact GMT+8.
+</p>
+
+<pre caption="Setting the timezone information">
+# <i>ls /usr/share/zoneinfo</i>
+<comment>(Suppose you want to use Brussels)</comment>
+<comment>(First copy the proper zone to localtime)</comment>
+# <i>cp /usr/share/zoneinfo/Europe/Brussels /etc/localtime</i>
+<comment>(Now specify your timezone)</comment>
+# <i>nano -w /etc/timezone</i>
+Europe/Brussels
+
+# <i>date</i>
+Wed Mar  8 00:46:05 CET 2006
+</pre>
+
+<note>
+Make sure that the timezone indicator (in this case "CET")
+is correct for your area.
+</note>
+
+<note>
+You can set the value of <c>TZ</c> to be everything after the
+<path>/usr/share/zoneinfo</path> in your shell rc file
+(<path>.bash_profile</path> for bash) for a user-level setting.  In this case
+<c>TZ="Europe/Berlin"</c>.
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Hardware Clock</title>
+<section>
+<body>
+
+<p>
+In most Gentoo Linux installations, your hardware clock is set to
+UTC (or GMT, Greenwich Mean Time) and then your timezone is
+taken into account to determine the actual, local time.  If,
+for some reason, you need your hardware clock not to be in UTC,
+you will need to edit <path>/etc/conf.d/hwclock</path> (or if you use Gentoo
+BSD: <path>/etc/conf.d/adjkerntz</path>) and change the
+value of <c>clock</c> from <c>UTC</c> to <c>local</c>.
+</p>
+
+<pre caption="local vs. GMT clock">
+<comment>(recommended:)</comment>
+clock="UTC"
+<comment>(or:)</comment>
+clock="local"
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Locale system</title>
+<section>
+<title>What are locales?</title>
+<body>
+
+<p>
+A Locale is a set of information that most programs use for determining country
+and language specific settings. The locales and their data are part of the
+system library and can be found at <path>/usr/share/locale</path> on most
+systems. A locale name is generally named <c>ab_CD</c> where <c>ab</c> is your
+two (or three) letter language code (as specified in ISO-639) and <c>CD</c> is
+your two letter country code (as specified in ISO-3166). Variants are often
+appended to locale names, e.g. <c>en_GB.UTF-8</c> or <c>de_DE@euro</c>. Please
+explore <uri link="http://en.wikipedia.org/wiki/Locale">Wikipedia</uri> to read
+more about locales and related articles.
+</p>
+
+</body>
+</section>
+<section id="variables">
+<title>Environment variables for locales</title>
+<body>
+
+<p>
+Locale settings are stored in environment variables. These are typically
+set in the <path>/etc/env.d/02locale</path> (for system-wide
+settings) and <path>~/.bashrc</path> (for user-specific settings) file.
+The variables controlling different aspects of locale settings
+are given in the table below. All of them
+take one name of a locale in <c>ab_CD</c> format given above.
+</p>
+
+<table>
+<tr>
+  <th>Variable name</th>
+  <th>Explanation</th>
+</tr>
+<tr>
+  <ti>LANG</ti>
+  <ti>
+    Defines all locale settings at once, while allowing further individual
+    customization via the LC_* settings below.
+  </ti>
+</tr>
+<tr>
+  <ti>LC_COLLATE</ti>
+  <ti>
+    Define alphabetical ordering of strings. This affects e.g. output of sorted
+    directory listing.
+  </ti>
+</tr>
+<tr>
+  <ti>LC_CTYPE</ti>
+  <ti>
+    Define the character handling properties for the system. This determines 
+    which characters are seen as part of alphabet, numeric and so on. This also
+    determines the character set used, if applicable.
+  </ti>
+</tr>
+<tr>
+  <ti>LC_MESSAGES</ti>
+  <ti>
+    Programs' localizations for applications that use message based localization
+    scheme (majority of Gnu programs, see next chapters for closer information
+    which do, and how to get the programs, that don't, to work).
+  </ti>
+</tr>
+<tr>
+  <ti>LC_MONETARY</ti>
+  <ti>Defines currency units and formatting of currency type numeric values.</ti>
+</tr>
+<tr>
+  <ti>LC_NUMERIC</ti>
+  <ti>
+    Defines formatting of numeric values which aren't monetary. Affects things
+    such as thousand separator and decimal separator.
+  </ti>
+</tr>
+<tr>
+  <ti>LC_TIME</ti>
+  <ti>Defines formatting of dates and times.</ti>
+</tr>
+<tr>
+  <ti>LC_PAPER</ti>
+  <ti>Defines default paper size.</ti>
+</tr>
+<tr>
+  <ti>LC_ALL</ti>
+  <ti>
+    A special variable for overriding all other settings.
+  </ti>
+</tr>
+</table>
+
+<note>
+Some programs are written in such a way that they expect traditional English
+ordering of the alphabet, while some locales, most notably the Estonian one, use
+a different ordering. Therefore it's recommended to explicitly set LC_COLLATE to C
+when dealing with system-wide settings.
+</note>
+
+<warn>
+Using LC_ALL is strongly discouraged as it can't be overridden later on. Please
+use it only when testing and <e>never</e> set it in a startup file.
+</warn>
+
+<p>
+Most typically users only set the LANG variable on the global basis. This
+example is for a unicode German locale:
+</p>
+
+<pre caption="Setting the default system locale in /etc/env.d/02locale">
+LANG="de_DE.UTF-8"
+LC_COLLATE="C"
+</pre>
+
+<note>
+Use <c>de_DE@euro</c> as your LANG if you want to use the Euro currency symbol
+(€) on non UTF-8 based locales.
+</note>
+
+<p>
+It's also possible, and pretty common especially in a more traditional UNIX
+environment, to leave the global settings unchanged, i.e. in the "<c>C</c>"
+locale. Users can still specify their preferred locale in their own shell RC
+file:
+</p>
+
+<pre caption="Setting the user locale in ~/.bashrc">
+export LANG="de_DE.UTF-8"
+export LC_COLLATE="C"
+</pre>
+
+<p>
+Another way of configuring system is to leave it in the default C locale, but
+enable UTF-8 character representation at the same time. This option is achieved
+using the following settings in <path>/etc/env.d/02locale</path>:
+</p>
+
+<pre caption="Using traditional C locale while specifying UTF-8">
+LC_CTYPE=de_DE.UTF-8
+</pre>
+
+<p>
+Using the above snippet, users will be able to see localized file names
+properly, while not being forced to your preferred language.
+</p>
+
+<p>
+For message based localization to work in programs that support it, you will
+probably need to have programs compiled with the <c>nls</c> (Native language
+support) USE flag set. Most of the programs using nls also need the gettext
+library to extract and use localized messages. Of course, Portage will
+automatically install it when needed.
+</p>
+
+<p>
+Once you have set the right locale, be sure to update your environment
+variables to make your system aware of the change:
+</p>
+
+<pre caption="Update the environment">
+<comment>(For system-wide default locale:)</comment>
+# <i>env-update &amp;&amp; source /etc/profile</i>
+
+<comment>(For user-specific locale:)</comment>
+$ <i>source ~/.bashrc</i>
+</pre>
+
+<p>
+After this, you will need to kill your X server by pressing
+<c>Ctrl-Alt-Backspace</c>, log out, then log in as user.
+</p>
+
+<p>
+Now, verify that the changes have taken effect:
+</p>
+
+<pre caption="Verify env changes">
+$ <i>locale</i>
+</pre>
+
+<p>
+There is also additional localisation variable called LINGUAS, which affects
+to localisation files that get installed in gettext-based programs, and decides
+used localisation for some specific software packages, such as 
+<c>kde-base/kde-l10n</c> and <c>app-office/openoffice</c>. The variable
+takes in <e>space</e>-separated list of language codes, and suggested
+place to set it is <path>/etc/make.conf</path>:
+</p>
+
+<pre caption="Setting LINGUAS in make.conf">
+# <i>nano -w /etc/make.conf</i>
+<comment>(Add in the LINGUAS variable. For instance, 
+for German, Finnish and English:)</comment>
+LINGUAS="de fi en"
+</pre>
+
+
+</body>
+</section>
+<section>
+<title>Generating Specific Locales</title>
+<body>
+
+<p>
+You will probably only use one or maybe two locales on your system. You can
+specify locales you will need in <path>/etc/locale.gen</path>.
+</p>
+
+<pre caption="Adding locales to /etc/locale.gen">
+en_GB ISO-8859-1
+en_GB.UTF-8 UTF-8
+de_DE ISO-8859-1
+de_DE@euro ISO-8859-15
+</pre>
+
+<p>
+The next step is to run <c>locale-gen</c>. It will generate all the locales you
+have specified in the <path>/etc/locale.gen</path> file.
+</p>
+
+<note>
+<c>locale-gen</c> is available in <c>glibc-2.3.6-r4</c> and newer. If you have
+an older version of glibc, you should update it now.
+</note>
+
+<p>
+You can verify that your selected locales are available by running <c>locale
+-a</c>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Keyboard layout for the console</title>
+<section>
+<body>
+
+<p>
+The keyboard layout used by the console is set in
+<path>/etc/conf.d/keymaps</path> by the <c>keymap</c> variable.
+Valid values can be found in
+<path>/usr/share/keymaps/<c>{arch}</c>/</path>.
+<path>i386</path> has further subdivisions into layout
+(<path>qwerty/</path>, <path>azerty/</path>, etc.).  Some
+languages have multiple options, so you may wish to experiment
+to decide which one fits your needs best.
+</p>
+
+<pre caption="Setting the console keymap">
+keymap="de"
+keymap="de-latin1"
+keymap="de-latin1-nodeadkeys"
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Keyboard layout for the X server</title>
+<section>
+<body>
+
+<p>
+The keyboard layout to be used by the X server is specified
+in <path>/etc/X11/xorg.conf</path> by the <c>XkbLayout</c>
+option.
+</p>
+
+<pre caption="Setting the X keymap">
+Section "InputClass"
+	Identifier "keyboard-all"
+	Driver "evdev"
+	Option "XkbLayout" "de"
+	#Option "XkbModel" "pc105"
+	MatchIsKeyboard "on"
+EndSection
+</pre>
+
+<p>
+If you have an international keyboard layout, you should set the option
+<c>XkbModel</c> to <c>pc102</c> or <c>pc105</c>, as this will allow mapping of the
+additional keys specific to your keyboard.
+</p>
+
+<p>
+Deadkeys allow you to press keys that will not show immediately but will be
+combined with another letter to produce a single character such as é,è,á,à,
+etc. Setting <c>XkbVariant</c> to <c>nodeadkeys</c> allows input these special
+characters into X terminals.
+</p>
+
+<p>
+If you would like to switch between more than one keyboard layout (for example
+English and Russian), all you have to do is add a few lines to
+<path>xorg.conf</path> that specify the desired layouts and the shortcut
+command.
+</p>
+
+<pre caption="Switching between two keyboard layouts">
+Section "InputClass"
+	Identifier "keyboard-all"
+	Driver "evdev"
+	Option "XkbLayout"    "us,ru"
+	Option "XkbOptions"   "grp:alt_shift_toggle,grp_led:scroll"
+	MatchIsKeyboard "on"
+EndSection
+</pre>
+
+<p>
+Here, <c>XkbOptions</c> allows you to toggle between keyboard layouts by simply
+pressing <c>Alt-Shift</c>. This will also toggle the Scroll Lock light on or
+off, thanks to the <c>grp_led:scroll</c> option. This is a handy visual
+indicator of which keyboard layout you are using at the moment.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>KDE</title>
+<section>
+<body>
+
+<p>
+For KDE you have to install the <c>kde-base/kde-l10n</c> and
+<c>app-office/koffice-l10n</c> packages. These respect the <uri
+link="#variables">LINGUAS variable</uri> described earlier.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>The Euro Symbol for the Console</title>
+<section>
+<body>
+
+<p>
+In order to get your console to display the Euro symbol, you will need to set
+<c>consolefont</c> in <path>/etc/conf.d/consolefont</path> to a file found in
+<path>/usr/share/consolefonts/</path> (without the <c>.psfu.gz</c>).
+<c>lat9w-16</c> has the Euro symbol.
+</p>
+
+<pre caption="Setting the console font">
+consolefont="lat9w-16"
+</pre>
+
+<p>
+You should verify that <c>consolefont</c> is in the boot runlevel:
+</p>
+
+<pre caption="Verify the proper runlevel">
+# <i>rc-update -v show | grep consolefont</i>
+</pre>
+
+<p>
+If no runlevel is displayed for <c>consolefont</c>, then add it to the proper level:
+</p>
+
+<pre caption="Add consolefont to boot">
+# <i>rc-update add consolefont boot</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>The Euro Symbol in X</title>
+<section>
+<title>Most Applications</title>
+<body>
+
+<p>
+Getting the Euro symbol to work properly in X is a little bit tougher.  The
+first thing you should do is change the <c>fixed</c> and <c>variable</c>
+definitions in <path>/usr/share/fonts/misc/fonts.alias</path> to end in
+<c>iso8859-15</c> instead of <c>iso8859-1</c>.
+</p>
+
+<pre caption="Setting default X fonts">
+fixed        -misc-fixed-medium-r-semicondensed--13-120-75-75-c-60-iso8859-15
+variable     -*-helvetica-bold-r-normal-*-*-120-*-*-*-*-iso8859-15
+</pre>
+
+<p>
+Some applications use their own font, and you will have to tell them separately
+to use a font with the Euro symbol.  You can do this at a user-specific level in
+<path>.Xdefaults</path> (you can copy this file to <path>/etc/skel/</path> for
+use by new users), or at a global level for any application with a resource file
+in <path>/usr/share/X11/app-defaults/</path> (like xterm).  In these files you
+generally have to change an existing line, rather than adding a new one.  To
+change our xterm font, for instance:
+</p>
+
+<pre caption="Setting fonts for xterm">
+<comment>(in your home directory)</comment>
+$ <i>echo 'XTerm*font: fixed' >> .Xresources </i>
+$ <i>xrdb -merge .Xresources</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>The Euro symbol in (X)Emacs</title>
+<body>
+
+<p>
+To use the Euro symbol in (X)Emacs, add the following to
+<path>.Xdefaults</path>:
+</p>
+
+<pre caption="setting the font for emacs">
+Emacs.default.attributeFont: -*-courier-medium-r-*-*-*-120-*-*-*-*-iso8859-15
+</pre>
+
+<p>
+For XEmacs (not plain Emacs), you have to do a little
+more.  In <path>/home/user/.xemacs/init.el</path>, add:
+</p>
+
+<pre caption="setting the font for xemacs">
+(define-key global-map '(EuroSign) '[€])
+</pre>
+
+<note>
+The symbol in the []s is the Euro symbol.
+</note>
+
+</body>
+</section>
+<section>
+<title>OpenOffice.Org</title>
+<body>
+
+<p>
+The current stable <c>app-office/openoffice</c> and
+<c>app-office/openoffice-bin</c> ebuilds support the <uri
+link="#variables">LINGUAS variable</uri> for selecting installed GUI language
+packs. To see the status of GUI translation, hyphenation, spell checking and
+other localisations on your language, please refer to <uri
+link="http://l10n.openoffice.org/languages.html">OpenOffice.Org localisation
+web site</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

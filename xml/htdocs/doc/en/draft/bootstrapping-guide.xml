@@ -1,0 +1,625 @@
+<?xml version='1.0' encoding="UTF-8"?>
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/draft/bootstrapping-guide.xml,v 1.7 2011/09/04 17:53:42 swift Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide disclaimer="draft">
+<title>Gentoo Bootstrapping Guide</title>
+
+<author title="Author">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+
+<abstract>
+Bootstrapping means to build a toolchain so that it is ready to build the rest
+of your system. Gentoo is a perfect operating system to perform such 
+installation while retaining support from the software management system, 
+Portage.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>0.1</version>
+<date>2005-07-25</date>
+
+<chapter>
+<title>What is Bootstrapping?</title>
+<section>
+<title>Definition</title>
+<body>
+
+<warn>
+Not only is this guide still in its early stage, it is also built on theoretical
+information found on the Internet and not from experience. It should be taken
+with a big grain of salt until the steps in it are verified and accepted by more
+experienced people.
+</warn>
+
+<p>
+If we were to believe the stories, <e>bootstrapping</e> - the term - originates
+from a German legend about Baron Münchhausen who was able to save himself from
+drowning in a swamp by pulling himself up by his hairs.
+</p>
+
+<p>
+In computer theory, bootstrapping has several meanings. All of them boil down to
+building more complex systems from simple ones. This document will discuss
+bootstrapping a toolchain: building a full cross-compilation environment able to
+build software for the target system, followed by a rebuild of the system to the
+native environment.
+</p>
+
+<p>
+Sounds strange to you? Don't despair, we'll discuss all that in the rest of this
+document...
+</p>
+
+</body>
+</section>
+<section>
+<title>Toolchain Bootstrapping</title>
+<body>
+
+<p>
+The process of bootstrapping a toolchain is three-fold.
+</p>
+
+<p>
+At first, you use an existing toolchain to create a cross-compilation
+environment, a toolchain capable of running on one system but building software
+for a different one. The second step is to use the cross-compilation toolchain 
+to rebuild itself so that it builds code native to the system it is booted on.
+The third step uses the native compiler to (re)build all packages (including
+itself) so that every tool is built on the target system, for the target system.
+</p>
+
+<p>
+There are three important terms we use in this definition:
+</p>
+
+<ul>
+  <li>the <e>host</e> system is the system on which the programs are ran, </li>
+  <li>
+    the <e>build</e> system is the system on which a particular package is being
+    built, and
+  </li>
+  <li>
+    the <e>target</e> system is the system for which the software generates
+    output (like the compiler)
+  </li>
+</ul>
+
+<p>
+Each of those terms has a certain syntax used by the GNU compiler collection. It
+is therefore adviseable to consult the <uri
+link="http://gcc.gnu.org/onlinedocs">online GCC documentation</uri> for more
+information.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Installing Gentoo on an Unsupported Platform</title>
+<section>
+<title>Creating the Cross-Compilation Environment</title>
+<body>
+
+<p>
+We first reserve some space in the home directory to install the
+cross-compilation environment in. We advise to perform the next steps as a
+regular, unprivileged user, so that you can not harm the current system. After
+all, we are going to rebuild core system packages on the system, ready for use
+on a different system, and we don't want to overwrite the ones on the current
+system ;)
+</p>
+
+<pre caption="Creating a destination for the cross-compilation environment">
+$ <i>mkdir ~/cd ~/cd/src</i>
+</pre>
+
+<p>
+We'll store all source code <e>and</e> binaries inside <path>~/cd</path> because
+we will need to use those files to boot the new system when the first two phases
+are complete.
+</p>
+
+<p>
+At first, extract the source code for the following packages (or similar ones,
+depending on your setup) inside the <path>~/cd/src</path> directory:
+</p>
+
+<dl>
+  <dt><c>gcc</c></dt>
+  <dd>The GNU Compiler Collection</dd>
+  <dt><c>glibc</c></dt>
+  <dd>The GNU C Library</dd>
+  <dt><c>binutils</c></dt>
+  <dd>The tools needed to build programs</dd>
+  <dt><c>vanilla-sources</c></dt>
+  <dd>The Linux kernel tree</dd>
+</dl>
+
+<p>
+These are just examples that are well known, but you can also try using the
+Intel compiler with the ucLibc library, etc.
+</p>
+
+<p>
+Copy over the header files from the kernel to the build root, allowing the other
+tools to use the architecture-specific settings of the target architecture:
+</p>
+
+<pre caption="Copying over the header files">
+$ <i>mkdir -p ~/cd/usr/include</i>
+$ <i>cp -a /usr/include/asm* /usr/include/linux ~/cd/usr/include</i>
+</pre>
+
+<p>
+The next step is to build the <c>binutils</c> package suitable for
+cross-compiling. It is recommended that you read the documentation of
+<c>binutils</c> for precise instructions how to do this (just like you should
+for the next packages, <c>gcc</c>, <c>glibc</c> and the Linux kernel). 
+</p>
+
+<pre caption="Building the binutils package">
+$ <i>cd ~/cd/src/binutils-*</i>
+$ <i>./configure --prefix=/usr --target=&lt;target&gt; --with-sysroot=~/cd</i>
+$ <i>make all &amp;&amp; make install</i>
+</pre>
+
+<p>
+Now that the <c>binutils</c> are available in the cross-compilation environment,
+we install the <c>glibc</c> headers (the function &amp; constant definitions of
+the c library). Lucky for us, the fine folks at GNU have made this step easier
+by adding a <c>install-headers</c> directive for <c>make</c>:
+</p>
+
+<pre caption="Installing the glibc headers">
+$ <i>cd ~/cd/src/glibc*</i>
+$ <i>./configure --prefix=/usr --build=&lt;build&gt; --host=&lt;target&gt; \
+  --with-headers=~/cd/usr/include --without-cvs --disable-profile \
+  --disable-debug --without-gd --enable-add-ons=nptl --with-tls \
+  --without-__thread --enable-kernel=2.6</i>
+$ <i>make cross-compiling=yes install-headers install_root=~/cd</i>
+$ <i>cp -r include/* ~/cd/usr/include</i>
+</pre>
+
+<p>
+Our next step is to build the cross-compiler:
+</p>
+
+<pre caption="Installing the cross-compiler">
+$ <i>cd ~/cd/src/gcc*</i>
+$ <i>./configure --prefix=/usr --target=&lt;target&gt; --with-sysroot=~/cd \
+  --with-headers=~/cd/usr/include --disable-threads --disable-shared \
+  --enable-language=c</i>
+$ <i>make &amp;&amp; make install</i>
+</pre>
+
+<p>
+Our almost-final step is to build the <c>glibc</c> package (previously, we just
+used the header files):
+</p>
+
+<pre caption="Building the glibc package">
+$ <i>cd ~/cd/src/glibc*</i>
+$ <i>./configure --prefix=/usr --libdir=/usr/lib --build=&lt;build&gt; \
+  --host=&lt;target&gt; --with-headers=/usr/include --without-cvs \
+  --disable-profile --disable-debug --without-gd \
+  --enable-add-ons=nptl --with-tls --without-__thread --enable-kernel=2.6</i>
+$ <i>make &amp;&amp; make install install_root=~/cd</i>
+</pre>
+
+<p>
+In our final step, we build the <c>gcc</c> package again, but now we enable
+support for C++ and shared libraries (which wasn't possible at first):
+</p>
+
+<pre caption="Building gcc">
+$ <i>cd ~/cd/src/gcc*</i>
+$ <i>./configure --prefix=/usr --target=&lt;target&gt; --with-sysroot=~/cd \
+  --with-headers=/usr/include --enable-threads=posix --enable-languages=c,++</i>
+$ <i>make &amp;&amp; make install</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Filling the Environment</title>
+<body>
+
+<p>
+The <path>~/cd</path> location now contains a minimal environment with the
+cross-compiling toolchain. The next step is to build the core system packages so
+that you are able to boot into the minimal environment later on.
+</p>
+
+<p>
+Our first task is to build a Linux kernel:
+</p>
+
+<pre caption="Building the Linux kernel">
+$ <i>cd ~/cd/src/linux-*</i>
+$ <i>make menuconfig</i>
+$ <i>make dep boot CROSS_COMPILE=&lt;target&gt;</i>
+</pre>
+
+<p>
+Next, build the core packages required to succesfully boot the system. The set
+of packages you'll need are:
+</p>
+
+<dl>
+  <dt><c>coreutils</c></dt>
+  <dd>Standard set of (POSIX) commands</dd>
+  <dt><c>diffutils</c></dt>
+  <dd>Tools for displaying the differences between files</dd>
+  <dt><c>grep</c></dt>
+  <dd>Text pattern searcher</dd>
+  <dt><c>sed</c></dt>
+  <dd>Streaming text editor</dd>
+  <dt><c>make</c></dt>
+  <dd>Makefile parser</dd>
+  <dt><c>tar</c></dt>
+  <dd>Tape Archive tool</dd>
+  <dt><c>gzip</c></dt>
+  <dd>Compression tool</dd>
+  <dt><c>util-linux</c></dt>
+  <dd>Linux utilities</dd>
+</dl>
+
+<p>
+All these tools should be fairly easy to build. Generally, you can set the
+following variables to declare your platform; the <c>configure</c> and
+<c>make</c> steps will then use those variables to make their platform-dependant
+decisions:
+</p>
+
+<pre caption="Setting platform environment variables">
+$ <i>export CC=</i><comment>your-platform</comment><i>-gcc</i>
+$ <i>export AR=</i><comment>your-platform</comment><i>-ar</i>
+$ <i>export RANLIB=</i><comment>your-platform</comment><i>-ranlib</i>
+$ <i>export LD=</i><comment>your-platform</comment><i>-ld</i>
+$ <i>export BUILD_CC=cc</i>
+$ <i>export HOST_CC=cc</i>
+$ <i>export CFLAGS=</i><comment>sane cflags</comment><i> -I~/cd/usr/include</i>
+</pre>
+
+<p>
+The build steps are then quite simple:
+</p>
+
+<pre caption="Build steps for the core packages">
+$ <i>./configure --prefix=/usr</i>
+$ <i>make</i>
+$ <i>make install prefix=~/cd/final</i>
+</pre>
+
+<p>
+The last thing you'll need is a statically linked version of a shell, for
+instance, <c>bash</c>:
+</p>
+
+<pre caption="Building a statically-linked bash">
+$ <comment>TODO</comment>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Bootstrapping the Toolchain</title>
+<body>
+
+<p>
+Now that you have build a minimal environment inside <path>~/cd</path>, we'll
+rebuild the toolchain so that it not only builds for the target platform (which
+it does already) but also builds <e>on</e> the target platform (it currently
+only works on the current system).
+</p>
+
+<p>
+First, we rebuild the <c>glibc</c> package:
+</p>
+
+<pre caption="Rebuilding glibc">
+$ <i>./configure --prefix=/usr --libdir=~/cd/usr/lib --build=${BUILD} \
+  --host=${TARGET} --with-headers=~/cd/usr/include --without-cvs \
+  --disable-profile --disable-debug --without-gd --enable-add-ons=nptl \
+  --with-tls --enable-kernel=2.6 --enable-shared</i>
+$ <i>make</i>
+$ <i>make install install_root=~/cd/final</i>
+</pre>
+
+<p>
+Next, we rebuild the <c>binutils</c> package:
+</p>
+
+<pre caption="Rebuilding binutils">
+$ <i>./configure --prefix=/usr --target=${TARGET} --with-sysroot=~/cd/final \
+  --libdir=~/cd/usr/lib --with-headers=~/cd/usr/include</i>
+$ <i>make all</i>
+$ <i>make install</i>
+</pre>
+
+<p>
+Finally, we rebuild the <c>gcc</c> package:
+</p>
+
+<pre caption="Rebuilding gcc">
+$ <i>./configure --prefix=/usr --target=${TARGET} --with-sysroot=~/cd/final \
+  --with-headers=~/cd/usr/include --enable-threads=posix \
+  --enable-languages=c,c++</i>
+$ <i>make</i>
+$ <i>make install</i>
+</pre>
+
+<p>
+Now the directory <path>~/cd/final</path> contains everything needed to
+continue.
+</p>
+
+</body>
+</section>
+<section>
+<title>Booting the System</title>
+<body>
+
+<p>
+The next step is to try and boot the system. The easiest approach is to
+NFS-mount <path>~/cd/final</path> and boot the target platform using the kernel
+built at the beginning. Don't forget to set <c>init=/bin/sh</c> since the entire
+bootup sequence stuff (like <c>init</c>) isn't available yet.
+</p>
+
+<p>
+<brite>TODO</brite> inform how to boot from the CD and use an NFS-mounted root
+file system.
+</p>
+
+</body>
+</section>
+<section>
+<title>Porting Portage</title>
+<body>
+
+<p>
+To be able to use Portage, we need to be able to use Python. Download the
+sources in <path>~/cd/final/tmp</path> (so that it is available for the booted
+platform) and build it:
+</p>
+
+<pre caption="Building python">
+<comment>TODO</comment>
+</pre>
+
+<p>
+Next, download a Portage rescue set and install it. As Portage is a set of
+Python scripts with bash scripts, this should have no further requirements after
+installation:
+</p>
+
+<pre caption="Installing Portage">
+<comment>TODO</comment>
+</pre>
+
+<p>
+Once installed, try to run <c>emerge</c> and <c>ebuild</c> to find out if they
+appear to work:
+</p>
+
+<pre caption="Checking emerge">
+$ <i>emerge --info</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Creating a Stage1 Tarball</title>
+<body>
+
+<p>
+Booted in the platform and with a working Portage, you are now ready to create a
+stage1 tarball. Create a snapshot of your environment using <c>tar</c>:
+</p>
+
+<pre caption="Creating a stage1 tarball">
+<comment>TODO</comment>
+Don't forget to talk about unmasking all packages...
+</pre>
+
+</body>
+</section>
+<section>
+<title>Creating a Bootable Environment</title>
+<body>
+
+<p>
+Next, to make sure that you'll always be able to boot the system (and help
+others as well), we'll create a bootable environment for the platform. Assuming
+that all platforms have a CD-ROM drive they can boot from, we'll focus on such
+environment.
+</p>
+
+<p>
+<brite>TODO</brite> talk about creating bootable CD.
+</p>
+
+</body>
+</section>
+<section>
+<title>Finishing Off</title>
+<body>
+
+<p>
+All set. Right? Nope, but almost :-)
+</p>
+
+<p>
+The most important step now is to inform the Gentoo community about what you've
+accomplished. Make sure you pay a visit at <c>#gentoo-dev</c> on
+<c>irc.freenode.net</c> and use our <uri link="http://forums.gentoo.org">Gentoo
+Forums</uri> to tell about the up and downfalls of your expedition. The most
+difficult steps are finished!
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Bootstrapping the System</title>
+<section>
+<title>Installing Gentoo</title>
+<body>
+
+<p>
+With the bootable environment at your disposal, you can now boot the target
+system into a small Linux environment. Once booted, follow the installation
+instructions inside the <uri link="/doc/en/handbook">Gentoo Handbook</uri> to
+the point where you chroot into your Gentoo environment. Of course, since you
+only have a stage1 tarball at your disposal, you should use that one instead of
+the stage3 used in the installation instructions.
+</p>
+
+<p>
+After chrooting the system, you should update the Portage tree.
+</p>
+
+<pre caption="Updating the Portage tree">
+# <i>emerge --sync</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Using the Bootstrap Script</title>
+<body>
+
+<p>
+Next, we'll rebuild the toolchain provided by the stage1 tarball natively.
+Gentoo provides a script that does this for you.
+</p>
+
+<pre caption="Rebuilding the toolchain">
+# <i>/usr/portage/scripts/bootstrap.sh</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Building the Core System</title>
+<body>
+
+<p>
+With the toolchain rebuild and ready for general usage, we'll build the core
+system packages for the system:
+</p>
+
+<pre caption="Building the core system packages">
+# <i>emerge --emptytree system</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Finishing the Installation</title>
+<body>
+
+<p>
+Now that the core system packages are built, you can continue using the
+installation instructions in the Gentoo Handbook. You will probably get a few
+complaints by Portage telling you certain packages are masked. This is because
+your architecture isn't supported by Gentoo yet, in which case you need to
+unmask the packages in <path>/etc/portage/package.keywords</path> like you did
+previously.
+</p>
+
+</body>
+</section>
+<section>
+<title>Creating a Fully Working Installation CD</title>
+<body>
+
+<p>
+If your entire installation has succeeded it is best to try and create an
+installation CD for your platform using <c>catalyst</c>. Not only will this
+require an additional profile (to support the new platform) but also some help
+from the Gentoo developers themselves. On the other hand, if you've succeeded in
+following all I've written until this part, you're probably already on your way
+to become a developer yourself :)
+</p>
+
+<p>
+The major benefit of using <c>catalyst</c> is that Gentoo is then able to create
+official support for the platform. Not only will there be a fully functional
+profile and keyword setting, but the core packages will be accepted for your
+platform, stages will be build and a working installation CD, just like those
+for the other architectures, will be available.
+</p>
+
+<p>
+<brite>TODO</brite> Talk about using <c>catalyst</c> to create all needed stuff.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Frequently Asked Questions</title>
+<section>
+<title>
+  Should I bootstrap when I want my entire system to use changed CFLAGS,
+  CXXFLAGS, USE settings and profile changes?
+</title>
+<body>
+
+<p>
+No. After your changes, you should rebuild the toolchain first, after which you
+can rebuild the entire system using the new toolchain. When your system suffers
+from circular dependencies, you'll need to rebuild the participants in that
+circle. For instance, if <c>openssl</c> depends on <c>python</c> which depends
+on <c>perl</c> which depends on <c>openssl</c> again (yes, this is a fictuous
+example), rebuild all those packages too.
+</p>
+
+<pre caption="Rebuilding the system">
+# <i>emerge --oneshot --emptytree glibc binutils gcc</i>
+# <i>emerge --emptytree world</i>
+</pre>
+
+<p>
+You don't need to bootstrap here because your architecture still remains the
+same, as is the target system.
+</p>
+
+</body>
+</section>
+<section>
+<title>
+  Should I bootstrap when I want my entire system to use changed CHOST settings?
+</title>
+<body>
+
+<p>
+Not if the system itself supports the new CHOST setting too (for instance,
+i386-pc-linux-gnu and i686-pc-linux-gnu on a Pentium IV system). Otherwise, yes,
+but then we are really interested in hearing how you managed to install Gentoo
+using the current - wrong - CHOST settings in the first place ;)
+</p>
+
+<p>
+If your system supports both CHOST settings, you can follow the same
+instructions as given in the previous FAQ.
+</p>
+
+</body>
+</section>
+</chapter>
+
+</guide>

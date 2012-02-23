@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/bind-guide.xml,v 1.1 2011/10/21 09:32:43 naota Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoo BIND ガイド</title>
+
+<author title="Author">
+  <mail link="peratu@carrosses.com">Vicente Olivert Riera</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+<author title="翻訳">
+  <mail link="friprabbit@gmail.com">城間隆行</mail>
+</author>
+
+<abstract>
+このガイドでは、あなたのドメインやローカルネットワークの為にBINDをインストールし、設定する方法を紹介します。
+</abstract>
+
+<!-- Original revision: 1.3 -->
+<version>2</version>
+<date>2009-08-21</date>
+
+<chapter>
+<title>概要</title>
+<section>
+<body>
+
+<p>
+ここではあなたのローカルネットワーク用とその他全世界用との二つの異なる設定が、
+あなたのドメインを解決する<c>bind</c>で動くようにします。
+このように一つのBINDで二つの異なるドメインへの名前解決をする為に、
+viewという仕組みを利用します。一つのviewで内部(ローカルネットワーク)での名前解決のために使われ、
+もう一つが外部(全世界)での名前解決のために使われます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>例示で使われるデータ</title>
+<section>
+<body>
+
+<table>
+<tr>
+  <th>キーワード</th>
+  <th>説明</th>
+  <th>例</th>
+</tr>
+<tr>
+  <ti>YOUR_DOMAIN</ti>
+  <ti>あなたのドメイン</ti>
+  <ti>gentoo.org</ti>
+</tr>
+<tr>
+  <ti>YOUR_PUBLIC_IP</ti>
+  <ti>ISPから提供されたグローバルIPアドレス</ti>
+  <ti>204.74.99.100</ti>
+</tr>
+<tr>
+  <ti>YOUR_LOCAL_IP</ti>
+  <ti>ローカルのIPアドレス</ti>
+  <ti>192.168.1.5</ti>
+</tr>
+<tr>
+  <ti>YOUR_LOCAL_NETWORK</ti>
+  <ti>ローカルのネットワークアドレス</ti>
+  <ti>192.168.1.0/24</ti>
+</tr>
+<tr>
+  <ti>SLAVE_DNS_SERVER</ti>
+  <ti>あなたのドメインのスレーブDNSサーバのIPアドレス</ti>
+  <ti>209.177.148.228</ti>
+</tr>
+<tr>
+  <ti>ADMIN</ti>
+  <ti>DNSサーバ管理者の名前</ti>
+  <ti>root</ti>
+</tr>
+<tr>
+  <ti>MODIFICATION</ti>
+  <ti>zoneファイルを修正した日付と回数</ti>
+  <ti>2009062901</ti>
+</tr>
+</table>
+
+<figure link="/images/docs/local-network-map.png" short="network" caption="Network example"/>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>BINDを設定する</title>
+<section>
+<title>インストール</title>
+<body>
+
+<p>
+まずは、 <c>net-dns/bind</c>をインストールします。
+</p>
+
+<pre caption="BINDのインストール">
+# <i>emerge net-dns/bind</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>/etc/bind/named.confを設定する</title>
+<body>
+
+<p>
+BINDの設定で最初に行う事は、<path>/etc/bind/named.conf</path>を編集することです。
+この段階でまず行う事は、BINDのルートディレクトリの指定、IPアドレスと
+リッスンするポートの指定、pidファイルのパス、そしてIPv6に関する設定です。
+</p>
+
+<pre caption="optionsセクションの設定">
+options {
+        directory "/var/bind";
+
+        listen-on-v6 { none; };
+        listen-on port 53 { 127.0.0.1; YOUR_LOCAL_IP; };
+
+        pid-file "/var/run/named/named.pid";
+};
+</pre>
+
+<p>
+次に、ローカルネットワーク向けのviewを設定します。
+</p>
+
+<pre caption="ローカルネットワークのview">
+view "internal" {
+        match-clients { YOUR_LOCAL_NETWORK; localhost; };
+        recursion yes;
+
+        zone "YOUR_DOMAIN" {
+                type master;
+                file "pri/YOUR_DOMAIN.internal";
+                allow-transfer { any; };
+        };
+};
+</pre>
+
+<p>
+更に、世界中の人が私たちのドメインの名前を解決出来て、私たちが世界中の他の
+ドメインをの名前を解決出来る様にする為に、（そして私たちのDNSサーバを
+利用したいと思う誰かの為に）グローバルネットワーク向けのviewを設定します。
+</p>
+
+<pre caption="グローバルネットワークのview">
+view "external" {
+        match-clients { any; };
+        recursion no;
+
+        zone "." IN {
+                type hint;
+                file "named.ca";
+        };
+
+        zone "127.in-addr.arpa" IN {
+                type master;
+                file "pri/127.zone";
+                allow-update { none; };
+                notify no;
+        };
+
+        zone "YOUR_DOMAIN" {
+                type master;
+                file "pri/YOUR_DOMAIN.external";
+                allow-query { any; };
+                allow-transfer { SLAVE_DNS_SERVER; };
+        };
+};
+</pre>
+
+<p>
+そして最後に、ログ保存のポリシーを設定します。
+</p>
+
+<pre caption="ログ保存のポリシー">
+logging {
+        channel default_syslog {
+                file "/var/log/named/named.log" versions 3 size 5m;
+                severity debug;
+                print-time yes;
+                print-severity yes;
+                print-category yes;
+        };
+       category default { default_syslog; };
+};
+</pre>
+
+<p>
+ここで、<path>/var/log/named/</path>が存在し、<c>named</c>がそのディレクトリの
+所有権を持っている必要があります。
+</p>
+
+<pre caption="ログファイルを作成する">
+# <i>mkdir -p /var/log/named/</i>
+# <i>chmod 770 /var/log/named/</i>
+# <i>touch /var/log/named/named.log</i>
+# <i>chmod 660 /var/log/named/named.log</i>
+# <i>chown -R named /var/log/named/</i>
+# <i>chgrp -R named /var/log/named/</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>ローカルネットワーク向けのzoneファイルを作成する</title>
+<body>
+
+<p>
+ここでは、上の画像で例示されているホスト名とIPアドレスを利用しています。
+全てではありませんが、殆どのドメイン名は"."(ドット)で終了している事に注意してください。
+</p>
+
+<pre caption="/var/bind/pri/YOUR_DOMAIN.internal">
+$TTL 2d
+@	IN SOA	ns.YOUR_DOMAIN.	ADMIN.YOUR_DOMAIN. (
+	MODIFICATION	; serial
+	3h	; refresh
+	1h	; retry
+	1w	; expiry
+	1d )	; minimum
+
+YOUR_DOMAIN.		IN MX	0 mail.YOUR_DOMAIN.
+YOUR_DOMAIN.		IN TXT	"v=spf1 ip4:YOUR_PUBLIC_IP/32 mx ptr mx:mail.YOUR_DOMAIN ~all"
+YOUR_DOMAIN.		IN NS	ns.YOUR_DOMAIN.
+YOUR_DOMAIN.		IN NS	SLAVE_DNS_SERVER
+www.YOUR_DOMAIN.	IN A	192.168.1.3
+ns.YOUR_DOMAIN.		IN A	192.168.1.5
+mail.YOUR_DOMAIN.	IN A	192.168.1.3
+router.YOUR_DOMAIN.	IN A	192.168.1.1
+hell.YOUR_DOMAIN.	IN A	192.168.1.3
+heaven.YOUR_DOMAIN.	IN A	192.168.1.5
+desktop.YOUR_DOMAIN.	IN A	192.168.1.4
+</pre>
+
+</body>
+</section>
+<section>
+<title>グローバルネットワーク向けのzoneファイルを作成する</title>
+<body>
+
+<p>
+ここでは、外部のクライアント向けに必要なサブドメイン(www, mail そして ns)を指定するだけです。
+</p>
+
+<pre caption="/var/bind/pri/YOUR_DOMAIN.external">
+$TTL 2d
+@	IN SOA	ns.YOUR_DOMAIN.	ADMIN.YOUR_DOMAIN. (
+	MODIFICATION	;serial
+	3h	;refresh
+	1h	;retry
+	1w	;expiry
+	1d )	;minimum
+
+YOUR_DOMAIN.		IN MX	0 mail.YOUR_DOMAIN.
+YOUR_DOMAIN.		IN TXT	"v=spf1 ip4:YOUR_PUBLIC_IP/32 mx ptr mx:mail.YOUR_DOMAIN ~all"
+YOUR_DOMAIN.		IN NS	ns.YOUR_DOMAIN.
+YOUR_DOMAIN.		IN NS	SLAVE_DNS_SERVER
+www.YOUR_DOMAIN.	IN A	YOUR_PUBLIC_IP
+ns.YOUR_DOMAIN.		IN A	YOUR_PUBLIC_IP
+mail.YOUR_DOMAIN.	IN A	YOUR_PUBLIC_IP
+</pre>
+
+</body>
+</section>
+<section>
+<title>その他の設定と起動</title>
+<body>
+
+<p>
+<c>named</c>をデフォルトのランレベルに追加する必要があるでしょう。
+</p>
+
+<pre caption="デフォルトのランレベルへの追加">
+# <i>rc-update add named default</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>クライアントの設定</title>
+<section>
+<body>
+
+<p>
+この時点で、あなたはローカルネットワークの全てのマシンから、名前解決の為にあなたの
+DNSサーバを利用する事が出来ます。ローカルネットワーク上のマシンの
+<path>/etc/resolv.conf</path>を編集してください。
+
+</p>
+
+<pre caption="/etc/resolv.conf の編集">
+search YOUR_DOMAIN
+nameserver YOUR_DNS_SERVER_IP
+</pre>
+
+<p>
+YOUR_DNS_SERVER_IP は、ドキュメントで出て来たYOUR_LOCAL_IP と同一であり、
+上の画像においては 192.168.1.5 となる事に注意してください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>テストをする</title>
+<section>
+<body>
+
+<p>
+新しいDNSサーバのテストを行います。まず、BINDのサービスを起動します。
+</p>
+
+<pre caption="手動でBINDを起動する">
+# <i>/etc/init.d/named start</i>
+</pre>
+
+<p>
+BINDが適切に設定されているかのテストの為に、いくつかのドメインに対して<c>host</c>
+コマンドを発行します。このテストは、ローカルネットワーク内のどのコンピュータでも
+可能です。もしあなたが <c>net-dns/host</c> をインストールしていない場合は、代わりに
+<c>ping</c>を利用することも可能です。pingが嫌ならば、まず<c>emerge host</c>を実行しましょう。
+</p>
+
+<pre caption="テストの実行">
+$ <i>host www.gentoo.org</i>
+www.gentoo.org has address 209.177.148.228
+www.gentoo.org has address 209.177.148.229
+
+$ <i>host hell</i>
+hell.YOUR_DOMAIN has address 192.168.1.3
+
+$ <i>host router</i>
+router.YOUR_DOMAIN has address 192.168.1.1
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>iptablesでサーバを保護する</title>
+<section>
+<body>
+
+<p>
+もしあなたがiptablesでサーバを保護しているのなら、DNSサービスを保護する為に
+以下のルールを追加するといいでしょう。
+</p>
+
+<pre caption="iptablesのルール">
+iptables -A INPUT -p udp --sport 53 -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -p udp --dport 53 -j ACCEPT
+iptables -A INPUT -p tcp --sport 53 -j ACCEPT
+iptables -A INPUT -p tcp --dport 53 -j ACCEPT
+</pre>
+
+</body>
+</section>
+</chapter>
+</guide>

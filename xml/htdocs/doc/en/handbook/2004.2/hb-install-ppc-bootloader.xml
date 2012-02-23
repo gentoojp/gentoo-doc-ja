@@ -1,0 +1,287 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-install-ppc-bootloader.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.13</version>
+<date>October 23, 2004</date>
+
+<section>
+<title>Making your Choice</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Now that your kernel is configured and compiled and the necessary system
+configuration files are filled in correctly, it is time to install a
+program that will fire up your kernel when you start the system. Such a
+program is called a <e>bootloader</e>. But before you start, consider
+your options...
+</p>
+
+<p>
+Several bootloaders exist for Linux/PPC. We have <uri link="#yaboot">yaBoot</uri>
+(for NewWorld Apple and IBM machines) and <uri link="#bootx">BootX</uri> (for 
+OldWorld Apple and IBM machines). The Pegasos does not require a bootloader.
+You cannot use yaBoot or BootX on them at this time. Pegasos users should
+therefore continue with <uri link="#reboot">Rebooting the System</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="yaboot">
+<title>Default: Using yaBoot</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<impo>
+yaBoot can only be used on NewWorld Apple and IBM systems!
+</impo>
+
+<p>
+There are two ways to configure yaBoot for your system. You can use the
+included <c>yabootconfig</c> to automatically set up yaboot. If
+for some reason you do not want to run <c>yabootconfig</c> to
+automatically set up <path>/etc/yaboot.conf</path> or you are installing Gentoo
+on a G5 (on which <c>yabootconfig</c> does not always work), you can just edit 
+the sample file already installed on your system.
+</p>
+
+<ul>
+  <li><uri link="#yabootconfig">Default: Using yabootconfig</uri></li>
+  <li>
+    <uri link="#manual_yaboot">Alternative: Manual yaBoot Configuration</uri>
+  </li>
+</ul>
+
+</body>
+</subsection>
+<subsection id="yabootconfig">
+<title>Default: Using yabootconfig</title>
+<body>
+
+<p>
+<c>yabootconfig</c> will auto-detect the partitions on your machine and will
+set up dual and triple boot combinations with Linux, Mac OS, and Mac OS X.
+</p>
+
+<p>
+To use <c>yabootconfig</c>, your drive must have a bootstrap partition, and
+<path>/etc/fstab</path> must be configured with your Linux partitions. Both of 
+these should have been done already in the steps above. To start, ensure that
+you have the latest version of yaboot installed by running <c>emerge --update
+yaboot</c>. This is necessary as the latest version will be available via
+Portage, but it may not have made it into the stage files.
+</p>
+
+<pre caption = "Installing yaboot">
+# <i>emerge --usepkg --update yaboot</i>
+</pre>
+
+<p>
+Now exit the chroot and run <c>yabootconfig --chroot /mnt/gentoo</c>. The program will run and it will confirm
+the location of the bootstrap partition. Type <c>Y</c> if it is correct. If
+not, double check <path>/etc/fstab</path>. yabootconfig will then scan your
+system setup, create <path>/etc/yaboot.conf</path> and run <c>mkofboot</c> for
+you. <c>mkofboot</c> is used to format the bootstrap partition, and install 
+the yaboot configuration file into it.
+After this enter the chroot again.
+</p>
+<pre caption="enter chroot">
+# <i>chroot /mnt/gentoo /bin/bash</i>
+# <i>/usr/sbin/env-update &amp;&amp; source /etc/profile</i>
+</pre>
+
+<p>
+You might want to verify the contents of <path>/etc/yaboot.conf</path>. If 
+you make changes to <path>/etc/yaboot.conf</path> (like setting the 
+default/boot OS), make sure to rerun <c>ybin -v</c> to apply changes to the 
+bootstrap partition.
+</p>
+
+<p>
+Now continue with <uri link="#reboot">Rebooting the System</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection id="manual_yaboot">
+<title>Alternative: Manual yaBoot Configuration</title>
+<body>
+
+<p>
+First make sure you have the latest <c>yaboot</c> installed on your
+system:
+</p>
+
+<pre caption = "Installing yaboot">
+# <i>emerge --usepkg --update yaboot</i>
+</pre>
+
+<p>
+Below you find a completed <path>yaboot.conf</path> file. Alter it at
+will. G5 users should be aware that their disks are Serial ATA disks which are
+seen as SCSI disks by the Linux kernel (so substitute <path>/dev/hda</path> with
+<path>/dev/sda</path>).
+</p>
+
+<pre caption = "/etc/yaboot.conf">
+<comment>## /etc/yaboot.conf
+##
+## run: "man yaboot.conf" for details. Do not make changes until you have!!
+## see also: /usr/share/doc/yaboot/examples for example configurations.
+##
+## For a dual-boot menu, add one or more of:
+## bsd=/dev/hdaX, macos=/dev/hdaY, macosx=/dev/hdaZ
+
+## our bootstrap partition:</comment>
+
+boot=/dev/hda1
+
+<comment>## ofboot is the openfirmware way to specify the bootstrap partition.
+## If this isn't defined, yaboot fails on the G5 (unless you pass the necessary
+## arguments to the mkofboot/ybin program).
+## hd:X means /dev/sdaX (or /dev/hdaX).
+## 
+## G5 users should uncomment this line!!
+
+#ofboot=hd:1</comment>
+
+<comment>##hd: is open firmware speak for hda</comment>
+device=hd:
+partition=3
+
+delay=5
+defaultos=macosx
+timeout=30
+install=/usr/lib/yaboot/yaboot
+magicboot=/usr/lib/yaboot/ofboot
+
+<comment>#################
+## This section can be duplicated if you have more than one kernel or set of
+## boot options - replace 2.6.7 with your kernel-version
+#################</comment>
+image=/boot/kernel-2.6.7
+  label=Linux
+  root=/dev/hda3
+  sysmap=/boot/System.map-2.6.7
+  read-only
+<comment>##################</comment>
+
+<comment>## G5 users should set 
+##   macos=hd:13
+##   macosx=hd:12
+## instead of the example values.</comment>
+macos=/dev/hda13
+macosx=/dev/hda12
+enablecdboot
+enableofboot
+</pre>
+
+<p>
+Once <path>yaboot.conf</path> is set up the way you want it, you run 
+<c>mkofboot -v</c> to install the settings in the bootstrap partition. <e>Don't 
+forget this!</e> If all goes well, and you have the same options as the sample 
+above, your next reboot will give you a simple, five-entry boot menu. If you 
+update your yaboot config later on, you'll just need to run <c>ybin -v</c> to 
+update the bootstrap partition - <c>mkofboot</c> is for initial setup only.
+</p>
+
+<p>
+For more information on yaboot, take a look at the <uri
+link="http://penguinppc.org/projects/yaboot">yaboot project</uri>. For
+now, continue the installation with <uri link="#reboot">Rebooting the
+System</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="bootx">
+<title>Alternative: BootX</title>
+<body>
+
+<impo>
+BootX can only be used on OldWorld Apple and IBM systems!
+</impo>
+
+<p>
+BootX requires that you reboot first. So, let's reboot shall we :)
+</p>
+
+<p>
+First exit the chrooted environment and unmount all mounted partitions, then
+type in the one magical command you have been waiting for: <c>reboot</c>.
+</p>
+
+<pre caption="Exiting the chroot, unmounting all partitions and rebooting">
+# <i>exit</i>
+cdimage ~# <i>cd</i>
+cdimage ~# <i>umount /mnt/gentoo/proc /mnt/gentoo</i>
+cdimage ~# <i>reboot</i>
+</pre>
+
+<p>
+Of course, don't forget to remove the bootable CD, otherwise the CD will be
+booted again instead of Mac OS X.
+</p>
+
+<p>
+Now your machine is booted in MacOS, open the BootX control panel. Select
+<c>Options</c> and uncheck <c>Used specified RAM disk</c>. When you return to 
+the BootX main screen, you will now find an option to specify your machine's 
+root disk and partition. Fill these in with the appropriate values.
+</p>
+
+<p>
+BootX can be configured to start Linux upon boot. If you do this, you will first
+see your machine boot into MacOS then, during startup, BootX will load and start
+Linux. See the <uri link="http://penguinppc.org/projects/bootx/">BootX home 
+page</uri> for more information.
+</p>
+
+<p>
+Now reboot again and boot into Linux, then continue with <uri 
+link="?part=1&amp;chap=11">Finalizing your Gentoo Installation</uri>.
+</p>
+
+</body>
+</section>
+<section id="reboot">
+<title>Rebooting the System</title>
+<subsection>
+<body>
+
+<p>
+Exit the chrooted environment and unmount all mounted partitions. Then type in 
+that one magical command you have been waiting for: <c>reboot</c>.
+</p>
+
+<pre caption="Exiting the chroot, unmounting all partitions and rebooting">
+# <i>exit</i>
+cdimage ~# <i>umount /mnt/gentoo/boot /mnt/gentoo/proc /mnt/gentoo</i>
+cdimage ~# <i>reboot</i>
+</pre>
+
+<p>
+Of course, don't forget to remove the bootable CD, otherwise the CD will be
+booted again instead of your new Gentoo system.
+</p>
+
+<p>
+Once rebooted in your Gentoo installation, finish up with <uri
+link="?part=1&amp;chap=11">Finalizing your Gentoo Installation</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

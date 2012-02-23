@@ -1,0 +1,222 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/security/shb-kernel.xml,v 1.4 2008/04/16 19:46:23 swift Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<sections>
+
+<version>1.2</version>
+<date>2008-04-15</date>
+
+<section>
+<title>Removing functionality</title>
+<body>
+
+<p>
+The basic rule when configuring the kernel is to remove everything that you do
+not need. This will not only create a small kernel but also remove the
+vulnerabilities that may lie inside drivers and other features.
+</p>
+
+<p>
+Also consider turning off loadable module support. Even though it is possible to
+add root kits without this features, it does make it harder for normal attackers
+to install root kits via kernel modules.
+</p>
+
+</body>
+</section>
+<section>
+<title>The proc filesystem</title>
+<body>
+
+<p>
+Many kernel parameters can be altered through the <path>/proc</path> file system
+or by using <c>sysctl</c>.
+</p>
+
+<p>
+To dynamically change kernel parameters and variables on the fly, you need
+<c>CONFIG_SYSCTL</c> defined in your kernel. This is on by default in
+a standard 2.4 kernel.
+</p>
+
+<pre caption="Deactivate IP forwarding">
+# <i>/bin/echo "0" &gt; /proc/sys/net/ipv4/ip_forward</i>
+</pre>
+
+<p>
+Make sure that IP forwarding is turned off. We only want this for a
+multi-homed host. It's advised to set or unset this flag before all other flags
+since it enabled/disables other flags as well.
+</p>
+
+<pre caption="Drop ping packets">
+# <i>/bin/echo "1" > /proc/sys/net/ipv4/icmp_echo_ignore_all</i>
+</pre>
+
+<p>
+This will cause the kernel to simply ignore all ping messages (also known as
+ICMP type 0 messages). The reason for this is that an IP packet carrying an ICMP
+message can contain a payload with information other than you think.
+Administrators use ping as a diagnostic tool and often complain if it is
+disabled, but there is no reason for an outsider to be able to ping. However,
+since it sometimes can be handy for insiders to be able to ping, you can disable
+ICMP type 0 messages in the firewall (allowing local administrators to continue
+to use this tool).
+</p>
+
+<pre caption="Ignore broadcast pings">
+# <i>/bin/echo "1" &gt; /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts</i>
+</pre>
+
+<p>
+This disables response to ICMP broadcasts and will prevent Smurf attacks. The
+Smurf attack works by sending an ICMP type 0 (ping) message to the broadcast
+address of a network. Typically the attacker will use a spoofed source
+address. All the computers on the network will respond to the ping message and
+thereby flood the host at the spoofed source address.
+</p>
+
+<pre caption="Disable source routed packets">
+# <i>/bin/echo "0" &gt; /proc/sys/net/ipv4/conf/all/accept_source_route</i>
+</pre>
+
+<p>
+Do not accept source routed packets. Attackers can use source routing to
+generate traffic pretending to originate from inside your network, but that is
+actually routed back along the path from which it came, so attackers can
+compromise your network. Source routing is rarely used for legitimate purposes,
+so it is safe to disable it.
+</p>
+
+<pre caption="Disable redirect acceptance">
+# <i>/bin/echo "0" &gt; /proc/sys/net/ipv4/conf/all/accept_redirects</i>
+</pre>
+
+<p>
+Do not accept ICMP redirect packets. ICMP redirects can be used to alter your
+routing tables, possibly to a malicious end.
+</p>
+
+<pre caption="Protect against bad error messages">
+# <i>/bin/echo "1" &gt; /proc/sys/net/ipv4/icmp_ignore_bogus_error_responses</i>
+</pre>
+
+<p>
+Enable protection against bogus error message responses.
+</p>
+
+<pre caption="Enable reverse path filtering">
+# <i>for i in /proc/sys/net/ipv4/conf/*; do
+        /bin/echo "1" &gt; $i/rp_filter
+done</i>
+</pre>
+
+<p>
+Turn on reverse path filtering. This helps make sure that packets use legitimate
+source addresses by automatically rejecting incoming packets if the routing
+table entry for their source address does not match the network interface they
+are arriving on. This has security advantages because it prevents IP spoofing.
+We need to enable it for each <path>net/ipv4/conf/*</path> otherwise source
+validation isn't fully functional.
+</p>
+
+<warn>
+However turning on reverse path filtering can be a problem if you use asymmetric
+routing (packets from you to a host take a different path than packets from that
+host to you) or if you operate a non-routing host which has several IP addresses
+on different interfaces.
+</warn>
+
+<pre caption="Log all spoofed, source routed and redirect packets">
+# <i>/bin/echo "1" &gt; /proc/sys/net/ipv4/conf/all/log_martians</i>
+</pre>
+
+<p>
+Log spoofed packets, source routed packets and redirect packets.
+</p>
+
+<p>
+All these settings will be reset when the machine is rebooted. I suggest that
+you add them to <path>/etc/sysctl.conf</path>, which is automatically sourced by
+the <path>/etc/init.d/bootmisc</path> init script.
+</p>
+
+<p>
+The syntax for <path>/etc/sysctl.conf</path> is pretty straightforward. Strip
+off the <path>/proc/sys/</path> from the previously mentioned paths and
+substitute <path>/</path> with <path>.</path>:
+</p>
+
+<pre caption="Translating to sysctl.conf">
+<comment>(Manual using echo):</comment>
+/bin/echo "0" &gt; /proc/sys/net/ipv4/ip_forward
+
+<comment>(Automatic in sysctl.conf:)</comment>
+net.ipv4.ip_forward = 0
+</pre>
+
+</body>
+</section>
+<section>
+<title>Grsecurity</title>
+<body>
+
+<p>
+The patch from <uri link="http://grsecurity.net">Grsecurity</uri> is standard
+in the <c>sys-kernel/hardened-sources</c> but is disabled by default. Configure
+your kernel as you normally do and then configure the Grsecurity options. An
+in-depth explanation on the available Grsecurity options is available on the
+<uri link="/proj/en/hardened">Gentoo Hardened</uri> project page.
+</p>
+
+<p>
+Recent <c>hardened-sources</c> provide the 2.* version of Grsecurity. For more
+information on this improved Grsecurity patch set, please consult the
+documentation available on the <uri
+link="http://www.grsecurity.net/">Grsecurity home page</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Kerneli</title>
+<body>
+
+<p>
+<uri link="http://www.Kerneli.org">Kerneli</uri> is a patch that adds encryption
+to the existing kernel. By patching your kernel you will get new options such as
+cryptographic ciphers, digest algorithms and cryptographic loop filters.
+</p>
+
+<warn>
+The kerneli patch is currently not in a stable version for the latest kernel, so
+be careful when using it.
+</warn>
+
+</body>
+</section>
+<section>
+<title>Other kernel patches</title>
+<body>
+
+<ul>
+<li><uri link="http://www.openwall.com">The OpenWall Project</uri></li>
+<li><uri link="http://www.lids.org">Linux Intrusion Detection System</uri></li>
+<li><uri link="http://www.rsbac.org">Rule Set Based Access Control</uri></li>
+<li>
+  <uri link="http://www.nsa.gov/selinux">NSA's security enhanced kernel</uri>
+</li>
+<li><uri link="http://sourceforge.net/projects/wolk/">Wolk</uri></li>
+</ul>
+
+<p>
+And there are probably a lot more.
+</p>
+
+</body>
+</section>
+</sections>

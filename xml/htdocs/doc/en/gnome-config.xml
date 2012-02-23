@@ -1,0 +1,257 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gnome-config.xml,v 1.35 2011/10/23 09:35:37 swift Exp $ -->
+
+<guide>
+<title>The GNOME Configuration HOWTO</title>
+
+<author title="Author">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Editor">
+  <mail link="lars@strojny.net">Lars Strojny</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+A frequently used environment is GNOME. This HOWTO tries to describe
+all aspects of GNOME, including installation, configuration, usage, ...
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>4</version>
+<date>2011-10-23</date>
+
+<chapter>
+<title>What is GNOME?</title>
+<section>
+<title>The Project</title>
+<body>
+
+<p>
+The <uri link="http://www.gnome.org">GNOME</uri> project is a free software
+project dedicated to the development of GNOME, a Unix/Linux desktop suite and
+development platform. The <uri link="http://foundation.gnome.org">GNOME
+Foundation</uri> coordinates the development and other aspects of the GNOME
+Project.
+</p>
+
+</body>
+</section>
+<section>
+<title>The Software</title>
+<body>
+
+<p>
+GNOME is a desktop environment and a development platform. This piece of free
+software is the desktop of choice for several industry leaders. It is
+interesting both for business users, home users as well as developers.
+</p>
+
+</body>
+</section>
+<section>
+<title>The Community</title>
+<body>
+
+<p>
+Like with any big free software project, GNOME has an extensive user- and
+development base. <uri link="http://www.gnomedesktop.org">Footnotes</uri>
+contains GNOME Desktop news for users; <uri
+link="http://planet.gnome.org">GnomePlanet</uri> is for hackers/contributors and
+<uri link="http://developer.gnome.org">Developer.Gnome.Org</uri> is for the
+GNOME developers.
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>Installing GNOME</title>
+<section>
+<title>What do you need?</title>
+<body>
+
+<impo>
+First read and follow the instructions in the <uri
+link="/doc/en/xorg-config.xml">X Server Configuration Howto</uri> to setup your
+X environment.
+</impo>
+
+<p>
+Before you start installing GNOME, you might want to edit your USE variables.
+Make sure that <c>X</c>, <c>gtk</c>, and <c>gnome</c> are in your USE variable
+listed in <path>/etc/make.conf</path>. If you want support for <c>dbus</c>, a
+system message bus Gnome uses extensively, add it to your USE flags. If you
+don't want KDE support (the other big desktop environment), remove <c>qt4</c>
+and <c>kde</c>.
+</p>
+
+<pre caption="Example USE in /etc/make.conf">
+USE="-qt4 -kde X dbus gtk gnome"
+</pre>
+
+<p>
+You can add the <c>branding</c> USE flag to get a lovely Gentoo-branded
+splashscreen instead of the default Gnome splashscreen:
+</p>
+
+<pre caption="Enabling Gentoo branding">
+# <i>echo "gnome-base/gnome-session branding" &gt;&gt; /etc/portage/package.use</i>
+</pre>
+
+<note>
+If you use the <c>desktop</c> profile, these USE flags will be set for you. You
+can check your profile by running <c>eselect profile list</c> and <c>eselect
+profile set &lt;profile-name&gt;</c> as root.
+</note>
+
+<p>
+Once done, start installing GNOME by emerging <c>gnome</c>:
+</p>
+
+<pre caption="Installing GNOME">
+# <i>emerge gnome</i>
+</pre>
+
+<p>
+You can also opt for a minimal Gnome installation using <c>gnome-light</c>.
+If you do so, you will have a lightweight Gnome installation without
+the additional tools that a full Gnome installation provides so you might need
+to install additional packages afterwards.
+</p>
+
+<pre caption="Installing a minimal GNOME environment">
+# <i>emerge gnome-light</i>
+</pre>
+
+<p>
+This will take a while, so you might want to start reading all those books your
+mother bought you but you never opened. Done? Great, now update your
+environment variables:
+</p>
+
+<pre caption="Updating environment variables">
+# <i>env-update &amp;&amp; source /etc/profile</i>
+</pre>
+
+<p>
+Next we'll clean up the remaining services and user groups. 
+</p>
+
+<pre caption="Setting up the DBUS service">
+# <i>/etc/init.d/dbus start</i>
+# <i>rc-update add dbus default</i>
+</pre>
+
+<p>
+Check if the <e>plugdev</e> group exists. If it does, it is adviseable to make
+yourself member of that group, but this is optional (the group is not that
+common anymore).
+</p>
+
+<pre caption="Checking and adding users to plugdev">
+~# <i>getent group plugdev</i>
+plugdev:x:104:
+
+<comment># Substitute yourUserName with your user name ;-)</comment>
+~# <i>gpasswd -a yourUserName plugdev</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>First Impressions</title>
+<body>
+
+<p>
+Let us first take a look at what we just built. Exit your root shell and log on
+as a regular user. We will configure our session to run GNOME when we issue the
+<c>startx</c> command (see also
+<uri link="/doc/en/xorg-config.xml#using_startx">Using startx</uri> in the
+<uri link="/doc/en/xorg-config.xml">X Server Configuration Howto</uri>):
+</p>
+
+<pre caption="Setting GNOME as the default desktop environment">
+$ <i>echo "exec gnome-session" &gt; ~/.xinitrc</i>
+</pre>
+
+<p>
+Starting with <c>gnome-base/gnome-session-2.26.2</c>, you will need to prepend
+the XDG_MENU_PREFIX variable to get the Gnome menus if you're using the
+<path>~/.xinitrc</path> method to start your desktop. (If you're not using
+<path>~/.xinitrc</path>, it will be handled automatically for you; no additional
+configuration is needed.)
+</p>
+
+<pre caption="Prepending XDG_MENU_PREFIX to ~/.xinitrc">
+$ <i>sed -i '1i\export XDG_MENU_PREFIX=gnome-' ~/.xinitrc</i>
+</pre>
+
+<p>
+Now start your graphical environment by running <c>startx</c>:
+</p>
+
+<pre caption="Starting GNOME">
+$ <i>startx</i>
+</pre>
+
+<p>
+If all goes well, you should be greeted by GNOME. Congratulations. Now let us
+take a look at how you can configure GNOME to suit your needs.
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>Configuring GNOME</title>
+<section>
+<title>GNOME's Graphical Login Manager</title>
+<body>
+
+<p>
+If you want the GNOME Display Manager (GDM) to run automatically when you boot
+(so you can log on graphically), you must add the <c>xdm</c> init script to the
+default runlevel:
+</p>
+
+<pre caption="Adding xdm to the default runlevel">
+# <i>rc-update add xdm default</i>
+</pre>
+
+<p>
+Now edit <path>/etc/conf.d/xdm</path> and alter the DISPLAYMANAGER variable.
+</p>
+
+<pre caption="Editing /etc/conf.d/xdm">
+DISPLAYMANAGER="gdm"
+</pre>
+
+<p>
+If you installed Gnome using the <c>gnome-light</c> package, you will need to
+install <c>gdm</c> too (as it is not defined as part of the <c>gnome-light</c>
+package).
+</p>
+
+<pre caption="Installing the gdm application">
+# <i>emerge gdm</i>
+</pre>
+
+<p>
+If you reboot now, the GNOME Display Manager will prompt you for your username
+and password and will default to using GNOME as Desktop Environment (even though
+you will have the option of selecting a different one of course, choosing from
+those available in <path>/usr/share/xsessions/</path>). Thus, if you use GDM,
+you don't need to edit <path>~/.xinitrc</path>.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

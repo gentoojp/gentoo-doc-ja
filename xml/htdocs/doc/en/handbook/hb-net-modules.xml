@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-net-modules.xml,v 1.27 2011/10/23 09:46:14 swift Exp $ -->
+
+<sections>
+
+<abstract>
+Gentoo provides you flexible networking - here you are told about choosing
+different DHCP clients, setting up bonding, bridging, VLANs and more.
+</abstract>
+
+<version>10</version>
+<date>2011-10-23</date>
+
+<section>
+<title>Network Modules</title>
+<body>
+
+<p>
+We now support modular networking scripts, which means we can easily add support
+for new interface types and configuration modules while keeping compatibility
+with existing ones.
+</p>
+
+<p>
+Modules load by default if the package they need is installed.  If you specify a
+module here that doesn't have its package installed then you get an error
+stating which package you need to install. Ideally, you only use the modules
+setting when you have two or more packages installed that supply the same
+service and you need to prefer one over the other.
+</p>
+
+<note>
+All settings discussed here are stored in <path>/etc/conf.d/net</path> unless 
+otherwise specified.
+</note>
+
+<pre caption="Module preference">
+<comment># Prefer ifconfig over iproute2</comment>
+modules="ifconfig"
+
+<comment># You can also specify other modules for an interface
+# In this case we prefer pump over dhcpcd</comment>
+modules_eth0="pump"
+
+<comment># You can also specify which modules not to use - for example you may be
+# using a supplicant or linux-wlan-ng to control wireless configuration but
+# you still want to configure network settings per ESSID associated with.</comment>
+modules="!iwconfig"
+</pre>
+
+</body>
+</section>
+<section>
+<title>Interface Handlers</title>
+<body>
+
+<p>
+We provide two interface handlers presently: <c>ifconfig</c> and
+<c>iproute2</c>. You need one of these to do any kind of network configuration.
+</p>
+
+<p>
+<c>ifconfig</c> is installed by default (the <c>net-tools</c> package is part of
+the system profile). <c>iproute2</c> is a more powerful and flexible package,
+but it's not included by default.
+</p>
+
+<pre caption="To install iproute2">
+# <i>emerge sys-apps/iproute2</i>
+
+<comment># To prefer ifconfig over iproute2 if both are installed as openrc prefers
+# to use iproute2 then</comment>
+modules="ifconfig"
+</pre>
+
+<p>
+As both <c>ifconfig</c> and <c>iproute2</c> do very similar things we allow
+their basic configuration to work with each other. For example both the below
+code snippet work regardless of which module you are using.
+</p>
+
+<pre caption="ifconfig and iproute2 examples">
+config_eth0="192.168.0.2/24"
+config_eth0="192.168.0.2 netmask 255.255.255.0"
+
+<comment># We can also specify broadcast</comment>
+config_eth0="192.168.0.2/24 brd 192.168.0.255"
+config_eth0="192.168.0.2 netmask 255.255.255.0 broadcast 192.168.0.255"
+</pre>
+
+</body>
+</section>
+<section id="dhcp">
+<title>DHCP</title>
+<body>
+
+<p>
+DHCP is a means of obtaining network information (IP address, DNS servers,
+Gateway, etc) from a DHCP server. This means that if there is a DHCP server
+running on the network, you just have to tell each client to use DHCP and it
+sets up the network all by itself. Of course, you will have to configure for
+other things like wireless, PPP or other things if required before you can use
+DHCP.
+</p>
+
+<p>
+DHCP can be provided by <c>dhclient</c>, <c>dhcpcd</c>, or <c>pump</c>. Each
+DHCP module has its pros and cons - here's a quick run down.
+</p>
+
+<table>
+<tr>
+  <th>DHCP Module</th>
+  <th>Package</th>
+  <th>Pros</th>
+  <th>Cons</th>
+</tr>
+<tr>
+  <ti><c>dhclient</c></ti>
+  <ti><c>net-misc/dhcp</c></ti>
+  <ti>
+    Made by ISC, the same people who make the BIND DNS software. Very 
+    configurable
+  </ti>
+  <ti>
+    Configuration is overly complex, software is quite bloated, cannot get 
+    NTP servers from DHCP, does not send hostname by default
+  </ti>
+</tr>
+<tr>
+  <ti><c>dhcpcd</c></ti>
+  <ti><c>net-misc/dhcpcd</c></ti>
+  <ti>
+    Long time Gentoo default, no reliance on outside tools, actively developed
+    by Gentoo
+  </ti>
+  <ti>Can be slow at times, does not yet daemonize when lease is infinite</ti>
+</tr>
+<tr>
+  <ti><c>pump</c></ti>
+  <ti><c>net-misc/pump</c></ti>
+  <ti>
+    Lightweight, no reliance on outside tools
+  </ti>
+  <ti>
+    No longer maintained upstream, unreliable, especially over modems, cannot
+    get NIS servers from DHCP
+  </ti>
+</tr>
+</table>
+     
+<p>
+If you have more than one DHCP client installed, you need to specify which one
+to use - otherwise we default to <c>dhcpcd</c> if available.
+</p>
+
+<p>
+To send specific options to the DHCP module, use <c>module_eth0="..."</c>
+<e>(change module to the DHCP module you're using - i.e. <c>dhcpcd_eth0</c>)</e>.
+</p>
+
+<p>
+We try and make DHCP relatively agnostic - as such we support the following
+commands using the <c>dhcp_eth0</c> variable. The default is not to set any of
+them:
+</p>
+
+<ul>
+  <li><c>release</c> - releases the IP address for re-use</li>
+  <li><c>nodns</c> - don't overwrite <path>/etc/resolv.conf</path></li>
+  <li><c>nontp</c> - don't overwrite <path>/etc/ntp.conf</path></li>
+  <li><c>nonis</c> - don't overwrite <path>/etc/yp.conf</path></li>
+</ul>
+
+<pre caption="Sample DHCP configuration in /etc/conf.d/net">
+<comment># Only needed if you have more than one DHCP module installed</comment>
+modules="dhcpcd"
+
+config_eth0="dhcp"
+dhcpcd_eth0="-t 10" <comment># Timeout after 10 seconds</comment>
+dhcp_eth0="release nodns nontp nonis" <comment># Only get an address</comment>
+</pre>
+
+<note>
+<c>dhcpcd</c> and <c>pump</c> send the current hostname to the
+DHCP server by default so you don't need to specify this anymore.
+</note>
+
+</body>
+</section>
+<section>
+<title>ADSL with PPPoE/PPPoA</title>
+<body>
+
+<p>
+First we need to install the ADSL software.
+</p>
+
+<pre caption="Install the ppp package">
+# <i>emerge net-dialup/ppp</i>
+</pre>
+
+<p>
+Second, create the PPP net script and the net script for the ethernet interface
+to be used by PPP:
+</p>
+
+<pre caption="Creating the PPP and ethernet scripts">
+# <i>ln -s /etc/init.d/net.lo /etc/init.d/net.ppp0</i>
+# <i>ln -s /etc/init.d/net.lo /etc/init.d/net.eth0</i>
+</pre>
+
+<p>
+Be sure to set <c>rc_depend_strict</c> to "YES" in <path>/etc/rc.conf</path>.
+</p>
+
+<p>
+Now we need to configure <path>/etc/conf.d/net</path>.
+</p>
+
+<pre caption="A basic PPPoE setup">
+config_eth0=null <comment>(Specify your ethernet interface)</comment>
+config_ppp0="ppp"
+link_ppp0="eth0" <comment>(Specify your ethernet interface)</comment>
+plugins_ppp0="pppoe"
+username_ppp0='user'
+password_ppp0='password'
+pppd_ppp0="
+noauth
+defaultroute
+usepeerdns
+holdoff 3
+child-timeout 60
+lcp-echo-interval 15
+lcp-echo-failure 3
+noaccomp noccp nobsdcomp nodeflate nopcomp novj novjccomp"
+
+rc_need_ppp0="net.eth0"
+</pre>
+
+<p>
+You can also set your password in <path>/etc/ppp/pap-secrets</path>.
+</p>
+
+<pre caption="Sample /etc/ppp/pap-secrets">
+<comment># The * is important</comment>
+"username"  *  "password"
+</pre>
+
+<p>
+If you use PPPoE with a USB modem you'll need to emerge <c>br2684ctl</c>. Please
+read <path>/usr/portage/net-dialup/speedtouch-usb/files/README</path> for
+information on how to properly configure it.
+</p>
+
+<impo>
+Please carefully read the section on ADSL and PPP in
+<path>/usr/share/doc/openrc-0.8.3-r1/net.example.bz2</path>. It contains many
+more detailed explanations of all the settings your particular PPP setup will
+likely need. Of course, change <c>0.8.3-r1</c> with the version of OpenRC
+installed on your system.
+</impo>
+
+</body>
+</section>
+<section id="apipa">
+<title>APIPA (Automatic Private IP Addressing)</title>
+<body>
+
+<p>
+APIPA tries to find a free address in the range 169.254.0.0-169.254.255.255 by
+arping a random address in that range on the interface. If no reply is found
+then we assign that address to the interface.
+</p>
+
+<p>
+This is only useful for LANs where there is no DHCP server and you don't connect
+directly to the internet and all other computers use APIPA.
+</p>
+
+<p>
+For APIPA support, emerge <c>net-misc/iputils</c> or <c>net-analyzer/arping</c>.
+</p>
+
+<pre caption="APIPA configuration in /etc/conf.d/net">
+<comment># Try DHCP first - if that fails then fallback to APIPA</comment>
+config_eth0="dhcp"
+fallback_eth0="apipa"
+
+<comment># Just use APIPA</comment>
+config_eth0="apipa"
+</pre>
+
+</body>
+</section>
+<section>
+<title>Bonding</title>
+<body>
+
+<p>
+For link bonding/trunking emerge <c>net-misc/ifenslave</c>.
+</p>
+
+<p>
+Bonding is used to increase network bandwidth. If you have two network cards
+going to the same network, you can bond them together so your applications see
+just one interface but they really use both network cards.
+</p>
+
+<pre caption="bonding configuration in /etc/conf.d/net">
+<comment># To bond interfaces together</comment>
+slaves_bond0="eth0 eth1 eth2"
+
+<comment># You may not want to assign an IP to the bonded interface</comment>
+config_bond0="null"
+
+<comment># Depend on eth0, eth1 and eth2 as they may require extra configuration</comment>
+rc_need_bond0="net.eth0 net.eth1 net.eth2"
+</pre>
+
+</body>
+</section>
+<section>
+<title>Bridging (802.1d support)</title>
+<body>
+
+<p>
+For bridging support emerge <c>net-misc/bridge-utils</c>.
+</p>
+
+<p>
+Bridging is used to join networks together. For example, you may have a server
+that connects to the internet via an ADSL modem and a wireless access card to
+enable other computers to connect to the internet via the ADSL modem. You could
+create a bridge to join the two interfaces together.
+</p>
+
+<pre caption="Bridge configuration in /etc/conf.d/net">
+<comment># Configure the bridge - "man brctl" for more details</comment>
+brctl_br0="setfd 0" "sethello 0" "stp off"
+
+<comment># To add ports to bridge br0</comment>
+bridge_br0="eth0 eth1"
+
+<comment># You need to configure the ports to null values so dhcp does not get started</comment>
+config_eth0="null"
+config_eth1="null"
+
+<comment># Finally give the bridge an address - you could use DHCP as well</comment>
+config_br0="192.168.0.1/24"
+
+<comment># Depend on eth0 and eth1 as they may require extra configuration</comment>
+rc_need_br0="net.eth0 net.eth1"
+</pre>
+
+<impo>
+For using some bridge setups, you may need to consult the <uri
+link="?part=4&amp;chap=2#variable_name">variable name</uri> documentation.
+</impo>
+
+</body>
+</section>
+<section>
+<title>MAC Address</title>
+<body>
+
+<p>
+If you need to, you can change the MAC address of your interfaces through
+the network configuration file too.
+</p>
+
+<pre caption="MAC Address change example">
+<comment># To set the MAC address of the interface</comment>
+mac_eth0="00:11:22:33:44:55"
+
+<comment># To randomize the last 3 bytes only</comment>
+mac_eth0="random-ending"
+
+<comment># To randomize between the same physical type of connection (e.g. fibre,
+# copper, wireless) , all vendors</comment>
+mac_eth0="random-samekind"
+
+<comment># To randomize between any physical type of connection (e.g. fibre, copper,
+# wireless) , all vendors</comment>
+mac_eth0="random-anykind"
+
+<comment># Full randomization - WARNING: some MAC addresses generated by this may
+# NOT act as expected</comment>
+mac_eth0="random-full"
+</pre>
+
+</body>
+</section>
+<section>
+<title>Tunnelling</title>
+<body>
+
+<p>
+You don't need to emerge anything for tunnelling as the interface handler can do
+it for you.
+</p>
+
+<pre caption="Tunnelling configuration in /etc/conf.d/net">
+<comment># For GRE tunnels</comment>
+iptunnel_vpn0="mode gre remote 207.170.82.1 key 0xffffffff ttl 255"
+
+<comment># For IPIP tunnels</comment>
+iptunnel_vpn0="mode ipip remote 207.170.82.2 ttl 255"
+
+<comment># To configure the interface</comment>
+config_vpn0="192.168.0.2 peer 192.168.1.1"
+</pre>
+
+</body>
+</section>
+<section>
+<title>VLAN (802.1q support)</title>
+<body>
+
+<p>
+For VLAN support, emerge <c>net-misc/vconfig</c>.
+</p>
+
+<p>
+Virtual LAN is a group of network devices that behave as if they were connected
+to a single network segment - even though they may not be. VLAN members can only
+see members of the same VLAN even though they may share the same physical
+network.
+</p>
+
+<pre caption="VLAN configuration in /etc/conf.d/net">
+<comment># Specify the VLAN numbers for the interface like so</comment>
+<comment># Please ensure your VLAN IDs are NOT zero-padded</comment>
+vlans_eth0="1 2"
+
+<comment># You can also configure the VLAN</comment>
+<comment># see for vconfig man page for more details</comment>
+vconfig_eth0="set_name_type VLAN_PLUS_VID_NO_PAD"
+vconfig_vlan1="set_flag 1" "set_egress_map 2 6"
+
+<comment># Configure the interface as usual</comment>
+config_vlan1="172.16.3.1 netmask 255.255.254.0"
+config_vlan2="172.16.2.1 netmask 255.255.254.0"
+</pre>
+
+<impo>
+For using some VLAN setups, you may need to consult the <uri
+link="?part=4&amp;chap=2#variable_name">variable name</uri> documentation.
+</impo>
+
+</body>
+</section>
+
+</sections>

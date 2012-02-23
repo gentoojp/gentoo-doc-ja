@@ -1,0 +1,273 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-working-features.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.22</version>
+<date>October 24, 2004</date>
+
+<section>
+<title>Portage Features</title>
+<body>
+
+<p>
+Portage has several additional features that makes your Gentoo experience even
+better. Many of these features rely on certain software tools that improve
+performance, reliability, security, ...
+</p>
+
+<p>
+To enable or disable certain Portage features you need to edit
+<path>/etc/make.conf</path>'s <c>FEATURES</c> variable. In several cases you
+will also need to install the additional tool on which the feature relies.
+</p>
+
+<p>
+Not all features that Portage supports are listed here. For a full overview,
+please consult the <path>make.conf</path> man page:
+</p>
+
+<pre caption="Consulting the make.conf man page">
+$ <i>man make.conf</i>
+</pre>
+
+<p>
+To find out what FEATURES are default set, run <c>emerge info</c> and search for
+the FEATURES variable or grep it out:
+</p>
+
+<pre caption="Finding out the FEATURES that are already set">
+$ <i>emerge info | grep FEATURES</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Distributed Compiling</title>
+<subsection>
+<title>Using distcc</title>
+<body>
+
+<p>
+<c>distcc</c> is a program to distribute compilations across several, not
+necessarily identical, machines on a network. The <c>distcc</c> client sends all
+necessary information to the available distcc servers (running <c>distccd</c>) 
+so they can compile pieces of source code for the client. The net result is a 
+faster compilation time.
+</p>
+
+<p>
+You can find more information about <c>distcc</c> (and how to have it work 
+with Gentoo) in our <uri link="/doc/en/distcc.xml">Gentoo Distcc
+Documentation</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Installing distcc</title>
+<body>
+
+<p>
+Distcc ships with a graphical monitor to monitor tasks that your computer is
+sending away for compilation. If you use Gnome then put 'gnome' in your USE
+variable. However, if you don't use Gnome and would still like to have the
+monitor then you should put 'gtk' in your USE variable.
+</p>
+
+<pre caption="Installing distcc">
+# <i>emerge distcc</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating Portage Support</title>
+<body>
+
+<p>
+Add <c>distcc</c> to the FEATURES variable inside <path>/etc/make.conf</path>.
+Next, edit the MAKEOPTS variable to your liking. A known guideline is to fill in
+"-jX" with X the number of CPUs that run <c>distccd</c> (including the current
+host) plus one, but you might have better results with other numbers.
+</p>
+
+<p>
+Now run <c>distcc-config</c> and enter the list of available distcc servers. For
+a simple example we assume that the available DistCC servers are 192.168.1.102
+(the current host), 192.168.1.103 and 192.168.1.104 (two "remote" hosts):
+</p>
+
+<pre caption="Configuring distcc to use three available distcc servers">
+# <i>distcc-config --set-hosts "192.168.1.102 192.168.1.103 192.168.1.104"</i>
+</pre>
+
+<p>
+Don't forget to run the <c>distccd</c> daemon as well:
+</p>
+
+<pre caption="Starting the distccd daemons">
+# <i>rc-update add distccd default</i>
+# <i>/etc/init.d/distccd start</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Caching Compilation</title>
+<subsection>
+<title>About ccache</title>
+<body>
+
+<p>
+<c>ccache</c> is a fast compiler cache. When you compile a program, it will 
+cache intermediate results so that, whenever you recompile the same program, the
+compilation time is greatly reduced. In common compilations this can result in 5
+to 10 times faster compilation times.
+</p>
+
+<p>
+If you are interested in the ins and outs of ccache, please visit the 
+<uri link="http://ccache.samba.org">ccache homepage</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Installing ccache</title>
+<body>
+
+<p>
+To install <c>ccache</c>, run <c>emerge ccache</c>:
+</p>
+
+<pre caption="Installing ccache">
+# <i>emerge ccache</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating Portage Support</title>
+<body>
+
+<p>
+Open <path>/etc/make.conf</path> and add <c>ccache</c> to the FEATURES variable.
+Next, add a new variable called CCACHE_SIZE and set it to "2G":
+</p>
+
+<pre caption="Editing CCACHE_SIZE in /etc/make.conf">
+CCACHE_SIZE="2G"
+</pre>
+
+<p>
+To check if ccache functions, ask ccache to provide you with its statistics:
+</p>
+
+<pre caption="Viewing ccache statistics">
+# <i>ccache -s</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Using ccache for non-Portage C Compiling</title>
+<body>
+
+<p>
+If you would like to use ccache for non-Portage compilations, add
+<path>/usr/lib/ccache/bin</path> to the beginning of your PATH variable 
+(before <path>/usr/bin</path>). This can be accomplished by editing 
+<path>/etc/env.d/00basic</path>:
+</p>
+
+<pre caption="Editing /etc/env.d/00basic">
+PATH="/usr/local/bin:/opt/bin<i>:/usr/lib/ccache/bin</i>"
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Binary Package Support</title>
+<subsection>
+<title>Creating Prebuilt Packages</title>
+<body>
+
+<p>
+Portage supports the installation of prebuilt packages. Even though Gentoo does
+not provide prebuilt packages by itself (except for the GRP snapshots) Portage
+can be made fully aware of prebuilt packages.
+</p>
+
+<p>
+To create a prebuilt package you can use <c>quickpkg</c> if the package is
+already installed on your system, or <c>emerge</c> with the <c>--buildpkg</c> or
+<c>--buildpkgonly</c> options.
+</p>
+
+<p>
+If you want Portage to create prebuilt packages of every single package you
+install, add <c>buildpkg</c> to the FEATURES variable.
+</p>
+
+<p>
+More extended support for creating prebuilt package sets can be obtained with
+<c>catalyst</c>. For more information on catalyst please read the <uri
+link="/proj/en/releng/catalyst/reference.xml">Catalyst Reference Manual</uri>
+and <uri link="/proj/en/releng/catalyst/catalyst-howto.xml">Catalyst
+Howto</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Installing Prebuilt Packages</title>
+<body>
+
+<p>
+Although Gentoo doesn't provide one, you can create a central repository where 
+you store prebuilt packages. If you want to use this repository, you need to 
+make Portage aware of it by having the PORTAGE_BINHOST variable point to
+it. For instance, if the prebuilt packages are on ftp://buildhost/gentoo:
+</p>
+
+<pre caption="Setting PORTAGE_BINHOST in /etc/make.conf">
+PORTAGE_BINHOST="ftp://buildhost/gentoo"
+</pre>
+
+<p>
+When you want to install a prebuilt package, add the <c>--getbinpkg</c> option
+to the emerge command alongside of the <c>--usepkg</c> option. The former tells
+emerge to download the prebuilt package from the previously defined server
+while the latter asks emerge to try to install the prebuilt package first before
+fetching the sources and compiling it.
+</p>
+
+<p>
+For instance, to install <c>gnumeric</c> with prebuilt packages:
+</p>
+
+<pre caption="Installing the gnumeric prebuilt package">
+# <i>emerge --usepkg --getbinpkg gnumeric</i>
+</pre>
+
+<p>
+More information about emerge's prebuilt package options can be found in the
+emerge man page:
+</p>
+
+<pre caption="Reading the emerge man page">
+$ <i>man emerge</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+</sections>

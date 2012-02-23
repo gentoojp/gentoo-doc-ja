@@ -1,0 +1,474 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/security/shb-intrusion.xml,v 1.6 2010/07/20 00:21:55 nightmorph Exp $ -->
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<sections>
+
+<version>2</version>
+<date>2010-07-19</date>
+
+<section>
+<title>AIDE (Advanced Intrusion Detection Environment)</title>
+<body>
+
+<p>
+AIDE is a Host-Based Intrusion Detection System (HIDS), a free alternative to
+Tripwire (if you already know Tripwire you should have no difficulties learning
+the configuration file for AIDE). HIDS are used to detect changes to important
+system configuration files and binaries, generally by making a unique
+cryptographic hash for the files to be checked and storing it in a secure
+place. On a regular basis (such as once a day), the stored "known-good" hash is
+compared to the one generated from the current copy of each file, to determine
+if that file has changed. HIDS are a great way to detect disallowed changes to
+your system, but they take a little work to implement properly and make good use
+of.
+</p>
+
+<p>
+The configuration file is based on regular expressions, macros and rules for
+files and directories. We have the following macros:
+</p>
+
+<table>
+<tr>
+  <th>Macro</th>
+  <th>Description</th>
+  <th>Syntax</th>
+</tr>
+<tr>
+  <ti>ifdef</ti>
+  <ti>If definded</ti>
+  <ti>@@ifdef "name"</ti>
+</tr>
+<tr>
+  <ti>ifndef</ti>
+  <ti>If not defined</ti>
+  <ti>@@ifndef "name"</ti>
+</tr>
+<tr>
+  <ti>define</ti>
+  <ti>Define a variable </ti>
+  <ti>@@define "name" "value"</ti>
+</tr>
+<tr>
+  <ti>undef</ti>
+  <ti>Undefine a variable</ti>
+  <ti>@@undef "name"</ti>
+</tr>
+<tr>
+  <ti>ifhost</ti>
+  <ti>if "hostname"</ti>
+  <ti>@@ifhost "hostname"</ti>
+</tr>
+<tr>
+  <ti>ifnhost</ti>
+  <ti>if not "hostname"</ti>
+  <ti>@@ifnhost "hostname"</ti>
+</tr>
+<tr>
+  <ti>endif</ti>
+<ti>
+Endif must be used after any of the above macros except define and undef
+</ti>
+<ti>@@endif</ti>
+</tr>
+</table>
+
+<p>
+These macros become very handy if you have more than one Gentoo box and want to
+use AIDE on all of them. But not all machines run the same services or even have
+the same users.
+</p>
+
+<p>
+Next we have sets of flags to check for on files and directories. These are a
+combination of permissions, file properties and cryptographic hashes
+(i.e. checksums).
+</p>
+
+<table>
+<tr>
+  <th>Flag</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti>p</ti>
+  <ti>permissions</ti>
+</tr>
+<tr>
+  <ti>i</ti>
+  <ti>inode</ti>
+</tr>
+<tr>
+  <ti>n</ti>
+  <ti>number of links</ti>
+</tr>
+<tr>
+  <ti>u</ti>
+  <ti>user</ti>
+</tr>
+<tr>
+  <ti>g</ti>
+  <ti>group</ti>
+</tr>
+<tr>
+  <ti>s</ti>
+  <ti>size</ti>
+</tr>
+<tr>
+  <ti>b</ti>
+  <ti>block count</ti>
+</tr>
+<tr>
+  <ti>m</ti>
+  <ti>mtime</ti>
+</tr>
+<tr>
+  <ti>a</ti>
+  <ti>atime</ti>
+</tr>
+<tr>
+  <ti>c</ti>
+  <ti>ctime</ti>
+</tr>
+<tr>
+  <ti>S</ti>
+  <ti>check for growing size</ti>
+</tr>
+<tr>
+  <ti>md5</ti>
+  <ti>md5 checksum</ti>
+</tr>
+<tr>
+  <ti>sha1</ti>
+  <ti>sha1 checksum</ti>
+</tr>
+<tr>
+  <ti>rmd160</ti>
+  <ti>rmd160 checksum</ti>
+</tr>
+<tr>
+  <ti>tiger</ti>
+  <ti>tiger checksum</ti>
+</tr>
+<tr>
+  <ti>R</ti>
+  <ti>p+i+n+u+g+s+m+c+md5</ti>
+</tr>
+<tr>
+  <ti>L</ti>
+  <ti>p+i+n+u+g</ti>
+</tr>
+<tr>
+  <ti>E</ti>
+  <ti>Empty group</ti>
+</tr>
+<tr>
+  <ti>&gt;</ti>
+  <ti>Growing logfile p+u+g+i+n+S</ti>
+</tr>
+</table>
+
+<p>
+And if AIDE is compiled with mhash support it supports a few other features:
+</p>
+
+<table>
+<tr>
+<th>Flag</th>
+<th>Description</th>
+</tr>
+<tr>
+<ti>haval</ti>
+<ti>haval checksum</ti>
+</tr>
+<tr>
+<ti>gost</ti>
+<ti>gost checksum</ti>
+</tr>
+<tr>
+<ti>crc32</ti>
+<ti>crc32 checksum</ti>
+</tr>
+</table>
+
+<p>
+Now you can create you own rules based on the above flags by combining them
+like this:
+</p>
+
+<pre caption="Create a ruleset for AIDE">
+All=R+a+sha1+rmd160
+Norm=s+n+b+md5+sha1+rmd160
+</pre>
+
+<p>
+The last thing we need to create our own configuration file is to see how to add
+a rule to a file or directory. To enter a rule, combine the file or directory
+name and the rule. AIDE will add all files recursively unless you specify an
+alternate rule.
+</p>
+
+<table>
+<tr>
+<th>Flag</th>
+<th>Description</th>
+</tr>
+<tr>
+<ti>!</ti>
+<ti>Don't add this file or directory.</ti>
+</tr>
+<tr>
+<ti>=</ti>
+<ti>Add this directory, but not recursively.</ti>
+</tr>
+</table>
+
+<p>
+So lets watch a full blown example:
+</p>
+
+<pre caption="/etc/aide/aide.conf">
+@@ifndef TOPDIR
+@@define TOPDIR /
+@@endif
+
+@@ifndef AIDEDIR
+@@define AIDEDIR /etc/aide
+@@endif
+
+@@ifhost smbserv
+@@define smbactive
+@@endif
+
+# The location of the database to be read.
+database=file:@@{AIDEDIR}/aide.db
+
+# The location of the database to be written.
+database_out=file:aide.db.new
+
+verbose=20
+report_url=stdout
+
+# Rule definition
+All=R+a+sha1+rmd160
+Norm=s+n+b+md5+sha1+rmd160
+
+@@{TOPDIR} Norm
+!@@{TOPDIR}etc/aide
+!@@{TOPDIR}dev
+!@@{TOPDIR}media
+!@@{TOPDIR}mnt
+!@@{TOPDIR}proc
+!@@{TOPDIR}root
+!@@{TOPDIR}sys
+!@@{TOPDIR}tmp
+!@@{TOPDIR}var/log
+!@@{TOPDIR}var/run
+!@@{TOPDIR}usr/portage
+@@ifdef smbactive
+!@@{TOPDIR}etc/smb/private/secrets.tdb
+@@endif
+=@@{TOPDIR}home Norm
+</pre>
+
+<p>
+In the above example we specify with some macros where the topdir starts and
+where the AIDE directory is. AIDE checks the <path>/etc/aide/aide.db</path> file
+when checking for file integrity. But when updating or creating a new file it
+stores the information in <path>/etc/aide/aide.db.new</path>. This is done so it
+won't automatically overwrite the old db file. The option
+<c>report_URL</c> is not yet implemented, but the author's intention was that
+it should be able to e-mail or maybe even execute scripts.
+</p>
+
+<p>
+The AIDE ebuild now comes with a working default configuration file, a helper
+script and a crontab script. The helper script does a number of tasks for you
+and provides an interface that is a little more script friendly. To see all
+available options, try <c>aide --help</c>. To get started, all that needs to be
+done is <c>aide -i</c> and the crontab script should detect the database and
+send mails as appropriate every day. We recommend that you review the
+<path>/etc/aide/aide.conf</path> file and ensure that the configuration
+accurately reflects what is in place on the machine.
+</p>
+
+<note>
+Depending on your CPU, disk access speed, and the flags you have set on files,
+this can take some time.
+</note>
+
+<note>
+Remember to set an alias so you get roots mail. Otherwise you will never know
+what AIDE reports.
+</note>
+
+<p>
+Now there is some risk inherent with storing the db files locally, since the
+attacker will (if they know that AIDE is installed) most certainly try to alter
+the db file, update the db file or modify <path>/usr/bin/aide</path>. So you
+should create a CD or other media and put on it a copy of the .db file and the
+AIDE binaries.
+</p>
+
+<p>
+One can find information at the <uri
+link="http://www.cs.tut.fi/~rammer/aide.html">AIDE</uri> project page.
+</p>
+
+</body>
+</section>
+<section>
+<title>Snort</title>
+<body>
+
+<p>
+Snort is a Network Intrusion Detection System (NIDS). To install and configure
+it use the following examples.
+</p>
+
+<pre caption="/etc/conf.d/snort">
+PIDFILE=/var/run/snort_eth0.pid
+MODE="full"
+NETWORK="10.0.0.0/24"
+LOGDIR="/var/log/snort"
+CONF=/etc/snort/snort.conf
+SNORT_OPTS="-D -s -u snort -dev -l $LOGDIR -h $NETWORK -c $CONF"
+</pre>
+
+<pre caption="/etc/snort/snort.conf">
+<comment>(Step 1)</comment>
+var HOME_NET 10.0.0.0/24
+var EXTERNAL_NET any
+var SMTP $HOME_NET
+var HTTP_SERVERS $HOME_NET
+var SQL_SERVERS $HOME_NET
+var DNS_SERVERS [10.0.0.2/32,212.242.40.51/32]
+var RULE_PATH ./
+
+<comment>(Step 2)</comment>
+preprocessor frag2
+preprocessor stream4: detect_scans detect_state_problems detect_scans disable_evasion_alerts
+preprocessor stream4_reassemble: ports all
+preprocessor http_decode: 80 8080 unicode iis_alt_unicode double_encode iis_flip_slash full_whitespace
+preprocessor rpc_decode: 111 32771
+preprocessor bo: -nobrute
+preprocessor telnet_decode
+
+<comment>(Step 3)</comment>
+include classification.config
+
+<comment>(Step 4)</comment>
+include $RULE_PATH/bad-traffic.rules
+include $RULE_PATH/exploit.rules
+include $RULE_PATH/scan.rules
+include $RULE_PATH/finger.rules
+include $RULE_PATH/ftp.rules
+include $RULE_PATH/telnet.rules
+include $RULE_PATH/smtp.rules
+include $RULE_PATH/rpc.rules
+include $RULE_PATH/rservices.rules
+include $RULE_PATH/dos.rules
+include $RULE_PATH/ddos.rules
+include $RULE_PATH/dns.rules
+include $RULE_PATH/tftp.rules
+include $RULE_PATH/web-cgi.rules
+include $RULE_PATH/web-coldfusion.rules
+include $RULE_PATH/web-iis.rules
+include $RULE_PATH/web-frontpage.rules
+include $RULE_PATH/web-misc.rules
+include $RULE_PATH/web-attacks.rules
+include $RULE_PATH/sql.rules
+include $RULE_PATH/x11.rules
+include $RULE_PATH/icmp.rules
+include $RULE_PATH/netbios.rules
+include $RULE_PATH/misc.rules
+include $RULE_PATH/attack-responses.rules
+include $RULE_PATH/backdoor.rules
+include $RULE_PATH/shellcode.rules
+include $RULE_PATH/policy.rules
+include $RULE_PATH/porn.rules
+include $RULE_PATH/info.rules
+include $RULE_PATH/icmp-info.rules
+include $RULE_PATH/virus.rules
+# include $RULE_PATH/experimental.rules
+include $RULE_PATH/local.rules
+</pre>
+
+<pre caption="/etc/snort/classification.config">
+config classification: not-suspicious,Not Suspicious Traffic,3
+config classification: unknown,Unknown Traffic,3
+config classification: bad-unknown,Potentially Bad Traffic, 2
+config classification: attempted-recon,Attempted Information Leak,2
+config classification: successful-recon-limited,Information Leak,2
+config classification: successful-recon-largescale,Large Scale Information Leak,2
+config classification: attempted-dos,Attempted Denial of Service,2
+config classification: successful-dos,Denial of Service,2
+config classification: attempted-user,Attempted User Privilege Gain,1
+config classification: unsuccessful-user,Unsuccessful User Privilege Gain,1
+config classification: successful-user,Successful User Privilege Gain,1
+config classification: attempted-admin,Attempted Administrator Privilege Gain,1
+config classification: successful-admin,Successful Administrator Privilege Gain,1
+
+# NEW CLASSIFICATIONS
+config classification: rpc-portmap-decode,Decode of an RPC Query,2
+config classification: shellcode-detect,Executable code was detected,1
+config classification: string-detect,A suspicious string was detected,3
+config classification: suspicious-filename-detect,A suspicious filename was detected,2
+config classification: suspicious-login,An attempted login using a suspicious username was detected,2
+config classification: system-call-detect,A system call was detected,2
+config classification: tcp-connection,A TCP connection was detected,4
+config classification: trojan-activity,A Network Trojan was detected, 1
+config classification: unusual-client-port-connection,A client was using an unusual port,2
+config classification: network-scan,Detection of a Network Scan,3
+config classification: denial-of-service,Detection of a Denial of Service Attack,2
+config classification: non-standard-protocol,Detection of a non-standard protocol or event,2
+config classification: protocol-command-decode,Generic Protocol Command Decode,3
+config classification: web-application-activity,access to a potentially vulnerable web application,2
+config classification: web-application-attack,Web Application Attack,1
+config classification: misc-activity,Misc activity,3
+config classification: misc-attack,Misc Attack,2
+config classification: icmp-event,Generic ICMP event,3
+config classification: kickass-porn,SCORE! Get the lotion!,1
+</pre>
+
+<p>
+More information is at the <uri
+link="http://www.snort.org">Snort</uri> web site.
+</p>
+
+</body>
+</section>
+<section>
+<title>Detecting malware with chkrootkit</title>
+<body>
+
+<p>
+HIDS like AIDE are a great way to detect changes to your system, but it never
+hurts to have another line of defence. <c>chkrootkit</c> is a utility that scans
+common system files for the presence of rootkits--software designed to hide an
+intruder's actions and allow him to retain his access--and scans your system for
+likely traces of key loggers and other "malware". While <c>chkrootkit</c> (and
+alternatives like <c>rkhunter</c>) are useful tools, both for system
+maintenance and for tracking an intruder after an attack has occurred, they
+cannot guarantee your system is secure.
+</p>
+
+<p>
+The best way to use <c>chkrootkit</c> to detect an intrusion is to run it
+routinely from <c>cron</c>. To start, emerge
+<path>app-forensics/chkrootkit</path>. <c>chkrootkit</c> can be run from the
+command line by the command of the same name, or from <c>cron</c> with an entry
+such as this:
+</p>
+
+<pre caption="Schedule chkrootkit as a cronjob">
+0 3 * * * /usr/sbin/chkrootkit
+</pre>
+
+</body>
+</section>
+</sections>

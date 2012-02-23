@@ -1,0 +1,565 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2004.2/hb-install-alpha-disk.xml,v 1.1 2004/11/15 12:43:54 swift Exp $ -->
+
+<sections>
+
+<version>1.9</version>
+<date>August 30, 2004</date>
+
+<section>
+<title>Introduction to Block Devices</title>
+<subsection>
+<title>Block Devices</title>
+<body>
+
+<p>
+We'll take a good look at disk-oriented aspects of Gentoo Linux
+and Linux in general, including Linux filesystems, partitions and block devices.
+Then, once you're familiar with the ins and outs of disks and filesystems,
+you'll be guided through the process of setting up partitions and filesystems
+for your Gentoo Linux installation.
+</p>
+
+<p>
+To begin, we'll introduce <e>block devices</e>. The most famous block device is
+probably the one that represents the first SCSI HD in a Linux system, namely
+<path>/dev/sda</path>.
+</p>
+
+<p>
+The block devices above represent an abstract interface to the disk. User
+programs can use these block devices to interact with your disk without worrying
+about whether your drives are IDE, SCSI or something else. The program can
+simply address the storage on the disk as a bunch of contiguous,
+randomly-accessible 512-byte blocks.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Slices</title>
+<body>
+
+<p>
+Although it is theoretically possible to use a full disk to house your Linux
+system, this is almost never done in practice. Instead, full disk block devices
+are split up in smaller, more manageable block devices. On Alpha systems,
+these are called <e>slices</e>. 
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Designing a Partitioning Scheme</title>
+<subsection>
+<title>Default Partitioning Scheme</title>
+<body>
+
+<p>
+As an example we use the following slice layout:
+</p>
+
+<table>
+<tr>
+  <th>Slice</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>Swap slice</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>Root slice</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>Full disk (required)</ti>
+</tr>
+</table>
+
+
+<p>
+If you are interested in knowing how big a partition should be, or even how 
+many partitions (or volumes) you need, read on. Otherwise continue now with
+<uri link="#fdisk">Using fdisk to Partition your Disk</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>How Many and How Big?</title>
+<body>
+
+<p>
+The number of partitions is highly dependent on your environment. For instance,
+if you have lots of users, you will most likely want to have your
+<path>/home</path> separate as it increases security and makes backups easier.
+If you are installing Gentoo to perform as a mailserver, your 
+<path>/var</path> should be separate as all mails are stored inside 
+<path>/var</path>. A good choice of filesystem will then maximise your 
+performance. Gameservers will have a separate <path>/opt</path> as most gaming 
+servers are installed there. The reason is similar for <path>/home</path>: 
+security and backups.
+</p>
+
+<p>
+As you can see, it very much depends on what you want to achieve. Separate
+partitions or volumes have the following advantages:
+</p>
+
+<ul>
+<li>
+  You can choose the best performing filesystem for each partition or volume
+</li>
+<li>
+  Your entire system cannot run out of free space if one defunct tool is
+  continuously writing files to a partition or volume
+</li>
+<li>
+  If necessary, file system checks are reduced in time, as multiple checks can
+  be done in parallel (although this advantage is more with multiple disks than
+  it is with multiple partitions)
+</li>
+<li>
+  Security can be enhanced by mounting some partitions or volumes read-only, 
+  nosuid (setuid bits are ignored), noexec (executable bits are ignored) etc.
+</li>
+</ul>
+
+<p>
+However, multiple partitions have one big disadvantage: if not configured 
+properly, you might result in having a system with lots
+of free space on one partition and none on another.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="fdisk">
+<title>Using fdisk on Alpha to Partition your Disk</title>
+<subsection>
+<body>
+
+<p>
+The following parts explain how to create the example slice layout described
+previously, namely:
+</p>
+
+<table>
+<tr>
+  <th>Slice</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>Swap slice</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>Root slice</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>Full disk (required)</ti>
+</tr>
+</table>
+
+<p>
+Change your slice layout according to your own preference.
+</p>
+
+
+</body>
+</subsection>
+<subsection>
+<title>Identifying Available Disks</title>
+<body>
+
+<p>
+To figure out what disks you have running, use the following commands:
+</p>
+
+<pre caption="Identifying available disks">
+# <i>dmesg | grep 'drive$'</i>        <comment>(For IDE disks)</comment>
+# <i>dmesg | grep 'scsi'</i>          <comment>(For SCSI disks)</comment>
+</pre>
+
+<p>
+From this output you should be able to see what disks were detected and their
+respective <path>/dev</path> entry. In the following parts we assume that the
+disk is a SCSI disk on <path>/dev/sda</path>.
+</p>
+
+<p>
+Now fire up <c>fdisk</c>:
+</p>
+
+<pre caption="Starting fdisk">
+# <i>fdisk /dev/sda</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Deleting All Slices</title>
+<body>
+
+<p>
+If your hard drive is completely blank, then you'll have to first create 
+a BSD disklabel.
+</p>
+
+<pre caption="Creating BSD disklabel">
+Command (m for help): <i>b</i>
+/dev/sda contains no disklabel.
+Do you want to create a disklabel? (y/n) <i>y</i>
+<comment>A bunch of drive-specific info will show here</comment>
+3 partitions:
+#       start       end      size     fstype   [fsize bsize   cpg]                                    
+  c:        1      5290*     5289*    unused        0     0
+</pre>
+
+<p>
+We start with deleting all slices <e>except</e> the 'c'-slice. The following
+shows how to delete a slice (in the example we use 'a'). Repeat the process to
+delete all other slices (again, except the 'c'-slice).
+</p>
+
+<p>
+Use <c>p</c> to view all existing slices. <c>d</c> is used to delete a slice.
+</p>
+
+<pre caption="Deleting a slice">
+BSD disklabel command (m for help): <i>p</i>
+
+8 partitions:
+#       start       end      size     fstype   [fsize bsize   cpg]                                    
+  a:        1       235*      234*    4.2BSD     1024  8192    16
+  b:      235*      469*      234*      swap
+  c:        1      5290*     5289*    unused        0     0
+  d:      469*     2076*     1607*    unused        0     0
+  e:     2076*     3683*     1607*    unused        0     0
+  f:     3683*     5290*     1607*    unused        0     0
+  g:      469*     1749*     1280     4.2BSD     1024  8192    16
+  h:     1749*     5290*     3541*    unused        0     0
+
+BSD disklabel command (m for help): <i>d</i>
+Partition (a-h): <i>a</i>
+</pre>
+
+<p>
+After repeating this process for all slices, a listing should show you something
+similar to this:
+</p>
+
+<pre caption="Viewing an empty scheme">
+BSD disklabel command (m for help): <i>p</i>
+
+3 partitions:
+#       start       end      size     fstype   [fsize bsize   cpg]                                    
+  c:        1      5290*     5289*    unused        0     0
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Creating the Swap Slice</title>
+<body>
+
+<p>
+On Alpha based systems you don't need a separate boot partition. However, the
+first cylinder cannot be used as the <c>aboot</c> image will be placed there.
+</p>
+
+<p>
+We will create a swap slice starting at the third cylinder, with a total
+size of 1 Gbyte. Use <c>n</c> to create a new slice. After creating the slice,
+we will change its type to <c>1</c> (one), meaning <e>swap</e>.
+</p>
+
+<pre caption="Creating the swap slice">
+BSD disklabel command (m for help): <i>n</i>
+Partition (a-p): <i>a</i>
+First cylinder (1-5290, default 1): <i>3</i>
+Last cylinder or +size or +sizeM or +sizeK (3-5290, default 5290): <i>+1024M</i>
+
+BSD disklabel command (m for help): <i>t</i>
+Partition (a-c): <i>a</i>
+Hex code (type L to list codes): <i>1</i>
+</pre>
+
+<p>
+After these steps you should see a layout similar to the following:
+</p>
+
+<pre caption="Slice layout after creating the swap slice">
+BSD disklabel command (m for help): <i>p</i>
+
+3 partitions:
+#       start       end      size     fstype   [fsize bsize   cpg]                                    
+  a:        3      1003      1001       swap
+  c:        1      5290*     5289*    unused        0     0
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Create the Root Slice</title>
+<body>
+
+<p>
+We will now create the root slice, starting from the first cylinder <e>after</e>
+the swap slice. Use the <c>p</c> command to view where the swap slice ends. In
+our example, this is at 1003, making the root partition start at 1004.
+</p>
+
+<p>
+Another problem is that there is currently a bug in <c>fdisk</c> making it think
+the number of available cylinders is one above the real number of cylinders. In
+other words, when you are asked for the last cylinder, decrease the cylinder
+number (in this example: 5290) with one.
+</p>
+
+<p>
+When the partition is created, we change the type to <c>8</c>, for <e>ext2</e>.
+</p>
+
+<pre caption="Creating the root slice">
+D disklabel command (m for help): <i>n</i>
+Partition (a-p): <i>b</i>
+First cylinder (1-5290, default 1): <i>1004</i>
+Last cylinder or +size or +sizeM or +sizeK (1004-5290, default 5290): <i>5289</i>
+
+BSD disklabel command (m for help): <i>t</i>
+Partition (a-c): <i>b</i>
+Hex code (type L to list codes): <i>8</i>
+</pre>
+
+<p>
+Your slice layout should now be similar to this:
+</p>
+
+<pre caption="Viewing the slice layout">
+BSD disklabel command (m for help): <i>p</i>
+
+3 partitions:
+#       start       end      size     fstype   [fsize bsize   cpg]                                    
+  a:        3      1003      1001       swap
+  b:     1004      5289      4286       ext2
+  c:        1      5290*     5289*    unused        0     0
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Save the Slice Layout and Exit</title>
+<body>
+
+<p>
+Save <c>fdisk</c> by typing <c>w</c>. This will also save your slice layout.
+</p>
+
+<pre caption="Save and exit fdisk">
+Command (m for help): <i>w</i>
+</pre>
+
+<p>
+Now that your slices are created, you can now continue with <uri
+link="#filesystems">Creating Filesystems</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="filesystems">
+<title>Creating Filesystems</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Now that your partitions are created, it is time to place a filesystem on them. 
+If you don't care about what filesystem to choose and are happy with what we use
+as default in this handbook, continue with <uri 
+link="#filesystems-apply">Applying a Filesystem to a Partition</uri>.
+Otherwise read on to learn about the available filesystems...
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Filesystems?</title>
+<body>
+
+<p>
+Several filesystems are available. Most of them are found stable on the
+Alpha architecture.
+</p>
+
+<p>
+<b>ext2</b> is the tried and true Linux filesystem but doesn't have metadata
+journaling, which means that routine ext2 filesystem checks at startup time can
+be quite time-consuming. There is now quite a selection of newer-generation
+journaled filesystems that can be checked for consistency very quickly and are
+thus generally preferred over their non-journaled counterparts. Journaled
+filesystems prevent long delays when you boot your system and your filesystem
+happens to be in an inconsistent state.
+</p>
+
+<p>
+<b>ext3</b> is the journaled version of the ext2 filesystem, providing metadata
+journaling for fast recovery in addition to other enhanced journaling modes like
+full data and ordered data journaling. ext3 is a very good and reliable
+filesystem. It has an additional hashed b-tree indexing option that enables 
+high performance in almost all situations. In short, ext3 is an excellent 
+filesystem.
+</p>
+
+<p>
+<b>ReiserFS</b> is a B*-tree based filesystem that has very good overall 
+performance and greatly outperforms both ext2 and ext3 when dealing with small 
+files (files less than 4k), often by a factor of 10x-15x. ReiserFS also scales 
+extremely well and has metadata journaling. As of kernel 2.4.18+, ReiserFS is 
+solid and usable as both general-purpose filesystem and for extreme cases such 
+as the creation of large filesystems, the use of many small files, very large 
+files and directories containing tens of thousands of files. 
+</p>
+
+<p>
+<b>XFS</b> is a filesystem with metadata journaling which comes with a robust
+feature-set and is optimized for scalability. We only recommend using this
+filesystem on Linux systems with high-end SCSI and/or fibre channel storage and
+an uninterruptible power supply. Because XFS aggressively caches in-transit data
+in RAM, improperly designed programs (those that don't take proper precautions
+when writing files to disk and there are quite a few of them) can lose a good
+deal of data if the system goes down unexpectedly.
+</p>
+
+<p>
+<b>JFS</b> is IBM's high-performance journaling filesystem. It has recently 
+become production-ready and there hasn't been a sufficient track record to 
+comment positively nor negatively on its general stability at this point.
+</p>
+
+</body>
+</subsection>
+<subsection id="filesystems-apply">
+<title>Applying a Filesystem to a Partition</title>
+<body>
+
+<p>
+To create a filesystem on a partition or volume, there are tools available for 
+each possible filesystem:
+</p>
+
+<table>
+<tr>
+  <th>Filesystem</th>
+  <th>Creation Command</th>
+</tr>
+<tr>
+  <ti>ext2</ti>
+  <ti><c>mke2fs</c></ti>
+</tr>
+<tr>
+  <ti>ext3</ti>
+  <ti><c>mke2fs -j</c></ti>
+</tr>
+<tr>
+  <ti>reiserfs</ti>
+  <ti><c>mkreiserfs</c></ti>
+</tr>
+<tr>
+  <ti>xfs</ti>
+  <ti><c>mkfs.xfs</c></ti>
+</tr>
+<tr>
+  <ti>jfs</ti>
+  <ti><c>mkfs.jfs</c></ti>
+</tr>
+</table>
+
+<p>
+For instance, to have the root partition (<path>/dev/sda2</path> in our example)
+in ext3, you would use:
+</p>
+
+<pre caption="Applying a filesystem on a partition">
+# <i>mke2fs -j /dev/sda2</i>
+</pre>
+
+<p>
+Now create the filesystems on your newly created partitions (or logical
+volumes).
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Activating the Swap Partition</title>
+<body>
+
+<p>
+<c>mkswap</c> is the command that is used to initialize swap partitions:
+</p>
+
+<pre caption="Creating a Swap signature">
+# <i>mkswap /dev/sda1</i>
+</pre>
+
+<p>
+To activate the swap partition, use <c>swapon</c>:
+</p>
+
+<pre caption="Activating the swap partition">
+# <i>swapon /dev/sda1</i>
+</pre>
+
+<p>
+Create and activate the swap now.
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Mounting</title>
+<body>
+
+<p>
+Now that your partitions are initialized and are housing a filesystem, it is
+time to mount those partitions. Use the <c>mount</c> command. Don't forget to
+create the necessary mount directories for every partition you created. As an
+example we mount the root and boot partition:
+</p>
+
+<pre caption="Mounting partitions">
+# <i>mount /dev/sda2 /mnt/gentoo</i>
+</pre>
+
+<note>
+If you want your <path>/tmp</path> to reside on a separate partition, be sure to
+change its permissions after mounting: <c>chmod 1777 /mnt/gentoo/tmp</c>. This
+also holds for <path>/var/tmp</path>.
+</note>
+
+<p>
+We will also have to mount the proc filesystem (a virtual interface with the 
+kernel) on <path>/proc</path>. But first we will need to place our files on the partitions.
+</p>
+
+<p>
+Continue with <uri link="?part=1&amp;chap=5">Installing the Gentoo
+Installation Files</uri>.
+</p>
+
+</body>
+</section>
+</sections>

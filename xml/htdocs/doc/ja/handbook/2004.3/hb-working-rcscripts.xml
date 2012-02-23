@@ -1,0 +1,582 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/1.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-working-rcscripts.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+
+<!-- Original revision: 1.20 -->
+
+<sections>
+
+<version>1.17</version>
+<date>2004-10-23</date>
+
+<section>
+<title>ランレベル</title>
+<subsection>
+<title>システムの起動</title>
+<body>
+
+<p>
+システムを起動したとき、多くのテキストが画面上を流れることに気がつくでしょう。
+よく注意して見ると、このテキストは、システムをリブートするたびに、常に同じであることがわかるでしょう。これらすべてのアクションの進行は、<e>ブートシーケンス</e>と呼ばれ、(ほぼ)静的に定義されます。
+</p>
+
+<p>
+最初に、ブートローダが、ブートローダの設定で指定されたカーネルイメージをメモリにロードし、その後、カーネルを実行するようにCPUに命じます。カーネルがロードされ、実行されるときに、カーネルは、カーネル固有の構造とタスク全てを初期化し、<c>init</c>プロセスを起動します。
+</p>
+
+<p>
+その後、<c>init</c>プロセスは、(<path>/etc/fstab</path>で指定された)すべてのファイルシステムがマウントされて使用できる準備が整うことを確認します。
+次に、<path>/etc/init.d</path>ディレクトリにあるいくつかのスクリプトを実行します。それらのスクリプトは、うまくシステムが起動されるように必要なサービスを開始します。
+</p>
+
+<p>
+最後に、すべてのスクリプトが実行されたら、<c>init</c>プロセスは、<c>agetty</c>という特別なプロセスを端末(ターミナル)にくっつけて、端末(ほとんどが、<c>Alt-F1</c>、<c>Alt-F2</c>などの下に隠される仮想コンソール)を有効にします。
+次に、<c>agetty</c>プロセスは、<c>login</c>プロセスを実行することで、これらの端末を通してユーザがログインできるようにします。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>initスクリプト</title>
+<body>
+
+<p>
+ここで、<c>init</c>プロセスは、<path>/etc/init.d</path>ディレクトリにあるスクリプトをでたらめに実行するわけではありません。ましてや、<path>/etc/init.d</path>ディレクトリにあるスクリプト全てを実行するわけでもありません。
+<path>/etc/runlevels</path>ディレクトリを調べて、どのスクリプトを実行するべきかを決めます。
+</p>
+
+<p>
+最初に、<c>init</c>プロセスは、<path>/etc/runlevels/boot</path>ディレクトリにシンボリックリンクがある<path>/etc/init.d</path>の全てのスクリプトを実行します。通常は、アルファベット順にスクリプトを開始しますが、いくつかのスクリプトは、起動される前に別のスクリプトが実行されなければならないことをシステムに伝える依存情報を持っています。
+</p>
+
+<p>
+<path>/etc/runlevels/boot</path>から参照されるすべてのスクリプトが実行されたら、<c>init</c>プロセスは、<path>/etc/runlevels/default</path>にシンボリックリンクがあるスクリプトの実行を続けます。
+やはり、スクリプトが依存情報を持たない場合は、どのスクリプトを最初に実行するべきかを決めるためにアルファベット順を使用しますが、うまく動作するスタートアップシーケンスを提供するために順番が変更される場合があります。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>initプロセスはどのように動作するか</title>
+<body>
+
+<p>
+もちろん、<c>init</c>プロセス自身が勝手に全てを決定するわけではありません。
+どんなアクションを取ることが必要かを指定する設定ファイルが必要です。
+この設定ファイルは、<path>/etc/inittab</path>です。
+</p>
+
+<p>
+最初に説明したブートシーケンスを覚えているなら、<c>init</c>プロセスの最初のアクションは、すべてのファイルシステムをマウントすることであることを覚えているでしょう。これは、<path>/etc/inittab</path>に以下のような行で指定されています。
+</p>
+
+<pre caption="/etc/inittabのシステム初期化を指示する行">
+si::sysinit:/sbin/rc sysinit
+</pre>
+
+<p>
+この行は、<c>init</c>プロセスに、システムを初期化するために<c>/sbin/rc sysinit</c>を実行しなければならないことを伝えています。<path>/sbin/rc</path>スクリプトが初期化を担当するので、<c>init</c>はあまり何もしないじゃないかと思うかもしれません。そうです、別のプロセスにシステムの初期化処理を委譲しています。
+</p>
+
+<p>
+次に、<c>init</c>プロセスは、<path>/etc/runlevels/boot</path>にシンボリックリンクがあるスクリプトすべてを実行します。これは、以下の行で指定されます。
+</p>
+
+<pre caption="システム初期化の続き">
+rc::bootwait:/sbin/rc boot
+</pre>
+
+<p>
+ここでも<c>rc</c>スクリプトが必要な処理を実行します。<c>rc</c>に与えられているオプション(<e>boot</e>)は、<path>/etc/runlevels</path>のサブディレクトリと同じものが使用されていることを覚えておいてください。
+</p>
+
+<p>
+ここで、<c>init</c>プロセスは、どの<e>ランレベル</e>で実行されるべきかを知るために設定ファイルを調べます。これを決めるために、<path>/etc/inittab</path>の以下の行を読みます。
+</p>
+
+<pre caption="initdefault行">
+id:3:initdefault:
+</pre>
+
+<p>
+この場合(Gentooユーザの大多数が使用する)、<e>ランレベル</e>idは3です。
+この情報を使って、<c>init</c>は<e>ランレベル3</e>を開始するために、何を実行しなければならないかを調べます。
+</p>
+
+<pre caption="ランレベルの定義">
+l0:0:wait:/sbin/rc shutdown
+l1:S1:wait:/sbin/rc single
+l2:2:wait:/sbin/rc nonetwork
+l3:3:wait:/sbin/rc default
+l4:4:wait:/sbin/rc default
+l5:5:wait:/sbin/rc default
+l6:6:wait:/sbin/rc reboot
+</pre>
+
+<p>
+レベル3を指定する行は、やはり、サービスを起動するために<c>rc</c>スクリプトを使用します(ここでは、<e>default</e>の引数を渡す)。
+ここでも、<c>rc</c>の引数が、<path>/etc/runlevels</path>のサブディレクトリと同じであることを覚えておいてください。
+</p>
+
+<p>
+<c>rc</c>が完了したら、<c>init</c>プロセスは、以下のように、どの仮想コンソールを有効にすべきで、何のコマンドがそれぞれのコンソールで実行されなければならないかを決定します。
+</p>
+
+<pre caption="仮想コンソールの定義">
+c1:12345:respawn:/sbin/agetty 38400 tty1 linux
+c2:12345:respawn:/sbin/agetty 38400 tty2 linux
+c3:12345:respawn:/sbin/agetty 38400 tty3 linux
+c4:12345:respawn:/sbin/agetty 38400 tty4 linux
+c5:12345:respawn:/sbin/agetty 38400 tty5 linux
+c6:12345:respawn:/sbin/agetty 38400 tty6 linux
+</pre>
+
+
+</body>
+</subsection>
+<subsection>
+<title>ランレベルって何?</title>
+<body>
+
+<p>
+あなたは、<c>init</c>プロセスがどの<e>ランレベル</e>を有効にすべきかを決めるために、番号付け体系を使用することを見ました。<e>ランレベル</e>は、システムの実行状態であり、ランレベルに入ったりランレベルから抜けたりするときに実行されるべきスクリプト(runlevel scriptsもしくは、<e>initscripts</e>)のコレクションを意味します。
+</p>
+
+<p>
+Gentooでは、7つのランレベルが定義されています。そのうちの3つは、システム内部で使用されるランレベルで、あとの4つは、ユーザ定義のランレベルです。内部で使用されるランレベルは、<e>sysinit</e>と<e>shutdown</e>と<e>reboot</e>で、その名が示すとおりのことを適切に行います。<e>sysinit</e>は、システムを初期化し、<e>shutdown</e>は、システムを停止し、<e>reboot</e>は、システムのリブートを行います。
+</p>
+
+<p>
+ユーザ定義のランレベルは、<path>/etc/runlevels</path>に属するサブディレクトリを指します。そのサブディレクトリには、<path>boot</path>と<path>default</path>と<path>nonetwork</path>と<path>single</path>があります。<path>boot</path>ランレベルは、他のすべてのランレベルが使用する、システムに必要なすべてのサービスを開始します。残りの3つのランレベルには、何のサービスを開始するかの違いがあります。
+<path>default</path>は、日常の業務のために使用されます。<path>nonetwork</path>はネットワーク接続が必要でない場合に使用されます。<path>single</path>は、システムを修復しなければならない場合に使用されます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Initスクリプトを使いこなす</title>
+<body>
+
+<p>
+<c>rc</c>プロセスが起動するスクリプトは、<e>initスクリプト</e>と呼ばれます。
+<path>/etc/init.d</path>ディレクトリにある各スクリプトは、次の引数を伴って実行することができます。<e>start</e>、<e>stop</e>、<e>restart</e>、<e>pause</e>、<e>zap</e>、<e>status</e>、<e>ineed</e>、<e>iuse</e>、<e>needsme</e>、<e>usesme</e>、<e>broken</e>。
+</p>
+
+<p>
+サービス(とそれに依存するすべてのサービス)を開始、停止、再スタートするために、それぞれ<c>start</c>、<c>stop</c>、<c>restart</c>引数が次のように使用されるでしょう。
+</p>
+
+<pre caption="postfixの起動">
+# <i>/etc/init.d/postfix start</i>
+</pre>
+
+<note>
+指定されたサービスを<e>need(必要)</e>するサービスだけが、停止されるか再スタートされます。別の依存(<e>use(使用)</e>であるが、need(必要)ではない)サービスは、何もされないままです。
+</note>
+
+<p>
+サービスを停止したいが、それに依存するサービスは停止したくない場合、以下のように<c>pause</c>引数を使用します。
+</p>
+
+<pre caption="postfixを停止するが、依存するサービスは実行したままにする">
+# <i>/etc/init.d/postfix pause</i>
+</pre>
+
+<p>
+サービスの状態(started、stopped、paused、...)を見たいなら、以下のように<c>status</c>引数を使用します。
+</p>
+
+<pre caption="postfixの状態を見る">
+# <i>/etc/init.d/postfix status</i>
+</pre>
+
+<p>
+実際にはサービスが停止しているのが分かっているのに、起動中と表示される場合、以下のように<c>zap</c>引数で"停止"状態に修正します。
+</p>
+
+<pre caption="postfixの状態の修正">
+# <i>/etc/init.d/postfix zap</i>
+</pre>
+
+<p>
+サービスが持つ依存には何があるかを問い合わせるには、<c>iuse</c>か<c>ineed</c>を使用します。<c>ineed</c>では、対象のサービスが正しく機能するために実際に必要なサービスを見ることができます。一方、<c>iuse</c>は、サービスが正しく機能するために必須ではないが、サービスによって使用される可能性のあるサービスを表示します。
+</p>
+
+<pre caption="postfixが依存する必要なサービスのすべてを表示する要求">
+# <i>/etc/init.d/postfix ineed</i>
+</pre>
+
+<p>
+同様に、どのサービスが対象のサービスを要求するか(<c>needsme</c>)、もしくは、使用するか(<c>usesme</c>)を問い合わせることができます。
+</p>
+
+<pre caption="postfixを必要とするすべてのサービスを表示する要求">
+# <i>/etc/init.d/postfix needsme</i>
+</pre>
+
+<p>
+最後に、サービスが必要としていても存在しないものを、以下のように問い合わせることができます。
+</p>
+
+<pre caption="postfixの依存しているものの中で、存在しないものを表示する要求">
+# <i>/etc/init.d/postfix broken</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>rc-updateを使いこなす</title>
+<subsection>
+<title>rc-updateって何?</title>
+<body>
+
+<p>
+Gentooのinitシステムは、最初に起動される必要があるサービスが何であるかを決定するために、依存性ツリーを使用します。依存性ツリーの管理作業は、ユーザに手動でさせたいとは思わない退屈なものなので、ランレベルとinitスクリプトの管理を簡単にするツールを作成しました。
+</p>
+
+<p>
+<c>rc-update</c>を使用して、ランレベルにinitスクリプトを追加したり、削除したりできます。<c>rc-update</c>ツールは、その後、依存性ツリーを再構築するために<c>depscan.sh</c>スクリプトを自動で呼び出します。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>サービスの追加と削除</title>
+<body>
+
+<p>
+Gentooをインストールする間に、既に"default"ランレベルにinitスクリプトを追加しています。そのときには"default"が何のためにあるかということを知らなかったかもしれませんが、今は知っておくべきです。<c>rc-update</c>スクリプトは、何を実行するかを指定する別の引数を必要とします。それは、<e>add</e>か<e>del</e>か<e>show</e>です。
+</p>
+
+<p>
+initスクリプトを追加または、削除するには、<c>rc-update</c>に<c>add</c>または、<c>del</c>引数を渡し、initスクリプトとランレベルが後ろに続きます。例えば、以下のようにします。
+</p>
+
+<pre caption="defaultランレベルからpostfixを削除する">
+# <i>rc-update del postfix default</i>
+</pre>
+
+<p>
+<c>rc-update show</c>コマンドは、すべての利用可能なinitスクリプトとそれがどのランレベルで実行されるかを表示します。
+</p>
+
+<pre caption="initスクリプトの情報を参照する">
+# <i>rc-update show</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>サービスの設定</title>
+<subsection>
+<title>なぜ追加の設定が必要ですか?</title>
+<body>
+
+<p>
+initスクリプトは、極めて複雑になる可能性があります。そのため、initスクリプトをユーザーが直接編集することは、間違い起こしやすいので良くありません。しかし、そのようなサービスを設定できることは重要です。例えば、サービスに追加のオプションを足したいと思うかもしれません。
+</p>
+
+<p>
+設定をinitスクリプトの外側に設ける別の理由として、変更した設定が無効になってしまうという心配をせずにinitスクリプトの上書きができるということがあります。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>/etc/conf.dディレクトリ</title>
+<body>
+
+<p>
+Gentooはそのようなサービスを設定する簡単な方法を提供します。設定可能なinitスクリプトのすべてが、<path>/etc/conf.d</path>ディレクトリにファイルを設けています。例えば、apache2のinitスクリプト(<path>/etc/init.d/apache2</path>)には、<path>/etc/conf.d/apache2</path>という設定ファイルがあります。設定ファイルには、起動されるときにApache 2サーバに与えたいオプションを含めることができます。
+</p>
+
+<pre caption="/etc/conf.d/apache2に定義される変数">
+APACHE2_OPTS="-D PHP4"
+</pre>
+
+<p>
+このような設定ファイルには、サービスを非常に簡単に設定し易くする変数や変数単体(<path>/etc/make.conf</path>のような)が記述されています。変数に関するより詳しい情報も(コメントとして)提供されます。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>initスクリプトの記述</title>
+<subsection>
+<title>記述しなければならないですか?</title>
+<body>
+
+<p>
+いいえ。Gentooは、提供されるサービスすべてに対して、すぐに使用できるinitスクリプトを提供するので、通常は、initスクリプトを記述する必要はありません。しかし、あなたは、Portageを使用しないで、サービスをインストールしているかもしれません。その場合、おそらくinitスクリプトを作成しなければならないでしょう。
+</p>
+
+<p>
+サービスによって提供されるinitスクリプトは、Gentoo用に適切に書かれていないなら、使用してはいけません。Gentooのinitスクリプトは、他のディストリビューションによって使用されるinitスクリプトとは、互換性がありません。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>レイアウト</title>
+<body>
+
+<p>
+initスクリプトの基本レイアウトを、以下に示します。
+</p>
+
+<pre caption="initスクリプトの基本レイアウト">
+#!/sbin/runscript
+
+depend() {
+  <comment>(依存情報)</comment>
+}
+
+start() {
+  <comment>(サービスを起動するために必要なコマンド群)</comment>
+}
+
+stop() {
+  <comment>(サービスを停止するために必要なコマンド群)</comment>
+}
+
+restart() {
+  <comment>(サービスを再スタートするために必要なコマンド群)</comment>
+}
+</pre>
+
+<p>
+initスクリプトでは<c>start()</c>関数が定義されていることが<e>必須</e>です。他のすべてのセクションは、定義してもしなくてもよいです。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>依存関係</title>
+<body>
+
+<p>
+二つの依存関係が指定可能です。それは、<c>use</c>と、<c>need</c>です。
+前に述べたように、<c>need</c>依存は、<c>use</c>依存より制約が強いです。
+依存タイプ(needかuse)の後に、依存するサービスか、<e>virtual</e>依存を記述します。
+</p>
+
+<p>
+<e>virtual</e>依存とは、あるサービスが提供する依存関係ですが、そのサービスだけが提供するものではありません。たとえば、あるinitスクリプトがシステムロガーに依存するとします。しかし、たくさんのシステムロガー(metalogd、syslog-ng、sysklogd等々)が存在しているので、その中の一つのシステムロガーだけに<c>need</c>依存することはできません(また、すべてのシステムロガーをインストールして、実行することのもナンセンスです)。このような場合、すべてのシステムロガーがvirutal依存関係を<c>provide(提供)</c>するようにします。
+</p>
+
+<p>
+postfixサービスの依存情報を見てみましょう。
+</p>
+
+<pre caption="postfixの依存情報">
+depend() {
+  need net
+  use logger dns
+  provide mta
+}
+</pre>
+
+<p>
+見たとおり、postfixサービスには以下のような依存情報があります。
+</p>
+
+<ul>
+  <li>
+    (virtual)依存の<c>net</c>(例えば、<path>/etc/init.d/net.eth0</path>によってprovide(提供)されます)を要求します
+  </li>
+  <li>
+    (virtual)依存の<c>logger(例えば、<path>/etc/init.d/syslog-ng</path>によってprovide(提供)されます)</c>を使用します
+  </li>
+  <li>
+    (virtual)依存の<c>dns</c>(例えば、<path>/etc/init.d/named</path>によってprovide(提供)されます)を使用します 
+  </li>
+  <li>
+    (virtual)依存の<c>mta</c>(すべてのメールサービスに共通です)をprovide(提供)します 
+  </li>
+</ul>
+
+</body>
+</subsection>
+<subsection>
+<title>順番の制御</title>
+<body>
+
+<p>
+場合によっては、別のサービスを要求はしないが、<e>もし</e>システムに存在し(注意： この条件は依存ではありません)、<e>かつ</e>、同一ランレベルで実行する(注意：この条件は同一ランレベルのサービスだけが対象です)別のサービスの<c>before(前に)</c>(もしくは、<c>after(後に)</c>)開始したいサービスがあるでしょう。
+</p>
+
+<p>
+例として、portmapサービスの設定を見てみましょう。
+</p>
+
+<pre caption="portmapサービスのdepend()関数">
+depend() {
+  need net
+  before inetd
+  before xinetd
+}
+</pre>
+
+<p>
+お勧めはしませんが、同一ランレベルのすべてのサービスにあてはまる"*"を使用することもできます。
+</p>
+
+<pre caption="ランレベル内の最初のスクリプトとしてこのinitスクリプトを実行する">
+depend() {
+  before *
+}
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>標準関数</title>
+<body>
+
+<p>
+<c>depend()</c>関数の次に、さらに<c>start()</c>関数を定義する必要があります。
+この関数には、あなたのサービスを初期化するために必要なすべてのコマンドを入れます。何がなされているかをユーザに知らせるために、以下のように<c>ebegin</c>と<c>eend</c>関数を使用することが望ましいです。
+</p>
+
+<pre caption="start()関数の例">
+start() {
+  ebegin "Starting my_service"
+  start-stop-daemon --start --quiet --exec /path/to/my_service
+  eend $?
+}
+</pre>
+
+<p>
+<c>start()</c>関数のより多くの例が必要なら、<path>/etc/init.d</path>ディレクトリにある利用可能なinitスクリプトのソースコードを見てください。<c>start-stop-daemon</c>コマンドに関しては、より詳しい情報が必要なら、素晴らしいmanページが以下のようにして利用可能です。
+</p>
+
+<pre caption="start-stop-daemonコマンドのmanページを参照する">
+# <i>man start-stop-daemon</i>
+</pre>
+
+<p>
+定義可能な他の関数には、<c>stop()</c>と<c>restart()</c>があります。
+これらの関数を定義することは強制されません! Gentooのinitシステムは、<c>start-stop-daemon</c>を使用する場合には、自動的にinitシステム自身がこれらの関数を適切に処理します。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>特別なオプションの追加</title>
+<body>
+
+<p>
+あなたのinitスクリプトに、既に説明したもの以外に追加のオプションをサポートさせたいなら、<c>opts</c>変数にオプションを追加して、オプションと同じ名前を持つ関数を作成しなければなりません。例えば、<c>restartdelay</c>というオプションをサポートするには、以下のようにします。
+</p>
+
+<pre caption="restartdelayオプションのサポート">
+opts="${opts} restartdelay"
+
+restartdelay() {
+  stop()
+  sleep 3    <comment># Wait 3 seconds before starting again</comment>
+  start()
+}
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>サービス設定変数</title>
+<body>
+
+<p>
+<path>/etc/conf.d</path>の設定ファイルをサポートするのに必要なことは、何もありません。あなたのinitスクリプトが実行される場合、自動的に以下のファイルは読み込まれます。(すなわち、変数が利用可能です)
+</p>
+
+<ul>
+  <li><path>/etc/conf.d/&lt;あなたのinitスクリプト&gt;</path></li>
+  <li><path>/etc/conf.d/basic</path></li>
+  <li><path>/etc/rc.conf</path></li>
+</ul>
+
+<p>
+さらに、あなたのinitスクリプトが(<c>net</c>のような)virtual依存を提供するなら、その依存に関連するファイル(<path>/etc/conf.d/net</path>のような)もsourceされるでしょう。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>ランレベルの動作を変更する</title>
+<subsection>
+<title>これをすることでどんな人が恩恵を受けますか?</title>
+<body>
+
+<p>
+多くのラップトップユーザは、"家では<c>net.eth0</c>を開始する必要があるが、外出先(ネットワークが利用可能な場所ではないので)では<c>net.eth0</c>を開始したくない。"という状況を理解できるでしょう。
+Gentooではあなたのしたいようにランレベルの動作を変更できます。
+</p>
+
+<p>
+例えば、別のinitスクリプトが割り当てられてブートする、2つ目の"default"ランレベルを作成できます。その後、使用したいdefaultランレベルがどれかをブート時に選択できます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>SOFTLEVELの使用</title>
+<body>
+
+<p>
+何はさておき、別の"default"ランレベルのためのランレベルディレクトリを作成してください。例として、<path>offline</path>ランレベルを以下のように作成します。
+</p>
+
+<pre caption="ランレベルディレクトリの作成">
+# <i>mkdir /etc/runlevels/offline</i>
+</pre>
+
+<p>
+新しく作成したランレベルに必要なinitスクリプトを追加してください。例えば、<c>net.eth0</c>を除いた現在の<c>default</c>ランレベルの完全なコピーをしたいなら、以下のようにしてください。
+</p>
+
+<pre caption="必要なinitスクリプトの追加">
+# <i>ls /etc/runlevels/default</i>
+acpid  domainname  local  net.eth0  netmount  postfix  syslog-ng  vixie-cron
+# <i>rc-update add acpid offline</i>
+# <i>rc-update add domainname offline</i>
+# <i>rc-update add local offline</i>
+# <i>rc-update add syslog-ng offline</i>
+# <i>rc-update add vixie-cron offline</i>
+</pre>
+
+<p>
+ここで、ブートローダの設定を編集して、<c>offline</c>ランレベルのための新しいエントリを追加してください。例えば、<path>/boot/grub/grub.conf</path>では、以下のようになります。
+</p>
+
+<pre caption="offlineランレベルのためのエントリ追加">
+title Gentoo Linux Offline Usage
+  root (hd0,0)
+  kernel (hd0,0)/kernel-2.4.25 root=/dev/hda3 <i>softlevel=offline</i>
+</pre>
+
+<p>
+ほら、もう全てが設定されました。システムをブートしてブート時に新しく追加されたエントリを選択すれば、<c>offline</c>ランレベルは、<c>default</c>ランレベルの代わりに使用されます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>BOOTLEVELの使用</title>
+<body>
+
+<p>
+<c>bootlevel</c>の使用は、まったくもって<c>softlevel</c>に類似しています。ここでのただ一つの違いは、別の"default"ランレベルを定義する代わりに、別の"boot"ランレベルを定義するということです。
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

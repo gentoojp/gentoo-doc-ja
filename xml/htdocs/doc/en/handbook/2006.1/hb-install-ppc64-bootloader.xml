@@ -1,0 +1,323 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/2006.1/hb-install-ppc64-bootloader.xml,v 1.1 2006/08/30 20:17:31 nightmorph Exp $ -->
+
+<sections>
+
+<version>7.0</version>
+<date>2006-08-30</date>
+
+<section>
+<title>Making your Choice</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+Now that your kernel is configured and compiled and the necessary system
+configuration files are filled in correctly, it is time to install a
+program that will fire up your kernel when you start the system. Such a
+program is called a <e>bootloader</e>.
+</p>
+
+<p>
+On Linux/PPC64 we have only yaBoot as a bootloader until grub2 is
+finished.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="yaboot">
+<title>Using yaBoot</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<impo>
+For a 64bit userland use yaboot-static instead of yaboot, because yaboot won't
+compile on 64bit userland systems. For a 32bit userland use yaboot as you
+normally would.
+</impo>
+
+<p>
+There are two ways to configure yaBoot for your system. You can use the
+new and improved <c>yabootconfig</c> included with
+<path>yaboot-1.3.8-r1</path> and later to automatically set up yaboot. If
+for some reason you do not want to run <c>yabootconfig</c> to
+automatically set up <path>/etc/yaboot.conf</path> or you are installing Gentoo
+on a G5 (on which <c>yabootconfig</c> does not always work), you can just edit 
+the sample file already installed on your system.
+</p>
+
+<impo>
+If you are installing on a G5 using an online install and have not used the 
+G5 optimized stages you must change what profile you are linked to now. If you 
+do not you will not get dependencies necessary for yaboot to run on Apple 
+equipment. In the command below replace <c>(userland)</c> with your chosen 
+userland bit level. If you are installing on a G5 using an offline install 
+you have to install these packages by hand.
+</impo>
+
+<pre caption = "(ONLINE INSTALL FOR G5 USERS ONLY) Changing your profile">
+# <i>rm /etc/make.profile</i>
+# <i>ln -sf /usr/portage/profiles/default-linux/ppc/2006.1/ppc64/(userland)/970/pmac /etc/make.profile</i>
+</pre>
+
+<pre caption = "(OFFLINE INSTALL FOR G5 USERS ONLY) Installing Necessary File System Tools">
+# <i>emerge hfsutils hfsplusutils</i>
+</pre>
+
+<pre caption = "Installing the bootloader">
+<comment>(64bit userland)</comment>
+# <i>emerge --update yaboot-static</i>
+<comment>(32bit userland)</comment>
+# <i>emerge --update yaboot</i>
+</pre>
+
+<impo>
+yabootconfig/ybin won't work on IBM. You have to install yaboot another way:
+<uri link="#yaboot-ibm">Using yaboot on IBM hardware</uri>
+</impo>
+
+<note>
+If your root filesystem uses the JFS filesystem, be sure to add <c>ro</c> as a
+kernel parameter. JFS must be able to replay its log in read-only mode before it
+gets mounted read-write.
+</note>
+
+<ul>
+  <li><uri link="#yabootconfig">Default: Using yabootconfig</uri></li>
+  <li>
+    <uri link="#manual_yaboot">Alternative: Manual yaBoot Configuration</uri>
+  </li>
+</ul>
+
+</body>
+</subsection>
+<subsection id="yabootconfig">
+<title>Default: Using yabootconfig</title>
+<body>
+
+<p>
+<c>yabootconfig</c> will auto-detect the partitions on your machine and will
+set up dual and triple boot combinations with Linux, Mac OS, and Mac OS
+X.
+</p>
+
+<p>
+To use <c>yabootconfig</c>, your drive must have a bootstrap partition, and
+<path>/etc/fstab</path> must be configured with your Linux partitions. Both of 
+these should have been done already in the steps above. To start, ensure that
+you have the latest version of yaboot installed by running <c>emerge --update
+yaboot-static</c>. This is necessary as the latest version will be available via
+Portage, but it may not have made it into the stage files.
+</p>
+
+<p>
+Now run <c>yabootconfig</c>. The program will run and it will confirm
+the location of the bootstrap partition. Type <c>Y</c> if it is correct. If
+not, double check <path>/etc/fstab</path>. yabootconfig will then scan your
+system setup, create <path>/etc/yaboot.conf</path> and run <c>mkofboot</c> for
+you. <c>mkofboot</c> is used to format the bootstrap partition, and install 
+the yaboot configuration file into it.
+</p>
+
+<p>
+You might want to verify the contents of <path>/etc/yaboot.conf</path>. If 
+you make changes to <path>/etc/yaboot.conf</path> (like setting the 
+default/boot OS), make sure to rerun <c>ybin -v</c> to apply changes to the 
+bootstrap partition.
+</p>
+
+<p>
+Now continue with <uri link="#reboot">Rebooting your System</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection id="manual_yaboot">
+<title>Alternative: Manual yaBoot Configuration</title>
+<body>
+
+<p>
+Below you find a completed <path>yaboot.conf</path> file. Alter it at
+will.
+</p>
+
+<pre caption = "/etc/yaboot.conf">
+<comment>## /etc/yaboot.conf
+##
+## run: "man yaboot.conf" for details. Do not make changes until you have!!
+## see also: /usr/share/doc/yaboot/examples for example configurations.
+##
+## For a dual-boot menu, add one or more of:
+## bsd=/dev/hdaX, macos=/dev/hdaY, macosx=/dev/hdaZ
+
+## our bootstrap partition:</comment>
+
+boot=/dev/hda2
+
+<comment>## ofboot is the openfirmware way to specify the bootstrap partition.
+## If this isn't defined, yaboot fails on the G5 and some G4s (unless 
+## you pass the necessary arguments to the mkofboot/ybin program).
+## hd:X means /dev/sdaX (or /dev/hdaX).</comment>
+
+ofboot=hd:2
+
+<comment>## hd: is open firmware speak for hda</comment>
+device=hd:
+
+delay=5
+defaultos=macosx
+timeout=30
+install=/usr/lib/yaboot/yaboot
+magicboot=/usr/lib/yaboot/ofboot
+
+<comment>#################
+## This section can be duplicated if you have more than one kernel or set of
+## boot options - replace 2.6.17-gentoo-r5 with your kernel-version
+#################</comment>
+image=/boot/kernel-2.6.17-gentoo-r5
+  label=Linux
+  root=/dev/hda3
+  partition=3
+  read-only
+
+macos=hd:13
+macosx=hd:12
+enablecdboot
+enableofboot
+</pre>
+
+<p>
+Once <path>yaboot.conf</path> is set up the way you want it, you run
+<c>mkofboot -v</c> to install the settings in the bootstrap partition.
+<e>Don't forget this!</e> Confirm when <c>mkofboot</c> asks you to create a new
+filesystem.
+</p>
+
+<p>
+If all goes well, and you have the same
+options as the sample above, your next reboot will give you a simple,
+five-entry boot menu. If you update your yaboot config later on, you'll
+just need to run <c>ybin -v</c> to update the bootstrap partition -
+<c>mkofboot</c> is for initial setup only.
+</p>
+
+<p>
+For more information on yaboot, take a look at the <uri
+link="http://penguinppc.org/projects/yaboot">yaboot project</uri>. For
+now, continue the installation with <uri link="#reboot">Rebooting your 
+System</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="yaboot-ibm">
+<title>Using yaboot on IBM hardware</title>
+<body>
+
+<p>
+On IBM hardware you cannot run yabootconfig or ybin. You must proceed with the 
+following steps:
+</p>
+
+<ul>
+  <li>Install yaboot-static</li>
+  <li>Run 'dd if=/usr/lib/yaboot/yaboot.chrp of=/dev/sdXX' (fill in XX
+  with your disk and partition for the PReP partition; this was in our
+  example /dev/sda1)</li>
+  <li>Next construct your own yaboot.conf file and place into /etc.
+  (Take a look at the config above, look into the man page of
+  yaboot.conf or look at the below yaboot.conf example)</li>
+  <li>Assuming your boot device in OF is pointing to the harddrive you
+  prep boot partition is on then it'll just work, otherwise at IPL time,
+  go into the multiboot menu and set the boot device to the one with
+  your prep boot partition.</li>
+  <li>That's it!</li>
+</ul>
+
+<pre caption = "yaboot.conf for IBM hardware">
+device=disk:
+partition=2
+root=/dev/sda2
+default=2.6.17-gentoo-r5
+timeout=50
+
+image=/boot/kernel-2.6.17-gentoo-r5
+      label=Linux
+      append="console=ttyS0,9600"
+      read-only
+</pre>
+
+<p>
+For POWER4, POWER5, and blade-based hardware where the PReP disk partition 
+and the disk partition that contains your kernel are on the same physical disk,
+you can use a simplified yaboot.conf.  The following should be sufficient:
+</p>
+
+<pre caption="yaboot.conf for PReP hardware">
+default = linux
+timeout = 100
+image=/boot/kernel-2.6.17-gentoo-r5
+      label=linux
+      read-only
+      root = /dev/sda2
+      append="root=/dev/sda2"
+</pre>
+
+<p>
+To verify that yaboot has been copied to the PReP partition:
+</p>
+
+<pre caption="Verifying the yaboot install on PReP">
+# <i>dd if=/dev/sda1 count=10 | grep ELF</i>
+Binary file (standard input) matches
+10+0 records in
+10+0 records out
+</pre>
+
+<p>
+A match signifies that yaboot was installed correctly.
+</p>
+
+</body>
+</section>
+<section id="reboot">
+<title>Rebooting the System</title>
+<subsection>
+<body>
+
+<p>
+Exit the chrooted environment and unmount all mounted partitions. Then type in 
+that one magical command you have been waiting for: <c>reboot</c>.
+</p>
+
+<pre caption="Exiting the chroot, unmounting all partitions and rebooting">
+# <i>exit</i>
+~# <i>cd</i>
+~# <i>umount /mnt/gentoo/boot /mnt/gentoo/dev /mnt/gentoo/proc /mnt/gentoo</i>
+~# <i>reboot</i>
+</pre>
+
+<p>
+Of course, don't forget to remove the bootable CD, otherwise the CD will be
+booted again instead of your new Gentoo system.
+</p>
+
+<p>
+Once rebooted in your Gentoo installation, finish up with <uri
+link="?part=1&amp;chap=11">Finalizing your Gentoo Installation</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+
+</sections>

@@ -1,0 +1,1263 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-ppc-faq.xml,v 1.71 2011/03/02 09:25:49 nightmorph Exp $ -->
+
+<guide>
+<title>Gentoo Linux/PowerPC Frequently Asked Questions</title>
+
+<author title="Editor">
+  <mail link="rajiv@gentoo.org">Rajiv Manglani</mail>
+</author>
+<author title="Editor">
+  <mail link="pylon@gentoo.org">Lars Weiler</mail>
+</author>
+<author title="Editor">
+  <mail link="sejo@gentoo.org">Jochen Maes </mail>
+</author>
+<author title="Editor">
+  <mail link="josejx@gentoo.org">Joseph Jezak</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+The Gentoo/PPC FAQ is a collection of questions and answers collected from the
+Gentoo/PPC mailing lists and from IRC.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2</version>
+<date>2011-03-02</date>
+
+<faqindex>
+<title>Questions</title>
+<section>
+<title>Introduction to the Gentoo/PPC FAQ</title>
+<body>
+
+<p>
+This FAQ is a collection of questions and answers collected from the
+Gentoo/PPC mailing lists and from IRC.  If you have any questions (or
+answers!), please contact either an author or a member of the
+documentation team.
+</p>
+
+</body>
+</section>
+</faqindex>
+
+<chapter>
+<title>Installation</title>
+<section id="powerpc">
+<title>
+What kind of PowerPC computer do I have and where can I find more information
+about it?
+</title>
+<body>
+
+<p>
+Welcome to Gentoo PPC!  The PowerPC processor has been used in a number of
+popular computing devices, here are some links to help you figure out what
+type of hardware is in the machine on your desk.
+</p>
+
+<ul>
+  <li>
+    <uri link="http://www.info.apple.com/support/applespec.html">
+      Apple Product Pages
+    </uri>
+  </li>
+  <li>
+    <uri link="http://lowendmac.com/profiles.htm">
+      Apple Product History and Details
+    </uri>
+  </li>
+  <li>
+    <uri link="http://www.pegasosppc.com/products.php">
+      Genesi Model Information
+    </uri>
+  </li>
+  <li>
+    <uri link="http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.pseries.doc/hardware_docs/selectbysystem.htm">
+      IBM Documentation by Model
+    </uri>
+  </li>
+  <li>
+    <uri link="http://kurobox.com/">KuroBox</uri>
+  </li>
+  <li>
+    <uri link="http://penguinppc.org/">
+      PenguinPPC - Linux on PowerPC Information
+    </uri>
+  </li>
+</ul>
+
+</body>
+</section>
+<section id="osxverify">
+<title>How can I verify with OSX that the downloaded ISO is not corrupted?</title>
+<body>
+
+<p>
+First be sure you did not mount the ftp server with <e>Finder</e> and then copy
+the file with drag'n'drop. This will corrupt the ISO. Instead, use <c>curl</c>
+(with <c>curl -O http://path/to/iso</c>).
+</p>
+
+<p>
+You can check your MD5 sum using the <c>md5sum</c> tool provided with OSX. On
+versions of OSX without md5sum, you can use <c>openssl</c> capability to
+produce an md5 checksum.
+</p>
+
+<pre caption="Creating an md5sum with openssl">
+<comment>(This could take some time depending of the size of the ISO and your CPU)</comment>
+$ <i>openssl md5 /path/to/iso</i>
+</pre>
+
+<p>
+Now compare this output with the appropriate file found on the server where you
+downloaded the ISO (the file will end with <path>.md5</path>). If it is the
+same, the ISO image downloaded correctly. Be sure you have <e>not</e> mounted
+it (e.g. with Disk Copy) yet!
+</p>
+
+</body>
+</section>
+<section id="dualboot">
+<title>Can I dual-boot Gentoo Linux and Mac OS X?</title>
+<body>
+
+<p>
+Yes you can! In fact, <e>yabootconfig</e> will automatically detect and setup
+<path>/etc/yaboot.conf</path> with Linux, Mac OS X and even classic Mac OS (see
+the <uri link="/doc/en/handbook/handbook-ppc.xml?part=1&amp;chap=10">Gentoo
+Handbook</uri> for details on yabootconfig). The trick is in how you partition
+your hard drive. Before installing Gentoo, startup with the Mac OS X Install
+CD. Use the <c>Disk Utility</c> to partition the drive in your machine into two
+or three partitions. Alternatively, use <c>parted</c> from a recent Gentoo
+InstallCD, since that has been patched to handle HFS and HFS+ partitions.
+Parted is also able to shrink a partition so you don't need to delete your
+existing install. The first partition should be big enough to contain all your
+Linux partitions (root+swap+/home etc.). The format of this partition does not
+matter. The second partition should be for OS X. The third (and optional)
+partition should be for classic Mac OS. It is only required if you intend of
+being able to triple boot, since OS9 must be on a separate partition from OSX
+for this to work.
+</p>
+
+<p>
+After partitioning, install Mac OS X and Mac OS 9 onto their respective
+partitions. Once installation is complete, start following the <uri
+link="/doc/en/handbook/handbook-ppc.xml">Gentoo Handbook</uri>. When you get to
+the section on partitioning, use <c>mac-fdisk</c> to <e>delete</e> the large
+partition you created for Gentoo. In its place, create a bootstrap partition,
+root, swap, and any other partitions you wish to use with Gentoo.
+</p>
+
+<p>
+If you have an OldWorld Macintosh (pre-iMac), follow a similar procedure as
+described above. However, use the Mac OS 9 install CD and the <c>Drive
+Setup</c> utility. OldWorld machines do not need a bootstrap partition.
+</p>
+
+<note>
+If yabootconfig does not detect your MacOS partitions, you can manually add
+them to your yaboot.config. See the example yaboot.conf in the <uri
+link="/doc/en/handbook/handbook-ppc.xml?part=1&amp;chap=10#doc_chap2_pre6">
+handbook</uri> for details.
+</note>
+
+</body>
+</section>
+<section id="bwof">
+<title>
+I have an early NewWorld Mac such as the Blue and White G3. It should be
+compatible with the InstallCD, but on boot it returns an "Unknown or corrupt
+filesystem" error.
+</title>
+<body>
+
+<p>
+As a workaround, boot into Open Firmware by holding down the Apple + Option + O
++ F keys on startup. When the prompt appears, type:
+</p>
+
+<pre caption="Early NewWorld Mac Open Firmware work around">
+<i>boot cd:,\\yaboot</i>
+</pre>
+
+<p>
+The CD should boot as expected now, thanks to John Plesmid for this workaround.
+</p>
+
+</body>
+</section>
+<section id="bootxarchive">
+<title>
+I have an OldWorld Macintosh and need to use BootX. However, I am having trouble
+opening the BootX installer archive. What can I do?
+</title>
+<body>
+
+<p>
+You will need a new version of <e>StuffIt Expander</e> to open the archive.
+You can <uri link="http://www.stuffit.com/expander/download.html">download
+it</uri> for free.
+</p>
+
+</body>
+</section>
+<section id="beigehd">
+<title>
+I have a Beige G3 machine. Can I install Gentoo Linux/PPC on a second IDE hard
+drive?
+</title>
+<body>
+
+<p>
+Early Beige G3 machines (those with a "Rev 1" motherboard with an ATI RageII+
+chip) do not support slave IDE drives. To use a second hard drive with this
+machine, you would have to attach it to the internal or external SCSI
+connector or install a PCI IDE card. Later G3 machines do not have this
+limitation. See <uri>http://www.xlr8yourmac.com/G3-ZONE/IDE/index.html</uri>
+for more information.
+</p>
+
+</body>
+</section>
+<section id="gblimit">
+<title>
+I have a revision A or B iMac. I've replaced the hard drive with a larger one
+and now I can't boot into anything!
+</title>
+<body>
+
+<p>
+There is an 8GB limit for the root partition on these machines. Ensure that
+your root partition is less than 8GB and it should work as expected. This also
+applies to OS X and later versions of OS 9.
+</p>
+
+</body>
+</section>
+<section id="fstabboot">
+<title>
+My /etc/fstab file has /dev/BOOT in it. Do I need to setup this line for my
+Apple bootstrap partition?
+</title>
+<body>
+
+<p>
+No. If you are not using a separate boot partition (<path>/boot</path>) then
+you do not need this line and can safely just delete it from
+<path>/etc/fstab</path>. The Apple bootstrap partition is <e>not</e>
+<path>/boot</path> and is not related in any way. In general, Apple PowerPC
+machines do not need a separate <path>/boot</path> partition, and the bootstrap
+partition should not be mounted or referred to in your fstab.
+</p>
+
+</body>
+</section>
+<section id="fixit">
+<title>
+When I rebooted, yaboot didn't work! Now, I'm stuck. How can I fix this?
+</title>
+<body>
+
+<p>
+It's probably just a misconfigured yaboot.conf. The easiest way to fix this is
+to boot the InstallCD again, mount your gentoo partition and check yaboot.conf
+for errors. You'll also need to run
+<c>ybin -v -C /mnt/gentoo/etc/yaboot.conf</c> to update the boot loader once
+you have finished. This can all be done without chrooting back into your
+install.
+</p>
+
+<note>
+If you <e>really</e> just need to get back to OSX, try holding down the Option
+key on startup. This should give you a graphical selection of bootable disks.
+Choose OSX and remember to fix your boot problems later.
+</note>
+
+</body>
+</section>
+<section id="xfs">
+<title>
+When I try to boot, yaboot only says "read error"!  Why can't I boot?
+</title>
+<body>
+
+<p>
+You're probably using XFS for your root partition.  While this is an option,
+yaboot has some issues accessing files with holes.  To ensure that your kernel
+will boot, instead of copying the vmlinux file to /boot, simply <c>cat</c>
+the kernel as shown below.
+</p>
+
+<pre caption="Fixing yaboot read errors on XFS with cat">
+# <i>cat /usr/src/linux/vmlinux &gt; /boot/vmlinux</i>
+</pre>
+
+</body>
+</section>
+<section id="applebrokeit">
+<title>
+I installed an OSX update and now my computer only boots into OSX! How can I
+fix it?
+</title>
+<body>
+
+<p>
+Hold down the option key on boot.  This will bring you to a graphical boot
+device selector.  Wait until a hard drive with a penguin shows up and click
+on the icon.  This will boot your linux install as usual.  Once you've
+booted, rerun <c>ybin -v</c> to fix the bootloader.
+</p>
+
+</body>
+</section>
+<section id="stupidclock">
+<title>
+I can't boot the InstallCD!  It stops while trying to set the hardware clock.
+What do I do?
+</title>
+<body>
+
+<p>
+Unfortunately, there was a bug in some versions of the baselayout scripts.  To
+get the system booting, the hardware clock will need to be set.  To set the
+clock boot into Open Firmware (using the key combination of Apple + O + F).
+Once you are at the Open Firmware prompt, you can set the clock using the
+command below:
+</p>
+
+<pre caption="Setting the clock at the open firmware prompt">
+<comment># decimal dev rtc sec min hour day month year set-time</comment>
+<comment># The example below sets the clock to 1:23:45 June, 7th, 2000</comment>
+ ok
+0 > decimal dev rtc 45 23 1 6 7 2000 set-time
+ ok
+1 >
+</pre>
+
+<p>
+Open Firmware will return with an ok after the clock is set.  The system should
+boot normally now.  Type <c>mac-boot</c> to continue booting after the clock is
+set.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Hardware Support</title>
+<section id="laptoppkgs">
+<title>
+I'm running Gentoo on a PowerPC laptop. What packages should I install to
+enable laptop-specific functionality?
+</title>
+<body>
+
+<p>
+There are four main packages you will need to install.
+</p>
+
+<ul>
+  <li>
+    <e>pbbuttonsd</e> is a tool that enables the brightness and volume keys on
+    most ppc laptops as well as other apple laptop specific functionality. The
+    current versions also work as a power manager and replaces <e>pmud</e>.
+  </li>
+  <li>
+    <e>powerprefs</e> provides a graphical configuration editing tool for
+    configuring pbbuttonsd including settings such as power-management, trackpad
+    options and various other preferences.
+  </li>
+  <li>
+    <e>powernowd</e> allows cpu speed scaling for longer battery life. Other
+    packages also provide the same functionality, such as <e>cpudyn</e>,
+    <e>cpufreqd</e> and <e>speedfreq</e>.  It doesn't really matter which you
+    chose, just ensure that you have the <e>userspace</e> cpu frequency scaling
+    governor enabled in your kernel. This is the only governor that will work on
+    PPC.
+  </li>
+</ul>
+
+<p>
+These packages can be installed by running the appropriate commands from the
+list below:
+</p>
+
+<pre caption="Installing laptop-specific packages">
+# <i>emerge pbbuttonsd</i>
+# <i>emerge powerprefs</i>
+# <i>emerge powernowd</i>
+</pre>
+
+<note>
+You should edit <path>/etc/pbbuttonsd.conf</path> or use <e>powerprefs</e> to
+better suit your needs. The behaviour of the Fx-keys can be controlled here as
+well as many sleep options. To switch the Fx-keys to the OSX behaviour, set
+KBDMode to fkeyslast. You can turn off touchpad tapping by setting TPMode to
+notap. Many other options are available, see man pbbuttonsd.conf for details.
+</note>
+
+<p>
+It is useful to add pbbuttonsd and powernowd to your boot runlevel so that
+they're started when your computer starts. To do this:
+</p>
+
+<pre caption="Adding pbbuttonsd and cpudyn to the boot runlevel">
+# <i>rc-update add pbbuttonsd boot</i>
+# <i>rc-update add powernowd boot</i>
+</pre>
+
+</body>
+</section>
+<section id="onebutton">
+<title>
+I only have one mouse-button. How can I make use of the second and third one,
+since ctrl-button does not work?
+</title>
+<body>
+
+<p>
+There is no way to use ctrl-button like on Mac OS X, but you can map just about
+any key or combination of keys to emulate the second and third mouse-button.
+The values can be obtained with the command line utility <c>showkey</c> from
+the console. Note that this program does not work as expected from X and should
+only be run from the console. To use this feature, enable the following options
+in your kernel:
+</p>
+
+<pre caption="Macintosh Device Drivers">
+[*] Apple Desktop Bus (ADB) support
+[*]    Use input layer for ADB devices
+[*]      Support for mouse button 2+3 emulation
+</pre>
+
+<p>
+You will also need to set the keyboard to mouse button mapping values in
+<path>/etc/sysctl.conf</path>. Here is an example using F11 and F12:
+</p>
+
+<pre caption="Mouse button emulation with F11 and F12">
+<comment># Enable mouse button emulation</comment>
+dev.mac_hid.mouse_button_emulation = 1
+<comment># Set 2nd button to 87 - F11</comment>
+dev.mac_hid.mouse_button2_keycode = 87
+<comment># Set 3rd button to 88 - F12</comment>
+dev.mac_hid.mouse_button3_keycode = 88
+</pre>
+
+<note>
+Other commonly used keycodes are 125 (The Apple key) and 96 (The Keypad Enter).
+</note>
+
+<p>
+To activate these settings:
+</p>
+
+<pre caption="Applying the sysctl changes">
+# <i>sysctl -p /etc/sysctl.conf</i>
+</pre>
+
+</body>
+</section>
+<section id="airport">
+<title>How can I configure my Airport card?</title>
+<body>
+
+<p>
+The Airport card is an 802.11b device based on the Lucent Orinoco chipset.  To
+use this card in Linux, enable these kernel options:
+</p>
+
+<pre caption="Wireless LAN">
+[*] Wirless LAN Drivers &amp; Wireless Extensions
+&lt;*&gt; Hermes chipset 802.11b support (Orinoco/Prism2/Symbol)
+&lt;*&gt;   Apple Airport support (build-in)
+</pre>
+
+<p>
+Once the kernel is configured, you'll also need some userland tools to
+configure the wireless settings.  Emerge the <c>wireless-tools</c>
+for iwconfig and other wireless tools.
+</p>
+
+<p>
+As an example of using iwconfig, to set your ESSID to home_essid:
+</p>
+
+<pre caption="Setting an ESSID">
+# <i>iwconfig eth1 essid home_essid</i>
+</pre>
+
+<p>
+For a generic guide to setting up wireless with Gentoo, please see the
+<uri link="/doc/en/handbook/handbook-ppc.xml?part=4&amp;chap=4">Gentoo Wireless
+Guide</uri>.
+</p>
+
+</body>
+</section>
+<section id="airportextreme">
+<title>How can I configure my Airport Extreme card?</title>
+<body>
+
+<p>
+The Airport Extreme is an 802.11b/g card that is included with modern Apple
+portable computers.  It is based on the Broadcom 43xx chipset which is supported
+by the native b43 driver project.  It has been included in the 2.6.24 kernel.
+Note that the driver should select the proper driver between b43 and b43-legacy.
+The firmware used for these two drivers is different, with the legacy version
+supporting older 4306 cards.  If you have a 4306 card, build both, otherwise,
+it should be safe to only build b43. Also, to enable either driver, mac80211
+must be selected first.
+</p>
+
+<pre caption="Adding b43 support to the kernel">
+Networking --&gt; Wireless --&gt;
+     &lt;M&gt;   Generic IEEE 802.11 Networking Stack (mac80211)
+
+Device Drivers --&gt; Network device support --&gt;
+     [*] Wireless LAN (IEEE 802.11)
+     &lt;M&gt;   Broadcom 43xx wireless support (mac80211 stack)
+     [*]     Broadcom 43xx debugging
+     &lt;M&gt;   Broadcom 43xx-legacy wireless support (mac80211 stack)
+     [*]     Broadcom 43xx-legacy debugging
+</pre>
+
+<p>
+After compiling your kernel, you'll need to emerge <c>b43-fwcutter</c> to
+install the firmware. For additional information, please see this
+<uri link="http://forums.gentoo.org/viewtopic-t-409194.html">forum post.</uri>
+</p>
+
+<p>
+For a generic guide to setting up wireless with Gentoo, please see the
+<uri link="/doc/en/handbook/handbook-ppc.xml?part=4&amp;chap=4">Gentoo Wireless
+Guide</uri>.
+</p>
+
+</body>
+</section>
+<section id="modem">
+<title>Will the internal modem work?</title>
+<body>
+
+<p>
+On older Macs, the internal modem is a regular serial device.  In addition to
+ppp support and i2c support, enable this kernel option to use it:
+</p>
+
+<pre caption="Serial Drivers">
+&lt;*&gt; PowerMac z85c30 ESCC support (CONFIG_SERIAL_PMACZILOG)
+</pre>
+
+<p>
+Newer Macs use a USB device which only has a driver from Linuxant. Unless you
+have purchased a key from Linuxant, this driver will only work at 14.4 and will
+not support FAX.  To install the driver, emerge <c>net-dialin/hcfusbmodem</c>
+which will provide <path>/dev/ttySHCF0</path>. Then set up ppp like usual.
+Further information about the installation can be found at
+<uri>http://www.linuxant.com/drivers/hcf/install.html</uri>
+</p>
+
+</body>
+</section>
+<section id="sleep">
+<title>Does sleep work on my iBook/PowerBook?</title>
+<body>
+
+<p>
+Sleep (suspend to ram) works very well on all G3 iBooks and TiBooks. Recently, a
+kernel patch has been released that adds sleep support for G4 iBooks and Radeon
+based AlBooks. If you have one of these laptops, use gentoo-sources 2.6.11 (or
+newer) for built in support.
+</p>
+
+<note>
+Note that the 12" PowerBook is not yet supported due to its nVidia chipset.
+</note>
+
+</body>
+</section>
+<section id="sound">
+<title>How do I get sound playback working?</title>
+<body>
+
+<p>
+There are two approaches to sound on modern kernels: OSS or ALSA. OSS is the
+older of the two options and has been deprecated, but still functions well for
+many older Macs. ALSA is the newer method and will continue to be supported in
+the future. We recommend that you use ALSA unless you have problems with it.
+</p>
+
+<note>
+If you include the OSS driver in your kernel, the ALSA driver will not load.
+</note>
+
+<p>
+In addition to configuring the kernel, users who should have access to the
+audio devices need to be added to the appropriate group with the command:
+</p>
+
+<pre caption="Adding users to the audio group">
+# <i>gpasswd -a username audio</i>
+</pre>
+
+<p>
+If the kernel is set up correctly, but you can't hear any sound, ensure that
+the main mixer volume is turned up and that the device isn't muted!
+</p>
+
+<note>
+The sound card on Macs is connected through the i2c Keywest/PowerMac bus, not
+the PCI bus.  You will not see the card listed when viewing the PCI bus or when
+using alsaconf. This is less of a problem then you might imagine, because all
+Macs use the same driver for sound, but you will need to insure that you have
+i2c Keywest/PowerMac support in your kernel.
+</note>
+
+<impo>
+If you compile in ALSA support, you need to also compile in i2c
+Keywest/PowerMac support. Failure to do this will result in kernel panics on
+boot!
+</impo>
+
+</body>
+</section>
+<section id="alsa">
+<title>Sound setup with ALSA</title>
+<body>
+
+<p>
+For ALSA, we'll set up both the regular ALSA drivers and the OSS emulation
+layer so that we can still use legacy OSS only programs. In <c>make
+menuconfig</c> you'll need to select:
+</p>
+
+<pre caption="Kernel options for ALSA">
+Device Drivers - I2c support ---&gt;
+  I2C Hardware Bus Support ---&gt;
+    &lt;*&gt; Powermac I2C interface (Keywest on 2.6.15 and older)
+
+Device Drivers - Sound ---&gt;
+&lt;*&gt; Sound card support
+    Advanced Linux Sound Architecture ---&gt;
+    &lt; &gt;   PowerMac DMA sound support
+      &lt;*&gt; Advanced Linux Sound Architecture
+      &lt;*&gt; Sequencer support
+      &lt;*&gt; Sequencer dummy client
+      &lt;*&gt; OSS Mixer API
+      &lt;*&gt; OSS PCM (digital audio) API
+      [*] OSS Sequencer API
+</pre>
+
+<p>
+Depending on the age of the machine, the correct sound driver should also be
+enabled.  On more modern machines such as Aluminum PowerBooks, new iBooks or
+G5's the <c>Apple On-board Audio</c> driver should be used.  For older machines,
+try the ALSA PowerMac driver instead.
+</p>
+
+<pre caption="ALSA Drivers - Choose only one">
+<comment>Older Machines</comment>
+    ALSA PowerMac devices ---&gt;
+        &lt;*&gt; PowerMac (AWACS, DACA, Burgundy, Tumbler, Keywest)
+<comment>Newer Machines</comment>
+    Apple Onboard Audio driver ---&gt;
+        &lt;*&gt; Apple Onboard Audio driver
+        &lt;*&gt;   layout-id fabric
+        &lt;*&gt;   support Onyx chip
+        &lt;*&gt;   support TAS chip
+        &lt;*&gt;   support Toonie chip
+</pre>
+
+<p>
+You can also configure these as modules and ensure they're loaded on boot, but
+it's easier to simply compile it all in.
+</p>
+
+<note>
+Please make sure that <c>PowerMac DMA sound support</c> is turned off,
+otherwise the ALSA module will not be able to load.
+</note>
+
+<p>
+For more information on configuring ALSA, please see the <uri
+link="/doc/en/alsa-guide.xml">Gentoo ALSA Guide</uri>.
+</p>
+
+<note>
+If you are using the alsa-driver package instead of building it into your
+kernel, the ALSA_CARDS variable should be set to <c>powermac</c> for older
+Macs or all of <c>aoa</c>, <c>aoa-fabric-layout</c>, <c>aoa-soundbus</c>,
+<c>aoa-soundbus-i2c</c>, <c>aoa-onyx</c>, <c>aoa-tas</c> and <c>aoa-toonie</c>
+for newer Macs.
+</note>
+
+</body>
+</section>
+<section id="oss">
+<title>Sound setup with OSS</title>
+<body>
+
+<note>Again, only use this if you're not using ALSA.</note>
+
+<p>
+In <c>make menuconfig</c> you'll need to select:
+</p>
+
+<pre caption="Kernel options for OSS">
+Device Drivers - I2c support ---&gt;
+  I2C Hardware Bus Support ---&gt;
+    &lt;*&gt; Powermac I2C interface (Keywest on 2.6.15 and older)
+
+Device Drivers - Sound ---&gt;
+&lt;*&gt; Sound card support
+  &lt;*&gt;   PowerMac DMA sound support
+</pre>
+
+<p>
+(or configure as modules and ensure they're loaded on boot).
+</p>
+
+<p>
+If the <c>dmasound_pmac</c> module does not load, you probably need to enable
+<c>i2c-core</c> in the kernel or as a module.
+</p>
+
+<note>
+If you are still using OSS sound, please test the ALSA drivers instead and
+report any regressions to the ALSA bugzila.  Thanks!
+</note>
+
+</body>
+</section>
+<section id="wakeon">
+<title>How do I make my Mac power up after a power failure?</title>
+<body>
+
+<p>
+The Power Management Unit (PMU) in most Macs has the ability to turn the Mac
+on again after a power loss.  This feature is controlled by the PMU options
+found in <path>/proc</path>.  To enable this feature, set <c>server_mode</c>
+to 1, to disable it, set <c>server_mode</c> to 0.
+</p>
+
+<pre caption="Enabling power on after power failure">
+# <i>echo "server_mode=1" > /proc/pmu/options</i>
+</pre>
+
+<p>
+Unfortunately, this setting is turned off again after the machine restarts. To
+ensure that your system always starts with power on after power failure
+enabled, add the line above to <path>/etc/conf.d/local.start</path>.
+</p>
+
+</body>
+</section>
+<section id="infrombadport">
+<title>
+I see lots of "IN from bad port" errors in my kernel dmesg, how do I fix that?
+</title>
+<body>
+
+<p>
+This is caused by drivers written for devices that you don't have on your
+system.  These messages are usually harmless, but it's a good idea to
+disable the unused drivers anyway.  See below to match up port numbers with
+kernel configuration options.  Note that even if the numbers don't match,
+try disabling these kernel options anyway, most PPC machines don't use these
+drivers.
+</p>
+
+<pre caption="IN from bad port 61 - Disable PC Speaker support">
+Device Drivers - Input device support ---&gt;
+[*] Miscellanous devices ---&gt;
+      &lt; &gt; PC Speaker Support
+</pre>
+
+<pre caption="IN from bad port 64 - Disable i8042 keyboard support">
+Device Drivers - Input device support ---&gt;
+Hardware I/O Ports ---&gt;
+      &lt; &gt; Serial I/O support
+        &lt; &gt; i8042 PC Keyboard controller
+</pre>
+
+<pre caption="IN from bad port 2E9,2F9,3E9,3F9 - Disable 8250/16550 support">
+Device Drivers - Character devices ---&gt;
+Serial drivers ---&gt;
+      &lt; &gt; 8250/16550 and compatible serial support
+</pre>
+
+<p>
+If you have another IN from bad port message that you're not sure about, please
+let us know!
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Applications</title>
+<section id="masked">
+<title>
+I can't emerge a package, and get an error about it being masked. What should I
+do?
+</title>
+<body>
+
+<p>
+There are two common reasons why a package will not emerge: either it hasn't
+been tested on PPC or it has been tested, but hasn't yet been marked stable.
+</p>
+
+<pre caption="The Package Hasn't Been Tested on PPC">
+!!! All ebuilds that could satisfy "bar" have been masked.
+!!! One of the following masked packages is required to complete your request:
+- app-foo/bar-1.0 (masked by: missing keyword)
+</pre>
+
+<p>
+If your package hasn't yet been tested on PPC, you'll need to first mark the
+ebuild with the ppc keyword. This is done using the ekeyword tool which is part
+of the <c>gentoolkit-dev</c> package. To mark the ebuild ppc and regenerate the
+manifest file so that it reflects the changes:
+</p>
+
+<pre caption="Adding the ppc keyword to app-foo/bar">
+# <i>ekeyword ppc /usr/portage/app-foo/bar/bar-1.0.ebuild</i>
+# <i>ebuild /usr/portage/app-foo/bar/bar-1.0.ebuild manifest</i>
+</pre>
+
+<p>
+Once the ebuild has been keyworded, you can now emerge it as usual. Test the
+application and if it works, <b>please</b> report it as a bug so one of the
+developers can add the keyword.
+</p>
+
+<note>
+This change will only last until the next sync. If you need a more permanent
+fix, you can maintain a portage overlay. See the portage documentation for more
+information on maintaining an overlay.
+</note>
+
+<pre caption="The Package Hasn't Been Marked Stable on PPC">
+!!! All ebuilds that could satisfy "bar" have been masked.
+!!! One of the following masked packages is required to complete your request:
+- app-foo/bar-1.0 (masked by: ~ppc keyword)
+</pre>
+
+<p>
+If your package already has the ~ppc keyword, you have two options. Either
+follow the above instructions and replace the ~ppc keyword with ppc, or you can
+use /etc/portage to unmask the specific package.  The second option is
+preferred simply because it won't be undone by an emerge sync.
+</p>
+
+<pre caption="Using /etc/portage to unmask app-foo/bar">
+$ <i>echo "=app-foo/bar-1.0" > /etc/portage/package.accept_keywords</i>
+</pre>
+
+<note>
+If the /etc/portage directory does not exist, make sure to create it first.
+</note>
+
+<p>
+Now emerge the package as normal. Once you're sure the app is stable,
+<b>please</b> report this as a bug so the developers can add the keyword.
+</p>
+
+</body>
+</section>
+<section id="flash">
+<title>Does Gentoo/PPC have support for Flash?</title>
+<body>
+
+<p>
+Well, not really. Macromedia has not supplied a linux/ppc binary and open
+source implementations are incomplete at this time.  However, there are two
+projects that can play many flash objects,
+<uri link="http://www.gnu.org/software/gnash/">gnash</uri> and
+<uri link="http://swfdec.freedesktop.org/">swfdec</uri>.
+Both are capable of playing back Youtube movies and lots of other popular
+content.
+</p>
+
+</body>
+</section>
+<section id="java">
+<title>Does Gentoo/PPC have a Java plugin?</title>
+<body>
+
+<p>
+Yes, a Java plugin is now available with IBM's Java 1.5 and 1.6.  Note that not
+all Java applications work with these Java versions yet.
+</p>
+
+</body>
+</section>
+<section id="xorg">
+<title>Is there an easy way to configure X?</title>
+<body>
+
+<p>
+Simply emerge <c>xac</c>. Once the package has been emerged, run <c>xac</c> to
+generate the config for your setup. If you would like to set a keyboard layout,
+you can use the --kbd-layout option. Note that although <c>xac</c> does set up
+DRM for most users, you may need to change your kernel configuration and emerge
+additional drivers to support the suggested configuration.  Be sure that you've
+configured your kernel as shown in the question below for optimal performance.
+</p>
+
+</body>
+</section>
+<section id="drm">
+<title>What is required for DRM?</title>
+<body>
+
+<p>
+When emerging xorg-server, make sure the dri use flag is enabled.  You should
+also set the VIDEO_CARDS variable in make.conf with your video card,
+VIDEO_CARDS="radeon" for radeon support, VIDEO_CARDS="nv" for nvidia support
+and so on.  For a backup option, add fbdev to the list of VIDEO_CARDS, this
+driver should always work.
+</p>
+
+<p>
+Make sure in your kernel config you have the following options set:
+</p>
+
+<pre caption="Rage128 DRM kernel configuration">
+Device Drivers - Character devices ---&gt;
+  &lt;*&gt; /dev/agpgart (AGP Support)
+  [*] Apple UniNorth support
+  [*] Direct Rendering Manager (DRI support)
+  &lt;*&gt;   ATI Rage 128
+Device Drivers - Graphics Support ---&gt;
+  &lt;*&gt;   ATI Rage 128 display support
+</pre>
+
+<pre caption="Radeon DRM kernel configuration">
+Device Drivers - Character devices ---&gt;
+  &lt;*&gt; /dev/agpgart (AGP Support)
+  [*] Apple UniNorth support
+  [*] Direct Rendering Manager (DRI support)
+  &lt;*&gt;   ATI Radeon
+Device Drivers - Graphics Support ---&gt;
+  &lt;*&gt;   ATI Radeon display support
+</pre>
+
+<pre caption="nVidia kernel configuration">
+Device Drivers - Graphics Support ---&gt;
+  &lt;*&gt;   nVidia Framebuffer Support
+</pre>
+
+<note>
+There is currently no support for DRM on nVidia cards since nVidia has not
+released any drivers for PPC and there are no open drivers for 3D acceleration.
+</note>
+
+<p>
+Rebuild and install the kernel if necessary. After this, make sure you
+have booted to the native framebuffer (i.e. radeonfb or atyfb128 and
+<e>not</e> from offb or ofonly video), and run <c>xac</c>.
+</p>
+
+<impo>
+You may need to edit your <path>/etc/X11/xorg.conf</path> file depending on
+your card setup. Ensure that the device driver selected is either ati or your
+specific driver (r128 or radeon). Also check that the DRI extension is loaded
+and not commented out.
+</impo>
+
+</body>
+</section>
+<section id="noati">
+<title>
+I've installed X.org and configured it correctly, but the radeon driver is
+missing.  What's wrong?
+</title>
+<body>
+
+<p>
+Add the appropriate VIDEO_CARDS line to <path>/etc/make.conf</path> (specify
+r128 or radeon) and recompile <c>xorg-server</c> and <c>mesa</c> to rebuild the
+driver.
+</p>
+
+</body>
+</section>
+<section id="xorgerror">
+<title>
+I have a VBIOS or "Invalid I/O allocation" error in my xorg.log.  Is this
+a problem?
+</title>
+<body>
+
+<p>
+No, this is simply X.org probing your video card.  It attempts to open the
+x86 only video BIOS and fails, leaving one of these messages.  It's
+harmless, don't worry about it!
+</p>
+
+</body>
+</section>
+<section id="glfreeze">
+<title>
+When using OpenGL DRI or playing movies, the system sometimes freezes hard
+unexpectedly. What can I do?
+</title>
+<body>
+
+<p>
+Your system may not cope properly with AGP support. The easiest solution is to
+add the following line to the "Device" section of
+<path>/etc/X11/xorg.conf</path>:
+</p>
+
+<pre caption="Forcing PCI mode for AGP-Cards">
+Option       "ForcePCIMode"
+</pre>
+
+<p>
+Also, there are some known issues with the composite extension, please disable
+this extension if you're having problems.
+</p>
+
+<p>
+Finally, if you are still having trouble, please try disabling dri in your
+xorg.conf and see if the problems go away.
+</p>
+
+</body>
+</section>
+<section id="keymap">
+<title>
+I recently emerged Xorg, but when using it, my international keyboard layout
+does not work correctly. The main keys work fine but I am unable to compose
+special characters like the "at" sign. The startx output says something like
+"could not load keymap, falling back to default keymap". What is wrong?
+</title>
+<body>
+
+<p>
+Check that the permissions on <path>/var/tmp</path> are set to
+<path>drwxrwxrwx</path>. If not, change them by typing <c>chmod a+rwx
+/var/tmp</c>. This will allow Xorg to load keymaps properly again.
+</p>
+
+</body>
+</section>
+<section id="audiocd">
+<title>How do I play Audio CDs?</title>
+<body>
+
+<p>
+NewWorld machines have no audio connection between their CD-ROM drive and their
+sound hardware. Therefore, audio information must be read as data and then
+piped to the sound hardware. This is possible using <e>Audacious</e>, which
+reads the audio off the CD over the ATA cable, decodes it in software and sends
+it to the sound card over the PCI bus as digital data.
+</p>
+
+<pre caption="Emerge audacious">
+# <i>emerge audacious</i>
+</pre>
+
+<p>
+To play a CD, just fire up <c>audacious</c>. If you're having playback trouble,
+you may need to open up the Preferences-->Plugins-->CD Audio Plugin menu and
+select your CD drive. Make sure that "Digital audio extraction" is checked.
+</p>
+
+</body>
+</section>
+<section id="mol">
+<title>Can I run Mac OS 9 or Mac OS X under Gentoo Linux?</title>
+<body>
+
+<p>
+Yes, as long as you are running Gentoo Linux on 32 bit PPC hardware, you can
+use <uri link="http://www.maconlinux.org/">Mac-on-Linux</uri> which allows you
+to run an instance of OS 9, OS X or Linux as a process on Linux. Simply
+<c>emerge mol</c> to install this package. MOL supports Mac OS 7.5.2 to 9.2.2,
+as well as any version of OS X. It can be run from a console framebuffer or run
+in a window on X.
+</p>
+
+<note>
+Currently, there is no support for running MOL on 64 bit PowerPC Processors.
+</note>
+
+<note>
+To run MOL fullscreen, you'll need to compile MOL with the fbcon use flag
+enabled and run it in a console framebuffer.
+</note>
+
+<p>
+For networking and sound you should install the drivers in the folder
+<path>MOL-Install</path> on your Mac OS X-Desktop. If errors with networking
+occur, make sure you have the following kernel options enabled:
+</p>
+
+<p>
+For OSX Networking:
+</p>
+
+<ul>
+  <li>Universal TUN/TAP device driver support (CONFIG_TUN)</li>
+</ul>
+
+<p>
+For the DHCP server:
+</p>
+
+<ul>
+  <li>Socket Filtering (CONFIG_FILTER)</li>
+  <li>Packet Socket (CONFIG_PACKET)</li>
+</ul>
+
+<p>
+For NAT:
+</p>
+
+<ul>
+  <li>Network packet filtering (CONFIG_NETFILTER)</li>
+  <li>Connection tracking (CONFIG_IP_NF_CONNTRACK)</li>
+  <li>IP tables support (CONFIG_IP_NF_IPTABLES)</li>
+  <li>Packet filtering (CONFIG_IP_NF_FILTER)</li>
+  <li>Full NAT (CONFIG_IP_NF_NAT)</li>
+  <li>MASQUERADE target support (CONFIG_IP_NF_TARGET_MASQUERADE)</li>
+</ul>
+
+</body>
+</section>
+<section id="ext">
+<title>Can I access my ext2/ext3 partitions from OSX?</title>
+<body>
+
+<p>
+OSX can support the reading and writing of ext2/ext3 partitions by using the
+kernel extension provided by the <uri
+link="http://sourceforge.net/projects/ext2fsx">ext2fsx project.</uri>
+</p>
+
+<note>
+When using MOL, you cannot access a partition that is currently being used by
+Linux.
+</note>
+
+</body>
+</section>
+<section id="useflags">
+<title>Which Portage USE flags do not work on PowerPC machines?</title>
+<body>
+
+<p>
+If you're using an old flat profile, (deprecated, pre 2005.0) look at
+<path>/etc/make.profile/use.mask</path> for a list.
+</p>
+
+<p>
+If you're using a cascaded profile, (2005.0 and onwards) look at
+<path>/usr/portage/profiles/default-linux/ppc/use.mask</path> for a list.
+</p>
+
+</body>
+</section>
+<section id="distcc">
+<title>How can I set up distcc with my x86 box?</title>
+<body>
+
+<p>
+If you've got another faster computer, you can set up distcc to compile binaries
+for your slower ppc processor. It's better to do as much building as possible on
+the faster machine; if possible, don't even build on the slower computer. Read
+the <uri link="/doc/en/cross-compiling-distcc.xml">DistCC Cross-compiling
+Guide</uri> to learn how. You may also want to read the <uri
+link="/proj/en/base/embedded/handbook/">Gentoo Embedded Handbook</uri> to learn
+more about cross-compiling.
+</p>
+
+</body>
+</section>
+<section id="gccsegfaults">
+<title>Why does gcc keep segfaulting during ebuilds?</title>
+<body>
+
+<p>
+If gcc segfaults during ebuilds, this probably isn't a bug with gcc and isn't
+even a problem with your hardware. Most of the time this problem is due to
+kernel preemption being enabled. Although this option is safe on x86, it can
+cause cache corruption on PPC which is why it is noticed most frequently during
+compiles. To prevent this from happening, simply recompile the kernel with
+preempt turned off. To check if preempt is enabled:
+</p>
+
+<pre caption="Check if preempt is enabled">
+$ <i>grep PREEMPT /usr/src/linux/.config</i>
+</pre>
+
+<p>
+If returns: "# CONFIG_PREEMPT is not set", then you should report the segfault
+as a bug.
+</p>
+
+<p>
+If it returns: "CONFIG_PREEMPT=y", then you'll need to disable it and rebuild
+your kernel.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Resources</title>
+<section id="cd">
+<title>Can I buy a CD of Gentoo Linux/PPC?</title>
+<body>
+
+<p>
+Yes! We sell Gentoo on CD-ROM in our <uri
+link="http://store.gentoo.org/">Gentoo store</uri>.
+</p>
+
+</body>
+</section>
+<section id="notanswered">
+<title>This FAQ hasn't answered my question. What do I do now?</title>
+<body>
+
+<p>
+A good first step is to browse through the relevant <uri
+link="/doc/en/index.xml">documentation on www.gentoo.org</uri>. Two
+PPC-specific <uri link="/main/en/lists.xml">mailing lists</uri> currently
+exist, gentoo-ppc-dev and gentoo-ppc-user. <uri
+link="http://forums.gentoo.org/viewforum.php?f=24">Gentoo on PPC</uri> (on
+forums.gentoo.org) is an open bulletin-board for discussion of all PowerPC
+issues. Also, there is usually a lively discussion on IRC. Join us on
+<c>#gentoo-ppc</c> on <c>irc.freenode.net</c>.
+</p>
+
+<p>
+General information about Linux on PowerPC can be found at <uri
+link="http://penguinppc.org/">penguinppc.org</uri>. General Linux information
+is at <uri link="http://www.linuxdoc.org/">www.linuxdoc.org</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

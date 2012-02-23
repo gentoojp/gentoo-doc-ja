@@ -1,0 +1,1212 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/virt-mail-howto.xml,v 1.63 2011/03/01 09:52:38 nightmorph Exp $ -->
+
+<guide>
+<title>Virtual Mailhosting System with Postfix Guide</title>
+
+<author title="Author">
+  <mail link="antifa@gentoo.org">Ken Nowack</mail>
+</author>
+<author title="Author">
+  <mail link="ezra@revoltltd.org">Ezra Gorman</mail>
+</author>
+<author title="Editor">
+  <mail link="klasikahl@gentoo.org">Zack Gilburd</mail>
+</author>
+<author title="Editor">
+  <mail link="seather@scygro.za.net">Scygro</mail>
+</author>
+<author title="Editor">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This document details how to create a virtual mailhosting system based upon
+postfix, mysql, courier-imap, and cyrus-sasl.
+</abstract>
+
+<version>3</version>
+<date>2011-03-01</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<body>
+
+<p>
+For most Gentoo users, a simple mail client and fetchmail will do. However, if
+you're hosting a domain with your system, you'll need a full blown MTA (Mail
+Transfer Agent). And if you're hosting multiple domains, then you'll definitely
+need something more robust to handle all of the email for your users. This
+system was designed to be an elegant solution to that problem.
+</p>
+
+<p>
+A virtual mail system needs to be able to handle email for numerous domains
+with multiple users over a variety of interfaces. This presents some issues
+that must be dealt with. For instance, what if you have two users on different
+domains that want the same user name? If you are providing imap access and
+smtp-auth, how do combine the various authentication daemons into a single
+system?  How do you provide security for the numerous components that comprise
+the system? How do you manage it all?
+</p>
+
+<p>
+This howto will show you how to set up with a mail system capable of handling
+mail for as many domains as your hardware can handle, supports virtual mail
+users that don't require shell accounts, has domain specific user names, can
+authenticate web, imap, smtp, and pop3 clients against a single database,
+utilizes ssl for transport layer security, has a web interface, can handle
+mailing lists for any domain on the machine, and is controlled by a nice,
+central and easy mysql database.
+</p>
+
+<p>
+There are quite a variety of ways to go about setting up a virtual mailhosting
+system. With so may options, another may be the best choice for your specific
+needs. Consider investigating <uri>http://www.qmail.org/</uri> and
+<uri>http://www.exim.org/</uri> to explore your options.
+</p>
+
+<p>
+The following packages are used in this setup: apache, courier-imap,
+courier-authlib postfix, mod_php, phpmyadmin, squirrelmail, cyrus-sasl, mysql,
+php, and mailman.
+</p>
+
+<p>
+Make sure to turn on the following USE variables in <path>/etc/make.conf</path>
+before compiling the packages: <c>USE="mysql imap libwww maildir
+sasl ssl"</c>. Otherwise you will most likely have to recompile things to
+get the support you need for all the protocols. Further, it's a good idea to
+turn off any other mail and network variables, like ipv6.
+</p>
+
+<impo>
+You need a domain name to run a public mail server, or at least an MX record
+for a domain. Ideally you would have control of at least two domains to take
+advantage of your new virtual domain functionality.
+</impo>
+
+<impo>
+Make sure <path>/etc/conf.d/hostname</path> is set to the right hostname for
+your mail server. You can apply any changes you make to this file by running
+<c>/etc/init.d/hostname restart</c>. Verify your hostname is set correctly with
+<c>hostname</c>. Also verify that there are no conflicting entries in
+<path>/etc/hosts</path>.
+</impo>
+
+<note>
+It is recommended that you read this entire document and familiarize yourself
+with all the steps before attempting the install. If you run into problems with
+any of the steps, check the troubleshooting guide at the end of this document.
+Also, not all the referenced packages are necessary, this set up is very
+flexible. For instance, if you do not desire a web interface, feel free to skip
+the squirrelmail section.
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Postfix Basics</title>
+<section>
+<body>
+
+<pre caption="Install postfix">
+# <i>emerge postfix</i>
+</pre>
+
+<warn>
+Verify that you have not installed any other MTA, such as ssmtp, exim, or
+netqmail, or you will surely have BIG problems.
+</warn>
+
+<p>
+After postfix is installed, it's time to configure it. Change the following
+options in <path>/etc/postfix/main.cf</path>. Remember to replace
+<c>$variables</c> with your own names.
+</p>
+
+<pre caption="/etc/postfix/main.cf">
+myhostname = $host.domain.name
+mydomain = $domain.name
+inet_interfaces = all
+mydestination = $myhostname, localhost.$mydomain $mydomain
+mynetworks = my.ip.net.work/24, 127.0.0.0/8
+home_mailbox = .maildir/
+local_destination_concurrency_limit = 2
+default_destination_concurrency_limit = 10
+</pre>
+
+<p>
+Next change the following in <path>/etc/postfix/master.cf</path>. This will
+turn on verbose output for debugging:
+</p>
+
+<pre caption="/etc/postfix/master.cf">
+# service type  private unpriv  chroot  wakeup  maxproc command + args
+#               (yes)   (yes)   (yes)   (never) (50)
+#
+==========================================================================
+<comment>(Just add the "-v" after the smtpd in the following line)</comment>
+smtp      inet  n       -       n       -       -       smtpd -v
+</pre>
+
+<p>
+Next, edit <path>/etc/mail/aliases</path> to add your local aliases. There
+should at least be an alias for root like: <c>root:   your@email.address</c>.
+</p>
+
+<pre caption="Starting postfix for the first time">
+# <i>/usr/bin/newaliases</i>
+<comment>(This will install the new aliases. You only need to do this
+when you update or install aliases.)</comment>
+
+# <i>/etc/init.d/postfix start</i>
+</pre>
+
+<p>
+Now that postfix is running, fire up your favorite console mail client and send
+yourself an email. I use <c>mutt</c> for all my console mail. Verify that
+postfix is delivering mail to local users, once that's done, we're on to the
+next step.
+</p>
+
+<note>
+I strongly recommend that you verify this basic postfix setup is functioning
+before you progress to the next step of the howto.
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Courier-imap</title>
+<section>
+<body>
+
+<pre caption="Install courier-imap and courier-authlib">
+# <i>emerge courier-imap courier-authlib</i>
+</pre>
+
+<pre caption="Courier-imap configuration">
+# <i>cd /etc/courier-imap</i>
+<comment>(If you want to use the ssl capabilities of courier-imap or pop3,
+you'll need to create certs for this purpose.
+This step is recommended. If you do not want to use ssl, skip this step.)</comment>
+
+# <i>nano -w pop3d.cnf</i>
+# <i>nano -w imapd.cnf</i>
+<comment>(Change the C, ST, L, CN, and email parameters to match your server.)</comment>
+
+# <i>mkpop3dcert</i>
+# <i>mkimapdcert</i>
+</pre>
+
+<pre caption="Start the courier services you need.">
+# <i>/etc/init.d/courier-imapd start</i>
+# <i>/etc/init.d/courier-imapd-ssl start</i>
+# <i>/etc/init.d/courier-pop3d start</i>
+# <i>/etc/init.d/courier-pop3d-ssl start</i>
+</pre>
+
+<p>
+Start up your favorite mail client and verify that all connections you've
+started work for receiving and sending mail. Of course, you won't be able to log
+on to any of the services because authentication hasn't been configured yet, but
+it is wise to check if the connections themselves work or not.
+</p>
+
+<p>
+Now that the basics work, we're going to do a whole bunch of stuff at once to
+get the rest of the system running. Again, please verify that what we've
+installed already works before progressing.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Cyrus-sasl</title>
+<section>
+<body>
+
+<p>
+Next we're going to install cyrus-sasl. Sasl is going to play the role of
+actually passing your auth variables to courier-auth, which will in turn pass
+that information to mysql for authentication of smtp users.  For this howto,
+we'll not even try to verify that sasl is working until mysql is set up and
+contains a test user. Which is fine since we'll be authenticating against
+mysql in the end anyway.
+</p>
+
+<pre caption="Configuring and installing the cyrus-sasl ebuild">
+# <i>emerge cyrus-sasl</i>
+</pre>
+
+<p>
+Next, edit <path>/etc/sasl2/smtpd.conf</path>.
+</p>
+
+<pre caption="Starting sasl">
+# <i>nano -w /etc/sasl2/smtpd.conf</i>
+mech_list: PLAIN LOGIN
+pwcheck_method: saslauthd
+# <i>nano -w /etc/conf.d/saslauthd</i>
+SASLAUTHD_OPTS="${SASLAUTH_MECH} -a rimap -r"
+SASLAUTHD_OPTS="${SASLAUTHD_OPTS} -O localhost"
+# <i>/etc/init.d/saslauthd start</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>SSL Certs for Postfix and Apache</title>
+<section>
+<body>
+
+<p>
+Next we're going to make a set of ssl certificates for postfix and apache.
+</p>
+
+<pre caption="Making ssl certicates">
+# <i>cd /etc/ssl/</i>
+# <i>nano -w openssl.cnf</i>
+
+<comment>Change the following default values for your domain:</comment>
+countryName_default
+stateOrProvinceName_default
+localityName_default
+0.organizationName_default
+commonName_default
+emailAddress_default.
+
+<comment>(If the variables are not already present, just add them in a sensible place.)</comment>
+
+# <i>cd misc</i>
+# <i>./CA.pl -newreq-nodes</i>
+# <i>./CA.pl -newca</i>
+# <i>./CA.pl -sign</i>
+# <i>cp newcert.pem /etc/postfix</i>
+# <i>cp newkey.pem /etc/postfix</i>
+# <i>cp demoCA/cacert.pem /etc/postfix</i>
+<comment>(Now we do the same thing for apache.)</comment>
+
+# <i>openssl req -new > new.cert.csr</i>
+# <i>openssl rsa -in privkey.pem -out new.cert.key</i>
+# <i>openssl x509 -in new.cert.csr -out new.cert.cert -req -signkey new.cert.key -days 365</i>
+<comment>(Just leave the resulting certificates here for now.
+We'll install them after Apache is installed.)</comment>
+</pre>
+
+</body>
+</section>
+
+</chapter>
+<chapter>
+<title>Adding SSL and SASL support to Postfix</title>
+<section>
+<body>
+
+<p>
+Now edit the postfix config's to make it aware of your new sasl and ssl
+capabilities. Add the following parameters to the end of the file where they
+will be easy to find.
+</p>
+
+<pre caption="/etc/postfix/main.cf">
+# <i>nano -w /etc/postfix/main.cf</i>
+
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_security_options = noanonymous
+broken_sasl_auth_clients = yes
+smtpd_sasl_local_domain =
+
+<comment>(The broken_sasl_auth_clients option and the login auth method
+are for outlook and outlook express only and are undocumented.
+Isn't having to hack software for stupid, broken, M$ BS great?
+smtpd_sasl_local_domain appends a domain name to clients using
+smtp-auth. Make sure it's blank or your user names will get
+mangled by postfix and be unable to auth.)</comment>
+
+smtpd_recipient_restrictions =
+  permit_sasl_authenticated,
+  permit_mynetworks,
+  reject_unauth_destination
+
+<comment>(The next two options enable outgoing encryption.)</comment>
+smtp_use_tls = yes
+smtp_tls_note_starttls_offer = yes
+smtpd_use_tls = yes
+#smtpd_tls_auth_only = yes
+smtpd_tls_key_file = /etc/postfix/newkey.pem
+smtpd_tls_cert_file = /etc/postfix/newcert.pem
+smtpd_tls_CAfile = /etc/postfix/cacert.pem
+smtpd_tls_loglevel = 3
+smtpd_tls_received_header = yes
+smtpd_tls_session_cache_timeout = 3600s
+tls_random_source = dev:/dev/urandom
+
+<comment>(smtpd_tls_auth_only is commented out to ease testing the system.
+You can turn this on later if you desire.)</comment>
+
+# <i>postfix reload</i>
+</pre>
+
+<p>
+Now we're going to verify that the config's we added were picked up by postfix.
+For this we are going to use <c>telnet</c> (provided by for instance
+<c>net-misc/netkit-telnetd</c>) although you can also use <c>nc</c> (provided by
+<c>net-analyzer/netcat</c>):
+</p>
+
+<pre caption="Verifying sasl and tls support">
+# <i>telnet localhost 25</i>
+
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+220 mail.domain.com ESMTP Postfix
+<i>EHLO domain.com</i>
+250-mail.domain.com
+250-PIPELINING
+250-SIZE 10240000
+250-VRFY
+250-ETRN
+250-STARTTLS
+250-AUTH LOGIN PLAIN
+250-AUTH=LOGIN PLAIN
+250-XVERP
+250 8BITMIME
+<i>^]</i>
+telnet> <i>quit</i>
+</pre>
+
+<p>
+Verify that the above AUTH and STARTTLS lines now appear in your postfix
+install. As I said before, as it stands now AUTH will not work. that's because
+sasl will try to auth against it's sasldb, instead of the shadow file for some
+unknown reason, which we have not set up. So we're going to just plow through
+and set up mysql to hold all of our auth and virtual domain information.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>The vmail user</title>
+<section>
+<body>
+
+<p>
+Before we set up our virtual mailhosting environment, we create a functional
+user under which the virtual mailboxes will be hosted. For clarity's sake we
+will call this <e>vmail</e>:
+</p>
+
+<pre caption="Adding the vmail user">
+# <i>useradd -d /home/vmail -s /bin/false -m vmail</i>
+</pre>
+
+<p>
+So now you've set up the vmail account. You can create multiple accounts if you
+want (to keep some structure in your set of virtual mail accounts). The user id,
+group id and home dirs are referenced in the MySQL tables.
+</p>
+
+<p>
+Next to the user account we also need to create the location where the mailboxes
+will reside:
+</p>
+
+<pre caption="Creating mailboxes">
+# <i>mkdir -p /home/vmail/virt-domain.com/foo</i>
+# <i>chown -R vmail:vmail /home/vmail/virt-domain.com</i>
+# <i>maildirmake /home/vmail/virt-domain.com/foo/.maildir</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>MySQL</title>
+<section>
+<body>
+
+<p>
+Next we're going to install and configure MySQL. You'll need the <uri
+link="http://www.gentoo.org/doc/en/files/genericmailsql.sql">genericmailsql.sql</uri>
+dumpfile for this step.
+</p>
+
+<pre caption="Installing and configuring MySQL">
+# <i>emerge mysql</i>
+
+# <i>/usr/bin/mysql_install_db</i>
+<comment>(After this command runs follow the onscreen directions
+for adding a root password with mysql, otherwise your db will
+be wide open.)</comment>
+
+# <i>/etc/init.d/mysql start</i>
+# <i>mysqladmin -u root -p create mailsql</i>
+# <i>mysql -u root -p mailsql &lt; genericmailsql.sql</i>
+# <i>mysql -u root -p mysql</i>
+mysql> <i>GRANT SELECT,INSERT,UPDATE,DELETE</i>
+  ->     <i>ON mailsql.*</i>
+  ->     <i>TO mailsql@localhost</i>
+  ->     <i>IDENTIFIED BY '$password';</i>
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> <i>FLUSH PRIVILEGES;</i>
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> <i>quit</i>
+<comment>(Verify that the new mailsql user can connect to the mysql server.)</comment>
+
+# <i>mysql -u mailsql -p mailsql</i>
+</pre>
+
+<p>
+Your new database has default values and tables set up for two domains. The
+following tables are included:
+</p>
+
+<ul>
+  <li>alias - local email alias and mailman alias information.</li>
+  <li>relocated - relocated user email address maps</li>
+  <li>
+    transport - default mail transport information for all domains you are
+    hosting
+  </li>
+  <li>users - all user account information</li>
+  <li>virtual - virtual domain email alias maps</li>
+</ul>
+
+<pre caption="alias table sample">
+id   alias      destination
+1    root       foo@bar.com
+2    postmaster foo@bar.com
+</pre>
+
+<pre caption="user table sample">
+<comment>(Line wrapped for clarity.)</comment>
+id email            clear     name     uid     gid     homedir     \
+  maildir                                quota  postfix
+10 foo@virt-domain.com $password realname virtid  virtid  /home/vmail \
+  /home/vmail/virt-domain.com/foo/.maildir/        y
+13 foo@bar.com      $password realname localid localid /home/foo   \
+  /home/foo/.maildir/                           y
+</pre>
+
+<p>
+The values of the <c>virtid</c> uid and gid should be those of the <c>vmail</c>
+user and group.
+</p>
+
+<pre caption="transport table sample">
+id   domain          destination
+1    bar.com         local:
+2    virt-domain.com virtual:
+</pre>
+
+<pre caption="virtual table sample">
+id   email                destination
+3    root@virt-domain.com other@email.address
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Apache and phpMyAdmin</title>
+<section>
+<body>
+
+<p>
+Next we'll set up apache and add an interface to interact with the database
+more easily.
+</p>
+
+<pre caption="Setting up apache and phpmyadmin">
+# <i>emerge apache phpmyadmin</i>
+</pre>
+
+<p>
+There are plenty of guides out there about how to set up apache with php,
+including guides provided by the <uri link="/proj/en/php/">Gentoo PHP
+Project</uri>. There are also numerous posts on
+<uri>http://forums.gentoo.org</uri> detailing how to solve problems with the
+installation. So, that said, we're not going to cover it here.  Set up the
+apache and php installs, then continue with this howto. Now, a word for the
+wise: .htaccess the directory that you put phpmyadmin in. If you do not do this,
+search engine spiders will come along and index the page which in turn will mean
+that anyone will be able to find your phpmyadmin page via google and in turn be
+able to come change your database however they want which is <e>BAD!</e>  There
+are many howtos on this including:
+<uri>http://www.csoft.net/docs/micro/htaccess.html.en</uri>.
+</p>
+
+<p>
+Now we're going to install the Apache certificates we made previously. The
+Apache-SSL directives that you need to use the resulting cert are:
+</p>
+
+<ul>
+  <li>SSLCertificateFile /path/to/certs/new.cert.cert</li>
+  <li>SSLCertificateKeyFile /path/to/certs/new.cert.key</li>
+</ul>
+
+<pre caption="Install Apache SSL certificates">
+# <i>cp /etc/ssl/misc/new.cert.cert /etc/apache2/ssl/</i>
+# <i>cp /etc/ssl/misc/new.cert.key /etc/apache2/ssl/</i>
+# <i>cd /etc/apache2/vhosts.d</i>
+<comment>(Check if you have an ssl-vhost template already.
+ Copy that one instead of the default_vhost if that is the case)</comment>
+# <i>cp 00_default_vhost.conf ssl-vhost.conf</i>
+# <i>nano -w ssl-vhost.conf</i>
+
+<comment>(Change the following parameters)</comment>
+NameVirtualHost host.domain.name:443
+
+&lt;VirtualHost host.domain.name:443&gt;
+  ServerName host.domain.name
+  ServerAdmin your@email.address
+
+  DocumentRoot "/var/www/localhost/htdocs/phpmyadmin";
+  &lt;Directory "/var/www/localhost/htdocs/phpmyadmin"&gt;
+    ...
+  &lt;/Directory&gt;
+
+  SSLCertificateFile /etc/apache2/ssl/new.cert.cert
+  SSLCertificateKeyFile /etc/apache2/ssl/new.cert.key
+  SSLEngine on
+  ...
+&lt;/VirtualHost&gt;
+
+# <i>nano -w /etc/conf.d/apache2</i>
+<comment>(Add -D SSL -D PHP5 to the APACHE2_OPTS)</comment>
+
+# <i>/etc/init.d/apache2 restart</i>
+</pre>
+
+<p>
+Next, configure phpMyAdmin.
+</p>
+
+<pre caption="Configuring phpMyAdmin">
+# <i>cd /var/www/localhost/htdocs/phpmyadmin</i>
+# <i>cp config.sample.inc.php config.inc.php</i>
+# <i>nano -w config.inc.php</i>
+<comment>(Change the following parameters.)</comment>
+$cfg['blowfish_secret'] = 'someverysecretpassphraze';
+
+$cfg['Servers'][$i]['host'] = 'localhost';          // MySQL hostname
+$cfg['Servers'][$i]['controluser'] = 'mailsql';     // MySQL control user settings
+                                                    // (this user must have read-only
+$cfg['Servers'][$i]['controlpass'] = '$password';   // access to the "mysql/user"
+                                                    // and "mysql/db" tables)
+$cfg['Servers'][$i]['user'] = 'mailsql';            // MySQL user
+$cfg['Servers'][$i]['password'] = '$password';      // MySQL password
+</pre>
+
+<p>
+Now enter the phpmyadmin page and browse the tables. You'll want to add in your
+local aliases, edit your user table to add a test user, and change your
+transport table to add information about your domains. The default values
+supplied with the dumpfile should be a sufficient guide to what values need to
+go where. Make sure that if you put information in the database that it is
+accurate. For instance, make sure the local user's home dir exists and that the
+correct uid/gid values are in place. The maildirs should be created
+automatically by postfix when the user receives their first email. So, in
+general, it's a good idea to send a "Welcome" mail to a new user after you
+setup their account to make sure the .maildir gets created.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring MySQL Authentication and vhosts</title>
+<section>
+<body>
+
+<p>
+Next we'll reconfigure our authentication to use the mailsql database in
+courier-imap and postfix.  In all of the following examples, replace
+<c>$password</c> with the password you set for the mailsql mysql user.
+</p>
+
+<pre caption="Configuring authentication">
+# <i>nano -w /etc/courier/authlib/authdaemonrc</i>
+authmodulelist="authmysql authpam"
+
+# <i>nano -w /etc/courier/authlib/authmysqlrc</i>
+MYSQL_SERVER            localhost
+MYSQL_USERNAME       mailsql
+MYSQL_PASSWORD      $password
+MYSQL_DATABASE          mailsql
+MYSQL_USER_TABLE        users
+<comment>(Make sure the following line is commented out since we're storing plaintext.)</comment>
+#MYSQL_CRYPT_PWFIELD    crypt
+MYSQL_CLEAR_PWFIELD     clear
+MYSQL_UID_FIELD         uid
+MYSQL_GID_FIELD         gid
+MYSQL_LOGIN_FIELD       email
+MYSQL_HOME_FIELD        homedir
+MYSQL_NAME_FIELD        name
+MYSQL_MAILDIR_FIELD     maildir
+
+# <i>/etc/init.d/courier-authlib restart</i>
+# <i>/etc/init.d/saslauthd restart</i>
+</pre>
+
+<p>
+We're almost there, I promise! Next, set up the rest of the necessary configs
+for postfix to interract with the database for all its other transport needs.
+Remember to replace each value with the name of your own user, user id,
+password, alias, email address, and so on.
+</p>
+
+<pre caption="/etc/postfix/mysql-aliases.cf">
+# <i>nano -w /etc/postfix/mysql-aliases.cf</i>
+# mysql-aliases.cf
+
+user         = mailsql
+password     = $password
+dbname       = mailsql
+table        = alias
+select_field = destination
+where_field  = alias
+hosts        = unix:/var/run/mysqld/mysqld.sock
+</pre>
+
+<pre caption="/etc/postfix/mysql-relocated.cf">
+# <i>nano -w /etc/postfix/mysql-relocated.cf</i>
+# mysql-relocated.cf
+
+user         = mailsql
+password     = $password
+dbname       = mailsql
+table        = relocated
+select_field = destination
+where_field  = email
+hosts        = unix:/var/run/mysqld/mysqld.sock
+</pre>
+
+<pre caption="/etc/postfix/mysql-transport.cf (optional)">
+# <i>nano -w /etc/postfix/mysql-transport.cf</i>
+# mysql-transport.cf
+
+user         = mailsql
+password     = $password
+dbname       = mailsql
+table        = transport
+select_field = destination
+where_field  = domain
+hosts        = unix:/var/run/mysqld/mysqld.sock
+</pre>
+
+<pre caption="/etc/postfix/mysql-virtual-gid.cf (optional)">
+# <i>nano -w /etc/postfix/mysql-virtual-gid.cf</i>
+# mysql-virtual-gid.cf
+
+user            = mailsql
+password        = $password
+dbname          = mailsql
+table           = users
+select_field    = gid
+where_field     = email
+additional_conditions = and postfix = 'y'
+hosts           = unix:/var/run/mysqld/mysqld.sock
+</pre>
+
+<pre caption="/etc/postfix/mysql-virtual-maps.cf">
+# <i>nano -w /etc/postfix/mysql-virtual-maps.cf</i>
+# mysql-virtual-maps.cf
+
+user            = mailsql
+password        = $password
+dbname          = mailsql
+table           = users
+select_field    = maildir
+where_field     = email
+additional_conditions = and postfix = 'y'
+hosts           = unix:/var/run/mysqld/mysqld.sock
+</pre>
+
+<pre caption="/etc/postfix/mysql-virtual-uid.cf (optional)">
+# <i>nano -w /etc/postfix/mysql-virtual-uid.cf</i>
+# mysql-virtual-uid.cf
+
+user            = mailsql
+password        = $password
+dbname          = mailsql
+table           = users
+select_field    = uid
+where_field     = email
+additional_conditions = and postfix = 'y'
+hosts           = unix:/var/run/mysqld/mysqld.sock
+</pre>
+
+<pre caption="/etc/postfix/mysql-virtual.cf">
+# <i>nano -w /etc/postfix/mysql-virtual.cf</i>
+# mysql-virtual.cf
+
+user         = mailsql
+password     = $password
+dbname       = mailsql
+table        = virtual
+select_field = destination
+where_field  = email
+hosts        = unix:/var/run/mysqld/mysqld.sock
+</pre>
+
+<p>
+Lastly, edit <path>/etc/postfix/main.cf</path> one more time.
+</p>
+
+<pre caption="/etc/postfix/main.cf">
+# <i>nano -w /etc/postfix/main.cf</i>
+<comment>(Ensure that there are no other alias_maps definitions)</comment>
+alias_maps = mysql:/etc/postfix/mysql-aliases.cf
+relocated_maps = mysql:/etc/postfix/mysql-relocated.cf
+
+local_transport = local
+local_recipient_maps = $alias_maps $virtual_mailbox_maps unix:passwd.byname
+
+virtual_transport = virtual
+<comment>(The domains listed by the mydestination should not be listed in
+ the virtual_mailbox_domains parameter)</comment>
+virtual_mailbox_domains = virt-domain.com, $other-virtual-domain.com
+
+virtual_minimum_uid = 1000
+<comment>(Substitute $vmail-gid with the GID of the vmail group)</comment>
+virtual_gid_maps = static:$vmail-gid
+virtual_mailbox_maps = mysql:/etc/postfix/mysql-virtual-maps.cf
+virtual_alias_maps = mysql:/etc/postfix/mysql-virtual.cf
+<comment>(Substitute $vmail-uid with the UID of the vmail user)</comment>
+virtual_uid_maps = static:$vmail-uid
+virtual_mailbox_base = /
+#virtual_mailbox_limit =
+</pre>
+
+<p>
+For security reasons you should change the permissions of the various
+<path>/etc/mail/mysql-*.cf</path>:
+</p>
+
+<pre caption="Changing file permission">
+# <i>chmod 640 /etc/postfix/mysql-*.cf</i>
+# <i>chgrp postfix /etc/postfix/mysql-*.cf</i>
+</pre>
+
+<p>
+As of Postfix 2.0.x, there were a number of significant changes over the 1.1.x
+release. Notably the transport, virtual-gid, and virtual-uid tables are no
+longer necessary. The tables are still included if you wish to use them.
+</p>
+
+<note>
+It is recommended that you read VIRTUAL_README included with the postfix docs
+for more information.
+</note>
+
+<pre caption="Make postfix reload its tables">
+# <i>postfix reload</i>
+</pre>
+
+<p>
+Now, if all went well, you should have a functioning mailhost. Users should be
+able to authenticate against the sql database, using their full email address,
+for pop3, imap, and smtp. I would highly suggest that you verify that
+everything is working at this point. If you run into problems (with as many
+things as this setup has going on, it's likely that you will) check the
+troubleshooting section of this howto.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Squirrelmail</title>
+<section>
+<body>
+
+<pre caption="Install squirrelmail">
+# <i>emerge squirrelmail</i>
+<comment>(Install squirrelmail to localhost so that it's accessed by http://localhost/mail)
+(Substitute 1.4.3a-r2 with the version you use)</comment>
+
+# <i>webapp-config -I -h localhost -d /mail squirrelmail 1.4.3a-r2</i>
+# <i>cd /var/www/localhost/htdocs/mail/config</i>
+# <i>perl ./conf.pl</i>
+<comment>(Change your Organization, Server, and Folder settings for squirrelmail.
+Now you should be able to login to squirrelmail, again - with your full email address,
+and use your new webmail setup.)</comment>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Mailman</title>
+<section>
+<body>
+
+<p>
+Last step: mailman. The new version of mailman has very nice virtual domain
+support, which is why I use it, not to mention it's really a great package. To
+get this package installed and working correctly for virtual domains is going
+to require a bit of hacking. I really recommend reading all of the mailman
+documentation, including README.POSTFIX.gz, to understand what's being done
+here.
+</p>
+
+<pre caption="Install mailman">
+# <i>emerge mailman</i>
+</pre>
+
+<pre caption="Setting defaults: Mailman/Defaults.py">
+# <i> nano -w /usr/local/mailman/Mailman/Defaults.py</i>
+<comment>(Change the values below to reflect your primary domain, virtuals will be set next.)</comment>
+DEFAULT_EMAIL_HOST = 'domain.com'
+DEFAULT_URL_HOST = 'www.domain.com'
+</pre>
+
+<pre caption="mailman config: mm_cfg.py">
+# <i>nano -w /usr/local/mailman/Mailman/mm_cfg.py</i>
+MTA = "Postfix"
+POSTFIX_STYLE_VIRTUAL_DOMAINS = ['virt-domain.com', 'virt.domain2.com']
+add_virtualhost('www.virt.domain.com', 'virt.domain.com')
+add_virtualhost('www.virt.domain2.com', 'virt.domain2.com')
+<comment>(This is required for your virtual domains for mailman to function.)</comment>
+</pre>
+
+<pre caption="And last but not least">
+<comment>(Once that's finished, add your first list.)</comment>
+
+# <i>su mailman</i>
+# <i>cd ~</i>
+# <i>./bin/newlist --urlhost='www.virt-domain.com' --emailhost='virt-domain.com' test</i>
+Enter the email of the person running the list: <i>your@email.address</i>
+Initial test password:
+Hit enter to continue with test owner notification...
+<comment>(Virtual domain lists may also be specified with
+list@domain.com style list names.)</comment>
+# <i>./bin/genaliases</i>
+<comment>(Now that your aliases have been generated,
+verify that they were added successfully.)</comment>
+
+# <i>nano -w data/aliases</i>
+# STANZA START: test
+# CREATED:
+test:             "|/usr/local/mailman/mail/mailman post test"
+test-admin:       "|/usr/local/mailman/mail/mailman admin test"
+test-bounces:     "|/usr/local/mailman/mail/mailman bounces test"
+test-confirm:     "|/usr/local/mailman/mail/mailman confirm test"
+test-join:        "|/usr/local/mailman/mail/mailman join test"
+test-leave:       "|/usr/local/mailman/mail/mailman leave test"
+test-owner:       "|/usr/local/mailman/mail/mailman owner test"
+test-request:     "|/usr/local/mailman/mail/mailman request test"
+test-subscribe:   "|/usr/local/mailman/mail/mailman subscribe test"
+test-unsubscribe: "|/usr/local/mailman/mail/mailman unsubscribe test"
+# STANZA END: test
+
+<comment>(Create the required mailman list)</comment>
+# <i>./bin/newlist mailman</i>
+# <i>./bin/genaliases</i>
+
+<comment>(Return to the root user)</comment>
+# <i>exit</i>
+
+# <i>/etc/init.d/mailman start</i>
+# <i>rc-update add mailman default</i>
+<comment>(To start mailman at once and on every reboot.)</comment>
+</pre>
+
+<pre caption="Adding mailman alias support to postfix">
+# <i>nano -w /etc/postfix/main.cf</i>
+owner_request_special = no
+recipient_delimiter = +
+<comment>(Read README.POSTFIX.gz for details on this.)</comment>
+
+alias_maps     =
+  hash:/usr/local/mailman/data/aliases,
+  mysql:/etc/postfix/mysql-aliases.cf
+
+virtual_alias_maps =
+  hash:/usr/local/mailman/data/virtual-mailman,
+  mysql:/etc/postfix/mysql-virtual.cf
+<comment>(This adds mailman alias file support to postfix
+You may of course use the mysql tables for this,
+but I hate doing that by hand. Also, if you are not
+using virtual domains, adding the virtual alias maps
+to postfix may cause problems, be warned.)</comment>
+</pre>
+
+<p>
+You should now be able to setup mailing lists for any domain on your box.  Last
+note on this, make sure you run all mailman commands as the user mailman (<c>su
+mailman</c>) or else the permissions will be wrong and you'll have to fix them.
+Read the mailman doc's for more information on setting up and managing mailman
+lists.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Content Filtering and Anti-Virus</title>
+<section>
+<body>
+
+<p>
+For content filtering and Anti-Virus, please consult our <uri
+link="/doc/en/mailfilter-guide.xml">mail filtering gateway guide</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Wrap Up</title>
+<section>
+<body>
+
+<p>
+Ok, you're all set, edit <path>/etc/postfix/master.cf</path> and turn off
+verbose mode for production use. You'll probably also want to add the services
+to your startup routine to make sure everything comes back up on a reboot. Make
+sure to add all the services you're using - apache, mysql, saslauthd, postfix,
+courier-imapd, courier-imapd-ssl, courier-pop3d, and courier-pop3d-ssl are all
+up to your decision on what access you want to provide. I generally have all
+the services enabled.
+</p>
+
+<pre caption="Wrap up">
+# <i>postfix reload</i>
+# <i>rc-update add $service default</i>
+</pre>
+
+<p>
+<e>Have fun!</e>
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Troubleshooting</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+Troubleshooting: This is a short troubleshooting guide for the set up we've
+detailed how to install here. It is not exhaustive, but meant as a place to get
+you started in figuring out problems. With a complicated setup such as this,
+it's imperative that you narrow down the problem to the particular component
+that is malfunctioning. In general I do that by following a few steps. Start
+from the base of the system and work your way up, ruling out components that
+work along the way until you discover which component is having the problem.
+</p>
+
+</body>
+</section>
+<section>
+<title>Step 1: Check your config files</title>
+<body>
+
+<p>
+Typos are killers, especially when dealing with authentication systems. Scan
+your config's and mailsql database for typo's. You can debug all you want, but
+if you're not passing the right information back and forth to your mail system,
+it's not going to work. If you make a change to a config file for a service,
+make sure you restart that service so that the config change gets picked up.
+</p>
+
+<pre caption="How to restart a service">
+# <i>/etc/init.d/service restart</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Step 2: Are all the necessary services actually running?</title>
+<body>
+
+<p>
+If it's not running, start it up. It's awful hard to debug a service that isn't
+running. Sometimes a service will act like it's started but still not function.
+Sometimes, when a bad config is used, or a bad transmission comes into a mail
+component, the service will hang and keep the port from being used by another
+process. Sometimes you can detect this with netstat. Or, if you've been at it
+awhile, just take a break and reboot your box in the meantime. That will clear
+out any hung services. Then you can come back fresh and try it again.
+</p>
+
+<pre caption="Checking the status of a service">
+# <i>/etc/init.d/$service status</i>
+# <i>netstat -a | grep $service (or $port)</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Step 3: Are all the service using the current config's?</title>
+<body>
+
+<p>
+If you've recently made a change to a config file, restart that service to make
+sure it's using the current version. Some of the components will dump their
+current config's to you, like postfix.
+</p>
+
+<pre caption="Some services can dump their current config">
+# <i>apache2ctl fullstatus</i> (needs lynx installed)
+# <i>apache2ctl configtest</i> (checks config sanity)
+# <i>postconf -n</i> (will tell you exactly what param's postfix is using)
+# <i>/etc/init.d/$service restart</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Step 4: Check the logs</title>
+<body>
+
+<p>
+Repeat after me, logs are my friend. My next troubleshooting stop is always the
+logs. Sometimes it's helpful to try a failed operation again then check the
+logs so that the error message is right at the bottom (or top depending on your
+logger) instead of buried in there somewhere. See if there is any information
+in your log that can help you diagnose the problem, or at the very least,
+figure out which component is having the problem.
+</p>
+
+<pre caption="Checking the logs">
+# <i>kill -USR1 `ps -C metalog -o pid=`</i>(to turn off metalog buffering)
+# <i>nano -w /var/log/mail/current</i>
+# <i>cat /var/log/mysql/mysql.log</i>
+# <i>tail /var/log/apache2/error_log</i>
+</pre>
+
+<p>
+You may also find the debug_peer parameters in main.cf helpful. Setting these
+will increase log output over just verbose mode.
+</p>
+
+<pre caption="adding debug_peer support">
+# <i>nano -w /etc/postfix/main.cf</i>
+debug_peer_level = 5
+debug_peer_list = $host.domain.name
+<comment>(Uncomment one of the suggested debugger
+commands as well.)</comment>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Step 5: Talk to the service itself</title>
+<body>
+
+<p>
+SMTP, IMAP, and POP3 all respond to telnet sessions. As we've seen earlier when
+we verified postfix's config. Sometimes it's helpful to open a telnet session
+to the service itself and see what's happening.
+</p>
+
+<pre caption="Connect to a service with telnet">
+# <i>telnet localhost $port</i>
+<comment>(SMTP is 25, IMAP is 143, POP3 is 110. You should receive at least an OK string,
+letting you know that the service is running and ready to respond to requests.)</comment>
+
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+* OK Courier-IMAP ready. Copyright 1998-2002 Double Precision, Inc.
+</pre>
+
+</body>
+</section>
+<section>
+<title>Step 6: Sometimes only the big guns will give you the information you need: strace</title>
+<body>
+
+<p>
+You should have this installed anyway. This is an invaluable tool for debugging
+software. You can start commands from the command line with strace and watch
+all the system calls as they happen. It often dumps a huge amount of
+information, so you'll either need to watch it realtime as you retry a failed
+transaction with the mail system, or dump the output to a file for review.
+</p>
+
+<pre caption="Using strace">
+# <i>emerge strace</i>
+# <i>strace $command</i>
+# <i>strace -p `ps -C $service -o pid=`</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Step 7: Research</title>
+<body>
+
+<p>
+Once you have the information, if you can diagnose and fix the problem, great!
+If not, you'll probably need to go digging on the net for information that will
+help you fix it. Here's a list of sites you can check to see if your error has
+already been resolved. There's also a really good howto on setting up smtp-auth
+which contains some great debugging ideas.
+</p>
+
+<ul>
+  <li><uri>http://forums.gentoo.org/</uri> - Great forums for gentoo users</li>
+  <li>
+    <uri>http://bugs.gentoo.org/</uri> - Bugs database for gentoo - great place
+    to look for specific errors
+  </li>
+  <li><uri>http://postfix.state-of-mind.de/</uri> - smtp-auth howto</li>
+  <li>
+    <uri>http://marc.theaimsgroup.com/?l=postfix-users</uri> - Postfix mailing
+    lists - searchable
+  </li>
+  <li>
+    <uri>http://sourceforge.net/mailarchive/forum.php?forum_id=6705</uri> -
+    Courier-imap mailing list archives - not searchable
+  </li>
+  <li>
+    <uri>http://www.google.com/</uri> - If all else fails, there's always
+    google, which has never failed me
+  </li>
+  <li>
+    I also spend a lot of time on <uri
+    link="irc://irc.gentoo.org/gentoo">#gentoo</uri>. IRC is a great place to go
+    for help.
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>

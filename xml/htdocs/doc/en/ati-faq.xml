@@ -1,0 +1,268 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/ati-faq.xml,v 1.52 2011/03/23 09:26:09 nightmorph Exp $ -->
+
+<guide>
+<title>Gentoo Linux ATI FAQ</title>
+
+<author title="Author">
+  <mail link="lu_zero@gentoo.org">Luca Barbato</mail>
+</author>
+<author title="Editor">
+  <mail link="peesh@gentoo.org">Jorge Paulo</mail>
+</author>
+<author title="Editor">
+  <mail link="blubber@gentoo.org">Tiemo Kieft</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph@gentoo.org">Joshua Saddler</mail>
+</author>
+
+<abstract>
+This FAQ should help users avoid some common installation and configuration
+issues related to DRI and X11 for AMD/ATI boards.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>5</version>
+<date>2011-03-01</date>
+
+<chapter>
+<title>Hardware Support</title>
+<section>
+<title>Is my AMD/ATI board supported?</title>
+<body>
+
+<p>
+Many AMD/ATI boards (but not all) are supported by <uri
+link="http://www.freedesktop.org/Software/xorg">xorg-x11</uri>, at least for the
+2D accelerated features. The 3D support is provided either by xorg-x11, or by
+AMD's <uri
+link="http://www.amd.com/us/products/technologies/ati-catalyst/Pages/catalyst.aspx">closed
+source drivers</uri>. AMD's closed source driver only supports R600 and newer
+GPUs. Older GPUs will use the mature open source xorg-x11 driver.
+</p>
+
+<table>
+<tr>
+  <th>GPU</th>
+  <th>Common Name</th>
+  <th>Support</th>
+</tr>
+<tr>
+  <ti>Rage128</ti>
+  <ti>Rage128</ti>
+  <ti>xorg</ti>
+</tr>
+<tr>
+  <ti>R100</ti>
+  <ti>Radeon7xxx, Radeon64</ti>
+  <ti>xorg</ti>
+</tr>
+<tr>
+  <ti>R200, R250, R280</ti>
+  <ti>Radeon8500, Radeon9000, Radeon9200</ti>
+  <ti>xorg</ti>
+</tr>
+<tr>
+  <ti>R300, R400</ti>
+  <ti>Radeon 9500 - X850</ti>
+  <ti>xorg</ti>
+</tr>
+<tr>
+  <ti>R500</ti>
+  <ti>Radeon X1300 - X1950</ti>
+  <ti>xorg</ti>
+</tr>
+<tr>
+  <ti>R600</ti>
+  <ti>RadeonHD 2000 series</ti>
+  <ti>AMD DRI, xorg</ti>
+</tr>
+<tr>
+  <ti>RV670</ti>
+  <ti>RadeonHD 3000 series</ti>
+  <ti>AMD DRI, xorg</ti>
+</tr>
+<tr>
+  <ti>RV770 (R700)</ti>
+  <ti>RadeonHD 4000 series</ti>
+  <ti>AMD DRI, xorg</ti>
+</tr>
+<tr>
+  <ti>R800</ti>
+  <ti>RadeonHD 5000 series</ti>
+  <ti>AMD DRI, xorg</ti>
+</tr>
+<tr>
+  <ti>R900</ti>
+  <ti>RadeonHD 6000 series</ti>
+  <ti>AMD DRI, xorg</ti>
+</tr>
+</table>
+
+<note>
+The <uri link="http://www.x.org/wiki/RadeonFeature">Radeon Feature Matrix</uri>
+at x.org lists the open source driver support level for each part of the
+graphics card hardware.
+</note>
+
+</body>
+</section>
+<section>
+<title>
+  I have an All-In-Wonder/Vivo board.  Are the multimedia features supported?
+</title>
+<body>
+
+<p>
+You don't need to use anything special for the board's multimedia features;
+<c>x11-drivers/xf86-video-ati</c> will work just fine.
+</p>
+
+</body>
+</section>
+<section>
+<title>I'm not using an x86-based architecture.  What are my options?</title>
+<body>
+
+<p>
+X11 support on the PPC or Alpha platforms is quite similar to x86 X11 support.
+However, AMD/ATI's closed source Catalyst drivers are not supported on the PPC
+or Alpha, so you will have to use the open source drivers. The Catalyst drivers
+are only available for x86 and AMD64. The open source xorg-x11 drivers should
+work well on all architectures.
+</p>
+
+<impo>
+To enable agpgart support for certain old AMD64 chipsets, you have to disable
+support for the K8 IOMMU.
+</impo>
+
+</body>
+</section>
+<section>
+<title>I have a laptop. Is my ATI Mobility model supported?</title>
+<body>
+
+<p>
+It should be, but you may have a configuration issue due to the OEM PCI id that
+such chips may have. In such cases, you may have to write the configuration
+file yourself.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Installation</title>
+<section>
+<title>Packages</title>
+<body>
+
+<p>
+There are two ways of getting drivers for your AMD/ATI card:
+</p>
+
+<ul>
+  <li>The <c>xorg-x11</c> ebuild provides the X11 implementation</li>
+  <li>
+    The <c>ati-drivers</c> ebuild provides the AMD closed source X drivers
+    and kernel modules
+  </li>
+</ul>
+
+<p>
+If you want to use AMD/ATI's <e>internal</e> agpgart support instead of the Linux
+kernel one, the agpgart driver and the chip set specific driver (in your kernel
+configuration) must be built as modules or not at all.
+</p>
+
+<note>
+Please read the <uri link="/doc/en/dri-howto.xml">Hardware Acceleration
+Guide</uri> for more information on installing drivers for your AMD/ATI graphics
+card.
+</note>
+
+</body>
+</section>
+<section>
+<title>Configuration</title>
+<body>
+
+<p>
+You may not need to manually create <path>xorg.conf</path> or modify it. Try
+running without it first. You can also use the Xorg auto configuration option:
+</p>
+
+<pre caption="Autoconfiguring X">
+# <i>X -configure</i>
+</pre>
+
+<p>
+For more information on how to get a basic <c>xorg.conf</c> configuration file,
+please refer to the <uri link="/doc/en/xorg-config.xml">Gentoo X Server
+HowTo</uri>.
+</p>
+
+<note>
+PPC, AMD64, and x86 users can use the <c>xac</c> stand-alone X configuration
+tool by emerging <c>x11-misc/xac</c>, but isn't required.
+</note>
+
+<note>
+You can use <c>aticonfig</c> if you have installed the <c>ati-drivers</c>
+package.
+</note>
+
+<impo>
+If you're using <c>ati-drivers</c>, then you'll need to disable <c>radeonfb</c>
+(and probably any other framebuffer drivers) in your kernel config, as it
+conflicts with the built-in framebuffer in <c>ati-drivers</c>.
+</impo>
+
+</body>
+</section>
+<section>
+<title>Switching to OpenGL</title>
+<body>
+
+<p>
+Once X is installed, configured, and running, it can use the AMD/ATI OpenGL
+libraries:
+</p>
+
+<pre caption="Running eselect">
+# <i>eselect opengl set ati</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>More Resources</title>
+<section>
+<body>
+
+<p>
+Please read the <uri link="/doc/en/dri-howto.xml">Hardware Acceleration
+Guide</uri> for more information on configuring your AMD/ATI graphics card.
+</p>
+
+<p>
+More information on Gentoo Linux and the AMD/ATI Radeon binary drivers can be
+found on the <uri
+link="http://odin.prohosting.com/wedge01/gentoo-radeon-faq.html">Wedge
+Unofficial Gentoo ATI Radeon FAQ</uri>, and on the <uri
+link="http://wiki.cchtml.com/index.php/Main_Page">Unofficial AMD Linux Driver
+Wiki</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

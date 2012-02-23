@@ -1,0 +1,477 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-ppc-disk.xml,v 1.4 2011/11/14 07:11:39 naota Exp $ -->
+<!-- Translator: Yuta SATOH -->
+<!-- Translator: Muneyuki Noguchi -->
+<!-- Original revision: 1.50 -->
+<sections>
+
+<abstract>
+Gentooをインストールするには、そのために必要なパーティションを作成する必要があります。この章では、後で必要となるパーティションを作成する方法を説明します。 
+</abstract>
+
+<version>11</version>
+<date>2011-10-17</date>
+
+<section>
+<title>ブロックデバイス入門</title>
+
+<subsection>
+<include href="hb-install-blockdevices.xml"/>
+</subsection>
+
+<subsection>
+<title>パーティション</title>
+<body>
+
+<p>
+Linuxシステムを格納するのにディスクの全体を使用することは理論上可能ですが、実際にはほとんどそうはされません。代わりにディスク全体のブロックデバイスはもっと扱いやすいブロックデバイスにより小さく分割されます。ほとんどのシステムではこれら分割されたものを<e>パーティション</e>と呼びます。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>パーティション構成を計画する</title>
+<subsection>
+<title>通常のパーティション構成</title>
+<body>
+
+<p>
+もしシステムのパーティション構成を編集するのに興味が無ければ、このハンドブックを通して使っているパーティション構成を使用できます。インストールするPowerPCシステムの種類に最も一致するファイルシステムの割り当てを選んでください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Apple New World</title>
+<body>
+
+<p>
+Apple New Worldマシンはかなり簡単に設定できます。最初のパーティションは常に<e>Apple Partition Map</e>上にあります。このパーティションはディスクの割り当てを記録します。このパーティションを削除することはできません。次のパーティションは常にブートストラップパーティションにするべきです。このパーティションは小さな(800k)のHFSファイルシステムを含み、このファイルシステムはブートローダYabootのコピーとその設定ファイルを保持しています。このパーティションは、他のアーキテクチャにあるような<path>/boot</path>と同じでは<e>ありません</e>。ブートパーティションの後には、下記の構成に従って、通常のLinuxファイルシステムが置かれます。スワップパーティションは、システムが物理メモリ不足になったときのための一時的な保存場所です。ルートパーティションは、Gentooがインストールされているファイルシステムを含みます。デュアルブートを行いたいのであれば、確実にyabootが最初に起動するように、ブートストラップパーティションの後であればどこでもOSXパーティションが置けます。
+</p>
+
+<note>
+<path>Apple_Driver63</path>、<path>Apple_Driver_ATA</path>、<path>Apple_FWDriver</path>、<path>Apple_Driver_IOKit</path>や<path>Apple_Patches</path>のような「Disk Driver」パーティションがディスク上にあるかもしれません。これらはMacOSをブートするのに使われるので、これが必要なければ、<c>mac-fdisk</c>の<c>i</c>オプションでディスクを初期化することでこれらを削除できます。これはディスクを完全に消去します!疑わしいときは、ただそのままにしてください。
+</note>
+
+<note>
+Appleのディスクユーティリティでこのディスクをパーティション分割したならば、「将来の利用」のためにAppleが予約している128Mbの空き領域があるかもしれません。これらは安全に削除できます。
+</note>
+
+<table>
+<tr>
+  <th>パーティション</th>
+  <th>サイズ</th>
+  <th>ファイルシステム</th>
+  <th>説明</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>32k</ti>
+  <ti>なし</ti>
+  <ti>Apple Partition Map</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>800k</ti>
+  <ti>HFS</ti>
+  <ti>Appleのブートストラップ</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>512Mb</ti>
+  <ti>スワップ</ti>
+  <ti>Linuxのスワップ</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda4</path></ti>
+  <ti>ディスクの残り</ti>
+  <ti>ext3、reiserfs、xfs</ti>
+  <ti>Linuxのルート</ti>
+</tr>
+</table>
+
+</body>
+</subsection>
+<subsection>
+<title>Apple Old World</title>
+<body>
+
+<p>
+Apple Old Worldマシンの設定は少し込み入っています。最初のパーティションは常に<e>Apple Partition Map</e>です。このパーティションはディスクの割り当てを記録します。このパーティションを削除することはできません。BootXを使っているならば、下記の設定はMacOSが別のディスク上にインストールされていることを想定しています。そうでなければ、<path>Apple_Driver63、Apple_Driver_ATA、Apple_FWDriver、Apple_Driver_IOKit、Apple_Patches</path>やMacOSインストールのような「Apple Disk Driver」のための追加パーティションがあるでしょう。Quikを使っているならば、他のAppleのブート方法と違って、カーネルを置くためのブートパーティションの作成が必要になります。ブートパーティションの後には、下記の構成に従って、通常のLinuxファイルシステムが置かれます。スワップパーティションは、システムが物理メモリ不足になったときのための一時的な保存場所です。ルートパーティションは、Gentooがインストールされているファイルシステムを含みます。
+</p>
+
+<note>
+OldWorldマシンを使っているならば、MacOSを利用可能なままにしておく必要があります。ここでの割り当てではMacOSが別のドライブにインストールされていることを想定しています。
+</note>
+
+<table>
+<tr>
+  <th>パーティション</th>
+  <th>サイズ</th>
+  <th>ファイルシステム</th>
+  <th>説明</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>32k</ti>
+  <ti>なし</ti>
+  <ti>Apple Partition Map</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>32Mb</ti>
+  <ti>ext2</ti>
+  <ti>Quikブートパーティション(quikのみ)</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>512Mb</ti>
+  <ti>スワップ</ti>
+  <ti>Linuxのスワップ</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda4</path></ti>
+  <ti>ディスクの残り</ti>
+  <ti>ext3、reiserfs、xfs</ti>
+  <ti>Linuxのルート</ti>
+</tr>
+</table>
+
+</body>
+</subsection>
+<subsection>
+<title>Pegasos</title>
+<body>
+
+<p>
+Pegasosのパーティションの割り当ては、Appleの割り当てと比べてかなり単純です。最初のパーティションはブートパーティションで、起動するカーネルや起動時にメニューを表示するOpen Firmwareのスクリプトを含んでいます。ブートパーティションの後には、下記の構成に従って、通常のLinuxファイルシステムが置かれます。スワップパーティションは、システムが物理メモリ不足になったときのための一時的な保存場所です。ルートパーティションは、Gentooがインストールされているファイルシステムを含みます。
+</p>
+
+<table>
+<tr>
+  <th>パーティション</th>
+  <th>サイズ</th>
+  <th>ファイルシステム</th>
+  <th>説明</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>32Mb</ti>
+  <ti>affs1またはext2</ti>
+  <ti>ブートパーティション</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>512Mb</ti>
+  <ti>スワップ</ti>
+  <ti>Linuxのスワップ</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>ディスクの残り</ti>
+  <ti>ext3、reiserfs、xfs</ti>
+  <ti>Linuxのルート</ti>
+</tr>
+</table>
+
+</body>
+</subsection>
+<subsection>
+<title>IBM PReP (RS/6000)</title>
+<body>
+
+<p>
+IBM PowerPC Reference Platform (PReP) は、ディスクの最初のパーティションに小さなPRePブートパーティションを必要としており、スワップとルートパーティションが続きます。
+</p>
+
+<table>
+<tr>
+  <th>パーティション</th>
+  <th>サイズ</th>
+  <th>ファイルシステム</th>
+  <th>説明</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>800k</ti>
+  <ti>なし</ti>
+  <ti>PRePブートパーティション (タイプ0x41)</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>512Mb</ti>
+  <ti>スワップ</ti>
+  <ti>Linuxのスワップ (タイプ0x82)</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>ディスクの残り</ti>
+  <ti>ext3、reiserfs、xfs</ti>
+  <ti>Linuxのルート (タイプ0x83)</ti>
+</tr>
+</table>
+
+<warn>
+<c>parted</c>は、HFS+を含むパーティションのサイズを変更することができます。あいにく、ジャーナルHFS+ファイルシステムのサイズ変更で問題が起こるかもしれないので、最良の結果を得るには、サイズ変更の前にMac OS Xでジャーナリングを無効にしてください。あらゆるサイズ変更操作は危険であることを覚えておき、あなた自身の責任で試みてください!サイズの変更前にデータのバックアップをいつも必ず取ってください!
+</warn>
+
+<p>
+もしパーティションがどれぐらいのサイズにすればいいのか、どれだけの数のパーティションかにすべきかを知りたいのならば読み進んでください。そうでなければ、今から<uri link="#mac-fdisk">一般的な選択: パーティション作成にmac-fdiskを使う(Apple)</uri>または<uri link="#parted">もう一つの選択: パーティション作成にpartedを使う(IBM/Pegasos)</uri>に進んでください。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>パーティション数とその大きさ</title>
+<body>
+
+<p>
+パーティションの数は環境に大きく依存します。例えば、多数のユーザーがいるのならセキュリティを強めバックアップを容易にするために多分<path>/home</path>を別にしたいでしょう。もしメールサーバーとして稼働させるためにGentooをインストールしようとしているのなら、すべての受信したメールは<path>/var</path>内に保存されるので<path>/var</path>は別にすべきでしょう。ファイルシステムの良い選択はパフォーマンスを最大限にするでしょう。ゲームサーバーではほとんどのゲームサーバーパッケージが<path>/opt</path>にインストールされるので、そこは別にするべきです。理由は<path>/home</path>をセキュリティとバックアップのために別にするのと同じようなものです。どの割り当てを選ぼうと、<path>/usr</path>の容量は十分に取りましょう。アプリケーションの大部分を含むだけではなく、Portageツリーに保存される多様なソースを除いてもPortageツリーだけで500Mbを超えます。
+</p>
+
+<p>
+こういったように、どういうシステムにしたいのかにかなり依存します。分割されたパーティションまたはボリュームには以下の利点があります。
+</p>
+
+<ul>
+<li>
+  それぞれのパーティションまたはボリュームに最適なパフォーマンスを上げるファイルシステムを選択できます。
+</li>
+<li>
+  パーティションを分けておくと、あるゾンビプロセスがパーティションまたはボリュームにデータを書き込み続けてシステム全体の空き容量を使い果たすのを防ぐことが出来ます。
+</li>
+<li>
+  必要ならば、並行した複数のチェックを行えるのでファイルシステムのチェック時間を減らせます。(この利点は複数のパーティションでよりも複数のディスクでより有効ですが)。
+</li>
+<li>
+  セキュリティは読込専用、nosuid(setuidビットは無視されます)、noexec(実行ビットは無視されます)等でいくつかのパーティションをマウントすることで増大します。
+</li>
+</ul>
+
+<p>
+しかし、複数のパーティションにもいくつか欠点があります。
+正しく設定しないと、空き容量がかなりあるパーティションと空き容量の無いパーティションのあるシステムになってしまうでしょう。
+もうひとつやっかいなのはパーティション(特に<path>/usr</path>や<path>/var</path>といった大切なもの)が分かれていると、
+initramfsを使ってブートスクリプトが実行される前に、パーティションをマウントするように設定しなければいけない、ということもあります。
+とはいえ、これはどんな環境でも問題になるというわけではありません。
+</p>
+
+<p>
+また、SCSIとSATAではGPTラベルを使わなければ15個迄というパーティション数の制限があります。
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="mac-fdisk">
+<title>一般的な選択: パーティション作成にmac-fdiskを使う(Apple)</title>
+<body>
+
+<p>
+現時点では、パーティション作成に<c>mac-fdisk</c>を使います。
+</p>
+
+<pre caption="mac-fdiskの開始">
+# <i>mac-fdisk /dev/sda</i>
+</pre>
+
+<p>
+Linux用の領域を残すためにAppleのディスクユーティリティを使うならば、新規インストールのため場所を空けるため以前に作成したパーティションを最初に削除してください。パーティションを削除するためには<c>mac-fdisk</c>の中で<c>d</c>を使用してください。それは、削除するパーティション番号を尋ねます。通常、NewWorldマシンの最初のパーティション(Apple_partition_map)は削除することができません。新しいディスクで始めたいのならば、<c>i</c>を押すことで簡単にディスクを初期化できます。これによりディスクが完全に消去されるので、注意してこれを使ってください。
+</p>
+
+<p>
+次に、<c>b</c>を使って<e>Apple_Bootstrap</e>を作成してください。それは、どのブロックから始めるか尋ねます。先に空いているパーティション番号を入力し、その後に続けて<c>p</c>を入力します。例えば、これは<c>2p</c>です。
+</p>
+
+<note>
+このパーティションは<path>/boot</path>パーティションでは<e>ありません</e>。これはLinuxによって全く使用されません。つまり、どんなファイルシステムも配置する必要はありませんし、これをマウントするべきではありません。Appleユーザーは<path>/boot</path>のための余分のパーティションを必要としません。
+</note>
+
+<p>
+それから、<c>c</c>を押してスワップパーティションを作成してください。再び、<c>mac-fdisk</c>はどのブロックからこのパーティションを始めるか尋ねます。以前に私たちがApple_Bootstrapを作成するために<c>2</c>を使用したので、今は<c>3p</c>を入力する必要があります。サイズを尋ねられた時は、<c>512M</c>(または望んでいるどんなサイズでも -- 最低限512MBを推奨しますが、物理メモリの2倍が一般的に受け入れられているサイズです)を入力してください。名前を尋ねられた時は、<c>swap</c>を入力してください。
+</p>
+
+<p>
+ルートパーティションを作成するためには、ルートパーティションがどのブロックから始まるべきであるかを選ぶために、<c>c</c>を入力した後に続けて<c>4p</c>を入力してください。サイズを尋ねられた時は、再び<c>4p</c>を入力してください。<c>mac-fdisk</c>はこれを「使用可能なスペースをすべて使用してください」と解釈するでしょう。名前を尋ねられた時は、<c>root</c>を入力してください。
+</p>
+
+<p>
+完了するためには、<c>w</c>を使ってパーティションをディスクに書き、<c>q</c>を使って<c>mac-fdisk</c>を終了してください。
+</p>
+
+<note>
+全く問題がないことを確かめるために、<c>mac-fdisk -l</c>を実行し、すべてのパーティションがそこにあるかどうかを調べるべきです。もし、作成したパーティションまたは行った変更のいずれかを見ないならば、<c>mac-fdisk</c>において<c>i</c>を押してパーティションの再初期化をするべきです。これがパーティションマップを再作成し、それからすべてのパーティションを取り去るということに注意してください。
+</note>
+
+<p>
+これでパーティションが作成されましたので、<uri link="#filesystems">ファイルシステムの作成</uri>に進むことができます。
+</p>
+
+</body>
+</section>
+<section id="parted">
+<title>もう一つの選択: パーティション作成にpartedを使う(PegasosとRS/6000)</title>
+<body>
+
+<p>
+パーティションエディタである<c>parted</c>は現在、Mac OSやMac OS Xで使われるHFS+パーティションを処理することができます。このツールであなたのMacパーティションのサイズを変更し、Linuxパーティションのためのスペースを作成することができます。Macについての説明ばかりをしましたが、以下の例はPegasosマシン向けのみのパーティションの作成についての説明になります。
+</p>
+
+<p>
+さあ<c>parted</c>を実行しましょう。
+</p>
+
+<pre caption="partedを起動する">
+# <i>parted /dev/sda</i>
+</pre>
+
+<p>
+もしドライブが区切られていなければ、<c>mklabel amiga</c>を実行して新しいディスクラベルをドライブに作成してください。
+</p>
+
+<p>
+現在のパーティションテーブルを表示するために、いつでも<c>print</c>をpartedでの操作中に入力することができます。もしあなたの気が変わるかミスをしたら、いつでも<c>Ctrl-c</c>を押して<c>parted</c>を中止させることができます。
+</p>
+
+<p>
+もし、あなたがMorphOSも同様にPegasosへインストールするつもりなら、ドライブの最初にaffs1ファイルシステムを作成します。MorphOSカーネルを入れるために32MBもあれば十分です。もし、Pegasos Iを持っているか、ext2やext3以外のファイルシステムを使うつもりなら、同様にLinuxカーネルをこのパーティションに入れなければならないでしょう(Pegasos IIはext2、ext3またはaffs1パーティションだけからブートすることができます)。パーティションを作成するには<c>mkpart primary affs1 開始 終了</c>を実行します。ここで、<c>開始</c>と<c>終了</c>はメガバイトによる範囲で置き換えるべきです(例えば<c>0 32</c>は0MBから始まって32MBで終わる32MBのパーティションを作成します)。もし、代わりにext2やext3のパーティションを作成するならば、<c>mkpart</c>コマンド内のaffs1をext2やext3に置き換えてください。
+</p>
+
+<p>
+Linuxのために2つのパーティションを作成する必要があります。ルートファイルシステムを1つと、スワップパーティションを1つです。個々のパーティションを作成するために、<c>開始</c>と<c>終了</c>を望んでいるメガバイト境界で置き換えて、<c>mkpart primary 開始 終了</c>を実行してください。
+</p>
+
+<p>
+コンピュータのRAMの2倍のサイズがあるスワップパーティションを作成することは一般的に推奨されていますが、少なくとも512Mbが推奨されています。スワップパーティションを作成するには、パーティション境界を再び開始と終了で表して、<c>mkpart primary linux-swap 開始 終了</c>を実行してください。
+</p>
+
+<p>
+partedでの作業が終わったら、単に<c>quit</c>を実行してください。
+</p>
+
+</body>
+</section>
+<section id="filesystems">
+<title>ファイルシステムを作成する</title>
+<subsection>
+<title>はじめに</title>
+<body>
+
+<p>
+さてパーティションが作成されましたので、それぞれにファイルシステムを作成するときが来ました。どのファイルシステムを選べばよいか分からなくて、デフォルトのものを使うことで満足ならば、<uri link="#filesystems-apply">パーティションにファイルシステムを適用する</uri>に進んでください。そうでなければ利用可能なファイルシステムに関して知るために読み進めてください。
+</p>
+
+</body>
+</subsection>
+
+<subsection>
+<include href="hb-install-filesystems.xml"/>
+</subsection>
+
+<subsection>
+<title>スワップパーティションを有効にする</title>
+<body>
+
+<p>
+<c>mkswap</c>はスワップパーティションを初期化するのに使うコマンドです。
+</p>
+
+<pre caption="スワップパーティションを初期化する">
+# <i>mkswap /dev/sda3</i>
+</pre>
+
+<p>
+スワップパーティションを有効にするには<c>swapon</c>を使用します。
+</p>
+
+<pre caption="スワップパーティションを有効にする">
+# <i>swapon /dev/sda3</i>
+</pre>
+
+<p>
+さあ、他のファイルシステムを作成する前に、スワップを作成し有効にしましょう。
+</p>
+
+</body>
+</subsection>
+<subsection id="filesystems-apply">
+<title>パーティションにファイルシステムを適用する</title>
+<body>
+
+<p>
+パーティションやボリュームにファイルシステムを作成するには、それぞれのファイルシステムに合った利用可能なツールがあります。
+</p>
+
+<table>
+<tr>
+  <th>ファイルシステム</th>
+  <th>作成コマンド</th>
+</tr>
+<tr>
+  <ti>ext2</ti>
+  <ti><c>mke2fs</c></ti>
+</tr>
+<tr>
+  <ti>ext3</ti>
+  <ti><c>mke2fs -j</c></ti>
+</tr>
+<tr>
+  <ti>reiserfs</ti>
+  <ti><c>mkreiserfs</c></ti>
+</tr>
+<tr>
+  <ti>xfs</ti>
+  <ti><c>mkfs.xfs</c></ti>
+</tr>
+</table>
+
+<p>
+例えば、ルートパーティション(今回の例では<path>/dev/sda4</path>)にext3ファイルシステムを作成するには、以下のようにします。
+</p>
+
+<pre caption="パーティションにファイルシステムを適用する">
+# <i>mke2fs -j /dev/sda4</i>
+</pre>
+
+<p>
+さあ新しく作成されたパーティション(もしくは論理ボリューム)にファイルシステムを作成しましょう。
+</p>
+
+<impo>
+<uri link="?part=1&amp;chap=10">ブートローダを設定する</uri>で説明しているように、<path>/</path>にReiserFSを使うことを選択し、ブートローダとして<c>yaboot</c>を使うならば、デフォルトのブロックサイズを変えないでください。
+</impo>
+
+<note>
+PegasosIIでは、カーネルを入れるパーティションはext2、ext3またはaffs1でなければなりません。NewWorldマシンはext2、ext3、XFS、ReiserFS、そしてHFS/HFS+ファイルシステムからでも起動することができます。BootXでブートしているOldWorldマシンでは、カーネルはHFSパーティション上に置かなければなりませんが、ブートローダを設定しているときにこれは終わるでしょう。
+</note>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>マウント</title>
+<body>
+
+<p>
+さてパーティションが初期化されてファイルシステムが収まったので、それらのパーティションをマウントするときが来ました。<c>mount</c>というコマンドを使います。例ではルートパーティションをマウントします。
+</p>
+
+<pre caption="パーティションをマウントする">
+# <i>mount /dev/sda4 /mnt/gentoo</i>
+</pre>
+
+<note>
+もし<path>/tmp</path>を別のパーティションとして置きたいのであれば、マウントと解凍後に<c>chmod 1777 /mnt/gentoo/tmp</c>という風にパーミッションを変更するのを忘れないでください。これは<path>/var/tmp</path>も同様です。
+</note>
+
+<p>
+<uri link="?part=1&amp;chap=5">Gentooインストールファイルをインストールする</uri>に進みましょう。
+</p>
+
+</body>
+</section>
+</sections>

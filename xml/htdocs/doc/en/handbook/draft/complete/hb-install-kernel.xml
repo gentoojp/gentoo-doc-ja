@@ -1,0 +1,271 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/draft/complete/hb-install-kernel.xml,v 1.1 2006/01/06 20:05:07 swift Exp $ -->
+
+<sections>
+
+<version>0.0</version>
+<date>2005-06-19</date>
+
+<section>
+<title>Kernel configuration procedure</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+The Linux kernel is the core of the Linux Operating System. It takes care of
+resource management (processes, memory, ...), hardware support, networking, file
+systems, ... and is therefore one of the most vital parts of the system.
+</p>
+
+<p>
+Gentoo offers various kernel sources. Each source is based on the <e>vanilla</e>
+kernel source (the one developed by the main kernel developers) and adds in
+additional features, hardware support, experimental features, etc. You can pick
+whatever kernel source you like for your system (as long as your profile allows
+it of course).
+</p>
+
+<p>
+When the source code is installed on your system, you still need to configure
+and build the kernel before you can use it. The kernel configuration is the
+trickiest part since a mistake can lead to an unusable kernel, but trying to
+build in too much leads to irrelevant code in your kernel which you'll never
+use, take space and might even cause troubles later when there is a kernel bug
+in that code.
+</p>
+
+<p>
+Luckily, Gentoo offers a tool called <c>genkernel</c> which configures, builds
+and installs a kernel automatically. This might be of interest to you if you
+have no idea about configuring kernels, you want a basic kernel configuration
+for all your systems, or you require a kernel that can deal with a majority of
+hardware.
+</p>
+
+<p>
+After configuring the kernel, it is built into an image which your computer
+loads in memory when you boot the system. 
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Picking a kernel source</title>
+<body>
+
+<p>
+Gentoo maintains a list of <uri link="/doc/en/gentoo-kernel.xml">supported
+kernel sources</uri> which contains a small introduction about the kernel tree.
+You can make your choice from this guide, although you can very well pick a
+fairly generic one right now and use a different kernel later on - the kernel is
+completely interchangeable on a Linux environment so you don't have to decide on
+the kernel right here, right now.
+</p>
+
+<p>
+The most default, generic kernel source is the <c>vanilla-sources</c>. This
+kernel tree is the one released by the Linux Kernel Developers, unmodified.
+Gentoo offers a patched version itself called <c>gentoo-sources</c>. Using these
+sources has the advantage that Gentoo can release a new kernel tree whenever it
+deems it necessary.
+</p>
+
+<p>
+If you have made your choice, install the kernel sources using <c>emerge</c>.
+Just add the kernel source name as an argument to <c>emerge</c> and
+<c>emerge</c> will download and extract the kernel sources on your system:
+</p>
+
+<pre caption="Installing the kernel sources">
+# <i>emerge &lt;kernelsources&gt;</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+
+<section>
+<title>Building the kernel</title>
+<subsection>
+<title>Automated build process</title>
+<body>
+
+<p>
+If you don't want all the hassle surrounding the kernel installation, you can
+install <c>genkernel</c> and then have <c>genkernel</c> configure, build and
+install the Linux kernel for you. This process is quite simple:
+</p>
+
+<pre caption="Using genkernel">
+# <i>emerge genkernel</i>
+# <i>genkernel all</i>
+</pre>
+
+<p>
+However, <c>genkernel</c> is a lot more powerful than this. With this tool, you
+can maintain your personal kernel configuration and let the tool rebuild newer
+kernel versions with your settings. You can enable specific features (like
+bootsplash, lvm2, evms2, raid, ...) and tweak the compiler settings used during
+the kernel build process (which <e>differs</e> from the settings placed in
+<path>make.conf</path>!).
+</p>
+
+<p>
+For more information on <c>genkernel</c>, please read the <uri
+link="/doc/en/genkernel.xml">Genkernel Guide</uri>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Manual build process</title>
+<body>
+
+<p>
+The manual build process consists out of three steps:
+</p>
+
+<ul>
+  <li>configuring the kernel, </li>
+  <li>building the kernel, and</li>
+  <li>installing the kernel</li>
+</ul>
+
+<p>
+To configure the kernel, go to <path>/usr/src/linux</path> and run
+<c>make&nbsp;menuconfig</c>. You will get a dialog-based interface where you can
+configure your kernel.
+</p>
+
+<p>
+Configuring a kernel isn't hard if you know what hardware you have and what
+features you want - but then again, if all this is new to you, finding out what
+features you want or need can be time consuming.
+</p>
+
+<p>
+The kernel configuration dialogs has a good <e>Help</e> built-in which even
+includes search functionality (very useful if you want to search for the
+location of that network card you have but can't seem to place in the
+configuration structure). 
+</p>
+
+<p>
+It is not our intention to describe the kernel configuration process for
+you - there are several guides about this topic on the Internet and if you
+really aren't able to succesfully configure a kernel, use <c>genkernel</c> for
+the time being.
+</p>
+
+<p>
+When you're finished with the configuration part, build the kernel by running
+<c>make</c> (hold on, we'll do this together with the next step). <c>make</c> 
+is a tool that reads in a script called <path>Makefile</path>
+in the directory you are in. <path>Makefile</path>s are very powerful when used
+for building software since they are able to only (re)build those parts that
+need to be (re)build instead of building the entire software over and over
+again.
+</p>
+
+<p>
+To finish the kernel build process, you need to copy over the resulting kernel
+image to the boot partition and install the kernel modules you have selected.
+The location of the kernel image depends on the architecture you're using. The
+following table gives an overview of possible kernel images with the commands
+needed to build and install the kernel:
+</p>
+
+<table>
+<tr>
+  <th>Architecture</th>
+  <th>Image Location</th>
+  <th>Build Command</th>
+</tr>
+<tr>
+  <ti>alpha</ti>
+  <ti><path>arch/alpha/boot/vmlinux.gz</path></ti>
+  <ti>
+    <c>make &amp;&amp; make modules_install &amp;&amp; make boot</c>
+  </ti>
+</tr>
+<tr>
+  <ti>amd64</ti>
+  <ti><path>arch/x86_64/boot/bzImage</path></ti>
+  <ti><c>make &amp;&amp; make modules_install</c></ti>
+</tr>
+<tr>
+  <ti>hppa</ti>
+  <ti><path>vmlinux</path></ti>
+  <ti><c>make &amp;&amp; make modules_install</c></ti>
+</tr>
+<tr>
+  <ti>mips</ti>
+  <ti><path>vmlinux</path></ti>
+  <ti><c>make &amp;&amp; make modules_install</c></ti>
+</tr>
+<tr>
+  <ti>ppc Apple/IBM</ti>
+  <ti><path>vmlinux</path></ti>
+  <ti><c>make &amp;&amp; make modules_install</c></ti>
+</tr>
+<tr>
+  <ti>ppc Pegasos</ti>
+  <ti><path>arch/ppc/boot/images/zImage.chrp</path></ti>
+  <ti><c>make &amp;&amp; make modules_install</c></ti>
+</tr>
+<tr>
+  <ti>ppc64</ti>
+  <ti><path>vmlinux</path></ti>
+  <ti><c>make &amp;&amp; make modules_install</c></ti>
+</tr>
+<tr>
+  <ti>sparc32</ti>
+  <ti><path>arch/sparc/boot/image</path></ti>
+  <ti><c>make &amp;&amp; make modules_install</c></ti>
+</tr>
+<tr>
+  <ti>sparc64</ti>
+  <ti><path>arch/sparc64/boot/image</path></ti>
+  <ti><c>make &amp;&amp; make image modules_install</c></ti>
+</tr>
+<tr>
+  <ti>x86</ti>
+  <ti><path>arch/i386/boot/bzImage</path></ti>
+  <ti><c>make &amp;&amp; make modules_install</c></ti>
+</tr>
+</table>
+
+<p>
+The build command is divided in two parts - the <c>make</c> instruction we've
+discussed before and a specific instruction to finish off with some additional
+steps. The separation is made with the <c>&amp;&amp;</c> string. This is a
+specific operator to the shell, telling the system to continue with the next
+command <e>if</e> the previous one didn't fail. A similar operator is <c>||</c>
+which tells the system to execute the next command if the previous one
+<e>did</e> fail.
+</p>
+
+<p>
+Now, execute the build command to create the kernel image. When the process has
+finished, copy over the file to <path>/boot</path>. It is wise to give the
+kernel image file a good name in <path>/boot</path> so that you can distinguish
+one kernel from another. A common used naming scheme is
+<path>kernel-&lt;version&gt;</path>. The next example copies over
+an x86 kernel image to <path>/boot/kernel-2.6.12-gentoo-r6</path>:
+</p>
+
+<pre caption="Copying over the kernel image to /boot">
+# <i>cp arch/i386/boot/bzImage /boot/kernel-2.6.12-gentoo-r6</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+
+</sections>

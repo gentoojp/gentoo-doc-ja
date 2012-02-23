@@ -1,0 +1,702 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/kernel-config.xml,v 1.3 2012/01/28 08:51:36 naota Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/kernel-config.xml" lang="ja">
+<title>Gentoo Linux カーネル設定ガイド</title>
+
+<author title="Author">
+  <mail link="dsd@gentoo.org">Daniel Drake</mail>
+</author>
+<author title="Contributor">
+  <mail link="curtis119@gentoo.org">Curtis Napier</mail>
+</author>
+<author title="Contributor">
+  <mail link="jdr@xemoka.net">Justin Robinson</mail>
+</author>
+<author title="Contributor">
+  <mail link="rane@gentoo.org">ﾅ「kasz Damentko</mail>
+</author>
+<author title="Editor">
+  <mail link="smithj@gentoo.org">Jonathan Smith</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+<author title="翻訳">
+	<mail link="blueberrycandle@gmail.com">横田修作</mail>
+</author>
+
+<abstract>
+このドキュメントは手動でのカーネル設定の概念を紹介し、
+設定時によく見られるいくつかの落とし穴について詳しく述べることを目的としています。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2</version>
+<date>2011-12-26</date>
+<!-- Original revision: 1.9 -->
+
+<chapter>
+<title>はじめに</title>
+<section>
+<body>
+
+<p>
+Gentooでは<e>自動化(genkernel)</e>と<e>手動</e>の2通りを、
+カーネルのインストールとアップグレードの方法として提供しています。
+自動化された方法はユーザにとって<e>より簡単</e>であると考えられますが、
+Gentooユーザの大部分がカーネルの手動設定を選択する背景には、
+優れた柔軟性、より小さいカーネル、短いコンパイル時間、学習経験、面白みにかけるなどの幾つかの理由があります。
+</p>
+
+<p>
+このガイドでは自動化された方法(genkernel)については記載していません。
+もしgenkernelを使いカーネルをコンパイルし、インストールするのを選ぶのであれば、
+<uri link="/doc/en/genkernel.xml">Genkernelガイド</uri><uri link="/doc/ja/genkernel.xml">(日本語訳)</uri>を参照してください。
+</p>
+
+<p>
+設定手順は多くの一般常識と、高いレベルのシステムについての技術的知識に依存しているため、
+このガイドは最初から最後までの手動設定手順を文書化していません。
+その代わりに、この文書では手動設定における概念の紹介と、ユーザが直面するよくある落とし穴を詳しく述べます。
+</p>
+
+<p>
+このドキュメントは最近のカーネルを念頭に、最も一般的なコンピュータアーキテクチャに向けて書かれています。
+幾つか細かい所がより古いカーネルやよりエキゾチックなアーキテクチャとは違うかもしれません。
+しかし、内容の多くはそれでも役立つでしょう。
+</p>
+
+<p>
+ここで、Linuxカーネルソースをハードディスク上(通常<c>/usr/src</c>の下に)に解凍してあると仮定します。
+また、<c>menuconfig</c>設定ユーティリティへの入り方と、メニューシステムでの移動の仕方を知っていると仮定します。
+もしこの段階にまだ達していなければ、他のドキュメントが参考になるでしょう。
+</p>
+
+<ul>
+  <li>
+    <uri link="/doc/en/gentoo-kernel.xml">カーネルガイド</uri><uri link="/doc/ja/gentoo-kernel.xml">(日本語訳)</uri>には、
+    Gentooが提供する様々なカーネルソースパッケージのリストがあります。
+  </li>
+  <li>
+    <uri link="/doc/en/kernel-upgrade.xml">カーネルアップグレードガイド</uri><uri link="/doc/ja/kernel-upgrade.xml">(日本語訳)</uri>は、
+    カーネルのアップグレードや、あるカーネルから他のカーネルへの移行について説明しています。
+  </li>
+  <li>
+    <uri link="/doc/en/handbook/index.xml">Gentooハンドブック</uri><uri link="/doc/ja/handbook/index.xml">(日本語訳)</uri>も、
+    カーネルインストールのいくつかの面を記載しています。
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>設定コンセプト</title>
+<section>
+<title>規則</title>
+<body>
+
+<p>
+一般的なプロセスはかなりシンプルです。
+一連のオプションがそれぞれのメニューやサブメニューに分類され表示されます。
+あなたはシステムに関連したハードウェアのサポートやカーネルの機能を選択するだけです。
+</p>
+
+<p>
+カーネルは最初にmenuconfigを実行したときにソースによって設定される特有の<e>デフォルトの設定</e>が最初から含まれています。
+そのデフォルトの設定は、大多数のユーザが少ない回数の変更のみで基礎の設定をおこなえるように、一般的に広く機能的です。
+もしデフォルトで有効になっているオプションを無効にするのであれば、そのオプションの機能、さらにはそれを無効にすることによってもたらされる結果についての充分な理解が必要です。
+</p>
+
+<p>
+もし初めてLinuxカーネルを設定する場合、おそらく保守的になったほうが良いでしょう。
+あまり大胆にならず、デフォルトの設定に対して可能なかぎり最小限の変更にとどめておくよう心がけるべきです。
+一部の設定項目はシステムがうまく起動するように、必ずあなたのシステムに合わせて設定しなければいけないことを心に止めておいてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>組み込みとモジュール</title>
+<body>
+
+<p>
+ほとんどの設定オプションは、全く組み込まない、カーネル内に直接組み込む(Y)、モジュールとして組み込む(M)の<e>三種類の状態</e>を取ります。
+モジュールはファイルシステム上の外部に格納されるのに対して、組み込み項目はカーネルイメージ内に項目を組み込みます。
+</p>
+
+<p>
+組み込みとモジュールには重要な違いがあります。
+いくつかの例外はありますが、カーネルは外部モジュールを必要とするときでさえも、それらを自動的に読みに行くことはありません(ユーザに委ねられます)。
+システムの他のある一部はロードオンデマンド機能があるかもしれません、また利用可能な自動モジュールロード用ユーティリティもあるとはいえ、
+直接カーネル内にハードウェアのサポートとカーネルの機能を組み込むことをお勧めします。
+これによりカーネルは特定の機能やハードウェアのサポートを確保し、必要とされた際には提供することが可能となります。
+</p>
+
+<p>
+もちろん設定のいくつかは、組み込みが絶対要件です。
+例えば、もしルートパーティションが<c>ext2</c>ファイルシステムだった場合、システムにext2がモジュールとして組み込まれていたらシステムは起動しないでしょう。
+(システムはext2モジュールを探すためにルートパーティションを見なければなりませんが、すでにext2モジュールがロードできていない限りルートパーティションを見ることができません)
+</p>
+
+</body>
+</section>
+<section>
+<title>ハードウェアサポート</title>
+<body>
+
+<p>
+システムの<e>アーキテクチャタイプ</e>の検出を除いては、
+設定ユーティリティはシステムに現在備わっているハードウェアを確認することを試みません。
+いくつかのハードウェアサポートがデフォルトの設定にはありますが、
+あなたはほぼ確実にシステムのハードウェア設定に関連する設定オプションを間違いなく見つけ、選択する必要があるでしょう。
+</p>
+
+<p>
+これは単純にコンピュータに内蔵または接続されているコンポーネントについてそれらを識別する知識が要求されます。
+ほとんどの内蔵コンポーネントは、小売の製品名よりそれぞれに使われている<e>チップセット</e>を識別する必要があります。
+</p>
+
+<p>
+あなたの助けとなる幾つかのユーティリティがあります。
+<c>lspci</c>(<c>sys-apps/pciutils</c>パッケージに入っています)はPCIベースやAGPベースのハードウェアを識別します、
+そしてそこにはマザーボードと、その上に組み込まれているハードウェアも含まれます。
+<c>lsusb</c>(<c>sys-apps/usbutils</c>パッケージの一部)はUSBポートに接続されているデバイスを識別します。
+</p>
+
+<p>
+現状ハードウェア業界にはいくつもの標準化規格があり、混乱した状況になっています。
+デフォルトから極端に外れない限り、IDEハードディスクはPS/2やUSBのキーボードやマウスのようにうまく動作するでしょう。
+標準的なVGAディスプレイのサポートも備わっているはずです。
+しかしながら、イーサネットアダプタのうような幾つかのデバイスはほとんど標準化されていないので、
+あなたが使用しているカードでネットワークにアクセスするためにはイーサネットチップセットを識別し、適切なハードウェアサポートを選択する必要があります。
+</p>
+
+<p>
+さらに、デフォルトの設定のままでも幾つかのものはそのまま動作しますが、システムの性能を最大限に引き出すためにはより詳細なオプションを選択する必要があるでしょう。
+例えば、もし適切なIDEチップセットのサポートを有効にしないのであれば、IDEハードディスクは<e>とても</e>遅いでしょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>カーネルの機能</title>
+<body>
+
+<p>
+ハードウェアのサポートと同様に、カーネルに必要なソフトウェア機能の観点から考える必要もあります。
+このような機能の一つの重要な例はファイルシステムのサポートです。
+ハードディスク上で使用しているファイルシステム、
+または外部ストレージで使用されるファイルシステム(例えばUSBフラッシュディスク上のVFATのような)のサポートを選択する必要があります。
+</p>
+
+<p>
+別の一般的な例は高度なネットワーク機能です。
+もしある種のルーティングやファイヤーウォールを使いたい場合、
+関連する設定項目がカーネルの設定に含まれている必要があります。
+</p>
+
+</body>
+</section>
+<section>
+<title>準備は出来ましたか？</title>
+<body>
+
+<p>
+今私たちはコンセプトについて紹介してきました。
+あなたはハードウェアの識別を始め、設定メニューを読み、システムに必要なカーネルオプションを選択することが出来るはずです。
+</p>
+
+<p>
+このページの残りの部分はよく混乱しやすい点を明らかにし、ユーザが頻繁に陥る一般的な問題を回避する方法についてアドバイスします。
+では、幸運を祈ります！
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>一般的な問題と混乱する部分</title>
+
+<section>
+<title>SATAディスクはSCSI</title>
+<body>
+
+<p>
+多くの近代的なデスクトップシステムは、より古い<uri link="http://en.wikipedia.org/wiki/Parallel_ATA">IDE</uri>(<uri
+link="http://ja.wikipedia.org/wiki/IDE">日本語版</uri>)バスではなく、
+<uri link="http://en.wikipedia.org/wiki/SATA">Serial ATA</uri>(<uri
+link="http://ja.wikipedia.org/wiki/%E3%82%B7%E3%83%AA%E3%82%A2%E3%83%ABATA">日本語版</uri>)バス上に、
+ストレージデバイス(ハードディスクやCD/DVDドライブ)を搭載しています。
+</p>
+
+<p>
+LinuxでのSATAサポートはSCSIサブシステムの下に存在する<e>libata</e>と呼ばれるレイヤーに実装されています。
+このためSATAドライバーの設定は、SCSIドライバーセクションにあります。
+さらに、ストレージデバイスはSCSIデバイスとして扱われるため、SCSIのディスクやCDROMサポートも必要となるでしょう。
+あなたのSATAハードディスクは例えば、<c>/dev/sda</c>として、
+SATA CD/DVDドライブは<c>/dev/sr0</c>として認識されるでしょう。
+</p>
+
+<p>
+これらのdriverの大半はSATAドライバーのコントローラ用ですが、libataはSATA用に設計されていません。
+大部分の標準的なIDEドライバーも近い将来にlibataにポーティングされるでしょう。
+そして、その時点で上記の配慮はIDEユーザにも当てはまるようになります。
+</p>
+
+<pre caption="libataのオプション設定">
+Device Drivers  ---&gt;
+ SCSI device support  ---&gt;
+  &lt;*&gt; SCSI device support
+  &lt;*&gt;   SCSI disk support
+  &lt;*&gt;   SCSI CDROM support
+
+  SCSI low-level drivers  ---&gt;
+   &lt;*&gt; Serial ATA (SATA) support
+  <comment>上記のオプションの下に表示される選択肢からチップセットを選択します</comment>
+</pre>
+
+</body>
+</section>
+<section>
+<title>IDEチップセットとDMA</title>
+<body>
+
+<p>
+SATAの導入にもかかわらず、IDEデバイスはまだよく使われており、多くのものに依存されています。
+IDEは非常に一般的な技術ですので、LinuxはまだほとんどすべてのIDEコントローラを、
+コントローラ向けのオプションを選択することなくそのままサポートしています。
+</p>
+
+<p>
+しかしながら、IDEは古い技術です。そして、元の<e>プログラムI/O</e>(Programmed I/O)の化身で、
+現在のストレージデバイスへの速いアクセスに必要な転送速度を提供することはできません。
+一般的なIDEドライバはこのようなPIO転送モードに限られているため、
+結果としてデータ転送は遅く、データの入出力中はCPU使用率が著しく高くなります。
+</p>
+
+<p>
+1995年以前のシステムを扱う場合を除き、IDEコントローラは<e>Direct Memory Access(DMA)</e>として知られる、代替転送モードをサポートしているでしょう。
+DMAは非常に早く、CPUの利用はデータ転送が行われる間わずかに使われるだけです。
+もしあなたが本当に貧弱な汎用システムのパフォーマンスに悩んでおり、さらにIDEディスクを利用している場合は、DMAを使用していない確率が高いです。
+</p>
+
+<note>
+前述のようにIDEドライバー用のlibataも存在しています。
+もしlibataを使っている場合、以降IDEドライブを含むすべてのドライブはDMAを使用することになります。
+そのためにいかなる確認や設定も必要ありません。
+</note>
+
+<p>
+もしIDEディスクがlibataを使用していないらば、その時はDMAの使い方を確認し、有効にする必要があるでしょう。
+</p>
+
+<pre caption="IDEディスクでDMAが有効かの確認">
+# <i>hdparm -d /dev/hda</i>
+
+/dev/hda:
+ using_dma    =  0 (off)
+</pre>
+
+<p>
+IDEデバイスでDMAを有効にするには、ただIDEコントローラの設定オプションを有効にする必要があるでしょう。
+</p>
+
+<pre caption="IDEコントローラの設定オプション">
+ ATA/ATAPI/MFM/RLL support  ---&gt;
+  &lt;*&gt; ATA/ATAPI/MFM/RLL support
+  &lt;*&gt;   Enhanced IDE/MFM/RLL disk/cdrom/tape/floppy support
+  [*]     PCI IDE chipset support
+  <comment>上記のオプションの下に表示される選択肢からチップセットを選択します</comment>
+</pre>
+
+</body>
+</section>
+<section>
+<title>USBバスとコントローラ</title>
+<body>
+
+<p>
+<uri link="http://en.wikipedia.org/wiki/USB">USB</uri>(<uri 
+link="http://ja.wikipedia.org/wiki/USB">日本語版</uri>)はコンピュータを外付け周辺機器に接続するために幅広く採用されているバスです。
+USBが成功した理由の一つは、プロトコルが標準化されていることです。
+しかしながら、USB<e>ホストコントローラデバイス</e>(HCDs)は非常に少ない種類ですがコンピュータ上で実装されています。
+USBホストコントローラには3つの種類があります。
+</p>
+
+<ul>
+  <li>
+    <c>UHCI</c>はUniversal Host Controller interfaceの略称です。
+    UHCIはUSB 1.1をサポートしていて、通常VIAやIntelのチップセットをベースにしたマザーボードに見られます。
+  </li>
+  <li>
+    <c>OHCI</c>はOpen Host Controller Interfaceの略称です。
+    OHCIはUSB 1.1をサポートしていて、通常NvidiaやSiSのチップセットをベースにしたマザーボードに見られます。
+  </li>
+  <li>
+    <c>EHCI</c>はExtended Host Controller Interfaceの略称です。
+    EHCIはUSB 2.0をサポートしている唯一のホストコントローラインタフェースで、
+    通常USB 2.0をサポートしているあらゆるコンピュータに見ることができます。
+  </li>
+</ul>
+
+<p>
+ほとんどのシステムは上記の2つのインタフェースタイプ(USB 2.0のEHCIと、USB 1.1のUHCIかOHCIのどちらか)があるでしょう。
+システムが提供しているUSB HCDタイプのオプションを両方選ぶことは重要なことです。
+すべてのUSB 2.0デバイスはUSB 1.1と後方互換性があるとはいえ、
+現在製造されているものであってもUSBデバイスの大部分はUSB 1.1インタフェースをベースにしています。
+(USBマウスに1.5Mbit/秒の速度が必要ですか？)
+</p>
+
+<p>
+システムに存在するUSB HCDタイプに適合するオプションを選択しなかった場合、
+デバイスを接続しても電力が得られなかったり、全く反応しない無意味なUSBポートを体験するかもしれません。
+</p>
+
+<p>
+<c>sys-apps/pciutils</c>パッケージに含まれる<c>lspci</c>をうまく使えば、
+システムに存在するHCDがどれか調べるのを比較的簡単にしてくれます。
+意図せず一致してしまったFireWireコントローラを無視すれば、システムが必要としているのがOHCIとEHCIのサポートであることを見つけるのは簡単です。
+</p>
+
+<pre caption="lspciを使ってHCDタイプを調べる">
+# <i>lspci -v | grep HCI</i>
+00:02.0 USB Controller: nVidia Corporation CK804 USB Controller (rev a2) (prog-if 10 <i>[OHCI]</i>)
+00:02.1 USB Controller: nVidia Corporation CK804 USB Controller (rev a3) (prog-if 20 <i>[EHCI]</i>)
+01:0b.0 FireWire (IEEE 1394): Agere Systems FW323 (rev 61) (prog-if 10 [OHCI])
+</pre>
+
+<pre caption="USB HCDの設定">
+Device Drivers  ---&gt;
+ USB support  ---&gt;
+  &lt;*&gt; Support for Host-side USB
+  ---   USB Host Controller Drivers
+  &lt;*&gt;   EHCI HCD (USB 2.0) support
+  &lt;*&gt;   OHCI HCD support
+  &lt;*&gt;   UHCI HCD (most Intel and VIA) support
+  <comment>システムに存在するHCDを選択するか、もしわからなければ3つ全てを選択します</comment>
+</pre>
+
+</body>
+</section>
+<section>
+<title>マルチプロセッサ。ハイパースレッディングと、デュアルコアシステム</title>
+<body>
+
+<p>
+多くのコンピュータシステムはマルチプロセッサに基づいていますが、必ずしも明らかにそうなっているわけではありません。
+</p>
+
+<ul>
+  <li>
+    IntelのCPUの多くは<uri link="http://en.wikipedia.org/wiki/Hyperthreading">ハイパースレッディング</uri>(<uri
+    link="http://ja.wikipedia.org/wiki/ハイパースレッディング・テクノロジー">日本語版</uri>)と呼ばれる
+    CPUがシステムから実際は2つの<e>論理的な</e>プロセッサに見える技術をサポートしています。
+  </li>
+  <li>
+    最近のIntelやAMDのCPUのほとんどは実際にひとつのパッケージの中に、複数の物理的なプロセッサからなっています。
+    それらは、<uri link="http://en.wikipedia.org/wiki/Dual_core">デュアルコア</uri>(<uri
+    link="http://ja.wikipedia.org/wiki/デュアルコア">日本語版</uri>)プロセッサとして知られています。
+  </li>
+  <li>
+    幾つかの高性能なコンピュータシステムは<e>単一</e>のプロセッサを持つシステムに比べて大幅に増加したパフォーマンスを提供するために、
+    特別なマザーボードを備え実際に複数の物理的なプロセッサを持っています。
+    そのようなシステムは安くないので、持っていればたぶん知っているでしょう。
+  </li>
+</ul>
+
+<p>
+これらのケース全てにおいて、最適な性能を得るために最適なカーネルオプションを以下から選択する必要があります。
+</p>
+
+<pre caption="マルチプロセッシングのための設定">
+Processor type and features  ---&gt;
+ [*] Symmetric multi-processing support
+ <comment>システムがマルチプロセッサの場合(どのタイプであっても)、上記のオプションを選択します</comment>
+ [*]   SMT (Hyperthreading) scheduler support
+ <comment>システムがIntelのハイパースレッディングCPUの場合、上記のオプションを選択します</comment>
+ [*]   Multi-core scheduler support (NEW)
+ <comment>CPUがデュアルコアの場合、上記のオプションを選択します</comment>
+Power management and ACPI options  ---&gt;
+ [*] ACPI (Advanced Configuration and Power Interface) Support
+ <comment>上記のオプションは電源管理機能が有効にする場合だけなく、システムのすべてのCPUを有効にするために必要かもしれません</comment>
+</pre>
+
+</body>
+</section>
+<section>
+<title>x86のハイメモリサポート</title>
+<body>
+
+<p>
+x86アーキテクチャの32ビットアドレス空間の制限のため、デフォルト設定のカーネルでは896メガバイトまでのRAMしかサポートできません。
+もしそれ以上のメモリがあっても、ハイメモリサポートを有効にするまでは最初の896メガバイトだけしかみることができないでしょう。
+</p>
+
+<note>
+この制限はx86(IA32)アーキテクチャ特有のものです。
+他のアーキテクチャは設定の必要なく自然に大量のメモリをサポートしています。
+</note>
+
+<p>
+ハイメモリサポートは小さいシステムオーバヘッドをもたらすため、デフォルトでは有効になっていません。
+オーバヘッドはより多くのメモリが利用できることによるパフォーマンスを増加と比較したら取るに足らないので、特に気にしないでください。
+</p>
+
+<pre caption="x86でのハイメモリサポートの有効化">
+Processor type and features  ---&gt;
+ High Memory Support  ---&gt;
+  (X) 4GB
+  ( ) 64GB
+  <comment>システムに4ギガバイト以上のRAMがないのであれば、4GBを選択して下さい</comment>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="shorthand">
+<title>カーネル設定の略記法</title>
+<section>
+<title>はじめに</title>
+<body>
+
+<p>
+カーネル設定について読むと、<c>CONFIG_&lt;something&gt;</c>という記述をよく見かけます。
+これは実際に内部で使われているカーネル設定の略記法で、<path>/usr/src/linux/.config</path>や自動生成される<path>/proc/config.gz</path>ファイルなどのカーネル設定ファイルで見ることができます。
+もちろんカーネル設定の実際の場所に変換できないときは、略記法を使うのはあまりよくないでしょう。
+しかし、幸運にも<c>make menuconfig</c>ツールはそれをしてくれます。
+</p>
+
+</body>
+</section>
+<section>
+<title>CONFIG_FOOの実際の設定箇所への変換</title>
+<body>
+
+<p>
+<c>CONFIG_TMPFS_XATTR</c>を有効にしたいと考えた場合、カーネル設定メニュー(<c>make menuconfig</c>)を起動し、<c>/</c>を入力します。
+これで検索窓が開きます。
+この検索窓に<c>CONFIG_TMPFS_XATTR</c>(<c>CONFIG_</c>を省略することもできます)と入力します。
+次のコード表示はこの検索の結果を示しています。
+</p>
+
+<pre caption="CONFIG_TMPFS_XATTRの検索結果">
+Symbol: TMPFS_XATTR [=n]
+Type  : boolean
+Prompt: Tmpfs extended attributes
+  Defined at fs/Kconfig:138
+  Depends on: TMPFS [=y]
+  Location:
+    -> File systems
+      -> Pseudo filesystems
+        -> Virtual memory file system support (former shm fs) (TMPFS [=y])
+  Selected by: TMPFS_POSIX_ACL [=n] &amp;&amp; TMPFS [=y]
+</pre>
+
+<p>
+これには多くの興味深い情報が出力されています。
+</p>
+
+<table>
+<tr>
+  <th>項目</th>
+  <th>説明</th>
+</tr>
+<tr>
+  <ti>Symbol: TMPFS_XATTR [=n]</ti>
+  <ti>
+    これで探しているカーネル設定のエントリかを見分けることができます。
+    また、設定が現在<e>無効</e>([=n])で有ることを示しています。
+  </ti>
+</tr>
+<tr>
+  <ti>Type: boolean</ti>
+  <ti>
+    この設定は有効か無効かを設定できる真偽値(boolean)です。
+    いくつかの設定は数字(numbers)や文字列(strings)になっています。
+  </ti>
+</tr>
+<tr>
+  <ti>Prompt: Tmpfs extended attributes</ti>
+  <ti>
+    <c>make menuconfig</c>などで見られる本文で、人が読むのにより適したものです。
+  </ti>
+</tr>
+<tr>
+  <ti>Depends on: TMPFS [=y]</ti>
+  <ti>
+    このエントリを参照する前に、<c>CONFIG_TMPFS</c>を有効にする必要があります。
+    このケースでは、[=y]となっているため既に有効になっています。
+    しかし、このようなケースではない場合、まず<c>CONFIG_TMPFS</c>を探し、有効にする必要があります。
+  </ti>
+</tr>
+<tr>
+  <ti>Location: ...</ti>
+  <ti>
+    <c>make menuconfig</c>の構造内でこの設定を見つけることができる場所です。
+    探している設定は<e>Tmpfs extended attributes</e>であることを思い出してください。
+  </ti>
+</tr>
+<tr>
+  <ti>Selected by: TMPFS_POSIX_ACL [=n] &amp;&amp; TMPFS [=y]</ti>
+  <ti>
+    今回のケースでは一つ目の設定はそうなっていませんが、もしここに記載されている設定が両方有効な場合、<c>CONFIG_TMPFS_XATTR</c>は自動的に有効になっていて、おまけに設定は無効にすることはできないでしょう。
+  </ti>
+</tr>
+</table>
+
+<p>
+この情報により、必要な<c>CONFIG_*</c>を提示し、略記法から実際の場所への変換を楽にできるでしょう。
+つまり、次のとおりです。
+</p>
+
+<ol>
+  <li><e>Depends on</e>に記述されている設定を有効にします</li>
+  <li><e>Location:</e>に示されているポイントに移動します</li>
+  <li><e>Prompt:</e>を参考にして、値を変更します</li>
+</ol>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>他のカーネル設定ドキュメント</title>
+<section>
+<body>
+
+<p>
+ここまで、カーネル設定に関して、詳しく述べるわけでもなく一般的な概念と特定の問題について論じてきました(詳細はあなたが見つけてください)。
+しかし、Gentooドキュメントの他の部分ではテーマ特有の詳細を手元に提供しています。
+</p>
+
+<p>
+そのような特定の部分について設定する際にはこれらのドキュメントを見ることが助けになるかもしれません。
+しかし、カーネル設定の初心者であるのならば、あまり冒険をしないでください。
+まず、基本システムが起動させ、動作させることからはじめましょう。オーディオや、プリンタなどのサポートの追加はいつでも後から戻って設定できます。
+</p>
+
+<ul>
+  <li>
+    <uri link="/doc/en/alsa-guide.xml">ALSAガイド</uri>(<uri link="/doc/ja/alsa-guide.xml">日本語訳</uri>)は、
+    サウンドカードのサポートについて必要なオプション設定を詳述しています。
+    カーネルの機能は普通組み込みにしたほうがよいですが、ALSAはモジュールとして構築した方がよいという特殊な例外の1つであることに注意してください。
+    ALSAは実際コンポーネントをモジュールとする方が設定がより簡単です。
+  </li>
+  <li>
+    <uri link="/doc/en/bluetooth-guide.xml">bluetoothガイド</uri>(<uri link="/doc/ja/bluetooth-guide.xml">日本語訳</uri>)は、
+    システムのbluetoothデバイスを使うために必要なオプションを詳述しています。
+  </li>
+  <li>
+    <uri link="/doc/en/ipv6.xml">IPv6ルータガイド</uri>(<uri link="/doc/ja/ipv6.xml">日本語訳</uri>)は、
+    次世代ネットワークアドレス体系を利用したルーティングのためのカーネル設定の仕方について記述しています。
+  </li>
+  <li>
+    クローズソースであるnVidiaグラフィックドライバを使って3Dグラフィックス機能向上を図りたいのであれば、
+    <uri link="/doc/en/nvidia-guide.xml">nVidiaガイド</uri>(<uri link="/doc/ja/nvidia-guide.xml">日本語訳</uri>)がシステムで選択するべきオプションと、
+    選択するべきでないオプションを一覧にしています。
+  </li>
+  <li>
+    特に<uri link="/doc/en/power-management-guide.xml">電力管理ガイド</uri>(<uri link="/doc/ja/power-management-guide.xml">日本語訳</uri>)は、
+    CPU周波数スケーリングと、サスペンドとハイバネート機能のためのカーネル設定方法について説明しています。
+  </li>
+  <li>
+    もしPowerPCのシステムを動作させているならば、<uri link="/doc/en/gentoo-ppc-faq.xml">PPC FAQ</uri>(<uri
+    link="/doc/ja/gentoo-ppc-faq.xml">日本語訳</uri>)に、カーネル設定について幾つかのセクションがあります。
+  </li>
+  <li>
+    <uri link="/doc/en/printing-howto.xml">印刷環境構築ガイド</uri>(<uri link="/doc/ja/printing-howto.xml">日本語訳</uri>)は、
+    Linuxで印刷をサポートするために必要なカーネルオプションを一覧にしています。
+  </li>
+  <li>
+    <uri link="/doc/en/usb-guide.xml">USBガイド</uri>(<uri link="/doc/ja/usb-guide.xml">日本語訳</uri>)は、
+    キーボード／マウス、ストレージデバイス、そしてプリンタのような一般的なUSBデバイスを使うために必要な設定を詳述しています。
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>トラブルシューティング</title>
+<section>
+<title>設定変更が有効になりません</title>
+<body>
+
+<p>
+ユーザが設定を変更することはとても一般的です、しかしその時以下の処理で小さなミスをすることがあります。
+彼らは再設定したのではないカーネルイメージで再起動しまい、
+解決しようとした問題がまだ解決していないことを確認すると、おこなった設定変更が問題を解決しないと断定します。
+</p>
+
+<p>
+カーネルをコンパイルして、インストールする処理はこのドキュメントの範囲外です。
+一般的な手引きとして<uri link="/doc/en/kernel-upgrade.xml">カーネルアップグレードガイド</uri>(<uri link="/doc/ja/kernel-upgrade.xml">日本語訳</uri>)を参照するべきです。
+要するに、処理は「設定をおこなう、コンパイルする、/bootをマウントする(まだマウントしていなければ)、カーネルイメージをそこにコピーする、再起動する」です。
+もしこれら最終段階のいずれかを省略すると、おこなった変更は反映されないでしょう。
+</p>
+
+<p>
+ハードディスクにコピーしたカーネルのコンパイル日時を調べることで、起動したカーネルかどうか確認することができます。
+アーキテクチャがx86であるとすると、カーネルソースは<path>/usr/src/linux</path>にインストールされます。
+</p>
+
+<pre caption="起動したものが変更したカーネルか確認する方法">
+# <i>uname -v</i>
+#4 SMP PREEMPT Sat Jul 15 08:49:26 BST 2006
+<comment>上記コマンドは現在起動しているカーネルがコンパイルされた日時を表示します</comment>
+
+# <i>ls -l /usr/src/linux/arch/i386/boot/bzImage</i>
+-rw-r--r-- 1 dsd users 1504118 Jul 15 08:49 /usr/src/linux/arch/i386/boot/bzImage
+<comment>上記コマンドはハードディスクのカーネルイメージが最後にコンパイルされた日時を表示します</comment>
+</pre>
+
+<p>
+もし上記のコマンドによる2つの時間が2分以上違っていたら、カーネルの再インストールの間に失敗していて、変更をおこなったカーネルイメージから起動していないことを示しています。
+</p>
+
+</body>
+</section>
+<section>
+<title>モジュールが自動で読み込まれません</title>
+<body>
+
+<p>
+このドキュメントの最初で述べたように、カーネル設定システムはコンポーネントを組み込む(Y)よりもモジュール(M)を選択することで大きな動作変更を隠すことができます。
+非常に多くのユーザがこの罠にかかるので、このことは再び繰り返して言う価値があります。
+</p>
+
+<p>
+コンポーネントを組み込みとして選択した場合、コードはカーネルイメージ(bzImage)内に構築されます。
+カーネルがそのコンポーネントを利用する必要があるときに、ユーザによる介入なしでコンポーネントは初期化され、自動で読み込まれます。
+</p>
+
+<p>
+コンポーネントをモジュールとして選択した場合、コードはカーネルモジュールファイルとして構築され、ファイルシステム上にインストールされます。
+一般的に、カーネルがそのコンポーネントを利用する必要があるときになっても、利用できません。
+いくつかの例外を除いて、カーネルは実際これらのモジュールを読み込む作業をしません。
+この作業はユーザに任されています。
+</p>
+
+<p>
+そして、ネットワークカードのサポートをモジュールとして構築した後、ネットワークへのアクセスを確認できない場合、おそらくモジュールが読み込まれていないでしょう。
+あなたはこれを手動で行うか、起動時に自動で読み込むようにシステムに設定しなくてはなりません。
+</p>
+
+<p>
+特別な理由がない限り、カーネルが自動的にこれらのことを設定できるように、コンポーネントをカーネルイメージに直接構築し、時間を節約しましょう。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

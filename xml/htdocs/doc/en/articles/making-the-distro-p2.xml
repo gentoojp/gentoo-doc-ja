@@ -1,0 +1,400 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/articles/making-the-distro-p2.xml,v 1.5 2011/09/04 17:53:41 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide disclaimer="articles">
+<title>Making the distribution, Part 2</title>
+
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<!--<author title="Editor">
+  <mail link="fox2mike@gentoo.org">Shyam Mani</mail>
+</author>-->
+
+<abstract>
+In his previous article, Daniel Robbins told the story of how he became a
+Stampede Linux developer and why he eventually left Stampede to start the Enoch
+Linux distribution. In this go-round he lets you in on the strange events that
+happened after the Enoch development team discovered a little-known, blazingly
+fast compiler.
+</abstract>
+
+<!-- The original version of this article was first published on IBM 
+developerWorks, and is property of Westtech Information Services. This 
+document is an updated version of the original article, and contains
+various improvements made by the Gentoo Linux Documentation team -->
+
+<version>1.2</version>
+<date>2005-10-09</date>
+
+<chapter>
+<title>From Enoch to Gentoo, via minor setbacks and corporate run-ins</title>
+<section>
+<title>First steps to Enoch</title>
+<body>
+
+<p>
+In my <uri link="/doc/en/articles/making-the-distro-p1.xml">previous article</uri>, I
+gave you the low-down on my days with the Stampede development team and why I
+left (to get away from lower-level politically-minded, project-controlling
+"freaks"). Because of the interference from these meddlesome by-standers, I
+figured it would be easier to put together my own Linux distribution than to
+continue improving Stampede under such dirty conditions! Fortunately I took with
+me a considerable amount of experience based on my (may I say substantial?) work
+for Stampede, including maintaining several of their packages, designing the
+initialization scripts, and leading the slpv6 (next-generation package
+management project).
+</p>
+
+<p>
+The distribution I began working on, code-named Enoch, was going to be blazingly
+fast because it would completely automate the package creation and upgrading
+process. I have to admit that this was in large part because I was a one-member
+team and couldn't afford to spend my time on repetitive work that my development
+box could be automated to do for me. And since I was designing a complete
+distribution from scratch (rather than "spinning off" from someone like RedHat),
+I had my work cut out for me and needed all the free time I could scrounge up.
+</p>
+
+<p>
+After getting my basic Enoch system up and running, I headed back to
+irc.openprojects.net and started my own channel called #enoch. From there I
+gradually assembled a team of about ten developers. In those early days we all
+hung out on IRC and worked on the distribution in our spare time. As we
+communally and cooperatively hacked away at it, finding and fixing new bugs,
+Enoch became more functional and professional every day.
+</p>
+
+</body>
+</section>
+<section>
+<title>The first roadblock</title>
+<body>
+
+<p>
+One inevitable day, Enoch hit its first roadblock. After adding Xfree86, glib,
+and gtk+, I decided to get xmms (an X11/gtk+-based MP3/CD player app) working. I
+figured it was time to celebrate with some music! But after installing xmms, I
+tried to start it... and X locked up! At first I thought xmms locked up because
+I used insane compiler optimizations ("-O6 -mpentiumpro", in case you were
+wondering). My first thought, to compile xmms with standard optimizations,
+didn't solve the problem. So I started looking elsewhere. After spending a full
+week of development time trying to track down the problem, I got an e-mail from
+an Enoch user, Omegadan, who was also experiencing xmms lockups.
+</p>
+
+<p>
+We corresponded for a while, and after many hours of testing we determined that
+the problem was a POSIX threads-related issue. For some reason, a
+pthread_mutex_trylock() call did not return the way it should. As the creator of
+a distribution, these were the types of bugs I really didn't want to encounter.
+I counted on the developers to release perfect sources so I could focus on
+enhancing the Linux experience rather than getting buggy sources to work. Of
+course I soon learned that this was an unrealistic expectation, and that
+problems like will always pop up from time to time.
+</p>
+
+<p>
+As it turned out, the problem wasn't with xmms, gtk+, or glib. And it wasn't an
+issue with Xfree86 3.3.5 not being thread-safe and locking up. Surprisingly, we
+found the bug in the Linux POSIX threads implementation itself, part of the GNU
+C library (glibc) version 2.1.2. I was shocked at the time to find that such a
+critical part of Linux had such a major bug. (And we used a release version of
+glibc in Enoch, not a prerelease or CVS version!).
+</p>
+
+<p>
+So how did we track down the problem? Actually, we never were able to come up
+with a bug fix, but at one point I stumbled across a couple of e-mails on the
+glibc developer mailing list from another person who had the same problem. The
+glibc developer who replied posted a patch that solved the thread problem for
+us. But I was curious why RedHat 6 (which also used glibc 2.1.2) didn't suffer
+from this problem since the patch was just posted and RedHat 6 had been
+available for some time. To find out, I downloaded RedHat's glibc SRPM (source
+RPM) and took a look at their patches.
+</p>
+
+<p>
+RedHat had their own homegrown glibc patch that solved the
+pthread_mutex_trylock() issue. Apparently they experienced the same problem and
+created their own custom fix. Too bad they didn't send this patch "upstream" to
+the glibc developers so it could be shared with the rest of the world. But who
+knows, maybe RedHat sent the patch upstream and for some reason the glibc
+developers didn't accept it. Or maybe the thread bug was triggered by a specific
+combination of compiler and binutils versions, and RedHat never ran into it
+(although they did have a thread patch in their SRPM). I suppose we'll never
+know exactly what happened. But I did learn that RedHat SRPMs contain a lot of
+private bug fixes and tweaks that never seem to make it upstream to the original
+developers. I'm going to rant about this for a little while.
+</p>
+
+</body>
+</section>
+<section>
+<title>Rant</title>
+<body>
+
+<p>
+When you put together a Linux distribution it's really important that any bug
+fixes you create are sent upstream to the original developers. As I see it, this
+is one of the many ways that distribution creators contribute to Linux. We're
+the guys who actually get all these different programs working as a unified
+whole. We should send our fixes upstream as we unify so that other users and
+distributions can benefit from our discoveries. If you decide to keep bug fixes
+to yourself, you're not helping anyone; you're just ensuring that a lot of
+people will waste time fixing the same problem over and over again. This kind of
+policy goes against the whole open source ethic and stunts the growth of Linux
+development. Maybe I should say that it "bugs" us all.
+</p>
+
+<p>
+It's unfortunate that some distributions (ahem) aren't as good (RedHat) as
+others (Debian) about sharing their work with the community.
+</p>
+
+</body>
+</section>
+<section>
+<title>Compiler drama</title>
+<body>
+
+<p>
+During the time we were trying to fix the glibc threads problem, I e-mailed
+Ulrich Drepper (one of the guys at Cygnus who is heavily involved with glibc
+development). I mentioned the POSIX thread problem we were having, and that
+Enoch was using pgcc for optimum performance. And he responded with something
+like this (I'm paraphrasing here): "Our own compiler included with the
+CodeFusion product has an excellent x86 backend that produces executables far
+faster than those generated with pgcc." Obviously, I was very interested in
+testing out this mystery "turbo" compiler the Cygnus guys had created.
+</p>
+
+<p>
+I thereupon requested a demo copy of Cygnus Codefusion 1.0 so that I could test
+it out, and Omegadan and I were amazed to find that this compiler was everything
+that Ulrich claimed and then some. The x86 backend increased the performance of
+some of the CPU-intensive executables (like bzip2) by close to 90%! All
+applications seemed to benefit from at least a 10% real-world performance
+increase, and all we did was swap out compilers. Enoch even booted 30 - 40%
+faster. The performance gains were far, far greater than what we gained by
+switching from gcc to pgcc. Obviously, after experiencing it for ourselves, we
+wanted to use this compiler for Enoch. Fortunately, the sources were included on
+the CodeFusion CD and were released under the GPL, so we were fully permitted to
+use this compiler... or so we thought.
+</p>
+
+</body>
+</section>
+<section>
+<title>Let the freakiness begin</title>
+<body>
+
+<p>
+I sent an e-mail to the marketing manager at Cygnus to let them know our
+intentions, expecting a "yeah, go for it, thanks for using our compiler"
+response. Instead the reply was that although we were (technically) allowed to
+use the Cygnus compiler, we were strongly urged not to use or include the
+compiler sources with Enoch. I responded by asking why they had released the
+source under the GPL, if that was the case. It's my guess that if they had a
+choice, they wouldn't have used the GPL, but because they derived their compiler
+from egcs (released under the GPL), they had no choice.
+</p>
+
+<p>
+This is a good example of a situation where the GPL prevented a company from
+creating a proprietary product based on open sources. My educated guess is that
+Cygnus was afraid that if we used their compiler we would undermine their boxed
+product sales, which would be especially strange because none of their marketing
+materials (nor the InfoWorld review) mentioned the new compiler included with
+CodeFusion. CodeFusion was marketed solely as a "development IDE" product, not
+as a compiler.
+</p>
+
+<p>
+In an attempt to put some of their paranoia to rest, I offered to endorse
+CodeFusion and place the endorsement on our Web site with a link to help spur
+CodeFusion sales. Personally I didn't think that a "turbo" Enoch would
+negatively affect their sales, since CodeFusion was marketed as an IDE. But I
+tried nevertheless to make them happy. The IDE component of CodeFusion was a
+commercial product, and we had no desire or intention (or right) to distribute
+it with Enoch.
+</p>
+
+<p>
+I e-mailed my (generous?) offer to Cygnus and received another strange response.
+They wanted authority over all of our "marketing materials" (apparently, this
+also included the content of our Web site!) Another shocker. The Cygnus
+marketing team seemed to have no grasp of how the Linux community or the GPL
+worked, so I decided to cut off communication with Cygnus for the indefinite
+future. In the mean time, we created a private "turbo" and public "non-turbo"
+version of Enoch, leaving the final decision for later.
+</p>
+
+<p>
+But after several months they integrated the CodeFusion x86 backend into gcc
+2.95.2. Now everyone could benefit from the nice new backend, not just the
+people who knew about the "secret GPL compiler" included on the CodeFusion CD.
+But we decided to go ahead and use gcc rather than the CodeFusion compiler. In
+addition to being more stable, gcc 2.95.2 also allowed us avoid Cygnus, which by
+this time had been purchased by RedHat for a ridiculous sum of money. (Note: the
+new x86 backend in gcc 2.95.2 is what gave newer Linux distributions the
+significant speed boost that we all got to experience. It also gave FreeBSD 4.0
+a nice speed boost over 3.3.6. Notice the difference?)
+</p>
+
+</body>
+</section>
+<section>
+<title>On the soapbox</title>
+<body>
+
+<p>
+Thanks to this and other experiences, I've learned a lot about for-profit open
+source companies. There's absolutely nothing bad about being a for-profit open
+source company. Nor is there anything morally wrong with producing proprietary
+closed-source software, if that's what you'd like to do. But it doesn't make any
+sense for open source companies to subvert or refuse to cooperate with the rest
+of the open source world, either by not supporting the GPL or by any other
+means. This is a practical point that clearly makes business sense.
+</p>
+
+<p>
+Open source companies should realize that the free exchange of ideas and code is
+what they profit from. By opposing things like the standard GPL practices, they
+undermine the environment they rely upon to prosper and grow. If open source is
+the soil from which your business has sprouted, it makes sense to keep the soil
+healthy.
+</p>
+
+<p>
+I understand that there's a temptation to keep at least some information secret
+for short-term financial gain. Advanced code or special techniques provide a
+coveted competitive advantage, which could potentially result in increased sales
+and profit. But if the goal is to be the sole provider of a product, the product
+should be commercial rather than open source. Open source does not allow for
+exclusive access to the inner workings of anything. That's what it means.
+</p>
+
+</body>
+</section>
+<section>
+<title>Back to Enoch</title>
+<body>
+
+<p>
+Now, I'll step down from my soapbox and continue my story.
+</p>
+
+<p>
+As Enoch became more and more refined, we decided that a name change was in
+order, and "Gentoo Linux" was born. By this time we had released a couple of
+versions of Enoch (now Gentoo), and were racing to get to Gentoo Linux version
+1.0. Around this time I also decided to upgrade my old Celeron 300 box
+(overclocked and rock-solid at 450Mhz) to a brand-new Abit BP6 (a dual Celeron
+board that had just hit the market). I sold my old box and put my dual Celeron
+366 system together. After overclocking the processors to something on the order
+of 500Mhz, I was cruising. But I noticed that my new machine wasn't very stable.
+</p>
+
+<p>
+Obviously my first reaction was to go back down to 2x366Mhz. But now I
+experienced an even stranger problem. As long as my machine kept the CPUs
+chugging away, the machine didn't lock up. But if I left the machine idle
+overnight, there was a good probability that the system would lock up
+completely. Yes, an idle bug -- argh! After some research, I found several other
+Linux users with the same problem on this particular motherboard. A chip on the
+BP6 (was it the PCI controller?) seemed to be flaky or out of spec, which caused
+Linux to lock up at idle.
+</p>
+
+<p>
+I was more than a wee bit upset, and because I couldn't afford to order more PC
+parts, Gentoo development effectively halted. I became more and more pessimistic
+about Linux and decided to switch over to FreeBSD. Yes, FreeBSD. And that's
+where I'll end this installment -- see you in Part 3. :)
+</p>
+
+</body>
+</section>
+<section>
+<title>Resources</title>
+<body>
+
+<ul>
+  <li>
+    Start at the beginning of my story with "Making the distribution", <uri
+    link="/doc/en/articles/making-the-distro-p1.xml">Part 1</uri>, and finish up
+    with <uri link="/doc/en/articles/making-the-distro-p3.xml">Part 3</uri>. 
+  </li>
+  <li>
+    Find out more about <uri link="/index.xml">Gentoo Linux</uri> from our Web
+    site.
+  </li>
+  <li>
+    Check out the competetion at <uri
+    link="http://www.freebsd.org/">FreeBSD</uri>.
+  </li>
+  <li>
+  Read up on the <uri link="http://www.gnu.org/copyleft/gpl.html">GPL</uri>.
+  </li>
+  <li>
+    Take a look at the official <uri link="http://www.stampede.org/">Stampede
+    site</uri>.
+  </li>
+  <!--<li>
+  Hang out on <uri
+  link="http://irc.openprojects.net/">irc.openprojects.net</uri>.
+  </li>-->
+  <li>
+    Find out more about the <uri link="http://www.xfree86.org/">Free X86
+    Project</uri>.
+  </li>
+  <li>
+    Get the <uri link="http://developer.gnome.org/doc/API/gtk/">GTK+ Reference
+    Documentation</uri>.
+  </li>
+  <li>
+    Check out the <uri link="http://www.xmms.org/">XMultiMedia System</uri>, an
+    X11/gtk+-based MP3/CD player app.
+  </li>
+  <li>
+    Get started on threads with a <uri
+    link="http://www.math.arizona.edu/swig/pthreads/threads.html">POSIX Threads
+    tutorial</uri> from the University of Arizona.
+  </li>
+  <li>
+    Get the latest on the <uri link="http://www.rpm.org/">RPM Packaging
+    Tool</uri>.
+  </li>
+  <li>
+  Visit the good folks at <uri link="http://www.debian.org/">Debian</uri>.
+  </li>
+  <li>
+  And see the official <uri link="http://gcc.gnu.org/">GCC</uri> site.
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>About the author</title>
+<body>
+
+<p>
+Daniel Robbins lives in Albuquerque, New Mexico. He was the President/CEO of
+Gentoo Technologies Inc., the Chief Architect of the Gentoo Project and is a
+contributing author of several books published by MacMillan: Caldera OpenLinux
+Unleashed, SuSE Linux Unleashed, and Samba Unleashed. Daniel has been involved
+with computers in some fashion since the second grade when he was first exposed
+to the Logo programming language and a potentially lethal dose of Pac Man. This
+probably explains why he has since served as a Lead Graphic Artist at SONY
+Electronic Publishing/Psygnosis. Daniel enjoys spending time with his wife Mary
+and his new baby daughter, Hadassah. You can contact Daniel at
+<mail link="drobbins@gentoo.org">drobbins@gentoo.org</mail>.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

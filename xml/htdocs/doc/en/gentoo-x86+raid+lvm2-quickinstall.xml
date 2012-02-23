@@ -1,0 +1,461 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-x86+raid+lvm2-quickinstall.xml,v 1.29 2011/08/23 15:12:17 swift Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoo Linux x86 with Software Raid and LVM2 Quick Install Guide</title>
+
+<values>
+ <key id="raid+lvm">yes</key>
+ <key id="root">/dev/md3</key>
+</values>
+
+<author title="Author">
+  <mail link="neysx"/>
+</author>
+<author title="Author">
+  <mail link="swift"/>
+</author>
+<author title="Author">Steven Wagner</author>
+
+<abstract>
+The Quick Install guide covers the Gentoo install process in a non-verbose
+manner. Its purpose is to allow users to perform a stage3 install with software
+RAID and LVM2 in no time. Users should already have prior experience with
+installing Gentoo Linux if they want to follow this guide.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>19</version>
+<date>2011-08-23</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<body>
+
+<p>
+This guide contains all commands you should use to complete a stage3
+installation including LVM2 on top of software RAID. This guide is targeted at
+experienced users. You need a connection to the Internet to download the stage3
+and Portage snapshots.
+</p>
+
+<impo>
+New users should read the <uri link="/doc/en/handbook/index.xml">Handbook</uri>
+as it gives a better overview about the installation process. The Quick Install
+guide is designed for experienced users who just need a checklist to follow.
+</impo>
+
+<p>
+Timing output follows all commands that take more than a couple of seconds to
+finish. Commands were timed on an AMD 2000 1.66 Ghz PC with 512 Mb of RAM and
+two SATA disks connected to a hardware controller configured as JBOD (i.e. two
+separate hard disks are seen by Gentoo). If you have a "hardware" RAID
+controller on your motherboard, it is most likely <b>not</b> a hardware
+controller.
+</p>
+
+<pre caption="Test box specs">
+<comment>(The following specs and the timing information should help you determine
+a rough estimate of the time you need to complete your install)</comment>
+
+# <i>grep bogo /proc/cpuinfo</i>
+bogomips       : 3337.81
+
+# <i>hdparm -tT /dev/sda /dev/sdb</i>
+/dev/sda:
+reads:   1048 MB in  2.00 seconds = 524.00 MB/sec
+ Timing buffered disk reads:  152 MB in  3.01 seconds =  50.50 MB/sec
+
+/dev/sdb:
+ Timing cached reads:   1048 MB in  2.00 seconds = 524.00 MB/sec
+ Timing buffered disk reads:  152 MB in  3.01 seconds =  50.50 MB/sec
+
+# <i>grep MemTotal /proc/meminfo</i>
+MemTotal:       509248 kB
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Quick Install Guide</title>
+<section>
+ <include href="gentoo-x86-quickinstall-media.xml"/>
+</section>
+<section>
+<title>Preparing the Disks</title>
+<body>
+
+<p>
+Load the software RAID and LVM2 modules.
+</p>
+
+<pre caption="Load RAID and LVM2 modules">
+livecd ~ # <i>modprobe raid0</i>
+livecd ~ # <i>modprobe raid1</i>
+<comment>(raid5, raid6 and raid10 are also available)</comment>
+
+livecd ~ # <i>modprobe dm-mod</i>
+</pre>
+
+<p>
+Use <c>fdisk</c> or <c>cfdisk</c> to create your partition layout.  The device
+names are likely to be either <path>/dev/sda</path> and <path>/dev/sdb</path>
+for a SATA or SCSI disks, or <path>/dev/hda</path> and <path>/dev/hdb</path>
+for IDE disks. The following layout will be used in this guide:
+</p>
+
+<table>
+  <tr>
+    <ti/>
+    <th><path>/dev/sda</path></th>
+    <th><path>/dev/sdb</path></th>
+    <th>Type</th>
+  </tr>
+  <tr>
+    <th><path>/dev/md1</path></th>
+    <th><path>/boot</path></th>
+    <th><path>/boot</path></th>
+    <ti>Raid-1 (mirroring)</ti>
+  </tr>
+  <tr>
+    <th/>
+    <th>swap</th>
+    <th>swap</th>
+    <ti>Normal partitions</ti>
+  </tr>
+  <tr>
+    <th><path>/dev/md3</path></th>
+    <th><path>/</path></th>
+    <th><path>/</path></th>
+    <ti>Raid-1 (mirroring)</ti>
+  </tr>
+  <tr>
+    <th><path>/dev/md4</path></th>
+    <th colspan="2">LVM2 volumes</th>
+    <ti>Raid-0 (striped)</ti>
+  </tr>
+</table>
+
+<impo>
+The partition you boot from must not be striped. It may not be raid-5 or
+raid-0.
+</impo>
+
+<note>
+On the one hand, if you want extra stability, consider using raid-1 (or even
+raid-5) for your swap partition(s) so that a drive failure would not corrupt
+your swap space and crash applications that are using it. On the other hand, if
+you want extra performance, just let the kernel use distinct swap partitions as
+it does striping by default.
+</note>
+
+<pre caption="Create the partitions">
+livecd ~ # <i>fdisk /dev/sda</i>
+<comment>(Make sure you use type fd and set the bootable flag)</comment>
+
+<comment>(The rest of this guide uses the following partitioning scheme)</comment>
+livecd ~ # <i>fdisk -l /dev/sda</i>
+
+Disk /dev/sda: 299.9 GB, 299989204992 bytes
+255 heads, 63 sectors/track, 36471 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *           1          11       88326   fd  Linux raid autodetect
+/dev/sda2              12          61      401625   82  Linux swap / Solaris
+/dev/sda3              62         311     2008125   fd  Linux raid autodetect
+/dev/sda4             312       36471   290455200   fd  Linux raid autodetect
+
+<comment>(Partition the second disk exactly as the first)</comment>
+livecd ~ # <i>fdisk /dev/sdb</i>
+</pre>
+
+<p>
+Then create the RAID device nodes and devices. Please bear in mind that, if you
+are not using an initramfs to help during boot, the
+<c>/boot</c> and <c>/</c> mount points should use an older metadata format which
+can be specified by the <c>--metadata=0.90</c> flag:
+</p>
+
+<pre caption="Create device nodes and devices">
+livecd ~ # <i>mknod /dev/md1 b 9 1</i>
+livecd ~ # <i>mknod /dev/md3 b 9 3</i>
+livecd ~ # <i>mknod /dev/md4 b 9 4</i>
+
+livecd ~ # <i>mdadm --create /dev/md1 --level=1 --raid-devices=2 --metadata=0.90 /dev/sda1 /dev/sdb1</i>
+mdadm: array /dev/md1 started.
+livecd ~ # <i>mdadm --create /dev/md3 --level=1 --raid-devices=2 --metadata=0.90 /dev/sda3 /dev/sdb3</i>
+mdadm: array /dev/md3 started.
+livecd ~ # <i>mdadm --create /dev/md4 --level=0 --raid-devices=2 /dev/sda4 /dev/sdb4</i>
+mdadm: array /dev/md4 started.
+
+<comment>(Wait until all units are ready)</comment>
+livecd ~ # <i>cat /proc/mdstat</i>
+Personalities : [raid0] [raid1]
+md4 : active raid0 sdb4[1] sda4[0]
+581006592 blocks 64k chunks
+
+md3 : active raid1 sdb3[1] sda3[0]
+1959808 blocks [2/2] [UU]
+
+md1 : active raid1 sdb1[1] sda1[0]
+88256 blocks [2/2] [UU]
+</pre>
+
+<p>
+If you use an initramfs, then it is responsible for assembling the RAID arrays
+during boot. When using a genkernel initramfs, this can be triggered using the
+<c>domdadm</c> boot option.
+</p>
+
+<p>
+Then create the LVM2 volumes in <path>/dev/md4</path>. The following scheme is
+used as an <b>example</b>:
+</p>
+
+<table>
+<tr>
+  <th>Directory</th>
+  <th>Size</th>
+  <th>File system</th>
+</tr>
+<tr>
+  <ti>/usr</ti>
+  <ti>8 GB</ti>
+  <ti>ext3</ti>
+</tr>
+<tr>
+  <ti>/usr/portage</ti>
+  <ti>2 GB</ti>
+  <ti>ext2, small block size, many inodes</ti>
+</tr>
+<tr>
+  <ti>/usr/portage/distfiles</ti>
+  <ti>4 GB</ti>
+  <ti>ext2, large block size, less inodes</ti>
+</tr>
+<tr>
+  <ti>/home</ti>
+  <ti>10 GB</ti>
+  <ti>ext3</ti>
+</tr>
+<tr>
+  <ti>/opt</ti>
+  <ti>4 GB</ti>
+  <ti>ext3</ti>
+</tr>
+<tr>
+  <ti>/var</ti>
+  <ti>4 GB</ti>
+  <ti>ext3</ti>
+</tr>
+<tr>
+  <ti>/var/tmp</ti>
+  <ti>6 GB</ti>
+  <ti>ext2</ti>
+</tr>
+<tr>
+  <ti>/tmp</ti>
+  <ti>2 GB</ti>
+  <ti>ext2</ti>
+</tr>
+</table>
+
+<pre caption="Create LVM2 volumes">
+livecd ~ # <i>vgscan</i>
+  Reading all physical volumes.  This may take a while...
+  No volume groups found
+livecd ~ # <i>vgchange -a y</i>
+  No volume groups found
+
+<comment>(Create physical volumes, we have only one in our example)</comment>
+livecd ~ # <i>pvcreate /dev/md4</i>
+  Physical volume "/dev/md4" successfully created
+
+<comment>(Create volume groups, again, we have only one in our example)</comment>
+livecd ~ # <i>vgcreate vg /dev/md4</i>
+  Volume group "vg" successfully created
+
+<comment>(Create logical volumes)</comment>
+livecd ~ # <i>lvcreate -L8G -nusr vg</i>
+  /dev/cdrom: open failed: Read-only file system
+  Logical volume "usr" created <comment>(Further similar messages not displayed)</comment>
+livecd ~ # <i>lvcreate -L2G -nportage vg</i>
+livecd ~ # <i>lvcreate -L4G -ndistfiles vg</i>
+livecd ~ # <i>lvcreate -L10G -nhome vg</i>
+livecd ~ # <i>lvcreate -L4G -nopt vg</i>
+livecd ~ # <i>lvcreate -L4G -nvar vg</i>
+livecd ~ # <i>lvcreate -L6G -nvartmp vg</i>
+livecd ~ # <i>lvcreate -L2G -ntmp vg</i>
+
+<comment>(Display volume groups and logical volumes)</comment>
+livecd ~ # <i>vgs</i>
+  VG   #PV #LV #SN Attr  VSize   VFree
+  vg     1   8   0 wz--n 554.09G 514.09G
+livecd ~ # <i>lvs</i>
+  LV        VG   Attr   LSize  Origin Snap%  Move Copy%
+  distfiles vg   -wi-a-  4.00G
+  home      vg   -wi-a- 10.00G
+  opt       vg   -wi-a-  4.00G
+  portage   vg   -wi-a-  2.00G
+  tmp       vg   -wi-a-  2.00G
+  usr       vg   -wi-a-  8.00G
+  var       vg   -wi-a-  4.00G
+  vartmp    vg   -wi-a-  6.00G
+</pre>
+
+<p>
+Use <c>mke2fs</c>, <c>mke2fs -j</c>, <c>mkreiserfs</c>, <c>mkfs.xfs</c> and
+<c>mkfs.jfs</c> to create file systems. Initialize swap using <c>mkswap</c> and
+<c>swapon</c>.
+</p>
+
+<pre caption="Create the file systems and activate swap">
+<comment>(ext2 is all you need on the /boot partition)</comment>
+livecd ~ # <i>mke2fs /dev/md1</i>
+
+<comment>(Let's use ext3 on the root partition)</comment>
+livecd ~ # <i>mke2fs -j /dev/md3</i>
+
+<comment>(Create file systems on logical volumes)</comment>
+livecd ~ # <i>mke2fs -b 4096 -T largefile /dev/vg/distfiles</i>
+livecd ~ # <i>mke2fs -j /dev/vg/home</i>
+livecd ~ # <i>mke2fs -j /dev/vg/opt</i>
+livecd ~ # <i>mke2fs -b 1024 -N 200000 /dev/vg/portage</i>
+livecd ~ # <i>mke2fs /dev/vg/tmp</i>
+livecd ~ # <i>mke2fs -j /dev/vg/usr</i>
+livecd ~ # <i>mke2fs -j /dev/vg/var</i>
+livecd ~ # <i>mke2fs /dev/vg/vartmp</i>
+
+<comment>(Create and activate swap)</comment>
+livecd ~ # <i>mkswap /dev/sda2 &amp;&amp; mkswap /dev/sdb2</i>
+livecd ~ # <i>swapon -p 1 /dev/sda2 &amp;&amp; swapon -p 1 /dev/sdb2</i>
+<comment>(Check that all swap partitions use the same priority)</comment>
+livecd ~ # <i>swapon -v -s</i>
+Filename                   Type            Size    Used    Priority
+/dev/sda2                  partition       401616  0       1
+/dev/sdb2                  partition       401616  0       1
+</pre>
+
+<p>
+Mount the freshly created file systems on <path>/mnt/gentoo</path>. Create
+directories for the other mount points and mount them too.
+</p>
+
+<pre caption="Mount the file systems">
+livecd ~ # <i>mount /dev/md3 /mnt/gentoo</i>
+livecd ~ # <i>cd /mnt/gentoo</i>
+livecd gentoo # <i>mkdir boot home usr opt var tmp</i>
+livecd gentoo # <i>mount /dev/md1 /mnt/gentoo/boot</i>
+livecd gentoo # <i>mount /dev/vg/usr /mnt/gentoo/usr</i>
+livecd gentoo # <i>mount /dev/vg/home /mnt/gentoo/home</i>
+livecd gentoo # <i>mount /dev/vg/opt /mnt/gentoo/opt</i>
+livecd gentoo # <i>mount /dev/vg/tmp /mnt/gentoo/tmp</i>
+livecd gentoo # <i>mount /dev/vg/var /mnt/gentoo/var</i>
+livecd gentoo # <i>mkdir usr/portage var/tmp</i>
+livecd gentoo # <i>mount /dev/vg/vartmp /mnt/gentoo/var/tmp</i>
+livecd gentoo # <i>mount /dev/vg/portage /mnt/gentoo/usr/portage</i>
+livecd gentoo # <i>mkdir usr/portage/distfiles</i>
+livecd gentoo # <i>mount /dev/vg/distfiles /mnt/gentoo/usr/portage/distfiles</i>
+
+<comment>(Set proper perms on tmp directories)</comment>
+livecd gentoo # <i>chmod 1777 /mnt/gentoo/tmp /mnt/gentoo/var/tmp</i>
+</pre>
+
+</body>
+</section>
+
+<section>
+ <include href="gentoo-x86-quickinstall-stage.xml"/>
+</section>
+
+<section>
+<title>Kernel Configuration</title>
+<body>
+
+<p>
+Install a kernel source (usually <c>gentoo-sources</c>), configure it, compile
+it and copy the <path>arch/i386/boot/bzImage</path> file to <path>/boot</path>.
+</p>
+
+<pre caption="Install a kernel source, compile it and install the kernel">
+livecd etc # <i>time emerge gentoo-sources</i>
+
+real  3m3.110s
+user  1m2.320s
+sys   0m34.990s
+livecd etc # <i>cd /usr/src/linux</i>
+livecd linux # <i>make menuconfig</i>
+
+<comment>(Configure your kernel as usual and make sure the raid and lvm modules you need are
+compiled in, i.e. <b>not</b> as modules. The same applies to the disk drivers and filesystems.)</comment>
+Multi-device support (RAID and LVM)  --->
+[*] Multiple devices driver support (RAID and LVM)
+  &lt;*&gt;   RAID support
+  &lt; &gt;     Linear (append) mode (NEW)
+  &lt;*&gt;     RAID-0 (striping) mode
+  &lt;*&gt;     RAID-1 (mirroring) mode
+  &lt; &gt;     RAID-10 (mirrored striping) mode (EXPERIMENTAL) (NEW)
+  &lt; &gt;     RAID-4/RAID-5 mode (NEW)
+  &lt; &gt;     RAID-6 mode (NEW)
+  &lt; &gt;     Multipath I/O support (NEW)
+  &lt; &gt;     Faulty test module for MD (NEW)
+  &lt;*&gt;   Device mapper support
+  &lt; &gt;     Crypt target support (NEW)
+  &lt; &gt;     Snapshot target (EXPERIMENTAL) (NEW)
+  &lt; &gt;     Mirror target (EXPERIMENTAL) (NEW)
+  &lt; &gt;     Zero target (EXPERIMENTAL) (NEW)
+  &lt; &gt;     Multipath target (EXPERIMENTAL) (NEW)
+  &lt; &gt;     Bad Block Relocation Device Target (EXPERIMENTAL) (NEW)
+
+livecd linux # <i>time make -j2</i>
+
+<comment>(Elapsed time depends highly on the options you selected)</comment>
+real  5m5.869s
+user  4m32.320s
+sys   0m32.930s
+
+livecd linux # <i>make modules_install</i>
+livecd linux # <i>cp arch/i386/boot/bzImage /boot/kernel</i>
+</pre>
+
+</body>
+</section>
+
+<section>
+ <include href="gentoo-x86-quickinstall-system.xml"/>
+</section>
+
+<section id="reboot">
+<title>Reboot</title>
+<body>
+
+<p>
+Exit the chrooted environment, unmount all file systems and reboot:
+</p>
+
+<pre caption="Reboot">
+livecd conf.d # <i>exit</i>
+livecd / # <i>umount -l /mnt/gentoo/usr{/portage/distfiles,/portage,}</i>
+livecd / # <i>umount -l /mnt/gentoo/dev{/pts,/shm,}</i>
+livecd / # <i>umount -l /mnt/gentoo{/usr,/var/tmp,/tmp,/var,/opt,/dev,/proc,/home,/boot,}</i>
+livecd / # <i>reboot</i>
+<comment>(Don't forget to remove the CD)</comment>
+</pre>
+
+</body>
+</section>
+
+<section>
+ <include href="gentoo-x86-quickinstall-after-reboot.xml"/>
+</section>
+
+</chapter>
+</guide>

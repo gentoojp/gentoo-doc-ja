@@ -1,0 +1,1793 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2012-02-22 22:53+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/home-router-howto.xml:6
+#, fuzzy, no-wrap
+msgid "Home Router Guide"
+msgstr "ホームルータガイド"
+
+#. type: Content of: <guide><abstract>
+#: en/home-router-howto.xml:13
+#, fuzzy, no-wrap
+msgid ""
+"This document details how to turn an old Gentoo machine into a router\n"
+"for connecting your home network to the internet.\n"
+msgstr "このガイドでは、ホームネットワークをインターネットに繋ぐために、古いGentooマシンをルータに変える方法を紹介します。\n"
+
+#. type: Content of: <guide><chapter><title>
+#: en/home-router-howto.xml:24
+#, fuzzy, no-wrap
+msgid "Introduction"
+msgstr "はじめに"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:29
+#, fuzzy, no-wrap
+msgid ""
+"Building your own router out of old spare parts has many advantages over buying\n"
+"a pre-made canned router by say Linksys.  The biggest one by far is control\n"
+"over the connection.  The other advantages are left up to your imagination;\n"
+"just about anything can be done in this scenario, it's just a matter of needing\n"
+"it.\n"
+msgstr ""
+"古くて余っているパーツを使ってあなただけのルータを組み立てるのは、Linksysのような既製のルータを買うのに比べて多くの利点があります。\n"
+"断然良い利点は、接続の制御についてです。\n"
+"他の利点はあなたの想像にお任せしましょう。\n"
+"必要とするものは、このシナリオでほとんど何でもできます。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:37
+#, fuzzy, no-wrap
+msgid ""
+"This guide will show you how to setup Network Address Translation (NAT) on the\n"
+"router (kernel and iptables), add and configure common services (Domain Name\n"
+"System (DNS) via dnsmasq, dhcp via dhcpcd, ADSL via ppp), and conclude\n"
+"with more elaborate and fun things that can be done (port forwarding, traffic\n"
+"shaping, proxies/caching, etc...).\n"
+msgstr ""
+"このガイドでは、最初にルータ上でのネットワークアドレス変換(NAT)の設定方法を紹介していきます。\n"
+"そして、dnsmasqでのドメインネームサービス(DNS)、dhcpcdによるDHCP、rp-pppoeによるADSLといった一般的なサービスの追加と設定方法を紹介します。\n"
+"最後に、ポートフォワーディング、帯域制御、proxyやキャッシングなどの凝った面白い話題を紹介します。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:45
+#, fuzzy, no-wrap
+msgid ""
+"Before getting started, there's a few basic requirements you must meet.  First,\n"
+"you'll need a computer that has at least 2 Network Interface Cards (NICs) in\n"
+"it.  Next, you'll need the configuration settings for your internet connection\n"
+"(may include things like IP/DNS/Gateway/username/password).  Finally, you'll\n"
+"need a bit of spare time and some Gentoo loving.\n"
+msgstr ""
+"設定を始めるに当たって、いくつか基本的な条件を満たさなければいけません。\n"
+"まず、ネットワークインタフェースカード(NIC)が少なくとも二つあるコンピュータが必要になります。\n"
+"次に、インターネット接続設定(IP、DNS、ゲートウェイ、ユーザ名、パスワードなど)の設定が必要でしょう。\n"
+"最後に、暇な時間が少しとGentooへの愛が必要になります。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:53
+#, fuzzy, no-wrap
+msgid "The conventions used in this guide are:\n"
+msgstr "このガイドでの取り決めは以下の通りです。\n"
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/home-router-howto.xml:57
+#, fuzzy, no-wrap
+msgid "eth0 - NIC connected to the Local Area Network (LAN)"
+msgstr "eth0 - ローカルエリアネットワーク(LAN)に接続しているNIC"
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/home-router-howto.xml:58
+#, fuzzy, no-wrap
+msgid "eth1 - NIC connected to the Wide Area Network (WAN)"
+msgstr "eth1 - ワイドエリアネットワーク(WAN)に接続しているNIC"
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/home-router-howto.xml:59
+#, fuzzy, no-wrap
+msgid "LAN utilizes the private 192.168.0.xxx network"
+msgstr "LANは192.168.0.xxxネットワークを使用します。"
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/home-router-howto.xml:60
+#, fuzzy, no-wrap
+msgid "router is hardcoded to the standard 192.168.0.1 IP"
+msgstr "ルータは、標準IPアドレス192.168.0.1に固定されています。"
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/home-router-howto.xml:61
+#, fuzzy, no-wrap
+msgid "router is running Linux 2.4 or 2.6; you're on your own with 2.0/2.2"
+msgstr "ルータは、Linux 2.4あるいは2.6で動作しています。 あなたは2.0あるいは2.2でもお好きにどうぞ。"
+
+#. type: Content of: <guide><chapter><section><body><impo>
+#: en/home-router-howto.xml:65
+#, fuzzy, no-wrap
+msgid ""
+"Due to security precautions, I would highly suggest you shut down any unneeded\n"
+"services on the router until we have a chance to get the firewall up and\n"
+"rolling.  To view the currently running services, just run <c>rc-status</c>.\n"
+msgstr ""
+"安全対策のために、ファイアウォールが起動して動き出すまでルータ上の不要なサービスはすべて停止することを強く勧めます。\n"
+"現在動いているサービスを見るには、<c>rc-status</c>を実行します。\n"
+
+#. type: Content of: <guide><chapter><title>
+#: en/home-router-howto.xml:75
+#, fuzzy, no-wrap
+msgid "Kernel setup (know thyself first)"
+msgstr "カーネルの設定 (まず汝自身を知れ)"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:80
+#, fuzzy, no-wrap
+msgid ""
+"Your kernel needs to have the drivers running for both your NICs.  To see if\n"
+"your cards are already setup, just run <c>ifconfig</c>.  Your output may differ\n"
+"slightly from the following, that's fine.  What matters is that the interface\n"
+"shows up at all.\n"
+msgstr ""
+"カーネルには、両方のNICを動かすためのドライバが必要です。\n"
+"カードが既に設定されているかを見るためには<c>ifconfig</c>を実行します。\n"
+"次の例とは出力が少し違うかもしれませんが気にしないでください。\n"
+"重要なのは、インタフェースがすべて見えるかということです。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:86
+#, fuzzy, no-wrap
+msgid "Checking NICs"
+msgstr "NICの確認"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:87
+#, fuzzy, no-wrap
+msgid ""
+"# <i>ifconfig -a</i>\n"
+"eth0      Link encap:Ethernet  HWaddr 00:60:F5:07:07:B8\n"
+"          BROADCAST MULTICAST  MTU:1500  Metric:1\n"
+"          RX packets:0 errors:0 dropped:0 overruns:0 frame:0\n"
+"          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0\n"
+"          collisions:0 txqueuelen:1000\n"
+"          RX bytes:0 (0.0 b)  TX bytes:0 (0.0 b)\n"
+"          Interrupt:11 Base address:0x9800\n"
+"\n"
+"eth1      Link encap:Ethernet  HWaddr 00:60:F5:07:07:B9\n"
+"          BROADCAST MULTICAST  MTU:1500  Metric:1\n"
+"          RX packets:0 errors:0 dropped:0 overruns:0 frame:0\n"
+"          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0\n"
+"          collisions:0 txqueuelen:1000\n"
+"          RX bytes:0 (0.0 b)  TX bytes:0 (0.0 b)\n"
+"          Interrupt:10 Base address:0x9400\n"
+msgstr ""
+"# <i>ifconfig -a</i>\n"
+"eth0      Link encap:Ethernet  HWaddr 00:60:F5:07:07:B8\n"
+"          BROADCAST MULTICAST  MTU:1500  Metric:1\n"
+"          RX packets:0 errors:0 dropped:0 overruns:0 frame:0\n"
+"          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0\n"
+"          collisions:0 txqueuelen:1000 \n"
+"          RX bytes:0 (0.0 b)  TX bytes:0 (0.0 b)\n"
+"          Interrupt:11 Base address:0x9800 \n"
+"\n"
+"eth1      Link encap:Ethernet  HWaddr 00:60:F5:07:07:B9\n"
+"          BROADCAST MULTICAST  MTU:1500  Metric:1\n"
+"          RX packets:0 errors:0 dropped:0 overruns:0 frame:0\n"
+"          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0\n"
+"          collisions:0 txqueuelen:1000 \n"
+"          RX bytes:0 (0.0 b)  TX bytes:0 (0.0 b)\n"
+"          Interrupt:10 Base address:0x9400 \n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:106
+#, fuzzy, no-wrap
+msgid ""
+"If you do not see your two cards showing up and you're not sure what kind of\n"
+"cards you have, try running <c>lspci | grep Ethernet</c>.  You can get that\n"
+"from <c>emerge pciutils</c>.  Once you have this information, go into your\n"
+"kernel and add support for the correct drivers.\n"
+msgstr ""
+"二つのカードが見えず、しかもカードの種類がわからなかった場合は<c>lspci | grep Ethernet</c>を実行してみます。\n"
+"これは、<c>emerge pciutils</c>で入手できます。\n"
+"この情報をもとに、適切なドライバのサポートをカーネルに追加しましょう。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:113
+#, fuzzy, no-wrap
+msgid ""
+"The next thing you'll need is support for iptables and NAT (and packet shaping\n"
+"if you want).  The following list is split up into always required (*),\n"
+"required only for adsl via PPPoE (a), suggested for everyone (x), and only\n"
+"for shaper (s) features.  It does not matter whether you build the features\n"
+"into the kernel or as a module so long as when the feature is needed, the\n"
+"correct module(s) are loaded (module loading is left to the reader as a fun\n"
+"exercise however).\n"
+msgstr ""
+"次に、iptablesとNAT(それと必要ならパケット制御)のサポートが必要になるでしょう。\n"
+"次のリストは、必ず必要(*)、PPPoEでのADSLでのみ必要(a)、推奨(x)、パケット制御のみ(s)といった機能に分けられます。\n"
+"機能をカーネルに組み込むか、\n"
+"機能が必要になったときに適切なモジュールがロードされるならばモジュールにするか、どちらでも構いません\n"
+"(ただし、モジュールのロードは楽しい課題として読者に任せます)。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:122
+#, fuzzy, no-wrap
+msgid "Network Options"
+msgstr "ネットワーク設定"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:123
+#, fuzzy, no-wrap
+msgid ""
+"Networking options  ---&gt;\n"
+"   [*] TCP/IP networking\n"
+"      [*] IP: advanced router\n"
+"   [*] Network packet filtering (replaces ipchains)\n"
+"<comment>If you use 2.4.x, you have to enable the following for DHCP:</comment>\n"
+"   [*] Socket Filtering\n"
+"\n"
+"   IP: Netfilter Configuration  ---&gt;\n"
+"      [*] Connection tracking (required for masq/NAT)\n"
+"         [x] FTP protocol support\n"
+"         [x] IRC protocol support\n"
+"      [*] IP tables support (required for filtering/masq/NAT)\n"
+"         [*] IP range match support\n"
+"         [x] MAC address match support\n"
+"         [*] Multiple port match support\n"
+"         [*] Packet filtering\n"
+"            [*] REJECT target support\n"
+"            [x] REDIRECT target support\n"
+"         [*] Full NAT\n"
+"            [*] MASQUERADE target support\n"
+"         [s] Packet mangling\n"
+"            [s] MARK target support\n"
+"         [x] LOG target support\n"
+"\n"
+"   QoS and/or fair queueing  ---&gt;\n"
+"      [s] QoS and/or fair queueing\n"
+"         [s] HTB packet scheduler\n"
+"         [s] Ingress Qdisc\n"
+"\n"
+"   [a] PPP (point-to-point protocol) support\n"
+"      [a] PPP filtering\n"
+"      [a] PPP support for async serial ports\n"
+"      [a] PPP support for sync tty ports\n"
+"      [a] PPP Deflate compression\n"
+"      [a] PPP BSD-Compress compression\n"
+"      [a] PPP over Ethernet\n"
+msgstr ""
+"Networking options  ---&gt;\n"
+"   [*] TCP/IP networking\n"
+"      [*] IP: advanced router\n"
+"   [*] Network packet filtering (replaces ipchains)\n"
+"<comment>2.4.xの場合、DHCP用に下記を有効にする必要があります。</comment>\n"
+"   [*] Socket Filtering\n"
+"\n"
+"   IP: Netfilter Configuration  ---&gt;\n"
+"      [*] Connection tracking (required for masq/NAT)\n"
+"         [x] FTP protocol support\n"
+"         [x] IRC protocol support\n"
+"      [*] IP tables support (required for filtering/masq/NAT)\n"
+"         [*] IP range match support\n"
+"         [x] MAC address match support\n"
+"         [*] Multiple port match support\n"
+"         [*] Packet filtering\n"
+"            [*] REJECT target support\n"
+"            [x] REDIRECT target support\n"
+"         [*] Full NAT\n"
+"            [*] MASQUERADE target support\n"
+"         [s] Packet mangling\n"
+"            [s] MARK target support\n"
+"         [x] LOG target support\n"
+"\n"
+"   QoS and/or fair queueing  ---&gt;\n"
+"      [s] QoS and/or fair queueing\n"
+"         [s] HTB packet scheduler\n"
+"         [s] Ingress Qdisc\n"
+"\n"
+"   [a] PPP (point-to-point protocol) support\n"
+"      [a] PPP filtering\n"
+"      [a] PPP support for async serial ports\n"
+"      [a] PPP support for sync tty ports\n"
+"      [a] PPP Deflate compression\n"
+"      [a] PPP BSD-Compress compression\n"
+"      [a] PPP over Ethernet\n"
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/home-router-howto.xml:162
+#, fuzzy, no-wrap
+msgid ""
+"Some things may be slightly different in a 2.4 vs 2.6 kernel, but you should be\n"
+"able to figure it out :).  Even among 2.6 kernels, these options have a\n"
+"tendency to move around.  Good luck!\n"
+msgstr "2.4と2.6では少し違うところもあるかもしれませんが、あなたはわかるんじゃないでしょうか。2,6カーネルにおいてさえ、オプションは移動する傾向があります。幸運を!\n"
+
+#. type: Content of: <guide><chapter><title>
+#: en/home-router-howto.xml:172
+#, fuzzy, no-wrap
+msgid "Hug the WAN (a.k.a. The Internet)"
+msgstr "WANに接続する(別名、インターネット)"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:175 en/home-router-howto.xml:494
+#, fuzzy, no-wrap
+msgid "Intro"
+msgstr "導入"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:179
+#, fuzzy, no-wrap
+msgid ""
+"There are many ways to connect to the internet so I'll just cover the ones I'm\n"
+"familiar with.  That leaves us with ADSL (PPPoE) and cable modems\n"
+"(static/dynamic).  If there are other methods out there, feel free to write up\n"
+"a little blurb and e-mail me.  Feel free to skip any of the following sections\n"
+"in this chapter that don't apply to you.  This chapter is just about getting\n"
+"the router connected to the internet via eth1.\n"
+msgstr ""
+"インターネットに繋ぐ方法は多いので、私が慣れ親しんでいる方法について見ていくことにします。\n"
+"それは、ADSL(PPPoE)や(静的IPあるいは動的IPの)ケーブルモデムです。\n"
+"もし他の方法があれば、軽い宣伝文句を気軽に書いて私にメールしてください。\n"
+"この章の以降の節は、あなたに当てはまらないなら遠慮なく飛ばしてください。\n"
+"この章では、ルータをeth1経由でインターネットに接続していきます。\n"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:190
+#, fuzzy, no-wrap
+msgid "ADSL and PPPoE"
+msgstr "ADSLとPPPoE"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:194
+#, fuzzy, no-wrap
+msgid ""
+"All the fancy PPPoE software that used to be provided by rp-pppoe\n"
+"(<uri link=\"http://www.roaringpenguin.com/\">Roaring Penguin</uri>) has been\n"
+"integrated into the <uri link=\"http://samba.org/ppp/\">standard PPP\n"
+"package</uri>.  Simply <c>emerge ppp</c> and you'll be on your way.  Remember\n"
+"how I said you'll need username/password information?  Well I wasn't lying so\n"
+"I hope you have it now!  Load up <path>/etc/conf.d/net</path> in your favorite\n"
+"editor and set it up.\n"
+msgstr ""
+"最近は、<uri link=\"http://www.roaringpenguin.com/\">Roaring Penguin</uri>という素晴らしいパッケージに上等のPPPoEソフトウェアがすべてまとめられています。\n"
+"単純に<c>emerge rp-pppoe</c>して、先に進みましょう。\n"
+"ユーザ名やパスワードの情報が必要になると言ったのを覚えているでしょうか？\n"
+"私は嘘をついていなかったので、あなたが情報を持っていることを望みます！\n"
+"<path>/etc/ppp/pppoe.conf</path>をあなたの好きなエディタで読み出して設定してください。\n"
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/home-router-howto.xml:204
+#, fuzzy, no-wrap
+msgid ""
+"In order for the following net settings to work, you must have\n"
+"baselayout-1.12.9 or later installed on your system.\n"
+msgstr "下記のnetの設定で動作するには、baselayout-1.11.14以降がシステムにインストールされている必要があります。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:208 en/home-router-howto.xml:259
+#, fuzzy, no-wrap
+msgid "Setting up eth1"
+msgstr "eth1の設定"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:209
+#, fuzzy, no-wrap
+msgid ""
+"<comment>(Replace 'vla9h924' with your username and 'boogie' with your password)</comment>\n"
+"\n"
+"# <i>nano /etc/conf.d/net</i>\n"
+"<comment>Tell baselayout to use adsl over eth1 for ppp0:</comment>\n"
+"config_ppp0=( \"ppp\" )\n"
+"link_ppp0=\"eth1\"\n"
+"plugins_ppp0=( \"pppoe\" )\n"
+"pppd_ppp0=(\n"
+"  \"defaultroute\"\n"
+"  \"usepeerdns\"\n"
+"  <comment>There may be other settings you want, see /usr/share/doc/openrc-*/net.example.bz2</comment>\n"
+")\n"
+"username_ppp0=\"vla9h924\"\n"
+"password_ppp0=\"boogie\"\n"
+"\n"
+"# <i>ln -s net.lo /etc/init.d/net.ppp0</i>\n"
+"# <i>rc-update add net.ppp0 default</i>\n"
+"# <i>/etc/init.d/net.ppp0 start</i>\n"
+msgstr ""
+"<comment>('vla9h924'をあなたのユーザ名に、'password'をあなたのパスワードに置き換えてください)</comment>\n"
+"\n"
+"# <i>nano /etc/ppp/pap-secrets</i>\n"
+"<comment># client    server  secret</comment>\n"
+"\"vla9h924\" * \"password\"\n"
+"# <i>nano /etc/conf.d/net</i>\n"
+"<comment>eth1にadslを使うようbaselayoutに伝える</comment>\n"
+"config_eth1=( \"adsl\" )\n"
+"user_eth1=( \"vla9h924\" )\n"
+"# <i>ln -s net.lo /etc/init.d/net.eth1</i>\n"
+"# <i>rc-update add net.eth1 default</i>\n"
+"# <i>/etc/init.d/net.eth1 start</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><warn>
+#: en/home-router-howto.xml:230
+#, fuzzy, no-wrap
+msgid ""
+"When the DSL interface comes up, it will create ppp0.  Although your NIC is\n"
+"called eth1, the IP is actually bound to ppp0.  From now on, when you see\n"
+"examples that utilize 'eth1', substitute with 'ppp0'.\n"
+msgstr ""
+"DSLインタフェースが起動すると、ppp0を作成するでしょう。\n"
+"NICはeth1と呼ばれていますが、実際にはIPはppp0と密接に結びついています。\n"
+"以降、'eth1'を利用する例では'ppp0'と置き換えてください。\n"
+
+#. type: Content of: <guide><chapter><section><body><warn>
+#: en/home-router-howto.xml:236
+#, no-wrap
+msgid ""
+"Make sure you change the permissions of the /etc/conf.d/net file so that only\n"
+"root can read/write it since you're sticking your username/password in it.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><warn>
+#: en/home-router-howto.xml:241
+#, no-wrap
+msgid ""
+"For people transitioning from the <c>rp-pppoe</c> package, or for people who\n"
+"hit weird connection resets, see the MTU section in the Troubleshooting\n"
+"chapter.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:250
+#, fuzzy, no-wrap
+msgid "Cable and/or dynamic/static IP"
+msgstr "（静的、動的IPの）ケーブルモデム"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:254
+#, fuzzy, no-wrap
+msgid ""
+"If you have a static IP then you will need a few more details than if\n"
+"you have a dynamic IP.  For static users, you will need your IP,\n"
+"gateway, and DNS servers.\n"
+msgstr ""
+"静的IPでは、動的IPより少し多くの詳細情報が必要になります。\n"
+"静的なユーザ用に、IP、ゲートウェイ、DNSサーバが必要になるでしょう。\n"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:260
+#, fuzzy, no-wrap
+msgid ""
+"<comment>Dynamic IP Users:</comment>\n"
+"# <i>emerge dhcpcd</i>\n"
+"# <i>nano /etc/conf.d/net</i>\n"
+"<comment>You'll need an entry like so:</comment>\n"
+"config_eth1=( \"dhcp\" )\n"
+"\n"
+"<comment>Static IP Users:</comment>\n"
+"# <i>nano /etc/conf.d/net</i>\n"
+"<comment>You'll need entries like so:</comment>\n"
+"config_eth1=( \"66.92.78.102 broadcast 66.92.78.255 netmask 255.255.255.0\" )\n"
+"routes_eth1=( \"default gw 66.92.78.1\" )\n"
+"# <i>nano /etc/resolv.conf</i>\n"
+"<comment>Add one line per DNS server:</comment>\n"
+"nameserver 123.123.123.123\n"
+"\n"
+"<comment>Dynamic and Static Setup:</comment>\n"
+"# <i>ln -s net.lo /etc/init.d/net.eth1</i>\n"
+"# <i>rc-update add net.eth1 default</i>\n"
+"# <i>/etc/init.d/net.eth1 start</i>\n"
+msgstr ""
+"<comment>動的IPユーザ</comment>\n"
+"# <i>emerge dhcpcd</i>\n"
+"# <i>nano /etc/conf.d/net</i>\n"
+"<comment>次のエントリが必要になるでしょう</comment>\n"
+"config_eth1=( \"dhcp\" )\n"
+"\n"
+"<comment>静的IPユーザ</comment>\n"
+"# <i>nano /etc/conf.d/net</i>\n"
+"<comment>次のエントリが必要になるでしょう</comment>\n"
+"config_eth1=( \"66.92.78.102 broadcast 66.92.78.255 netmask 255.255.255.0\" )\n"
+"routes_eth1=( \"default gw 66.92.78.1\" )\n"
+"# <i>nano /etc/resolv.conf</i>\n"
+"<comment>一行あたりに一つのDNSサーバを記述してください</comment>\n"
+"nameserver 123.123.123.123\n"
+"\n"
+"<comment>動的、静的設定</comment>\n"
+"# <i>ln -s net.lo /etc/init.d/net.eth1</i>\n"
+"# <i>rc-update add net.eth1 default</i>\n"
+"# <i>/etc/init.d/net.eth1 start</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:282
+#, fuzzy, no-wrap
+msgid "You should be all set to go now.\n"
+msgstr "設定はすべて終わり。これで動作するはずです。\n"
+
+#. type: Content of: <guide><chapter><title>
+#: en/home-router-howto.xml:290
+#, fuzzy, no-wrap
+msgid "Hug the LAN (bring along some friends)"
+msgstr "LANに接続する(友達と一緒に行こう)"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:295
+#, fuzzy, no-wrap
+msgid "This step is a breeze compared to the previous one.\n"
+msgstr "このステップは、前のステップに比べて楽です。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:298
+#, fuzzy, no-wrap
+msgid "Setting up eth0"
+msgstr "eth0の設定"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:299
+#, fuzzy, no-wrap
+msgid ""
+"# <i>nano /etc/conf.d/net</i>\n"
+"<comment>Add a line like the following:</comment>\n"
+"config_eth0=( \"192.168.0.1 broadcast 192.168.0.255 netmask 255.255.255.0\" )\n"
+"# <i>rc-update add net.eth0 default</i>\n"
+"# <i>/etc/init.d/net.eth0 start</i>\n"
+msgstr ""
+"# <i>nano /etc/conf.d/net</i>\n"
+"<comment>次のような行を追加してください</comment>\n"
+"config_eth0=( \"192.168.0.1 broadcast 192.168.0.255 netmask 255.255.255.0\" )\n"
+"# <i>rc-update add net.eth0 default</i>\n"
+"# <i>/etc/init.d/net.eth0 start</i>\n"
+
+#. type: Content of: <guide><chapter><title>
+#: en/home-router-howto.xml:311
+#, fuzzy, no-wrap
+msgid "LAN Services (because we're nice people)"
+msgstr "LANサービス(私たちは善良な人々だから)"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:314
+#, fuzzy, no-wrap
+msgid "DHCP Server"
+msgstr "DHCPサーバ"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:318
+#, fuzzy, no-wrap
+msgid ""
+"I bet it'd be nice if everyone else in your house could just plug their\n"
+"computers into the network and things would just work.  No need to remember\n"
+"mind-numbing details or make them stare at confusing configuration screens!\n"
+"Life would be grand eh?  Introducing the Dynamic Host Configuration Protocol\n"
+"(DHCP) and why you should care.\n"
+msgstr ""
+"家の皆が、自分のコンピュータをネットワークに繋ぐとすぐ利用できるのは素晴らしいに違いありません。\n"
+"退屈でつまらない詳細を覚えたり、ややこしい設定画面をじっとにらむ必要がないのです。\n"
+"人生は素晴らしくなきゃ、でしょ？\n"
+"ここでは、動的ホスト設定プロトコル(DHCP)と何故それを使うかを説明します。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:326
+#, fuzzy, no-wrap
+msgid ""
+"DHCP is exactly what its name implies.  It's a protocol that allows you\n"
+"to dynamically configure other hosts automatically.  You run a DHCP server on\n"
+"the router, give it all the information about your network (valid IPs,\n"
+"DNS servers, gateways, etc...), and then when the other hosts start up, they\n"
+"run a DHCP client to automatically configure themselves.  No fuss, no muss!\n"
+"For more information about DHCP, you can always visit <uri\n"
+"link=\"http://en.wikipedia.org/wiki/DHCP\">Wikipedia</uri>.\n"
+msgstr ""
+"DHCPは、その名前が表す通りのプロトコルです。\n"
+"他のホストを自動的に動的に設定します。\n"
+"DHCPサーバをルータ上で実行し、ネットワークに関するすべての情報(正当なIP、DNSサーバ、ゲートウェイなど)をルータに設定します。\n"
+"そしてホストは起動するときに、DHCPクライアントを実行して自動的に自身を設定します。\n"
+"慌てず、騒がずです！\n"
+"DHCPについての詳しい情報は、<uri link=\"http://en.wikipedia.org/wiki/DHCP\">Wikipedia</uri>で必ず見つかります。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:336
+#, fuzzy, no-wrap
+msgid ""
+"We'll use a package called dnsmasq which provides both DHCP and DNS services.\n"
+"For now lets just focus on the DHCP aspect.  Note that if you want to run a\n"
+"different DHCP server, you can find another example in the Fun Things chapter.\n"
+"Also, if you wish to tinker with the DHCP server settings, just read the\n"
+"comments in <path>/etc/dnsmasq.conf</path>.  All the defaults should work fine\n"
+"though.\n"
+msgstr ""
+"DHCPとDNSサービスの両方を提供する、dnsmasqと言うパッケージを使用します。\n"
+"今のところは、DHCPにのみ焦点を当てます。\n"
+"別のDHCPサーバを実行したいなら、面白いことの章で別の例を探す事が出来ると言うことに注意してください。\n"
+"また、DHCPサーバの設定をいじくり回したいのなら、<path>/etc/dnsmasq.conf</path>のコメントを読んでください。\n"
+"ですが、すべてデフォルト設定でもよく動作します。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:344
+#, fuzzy, no-wrap
+msgid "Setting up a DHCP server"
+msgstr "DHCPサーバの設定"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:345
+#, fuzzy, no-wrap
+msgid ""
+"# <i>emerge dnsmasq</i>\n"
+"# <i>nano /etc/dnsmasq.conf</i>\n"
+"<comment>Add this line to enable dhcp:</comment>\n"
+"dhcp-range=192.168.0.100,192.168.0.250,72h\n"
+"<comment>Restrict dnsmasq to just the LAN interface</comment>\n"
+"interface=eth0\n"
+"\n"
+"# <i>rc-update add dnsmasq default</i>\n"
+"# <i>/etc/init.d/dnsmasq start</i>\n"
+msgstr ""
+"# <i>emerge dnsmasq</i>\n"
+"# <i>nano /etc/dnsmasq.conf</i>\n"
+"<comment>dhcpを有効にするためにこの行を追加してください</comment>\n"
+"dhcp-range=192.168.0.100,192.168.0.250,72h\n"
+"<comment>dnsmasqをLANインタフェースだけに制限する</comment>\n"
+"interface=eth0\n"
+"# <i>rc-update add dnsmasq default</i>\n"
+"# <i>/etc/init.d/dnsmasq start</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:357
+#, fuzzy, no-wrap
+msgid ""
+"Now your little router is a bona-fide DHCP server!  Plugin those computers and\n"
+"watch them work!  With Windows systems you should go into the TCP/IP Properties\n"
+"and select the 'Obtain an IP address automatically' and 'Obtain DNS server\n"
+"address automatically' options.  Sometimes the changes aren't instantaneous, so\n"
+"you may have to open a command prompt and run <c>ipconfig /release</c> and\n"
+"<c>ipconfig /renew</c>.  But enough about Windows, let's get back to our\n"
+"favorite penguin.\n"
+msgstr ""
+"これで、あなたのかわいいルータは正真正銘のDHCPサーバになりました！\n"
+"コンピュータを接続して動作を見てください！\n"
+"Windowsシステムであれば、TCP/IPプロパティを開いて「IPアドレスを自動的に取得する」と「DNSサーバのアドレスを自動的に取得する」オプションを選択してください。\n"
+"すぐには変更が反映されないこともあるので、コマンドプロンプトを開いて<c>ipconfig /release</c>と<c>ipconfig /renew</c>を実行する必要があるかもしれません。\n"
+"Windowsについてはこれで十分なので、大好きなペンギンのもとに戻りましょう。\n"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:370
+#, fuzzy, no-wrap
+msgid "DNS Server"
+msgstr "DNSサーバ"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:374
+#, fuzzy, no-wrap
+msgid ""
+"When people want to visit a place on the internet, they remember names, not a\n"
+"string of funky numbers.  After all, what's easier to remember, ebay.com or\n"
+"66.135.192.87?  This is where the DNS steps in.  DNS servers run all over the\n"
+"internet, and whenever someone wants to visit 'ebay.com', these servers turn\n"
+"'ebay.com' (what we understand) into '66.135.192.87' (what our computers\n"
+"understand).  For more information about DNS, you can always visit <uri\n"
+"link=\"http://en.wikipedia.org/wiki/DNS\">Wikipedia</uri>.\n"
+msgstr ""
+"インターネット上のある場所に行きたい時、人々は数字の羅列ではなく名前を覚えています。\n"
+"だって、'ebay.com'と'66.135.192.87'、覚えやすいのはどちらでしょうか？\n"
+"ここは、DNSのステップです。\n"
+"DNSサーバはインターネットの至るところで動作していて、\n"
+"誰かが'ebay.com'に行きたいときに、'ebay.com'(私たちが理解している形)を'66.135.192.87'(コンピュータが理解している形)に変えます。\n"
+"DNSに関する詳しい情報は、<uri link=\"http://en.wikipedia.org/wiki/DNS\">Wikipedia</uri>で必ず見つかります。\n"
+"\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:384
+#, fuzzy, no-wrap
+msgid ""
+"Since we're using dnsmasq for our DHCP server, and it includes a DNS server,\n"
+"you've got nothing left to do here!  Your little router is already providing\n"
+"DNS to its DHCP clients.  Bet you wish everything was this easy ;).\n"
+msgstr ""
+"DHCPサーバにdnsmasqを使用しており、これにはDNSサーバが含まれているので、ここで行うことは何もありません。\n"
+"あなたのルータは、DHCPクライアントにDNSを提供する準備が出来ています。\n"
+"すべてが簡単だと思うでしょう。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:390
+#, fuzzy, no-wrap
+msgid ""
+"You're welcome to choose other DNS servers if you're more comfortable with\n"
+"them, but the reason dnsmasq is great is because it was designed to do exactly\n"
+"what we want and nothing more.  It's a little DNS caching/forwarding server for\n"
+"local networks.  We're not looking to provide DNS for our own domain here, just\n"
+"offer simple DNS services to everyone else on our LAN.\n"
+msgstr ""
+"他のDNSサーバのほうが快適であれば、遠慮なく他のDNSサーバを選んでください。\n"
+"しかしdnsmasqがすごいのは、私たちが望むことだけをしっかりやってくれるよう設計されている点です。\n"
+"これは、ローカルネットワーク用のDNSキャッシング/フォワーディングサーバです。\n"
+"ここでは、独自ドメイン用にDNSを提供しようとはせずに、LAN内の皆に単純なDNSサービスを提供します。\n"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:401
+#, fuzzy, no-wrap
+msgid "NAT (a.k.a. IP-masquerading)"
+msgstr "NAT (別名、IPマスカレード)"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:405
+#, fuzzy, no-wrap
+msgid ""
+"At this point, people on your network can talk to each other and they can look\n"
+"up hostnames via DNS, but they still can't actually connect to the internet.\n"
+"While you may think that's great (more bandwidth for you!), I bet they're not\n"
+"too happy just yet.\n"
+msgstr ""
+"ここまでの設定では、あなたのネットワークを利用する人たちは、お互いに通信できてDNSでホスト名を見ることもできるのですが、インターネットへはまだ実際に接続できません。\n"
+"これでも素晴らしいことだと思うかもしれませんが(あなたがたくさんの帯域を使えますからね！)、まだあまり幸せではないのは間違いありません。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:412
+#, fuzzy, no-wrap
+msgid ""
+"This is where Network Address Translation (NAT) steps in.  NAT is a way of\n"
+"connecting multiple computers in a private LAN to the internet when you have a\n"
+"smaller number of public IP addresses available to you.  Typically you are given\n"
+"1 IP by your ISP, but you want to let your whole house connect to the internet.\n"
+"NAT is the magic that makes this possible.  For more information about NAT, you\n"
+"can always visit <uri link=\"http://en.wikipedia.org/wiki/NAT\">Wikipedia</uri>.\n"
+msgstr ""
+"それではNetwork Address Translation (NAT)のステップです。\n"
+"NATは、利用できるIPアドレスの数が少ししかない場合に、プライベートLAN内の複数のコンピュータをインターネットに接続する方法です。\n"
+"一般にISPからもらえるIPアドレスは１つですが、家にあるコンピュータ全部をインターネットに接続したいとします。\n"
+"NATはこれを可能にする魔法です。\n"
+"NATに関する詳しい情報は、<uri link=\"http://en.wikipedia.org/wiki/NAT\">Wikipedia</uri>で必ず見つかります。\n"
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/home-router-howto.xml:421
+#, fuzzy, no-wrap
+msgid ""
+"Before we get started, make sure you have iptables on your system.  Although it\n"
+"is automatically installed on most systems, you may not have it.  If you don't,\n"
+"just run <c>emerge iptables</c>.\n"
+msgstr ""
+"設定を始める前に、システムにiptablesがあるかを確かめてください。\n"
+"ほとんどのシステムでは既にインストールされていますが、されていないこともあるかもしれません。\n"
+"もしインストールされていないなら、<c>emerge iptables</c>を実行しましょう。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:426
+#, fuzzy, no-wrap
+msgid "Setting up iptables"
+msgstr "iptablesの設定"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:427
+#, fuzzy, no-wrap
+msgid ""
+"<comment>First we flush our current rules</comment>\n"
+"# <i>iptables -F</i>\n"
+"# <i>iptables -t nat -F</i>\n"
+"\n"
+"<comment>Setup default policies to handle unmatched traffic</comment>\n"
+"# <i>iptables -P INPUT ACCEPT</i>\n"
+"# <i>iptables -P OUTPUT ACCEPT</i>\n"
+"# <i>iptables -P FORWARD DROP</i>\n"
+"\n"
+"<comment>Copy and paste these examples ...</comment>\n"
+"# <i>export LAN=eth0</i>\n"
+"# <i>export WAN=eth1</i>\n"
+"\n"
+"<comment>Then we lock our services so they only work from the LAN</comment>\n"
+"# <i>iptables -I INPUT 1 -i ${LAN} -j ACCEPT</i>\n"
+"# <i>iptables -I INPUT 1 -i lo -j ACCEPT</i>\n"
+"# <i>iptables -A INPUT -p UDP --dport bootps ! -i ${LAN} -j REJECT</i>\n"
+"# <i>iptables -A INPUT -p UDP --dport domain ! -i ${LAN} -j REJECT</i>\n"
+"\n"
+"<comment>(Optional) Allow access to our ssh server from the WAN</comment>\n"
+"# <i>iptables -A INPUT -p TCP --dport ssh -i ${WAN} -j ACCEPT</i>\n"
+"\n"
+"<comment>Drop TCP / UDP packets to privileged ports</comment>\n"
+"# <i>iptables -A INPUT -p TCP ! -i ${LAN} -d 0/0 --dport 0:1023 -j DROP</i>\n"
+"# <i>iptables -A INPUT -p UDP ! -i ${LAN} -d 0/0 --dport 0:1023 -j DROP</i>\n"
+"\n"
+"<comment>Finally we add the rules for NAT</comment>\n"
+"# <i>iptables -I FORWARD -i ${LAN} -d 192.168.0.0/255.255.0.0 -j DROP</i>\n"
+"# <i>iptables -A FORWARD -i ${LAN} -s 192.168.0.0/255.255.0.0 -j ACCEPT</i>\n"
+"# <i>iptables -A FORWARD -i ${WAN} -d 192.168.0.0/255.255.0.0 -j ACCEPT</i>\n"
+"# <i>iptables -t nat -A POSTROUTING -o ${WAN} -j MASQUERADE</i>\n"
+"<comment>Tell the kernel that ip forwarding is OK</comment>\n"
+"# <i>echo 1 > /proc/sys/net/ipv4/ip_forward</i>\n"
+"# <i>for f in /proc/sys/net/ipv4/conf/*/rp_filter ; do echo 1 > $f ; done</i>\n"
+"\n"
+"<comment>This is so when we boot we don't have to run the rules by hand</comment>\n"
+"# <i>/etc/init.d/iptables save</i>\n"
+"# <i>rc-update add iptables default</i>\n"
+"# <i>nano /etc/sysctl.conf</i>\n"
+"<comment>Add/Uncomment the following lines:</comment>\n"
+"net.ipv4.ip_forward = 1\n"
+"net.ipv4.conf.default.rp_filter = 1\n"
+"\n"
+"<comment>If you have a dynamic internet address you probably want to enable this:</comment>\n"
+"net.ipv4.ip_dynaddr = 1\n"
+msgstr ""
+"<comment>最初に現在のルールを全消去します</comment>\n"
+"# <i>iptables -F</i>\n"
+"# <i>iptables -t nat -F</i>\n"
+"\n"
+"<comment>一致しないトラフィックを扱うためのデフォルトポリシーを設定</comment>\n"
+"# <i>iptables -P INPUT ACCEPT</i>\n"
+"# <i>iptables -P OUTPUT ACCEPT</i>\n"
+"# <i>iptables -P FORWARD DROP</i>\n"
+"\n"
+"<comment>これらの例をコピーして貼り付ける</comment>\n"
+"# <i>export LAN=eth0</i>\n"
+"# <i>export WAN=eth1</i>\n"
+"\n"
+"<comment>それからサービスをロックし、LANからだけ動作するようにします</comment>\n"
+"# <i>iptables -I INPUT 1 -i ${LAN} -j ACCEPT</i>\n"
+"# <i>iptables -I INPUT 1 -i lo -j ACCEPT</i>\n"
+"# <i>iptables -A INPUT -p UDP --dport bootps -i ! ${LAN} -j REJECT</i>\n"
+"# <i>iptables -A INPUT -p UDP --dport domain -i ! ${LAN} -j REJECT</i>\n"
+"\n"
+"<comment>(自由選択) WANから私たちのsshサーバへのアクセスを許可します</comment>\n"
+"# <i>iptables -A INPUT -p TCP --dport ssh -i ${WAN} -j ACCEPT</i>\n"
+"\n"
+"<comment>特権ポートへのTCP/UDPパケットを破棄します</comment>\n"
+"# <i>iptables -A INPUT -p TCP -i ! ${LAN} -d 0/0 --dport 0:1023 -j DROP</i>\n"
+"# <i>iptables -A INPUT -p UDP -i ! ${LAN} -d 0/0 --dport 0:1023 -j DROP</i>\n"
+"\n"
+"<comment>最後に、NAT用のルールを追加します</comment>\n"
+"# <i>iptables -I FORWARD -i ${LAN} -d 192.168.0.0/255.255.0.0 -j DROP</i>\n"
+"# <i>iptables -A FORWARD -i ${LAN} -s 192.168.0.0/255.255.0.0 -j ACCEPT</i>\n"
+"# <i>iptables -A FORWARD -i ${WAN} -d 192.168.0.0/255.255.0.0 -j ACCEPT</i>\n"
+"# <i>iptables -t nat -A POSTROUTING -o ${WAN} -j MASQUERADE</i>\n"
+"<comment>IPフォワーディングが可能なことをカーネルに伝えましょう</comment>\n"
+"# <i>echo 1 > /proc/sys/net/ipv4/ip_forward</i>\n"
+"# <i>for f in /proc/sys/net/ipv4/conf/*/rp_filter ; do echo 1 > $f ; done</i>\n"
+"\n"
+"<comment>こうすると、ブート時に手動でルールを実行する必要はありません</comment>\n"
+"# <i>/etc/init.d/iptables save</i>\n"
+"# <i>rc-update add iptables default</i>\n"
+"# <i>nano /etc/sysctl.conf</i>\n"
+"<comment>次の行を追加するかコメントを外してください</comment>\n"
+"net.ipv4.ip_forward = 1\n"
+"net.ipv4.conf.default.rp_filter = 1\n"
+"\n"
+"<comment>動的なインターネットアドレスであれば、\n"
+"おそらくはこれを有効にした方が良いでしょう。</comment>\n"
+"net.ipv4.ip_dynaddr = 1\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:475
+#, fuzzy, no-wrap
+msgid ""
+"Once you've typed out all of that, the rest of your network should now be able\n"
+"to use the internet as if they were directly connected themselves.\n"
+msgstr "これらすべてをタイプし終わると、あなたのネットワークのホストはまるで直接接続されているかのようにインターネットを利用できるはずです。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:480
+#, fuzzy, no-wrap
+msgid ""
+"The ip_dynaddr option is useful for dial on demand systems or when your ISP\n"
+"gives out dynamic addresses.  This works around the problem where a connection\n"
+"is attempted before the internet interface is fully setup.  Really this just\n"
+"provides for a smoother network experience for users behind your router.\n"
+msgstr ""
+"ip_dynaddrオプションは、\n"
+"ダイアル・オン・デマンドシステムやISPが動的アドレスを配布する場合に有用です。\n"
+"これにより、インターネット側のインターフェースが準備OKになる前に、\n"
+"接続が試みられた際に発生する問題に対処できます。但し、\n"
+"これはルータ背後のユーザに対しより滑らかなネットワークを体験させているにすぎません。\n"
+
+#. type: Content of: <guide><chapter><title>
+#: en/home-router-howto.xml:491
+#, fuzzy, no-wrap
+msgid "Fun Things (for a rainy day)"
+msgstr "(まさかのときに備えて)面白いこと"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:498
+#, fuzzy, no-wrap
+msgid ""
+"Believe it or not, you're done :).  From here on out, I'll cover a bunch of\n"
+"common topics that may interest you.  Everything in this chapter is completely\n"
+"optional.\n"
+msgstr ""
+"信じられないかもしれませんが、終わってしまいました:)\n"
+"ここからは、あなたの興味をひくような共通の話題を紹介していきます。\n"
+"この章で紹介する話題はすべて自由選択です。\n"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:507
+#, fuzzy, no-wrap
+msgid "Port Forwarding"
+msgstr "ポートフォワーディング"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:511
+#, fuzzy, no-wrap
+msgid ""
+"Sometimes you would like to be able to host services on a computer behind the\n"
+"router, or just to make your life easier when connecting remotely.  Perhaps you\n"
+"want to run a FTP, HTTP, SSH, or VNC server on one or more machines behind your\n"
+"router and be able to connect to them all.  The only caveat is that you can\n"
+"only have one service/machine combo per port.  For example, there is no\n"
+"practical way to setup three FTP servers behind your router and then try to\n"
+"connect to them all through port 21; only one can be on port 21 while the\n"
+"others would have to be on say port 123 and port 567.\n"
+msgstr ""
+"ルータの背後にあるコンピュータ上のサービスを取り扱えるようになりたい、もしくはリモートで接続するときにもっと楽にやりたいこともあるでしょう。\n"
+"おそらく、ルータの背後にある一つ以上のマシンでFTP、HTTP、SSH、VNCサーバを実行し、それらすべてに接続できるようにしたいのではないでしょうか。\n"
+"ただ一つ気をつけて欲しいのは、一つのポートには一つのサービスとマシンしか設定できないということです。\n"
+"例えば、ルータの背後にある三つのFTPサーバを直接設定できないときに、すべて21番ポートを通して接続しようとします。\n"
+"この場合、21番ポートを使えるのは一つのサーバだけで、残りは123番や567番ポートなどを使うしかありません。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:522
+#, fuzzy, no-wrap
+msgid ""
+"All the port forwarding rules are of the form <c>iptables -t nat -A PREROUTING\n"
+"[-p protocol] --dport [external port on router] -i ${WAN} -j DNAT --to [ip/port\n"
+"to forward to]</c>.  Unfortunately, iptables does not accept hostnames when port\n"
+"forwarding.  If you are forwarding an external port to the same port on the\n"
+"internal machine, you can omit the destination port.  See the iptables(8) man\n"
+"page for more information.\n"
+msgstr ""
+"ポートフォワーディングのルールは、すべて<c>iptables -t nat -A PREROUTING [-p プロトコル] --dport [ルータ上の外部ポート] -i ${WAN} -j DNAT --to [IPあるいはポートをフォワードする場所]</c>という形式です。\n"
+"不幸なことに、iptablesはポートフォワーディングの場合にホスト名を受け付けません。\n"
+"外部のポートを、内部のマシン上の同じポートへフォワーディングしているなら、あて先ポートを省略できます。\n"
+"詳しい情報は、iptables(8)のページを見てください。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:530
+#, fuzzy, no-wrap
+msgid "Running the iptables commands"
+msgstr "iptablesコマンドを実行する"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:531
+#, fuzzy, no-wrap
+msgid ""
+"<comment>Copy and paste these examples ...</comment>\n"
+"# <i>export LAN=eth0</i>\n"
+"# <i>export WAN=eth1</i>\n"
+"\n"
+"<comment>Forward port 2 to ssh on an internal host</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p tcp --dport 2 -i ${WAN} -j DNAT --to 192.168.0.2:22</i>\n"
+"\n"
+"<comment>FTP forwarding to an internal host</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p tcp --dport 21 -i ${WAN} -j DNAT --to 192.168.0.56</i>\n"
+"\n"
+"<comment>HTTP forwarding to an internal host</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p tcp --dport 80 -i ${WAN} -j DNAT --to 192.168.0.56</i>\n"
+"\n"
+"<comment>VNC forwarding for internal hosts</comment>\n"
+"# <i>iptables -t nat -I PREROUTING -p tcp --dport 5900 -i ${WAN} -j DNAT --to 192.168.0.2</i>\n"
+"# <i>iptables -t nat -I PREROUTING -p tcp --dport 5901 -i ${WAN} -j DNAT --to 192.168.0.3:5900</i>\n"
+"<comment>If you want to VNC in to 192.168.0.3, then just add ':1' to the router's hostname</comment>\n"
+"\n"
+"<comment>SAMBA forwarding to an internal host (excess ports to cover Windows)</comment>\n"
+"# <i>iptables -t nat -I PREROUTING -p tcp --dport 135 -i ${WAN} -j DNAT --to 192.168.0.2</i>\n"
+"# <i>iptables -t nat -I PREROUTING -p tcp --dport 139 -i ${WAN} -j DNAT --to 192.168.0.2</i>\n"
+"# <i>iptables -t nat -I PREROUTING -p tcp --dport 445 -i ${WAN} -j DNAT --to 192.168.0.2</i>\n"
+"# <i>iptables -t nat -I PREROUTING -p udp --dport 137:138 -i ${WAN} -j DNAT --to 192.168.0.2</i>\n"
+"# <i>iptables -t nat -I PREROUTING -p udp --dport 445 -i ${WAN} -j DNAT --to 192.168.0.2</i>\n"
+"\n"
+"<comment>Bittorrent forwarding</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p tcp --dport 6881:6889 -i ${WAN} -j DNAT --to 192.168.0.2</i>\n"
+"\n"
+"<comment>eDonkey/eMule forwarding</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p tcp --dport 4662 -i ${WAN} -j DNAT --to 192.168.0.55</i>\n"
+"\n"
+"<comment>Game Cube Warp Pipe support</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p udp --dport 4000 -i ${WAN} -j DNAT --to 192.168.0.56</i>\n"
+"\n"
+"<comment>Playstation 2 Online support</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p tcp --dport 10070:10080 -i ${WAN} -j DNAT --to 192.168.0.11</i>\n"
+"# <i>iptables -t nat -A PREROUTING -p udp --dport 10070:10080 -i ${WAN} -j DNAT --to 192.168.0.11</i>\n"
+"\n"
+"<comment>Xbox Live</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p tcp --dport 3074 -i ${WAN} -j DNAT --to 192.168.0.69</i>\n"
+"# <i>iptables -t nat -A PREROUTING -p udp --dport 3074 -i ${WAN} -j DNAT --to 192.168.0.69</i>\n"
+"# <i>iptables -t nat -A PREROUTING -p udp --dport 88 -i ${WAN} -j DNAT --to 192.168.0.69</i>\n"
+msgstr ""
+"<comment>これらの例をコピーして貼り付け</comment>\n"
+"# <i>export LAN=eth0</i>\n"
+"# <i>export WAN=eth1</i>\n"
+"\n"
+"<comment>2番ポートを内部ホストのsshへフォワーディング</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p tcp --dport 2 -i ${WAN} -j DNAT --to 192.168.0.2:22</i>\n"
+"\n"
+"<comment>FTPを内部ホストへフォワーディング</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p tcp --dport 21 -i ${WAN} -j DNAT --to 192.168.0.56</i>\n"
+"\n"
+"<comment>HTTPを内部ホストへフォワーディング</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p tcp --dport 80 -i ${WAN} -j DNAT --to 192.168.0.56</i>\n"
+"\n"
+"<comment>内部ホスト用のVNCフォワーディング</comment>\n"
+"# <i>iptables -t nat -I PREROUTING -p tcp --dport 5900 -i ${WAN} -j DNAT --to 192.168.0.2</i>\n"
+"# <i>iptables -t nat -I PREROUTING -p tcp --dport 5901 -i ${WAN} -j DNAT --to 192.168.0.3:5900</i>\n"
+"<comment>192.168.0.3へVNCしたいなら、ルータのホスト名にただ':1'を追加します</comment>\n"
+"\n"
+"<comment>Bittorrentフォワーディング</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p tcp --dport 6881:6889 -i ${WAN} -j DNAT --to 192.168.0.2</i>\n"
+"\n"
+"<comment>eDonkey/eMuleフォワーディング</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p tcp --dport 4662 -i ${WAN} -j DNAT --to 192.168.0.55</i>\n"
+"\n"
+"<comment>ゲームキューブ ワープ・パイプのサポート</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p udp --dport 4000 -i ${WAN} -j DNAT --to 192.168.0.56</i>\n"
+"\n"
+"<comment>プレイステーション2オンラインのサポート</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p tcp --dport 10070:10080 -i ${WAN} -j DNAT --to 192.168.0.11</i>\n"
+"# <i>iptables -t nat -A PREROUTING -p udp --dport 10070:10080 -i ${WAN} -j DNAT --to 192.168.0.11</i>\n"
+"\n"
+"<comment>Xbox Live</comment>\n"
+"# <i>iptables -t nat -A PREROUTING -p tcp --dport 3074 -i ${WAN} -j DNAT --to 192.168.0.69</i>\n"
+"# <i>iptables -t nat -A PREROUTING -p udp --dport 3074 -i ${WAN} -j DNAT --to 192.168.0.69</i>\n"
+"# <i>iptables -t nat -A PREROUTING -p udp --dport 88 -i ${WAN} -j DNAT --to 192.168.0.69</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/home-router-howto.xml:576
+#, fuzzy, no-wrap
+msgid ""
+"If you have other common / cool examples, please <mail\n"
+"link=\"vapier@gentoo.org\">e-mail me</mail>.\n"
+msgstr "一般的で良い例が他にありましたら、"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:584
+#, fuzzy, no-wrap
+msgid "Identd (for IRC)"
+msgstr "identd (IRC用)"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:588
+#, fuzzy, no-wrap
+msgid ""
+"Internet Relay Chat utilizes the ident service pretty heavily.  Now that the\n"
+"IRC clients are behind the router, we need a way to host ident for both the\n"
+"router and the clients.  One such server has been created called\n"
+"<c>midentd</c>.\n"
+msgstr ""
+"インターネットリレーチャット(IRC)は、identサービスをかなり利用しています。\n"
+"いまIRCクライアントはルータの背後にあるので、ルータやクライアントにidentサービスを提供する必要があります。\n"
+"そのようなサーバの一つとして、<c>midentd</c>と呼ばれるものが作成されています。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:594
+#, fuzzy, no-wrap
+msgid "Setting up ident"
+msgstr "identの設定"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:595
+#, fuzzy, no-wrap
+msgid ""
+"# <i>emerge midentd</i>\n"
+"# <i>rc-update add midentd default</i>\n"
+"# <i>/etc/init.d/midentd start</i>\n"
+msgstr ""
+"# <i>emerge midentd</i>\n"
+"# <i>rc-update add midentd default</i>\n"
+"# <i>/etc/init.d/midentd start</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:601
+#, fuzzy, no-wrap
+msgid ""
+"There are a few other ident servers in portage.  Depending on your needs, I\n"
+"would recommend checking out <c>oidentd</c> and <c>fakeidentd</c>.\n"
+msgstr ""
+"Portageには他のidentサーバもいくつかあります。\n"
+"必要に応じて、<c>oidentd</c>や<c>fakeidentd</c>を調べることをお勧めします。\n"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:682
+#, fuzzy, no-wrap
+msgid "Time Server"
+msgstr "タイムサーバ"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:686
+#, fuzzy, no-wrap
+msgid ""
+"Keeping your system time correct is essential in maintaining a healthy system.\n"
+"One of the most common ways of accomplishing this is with the Network Time\n"
+"Protocol (NTP) and the ntp package (which provides implementations for both\n"
+"server and client).\n"
+msgstr ""
+"システム時間を正確に保つのは、正常なシステムを維持するのに必須です。\n"
+"時間を維持する最も一般的な方法の一つに、\n"
+"ネットワークタイムプロトコル(NTP)と、(サーバとクライアントの実装を提供する)ntpパッケージがあります。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:693
+#, fuzzy, no-wrap
+msgid ""
+"Many people run ntp clients on their computers.  Obviously, the more clients in\n"
+"the world, the larger the load the ntp servers need to shoulder.  In\n"
+"environments like home networks though, we can help keep the load down on\n"
+"public servers while still providing the proper time to all our computers.  As\n"
+"an added bonus, our private updates will be a lot faster for the clients too!\n"
+"All we have to do is run a ntp server on our router that synchronizes itself\n"
+"with the public internet servers while providing the time to the rest of the\n"
+"computers in the network.  To get started, simply <c>emerge ntp</c> on the\n"
+"router.\n"
+msgstr ""
+"コンピュータ上でntpクライアントを実行している人達は多いです。\n"
+"明らかに、世界ではクライアントが増え、ntpサーバが受ける負荷が大きくなっています。\n"
+"ホームネットワークのような環境でも、正確な時間をホームネットワーク内のすべてのコンピュータに提供しつつ、公開サーバにかかる負荷の低下に寄与することができます。\n"
+"おまけに、プライベートな更新はクライアントにとっても大幅に速くなります！\n"
+"ネットワーク内のコンピュータに時間を提供するには、公開インターネットサーバと同期するntpサーバをルータ上で実行するだけでよいです。\n"
+"これを始めるためには、ルータ上で単に<c>emerge ntp</c>しましょう。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:704
+#, fuzzy, no-wrap
+msgid "Setting up the NTP server"
+msgstr "NTPサーバの設定"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:705
+#, fuzzy, no-wrap
+msgid ""
+"# <i>nano /etc/conf.d/ntp-client</i>\n"
+"<comment>Customize if you wish but the defaults should be fine</comment>\n"
+"# <i>rc-update add ntp-client default</i>\n"
+"\n"
+"# <i>nano /etc/ntp.conf</i>\n"
+"<comment>Add the follwing lines:</comment>\n"
+"restrict default ignore\n"
+"restrict 192.168.0.0 mask 255.255.255.0 notrust nomodify notrap\n"
+"<comment>These will allow only ntp clients with an IP\n"
+"address in the 192.168.0.xxx range to use your ntp server</comment>\n"
+"# <i>nano /etc/conf.d/ntpd</i>\n"
+"<comment>Customize if you wish but the defaults should be fine</comment>\n"
+"# <i>rc-update add ntpd default</i>\n"
+"\n"
+"# <i>/etc/init.d/ntp-client start</i>\n"
+"# <i>/etc/init.d/ntpd start</i>\n"
+msgstr ""
+"# <i>nano /etc/conf.d/ntp-client</i>\n"
+"<comment>ランレベルは自由に変更してもよいですが、defaultがよいでしょう</comment>\n"
+"# <i>rc-update add ntp-client default</i>\n"
+"\n"
+"# <i>nano /etc/ntp.conf</i>\n"
+"<comment>次の行を追加してください</comment>\n"
+"restrict default ignore\n"
+"restrict 192.168.0.0 mask 255.255.255.0 notrust nomodify notrap\n"
+"<comment>これで、あなたのntpサーバを利用できるのはIPアドレス192.168.0.xxx内のntpクライアントだけとなります</comment>\n"
+"# <i>nano /etc/conf.d/ntpd</i>\n"
+"<comment>ランレベルは自由に変更してもよいですが、defaultがよいでしょう</comment>\n"
+"# <i>rc-update add ntpd default</i>\n"
+"\n"
+"# <i>/etc/init.d/ntp-client start</i>\n"
+"# <i>/etc/init.d/ntpd start</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/home-router-howto.xml:724
+#, fuzzy, no-wrap
+msgid ""
+"You should make sure that you allow inbound and outbound communication on the\n"
+"ntp port (123/udp) when setting up the server.  The client just needs outbound\n"
+"access on port 123 over udp.\n"
+msgstr ""
+"サーバを設定する際、ntpポート(123/UDP)の内向きと外向きの通信を許可しているかを確認するべきです。\n"
+"クライアントは、UDP 123番ポートの外向きの接続を必要とします。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:730
+#, fuzzy, no-wrap
+msgid ""
+"Now, on your clients, have them <c>emerge ntp</c> also.  However, we will just\n"
+"run the ntp client so setup is a lot simpler.\n"
+msgstr ""
+"さて、クライアントになるホスト上でも<c>emerge ntp</c>します。\n"
+"設定はとても簡単なので、ntpクライアントをすぐ実行できますよ。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:734
+#, fuzzy, no-wrap
+msgid "Setting up a NTP client"
+msgstr "NTPクライアントの設定"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:735
+#, fuzzy, no-wrap
+msgid ""
+"# <i>nano /etc/conf.d/ntp-client</i>\n"
+"<comment>Change the 'pool.ntp.org' server in the NTPCLIENT_OPTS variable to '192.168.0.1'</comment>\n"
+"# <i>rc-update add ntp-client default</i>\n"
+"# <i>/etc/init.d/ntp-client start</i>\n"
+msgstr ""
+"# <i>nano /etc/conf.d/ntp-client</i>\n"
+"<comment>NTPCLIENT_OPTS変数の値である'pool.ntp.org'サーバを'192.168.0.1'に変更してください</comment>\n"
+"# <i>rc-update add ntp-client default</i>\n"
+"# <i>/etc/init.d/ntp-client start</i>\n"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:745
+#, fuzzy, no-wrap
+msgid "Rsync Server"
+msgstr "Rsyncサーバ"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:749
+#, fuzzy, no-wrap
+msgid ""
+"For those who run multiple Gentoo boxes on the same lan, you often want to\n"
+"keep from having every machine running <c>emerge sync</c> with remote\n"
+"servers.  By setting up a local rsync, you save on both your bandwidth and\n"
+"the Gentoo rsync servers' bandwidth.  It's pretty simple to do.\n"
+msgstr ""
+"同一LAN上で複数のGentooマシンを稼働させている人は、すべてのマシンでリモートマシンと<c>emerge sync</c>を行い続けたいと思うでしょう。\n"
+"ローカルrsyncを設定することで、あなたの帯域とGentoo rsyncサーバの帯域両方を節約することが出来ます。\n"
+"これはとても簡単です。\n"
+
+#. type: Content of: <guide><chapter><section><body><note>
+#: en/home-router-howto.xml:756
+#, fuzzy, no-wrap
+msgid ""
+"For a much more in-depth rsync guide, please see the official <uri\n"
+"link=\"/doc/en/rsync.xml#local\">rsync guide</uri>.\n"
+msgstr "より詳しいrsyncガイドは、公式の<uri link=\"/doc/en/rsync.xml#local\">rsync guide</uri><uri link=\"/doc/ja/rsync.xml#local\">(日本語訳)</uri>をご覧下さい。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:761
+#, fuzzy, no-wrap
+msgid ""
+"Since every Gentoo machine requires rsync, theres no need to emerge it.  Edit\n"
+"the default <path>/etc/rsyncd.conf</path> config file, uncomment the\n"
+"<c>[gentoo-portage]</c> section, and make sure you add an <c>address</c>\n"
+"option.  All the other defaults should be fine.\n"
+msgstr ""
+"それぞれのGentooマシンにrsyncが必要ですが、それをemergeする必要はありません。\n"
+"デフォルトの<path>/etc/rsyncd.conf</path>設定ファイルを編集し、<c>[gentoo-portage]</c>の部分をコメント解除し、<c>address</c>オプションを追加します。\n"
+"そのほかはデフォルトのままでかまいません。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:767
+#, fuzzy, no-wrap
+msgid "Rsync server config"
+msgstr "Rsyncサーバの設定"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:768
+#, fuzzy, no-wrap
+msgid ""
+"pid file = /var/run/rsyncd.pid\n"
+"use chroot = yes\n"
+"read only = yes\n"
+"address = 192.168.0.1\n"
+"\n"
+"[gentoo-portage]\n"
+"  path = /mnt/space/portage\n"
+"  comment = Gentoo Linux Portage tree\n"
+"  exclude = /distfiles /packages\n"
+msgstr ""
+"pid file = /var/run/rsyncd.pid\n"
+"use chroot = yes\n"
+"read only = yes\n"
+"address = 192.168.0.1\n"
+"\n"
+"[gentoo-portage]\n"
+"  path = /mnt/space/portage\n"
+"  comment = Gentoo Linux Portage tree\n"
+"  exclude = /distfiles /packages\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:780
+#, fuzzy, no-wrap
+msgid "Then you need to start the service (again, the defaults are OK).\n"
+msgstr "その後、サービスを開始する必要があります（繰り返しますが、デフォルトでOKです）。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:783
+#, fuzzy, no-wrap
+msgid "Starting the rsync server"
+msgstr "rsyncサーバの開始"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:784
+#, fuzzy, no-wrap
+msgid ""
+"# <i>/etc/init.d/rsyncd start</i>\n"
+"# <i>rc-update add rsyncd default</i>\n"
+msgstr ""
+"# <i>/etc/init.d/rsyncd start</i>\n"
+"# <i>rc-update add rsyncd default</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:789
+#, fuzzy, no-wrap
+msgid "Only thing left is to set tell your clients to sync against the router.\n"
+msgstr "残っていることは、クライアントがルータとsyncするよう設定するだけです。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:792
+#, fuzzy, no-wrap
+msgid "Client SYNC settings in make.conf"
+msgstr "make.confでのクライアントのSYNC設定"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:793
+#, fuzzy, no-wrap
+msgid "SYNC=\"rsync://192.168.0.1/gentoo-portage\"\n"
+msgstr "SYNC=\"rsync://192.168.0.1/gentoo-portage\"\n"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:800
+#, fuzzy, no-wrap
+msgid "Mail Server"
+msgstr "メールサーバ"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:804
+#, fuzzy, no-wrap
+msgid ""
+"Sometimes it's nice to run your own Simple Mail Transfer Protocol (SMTP) server\n"
+"on the router.  You may have your own reason for wanting to do so, but I run it\n"
+"so that the users see mail as being sent instantly and the work of\n"
+"retrying/routing is left up to the mail server.  Some ISPs also don't allow for\n"
+"mail relaying for accounts that aren't part of their network (like Verizon).\n"
+"Also, you can easily throttle the delivery of mail so that large attachments\n"
+"won't seriously lag your connection for half an hour.\n"
+msgstr ""
+"自分のシンプルメール転送プロトコル(SMTP)サーバをルータ上で動かすといいことがあるかもしれません。\n"
+"あなたがそうしたい理由があるかもしれませんが、私は、メールが送られるとすぐユーザが見られるように実行しますし、再試行/ルーティングの仕事がメールサーバに残されています。\n"
+"またISPには、そのISPのネットワークに属していないアカウントへのメール中継を許可していないところもあります（例：Verizon）。\n"
+"また、大きな添付ファイルによって接続が30分間も遅れないように、簡単にメールの配信を止めることができます。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:813
+#, fuzzy, no-wrap
+msgid "Setting up SMTP"
+msgstr "SMTPの設定"
+
+#. # <i>
+#. cd /etc</i>
+#. # <i>nano tcp.smtp</i>
+#. # <i>
+#. tcprules tcp.qmail-qmtp.cdb rules.tmp &lt; tcp.qmail-smtp</i>
+#. # <i>tcprules tcp.smtp.cdb rules.tmp &lt; tcp.smtp</i>
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:814
+#, fuzzy, no-wrap
+msgid ""
+"# <i>emerge netqmail</i>\n"
+"<comment>make sure the output of `hostname` is correct</comment>\n"
+"# <i>emerge --config netqmail</i>\n"
+"# <i>iptables -I INPUT -p tcp --dport smtp ! -i ${LAN} -j REJECT</i>\n"
+"# <i>ln -s /var/qmail/supervise/qmail-send /service/qmail-send</i>\n"
+"# <i>ln -s /var/qmail/supervise/qmail-smtpd /service/qmail-smtpd</i>\n"
+"# <i>cd /etc/tcprules.d</i>\n"
+"# <i>nano tcp.qmail-smtp</i>\n"
+"\n"
+"<comment>Add an entry like so to the allow section:</comment>\n"
+"192.168.0.:allow,RELAYCLIENT=\"\"\n"
+"\n"
+"# <i>make</i>\n"
+"# <i>rc-update add svscan default</i>\n"
+"# <i>/etc/init.d/svscan start</i>\n"
+msgstr ""
+"# <i>emerge qmail</i>\n"
+"<comment>`hostname` の出力が正しいか確認してください</comment>\n"
+"# <i>ebuild /var/db/pkg/*-*/qmail-1.03-r*/*.ebuild config</i>\n"
+"# <i>iptables -I INPUT -p tcp --dport smtp -i ! ${LAN} -j REJECT</i>\n"
+"# <i>ln -s /var/qmail/supervise/qmail-send /service/qmail-send</i>\n"
+"# <i>ln -s /var/qmail/supervise/qmail-smtpd /service/qmail-smtpd</i>\n"
+"\n"
+"# <i>cd /etc</i>\n"
+"# <i>nano tcp.smtp</i>\n"
+"<comment>許可するエントリを追加してください</comment>\n"
+"192.168.0.:allow,RELAYCLIENT=\"\"\n"
+"\n"
+"# <i>tcprules tcp.smtp.cdb rules.tmp &lt; tcp.smtp</i>\n"
+"# <i>rc-update add svscan default</i>\n"
+"# <i>/etc/init.d/svscan start</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:838
+#, fuzzy, no-wrap
+msgid ""
+"I'm a huge fan of qmail, but you're free to use a different mta :).  When you\n"
+"setup e-mail on the hosts in your network, tell them that their SMTP server is\n"
+"192.168.0.1 and everything should be peachy.  You might want to visit the <uri\n"
+"link=\"http://netqmail.org/\">netqmail homepage</uri> for more documentation.\n"
+msgstr ""
+"私はqmailの大ファンですが、あなたはお好きなMTAを使ってください:)\n"
+"あなたのネットワーク内のホストのe-mailを設定するときには、SMTPサーバは192.168.0.1で、すべてうまくいっていることを教えてあげてください。\n"
+"詳しいドキュメントは、<uri link=\"http://qmail.org/\">qmail homepage</uri>にあるでしょう。\n"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:867
+#, fuzzy, no-wrap
+msgid "Full DHCP Server"
+msgstr "完全なDHCPサーバ"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:871
+#, fuzzy, no-wrap
+msgid ""
+"Earlier we used dnsmasq to provide DHCP service to all our clients.  For most\n"
+"people with a simple small LAN, this is perfect.  But you may need something\n"
+"with more features.  Thus we turn to a full-featured DHCP server as provided\n"
+"by the <uri link=\"http://www.isc.org/products/DHCP\">ISC</uri> folks.\n"
+msgstr ""
+"このガイドの前の方では、すべてのクライアントにDHCPサービスを提供するためにdnsmasqを使用しました。\n"
+"単純で小さなLANを使用している多くの人には、これで完璧です。\n"
+"ですが、もしかするとより多くの機能が必要かもしれません。\n"
+"<uri link=\"http://www.isc.org/products/DHCP\">ISC</uri>が提供する完全な機能を持ったDHCPサーバに切り替えます。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:877
+#, fuzzy, no-wrap
+msgid "Setting up dhcpd"
+msgstr "dhcpdの設定"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:878
+#, fuzzy, no-wrap
+msgid ""
+"# <i>emerge dhcp</i>\n"
+"# <i>nano /etc/dhcp/dhcpd.conf</i>\n"
+"<comment>(Here is a sample configuration file:)</comment>\n"
+"authoritative;\n"
+"ddns-update-style interim;\n"
+"subnet 192.168.0.0 netmask 255.255.255.0 {\n"
+"    range 192.168.0.100 192.168.0.250;\n"
+"    default-lease-time 259200;\n"
+"    max-lease-time 518400;\n"
+"    option subnet-mask 255.255.255.0;\n"
+"    option broadcast-address 192.168.0.255;\n"
+"    option routers 192.168.0.1;\n"
+"    option domain-name-servers 192.168.0.1;\n"
+"}\n"
+"# <i>nano /etc/conf.d/dhcpd</i>\n"
+"<comment>(Set IFACE=\"eth0\")</comment>\n"
+"# <i>rc-update add dhcpd default</i>\n"
+"# <i>/etc/init.d/dhcpd start</i>\n"
+msgstr ""
+"# <i>emerge dhcp</i>\n"
+"# <i>nano /etc/dhcp/dhcpd.conf</i>\n"
+"<comment>(これは設定ファイルの例です)</comment>\n"
+"authoritative;\n"
+"ddns-update-style interim;\n"
+"subnet 192.168.0.0 netmask 255.255.255.0 {\n"
+"    range 192.168.0.100 192.168.0.250;\n"
+"    default-lease-time 259200;\n"
+"    max-lease-time 518400;\n"
+"    option subnet-mask 255.255.255.0;\n"
+"    option broadcast-address 192.168.0.255;\n"
+"    option routers 192.168.0.1;\n"
+"    option domain-name-servers 192.168.0.1;\n"
+"}\n"
+"# <i>nano /etc/conf.d/dhcpd</i>\n"
+"<comment>(IFACE=\"eth0\"に設定)</comment>\n"
+"# <i>rc-update add dhcpd default</i>\n"
+"# <i>/etc/init.d/dhcpd start</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:899
+#, fuzzy, no-wrap
+msgid ""
+"This is the minimal setup required to replace the dnsmasq DHCP functionality\n"
+"that we used earlier.  Speaking of which, you did remember to disable the DHCP\n"
+"features in dnsmasq didn't you?  If not, you should do so now (just comment\n"
+"out the <c>dhcp-range</c> setting in <path>/etc/dnsmasq.conf</path> and restart\n"
+"the service).\n"
+msgstr ""
+"これは、以前使用していたdnsmasqのDHCP機能を置き換えるのに必要な最小の設定です。\n"
+"dnsmasqのDHCP機能を忘れずに無効にしましたか？\n"
+"もししていないのであれば、今すべきです（<path>/etc/dnsmasq.conf</path>の<c>dhcp-range</c>設定をコメントアウトし、サービスを再起動するだけです）。\n"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:910
+#, fuzzy, no-wrap
+msgid "Connect Another LAN (or two or three or ...)"
+msgstr "別のLANと接続"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:914
+#, fuzzy, no-wrap
+msgid ""
+"Sometimes you have need of connecting the router to another LAN.  Maybe you\n"
+"want to hook up a group of friends temporarily, or you're a neat freak and\n"
+"want to section off different groups of computers, or you're just really\n"
+"really bored.  Whatever the reasons, extending the router to other LAN\n"
+"networks should be pretty straightforward.  In the following examples, I will\n"
+"assume that this new network is connected via a third ethernet card, namely\n"
+"<c>eth2</c>.\n"
+msgstr ""
+"時々、別のLANにルータを接続する必要があります。\n"
+"もしかすると、友人のグループと一時的に接続したいかもしれませんし、異常なほど几帳面なので異なるグループのコンピュータを区切りたいかもしれませんし、単にとてつもなく退屈しているのかもしれません。\n"
+"理由が何であれ、ルータを他のLANネットワークに拡張することはとてもわかりやすいでしょう。\n"
+"以下の例では、この新しいネットワークは<c>eth2</c>という3番目のイーサネットカードに接続されていると仮定します。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:924
+#, fuzzy, no-wrap
+msgid ""
+"First you need to configure the interface.  Just take the instructions in the\n"
+"<uri link=\"#doc_chap4_pre1\">4.1 code listing</uri> and replace <c>eth0</c>\n"
+"with <c>eth2</c> and <c>192.168.0</c> with <c>192.168.1</c>.\n"
+msgstr ""
+"まず、インタフェースを設定する必要があります。\n"
+"<uri link=\"#doc_chap4_pre1\">4.1 code listing</uri>の指示に従い、<c>eth0</c>を<c>eth2</c>へ、<c>192.168.0</c>を<c>192.168.1</c>へ置き換えるだけです。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:930
+#, fuzzy, no-wrap
+msgid ""
+"Then you need to tweak dnsmasq to service the new interface.  Just edit the\n"
+"<path>/etc/conf.d/dnsmasq</path> file again and append <c>-i eth2</c> to\n"
+"DNSMASQ_OPTS; using -i multiple times is OK.  Then edit\n"
+"<path>/etc/dnsmasq.conf</path> and add another line like the dhcp-range line\n"
+"in the <uri link=\"#doc_chap5_pre1\">5.1 code listing</uri>, replacing\n"
+"<c>192.168.0</c> with <c>192.168.1</c>.  Having multiple dhcp-range lines is\n"
+"OK too.\n"
+msgstr ""
+"その後、新しいインタフェースにサービスを提供するためにdnsmasqを調整する必要があります。\n"
+"<path>/etc/conf.d/dnsmasq</path>を再び編集し、DNSMASQ_OPTSに<c>-i eth2</c>を追加するだけです。\n"
+"-iを複数回使用しても問題ありません。\n"
+"その後、<path>/etc/dnsmasq.conf</path>を編集し、<uri link=\"#doc_chap5_pre1\">5.1 code listing</uri>にdhcp-rangeといった別の行を追加します。<c>192.168.0</c>を<c>192.168.1</c>に置き換えてください。\n"
+"複数のdhcp-rangeがあっても問題ありません。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:940
+#, fuzzy, no-wrap
+msgid ""
+"Finally, see the rules in the <uri link=\"#doc_chap5_pre2\">5.2 code\n"
+"listing</uri> and duplicate the rules that have <c>-i ${LAN}</c> in them.  You\n"
+"may want to create another variable, say <c>LAN2</c>, to make things easier.\n"
+msgstr ""
+"最後に、<uri link=\"#doc_chap5_pre2\">5.2 code listing</uri>のルールで、<c>-i ${LAN}</c>がある物をコピーします。\n"
+"わかりやすくするために、<c>LAN2</c>のような別の変数を作成したいかもしれません。\n"
+
+#. type: Content of: <guide><chapter><title>
+#: en/home-router-howto.xml:951
+#, fuzzy, no-wrap
+msgid "Troubleshooting"
+msgstr "トラブルシューティング"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:954
+#, fuzzy, no-wrap
+msgid "Useful Tools"
+msgstr "有用なツール"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:958
+#, fuzzy, no-wrap
+msgid ""
+"If you're having trouble getting your computers to communicate, you may way to\n"
+"try out the following tools (they can all be found in the <c>net-analyzer</c>\n"
+"portage category):\n"
+msgstr "通信に関してトラブルに見舞われた場合、次のようなツールを試してみる方法があります(これらのツールはPortageの<c>net-analyzer</c>カテゴリにあります)。\n"
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/home-router-howto.xml:965
+#, fuzzy, no-wrap
+msgid "Utility"
+msgstr "ユーティリティ"
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/home-router-howto.xml:966
+#, fuzzy, no-wrap
+msgid "Description"
+msgstr "説明"
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/home-router-howto.xml:969
+#, no-wrap
+msgid "wireshark"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/home-router-howto.xml:970
+#, fuzzy, no-wrap
+msgid "GUI tool to view all raw network data according to filters"
+msgstr "フィルタによりすべてのrawネットワークデータを観測するGUIツール"
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/home-router-howto.xml:973
+#, fuzzy, no-wrap
+msgid "tcpdump"
+msgstr "tcpdump"
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/home-router-howto.xml:974
+#, fuzzy, no-wrap
+msgid "Console tool to dump all raw network data according to filters"
+msgstr "フィルタによりすべてのrawネットワークデータをダンプするコンソールツール"
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/home-router-howto.xml:977
+#, fuzzy, no-wrap
+msgid "iptraf"
+msgstr "iptraf"
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/home-router-howto.xml:978
+#, fuzzy, no-wrap
+msgid "ncurses based IP LAN monitor"
+msgstr "ncursesベースのIP LANモニタ"
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/home-router-howto.xml:981
+#, fuzzy, no-wrap
+msgid "ettercap"
+msgstr "ettercap"
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/home-router-howto.xml:982
+#, fuzzy, no-wrap
+msgid "ncurses based network monitor/control"
+msgstr "ncursesベースのネットワークモニタ/コントロール"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:990
+#, fuzzy, no-wrap
+msgid "DHCP Fails To Start"
+msgstr "DHCPが起動に失敗する"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:994
+#, fuzzy, no-wrap
+msgid ""
+"When starting the dhcp init.d script for the first time, it may fail to load\n"
+"but neglect to give you any useful info.\n"
+msgstr "dhcp init.dスクリプトの初回起動時に、ロードに失敗するが有益な情報を全く提供しないことがあるかもしれません。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:998
+#, fuzzy, no-wrap
+msgid "DHCP Failing Example"
+msgstr "DHCPの失敗例"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:999
+#, fuzzy, no-wrap
+msgid ""
+"# <i>/etc/init.d/dhcp start</i>\n"
+" * Setting ownership on dhcp.leases ...          [ ok ]\n"
+" * Starting dhcpd ...                            [ !! ]\n"
+msgstr ""
+"# <i>/etc/init.d/dhcp start</i>\n"
+"* Setting ownership on dhcp.leases ...          [ ok ]\n"
+"* Starting dhcpd ...                            [ !! ]\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:1005
+#, fuzzy, no-wrap
+msgid ""
+"The trick is to know where dhcpd is sending its output.  Simply browse to\n"
+"<path>/var/log</path> and read the log files.  Since the exact log file depends\n"
+"on the package you are using as a syslog, try running <c>grep -Rl dhcpd\n"
+"/var/log</c> to narrow down the possibilities.  Chances are you made a typo in\n"
+"your config file.  You could also try running <c>dhcpd -d -f</c> (short for\n"
+"debug / foreground) and debug the error based upon the output.\n"
+msgstr ""
+"これは、dhcpdがどこへ出力を送信しているかを知ることです。\n"
+"単に、<path>/var/log</path>にあるログファイルを読んでください。\n"
+"存在するログファイルはsyslogとして使用しているパッケージによるので、限定するために<c>grep -Rl dhcpd /var/log</c>を試してください。\n"
+"おそらく、設定ファイルでタイプミスをしたのでしょう。\n"
+"<c>dhcpd -d -f</c>(debug / foregroundのこと)を実行し、出力されたエラーをデバッグすることも出来ます。\n"
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:1017
+#, fuzzy, no-wrap
+msgid "Incorrect MTU Value"
+msgstr "不正なMTU値"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:1021
+#, fuzzy, no-wrap
+msgid ""
+"If you experience odd errors (such as not being able to access some webpages\n"
+"while others load fine), you may be having Path MTU Discovery trouble.  The\n"
+"quick way to test is to run this iptables command:\n"
+msgstr ""
+"妙なエラー(例：うまく読み込めないWebページがある。ただし、他のページはすんなり読み込める)に出会ったら、パスMTU探索(Path MTU Discovery)問題が起こっているかもしれません。\n"
+"これをすぐに確かめるには、次のiptablesコマンドを実行します。\n"
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:1026
+#, fuzzy, no-wrap
+msgid "Circumvent MTU issues"
+msgstr "MTU問題を回避する"
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/home-router-howto.xml:1027
+#, fuzzy, no-wrap
+msgid "# <i>iptables -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu</i>\n"
+msgstr "# <i>iptables -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu</i>\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:1031
+#, fuzzy, no-wrap
+msgid ""
+"This will affect all new connections, so just refresh the website you're having\n"
+"problems with in order to test. In case it helps, the standard MTU value for\n"
+"100mbit ethernet connections is <c>1500</c>; this value also applies to PPPoA.\n"
+"For PPPoE connections it is <c>1492</c>. For more info, you should read Chapter\n"
+"15 of the <uri link=\"http://lartc.org/howto/\">Linux Advanced Routing &amp;\n"
+"Traffic Control HOWTO</uri>.\n"
+msgstr ""
+"これは、すべての新しい接続に影響があるでしょう。\n"
+"ですから、テストするために問題のWebサイトを更新してください。\n"
+"念のため、100mbitイーサネット接続の標準MTU値は<c>1500</c>であるのに対し、PPPoE接続の場合は<c>1492</c>です。\n"
+"詳しい情報は、<uri link=\"http://lartc.org/howto/\">Linux Advanced Routing &amp;\n"
+"Traffic Control HOWTO</uri>の15章を読んでください。\n"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:1040
+#, no-wrap
+msgid ""
+"If that command does not work for you, you may want to try putting the rule\n"
+"into the mangle table.  Simply add <c>-t mangle</c> to the command.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/home-router-howto.xml:1048
+#, fuzzy, no-wrap
+msgid "Unable to connect two machines directly"
+msgstr "2台のマシンを直接接続できない"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:1052
+#, fuzzy, no-wrap
+msgid ""
+"If (for whatever reason) you want to connect two machines directly together\n"
+"without a hub or switch, a regular ethernet cable will likely not work, unless\n"
+"you have an Auto MDI/MDI-X (also known as \"autosensing\") capable network\n"
+"adapter.  You will need a different cable called a crossover cable.  This <uri\n"
+"link=\"http://en.wikipedia.org/wiki/Ethernet_crossover_cable\">Wikipedia</uri>\n"
+"page explains the low level details.\n"
+msgstr ""
+"(どんな理由であれ)2台のマシンをハブ、\n"
+"もしくはスイッチなしで直接接続したいのであれば、\n"
+"Auto MDI/MDI-X(別名、オートセンス)機能のあるネットワークアダプタでない限り、\n"
+"通常のイーサネットケーブルではおそらく動作しないでしょう。これには、\n"
+"クロスケーブルという異なるケーブルが必要になります。この<uri \n"
+"link=\"http://en.wikipedia.org/wiki/Ethernet_crossover_cable\">Wikipedia</uri>ページが、\n"
+"低レイヤーの観点から詳細に関して説明しています。\n"
+
+#. type: Content of: <guide><chapter><title>
+#: en/home-router-howto.xml:1066
+#, fuzzy, no-wrap
+msgid "Final Notes"
+msgstr "あとがき"
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/home-router-howto.xml:1071
+#, fuzzy, no-wrap
+msgid ""
+"I have no final notes other than if you experience any troubles with the guide,\n"
+"please contact <mail link=\"vapier@gentoo.org\">me</mail> or file a bug with <uri\n"
+"link=\"http://bugs.gentoo.org/\">Gentoo's Bugtracking Website</uri>.  If you have\n"
+"some interesting bits you think would enhance this guide, by all means send it\n"
+"my way for inclusion.\n"
+msgstr ""
+"連絡するか、<uri link=\"http://bugs.gentoo.org/\">Gentoo's Bugtracking Website</uri>にバグを報告してください。あとがきはこれだけです。\n"
+"このガイドに加えたい面白い具体例がありましたら、是非とも連絡よろしくお願いします。\n"
+
+#, fuzzy
+#~ msgid ".\n"
+#~ msgstr "。\n"
+
+#, fuzzy
+#~ msgid "ethereal"
+#~ msgstr "ethereal"
+
+#, fuzzy
+#~ msgid ""
+#~ "I have no final notes other than if you experience any troubles with the guide,\n"
+#~ "please contact "
+#~ msgstr "あなたがこのガイドに関してトラブルに見舞われた場合、"

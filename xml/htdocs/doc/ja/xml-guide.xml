@@ -1,0 +1,1049 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/xml-guide.xml,v 1.12 2008/07/21 11:28:05 shindo Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoo Linux XML ガイド</title>
+
+<author title="Author">
+  <mail link="neysx"/>
+</author>
+<author title="Author">
+  <mail link="drobbins@gentoo.org">Daniel Robbins</mail>
+</author>
+<author title="Author"><!-- zhen@gentoo.org -->
+  John P. Davis
+</author>
+<author title="Editor">
+  <mail link="peesh@gentoo.org">Jorge Paulo</mail>
+</author>
+<author title="Editor">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="翻訳">
+<mail link="t-shige@humatec.co.jp">千里</mail>
+</author>
+<author title="翻訳">
+<mail link="088@t.ne.jp">Takasi Ota</mail>
+</author>
+<author title="翻訳">
+<mail link="yasumichi@users.sourceforge.jp">Yasumichi Akahoshi</mail>
+</author>
+<author title="翻訳">
+<mail link="shindo@gentoo.gr.jp">シンドウナオアキ</mail>
+</author>
+
+
+<abstract>
+このガイドは、新しいGentooのGuideXMLの簡易な構文を使用して、Webドキュメンテーションを作成する方法を示します。
+この構文はGentooLinuxドキュメンテーションのための公式フォーマットです。
+また、このドキュメントはそれ自身ガイドXMLを使用して作成されました。
+このガイドは、XMLとHTMLについての基礎的な動作知識を前提としています。</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>9</version>
+<date>2008-03-09</date>
+<!-- Original revision: 1.68 -->
+
+<chapter>
+<title>GuideXMLの基本方針</title>
+<section>
+<title>GuideXMLの設計目標</title>
+<body>
+
+<p>
+このガイドXML構文は軽快で表現に富み、その結果として学習することは容易で、
+さらにWebドキュメンテーションの作成に私たちが必要とする特性をすべて提供します。
+タグの数は（私たちが必要とする）最小限に抑えられていますこれにより、
+ガイドをDocBook XML/SGMLあるいはWebに対応するHTMLのような他のフォーマットに容易に置き換えられます。</p>
+
+<p>このドキュメントのゴールはGuideXMLドキュメントの<e>作成</e>および<e>変換</e>を容易にすることです。</p>
+
+</body>
+</section>
+<section>
+<title>さらなるリソース</title>
+<body>
+
+<p>もし、Gentooへドキュメントを寄稿しようと計画していたり、GuideXMLをテストしたいと考えているなら、
+ドキュメント作成のための助言やコツを集めた
+<uri link="http://www.gentoo.org/proj/en/gdp/doc/doc-tipsntricks.xml">Tips and Tricks</uri>
+(訳注:<uri link="http://www.gentoo.org/proj/ja/gdp/doc/doc-tipsntricks.xml">日本語訳</uri>)
+をお読みください。</p>
+
+<p>
+このドキュメントを読みながらXMLソースを<uri link="?passthru=1">XML source</uri>みてみても構いませんよ。</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>GuideXML</title>
+<section>
+<title>基本構造</title>
+<body>
+
+<p>
+GuideXMLの構文の勉強を始めましょう。GuideXMLドキュメントの中で使われている冒頭タグから始める事にしましょう:
+</p>
+
+<pre caption="The initial part of a guide XML document">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE guide SYSTEM "/dtd/guide.dtd"&gt;
+&lt;!-- &#36;Header&#36; --&gt;
+
+&lt;guide link="<i>/doc/en/guide.xml</i>" lang="<i>en</i>"&gt;
+&lt;title&gt;<i>Gentoo Documentation Guide</i>&lt;/title&gt;
+
+&lt;author title="<i>Author</i>"&gt;
+  &lt;mail link="<i>yourname@gentoo.org</i>"&gt;<i>Your Name</i>&lt;/mail&gt;
+&lt;/author&gt;
+
+&lt;abstract&gt;
+<i>このガイドは、新しいGentoo GuideXMLの簡易な構文を使用して、
+Webドキュメンテーションを構成する方法をあなたに示します。この構文はGentooLinuxドキュメンテーションのための公式フォーマットです。
+また、このドキュメントはそれ自身GudeXMLを使用して作成されました。</i>
+&lt;/abstract&gt;
+
+&lt;!-- The content of this document is licensed under the CC-BY-SA license --&gt;
+&lt;!-- See http://creativecommons.org/licenses/by-sa/2.5 --&gt;
+&lt;license/&gt;
+
+&lt;version&gt;<i>1.0</i>&lt;/version&gt;
+&lt;date&gt;<i>2004-12-25</i>&lt;/date&gt;
+</pre>
+
+<p>
+一番上の行には、これがXMLドキュメントであると認識されるために必要なタグがあり、そのDTDも指定しています。
+<c>&lt;!-- &#36;Header&#36; --&gt;</c> 行はCVSサーバーにより自動的に変換され、
+リビジョン管理に使われますそれに続いて、<c>&lt;guide&gt;</c>タグがありますが、
+ガイド・ドキュメント全体は<c>&lt;guide&gt; &lt;/guide&gt;</c>のペアで囲まれます。<br/>
+<c>link</c> 属性はオプションです。ファイル名単独でも機能しますが、ドキュメントルールへの相対パスよりも絶対パスのほうが望ましいです。
+これはドキュメントの印刷用バージョンへのリンクと翻訳が最新かどうかのチェックにだけ使われます。
+XSLの後方にあるエンジンからXSLスタイルシートには実際のパスが渡されます。
+リンク属性はXMLが他の手段により処理される際のフォールバックとしてだけ使われます。<br/>
+<c>lang</c>属性はドキュメントの言語を指定するために使われます。これは指定された言語での"<e>Note</e>",
+"<e>Content</e>"などの日付や挿入する文字列のフォーマットに使われます。デフォルトは英語です。</p>
+
+<p>
+次に、&lt;title&gt;タグがあり、ガイド・ドキュメント全体のタイトルをセットするのに使用されています。</p>
+
+<p>
+その後、<c>&lt;author&gt;</c>タグに行き当たります。
+これらはドキュメントの著者などに関する情報を含んでいます。
+各<c>&lt;author&gt;</c>タグにはオプションの<c>title</c>エレメントの記述が可能で、著者のドキュメントとの関係(Author、Co-author、Editorなど)を特定するために使用されます。
+この例では、著者の名前は<c>&lt;mail&gt;</c>タグという別のタグで囲まれています。
+これはこの人のためのメールアドレスを指定するために使用されています。
+<c>&lt;mail&gt;</c>タグはオプションであり省略することができます。
+そして<c>&lt;author&gt;</c>エレメントはガイド・ドキュメントにつき最低1つ必要です。</p>
+
+<p>
+さらに、<c>&lt;abstract&gt;</c>、<c>&lt;version&gt;</c>および<c>&lt;date&gt;</c>などのタグに行き当たります。
+これらはドキュメント要約、現行版のバージョンおよび現行版の日付(YYYY-MM-DDフォーマットで)をそれぞれ指定するために使用されています。
+日付が正しくない、またはYYYY-MM-DDフォーマットでなければ、表示されるドキュメントにはそのままの形で現れます</p>
+
+<p>
+この要約に必要なタグ類はガイド・ドキュメントの冒頭になければいけません。
+さらに<c>&lt;title&gt;</c> と <c>&lt;mail&gt;</c> タグは<c>&lt;guide&gt;</c> の直後以外には置くことはできず、
+また、一貫性という点では(必ずではありませんが)ドキュメントの内容が書かれる前に、これらのタグ類が現われることが推奨されます。</p>
+
+<p>最後に<uri link="/proj/en/gdp/doc/doc-policy.xml">Documentation Policy</uri>によって求められる<uri link="http://creativecommons.org/licenses/by-sa/2.5/">Creative Commons - Attribution / Share Alike</uri>ライセンスの下でドキュメントを出版するために使用されている<c>&lt;license/&gt;</c>タグあります。</p>
+
+</body>
+</section>
+<section>
+<title>章と節</title>
+<body>
+
+<p>
+一旦冒頭のタグが指定されたら、ドキュメントの構造化要素を追加する準備ができています。
+ガイド・ドキュメントはいくつかの章に分割されます。また、各章は一つ以上の節を設けることができます。
+すべての章および節にはタイトルが1つあります。ここに例として、一つの段落から成る単一の節をもつ章があるものとします。
+このXMLを<uri link="#doc_chap2_pre1">先程抜粋したXML</uri>に追加して、
+のファイルの末尾に<c>&lt;/guide&gt;</c>をを追加すれば、(最小限の内容ではありますが)有効なガイド・ドキュメントの完成です:
+</p>
+
+<pre caption="最小限の例">
+&lt;chapter&gt;
+&lt;title&gt;<i>自分で作成した章</i>&lt;/title&gt;
+&lt;section&gt;
+&lt;title&gt;<i>これは私が書いた節です</i>&lt;/title&gt;
+&lt;body&gt;
+
+&lt;p&gt;
+<i>ここに実際にこの節でのテキスト内容を記述します。</i>
+&lt;/p&gt;
+
+&lt;/body&gt;
+&lt;/section&gt;
+&lt;/chapter&gt;
+</pre>
+
+<p>
+上記では、私は<c>&lt;chapter&gt;</c>要素に子要素である<c>&lt;title&gt;</c>要素を加えて章タイトルを設定しました。
+その後、私は<c>&lt;section&gt;</c>要素を加えることにより節を作成しました。<c>&lt;section&gt;</c>要素の内側を見ると、
+それが<c>&lt;title&gt;</c>および<c>&lt;body&gt;</c>の2つの子要素を持っていることを理解して頂けると思います。
+<c>&lt;title&gt;</c>に目新しいものはありませんが、<c>&lt;body&gt;</c>については、この節の実際のテキスト内容を含んでいます。
+<c>&lt;body&gt;</c>要素内で使用できるタグをすぐあとに紹介します。</p>
+
+<note>
+<c>&lt;guide&gt;</c>要素は必ず少なくとも1つ<c>&lt;chapter&gt;</c>要素を含んでいなければいけません。<c>&lt;chapter&gt;</c> は必ず少なくとも1つ
+<c>&lt;section&gt;</c>要素を含んでいなければいけません。そして<c>&lt;section&gt;</c>要素は必ず少なくとも1つ<c>&lt;body&gt;</c>要素を含んでいなければいけません。</note>
+
+</body>
+</section>
+<section>
+<title>&lt;body&gt;の例</title>
+<body>
+
+<p>
+さてここからは、実際の内容をマークアップする方法を学習しましょう。以下は、<c>&lt;body&gt;</c>要素のためのXMLコードの例です。</p>
+
+<pre caption="body要素の例">
+&lt;p&gt;
+これはひとつの段落です。&lt;path&gt;/etc/passwd&lt;/path&gt; はファイルです。&lt;uri&gt;http://forums.gentoo.org&lt;/uri&gt; はお気に入りのウェブサイトです。&lt;c&gt;ls&lt;/c&gt;と打つのはご自由に。私は&lt;e&gt;本当に&lt;/e&gt; 眠いんです。&lt;/p&gt;
+
+&lt;pre caption="コードサンプル"&gt;
+これは出力結果かコードのテキストです。# &lt;i&gt;これはユーザーの入力です&lt;/i&gt;
+
+ある部分を選択して強調することで、HTML/XMLをより読みやすくしてください:
+&lt;foo&gt;&lt;i&gt;bar&lt;/i&gt;&lt;/foo&gt;
+
+&lt;comment&gt;(これはコード・ブロックにインラインの注記を挿入する方法です)&lt;/comment&gt;
+&lt;/pre&gt;
+
+&lt;note&gt;
+これは注記です。&lt;/note&gt;
+
+&lt;warn&gt;
+これは警告です。&lt;/warn&gt;
+
+&lt;impo&gt;
+これは重要項目です。&lt;/impo&gt;
+</pre>
+
+<p>
+上の<c>&lt;body&gt;</c>要素がどのように表示されるか見てみましょう:
+</p>
+
+<p>
+これは一つの段落です。<path>/etc/passwd</path> はファイルです。
+<uri>http://forums.gentoo.org</uri> お気に入りのウェブサイトです。<c>ls</c> と打つのはご自由に私は<e>本当に</e>眠いんです。</p>
+
+<pre caption="コードサンプル">
+これは出力結果かコードのテキストです。# <i>これはユーザーの入力です</i>
+
+ある部分を選択して強調することで、HTML/XMLをより読みやすくしてください:
+&lt;foo&gt;<i>bar</i>&lt;/foo&gt;
+
+<comment>(これはコード・ブロックにインラインの注記を挿入する方法です)</comment>
+</pre>
+
+<note>
+これは注記です。</note>
+
+<warn>
+これは警告です。</warn>
+
+<impo>
+これは重要項目です。</impo>
+
+</body>
+</section>
+<section>
+<title>&lt;body&gt; タグ</title>
+<body>
+
+<p>
+私たちは前の節で多くの新しいタグを紹介しました。次のことを覚えておいてください。
+<c>&lt;p&gt;</c>(段落:パラグラフ)、<c>&lt;pre&gt;</c>(コード・ブロック)、
+<c>&lt;note&gt;</c>(訳注:注意)、<c>&lt;warn&gt;</c>(警告)および<c>&lt;impo&gt;</c>(重要)タグはすべてテキストを1以上行含むことができます。
+<c>&lt;table&gt;</c>と<c>&lt;ul&gt;</c>、<c>&lt;ol&gt;</c>、<c>&lt;dl&gt;</c> 要素(すぐに説明します)を加えた、これらのタグ以外のものが<c>&lt;body&gt;</c>要素内に最初に現れてはいけません。
+また別な事柄として、これらのタグを積み重ねては<e>いけません</e>。
+言いかえると <c>&lt;note&gt;</c>要素を<c>&lt;p&gt;</c>要素の内部に置いてはいけない、ということです。
+ご推察のように、<c>&lt;pre&gt;</c>要素はコードの抜粋には都合が良く、その余白を正確に保持します。
+
+<c>&lt;pre&gt;</c>タグには<c>caption</c>属性で名称をつけなければいけません:
+</p>
+
+<pre caption="名称がついた &lt;pre&gt;">
+&lt;pre caption="Output of uptime"&gt;
+# &lt;i&gt;uptime&lt;/i&gt;
+16:50:47 up 164 days,  2:06,  5 users,  load average: 0.23, 0.20, 0.25
+&lt;/pre&gt;
+</pre>
+
+</body>
+</section>
+<section>
+<title>題辞</title>
+<body>
+
+<p by="Anonymous student">
+Delegates from the original 13 states formed the Contented Congress. Thomas
+Jefferson, a Virgin, and Benjamin Franklin were two singers of the Declaration
+of Independence. Franklin discovered electricity by rubbing two cats backwards
+and declared, "A horse divided against itself cannot stand." Franklin died in
+1790 and is still dead.
+
+(訳注: これはジョークですので原文のままにしておきます。)
+</p>
+
+<p>
+題辞は章にどういった事柄が書かれているのか、章の最初に説明するのに使われます. 題辞は簡単な段落で、署名を含む<c>by</c>属性です</p>
+
+<pre caption="短い題辞">
+&lt;p by="Anonymous student"&gt;
+Delegates from the original 13 states formed the...
+&lt;/p&gt;
+</pre>
+
+</body>
+</section>
+<section>
+<title>
+  &lt;path&gt;, &lt;c&gt;, &lt;b&gt;, &lt;e&gt;, &lt;sub&gt; and &lt;sup&gt;
+</title>
+<body>
+
+<p>
+<c>&lt;path&gt;</c>と<c>&lt;c&gt;</c>、<c>&lt;b&gt;</c>、<c>&lt;e&gt;</c>、
+<c>&lt;sub&gt;</c>、<c>&lt;sup&gt;</c>要素は<c>&lt;body&gt;</c>タグの<c>&lt;pre&gt;</c>以外のいずれの子要素のなかで使うことができます</p>
+
+<p>
+<c>&lt;path&gt;</c>要素は<e>ディスク上のファイル</e>を参照するテキストを目立たせるために使用されます。これらは<e>絶対パスまたは相対パス</e>、あるいは<e>単なるファイル名</e>で示されます。 この要素は一般的に、標準の段落の中で目立たせるために等幅フォントで表示されます。</p>
+
+<p>
+<c>&lt;c&gt;</c>要素は<e>コマンド</e>あるいは<e>ユーザ入力</e>を目立たせるために使用されます。
+<c>&lt;c&gt;</c>については、読み手に何らかの結果を伴う入力が促されていることを警告する方法だと考えてください。
+例えば、このドキュメントに表示されたXMLタグはすべて、<c>&lt;c&gt;</c>エレメントで囲まれます。
+なぜなら、それらはユーザが入力することができるものを表わすのであって、パスを記載するときには使わないからです。
+<c>&lt;c&gt;</c>要素の使用によって、読者がそれらが入力する必要のあるコマンドであると言うことを素早く識別する手助けになるでしょう。
+さらに、<c>&lt;c&gt;</c>エレメントは、もともと通常のテキストとは違うフォントで表示されるようになっているわけですから、
+<e>ダブルクォートでユーザ入力を囲んだりする必要がほとんどないというわけです</e>。
+例えば、"<c>&lt;c&gt;</c>"要素などと書いているような注目のさせかたは必要ないのです。
+不必要なダブルクォートの使用の回避はドキュメントをより判読可能しやすくします!</p>
+
+<p>
+お気づきかもしれませんが、<c>&lt;b&gt;</c> はテキストを<b>ボールド</b>にするのに使われます。</p>
+
+<p>
+<c>&lt;e&gt;</c>は単語か句に強調を適用するために使用されます。
+たとえば私は、私はセミコロンの方を多く使うべきだと<e>本当に</e>思います。ご覧のように、このテキストは通常の段落のフォントより目立ちます。これは、あなたの文をキリッと<e>引き締める</e>ことをサポートします!</p>
+
+<p>
+<c>&lt;sub&gt;</c> と <c>&lt;sup&gt;</c> 要素は<sub>下付き文字</sub>と<sup>上付き文字</sup>を指定するために使われます。</p>
+
+</body>
+</section>
+<section>
+<title>コード例と色付けの例</title>
+<body>
+
+<p>
+コードサンプルの読みさすさを上げるために<c>&lt;pre&gt;</c> ブロックの内側で次のタグが使えます:
+</p>
+
+<dl>
+  <dt><c>&lt;i&gt;</c></dt>
+  <dd>ユーザー入力と表示テキストを区別します</dd>
+  <dt><c>&lt;comment&gt;</c></dt>
+  <dd>後に続くアクションに関連するコメント</dd>
+  <dt><c>&lt;keyword&gt;</c></dt>
+  <dd>コードサンプルのなかで使われている言語でのキーワードを表示します
+  </dd>
+  <dt><c>&lt;ident&gt;</c></dt>
+  <dd>識別子に使われます
+  </dd>
+  <dt><c>&lt;const&gt;</c></dt>
+  <dd>定数に使われます
+  </dd>
+  <dt><c>&lt;stmt&gt;</c></dt>
+  <dd>ステートメントに使われます
+  </dd>
+  <dt><c>&lt;var&gt;</c></dt>
+  <dd>変数に使われます
+  </dd>
+</dl>
+
+<note>
+<c>&lt;pre&gt;</c>内の前後の空白と改行は表示htmlページに現れることを忘れないでください</note>
+
+<p>
+色付き <c>&lt;pre&gt;</c> ブロックの例:
+</p>
+
+<pre caption="My first ebuild">
+<comment># Copyright 1999-2006 <b>Gentoo Foundation</b>
+# Distributed under the terms of the GNU General Public License v2
+# &#36;Header: $</comment>
+
+<ident>DESCRIPTION</ident>=<const>"Exuberant ctags generates tags files for quick source navigation"</const>
+<ident>HOMEPAGE</ident>=<const>"http://ctags.sourceforge.net"</const>
+<ident>SRC_URI</ident>=<const>"mirror://sourceforge/ctags/<var>${P}</var>.tar.gz"</const>
+
+<ident>LICENSE</ident>=<const>"GPL-2"</const>
+<ident>SLOT</ident>=<const>"0"</const>
+<ident>KEYWORDS</ident>=<const>"~mips ~sparc ~x86"</const>
+<ident>IUSE</ident>=<const>""</const>
+
+<stmt>src_compile()</stmt> {
+    <keyword>econf</keyword> --with-posix-regex || <keyword>die</keyword> <const>"econf failed"</const>
+    <keyword>emake</keyword> || <keyword>die</keyword> <const>"emake failed"</const>
+}
+
+<stmt>src_install()</stmt> {
+    <keyword>make</keyword> <ident>DESTDIR</ident>="<var>${D}</var>" install || <keyword>die</keyword> <const>"install failed"</const>
+
+    <keyword>dodoc</keyword> FAQ NEWS README
+    <keyword>dohtml</keyword> EXTENDING.html ctags.html
+}
+</pre>
+
+</body>
+</section>
+<section>
+<title>&lt;mail&gt;および&lt;uri&gt;</title>
+<body>
+
+<p>
+私たちはこれまでにいくつか<c>&lt;mail&gt;</c>タグを見てきました。
+それはあるテキストを特別のメールアドレスとリンクするために使用され、<c>&lt;mail link="foo@bar.com"&gt;Mr. Foo Bar&lt;/mail&gt;</c>の形式をとります。もし、メールアドレスを表示するためには、<c>&lt;mail&gt;foo.bar@example.com&lt;/mail&gt;</c>と書いてください。これは<mail>foo.bar@example.com</mail>と表示されます。</p>
+
+<p>
+短い形式ではGentoo開発者の名前とメールアドレスを使うのはより簡単になります。
+<c>&lt;mail&gt;neysx&lt;/mail&gt;</c> と <c>&lt;mail link="neysx"/&gt;</c>のどちらでも<mail>neysx</mail>と表示されます。もし開発者のフルネームではないものを使いたい場合は2番目の形式をつかってください。
+たとえば開発者のファーストネームの場合: <c>&lt;mail link="neysx"&gt;Xavier&lt;/mail&gt;</c> は <mail link="neysx">Xavier</mail>と表示されます。<br/>
+もし、開発者の名前に、キーボードで打てない「おかしな」文字が入っている場合に|特に|!役に立ちます。</p>
+
+<p>
+<c>&lt;uri&gt;</c> タグははインターネット上のファイル/ロケーションを指定するために使用されます。
+このタグには二つの使われ方があり、一つめは、例えば<uri>http://www.gentoo.org</uri>へリンクするこのテキストのように、テキストそのものに実際のURIを表示したい場合です。
+このリンクを作成するためには<c>&lt;uri&gt;http://www.gentoo.org&lt;/uri&gt;</c>と入力します。
+もう一つは、たとえば<uri link="http://www.gentoo.org">Gentoo Linux ウェブサイト</uri>のように、
+あるURIを他のテキストに関連づけしたい場合です。
+<e>この</e>リンクを作成するためには<c>&lt;uri link="http://www.gentoo.org"&gt;Gentoo Lin|!b|ux ウェブサイト&lt;/uri&gt;</c>と入力します。
+Gentoo Webサイトの他の場所へリンクするのに<c>http://www.gentoo.org/</c>を書く必要はありません。
+たとえば、<uri link="/doc/en/">documentation main index</uri>へのリンクは、
+単純に<c>&lt;uri link="/doc/en/index.xml"&gt;documentation main index&lt;/uri&gt;</c>としてください。
+ディレクトリインデックスにリンクするときには、<c>index.xml</c>を省略することができます。
+つまり <c>&lt;uri link="/doc/en/"&gt;documentation main index&lt;/uri&gt;</c>と書けます。
+最後のスラッシュを残しておくと余計なHTTPリクエストが省けます。</p>
+
+<p>
+<c>mailto:</c>の場合に<c>&lt;uri&gt;</c> タグを<c>link</c> 属性とともに使わないでくださいこの場合は、<c>&lt;mail&gt;</c> タグを使ってください。</p>
+
+<p>
+<uri link="http://www.w3.org/QA/Tips/noClickHere">W3C</uri>の推奨どおり、<uri link="http://en.wikipedia.org/wiki/Click_here">ここをクリックしてくださいシンドローム</uri>は避けてください。</p>
+
+</body>
+</section>
+<section>
+<title>図</title>
+<body>
+
+<p>
+では、ドキュメントに図を挿入する方法を紹介しましょう。
+<c>&lt;figure link="mygfx.png" short="私の写真" caption="いつの時も私の大好きな写真"/&gt;</c> <c>link=</c>属性は実際のグラフィックのイメージを指します。<c>short=</c>属性には短い説明(今回は画像にHTMLの<c>alt=属性</c>を付けるために使用されています)やキャプションを指定します。それほど難しくありません:) さらに、私たちは標準のHTMLスタイルのキャプションや境界のないイメージを加えるために&lt;img src="foo.gif"/&gt;タグをサポートします。
+</p>
+
+</body>
+</section>
+<section>
+<title>表</title>
+<body>
+
+<p>ガイドXMLはHTML構文より簡潔な表構文をサポートしています。
+表を始めるには、<c>&lt;table&gt;</c>タグを使います。行データを開始するには<c>&lt;tr&gt;</c>タグを使います。
+しかしながら、実際の表のデータを挿入するために、HTMLでいうところの&lt;td&gt;タグはサポートして<e>いません</e>。
+そのかわり、見出しを入れたい時には<c>&lt;th&gt;</c>を使い、通常の情報ブロックには<c>&lt;ti&gt;</c>を使います。
+<c>&lt;ti&gt;</c>を使えるところならば<c>&lt;th&gt;</c>を使うことができます。
+<c>&lt;th&gt;</c>エレメントが必ず最初の列になければいけないとうことはありません。</p>
+
+<p>
+さらに、表のヘッダー(<c>&lt;th&gt;</c>) と表の項目(<c>&lt;ti&gt;</c>) の両方で項目の横、縦、もしくはその両方の幅に関する<c>colspan</c> と <c>rowspan</c> 属性をつけることができます</p>
+
+<p>
+さらに表のセル (<c>&lt;ti&gt;</c> &amp; <c>&lt;th&gt;</c>) は<c>align</c>属性で左寄せ、右寄せ、中央寄せが変わります。</p>
+
+<table>
+  <tr>
+    <th align="center" colspan="4">このタイトルは4列分の幅です。</th>
+  </tr>
+  <tr>
+    <th rowspan="6">このタイトルは6行分です</th>
+    <ti>項目 A1</ti>
+    <ti>項目 A2</ti>
+    <ti>項目 A3</ti>
+  </tr>
+  <tr>
+    <ti align="center">項目 B1</ti>
+    <th colspan="2" rowspan="2" align="right">2x2 ブロックタイトル</th>
+  </tr>
+  <tr>
+    <ti align="right">項目 C1</ti>
+  </tr>
+  <tr>
+    <ti colspan="3" align="center">項目 D1..D3</ti>
+  </tr>
+  <tr>
+    <ti rowspan="2">項目 E1..F1</ti>
+    <ti colspan="2" align="right">項目 E2..E3</ti>
+  </tr>
+  <tr>
+    <ti colspan="2" align="right">項目 F2..F3</ti>
+  </tr>
+</table>
+
+</body>
+</section>
+<section>
+<title>リスト</title>
+<body>
+
+<p>
+番号付きリストあるいは番号無しリストを作成するためには、
+XHTMLスタイルと同じ<c>&lt;ol&gt;</c>, <c>&lt;ul&gt;</c>と<c>&lt;li&gt;</c>タグを使用してください。
+リストは<c>&lt;body&gt;</c> と <c>&lt;li&gt;</c>タグの内側にだけ置くことができます。
+つまりリストの入れ子ができます。XMLを書いていて、HTMLとは異なりlistの要素も含めて、タグを閉じることを忘れないでください</p>
+
+<p>
+定義リスト(<c>&lt;dl&gt;</c>)もサポートされています定義語タグ(<c>&lt;dt&gt;</c>) も定義データタグ
+(<c>&lt;dd&gt;</c>) のどちらも段落や警告などの他のブロックレベルタグを受け付けないことに注意してください。
+一組の定義リストはつぎのように構成されます:
+</p>
+
+<dl>
+  <dt><c>&lt;dl&gt;</c></dt>
+  <dd>定義リスト(<b>D</b>efinition <b>L</b>ist)タグが含むのは</dd>
+  <dt><c>&lt;dt&gt;</c></dt>
+  <dd>定義語(<b>D</b>efinition <b>T</b>erm)タグと</dd>
+  <dt><c>&lt;dd&gt;</c></dt>
+  <dd>定義データ(<b>D</b>efinition <b>D</b>ata)タグのペアです。</dd>
+</dl>
+
+<p>
+次のリストは
+ <uri link="http://www.w3.org/TR/REC-html40/struct/lists.html">w3.org</uri> から転載したもので、番号付き、番号なしリストを定義リストに含めることができることを示しています。しかし、他の定義リストを含めることはできません</p>
+
+<dl>
+  <dt><b>材料:</b></dt>
+  <dd>
+    <ul>
+      <li>小麦粉100g</li>
+      <li>砂糖10g</li>
+      <li>水1カップ</li>
+      <li>卵2個</li>
+      <li>塩、コショウ</li>
+    </ul>
+  </dd>
+  <dt><b>作り方:</b></dt>
+  <dd>
+    <ol>
+      <li>乾いている材料をじっくり混ぜてください</li>
+      <li>水分のある材料を入れてください</li>
+      <li>10分間混ぜてください</li>
+      <li>300度で1時間焼いてください</li>
+    </ol>
+  </dd>
+  <dt><b>もう一手間:</b></dt>
+  <dd>レシピにレーズンを加えることで一層おいしくなります</dd>
+</dl>
+
+</body>
+</section>
+<section>
+<title>ドキュメント内部での参照</title>
+<body>
+
+<p>
+ガイドXMLでは、ハイパーリンクを使用して簡単にドキュメントの他の部分への参照ができます。
+<uri link="#doc_chap1">第1章</uri>を指すリンクは<c>&lt;uri link="#doc_chap1"&gt;第1章&lt;/uri&gt;</c>
+のように入力して作成できます。
+<uri link="#doc_chap1_sect2">第1章2節</uri>を指し示すためには、<c>&lt;uri link="#doc_chap1
+_sect2"&gt;第1章2節&lt;/uri&gt;</c>と入力します。
+図1.3を参照するためには、<c>&lt;uri link="#doc_chap1_fig3"&gt;図 1.3&lt;/uri&gt;</c>と入力します。
+また、<uri link="#doc_chap2_pre2">コードリスト2.2</uri>を参照するには、<c>&lt;uri link
+="#doc_chap2_pre2"&gt;コードリスト2.2&lt;/uri&gt;</c>と入力します。
+
+
+</p>
+
+<p>しかしながら、しばしば変更がありこうした"数え方"が使われているガイドではリンク切れを誘発することがあります。
+これに対処するために<c>&lt;chapter&gt;</c>や<c>&lt;section&gt;</c>に<c>id</c>属性を使って名前を定義する事ができ、次のようにしてその属性を指します:
+</p>
+
+<pre caption="id属性の使用">
+&lt;chapter id="foo"&gt;
+&lt;title&gt;ここはfooです!&lt;/title&gt;
+...
+&lt;p&gt;
+さらなる情報は&lt;uri link="#foo"&gt;fooの章&lt;/uri&gt;で見つかります。
+&lt;/p&gt;
+</pre>
+
+</body>
+</section>
+<section>
+<title>免責事項と無効(obsolete)ドキュメント</title>
+<body>
+
+<p>
+<c>disclaimer</c> 属性はガイドとハンドブックに適用でき、事前に定めた免責事項をドキュメントの先頭に表示します。
+使用可能なdisclaimerは次のとおりです。
+</p>
+
+<ul>
+  <li>
+    <b>articles</b>は<uri link="/doc/en/articles/">再公開</uri>に使われます
+  </li>
+  <li>
+    <b>draft</b> はドキュメントがまだ作業中で公式なものにはなっていないことを意味します
+  </li>
+  <li>
+    <b>oldbook</b> は現在メンテナンスされていない古いハンドブックに使われます
+  </li>
+  <li><b>obsolete</b> はドキュメントが無効(obosolete)であることを示すため使われます</li>
+</ul>
+
+<p>
+ドキュメントが無効であるとなった場合、新しいバージョンへのリンクを追加する必要がでてくるかもしれません。
+そのときは<c>redirect</c> 属性を使ってください。ユーザーは自動的に新しいページにリダイレクトされるかもしれませんが、
+その振る舞いには依存しないでください。</p>
+
+<pre caption="免責事項の例">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE guide SYSTEM "/dtd/guide.dtd"&gt;
+&lt;!-- &#36;Header&#36; --&gt;
+
+&lt;guide disclaimer="obsolete" redirect="/doc/en/handbook/handbook-x86.xml"&gt;
+&lt;title>Gentoo x86 Installation Guide&lt;/title&gt;
+
+&lt;author title="Author"&gt;
+...
+</pre>
+
+</body>
+</section>
+<section>
+<title>FAQ</title>
+<body>
+
+<p>
+FAQドキュメントは質問とその回答へのリンクのリストから始める必要があります。
+しかし、そういったリストを作るのは、時間がかかり、間違いをしやすいものです。
+<c>faqindex</c>要素をドキュメントの最初の章で使うことで、このリストを自動的に作ることができます。
+この要素は導入テキストを書ける<c>chapter</c>と同じ構造をもっています。
+FAQドキュメントの構造は(少なくとも1つの)章に分けられ、章には複数の節があります。
+各節には<c>title</c>で指定され<c>body</c>に回答が書かれた質問が1つ置かれます。
+章ごとに1つの節が1つの質問としてリンクされ表示されます。</p>
+
+<p> <uri link="/doc/en/faq.xml">FAQ</uri> と <uri
+link="/doc/en/faq.xml?passthru=1">そのソース</uri> を見てもらえれば、上に書いたことはすぐ分かると思います。</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Handbookのフォーマット</title>
+<section>
+<title>Guide 対 Book</title>
+<body>
+
+<p>
+<uri link="/doc/en/handbook/handbook-x86.xml?part=1">Installation Instructions</uri>(訳注:<uri link="/doc/ja/handbook/handbook-x86.xml?part=1">日本語訳</uri>)のような、量の多いドキュメントについては、
+より幅広いフォーマットが求められました。
+我々はモジュール形式で複数のページに渡る文書が書けるような、GuideXML互換の強化版を設計しました。</p>
+
+</body>
+</section>
+<section>
+<title>メインファイル</title>
+<body>
+
+<p>
+最初の変更は「マスター」ドキュメントの必要性です。
+このドキュメントは実際の内容は含みませんが、ここのドキュメントモジュールにリンクを張ります。
+文法はGuideXMLとほとんど違いはありません:
+</p>
+
+<pre caption="book使用の例">
+&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;!DOCTYPE book SYSTEM "/dtd/book.dtd"&gt;
+&lt;!-- &#36;Header&#36; --&gt;
+
+&lt;<i>book</i>&gt;
+&lt;title&gt;book使用の例&lt;/title&gt;
+
+&lt;author...&gt;
+  ...
+&lt;/author&gt;
+
+&lt;abstract&gt;
+  ...
+&lt;/abstract&gt;
+
+&lt;!-- The content of this document is licensed under the CC-BY-SA license --&gt;
+&lt;!-- See http://creativecommons.org/licenses/by-sa/2.5 --&gt;
+&lt;license/&gt;
+
+&lt;version&gt;...&lt;/version&gt;
+&lt;date&gt;...&lt;/date&gt;
+</pre>
+
+<p>
+(<c>&lt;guide&gt;</c> タグの代わりに<c>&lt;book&gt;</c>を使う以外に)実際の違いはありません。
+個別の<c>&lt;chapter&gt;</c>で始まるのではなく<c>&lt;part&gt;</c>を定めます。これはbookのなかの個別のパートに相当します:</p>
+
+<pre caption="パートの定義">
+&lt;part&gt;
+&lt;title&gt;パート1&lt;/title&gt;
+&lt;abstract&gt;
+  ...
+&lt;/abstract&gt;
+
+<comment>(いくつか章を定める)</comment>
+&lt;/part&gt;
+</pre>
+
+<p>
+それぞれのパートには<c>&lt;title&gt;</c>と<c>&lt;abstract&gt;</c>があり、そのパートへのちょっとした導入部になります。</p>
+
+<p>
+各パートの内部で、個別に<c>&lt;chapter&gt;</c>を定めます。
+それぞれの章は独立したドキュメントで<e>なければなりません。</e>
+そのため、特別なタグ(<c>&lt;include&gt;</c>)により、個別のドキュメントを読み込めるのは驚くにはあたりません。</p>
+
+<pre caption="章の定義">
+&lt;chapter&gt;
+&lt;title&gt;第一章&lt;/title&gt;
+
+  &lt;include href="path/to/chapter-one.xml"/&gt;
+
+&lt;/chapter&gt;
+</pre>
+
+</body>
+</section>
+<section>
+<title>個々の章を定める</title>
+<body>
+
+<p>
+個々の章の内容は次のような構造になっています。
+</p>
+
+<pre caption="章の構文">
+&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;!DOCTYPE sections SYSTEM "/dtd/book.dtd"&gt;
+&lt;!-- &#36;Header&#36; --&gt;
+
+&lt;!--  The content of this document is licensed under the CC-BY-SA license --&gt;
+&lt;!--  See http://creativecommons.org/licenses/by-sa/2.5 --&gt;
+
+&lt;sections&gt;
+
+&lt;abstract&gt;
+  これは第一章のちょっとした説明です&lt;/abstract&gt;
+
+&lt;version&gt;...&lt;/version&gt;
+&lt;date&gt;...&lt;/date&gt;
+
+<comment>(いくつか&lt;section&gt; と &lt;subsection&gt;を定める)</comment>
+
+&lt;/sections&gt;
+</pre>
+
+<p>
+個々の章の内部で <c>&lt;section&gt;</c>(Guideでの<c>&lt;chapter&gt;</c> と同じ) と <c>&lt;subsection&gt;</c>s (Guideでの <c>&lt;section&gt;</c> と同じ)を定めることができます。</p>
+
+<p>
+個々の章はそれ自身のデータとバージョン要素を持たなければなりません。
+すべての章とマスタードキュメントの最新のデータはユーザーがすべてのブックのパートをブラウズするときに表示されます。</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ハンドブックの進んだ機能</title>
+<section>
+<title>グローバルな値</title>
+<body>
+
+<p>
+ときおり、ハンドブック内のいくつかのパートで同じ値が繰りかえされることがあります。
+全体を検索し、置換をしても何か忘れてしまったり、望まない変更をしてしまいがちです。
+またさらに、共通する章で使われ、含まれるハンドブックに依存するような値を定義することも有用です。</p>
+
+<p>
+グローバルな値はハンドブックのマスターファイルで定義でき、含まれる章全体で使うことができます。</p>
+
+<p>
+グローバルな値を定義するには、<c>&lt;values&gt;</c> 要素をハンドブックのマスターファイルに追加してください。
+それぞれの値は<c>&lt;key&gt;</c> 要素のなかで定義され、その<c>id</c> 属性が値を特定します。
+すなわちその値の名前となります。<c>&lt;key&gt;</c>の内容がその値になります。</p>
+
+<p>
+次の例では、ハンドブックのマスターファイルで3つの値を定義しています:
+</p>
+
+<pre caption="Define values in a handbook">
+&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;!DOCTYPE book SYSTEM "/dtd/book.dtd"&gt;
+&lt;!-- &#36;Header&#36; --&gt;
+
+&lt;book&gt;
+&lt;title&gt;bookの使い方の例&lt;/title&gt;
+
+<i>&lt;values>
+ &lt;key id="arch"&gt;x86&lt;/key&gt;
+ &lt;key id="min-cd-name"&gt;install-x86-minimal-2007.0-r1.iso&lt;/key&gt;
+ &lt;key id="min-cd-size"&gt;57&lt;/key&gt;
+&lt;/values&gt;</i>
+
+&lt;author...&gt;
+  ...
+&lt;/author&gt;
+
+...
+</pre>
+
+<p>
+定義された値は、ハンドブック全体にわたってインラインの<c>&lt;keyval id="key_id"/&gt;</c> 要素で使うことができます。キーの名前をその<c>id</c>属性で特定します。例えば、 &lt;keyval id="min-cd-name"/&gt; とすると、例のなかでは
+"install-x86-minimal-2007.0-r1.iso" と置換されます。</p>
+
+<pre caption="定義した値を使う">
+&lt;p&gt;
+minimalインストールCDは&lt;c&gt;<i>&lt;keyval id="min-cd-name"/&gt;</i>&lt;/c&gt;と呼ばれ、
+たった<i>&lt;keyval id="min-cd-size"/&gt;</i> MB のディスクスペースしtかとりません。 インターネット接続があるとき&lt;e&gt;only&lt;/e&gt;だけ、このインストールCDをインストールに使えます&lt;/p&gt;
+</pre>
+
+<p>
+翻訳者を楽にするために、実際の値だけを使う、つまり翻訳の必要がない内容だけを使ってください。
+たとえば、<c>min-cd-size</c> の値を <c>57 MB</c>ではなく<c>57</c> とします。</p>
+
+</body>
+</section>
+<section>
+<title>条件要素</title>
+<body>
+
+<p>
+<uri
+link="/doc/en/handbook/">Installation Handbooks</uri>のように、ハンドブック毎のわずかな違いがあるものの、
+複数の章がいくつかのハンドブックで共有されることがあります。
+いくつかのハンドブックには関係のない内容を追加する代わりに、執筆者は次の要素に条件を追加できます。
+<c>&lt;section&gt;</c>, <c>&lt;subsection&gt;</c>,
+<c>&lt;body&gt;</c>, <c>&lt;note&gt;</c>, <c>&lt;impo&gt;</c>,
+<c>&lt;warn&gt;</c>, <c>&lt;pre&gt;</c>, <c>&lt;p&gt;</c>,
+<c>&lt;table&gt;</c>, <c>&lt;tr&gt;</c>, <c>&lt;ul&gt;</c>, <c>&lt;ol&gt;</c>, <c>&lt;li&gt;</c>.
+</p>
+
+<p>
+条件はXMLが変換されるときに評価される<uri
+link="http://en.wikipedia.org/wiki/XPath">XPATH</uri> 形式でなくてはなりません。もし、条件が<c>真</c>のときは要素が実行され、そうでなければ無視されます。 条件は
+<c>test</c>属性で設定されます。</p>
+
+<p>
+次の例では、各ハンドブックのマスターファイルでいくつかの条件に対して<c>arch</c> の値が使われています:
+</p>
+
+<pre caption="条件要素を使う">
+&lt;body test="contains('AMD64 x86',func:keyval('arch'))"&gt;
+
+&lt;p&gt;
+この段落はx86 と AMD64 アーキテクチャの両方に適用される。&lt;/p&gt;
+
+&lt;p test="func:keyval('arch')='x86'"&gt;
+この段落はx86アーキテクチャだけに適用される。&lt;/p&gt;
+
+&lt;p test="func:keyval('arch')='AMD64'"&gt;
+この段落はAMD64アーキテクチャだけに適用される。&lt;/p&gt;
+
+&lt;p test="func:keyval('arch')='PPC'"&gt;
+この段落は表示されません!最初の条件により、body全体はスキップされます。&lt;/p&gt;
+
+&lt;/body&gt;
+
+&lt;body test="contains('AMD64 PPC64',func:keyval('arch'))"&gt;
+
+&lt;p&gt;
+この段落はAMD64, PPC64 <comment>と PPC</comment>アーキテクチャに対して適用されます。なぜなら'AMD64 PPC64'という文字列は'PPC'を含んでいるからです。&lt;/p&gt;
+
+&lt;note test="func:keyval('arch')='AMD64' or func:keyval('arch')='PPC64'"&gt;
+この注意はAMD64とPPC64アーキテクチャに適用されます。&lt;/note&gt;
+
+&lt;/body&gt;
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="codingstyle">
+<title>コーディングスタイル</title>
+<section>
+<title>はじめに</title>
+<body>
+
+<p>
+すべてのGentooドキュメントは共同作業であり、たいがい何人かで既存の文書を変更しますので、
+コーディングスタイルが必要になります。
+コーディングスタイルは二つの節にわかれます。
+はじめに内部コーディングに関するもの、つまりどのようにXMLタグを配置するかということです。
+二番目に内容に関すること、つまり読者を混乱させないようにする方法です。</p>
+
+<p>
+どちらも次に説明します。</p>
+
+</body>
+</section>
+<section>
+<title>内部のコーディングスタイル</title>
+<body>
+
+<p>
+次のタグを除く<e>全ての</e>ガイドXMLタグの後で直ちに<b>改行</b>します。(開始タグ、終了タグともに):
+<c>&lt;version&gt;</c>, <c>&lt;date&gt;</c>, <c>&lt;title&gt;</c>, 
+<c>&lt;th&gt;</c>, <c>&lt;ti&gt;</c>,
+<c>&lt;li&gt;</c>, <c>&lt;i&gt;</c>, <c>&lt;e&gt;</c>,
+<c>&lt;uri&gt;</c>, <c>&lt;path&gt;</c>, <c>&lt;b&gt;</c>, <c>&lt;c&gt;</c>, 
+<c>&lt;comment&gt;</c>, <c>&lt;mail&gt;</c>です。</p>
+
+<p>
+<e>全ての</e><c>&lt;body&gt;</c>(開始タグのみ)の後、
+<e>全ての</e><c>&lt;chapter&gt;</c>, <c>&lt;p&gt;</c>, <c>&lt;table&gt;</c>, 
+<c>&lt;author&gt;</c> (の集まり), <c>&lt;pre&gt;</c>, <c>&lt;ul&gt;</c>, 
+<c>&lt;ol&gt;</c>, <c>&lt;warn&gt;</c>, <c>&lt;note&gt;</c>および<c>&lt;impo&gt;</c>(開始タグのみ)の前に
+<b>空行</b>を入れます。
+</p>
+
+<p>
+<b>折り返し</b>は80文字としてください。ただし<c>&lt;pre&gt;</c>の内部は例外です。どうしても選択肢がない場合のみこのルールから逸脱しても許されます(たとえば、URLが最大文字数を越える場合など)。
+執筆者は最初に空白がきたところで必ず折り返してください。
+コンソールユーザーに役立つように、<c>&lt;pre&gt;</c>要素の内容を80文字以内に保って<e>レンダリング</e>されるよう努めるべきです。
+(訳注：日本語を使用する場合については、
+<uri link="http://www.gentoo.gr.jp/jpmain/translation.xml">GentooJP翻訳プロジェクト</uri>の
+<uri link="http://www.gentoo.gr.jp/jpmain/translation.xml#doc_chap3_sect4">改行の場所</uri>を参考にしてください。)</p>
+
+<p>
+<b>インデント</b>は禁止されています。ただし例外は親XMLタグが<c>&lt;tr&gt;</c> (<c>&lt;table&gt;</c>から)や
+<c>&lt;ul&gt;</c>, <c>&lt;ol&gt;</c>, <c>&lt;dl&gt;</c>, 
+<c>&lt;author&gt;</c>という場合のXML構造です。
+もしインデントを使う場合には、各インデントは<e>必ず</e>スペース2つ分にしてください。
+つまり、<e>タブは禁止</e>でありそれ以上のスペースは<e>ダメ</e>ということです。
+さらに、タブはGuideXMLドキュメントのなかでは禁止されています。</p>
+
+<p>
+折り返しが<c>&lt;ti&gt;</c>や<c>&lt;th&gt;</c>,
+<c>&lt;li&gt;</c>, <c>&lt;dd&gt;</c> 構造のなかで発生したばあい、内容にあわせてインデントしなければなりません。</p>
+
+<p>
+インデントの例です:
+</p>
+
+<pre caption="インデント例">
+&lt;table&gt;
+&lt;tr&gt;
+  &lt;th&gt;Foo&lt;/th&gt;
+  &lt;th&gt;Bar&lt;/th&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+  &lt;ti&gt;これがインデントの一例&lt;/ti&gt;
+  &lt;ti&gt;
+    テキストが80文字以内で書ききれない場合は、
+    インデントを許可する親タグならば、インデントを必ず行ってください。
+  &lt;/ti&gt;
+&lt;/tr&gt;
+&lt;/table&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;最初のオプション&lt;/li&gt;
+  &lt;li&gt;2番目のオプション&lt;/li&gt;
+&lt;/ul&gt;
+</pre>
+
+<p>
+<b>属性</b> では属性名と"="記号、属性値の間に空白を置かないでください。例です:
+</p>
+
+<pre caption="属性">
+<comment>悪い例:</comment>     &lt;pre caption = "属性"&gt;
+<comment>良い例:</comment>     &lt;pre caption="属性"&gt;
+</pre>
+
+</body>
+</section>
+<section>
+<title>外部コーディングスタイル</title>
+<body>
+
+<p>
+表内(<c>&lt;table&gt;</c>)およびリスト(<c>&lt;ul&gt;</c>と<c>&lt;ol&gt;</c>)においては、
+複数の文から成る場合以外、ピリオド(".")を使用するべきではありません。
+
+複数の文から成る場合は全ての文をピリオド(あるいはその他の句点)で終了します。
+</p>
+
+<p>
+表やリスト内に含まれる全ての文は、大文字で始めるべきです。</p>
+
+<pre caption="ピリオドと大文字">
+&lt;ul&gt;
+  &lt;li&gt;No period&lt;/li&gt;
+  &lt;li&gt;With period. Multiple sentences, remember?&lt;/li&gt;
+&lt;/ul&gt;
+</pre>
+
+<p>
+コードリストには<e>いつも</e><c>見出し</c>(caption)をつけるべきです。</p>
+
+<p>
+可能な限り<c>link</c>属性とともに<c>&lt;uri&gt;</c>を使ってください。言い換えると <uri link="http://forums.gentoo.org">Gentoo
+Forums</uri> のほうが <uri>http://forums.gentoo.org</uri>より優先されます。</p>
+
+<p>
+When you comment something inside a <c>&lt;pre&gt;</c> construct, use
+<c>&lt;comment&gt;</c> and parentheses or the comment marker for the language
+that is being used (<c>#</c> for bash scripts and many other things, <c>//</c>
+for C code, etc.) Also place the comment <e>before</e> the subject of the
+comment.
+<c>&lt;pre&gt;</c>構造のなかで何かコメントをする場合は、<c>&lt;comment&gt;</c>と括弧またはその言語で使われているコメントマーク(bashなら<c>#</c>、C言語なら<c>//</c>など)を使ってください。さらに、コメントの主題の<e>前に</e>コメントを置いてください。
+</p>
+
+<pre caption="コメントの例">
+<comment>(あなたのユーザ名が仮に"john"であるとします。)</comment>
+# <i>id john</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>参考</title>
+<section>
+<title>書いてみましょう</title>
+<body>
+
+<p>
+ガイドXMLは、とにかく"すっきりさっぱり"を念頭に作られていますから、
+XMLを作成する人は、実際のXML構文の勉強に時間を費すことなくどんどんドキュメントを書いてみることができます。
+このガイドが"文学者"というわけではない人たちにとって、質の高いGentoo Linuxドキュメントを書き始めるきっかけになれば幸いです。
+もしかしたら、<uri link="/proj/en/gdp/doc/doc-tipsntricks.xml">Documentation Development Tips
+&amp; Tricks</uri>(訳注: <uri link="/proj/ja/gdp/doc/doc-tipsntricks.xml">日本語訳</uri>)にも興味がわくかもしれません。
+もし、あなたが支援したい場合(もしくは何かガイドに疑問がある場合)、
+どうぞ<mail link="gentoo-doc@gentoo.org">gentoo-doc メーリングリスト</mail>
+へあなたの取り組みたいことをメッセージとして送ってください。
+それではどうぞ楽しんでください!</p>
+
+</body>
+</section>
+</chapter>
+</guide>

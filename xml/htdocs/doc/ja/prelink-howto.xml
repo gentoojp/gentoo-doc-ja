@@ -1,0 +1,384 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/prelink-howto.xml,v 1.18 2010/03/12 15:07:41 shindo Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<guide>
+<title>Gentoo Linux Prelinkガイド</title>
+
+<author title="Author">
+  <mail link="cretin@gentoo.org">Stefan Jones</mail>
+</author>
+<author title="Editor"><!-- zhen@gentoo.org -->
+  John P. Davis
+</author>
+<author title="Editor">
+  <mail link="peesh@gentoo.org">Jorge Paulo</mail>
+</author>
+<author title="Editor">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+<author title="Editor">
+  <mail link="erwin@gentoo.org">Erwin</mail>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+<author title="翻訳">
+  <mail link="nakano@gentoo.org">中野正智</mail>
+</author>
+<author title="翻訳">
+  <mail link="murakami.taku@gmail.com">Taku Murakami</mail>
+</author>
+<author title="翻訳">
+  <mail link="yuya-web@sd-net.ath.cx">田中 裕也</mail>
+</author>
+<author title="翻訳">
+  <mail link="shindo@gentoo.gr.jp">Shindo Naoaki</mail>
+</author>
+
+<abstract>このガイドはportage2.0.46以降でサポートしているprelinkの使い方について記述しています。</abstract>
+
+<license/>
+
+<version>1.18</version>
+<date>2010-01-12</date>
+<!-- Original revision: 1.46 -->
+
+<chapter>
+<title>紹介</title>
+<section>
+<title>prelinkとは何ですか？ それは何の役に立つのですか？</title>
+<body>
+
+<p>
+ほとんどの一般的なアプリケーションは共有ライブラリを使用します。
+これらの共有ライブラリは実行時にメモリーに読み込まれる必要があります。
+また各種シンボルへの参照が解決される必要があります。
+小さなプログラムの多くでは、このダイナミックリンクはとても短時間に行われます。
+しかしC++で書かれたプログラムでたくさんのライブラリに依存するプログラムでは、ダイナミックリンクはかなりの時間がかかります。
+</p>
+
+<p>
+大部分のシステムでは、ライブラリはそんなに変更されることがありません。そしてプログラムが起動されるときにリンクされるプログラムは毎回同じです。
+prelinkはlink情報を取り出し、それを実行ファイルに格納します。つまりprelinkを行ないます。
+</p>
+
+<p>
+prelinkはアプリケーションの起動時間を短縮できます。例えば、典型的なKDEプログラムでは起動時間を50%も短縮することができます。
+prelinkの唯一必要なメンテナンスは、ライブラリをアップグレードしたときに毎回prelinkしている実行ファイルを再度prelinkすることです。
+</p>
+
+<warn>
+prelinkはHardened Gentooでは動作しないでしょう。これは、
+両プロジェクトが共有ライブラリにおけるアドレススペースのマッピングを変更しようとしているためです。
+しかし、prelinkを-Rオプションで使用すると、
+ライブラリのベースアドレスをランダム化しある程度防御を高めてくれます。
+</warn>
+
+</body>
+</section>
+<section>
+<title>概要</title>
+<body>
+<ul>
+<li>
+驚いたことに、prelinkは<c>prelink</c>と呼ばれるプログラムによって行なわれます。
+prelinkはバイナリプログラムの起動時間を早くします。
+</li>
+<li>
+prelinkを行なった後で、アプリケーションが依存しているライブラリを変更した場合、アプリケーションのprelinkをし直す必要があります。そうしないとスピードアップの効果が無くなってしまいます。
+</li>
+<li>
+prelinkによるバイナリの変更は完全な可逆性を持っています。
+つまり<c>prelink</c>は元に戻す機能を持っています。
+</li>
+<li>
+portageの新しいバージョンは、prelinkを通じてのバイナリのMD5sum、mtimeの変更を処理することができます。
+</li>
+<li>
+<path>make.conf</path>にて、<c>FEATURES="prelink"</c>をセットする必要はありません。
+Portageは自動的にprelinkの実行ファイルを検出し、prelinkをサポートします。
+</li>
+
+</ul>
+</body>
+</section>
+
+</chapter>
+
+<chapter>
+<title>prelinkの設定</title>
+<section>
+<title>プログラムのインストール</title>
+<body>
+<p>最初にprelinkツールをインストールする必要があります。emergeプロセスではシステムがprelinkを安全に実行できるか自動的に確認します。</p>
+
+<pre caption = "prelinkのインストール">
+# <i>emerge prelink</i>
+</pre>
+
+<p>
+多くの人がprelinkのemergeで確認テストエラーがでます。そのテストはいくつかの安全性のために行われています。それらを無効にすると、prelinkの動きが保証されません。そのemergeエラーは通常binutils,gcc,glibcといったcoreパッケージに依存しています。それらのパッケージをその順番で再度emergeしてみてください。
+</p>
+
+<note>
+Tip: もしエラーが出たら、あなた自身で<c>prelink</c>のコンパイル、テスト(./configure ; make ; make check)を行ってみてください。
+するとエラー時に、testsuiteディレクトリに*.logファイルが作成されます。そのファイルにはなんらか役立つ手掛りが記録される場合があります。
+</note>
+   
+<p>
+他のシステム(マシン)で再びエラーがおきる場合には、<uri link="http://bugzilla.gentoo.org">Bugzilla</uri>をチェックし、
+まだレポートされていない場合にはバグレポートを作成して下さい。
+</p>
+
+</body>
+</section>
+<section>
+<title>システムの準備</title>
+<body>
+
+<p>
+また、CFLAGS/CXXFLAGSに-fPICが<e>入っていないこと</e>を確認してください。
+もし設定されている場合には、システム全体を-fPICなしで再構築する必要があります。
+</p>
+
+</body>
+</section>
+<section>
+<title>設定</title>
+<body>
+
+<p>
+<c>env-update</c>を実行することで"/etc/prelink.conf"ファイルが作成されます。このファイルはどのファイルを<c>prelink</c>するかが記述されています。
+</p>
+
+<pre caption="env-updateの実行">
+# <i>env-update</i>
+</pre>
+
+<p>
+残念ながら、古いバージョンのbinutilsによってコンパイルされていたファイルはprelinkできません。
+これらのアプリケーションの大部分は/optにインストールされているバイナリのみのパッケージです。次のファイルを記述することによってそれらをprelinkしないようにします。
+</p>
+
+<pre caption="/etc/env.d/60prelink">
+PRELINK_PATH_MASK="/opt"
+</pre>
+
+<note>
+コロンで区切って複数のディレクトリを記述することができます。
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>prelink</title>
+<section>
+<title>prelinkの使用方法</title>
+<body>
+
+<p>
+/etc/prelink.confによって与えられたディレクトリのバイナリすべてをprelinkするために以下のコマンドが使えます。
+</p>
+
+<pre caption = "listされたファイルのprelink">
+# <i>prelink -amR</i>
+</pre>
+
+<warn>
+ディスクの残りスペースが少ないときには、バイナリの一部分が切り捨てられてしまう場合があります。この結果システムが壊れてしまいます。"file"や"readelf"コマンドを使ってバイナリファイルの状態をチェックしてください。または、<c>df -h</c>コマンドを仕様してハードディスクの空き容量をチェックしてください。
+</warn>
+
+<table>
+<tr>
+<th>オプションの説明</th>
+</tr>
+<tr>
+  <th>-a</th>
+  <ti>"All": すべてのバイナリをprelinkする。</ti>
+</tr>
+<tr>
+  <th>-m</th>
+  <ti>仮想メモリ空間を確保します。prelinkするライブラリが多い場合に必要です。</ti>
+</tr>
+<tr>
+  <th>-R</th>
+  <ti>アドレスの順序をランダムにします。これはbuffer overflowに対してのセキュリティが増大します。</ti>
+</tr>
+</table>
+
+<note>
+他のオプションや詳細は<c>man prelink</c>を見てください。
+</note>
+
+</body>
+</section>
+<section>
+<title>prelink cronジョブ</title>
+<body>
+
+<p>
+<c>sys-devel/prelink-20060213</c>以降であれば、
+cronジョブを<path>/etc/cron.daily/prelink</path>にインストールします。
+有効にするには、設定ファイル<path>/etc/conf.d/prelink</path>を編集します。
+これによりprelinkが毎日バックグラウンドで実行され、必要に応じコマンドを手動で実行する手間がなくなります。
+</p>
+
+</body>
+</section>
+<section>
+<title>prelinkした後で、KDEのスピードアップ</title>
+<body>
+
+<p>
+KDEの読み込み時間をprelinkした後で大幅に減少させることができます。
+KDEにprelinkされていることを通知すると、KDEは<c>kdeinit</c>の実行をしなくなり(必要ないので)、さらにスピードアップします。
+</p>
+
+<p>
+<path>/etc/env.d/*kdepaths*</path>に<c>KDE_IS_PRELINKED=1</c>を記述して、
+KDEにprelinkのことを教えてあげてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>prelinkの削除</title>
+<body>
+
+<p>
+prelinkをしたくなくなったならば、prelinkをアンインストールする前に、
+先に<path>/etc/cron.daily</path>と<path>/etc/conf.d/prelink</path>にあるprelinkのcronjobを削除しなくてはなりません。
+次に、以下のようにしてすべてのバイナリからprelinkを取り除かなくてはなりません。
+</p>
+
+<pre caption="すべてのバイナリからのprelinkの除去">
+# <i>prelink -au</i>
+</pre>
+
+<p>
+最後に、以下のようにしてprelinkパッケージそのものをアンインストールします。
+</p>
+
+<pre caption="prelinkのアンインストール">
+# <i>emerge -aC prelink</i>
+</pre>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>既知の問題と解決策</title>
+<section>
+<title>"non-PIC共有ライブラリがprelinkできない"</title>
+<body>
+
+<p>
+この問題の原因は、gccのオプション-fPICなしでobjectファイルをコンパイルされた共有ライブラリにあります。
+</p>
+
+<p>
+以下は、まだ修正が終わっていないか修正できないライブラリです。
+</p>
+
+<ul>
+<li>winexを含むwineパッケージのライブラリ。MS Windows実行ファイルはスピードアップしません。
+</li>
+<li>
+media-video/mjpegtoolsの<path>/usr/lib/liblavfile-1.6.so.0</path>ライブラリ
+</li>
+<li>
+Nvidia OpenGlライブラリ<path>/usr/lib/opengl/nvidia/lib/libGL.so.*</path>。
+パフォーマンスの理由により、PICサポートなしでコンパイルされました。
+</li>
+</ul>
+
+<p>
+このリストに載っていない問題のあるライブラリがある場合には、できれば<c>-fPIC</c>を関連するCFLAGSに追加したパッチと一緒に連絡してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>システムをprelinkしたらいくつかのスタティックバイナリが動かなくなりました。</title>
+<body>
+
+<p>
+glibcが関係しているところでは、100% スタティックバイナリのことはありません。glibcと静的にコンパイルした場合には、他のシステムに依存していることになります。以下はDick Howellによる説明です。
+</p>
+
+<p>
+"ダウンロードしたバイナリパッケージはすべてを自分自身に含んでいるため、ターゲットシステムのローカルライブラリに依存しないと考えます。しかしあいにくLinux、また他のGLIBCを使用したシステムで、これは完全に真ではありません。さまざまなデータベースへの認証、ネットワーク情報などの機能を提供する"libnss"(ネームサービススイッチライブラリ。
+ネットワークセキュリティシステムと呼ばれることもある)があります。これはそのマシンの実際のネットワークに依存しないアプリケーションプログラムを作ることができます。良い考えですが、GLIBCを変更するとロードするときに問題が置こる場合があります。"libnss"をスタティックリンクすることはできません。なぜならそれぞれのマシン個々で設定されているからです。その問題は主に他のGLIBCライブラリと静的にリンクれている場合に起こると考えます。特に"libnss"から個々に呼ばれる"libpthread"、"libm"、"libc"で起こります。"
+</p>
+
+</body>
+</section>
+<section>
+<title>Prelinkが"prelink: dso.c:306: fdopen_dso: Assertion `j == k' failed."のメッセージを出して異常終了しました。</title>
+<body>
+
+<p>
+これは良く知られた問題です。<uri link="http://bugs.gentoo.org/show_bug.cgi?id=13878">ここ</uri>で、親切に解説されています。
+prelinkはUPX圧縮された実行形式を処理することができません。
+prelink-20021213の時点で、prelinkの最中にそのファイルを隠しておくことしか、解決する方法はありません。ファイルを隠す簡単な方法が<uri link="#doc_chap2_sect2">prelinkの設定</uri>にあるので見てください。
+</p>
+
+</body>
+</section>
+<section>
+<title>grsecurityを使用しているのですが、prelinkが動かないようです。</title>
+<body>
+
+<p>
+randomized mmap() baseを使用するgrsecurityを使用したシステム上でprelinkを行なうためには、
+<path>/lib/ld-2.3.*.so</path>に関して"randomized mmap() base"をオフにする必要があります。
+これは<c>chpax</c>ユーティリティによって行なうことができますが、
+ファイルが使用中でないときに行なう必要があります(rescue CDを使用してbootするなどします)。
+</p>
+
+</body>
+</section>    
+
+<section>
+<title>
+prelinkが"prelink: Can't walk directory tree XXXX: Too many levels of symbolic links"のエラーを出して失敗しました。
+</title>
+<body>
+
+<p>
+シンボリックリンクが深くネストされすぎています。これはシンボリックリンクが自身をポイントしている場合に発生します。
+例えば、<path>/usr/lib/lib -&gt; lib</path>が最も一般的です。これを修正するには、
+そのシンボリックリンクを手動で見つけるか、または<c>symlinks</c>パッケージで提供されているユーティリティを使用します。
+</p>
+
+<pre caption="シンボリックリンクの修正">
+# <i>emerge symlinks</i>
+# <i>symlinks -drv /</i>
+</pre>
+
+<p>
+より詳細な情報は、
+<uri link="http://bugs.gentoo.org/show_bug.cgi?id=82117">Bugzilla</uri>やこの<uri
+link="http://forums.gentoo.org/viewtopic-t-458144-highlight-prelink.html">フォーラムの投稿</uri>で見つかります。
+</p>
+
+</body>
+</section>
+
+</chapter>
+
+<chapter>
+<title>最後に</title>
+<section>
+<body>
+
+<p>
+prelinkは多くの巨大なアプリケーションの起動時間を短縮することができます。そしてPortageでサポートされています。prelinkはまたもし問題に直面した場合には安全にいつでもどのバイナリでも元に戻すことができます。ただ一つ次のことを覚えておいてください。prelinkを使用したglibcや他のライブラリをアップデートしたときには、<path>prelink</path>を再度実行する必要があります。まあ、つまり、がんばってね！
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,240 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.0 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/2004.3/hb-portage-files.xml,v 1.1 2005/01/30 04:54:03 nakano Exp $ -->
+
+<!-- Original revision: 1.7 -->
+
+<sections>
+
+<version>1.4</version>
+<date>2004-10-23</date>
+
+<section>
+<title>Portageファイル</title>
+<subsection>
+<title>設定するには</title>
+<body>
+
+<p>
+Portageはデフォルトの設定を<path>/etc/make.globals</path>に保存しています。
+これを見ると、Portageの全ての設定は、変数を通して制御されていると言うことに気付くでしょう。
+Portageがどのような変数を受け付け、それらが何を意味するのかは後述します。
+</p>
+
+<p>
+アーキテクチャ間によって多くの設定コマンドが異なるため、Portageはデフォルト設定ファイルをあなたのプロファイル内に持っています。<path>/etc/make.profile/make.defaults</path>がそれです。
+プロファイルや<path>/etc/make.profile</path>ディレクトリについては後でより詳しく説明します。
+</p>
+
+<p>
+もし設定変数を変更しようとしているのなら、<path>/etc/make.globals</path>や<path>/etc/make.profile/make.defaults</path>を改変<e>してはいけません</e>。
+その代わりに上記のファイルより優先される<path>/etc/make.conf</path>を使ってください。
+また、<path>/etc/make.conf.example</path>というファイルも見つけるでしょう。
+その名前が示すように、これは単なるサンプルファイルで、Portageはこのファイルを読み込みません。
+</p>
+
+<p>
+Portage設定変数を環境変数で定義することもできますが、私たちはお勧めしません。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>プロファイルの詳細な情報</title>
+<body>
+
+<p>
+私たちは既に<path>/etc/make.profile</path>ディレクトリを見ています。
+ええ、これは正確にはディレクトリではなくプロファイルへのシンボリックリンクです。
+デフォルトの設定ファイルは<path>/usr/portage/profiles</path>にありますが、あなた自身のプロファイルをどこにでも作成してそれを指し示すようにすることができます。
+このシンボリックリンクが指し示すプロファイルはシステムに付属するプロファイルです。
+</p>
+
+<p>
+プロファイルはPortageのアーキテクチャ固有の情報を含んでいます。
+それは例えば、プロファイルと一致するシステムに属するパッケージのリストや、動作しない(もしくはマスクされた)パッケージのリストなどといったものです。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>ユーザー特有の設定</title>
+<body>
+
+<p>
+ソフトウェアのインストールに関するPortageの動作を上書きしたいときには、<path>/etc/portage</path>内のファイルの編集に行き着くでしょう。
+<path>/etc/portage</path>内のファイルを利用することが<e>強く推奨され</e>ており、環境変数によって上書きすることは<e>全く推奨されていません</e>。
+</p>
+
+<p>
+<path>/etc/portage</path>内には以下のファイルを作成することができます。
+</p>
+
+<ul>
+  <li>
+    <path>package.mask</path> はPortageに決してインストールして欲しくないパッケージのリストです。
+  </li>
+  <li>
+    <path>package.unmask</path> はGentoo開発者達が全く推奨していなくてもインストールをできるようにするパッケージのリストです。
+  </li>
+  <li>
+    <path>package.keywords</path> はシステムやアーキテクチャに(未だ)対応していなくてもインストールできるようにするパッケージのリストです。
+  </li>
+  <li>
+    <path>package.use</path> は、システム全体で使用しているUSEフラグではなく、特定のパッケージに対して使用するUSEフラグのリストです。
+  </li>
+</ul>
+
+<p>
+<path>/etc/portage</path>に関するより多くの情報と作成できるファイルの完全なリストはPortageのmanページで見つけることができます。
+</p>
+
+<pre caption="Portageのmanページを読む">
+$ <i>man portage</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Portageファイルとディレクトリの場所を変更する</title>
+<body>
+
+<p>
+前に説明したように設定ファイルはどこにでも置けるわけではありません。
+Portageはいつも決まった位置から設定ファイルを探すからです。
+しかし、Portageは様々な用途でその他多くの位置を利用します。ビルドディレクトリ、ソースコードディレクトリ、Portageツリーの位置等々...
+</p>
+
+<p>
+これら全ての用途向けに、よく知られたデフォルトの位置がありますが、<path>/etc/make.conf</path>を通してあなた好みに変更することができます。
+この章の残りで、Portageが使う特別な用途の場所とは何処かと、どのようにすればそれらの場所を変更できるかについて説明します。
+</p>
+
+<p>
+このドキュメントはリファレンスのように使われるものではありません。
+もしあなたが100%の範囲を必要としているのなら、Portageと<path>make.conf</path>のmanページを調べてください。
+</p>
+
+<pre caption="Portageとmake.confのmanページを読む">
+$ <i>man portage</i>
+$ <i>man make.conf</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>ファイルを保管する</title>
+<subsection>
+<title>Portageツリー</title>
+<body>
+
+<p>
+Portageツリーはデフォルトでは<path>/usr/portage</path>にあります。
+これはPORTDIR変数で定義されています。
+もしPortageツリーを(この変数を変更することで)どこか別の位置に保管するときは、忘れずに<path>/etc/make.profile</path>のシンボリックリンクを一致させるように変更してください。
+</p>
+
+<p>
+もしPORTDIR変数を変更したなら、PORTDIRの変更に関する影響を気にしなくてもいいように、以下の変数も同様に変更した方がいいでしょう。
+このPORTDIRの変更によって、PortageのPKGDIR、DISTDIR、RPMDIR変数の操作方法に影響を与えます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>ビルド済みのバイナリ</title>
+<body>
+
+<p>
+Portageはデフォルトではビルド済みパッケージを利用しないにもかかわらず、ビルド済みパッケージ用の広範なサポート機能を持っています。
+Portageにビルド済みパッケージで作業するよう指示したときは、<path>/usr/portage/packages</path>から探そうとします。
+この位置はPKGDIR変数で定義されます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>ソースコード</title>
+<body>
+
+<p>
+アプリケーションのソースコードはデフォルトで<path>/usr/portage/distfiles</path>に保管されます。
+この位置はDISTDIR変数で定義されます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>RPMファイル</title>
+<body>
+
+<p>
+PortageはRPMファイルを扱うことができないにもかかわらず、<c>ebuild</c>コマンド(<uri link="?part=3&amp;chap=6">The Ebuild Application</uri>を参照)を使うことによって生成することができます。
+PortageがデフォルトでRPMファイルを保管する場所は<path>/usr/portage/rpm</path>で、RPMDIR変数で定義されます。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>ソフトウェアのビルド</title>
+<subsection>
+<title>一時的なPortageファイル</title>
+<body>
+
+<p>
+Portageの一時ファイルはデフォルトで<path>/var/tmp</path>に保管されます。
+これはPORTAGE_TMPDIR変数で定義されます。
+</p>
+
+<p>
+PORTAGE_TMPDIR変数を変更したのなら、PORTAGE_TMPDIRの変更に関する影響を気にしなくてもいいように、以下の変数も変更した方がいいでしょう。
+これはPortageが処理するBUILD_PREFIX変数が影響を受けます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>ビルドに使用するディレクトリ</title>
+<body>
+
+<p>
+Portageは、各々のパッケージがemergeされるごとに特定のビルドディレクトリを<path>/var/tmp/portage</path>内に作ります。
+この位置はBUILD_PREFIX変数で定義されます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>稼働中のファイルシステムの位置</title>
+<body>
+
+<p>
+デフォルトではPortageは全てのファイルをカレントファイルシステム(<path>/</path>)にインストールしますが、ROOT環境変数でこれを変更することができます。
+新しいビルドイメージを作りたいときにはこれが役に立ちます。
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>ロギング機能</title>
+<subsection>
+<title>ebuildロギング</title>
+<body>
+
+<p>
+Portageはebuildごとのログファイルを作成することができます。
+しかし、この機能は、PORT_LOGDIR変数にPortage(portageユーザー)が書き込み可能な位置を設定しているときだけ有効になります。
+デフォルトではこの変数は設定されていません。
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

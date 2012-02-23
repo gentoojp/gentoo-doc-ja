@@ -1,0 +1,606 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/rsync.xml,v 1.7 2006/02/22 16:10:17 idani Exp $ -->
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/ja/rsync.xml">
+<title>Gentoo Linux rsyncミラーリングポリシー</title>
+<author title="Author">
+  <mail link="mirror-admin@gentoo.org">Gentoo Mirror Administrators</mail>
+</author>
+<author title="Editor">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+<author title="翻訳">
+  <mail link="hiro@extreme.jpseed.jp">武田洋之</mail>
+</author>
+<author title="翻訳">
+  <mail link="solidsneak@hyper.cx">小林弘樹</mail>
+</author>
+
+<abstract>
+このドキュメントは、公式なrsyncミラーやローカルミラーの構築の仕方を説明しています。
+</abstract>
+
+<license/>
+
+<version>1.13</version>
+<date>2005-12-12</date>
+
+<!-- Original revision: 1.46 -->
+
+<chapter>
+<title>ハードウェア要求</title>
+<section>
+<title>マシンの寄付</title>
+<body>
+
+<p>
+Gentoo Linuxはメインローテーションミラーとコミュニティミラーといった2つの異なるミラーに頼っています。
+メインローテーションミラーはrsync専用サーバで、rsyncトラフィックの大半を扱っています。
+全てのメインローテーションミラーではGentoo Linuxが稼働しており、Gentoo開発チームのメンバーが管理しています。
+コミュニティミラーはコミュニティメンバーが提供し管理するサーバです。
+これらのサーバはrsyncの使用だけかもしれませんし、されないかもしれません。
+それらはGentoo Linuxが稼働しているかもしれませんし、していないかもしれません。
+</p>
+
+<p>
+現時点で、私たちには十分なコミュニティミラーがあるので、積極的にメインローテーションミラーを追加していく予定です。
+メインローテーションミラーの仕様を以下に示します。
+</p>
+
+<ul>
+  <li>Pentium 4プロセッサ(もしくは同等の物)2GHz以上</li>
+  <li>1GB RAM以上(1.5GB～2GBが理想的です)</li>
+  <li>10GBのディスク空き容量(IDEが良いでしょう)</li>
+</ul>
+
+<p>
+これらのサーバは、もしあるのなら回線と設置場所を合わせて寄付されることもあります。
+別の方法では、私たちがこれらのサービスを提供するので、機材を設備設置施設へ送ってもらうだけになります。
+メインローテーションミラーの平均帯域占有量は現在7Mbps(月間2TB)程度です。
+メインローテーションミラーの数が増えるので、従ってこの数字は減少するでしょう。
+</p>
+
+<p>
+機材を提供したいのなら、適切な情報を<mail link="jforman@gentoo.org">Jeffrey Forman</mail>にまでメールしてください。
+</p>
+
+</body>
+</section>
+</chapter>
+<!--
+<chapter>
+<title>Requirements</title>
+<section>
+<title>Minimum Bandwidth</title>
+<body>
+
+<p>
+To properly host a mirror you should have a minimum of 5Mbps full duplex
+bandwidth.
+</p>
+
+</body>
+</section>
+<section>
+<title>Minimum User Count</title>
+<body>
+
+<p>
+We ask that you support a minimum of 15 concurrent user connections.
+</p>
+
+</body>
+</section>
+<section>
+<title>Minimum Hardware</title>
+<body>
+
+<p>
+In order to effectively serve at least 15 concurrent user connections, we ask
+that you have at least the following minimum hardware requirements:
+</p>
+
+<ul>
+  <li>PIII 500 Processor</li>
+  <li>256MB RAM</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Update Frequency</title>
+<body>
+
+<p>
+Updates must occur at :00 and :30 of each hour, 24 hours a day. It is
+<e>very</e> important that this schedule is followed strictly, as we use a
+round robin style DNS to select the users' rsync server.
+</p>
+
+</body>
+</section>
+<section>
+<title>MOTD (/etc/rsync/rsyncd.motd)</title>
+<body>
+
+<p>
+Please include the following information in your rsync MOTD file:
+</p>
+
+<ul>
+<li>server name</li>
+<li>server IP address</li>
+<li>server specs (CPU and RAM)</li>
+<li>bandwidth available to the server</li>
+<li>user connection limit, if any</li>
+<li>server location (city and country)</li>
+<li>a contact name and email address</li>
+</ul>
+
+<p>
+Including the above information in your MOTD file makes it easy to identify
+your mirror in case of problems.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Implementation details</title>
+<section>
+<body>
+
+<p>
+To set up a new mirror, please complete the following steps:
+</p>
+
+<ul>
+<li>
+  Set up your mirror to synchronize against an existing, public Gentoo Linux
+  rsync mirror.  It does not matter which one.  Please make sure to synchronize
+  in accordance with our <e>Update Frequency</e> schedule noted above.
+</li>
+<li>
+  Fill out a bug report on <uri link="http://bugs.gentoo.org">bugs.gentoo.org</uri>
+  that contains your organization name, server name, ip address, contact information and the fact
+  that you'd like to become a new rsync mirror.  We will check your server to
+  ensure it is synchronizing properly. It is important that your server synchronizes
+  twice an hour, with one sync occuring between :00 and :10 and the second sync
+  occuring between :30 and :40.  You may pick any time in these two, 10-minute 
+  windows to schedule your sync. 
+</li>
+<li>
+  Once we have verified that the mirror is synchronizing correctly, we will add
+  the server's IP address to the rsync1.us.gentoo.org access list.
+</li>
+<li>
+  Update your rsync cron job to point to <path>rsync1.us.gentoo.org</path>. We
+  will monitor your server over the next 48-72 hours to ensure it is
+  synchronizing correctly.
+</li>
+</ul>
+
+<p>
+If all steps went smoothly, we will then set up an official 
+<path>rsync[num].[countrycode].gentoo.org</path> DNS entry and add you to our
+DNS round-robin for rsync.[continentcode].gentoo.org and rsync.[countrycode].gentoo.org.
+Shortly after you've been added to our DNS, you should start to see rsync
+traffic.
+</p>
+
+<p>
+Additionally, you, the mirror admin will be added to the gentoo-mirrors mailing
+list (low traffic) so that you can folllow all issues associated with rsync
+mirrors.
+</p>
+
+<note>
+Thanks for helping out Gentoo Linux users and developers! :) For any rsync
+administration issues or problems, please visit <uri
+link="http://bugs.gentoo.org">http://bugs.gentoo.org</uri> and fill out a bug
+on the product "Rsync".
+</note>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Parallel Tasks</title>
+<section>
+<body>
+
+<p>
+We will have soon a rrdtool created page that will simply have links to graphs
+(ordered by continent, then country, then server) of official rsync mirrors
+availability (these graphs will be made from sping output). We will check these
+graphs at least once a day, and unreacheable boxes will be removed from the
+RR DNS scheme until the problems are addressed. We will have scripts checking
+that every 30 minutes all mirrors are, in fact, syncing with us.
+</p>
+
+<warn>
+If a mirror has periodically problematic behavior and the admin is being
+contacted and the situation doesn't improve, then that mirror box will be
+taken of the RR scheme permanently.
+</warn>
+
+</body>
+</section>
+</chapter>
+-->
+<chapter>
+<title>ちょっとしたFAQ (現在のミラー管理人用)</title>
+<section>
+<title>Q: rsyncに関する問題や保守について、誰に連絡を取ればよいでしょうか?</title>
+<body>
+
+<p>
+A: http://bugs.gentoo.orgを訪れて、"Rsync"カテゴリにバグとして記入してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>Q: プライベートなrsyncミラーを自社の為に運用しているのですが、それでも、わたしはrsync1.us.gentoo.orgにアクセス可能でしょうか?</title>
+<body>
+
+<p>
+A: わたしたちの資源は限られていますので、ユーザーに最大限の利益を提供する為に、その限られた中で資源を割り振っていく必要があります。
+その為、マスターrsyncおよびdistfileミラーへの接続を一般公開mirrorだけに制限しています。
+ユーザーがプライベートなrsyncミラーを設置する為に、正規のミラーシステムを使用することは歓迎しますが、基本的に<uri link="http://www.gentoo.org/news/en/gwn/20030505-newsletter.xml#doc_chap1_sect3">rsyncの利用に関するガイドライン</uri>に従うことが求められます。
+</p>
+
+</body>
+</section>
+<section>
+<title>Q: 1時簡に2回、ミラーを同期させることは重要なのでしょうか?</title>
+<body>
+
+<p>
+A: はい、重要です。
+00分、30分きっかりに同期させる必要はありませんが、次の2つの期間に同期するようにしなければなりません:
+</p>
+
+<ol>
+	<li>00分と10分の間</li>
+	<li>30分と40分の間</li>
+</ol>
+
+<p>
+さらに、30分ごとに同期をとるようにしてください。
+もし最初の同期を08分にとることにしたら、次の同期は38分にとるようにしてください。
+</p>
+
+</body>
+</section>
+<section>
+<title>Q: 公式なGentooミラーになるまではどこと同期するべきでしょうか?</title>
+<body>
+
+<ul>
+  <li>ヨーロッパのrsyncミラーなら、rsync.de.gentoo.orgと同期します</li>
+  <li>アメリカのrsyncミラーなら、rsync.us.gentoo.orgと同期します</li>
+  <li>上記2つのどちらにも該当しなければ、rsync.us.gentoo.orgと同期します</li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>Q: 最も近いミラーをどのように探せばよいでしょうか?</title>
+<body>
+
+<p>
+A: これを実現する為に<c>netselect</c>が開発されました。
+まだ<c>emerge netselect</c>を実行していないのなら、実行してみてください。
+そして、<c>netselect rsync.gentoo.org</c>と実行してみてください。
+1分程度でnetselectはIP addressを表示するでしょう。
+このIPアドレスを控えておき、コロン(:)を二つ付け加えてrsyncの唯一のパラメータとして使用してください。
+例えば、<c>rsync 1.2.3.4::</c>の様にします。
+バナーメッセージからどのミラーなのか知ることができるでしょう。
+<path>/etc/make.conf</path>の方も相応に更新してください。
+</p>
+
+</body>
+</section>
+<section>
+<title>Q: rsync1.us.gentoo.orgと同期するときに圧縮転送を使うことができますか?</title>
+<body>
+
+<p>
+A: いいえ。圧縮転送はサーバーの資源を消費しすぎるので、<path>rsync1.us.gentoo.org</path>では強制的に無効にしています。
+このサーバーに対して同期するときに、圧縮転送をしようと<e>しないで</e>ください。
+</p>
+
+</body>
+</section>
+<section>
+<title>Q: 残った、あるいは、恐らく死んだrsyncプロセスをたくさん参照しているようです。どうすればこれを取り除けますか?</title>
+<body>
+
+<p>
+A: スクリプトの例のセクションを見てください。
+</p>
+
+</body>
+</section>
+<section>
+<title>Q: rsyncサーバーに非常に頻繁に接続してくるユーザーがたくさんいます。これが原因で、私のミラーは、ときどきサービスが正常に提供できなくなる場合があります。これを回避する方法はありますか?</title>
+<body>
+
+<p>
+A: スクリプトの例のセクションを見てください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>スクリプトの例</title>
+<section>
+<body>
+
+<note>
+設定とスクリプトのサンプルはgentoo-rsync-mirrorパッケージにあります。<c>emerge gentoo-rsync-mirror</c>を実行するだけです。
+</note>
+
+<p>
+現在のところ、わたしたちのPortageツリーをミラーリングするのには250MB程度が必要ですが、これはそれほど大した容量ではありません。
+容量が増えたときの為に、少なくとも500MBの空きがあったほうが良いでしょう。
+portageツリーのミラーを構築するのは簡単です。まず、ミラーにrsyncがインストールされていることを確認してください。
+次に、後に示すように<path>rsyncd.conf</path>ファイルを編集します。
+</p>
+
+<pre caption="rsyncd.conf">
+uid = nobody
+gid = nobody
+use chroot = yes
+max connections = 15
+pid file = /var/run/rsyncd.pid
+motd file = /etc/rsync/rsyncd.motd
+log file = /var/log/rsync.log
+transfer logging = yes
+log format = %t %a %m %f %b
+syslog facility = local3
+timeout = 300
+
+[gentoo-x86-portage]
+#このエントリは互換性の為にあります
+path = /gentoo/rsync
+comment = Gentoo Linux Portage tree
+
+[gentoo-portage]
+#最近のバージョンのportageはこのエントリを使います
+path = /gentoo/rsync
+comment = Gentoo Linux Portage tree mirror
+exclude = distfiles
+</pre>
+
+<p>
+上記で、gentoo-x86-portageミラーは、gentoo-portageと同じデータを指しています。
+わたしたちは、最近ミラーの公式な名前をgentoo-portageに変えましたが、gentoo-x86-portageは後方互換性の為にまだ必要ですので、両方のエントリーを書いておいてください。
+</p>
+
+<p>
+セキュリティ的な理由から、chroot環境を使うことが必須です!
+</p>
+
+<p>
+Gentoo Linux portageツリーのミラーが必要です。次のスクリプトを使うことができます。
+</p>
+
+<pre caption="rsync-gentoo-portage.sh">
+#!/bin/bash
+
+RSYNC="/usr/bin/rsync"
+OPTS="--quiet --recursive --links --perms --times --devices --delete --timeout=300"
+#rsync1.us.gentoo.orgへのアクセスを許されたときだけ、次の行のコメントを外してください。
+#SRC="rsync://rsync1.us.gentoo.org/gentoo-portage"
+#もし、わたしたちのマスターミラーへのアクセス許可を待っているなら、どこからミラーするのか、わたしたちのミラーのひとつから選択してください。
+SRC="rsync://rsync2.de.gentoo.org/gentoo-portage"
+DST="/space/gentoo/rsync/"
+
+echo "Started update at" `date` >> $0.log 2>&amp;1
+logger -t rsync "re-rsyncing the gentoo-portage tree"
+${RSYNC} ${OPTS} ${SRC} ${DST} >> $0.log 2>&amp;1
+
+echo "End: "`date` >> $0.log 2>&amp;1 
+</pre>
+
+<pre caption="/etc/init.d/rsyncd">
+#!/sbin/runscript
+# Copyright 1999-2004 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+# &#36;Header: /var/cvsroot/gentoo-x86/net-misc/rsync/files/rsyncd.init.d,v 1.2 2004/05/02 22:45:02 mholzer Exp &#36;
+
+depend() {
+need net
+}
+
+# FYI: --sparce seems to cause problems.
+RSYNCOPTS="--daemon --safe-links --timeout=300"
+
+start() {
+ebegin "Starting rsync daemon"
+start-stop-daemon --start --quiet --pidfile /var/run/rsyncd.pid --nicelevel 15 --exec /usr/bin/rsync -- ${RSYNCOPTS}
+eend $?
+}
+
+stop() {
+ebegin "Stopping rsync daemon"
+start-stop-daemon --stop --quiet --pidfile /var/run/rsyncd.pid
+eend $?
+} 
+</pre>
+
+<p>
+<path>rsyncd.motd</path>には、あなたのIPアドレスやportageミラーを提供している旨、管理者への連絡方法等のあなたのミラーに関係する情報が含まれているでしょう。
+公式なrsyncミラーとして承認されたら、あなたのホストは、次の形式の名前でエイリアスされるでしょう。
+<path>rsync[num].[country code].gentoo.org</path>
+</p>
+
+<p>
+次のコマンドは、接続の問題などが原因でときどき残ってしまうrsyncプロセスの処理を強制終了させるのに役立つでしょう。
+残ったプロセスは、'max connections'オプションで指定した最大値を計算する際に、正常な接続として数えられてしまうので、これらの処理を強制終了させることは重要です。
+このコマンドを1時間に1回、cronで実行すれば、1時間以上前の残ったrsyncプロセスを探し出して処理を強制終了してくれます。
+</p>
+
+<pre caption="残ったrsyncプロセスの処理を強制終了">
+/bin/kill -9 `/bin/ps --no-headers -Crsync -o etime,user,pid,command|/bin/grep nobody | \
+             /bin/grep "[0-9]\{2\}:[0-9]\{2\}:" |/bin/awk '{print $3}'` 
+</pre>
+
+<p>
+1日に1-2回以上も同期するような、rsyncミラーを乱用している非常識なユーザーも時々います。
+極端な場合では、15分程度に1回、cronでスケージューリングしている場合もあります。
+他のユーザーに割り当てられるはずのrsyncの接続を占有してしまうことによって、DoS攻撃のようになってしまう場合があります。
+これを避けるには、次の<uri link="/proj/en/infrastructure/mirrors/rsyncd.conf_pl.txt">perlスクリプト</uri>を試してみることができます。
+このスクリプトは、rsyncログを捜査し、その日に<c>N</c>回以上既に接続しているIPアドレスを抜き出して、'hosts deny'ディレクティブにその不愉快なIPアドレスを追加した<path>rsyncd.conf</path>ファイルを動的に生成します。
+次の行で、<c>N</c>回の部分を設定できます。
+</p>
+
+<pre caption="IPごとの最大接続回数を定義">
+@badhosts=grep {$hash{$_}>4} keys %hash;
+</pre>
+
+<p>
+このスクリプトを使う場合には、忘れずにrsyncログファイルを毎日ローテートするようにし、スクリプト内で<path>rsyncd.conf</path>の適切な場所を指定してください。
+このスクリプトはGentoo Linuxでテストされましたが、rsyncとperlが動作する他のマシンでもうまく動作するでしょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>自分用のローカルrsyncミラーの設定</title>
+<section>
+<title>初めに</title>
+<body>
+
+<p>
+多くのユーザがそれぞれのマシンでGentooを起動しており、それら全てを<c>emerge --sync</c>する必要があります。
+公開ミラーを使うことはお互いにとって帯域の無駄にしかなりません。
+1台のマシンが公開ミラーと同期し、その他のコンピュータがその同期したコンピュータと同期することで、Gentooミラーの資源とユーザの帯域を抑えることができます。
+</p>
+
+<p>
+あなたがすべきことは、どのマシンをローカルrsyncミラーにするか決定して、それを設定するだけです。
+rsync運用要求をこなせるCPUとディスクを持つコンピュータを選ぶべきです。
+ローカルミラーはその他のコンピュータがportageツリーを同期させる時はいつでも利用可能になっている必要があります。
+その上、そのマシンは静的IPアドレスか常に解決できる名前を持っている必要があります。
+DHCPやDNSサーバの設定はこのガイドの範囲外です。
+</p>
+
+</body>
+</section>
+<section>
+<title>サーバの設定</title>
+<body>
+
+<p>
+必要なソフトが既にインストールされているので、特別なパッケージをインストールする必要はありません。
+ローカルrsyncミラーの設定は単に<path>/usr/portage</path>ディレクトリが同期できるように<e>rsyncd</e>デーモンを設定するだけです。
+以下のような<path>/etc/rsyncd.conf</path>設定ファイルを作成します。
+</p>
+
+<pre caption="/etc/rsyncd.confの例">
+pid file = /var/run/rsyncd.pid
+max connections = 5
+use chroot = yes
+uid = nobody
+gid = nobody
+<comment># 自由選択: Gentooコンピュータへのアクセス制限</comment>
+hosts allow = 192.168.0.1 192.168.0.2 192.168.1.0/24
+hosts deny  = *
+
+[gentoo-portage]
+path=/usr/portage
+comment=Gentoo Portage
+exclude=distfiles/ packages/
+</pre>
+
+<p>
+<c>hosts allow</c>と<c>hosts deny</c>オプションを設定する必要はありません。
+デフォルトでは、全てのクライアントは接続が許可されます。
+オプションを書く順序は関係ありません。
+サーバはいつも<c>hosts allow</c>をまず確認して、接続しているホストがパターンと一致したら接続を許可します。
+サーバはその後<c>hosts deny</c>を確認して、一致する物があったら接続を拒否します。
+どちらにも一致しないホストは接続が許可されます。
+より詳しい情報はマニュアルページ(<c>man rsyncd.conf</c>)を参照してください。
+</p>
+
+<p>
+では、rsyncをrootユーザで以下のコマンドで起動します。
+</p>
+
+<pre caption="rsyncデーモンの起動">
+<comment>(デーモンを今すぐ起動)</comment>
+# <i>/etc/init.d/rsyncd start</i>
+<comment>(デーモンをデフォルトランレベルに追加)</comment>
+# <i>rc-update add rsyncd default</i>
+</pre>
+
+<p>
+rsycミラーをテストしましょう。
+他のマシンから試す必要はありませんが、できればそのようにした方がいいでしょう。
+もしサーバが他のコンピュータに名前で知られていなければ、IPアドレスを代わりに使うことができます。
+</p>
+
+<pre caption="ミラーのテスト">
+<comment>(サーバ名かIPを使います)</comment>
+# <i>rsync 192.168.0.1::</i>
+gentoo-portage     Gentoo Portage
+# <i>rsync your_server_name::gentoo-portage</i>
+<comment>(ミラーに/usr/portageの内容があるでしょう)</comment>
+</pre>
+
+<p>
+rsyncミラーの設定が完了しました。サーバを最新状態に保つために<c>emerge --sync</c>を実行し続けてください。
+</p>
+
+<note>
+多くの公開ミラー管理者は1日に1から2回以上の同期は乱用であると考えていることに注意してください。
+</note>
+
+</body>
+</section>
+<section>
+<title>クライアントの設定</title>
+<body>
+
+<p>
+では、他のコンピュータが公開サーバの代わりにローカルrsyncミラーを使うようにしましょう。
+<path>/etc/make.conf</path>を編集して<c>SYNC</c>変数がサーバを示すようにします。
+</p>
+
+<pre caption="/etc/make.confでSYNCを定義">
+<comment>(サーバのIPアドレスを利用)</comment>
+SYNC="rsync://<i>192.168.0.1</i>/gentoo-portage"
+<comment>(もしくはサーバ名を利用)</comment>
+SYNC="rsync://<i>your_server_name</i>/gentoo-portage"
+</pre>
+
+<p>
+以下の方法でコンピュータが正しく設定されてローカルミラーを参照しているか確認することができます。
+</p>
+
+<pre caption="確認と同期">
+<comment>(SYNC変数が設定されているか確認)</comment>
+# <i>emerge --info|grep SYNC</i>
+SYNC="rsync://your_server_name/gentoo-portage"
+<comment>(ローカルミラーと同期)</comment>
+# <i>emerge --sync</i>
+</pre>
+
+<p>
+これで完了です。全てのコンピュータはこれからは<c>emerge --sync</c>を実行した時はいつでもローカルrsyncミラーを利用するでしょう。
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

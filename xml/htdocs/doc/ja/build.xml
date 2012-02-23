@@ -1,0 +1,634 @@
+<?xml version="1.0" encoding="euc-jp"?>
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide link="/doc/build.html">
+<title>Gentoo Linux 1.2 インストール手引書</title>
+<author title="Chief Architect"><mail link="drobbins@gentoo.org">Daniel Robbins</mail></author>
+<author title="Author">Chris Houser</author>
+<author title="Author"><mail link="jerry@gentoo.org">Jerry Alexandratos</mail></author>
+<author title="Ghost"><mail link="g2boojum@gentoo.org">Grant Goodyear</mail></author>
+
+<abstract>Gentoo Linux 1.2のインストール手引書です。この手引書ではゼロからGentoo Linuxを構築することはもちろん、いろいろな段階からのインストールを解説します。</abstract>
+
+<version>1.52</version>
+<date>19 July 2002</date>
+
+<chapter>
+<title>インストールについて</title>
+<section>
+<body>
+
+<p>この新しいブートCDは近年のIDE CD-ROMドライブや多くのSCSI CD-ROMドライブから起動させることができます。IDEデバイス（カーネルに内蔵）だけでなくすべてのSCSIデバイス（モジュールとして利用可能）もサポートしています。さらに、Linuxがサポートする多くのネットワークカードのモジュールはもちろん、ネットワークを設定し、<c>ssh</c>による接続やファイルのダウンロードを可能にするツールをも提供します。</p>
+
+<p>インストールを行なうにはi486以上のCPUおよび少なくとも64Mバイトのメモリが必要です（Gentoo Linuxは64Mバイトのメモリと64Mバイトのスワップでインストールに成功していますが、この環境ではインストールに非常に多くの時間がかかります）。インストールを始めるため、まずは<uri>http://www.ibiblio.org/gentoo/releases/build/</uri>からふたつのCD-ROMイメージのうちいずれかを入手してください。1枚目のCD-ROMイメージ（<uri link="http://www.ibiblio.org/gentoo/releases/build/1.2/gentoo-ix86-1.2.iso">gentoo-ix86-1.2.iso</uri>）はとても小さく（16Mバイト）chroot可能な最小限のイメージ（<path>stage1-ix86-1.2.tbz2</path>）、つまりゼロからGentoo Linuxを構築するために必要なものすべてが含まれています（必要なソースはインターネットから自動的にダウンロードされます）。 2枚目のCD-ROMイメージ（<uri link="http://www.ibiblio.org/gentoo/releases/build/1.2/gentoo-i686-1.2.iso">gentoo-i686-1.2.iso</uri>）は少し大きめで（100Mバイト超）前者のCD-ROMイメージの要素に<e>加え</e>、あらかじめビルドされたi686用ベースシステム（<path>stage3-i686-1.2.tbz2</path>）と、ある程度までビルドされたi686用ベースシステム（<path>stage2-i686-1.2.tbz2</path>）が含まれています。このふたつの圧縮ファイルを利用するにはPentium Pro以上のCPUが必要です（AMD-K6では動作しません）。もしi686以上のCPUを持っていて、なおかつゼロからシステムを構築する必要がなければインストールにかかる時間はかなり減らせるはずです。</p>
+
+<p>インストールの手順を簡単に見てみましょう。まずパーティションを、続いてファイルシステムを作成し、ステージ1、ステージ2またはステージ3のいずれかの圧縮ファイルを展開します。ステージ1かステージ2の圧縮ファイルを使用する場合、ステージ3に進むために適切な手順を踏む必要があります。ステージ3に進みシステムに対して各種の設定（設定ファイルの微調整、ブートローダーのインストールなど）を行なえばGentoo Linuxの完成です。スタートするステージごとにどのような手順が必要なのかを以下に示します。</p>
+
+<table>
+<tr><th>圧縮ファイル</th><th>必要な手順</th></tr>
+<tr><ti>1</ti><ti>パーティションとファイルシステムの設定・emerge rsync・ブートストラップ・emerge system・emerge linux sources・最終調整</ti></tr>
+<tr><ti>2</ti><ti>パーティションとファイルシステムの設定・emerge rsync・emerge system・emerge linux sources・最終調整</ti></tr>
+<tr><ti>3</ti><ti>パーティションとファイルシステムの設定・emerge rsync（オプション）・最終調整</ti></tr>
+</table>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>ブート</title>
+<section>
+<body>
+
+<p>使用するCD-ROMを選んでブートしてください。一連のテキストが表示された後、<c>boot:</c>プロンプトが表示されます。ここで[enter]キーを押せば、CDよりLinux本体が読み込まれます。</p> 
+
+<p>次の画面では、このブートCDで使えるコマンドの一覧が表示されます。これには<c>nano</c>（picoエディターのクローン）も含まれます。ネットワークのセットアップの手順も表示されます。PCIの自動検知に続いて、好みのキーマップを選択してください。PCIの自動検知はカーネルに適切なPCI SCSIドライバーやPCIイーサネットドライバーをモジュールとして組み込みます。この後、[enter]キーを押せば、最小ブート環境がスタートします。このコンソールではroot（"<c>#</c>"）としてログインしています。また、[alt]-[F2]、[alt]-[F3]を押すことによって新しいコンソールを開くこともできます。</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>カーネルモジュールのロード</title>
+<section>
+<body>
+
+<p>Gentoo Linuxをインストールする準備は整いました。最初にネットワークカードをカーネルに認知させます。PCI自動検知で漏れたSCSIデバイスを認知させることも可能です。使用可能なネットワークカードモジュールのリストを見るために<c>ls /lib/modules/*/kernel/drivers/net/*</c>とタイプしてください。特定のモジュールをロードするには、以下のようにタイプします。</p>
+
+<pre>
+# <i>modprobe pcnet32</i>
+	<comment>(NICモジュールをpcnet32に置き換えます)</comment>
+</pre>
+
+<p>PCI自動検知で漏れたSCSIデバイスにアクセスできるようにするには、もういちど<c>modprobe</c>を利用して/lib/modulesから適切なモジュールをロードします。</p>
+
+<pre>
+# <i>modprobe aic7xxx</i>
+# <i>modprobe sr_mod</i>
+# <i>modprobe sd_mod</i>
+</pre>
+
+<p>上の例では、<c>aic7xxx</c>がロードされました。次いでSCSI CD-ROM（<c>sr_mod</c>）とSCSIディスク（<c>sd_mod</c>）のサポートがロードされているか確認しています。</p>
+<note><c>hdparm</c>はブートCDに含まれています。ドライバーの微調整が必要な場合は役に立つでしょう。現在のハードウェアならば<c>hdparm -d 1 /dev/hdx</c>とすればいいでしょう。<c>hdparm -v /dev/hdx</c>とすればドライブの設定のチェックができます。<c>hdparm -t /dev/hdx</c>とすればドライブのパフォーマンスのチェックができます。</note>
+</body>
+</section>
+</chapter>
+<chapter>
+<title>PCMCIAカーネルモジュールのロード</title>
+<section>
+<body>
+<p>PCMCIAネットワークカードを利用するには、ちょっとしたトリックが必要です。</p>
+<pre>
+# <i>insmod pcmcia_core</i>
+# <i>insmod i82365</i>
+# <i>insmod ds</i>
+# <i>cardmgr -f</i>
+</pre>
+<p>cardmgrがハードウェアを検知すると、ビープ音が鳴り、PCMCIAネットワークカードが使用可能になります。もちろん<i>cardmgr</i>がロードされていれば、後から必要なときにPCMCIAネットワークカードを挿入することができます（技術的には、PCMCIAカードがどのモジュールを必要としているのか正確に分かっていれば、<i>cardmgr</i>を実行する必要はありません。しかし<i>cardmgr</i>を実行していない場合、PCMCIAカードが働くようにPCMCIAモジュールをロードしてまわるので、全てのPCMCIAモジュールをロードして、どのカードが動いているか確認してください。カードを抜いたときも<i>cardmgr</i>がPCMCIAモジュールをアンロードしてくれます）。</p>
+</body>
+</section>
+</chapter>
+<chapter>
+<title>ネットワークの設定</title>
+<section>
+<body>
+
+<p>-r11以上のブートCDでは、インストールを始める前に、<c>ssh</c>、<c>scp</c>、<c>wget</c>を利用できるようにネットワークを設定することが可能です。たとえ今は必要でなくとも、今のうちに設定しておきましょう。いちど設定してしまえば、chroot環境（Gentoo Linuxのインストールに必要です）に入ったときにPortageがネットワークを利用することが可能になります。</p>
+</body>
+</section>
+
+<section>
+<title>DHCP</title>
+<body>
+<p>DHCPの設定は簡単です。ご利用のISPがDHCPをサポートしていない場合は、固定IPの設定まで進んでください。</p>
+<pre caption="DHCPの設定">
+# <i>dhcpcd eth0</i> 
+</pre>
+<note>ISPによっては、ホスト名の入力が必要になります。その場合はdhcpdコマンドの後に<c>-h myhostname</c>と書き加えてください。</note>
+<p>もし<i>dhcpConfig</i>警告を受け取ったとしても、慌てないでください。このエラーはお飾りのようなものです。ネットワークのテストまで進んでください。</p>
+</body>
+</section>
+<section>
+<title>固定IP</title>
+<body>
+<p>システムの構築に必要なソースをダウンロードするために、ネットワークに対して適切な設定を行なう必要があります。下記のコマンドを入力してください。その際、$IFACEを使用するネットワークインターフェイス（たいていの場合<c>eth0</c>）に、$IPNUMを使用するIPアドレスに、$BCASTをブロードキャストアドレスに、$NMASKをネットマスクにそれぞれ置き換えてください。<c>route</c>コマンドでは、$GTWAYをデフォルトゲートウェイに置き換えてください。</p>
+<pre>
+# <i>/sbin/ifconfig $IFACE $IPNUM broadcast $BCAST netmask $NMASK</i>
+# <i>/sbin/route add -net default gw $GTWAY netmask 0.0.0.0 metric 1</i>
+</pre>
+<p><path>/etc/resolv.conf</path>を書き換えてWeb/FTPサイトをIPアドレスではなくドメイン名で検索できるようにしましょう。</p>
+
+<note>デフォルトで使えるエディターは<c>nano</c>という非常に使いやすくサイズの小さなエディターです。<c>-w</c>オプションをつけることによって、自動改行を無効にします。</note>
+
+<p>以下に従い、resolv.confを編集してください。</p>
+<pre caption="/etc/resolv.confのテンプレート">
+domain mydomain.com
+nameserver 10.0.0.1
+nameserver 10.0.0.2
+</pre>
+<p><c>10.0.0.1</c>と<c>10.0.0.2</c>をお使いのプライマリDNSサーバ、セカンダリDNSサーバにそれぞれ置き換えてください。</p>
+</body>
+</section>
+<section>
+<title>ネットワークのテスト</title>
+<body>
+<p>これでネットワークの設定は終了です。<c>/sbin/ifconfig -a</c>コマンドでネットワークカードが働いているかどうか確認してみましょう（うまくいきますように！）。下記の<e>UP</e>と<e>RUNNING</e>に注目してください。</p>
+<pre caption="/sbin/ifconfigコマンドによるネットワークカードの動作確認">
+eth0      Link encap:Ethernet  HWaddr 00:50:BA:8F:61:7A
+          inet addr:192.168.0.2  Bcast:192.168.0.255  Mask:255.255.255.0
+          inet6 addr: fe80::50:ba8f:617a/10 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:1498792 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:1284980 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:1984 txqueuelen:100
+          RX bytes:485691215 (463.1 Mb)  TX bytes:123951388 (118.2 Mb)
+          Interrupt:11
+</pre>
+<!--
+<note>
+If you have a static ppp link, you can !!! do this...!!!
+</note>
+-->
+</body>
+</section>
+<section>
+<title>ネットワークの準備は整いました</title>
+<body>
+<p>ネットワークの設定は終わりました。<c>ssh</c>、<c>csp</c>、<c>wget</c>コマンドを使って、LAN上のマシンやインターネットに接続することが可能です。</p>
+</body>
+</section>
+</chapter>
+<chapter>
+<title>パーティションの設定</title>
+<section>
+<body>
+
+<p>カーネルはネットワークカードとディスクコントローラーを利用できるようになりました。次はパーティションの設定をしましょう。</p>
+
+<p>簡単にGentoo Linuxの標準的なパーティションを説明します。Gentoo Linuxではswapパーティション、rootパーティション（Gentoo Linuxの大部分を占めます）、そしてbootパーティションと、少なくとも3つのパーティションが必要です。bootパーティションはGRUBブートローダの情報ととカーネルの情報を保持しています。また、Linuxのブートに関するあらゆる情報を安全に確保する役目を持っています。Gentoo Linuxを使用している間はbootパーティションを<e>切り離しておくべきです</e>。こうすることによって、万が一ファイルシステムの不正でシステムクラッシュが起こったとき、カーネルがGRUBから利用できなくなることを防ぎます。また、ブート不可能なのでファイルシステムを正常な状態に戻すことができない（ファイルシステムが一貫していない）ため、GRUBがカーネルを読み込めなくなるという「ニワトリと卵」の問題を防ぎます。</p>
+
+<p>ファイルシステムについて説明します。Gentoo LinuxではXFS、ext2、ext3（ジャーナリング）そしてReiserFSのよっつのファイルシステムを使うことができます。ext2はLinuxで使い込まれた正式のファイルシステムですが、メタデータ・ジャーナリングを持っていません。ext3はメタデータ・ジャーナリングとオーダーデータの記録によるデータ・ジャーナリングの両方をもつetc2の後継バージョンです。ReiserFSはB*-treeファイルシステムがベースで優れたパフォーマンスを持っています。また、小さな（4K以下）ファイルの取り扱いではext2やext3をはるかに上回ります。しかしながら、カーネル2.4.xにおいてファイルシステムの改悪が繰り返し発生したため、現状でのReiserFSの使用はお勧めできません。ReiserFSはメタデータ・ジャーナリングを持ちますが、データ・ジャーナリングはサポートしていません。XFSはメタデータ・ジャーナリングを持つ高機能で業務用にも使えるファイルシステムです。Gentoo Linuxはこれを完全にサポートしています。</p>
+
+<p>スタンダードなファイルシステムを使いたいときはext2を選択してください。頑丈なファイルシステムを希望するならばext3を選択してください。ジャーナリングを備えた高機能なファイルシステムを希望するならばXFSを選択してください。ext3、XFS両者とも成熟し、洗練されています。ReiserFS以外のファイルシステムは全て提供準備ができています。以下に推奨されるファイルサイズとタイプを示します。</p>
+
+  <table>
+  <tr>
+  	<th>パーティション</th>
+	<th>サイズ</th>
+	<th>タイプ</th>
+  	<th>デバイス例</th>
+  </tr>
+  <tr>
+  	<ti>bootパーティション：カーネル情報とブート情報</ti>
+	<ti>100Mバイト</ti>
+	<ti>ext2/3を推奨：ReiserFSをマウントするなら<c>-o notail</c>を追加してください</ti>
+  	<ti>/dev/hda1</ti>
+  </tr>
+   <tr>
+  	<ti>swapパーティション（128Mバイト制限はありません）</ti>
+	<ti>実メモリの2倍が推奨ですが、カーネル2.4.10以降では要求されません</ti>
+	<ti>Linux swap</ti>
+  	<ti>/dev/hda2</ti>
+  </tr>
+  <tr>
+  	<ti>rootパーティション：/usr、/homeなどの主要なファイル</ti>
+	<ti>1.5Gバイト以上</ti>
+	<ti>XFS、ext3を推奨：ext2でも可</ti>
+  	<ti>/dev/hda3</ti>
+  </tr>
+ </table>
+
+<note>ここではfdiskを使ってパーティションの作成を行なってください。標準ファイルシステム（XFS、ReiserFS、ext2/3）の0x83に対して、swapは0x82になっていることに注意してください。</note>
+
+<p><c>fdisk</c>を使ってパーティションを作成した後にファイルシステムの初期化を行ないます。以下のようにswapを初期化してください。</p>
+<pre>
+# <i>mkswap /dev/hda2</i>
+</pre>
+<p>ext2ファイルシステムを作成するには<c>mke2fs</c>コマンドを使用してください。</p>
+<pre>
+# <i>mke2fs /dev/hda1</i>
+</pre>
+<p>XFSファイルシステムを作成するには<c>mkfs.xfs</c>コマンドを使用してください。</p>
+<pre>
+# <i>mkfs.xfs /dev/hda3</i>
+</pre>
+<note><c>mkfs.xfs</c>コマンドに対し、<c>-d agcount=3 -l size=32m</c>オプションを付加することができます。<c>-d agcount=3</c>オプションはアロケーショングループの数を減らします。XFSは4Gバイトごとに少なくともひとつのアロケーショングループを必要とします。つまり、20Gバイトのパーティションがあった場合、最低でも5つのアロケーショングループが必要になります。<c>-l size=32m</c>オプションはジャーナルサイズを32Mバイトに増加させ、パフォーマンスを良くします。</note>
+<warn>ReiserFSパーティションの上にXFSパーティションを作成した場合、<c>mount -t xfs</c>と明示的に指定しないとマウントに失敗するかもしれません。XFSパーティションを作成する前に<c>dd if=/dev/zero of=/dev/hd<comment>x</comment> bs=1k</c>と入力してゼロアウトしてください。</warn>
+<p>ext3ファイルシステムを作成するには<c>mke2fs -j</c>コマンドを使用してください。</p>
+<pre>
+# <i>mke2fs -j /dev/hda3</i>
+</pre>
+<p>ReiserFSファイルシステムを作成するには<c>mkreiserfs</c>コマンドを使用してください。</p>
+<pre>
+# <i>mkreiserfs /dev/hda3</i>
+</pre>
+
+<warn>再度言いますが、現状でのReiserFSの使用はお勧めできません。ReiserFSには良い面もたくさんあるのですが、ファイルシステムの改悪がReiserFSと2.4.xカーネルの間に共通の問題を起こしています。</warn>
+
+<note>Linux2.4でext3を使用することについては以下のURLを参照してください。<uri>http://www.zip.com.au/~akpm/linux/ext3/ext3-usage.html</uri></note>
+</body>
+</section>
+</chapter>
+<chapter>
+<title>パーティションのマウント</title>
+<section>
+<body>
+<p>後に仮想記憶が必要になるかもしれないので、sawpをアクティブにします。</p>
+<pre>
+# <i>swapon /dev/hda2</i>
+</pre>
+<p>次に、<path>/mnt/gentoo</path>と<path>/mnt/gentoo/boot</path>というふたつのマウントポイントを設定し、作成したパーティションをマウントします。</p>
+<pre>
+# <i>mkdir /mnt/gentoo</i>
+# <i>mount /dev/hda3 /mnt/gentoo</i>
+# <i>mkdir /mnt/gentoo/boot</i>
+# <i>mount /dev/hda1 /mnt/gentoo/boot</i>
+</pre>
+<p><path>/usr</path>や<path>/var</path>を別のパーティションとして設定している場合は、それぞれのパーティションを<path>/mnt/gentoo/usr</path>や<path>/mnt/gentoo/var</path>にマウントしてください。</p>
+<impo><e>boot</e>パーティションがReiserFSである場合、GRUBがうまくインストールされるように<c>-o notail</c>オプションを使ってマウントしてください。さらに<path>/etc/fstab</path>のbootパーティションに<c>notail</c>オプションを追加してください。すぐ後に出てきます。</impo>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>CD-ROMのマウント</title>
+<section>
+<body>
+<p>この最小Linux環境では、CD-ROMからブートしたとしても、CD-ROMそのものはマウントされていません。CD-ROMに含まれるビルドイメージの圧縮ファイルにアクセスできるようにCD-ROMをマウントしてください。CD-ROMをマウントするには以下のようにタイプします。</p>
+<pre>
+# <i>mount /dev/cdroms/cdrom0 /mnt/cdrom -o ro -t iso9660</i>
+</pre>
+<p><c>ls /mnt/cdrom</c>とタイプして、CD-ROMの中に<c>stage???.tbz2</c>のファイルがあるかどうか確認してください。</p>
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>ステージの解凍</title>
+<section>
+<body>
+
+<p><path>/mnt/gentoo</path>に選択したステージの圧縮ファイルを展開してください。その後、<c>chroot</c>してGentoo Linuxの中に入ります。</p>
+
+<impo><c>tar</c>する時は必ず<c>p</c>オプションを使用してください。これを怠ると、いくつかのファイルに誤ったパーミッションを与えてしまいます。</impo>
+
+<impo>もし「全てをゼロから」インストールをするならば、<path>stage1-ix86-1.2.tbz2</path>を使用してください。2枚目のCD（gentoo-i686-1.2.iso）を使用しているのであればステージ2かステージ3も選択してください。設定の自由と引き換えに、時間を短縮できます（コンパイラの最適化法とデフォルトのUSE変数を設定してあります）。ステージ3のイメージには完全なLinuxソースと<c>emerge rsync</c>の必要のないPortage treeのスナップショットが含まれています。</impo>
+
+<pre>
+# <i>cd /mnt/gentoo</i>
+# <i>tar -xvjpf /mnt/cdrom/stage?-*.tbz2</i>
+# <i>mount -o bind /proc /mnt/gentoo/proc</i>
+# <i>cp /etc/resolv.conf /mnt/gentoo/etc/resolv.conf</i>
+</pre>
+
+<pre>
+# <i>chroot /mnt/gentoo /bin/bash</i>
+# <i>env-update</i>
+Regenerating /etc/ld.so.cache...
+# <i>source /etc/profile</i>
+# 
+</pre>
+
+<p>このコマンドを実行すればGentoo Linuxの「中」に入ることができます。</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Rsync</title>
+<section>
+<body>
+<p><c>emerge rsync</c>を行ないます。もしGentoo Linux1.2以上でステージ3の圧縮ファイルを使用しているならば、Potage treeのスナップショットを用意しているため、この作業は行なわなくても構いません。<c>emerge sync</c>は<c>emerge</c>コマンドによってrsync.gentoo.orgに接続し、Portage ports treeの最新バージョンをダウンロードします。</p>
+
+<pre>
+# <i>emerge rsync</i>
+</pre>
+<p>Portage treeがダウンロードされます。約10Mバイトあります。</p>
+<impo>現在のrsyncサーバのアドレスはrsync://rsync.gentoo.org/gentoo-portageです。Gentoo rsyncのアクセスに失敗した場合は/etc/make.confファイルのSYNC変数が上記のアドレスに設定されているか確認してください。</impo>
+<note>ファイアーウォールが設置されている場合はHTTPプロクシを利用できます。<i>/etc/make.conf</i>ファイル内で<i>RSYNC_PROXY="hostname:port"</i>と設定するか、環境変数をセットしてください。</note>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>ステージ1からステージ2へ</title>
+<section>
+<body>
+
+<impo>もし、ステージ2かステージ3の圧縮ファイルを使用しているならば、すでにブートストラップは組み込まれています。<c>emerge rsync</c>を行なって最新のシステムにしたいというのでなければ、この作業を行なう必要は<i>ありません</i>。高速なマシンを使っても、この作業には1時間ほどかかります。</impo>
+
+<p>ステージ1を使用しているならば、次のようにブートストラップを設定してください。始めに<path>/etc/make.conf</path>ファイルを編集します。パッケージに組み込みたい機能を指定する<c>USE</c>変数をセットしてください。一般的にはデフォルト（<e>空</e>かセットなし）でいいでしょう。<c>CHOST</c>、<c>CFLAGS</c>、<c>CXXFLAGS</c>変数もそれぞれセットしてください（ファイルの下の方にセット例がコメントされています）。ファイアーウォールが設置されている場合はここでプロクシ情報をセットできます。</p>
+
+<pre>
+# <i>nano -w /etc/make.conf</i> <comment>（上記のセッティングを編集してください）</comment>
+</pre>
+<note>ビルドプロセスを本格的に調整する必要があるならば、<path>/etc/make.globals</path>ファイルを参照してください。このファイルはgentooデフォルトを含んでおり、触ることはできません。デフォルトで不十分な場合、<path>/etc/make.conf</path>ファイルに変数をセットしてください。<path>/etc/make.conf</path>ファイルは<path>/etc/make.globals</path>ファイルを<comment>上書きします</comment>。USE変数を調整する場合は<path>/etc/make.profile/make.defaults</path>ファイルを参照してください。オフにしたいUSE変数があれば、<path>/etc/make.conf</path>ファイル内で<c>USE="-xxx"</c>と記述してください（<c>xxx</c>USE変数をオフにします）。</note>
+<p>「ブートストラップ」プロセスを開始します。機械にもよりますが、約1〜2時間かかります（AMD Athlon 900Mhzで約1時間かかります）。このプロセスでは、残りのシステムをコンパイルするために、展開されたビルドイメージが準備されます。GNUコンパイラ一式とGNU Cライブラリが構築されます。ブートストラップが構築され完全なものになります。</p>
+<pre>
+# <i>cd /usr/portage</i>
+# <i>scripts/bootstrap.sh</i>
+</pre>
+<p>「ブートストラップ」プロセスが開始します。</p>
+<note>デフォルトのPortageはパッケージのビルド中に一時的に<c>/var/tmp</c>を数百Mバイト使用する時があります。一時ファイルの場所を変更している場合は、ブートストラッププロセスを始める前にPORTAGE_TMPDIR変数を変更してください。</note>
+<pre>
+# <i>export PORTAGE_TMPDIR="/otherdir/tmp"</i>
+</pre>
+<p><c>bootstrap.sh</c>は<c>binutils</c>、<c>gcc</c>、<c>gettext</c>、<c>glibc</c>を構築し、<c>glibc</c>が構築された後、<c>binutils</c>、<c>gcc</c>、<c>gettext</c>を再構築します。言うまでもなく、このプロセスには時間がかかりますので、昼寝でもしていてください。このプロセスが完了すれば、システムはステージ2へ進みます。</p>
+</body>
+</section>
+</chapter>
+<chapter>
+<title>ステージ2からステージ3へ</title>
+<section>
+<body>
+
+<p>ブートストラップを終え、ステージ2に進みました（ステージ3の圧縮ファイルを使用するならば、以下の作業は必要ありません）。残りのシステムのインストールを始めましょう。</p>
+
+<pre>
+# <i>export CONFIG_PROTECT=""</i>
+# <i>emerge --pretend system</i>
+	<comment>（インストールされるパッケージのリストを表示）</comment>
+# <i>emerge system</i>
+</pre>
+
+<note><c>export CONFIG_PROTECT=""</c>コマンドで、コンフィグファイルの編集ができない（<path>sys-apps/baselayout</path>に格納された）古いスクリプトを新しいスクリプトに上書きして<path>/etc</path>にインストールできるようにします。詳細については<c>emerge --help config</c>とタイプしてください。</note>
+
+<p>ベースシステム全体を構築するにはまとまった時間が必要です。そのかわりシステムは徹底的に最適化されます。もちろん暇つぶしの方法を見いださなければなりませんが。作者はプレーステーション2用ソフト「Star Wars - Super Bombad Racing」をおすすめします。<c>emerge system</c>コマンドが完了すれば、ステージ3のGentoo Linuxが完成します。</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>最終ステップ：タイムゾーン</title>
+<section>
+<body>
+
+<p>この段階でステージ3に到達しました。次にタイムゾーンの設定を行ないます。カーネルのビルドの前にタイムゾーンを設定することで、<c>uname -a</c>コマンドで正確な情報を得ることができます。</p>
+<p><path>/usr/share/zoneinfo</path>のなかからタイムゾーン（グリニッジ標準時を使用するならGMT）を選んでシンボリックリンクを作成してください。</p>
+
+<pre>
+# <i>ln -sf /usr/share/zoneinfo/path/to/timezonefile /etc/localtime</i>
+</pre>
+</body>
+</section>
+</chapter>
+<chapter>
+<title>最終ステップ：カーネルとシステムロガー</title>
+<section>
+<body>
+<p>Gentoo Linux1.1以上のステージ3圧縮ファイルには、最新のLinuxカーネルソースが<path>/usr/src/linux</path>に収録してありますので、簡単にインストールができます。そうでない場合は、以下のソースからひとつを選び、マージしてください。</p>
+<table>
+<tr><th>ebuild</th><th>description</th></tr>
+<tr><ti><path>gentoo-sources</path></ti><ti>Gentoo Linux独自の高性能で実用的な-acベースのカーネル（XFSのサポートは無し）</ti></tr>
+<tr><ti><path>xfs-sources</path></ti><ti>SGIのXFS CVS Linuxソースのスナップショット。XFSファイルシステムを使用する際は、このソースを使ってください。</ti></tr>
+<tr><ti><path>openmosix-sources</path></ti><ti>GPL <uri link="http://www.openmosix.com">openMosix</uri>ロード・バランシング/クラスタリング技術をサポートしたLinuxソース。</ti></tr>
+<tr><ti><path>usermode-sources</path></ti><ti>ユーザーモードLinux（Linux inside Linux）をサポートしたLinuxソース。</ti></tr>
+<tr><ti><path>vanilla-sources</path></ti><ti>kernel.orgから得ることのできるものと同じLinuxソース。</ti></tr>
+</table>
+
+<p>上のソースからひとつを選び、下記のようにマージしてください。</p>
+
+<pre>
+# <i>emerge sys-kernel/gentoo-sources</i>
+</pre>
+
+<p>カーネルの準備ができたら、好みにカスタムしてカーネルをコンパイルしてください。</p>
+<pre>
+# <i>cd /usr/src/linux</i>
+# <i>make menuconfig</i>
+# <i>make dep &amp;&amp; make clean bzImage modules modules_install</i>
+# <i>mv /boot/bzImage /boot/bzImage.orig</i> <comment>（まだbzImageが残っていた場合）</comment>
+# <i>cp /usr/src/linux/arch/i386/boot/bzImage /boot</i>
+</pre>
+<warn>カーネルが適切に機能するために必要なオプションがいくつかあります。これらは<i>モジュールとしてコンパイルしてはなりません</i>。<i>Code maturity level options</i>の中にある<i>Prompt for development and/or incomplete code/drivers</i>オプションをチェックしてください。File systemsの中の<i>Device File System</i>オプションにもチェックしてください（/dev/pts file system supportオプションはチェックする<e>必要はありません</e>）。また、<i>Virtual Memory Filesystem</i>オプションにもチェックします。ReiserFSファイルシステムを使用している場合はReiserFSオプションにチェックします。同様にExt3ファイルシステムを使用している場合はExt3オプションにチェックします。XFSファイルシステムを使用している場合はSGI XFS filesystem supportオプションにチェックします。いずれの場合もExt2オプションはチェックしておいてください。IDEハードディスクを使用している場合は忘れずにUSE DMA by defaultオプションをチェックしてください。これを忘れてしまうと、ディスクのパフォーマンスが非常に貧弱になってしまいます。もちろんIDE diskオプションをチェックするのを忘れずに。さもないと、カーネルがIDEディスクにアクセスできなくなってしまいます。</warn>
+<impo>もし、IDE CD-Rを使うならば、SCSIエミュレーションを利用できるようにしてください。"ATA/IDE/MFM/RLL support" ---> "IDE, ATA and ATAPI Block devices" ---> "SCSI emulation support"をチェックしてください（モジュールとしてインストールするのが良いでしょう）。そして"SCSI support" enable "SCSI support"、"SCSI CD-ROM support"と"SCSI generic support"をチェックしてください（これもモジュールとしてインストールするのが良いでしょう）。
+モジュールとしてインストールしたならば、<c>echo -e "ide-scsi\nsg\nsr_mod" >> /etc/modules.autoload</c>として、ブート時に読み込まれるようにしてください。</impo>
+<note>2.2カーネルベースのGentoo Linuxをインストールすることもできます。が、これは高くつくでしょう。Reiserfsファイルシステムやdevfsのサポートは行なえますが、2.4カーネルの素晴らしい特徴（XFSファイルシステムとtmpfsファイルシステムやiptablesなど）を使うことができません。Gentoo LinuxのブートスクリプトはtmpfsかRAMディスクのどちらかを必要としますので、2.2カーネルを使用する際にはRAMディスクサポートをコンパイルしてください（モジュールではなく）。<comment>必ず</comment><path>/boot/grub/menu.lst</path>ファイルに<e>gentoo=notmpfs</e>と記述して、RAMディスクをtmpfsのかわりにブートスクリプトにマウントしてください。devfsを使わないならば<e>gentoo=notmpfs,nodevfs</e>と記述してください。</note>
+
+<p>これで、あなたの好みに合ったカーネルがインストールされました。次に好みのシステムロガーをインストールします。従来から使われているsysklogdデーモンをおすすめします。yslog-ngデーモンやmetalogデーモンも用意してあります。パワーユーザーは（それほど性能のよくない）sysklogdデーモンからyslog-ngデーモンやmetalogデーモンに移行したいと思っているでしょう。疑わしくもポピュラーに見えるのでmetalogデーモンを試してみたいかもしれません。次の3つのロガーから<e>ひとつ</e>を選んでください。</p>
+
+<pre>
+# <i>emerge sys-apps/sysklogd</i>
+# <i>rc-update add sysklogd default</i>
+<comment>または</comment>
+# <i>emerge app-admin/syslog-ng</i>
+# <i>rc-update add syslog-ng default</i>
+<comment>または</comment>
+# <i>emerge app-admin/metalog</i>
+# <i>rc-update add metalog default</i>
+</pre>
+<warn>syslog-ngデーモンを使用する場合は<path>/etc/syslog-ng/syslog-ng.conf</path>ファイルを作成してください。<path>/etc/syslog-ng</path>に設定ファイルのサンプルが用意してあります。</warn>
+<impo>metalogは一括して出力をディスクに流し込みます。そのため、システムログが継続的に記録されるわけではありません。デーモンのデバッグを行なう時には、このパフォーマンス向上のための動作はかえって邪魔になるでしょう。Gentoo Linuxでは、一時的にメッセージバッファを止めるために（<i>tail -f <path>/var/log/everything/current</path></i>コマンドがリアルタイムで実行されることを期待して）metalogデーモンにUSR1信号を送ることができます。メッセージバッファを働かせるためにはUSR2信号を送ってください。</impo>
+<p>次にdcron、fcron、vcronの中から好みのcronを選んでください。どれを選べば分からない時はvcronをおすすめします。次のようにインストールしてください。</p>
+<pre>
+# <i>emerge sys-apps/dcron</i>
+# <i>crontab /etc/crontab</i>
+<comment>または</comment>
+# <i>emerge sys-apps/fcron</i>
+# <i>crontab /etc/crontab</i>
+<comment>または</comment>
+# <i>emerge sys-apps/vcron</i>
+</pre>
+<p>Gentoo Linux下でのさらに詳しいcronの働きについては<uri link="http://lists.gentoo.org/pipermail/gentoo-announce/2002-April/000151.html">http://lists.gentoo.org/pipermail/gentoo-announce/2002-April/000151.html</uri>を参照してください。</p>
+</body>
+</section>
+</chapter>
+<chapter>
+<title>最終ステップ：追加パッケージのインストール</title>
+<section>
+<body>
+<p>XFSやLVMを使用するならば、Portage treeから追加のパッケージをインストールしなければなりません。XFSを使用しているなら、<c>xfsprogs</c>をインストールしてください。</p>
+<pre>
+# <i>emerge sys-apps/xfsprogs</i>
+</pre>
+<p>LVMを使用しているなら、<c>lvm-user</c>をインストールしてください。</p>
+<pre>
+# <i>emerge --usepkg sys-apps/lvm-user</i>
+</pre>
+<p>ノートパソコンでPCMCIAカードを利用するには、pcmcia-csパッケージをインストールしてください。</p>
+<pre>
+# <i>emerge sys-apps/pcmcia-cs</i>
+</pre>
+</body>
+</section>
+</chapter>
+<chapter>
+<title>最終ステップ：/etc/fstab</title>
+<section>
+<body>
+<p>ここまでの作業でGentoo Linuxシステムはすでに完成しました。あとは重要なシステムファイルを作成し、GRUBブートローダーをインストールします。まず、<path>/etc/fstab</path>ファイルを編集します。ReiserFSファイルシステムを使用する場合は<c>notail</c>オプションをbootパーティションに付加するのを忘れないでください。<c>ext2</c>、<c>ext3</c>や<c>reiserfs</c>などのファイルシステムのタイプも指定してください。</p>
+<p>下記の<path>/etc/fstab</path>のように設定してください。もちろん、BOOT、ROOT、SWAPのデバイス名を実際のデバイス名（<c>hda1</c>など）に変更してください。</p>
+<pre>
+<comment>
+# /etc/fstab: static file system information.
+#
+# noatime turns of atimes for increased performance (atimes normally aren't
+# needed; notail increases performance of ReiserFS (at the expense of storage
+# efficiency).  It's safe to drop the noatime options if you want and to 
+# switch between notail and tail freely.
+
+# &lt;fs&gt;           &lt;mountpoint&gt;   &lt;type&gt;   &lt;opts&gt;          &lt;dump/pass&gt;
+
+# NOTE: If your BOOT partition is ReiserFS, add the notail option to opts.
+</comment>
+/dev/BOOT           /boot       ext2	 noauto,noatime	 1 2
+/dev/ROOT           /           ext3	 noatime         0 1
+/dev/SWAP           none        swap	 sw              0 0
+/dev/cdroms/cdrom0  /mnt/cdrom  iso9660	 noauto,ro       0 0
+proc                /proc       proc	 defaults        0 0
+</pre>
+
+</body>
+</section>
+<section>
+<title>最終ステップ：rootパスワードの設定</title>
+<body>
+<p>忘れないうちにrootパスワードを設定してください。</p>
+<pre>
+# <i>passwd</i>
+</pre>
+</body>
+</section>
+<section>
+<title>最終ステップ：/etc/hostname</title>
+<body>
+<p>完全なドメイン名をファイルに書き込んでください（例：<c>mymachine.mydomain.com</c>）</p>
+</body>
+</section>
+
+<section>
+<title>最終ステップ：/etc/hosts</title>
+<body>
+<p>このファイルにホストネームとIPアドレスを書き込んでください。ネームサーバに無いホストネームとIPアドレスの解決に使用されます。以下にこのファイルのテンプレートを示します。</p>
+<pre>
+127.0.0.1      localhost
+<comment># 次の行にIPアドレスとドメイン名、ホスト名を入力してください</comment>
+192.168.1.1    mymachine.mydomain.com	mymachine
+</pre>
+</body>
+</section>
+
+<section>
+<title>最終ネットワーク設定</title>
+<body>
+<p><path>/etc/modules.autoload</path>ファイルにシステムに必要なモジュールを書き込んでください（その他のオプションがあれば、ここに書き込んでください）。Gentoo Linuxがブートする時、これらのモジュールが自動的に読み込まれます。特に重要なものがモジュールとしてコンパイルした場合のイーサネットカードモジュールです。</p>
+<pre caption="/etc/modules.autoload">
+3c59x
+</pre>
+<p>ブート時にネットワークの設定を読み込ませるために<c>/etc/conf.d/net</c>スクリプトを編集してください。</p>
+<pre>
+# <i>nano -w /etc/conf.d/net</i>
+# <i>rc-update add net.eth0 default</i>
+</pre>
+<p>もし、複数のネットワークカードを使用しているなら、それぞれにnet.eth<comment>x</comment>スクリプト（<comment>x</comment>=1,2,…）を追加してください。</p>
+<pre caption="複数のネットワークインターフェイス">
+# <i>cd /etc/init.d</i>
+# <i>cp net.eth0 net.eth<comment>x</comment></i>
+# <i>rc-update add net.eth<comment>x</comment> default</i>
+</pre>
+<p>PCMCIAカードをインストールしている場合は、/etc/init.d/pcmciaの中にモジュールがあるか確認してください。そして、
+<pre>
+depend() {
+	need pcmcia
+}
+</pre>
+<path>/etc/init.d/net.eth<comment>x</comment></path>の一番上に上記のコードを追加してください。ネットワーク設定が読み込まれる際、自動的にPCMCIAドライバが読み込まれます。</p>
+</body>
+</section>
+
+<section>
+<title>最終ステップ：基本設定（キーマップのセッティングも含む）</title>
+<body>
+<pre caption="基本設定">
+# <i>nano -w /etc/rc.conf</i>
+</pre>
+<p>ファイルの指示に従って基本的な設定を行なってください。<c>CLOCK</c>変数を好みのものにセットしてください。国際キーボードを使う場合は、<c>KEYMAP</c>変数を変更してください（<path>/usr/share/keymaps</path>にたくさんのキーマップがあります）。</p>
+</body>
+</section>
+
+<section>
+<title>最終ステップ：ドライブの設定（hdparm）</title>
+<body>
+<p>残念なことに、最初に設定したhdparmはリブート時には保存されません。<path>/etc/conf.d/local.start</path>ファイルを編集して設定を保存してください。</p>
+<pre>
+# <i>nano -w /etc/conf.d/local.start</i>
+</pre>
+<pre caption="add hdparm tweak to /etc/conf.d/local.start">
+# This is a good place to load any misc.
+# programs on startup ( 1>&amp;2 )
+
+# turn on DMA on both harddrives
+hdparm -d 1 /dev/hda
+hdparm -d 1 /dev/hdb
+</pre>
+</body>
+</section>
+
+<section>
+<title>最終ステップ：GRUBの設定</title>
+<body>
+<p>GRUBを理解するのにもっとも重要なことは、GRUBがどうやってハードディスクとパーティションを参照するかということです。<path>/dev/hda1</path>パーティションはGRUBでは<path>(hd0,0)</path>と呼ばれます。hd0,0をカッコでくくる点に注意してください。ハードディスクはaからではなく0から数えます。パーティションは1からではなく0から数えます。つまり<path>dev/hdb3</path>は<path>(hd1,2)</path>になり、<path>/dev/hdd7</path>は<path>(hd3,6)</path>になります。これをふまえて、bootパーティションとrootパーティションをGRUBで使う名前に変換してください。そしてGRUBをインストールしましょう。</p>
+
+<p>GRUBをインストールするもっとも簡単な方法は、chrootから<c>grub</c>とタイプすることです。</p>
+<pre>
+# <i>grub</i>
+</pre>
+<p>guubコマンドを入力するとプロンプト<c>grub&gt;</c>が現れます。GRUBブートレコードをハードディスクにインストールするために、正しいコマンドを入力してください。GRUBブートレコードをハードディスクのMBR（マスターブートレコード）にインストールする場合は、次のように入力してください。</p>
+<pre>grub&gt; <i>root (hd0,0)</i>
+grub&gt; <i>setup (hd0)</i>
+grub&gt; <i>quit</i>
+</pre>
+
+<p>このふたつのコマンドの意味を説明します。<c>root ( )</c>はGRUBにブートパーティション（上の例で言えばGRUBの<path>(hd0,0)</path>つまり<path>/dev/hda1</path>）の位置を教えます。<c>setup ( )</c>はGRUBに<c>root ( )</c>で指定したブートパーティションを探すためのブートレコードをどこにインストールするのかを教えます。上の例では、ブートレコードをハードディスクのMBRにインストールするので、単純に<path>/dev/hda</path>（GRUBでは<path>(hd0)</path>です）と指定します。もしほかのブートローダを使用していて、GRUBをセカンダリ・ブートローダとしたいのであれば、GRUBを特定のパーティションにインストールすることができます。その場合はディスク全体ではなく、特定のパーティションを指定します。GRUBのインストールに成功したら、<c>quit</c>とタイプしてGRUBを終了してください。Gentoo Linuxのインストールは終わりました。あとはGRUBのメニューを表示させるため<path>/boot/grub/menu.lst</path>ファイルを作成します。</p>
+
+<p>menu.lstを作成して（<c>nano -w /boot/grub/menu.lst</c>）以下のように編集してください。</p>
+<pre>
+default 0
+timeout 30
+splashimage=(hd0,0)/boot/grub/splash.xpm.gz
+
+title=My example Gentoo Linux
+root (hd0,0) 
+kernel /boot/bzImage root=/dev/hda3 
+
+<comment># デュアルブートにする場合は以下を追加してください。</comment>
+title=Windows NT Workstation
+root (hd0,5) 
+chainloader +1
+</pre>
+
+<note><path>menu.lst</path>ファイルの「lst」はアルファベットのLで、数字の1ではありません。また、(hd0,0)のカッコ内は余計なスペースを空けないようにしてください。</note>
+<impo>IDE CD-R用にSCSIエミュレーションを設定しているなら、カーネルの引数に"hdx=ide-scsi"を追加してください（hdxはCD-Rの位置に合わせてください）。</impo>
+<p>このファイルを保存すれば、Gentoo Linuxのインストールは完了します。第一オプションを選択しておけば、GRUBはGentoo Linuxをブートします。menu.lstファイルの2番目の部分はGRUBでWindowsをブートする方法を示したものです。</p>
+
+<note>上で述べた<path>(hd0,0)</path>はbootパーティション（例では<path>/dev/hda1</path>）を指しています。<path>/dev/hda3</path>はrootパーティションを指しています。<path>(hd0,5)</path>にはNTブートローダーが存在しています。</note>
+
+<p>カーネルに引数を与える必要があるならば、<c>kernel</c>コマンドの後に追加してください。上の例ではすでにひとつの引数（<c>root=/dev/hda3</c>）を与えていますが、さらに引数を与えることができます。<c>kernel</c>コマンドに<c>gentoo=nodevfs</c>を追加することにより、デフォルトでdevfsをオフにすることができます（意味が分からない場合は行なわないでください）。
+
+<note>初期のGentoo Linuxには当てはまりませんが、devfsを有効にするために<c>kernel</c>コマンドに<c>devfs=mount</c>を追加する必要はありません。rc6ではdevfsはデフォルトで有効になっています。</note>
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>インストール完了</title>
+<section>
+<body>
+<p>これでGentoo Linuxのインストールは完了です。chroot環境から抜け出して、パーティションを切り離してから再起動しましょう。</p><pre>
+# <i>exit</i> 
+<codenote>chroot環境から抜け出します。<c>[ctrl]+[D]</c>でも構いません。</codenote>
+# <i>cd / </i>
+# <i>umount /mnt/gentoo/boot</i>
+# <i>umount /mnt/gentoo/proc</i>
+# <i>umount /mnt/gentoo</i>
+# <i>reboot</i>
+</pre>
+<note>再起動したあとに<c>update-modules</c>コマンドを実行して<path>/etc/modules.conf</path>ファイルを作成するのも良いでしょう。一般的には、このファイルを直接修正する代わりに<path>/etc/modules.d</path>の中のファイルに変更を加えるべきです。</note>
+
+<p>何か疑問があったり、Gentoo Linuxの開発に携わりたい人は、gentoo-userメーリングリストやgentoo-devメーリングリストへの参加も考えてみてください。システムの設定については<uri link="/doc/desktop.html">Desktop configuration guide</uri>を参照してください。Potageについては<uri link="/doc/portage-user.html">Portage user guide</uri>を参照してください。Gentoo Linuxへようこそ！どうぞ楽しんで下さい。</p>
+</body>
+</section>
+</chapter>
+</guide>

@@ -1,0 +1,424 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sections SYSTEM "/dtd/book.dtd">
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-mips-stage.xml,v 1.12 2010/08/28 23:42:23 nightmorph Exp $ -->
+
+<sections>
+
+<abstract>
+Gentoo installs work through a stage3 archive. In this chapter we
+describe how you extract the stage3 archive and configure Portage.
+</abstract>
+
+<version>10.1</version>
+<date>2010-08-28</date>
+
+<section>
+<title>Installing a Stage Tarball</title>
+<subsection>
+<title>Setting the Date/Time Right</title>
+<body>
+
+<p>
+Before you continue you need to check your date/time and update it. A
+misconfigured clock may lead to strange results in the future!
+</p>
+
+<p>
+To verify the current date/time, run <c>date</c>:
+</p>
+
+<pre caption="Verifying the date/time">
+# <i>date</i>
+Fri Mar 29 16:21:18 CEST 2005
+</pre>
+
+<p>
+If the date/time displayed is wrong, update it using the <c>date
+MMDDhhmmYYYY</c> syntax (<b>M</b>onth, <b>D</b>ay, <b>h</b>our, <b>m</b>inute
+and <b>Y</b>ear). For instance, to set the date to March 29th, 16:21 in the
+year 2005:
+</p>
+
+<pre caption="Setting the date/time">
+# <i>date 032916212010</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Making your Choice</title>
+<body>
+
+<p>
+The next step you need to perform is to install the <e>stage</e> tarball of
+your choice onto your system. 
+</p>
+
+</body>
+</subsection>
+</section>
+<section>
+<title>Downloading the Stage Tarball</title>
+<subsection>
+<body>
+
+<p>
+Go to the Gentoo mountpoint at which you mounted your filesystems
+(most likely <path>/mnt/gentoo</path>):
+</p>
+
+<pre caption="Going to the Gentoo mountpoint">
+# <i>cd /mnt/gentoo</i>
+</pre>
+
+<p>
+The table below specifies exactly which stages you need for your system.
+Stages may be downloaded
+off the <uri link="/main/en/mirrors.xml">official Gentoo mirrors</uri> under the
+<c>releases/mips/current</c> directory.
+</p>
+
+<table>
+<tr>
+  <th>Endianness</th>
+  <th>CPU</th>
+  <th>Location</th>
+</tr>
+<tr>
+  <ti>
+    Big Endian<br />
+    <e>(SGI Users)</e>
+  </ti>
+  <ti>
+    R4000<br />
+    R4400<br />
+    R4600
+  </ti>
+  <ti><c>mips3/stage#-mips3-RELEASE.tar.bz2</c></ti>
+</tr>
+<tr>
+  <ti>
+    Big Endian<br />
+    <e>(SGI Users)</e>
+  </ti>
+  <ti>
+    R5000<br />
+    RM5200<br />
+    RM7000<br />
+    R10000<br />
+    R12000<br />
+    R14000
+  </ti>
+  <ti><c>mips4/stage#-mips4-RELEASE.tar.bz2</c></ti>
+</tr>
+<tr>
+  <ti>
+    Little Endian<br />
+    <e>(Cobalt Users)</e>
+  </ti>
+  <ti>
+    RM5230<br />
+    RM5231
+  </ti>
+  <ti><c>cobalt/stage#-mipsel4-RELEASE.tar.bz2</c></ti>
+</tr>
+<tr>
+  <ti>
+    Little Endian<br />
+    <e>(Others)</e>
+  </ti>
+  <ti>
+    All Standard CPU Types
+  </ti>
+  <ti><c>cobalt/stage#-mipsel1-RELEASE.tar.bz2</c></ti>
+</tr>
+</table>
+
+<warn>
+Although we provide stages for little-endian MIPS1, support for little endian
+MIPS systems is still restricted to the Cobalt server range. They are provided
+for those who may wish to experiment with Gentoo on presently unsupported
+platforms, thus it is assumed that you know what you're doing.
+</warn>
+
+<p>
+If you need to go through a proxy, export the <c>http_proxy</c> and
+<c>ftp_proxy</c> variables:
+</p>
+
+<pre caption="Setting proxy information for wget">
+# <i>export http_proxy="http://proxy.server.com:port"</i>
+# <i>export ftp_proxy="http://proxy.server.com:port"</i>
+</pre>
+
+<p>
+The Gentoo/MIPS netboot images provide <c>wget</c> as a means of downloading
+files.  Due to space constraints, it is not possible to provide more capable
+browsers on SGI netboot images. LiveCD users may use <c>elinks</c>.
+</p>
+
+<pre caption="Fetching the tarball via wget">
+# <i>wget -c http://distfiles.gentoo.org/releases/mips/mips4/stage3-mips4-2008.0.tar.bz2</i>
+</pre>
+
+<p>
+If you want to check the integrity of the downloaded stage tarball, use
+<c>md5sum</c> or <c>sha1sum</c> and compare the output with the MD5 checksum
+provided on the mirror. For instance, to check the validity of the mips4 stage
+tarball:
+</p>
+
+<pre caption="Example checking integrity of a stage tarball">
+# <i>md5sum -c stage3-mips4-2008.0.tar.bz2.DIGESTS</i>
+stage3-mips4-2008.0.tar.bz2: OK
+# <i>sha1sum -c stage3-mips4-2008.0.tar.bz2.DIGESTS</i>
+stage3-mips4-2008.0.tar.bz2: OK
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Unpacking the Stage Tarball</title>
+<body>
+
+<p>
+Now unpack your downloaded stage onto your system. We use GNU's <c>tar</c> to
+proceed as it is the easiest method:
+</p>
+
+<pre caption="Unpacking the stage">
+# <i>tar -xjpf stage?-*.tar.bz2</i>
+</pre>
+
+<p>
+Make sure that you use the same options (<c>-xjpf</c>). The <c>x</c> stands for
+<e>Extract</e>, the <c>j</c> for <e>Decompress with bzip2</e>, the <c>p</c> for
+<e>Preserve permissions</e> and the <c>f</c> to denote that we want to extract
+a file, not standard input.
+</p>
+
+<p>
+Now that the stage is installed, continue with <uri
+link="#installing_portage">Installing Portage</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+
+<section id="installing_portage">
+<title>Installing Portage</title>
+<subsection>
+<title>Unpacking a Portage Snapshot</title>
+<body>
+
+<p>
+You now have to install a Portage snapshot, a collection of files that inform
+Portage what software titles you can install, which profiles are available, etc.
+</p>
+
+</body>
+</subsection>
+<subsection id="installing_from_Internet">
+<title>Download and Install a Portage Snapshot</title>
+<body>
+
+<p>
+Go to the mountpoint where you mounted your filesystem (most likely
+<path>/mnt/gentoo</path>):
+</p>
+
+<pre caption="Going to the Gentoo mountpoint">
+# <i>cd /mnt/gentoo</i>
+</pre>
+
+<p>
+Download a portage snapshot from a <uri
+link="/main/en/mirrors.xml">local mirror</uri>.
+You'll find them in the <path>snapshots/</path> directory.  Transfer it to the
+target system in the same manner that you did for the stage tarball.
+</p>
+
+<pre caption="Extracting the Portage snapshot">
+# <i>tar -xjf portage-*.tar.bz2 -C /mnt/gentoo/usr</i>
+</pre>
+
+</body>
+</subsection>
+</section>
+
+<section id="compile_options">
+<title>Configuring the Compile Options</title>
+<subsection>
+<title>Introduction</title>
+<body>
+
+<p>
+To optimize Gentoo, you can set a couple of variables which impact Portage 
+behaviour. All those variables can be set as environment variables (using
+<c>export</c>) but that isn't permanent. To keep your settings, Portage provides
+you with <path>/etc/make.conf</path>, a configuration file for Portage. It is
+this file we will edit now. 
+</p>
+
+<note>
+A commented listing of all possible variables can be found in
+<path>/mnt/gentoo/etc/make.conf.example</path>. For a successful Gentoo 
+installation you'll only need to set the variables which are mentioned beneath.
+</note>
+
+<p>
+Fire up a text editor so we can alter the optimization variables we will discuss
+hereafter.  Two editors are provided, <c>vi</c> (part of Busybox) and
+<c>nano</c>.  We will assume you're using <c>nano</c>.
+</p>
+
+<pre caption="Opening /etc/make.conf">
+# <i>nano -w /mnt/gentoo/etc/make.conf</i>
+</pre>
+
+<p>
+As you probably noticed, the <path>make.conf.example</path> file is
+structured in a generic way: commented lines start with "#", other lines define
+variables using the <c>VARIABLE="content"</c> syntax. The <path>make.conf</path>
+file uses the same syntax. Several of those variables are discussed next. 
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>CFLAGS and CXXFLAGS</title>
+<body>
+
+<p>
+The <c>CFLAGS</c> and <c>CXXFLAGS</c> variables define the optimization flags 
+for the <c>gcc</c> C and C++ compiler respectively. Although we define those
+generally here, you will only have maximum performance if you optimize these
+flags for each program separately. The reason for this is because every program
+is different.
+</p>
+
+<p>
+In <path>make.conf</path> you should define the optimization flags you think
+will make your system the most responsive <e>generally</e>. Don't place
+experimental settings in this variable; too much optimization can make 
+programs behave bad (crash, or even worse, malfunction).
+</p>
+
+<p>
+We will not explain all possible optimization options. If you want to know
+them all, read the <uri link="http://gcc.gnu.org/onlinedocs/">GNU
+Online Manual(s)</uri> or the <c>gcc</c> info page (<c>info gcc</c> -- only
+works on a working Linux system). The <path>make.conf.example</path> file 
+itself also contains lots of examples and information; don't forget to read it 
+too. 
+</p>
+
+<p>
+A first setting is the <c>-march=</c> flag, which specifies the name of the
+target architecture. Possible options are described in the
+<path>make.conf.example</path> file (as comments).  Examples include ISA levels
+(<c>mips1</c> ... <c>mips4</c>) and CPU models (<c>r4400</c>, <c>r4600</c> ...
+etc).  For pure ISA level architectures, one can simply specify <c>-mips3</c>
+rather than <c>-march=mips3</c>.
+</p>
+
+<pre caption="The GCC -march and -mips# settings">
+<comment>(For an R4600 system...)</comment>
+-march=r4600
+
+<comment>(Any MIPS4-class CPU...)</comment>
+-march=mips4
+
+<comment>(Or just specify the ISA level directly...)</comment>
+-mips4
+</pre>
+
+<p>
+A second one is the <c>-O</c> flag (that is a capital O, not a zero),
+which specifies the <c>gcc</c> optimization
+class flag. Possible classes are <c>s</c> (for size-optimized),
+<c>0</c> (zero - for no optimizations), <c>1</c>, <c>2</c> or even <c>3</c> for more
+speed-optimization flags (every class has the same flags as the one before, plus
+some extras). <c>-O2</c> is the recommended default. <c>-O3</c> is known to
+cause problems when used system-wide, so we recommend that you stick to
+<c>-O2</c>.
+</p>
+
+<pre caption="The GCC O setting">
+-O2
+</pre>
+
+<p>
+A very important setting in the MIPS world is the <c>-mabi=</c> flag.  MIPS has
+3 different ABIs: <c>32</c> (pure 32-bit, aka <c>o32</c>), <c>64</c> (full
+64-bit, aka <c>n64</c>) and <c>n32</c>
+(a mix of 32-bit data structures with 64-bit instructions).  This
+flag selects which of these you wish to use.  Note you need libraries for the
+ABI you select.  In layman's terms, this means, for example, you can't use
+<c>-mabi=64</c> on a 32-bit userland (or even an <c>n32</c> userland).
+</p>
+
+<p>
+Another popular optimization flag is <c>-pipe</c> (use pipes rather than
+temporary files for communication between the various stages of compilation).
+</p>
+
+<p>
+Using <c>-fomit-frame-pointer</c> (which doesn't keep the frame pointer in a
+register for functions that don't need one) might have serious repercussions on
+the debugging of applications.
+</p>
+
+<p>
+When you define the <c>CFLAGS</c> and <c>CXXFLAGS</c>, you should combine
+several optimization flags, like in the following example:
+</p>
+
+<pre caption="Defining the CFLAGS and CXXFLAGS variable">
+CFLAGS="-mabi=32 -mips4 -pipe -O2"
+CXXFLAGS="${CFLAGS}"                  <comment># Use the same settings for both variables</comment>
+</pre>
+
+<note>
+You may also want to view the <uri
+link="/doc/en/gcc-optimization.xml">Compilation Optimization Guide</uri> for
+more information on how the various compilation options can affect your system.
+</note>
+
+</body>
+</subsection>
+<subsection>
+<title>MAKEOPTS</title>
+<body>
+
+<p>
+With <c>MAKEOPTS</c> you define how many parallel compilations should occur when
+you install a package. A good choice is the number of CPUs (or CPU cores) in
+your system plus one, but this guideline isn't always perfect.
+</p>
+
+<pre caption="MAKEOPTS for a regular, 1-CPU system">
+MAKEOPTS="-j2"
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Ready, Set, Go!</title>
+<body>
+
+<p>
+Update your <path>/mnt/gentoo/etc/make.conf</path> to your own preference and
+save (<c>nano</c> users would hit <c>Ctrl-X</c>). You are now ready to continue
+with <uri link="?part=1&amp;chap=6">Installing the Gentoo Base System</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
+</sections>

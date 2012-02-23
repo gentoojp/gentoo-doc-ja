@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide lang="ja">
+<title>zshの設定及びインストールガイド</title>
+
+<author title="Author">
+  <mail link="hekonsek@gmail.com">Henryk Konsek</mail>
+</author>
+<author title="Author">
+  <mail link="morritt.andrew@gmail.com">Andrew Morritt</mail>
+</author>
+<author title="Editor">
+  <mail link="chriswhite@gentoo.org">Chris White</mail>
+</author>
+<author title="Editor">
+  <mail link="welp@gentoo.org">Peter Weller</mail>
+</author>
+<author title="翻訳">
+  <mail link="grafi@grafi.sakura.ne.jp">清水駿介</mail>
+</author>
+
+<abstract>
+このガイドではzshをインストールして設定する方法を簡単に解説します。
+このドキュメントを読み終わったときには、高度なタブ補完やコマンドの自動訂正やプロンプトの設定といった多くのzshの機能を使えるようになっているでしょう。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2</version>
+<date>2006-10-18</date>
+<!-- Original revision: 1.7 -->
+
+<chapter>
+<title>インストール</title>
+<section>
+<title>zshをインストールする</title>
+<body>
+
+<p>
+<c>zshを</c>Gentooにインストールするには、
+<c>app-shells/zsh</c>(zsh本体)と<c>app-shells/zsh-completion</c>(zshが用いる補完スクリプト)のパッケージをemergeする必要があります。
+</p>
+
+<pre caption="zshのemerge">
+# <i>emerge zsh zsh-completion</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>zshを使い始める</title>
+<body>
+
+<p>
+<c>zsh</c>を始めて起動する際、以下のようなメッセージが表示されます。
+このガイドの後ろの部分を読むときに起動ファイルを作成することになるので、このメニューはスキップしても構いません。
+</p>
+
+<pre caption="初期設定のスキップ">
+$ <i>zsh</i>
+This is the Z Shell configuration function for new users, zsh-newuser-install.
+You are seeing this message because you have no zsh startup files
+(the files .zshenv, .zprofile, .zshrc, .zlogin in the directory
+~).  This function can help you with a few settings that should
+make your use of the shell easier.
+
+You can:
+
+(q)  Quit and do nothing.  The function will be run again next time.
+
+(0)  Exit, creating the file ~/.zshrc containing just a comment.
+     That will prevent this function being run again.
+
+(1)  Continue to the main menu.
+
+--- Type one of the keys in parentheses --- <i>q</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>設定</title>
+<section>
+<title>初めに</title>
+<body>
+
+<p>
+<c>zsh</c>コマンドを実行して、zshの単一のセッションを起動してみましょう。
+なお、もっと永続的な設定を行う方法については、<uri link="#savingsettings">設定の保存</uri>の章を参照してください。
+インストールした直後は、<c>zsh</c>は非常にシンプルで多機能とは言えないように感じられます。
+この挙動を変えるためには、いくつかの設定を変更する必要があります。
+</p>
+
+</body>
+</section>
+<section>
+<title>高度なタブ補完</title>
+<body>
+
+<p>
+有名な<c>zsh</c>のタブ補完システムを使えるようにするためには、以下のコマンドを実行する必要があります。
+</p>
+
+<pre caption="補完の有効化">
+% <i>autoload -U compinit</i>
+% <i>compinit</i>
+</pre>
+
+<p>
+標準の補完スタイルはとても単純で見た目が悪いです。この見た目を改善したい場合、以下のコマンドを入力してください。
+</p>
+
+<pre caption="補完スタイルの改善">
+% <i>zstyle ':completion:*:descriptions' format '%U%B%d%b%u'</i>
+% <i>zstyle ':completion:*:warnings' format '%BSorry, no matches for: %d%b'</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>コマンド訂正</title>
+<body>
+
+<p>
+入力されたコマンドを自動で訂正する機能を有効にするのも得策です。
+</p>
+
+<pre caption="訂正の有効化">
+% <i>setopt correctall</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Prompts</title>
+<body>
+
+<p>
+何にせよ、プロンプトが味気ないのだと感じるかもしれませんが、これは数段階の作業で簡単に修正することができます。
+初めに、高度なプロンプトを扱うための機能を初期化する必要があります。
+</p>
+
+<pre caption="高度なプロンプトの有効化">
+% <i>autoload -U promptinit</i>
+% <i>promptinit</i>
+</pre>
+
+<p>
+<c>prompt -p</c>コマンドを実行することで、使用可能なプロンプトのサンプルを表示することができます。
+ここで、気に入ったものを現在のプロンプトに設定することができます。
+</p>
+
+<pre caption="サンプルのプロンプトからの選択">
+<comment>(gentooをあなたが選んだプロンプトに置き換えてください)</comment>
+% <i>prompt gentoo</i>
+</pre>
+
+<note>
+色々なプロンプトを試していて、全部のプロンプトのサンプルを一々見たくない場合は、
+<c>prompt -l</c>コマンドを使って使用可能なプロンプトのリストを表示することができます。
+</note>
+
+<p>
+他の選択肢として、自分で独自のプロンプトを作成するという手があります。そのためにはPS1環境変数を設定する必要があります。
+</p>
+
+<pre caption="単純な独自のプロンプト">
+% <i>export PS1="[Test Prompt] > "</i>
+[Test Prompt] >
+</pre>
+
+<p>
+独自のテキストプロンプトを作成できることはそれ自体優れた機能ですが、
+そのうえシステム情報をプロンプト中に表示させるための多くのエスケープシーケンスをzshは備えています。使用可能なエスケープシーケンスの一部を示します。
+</p>
+
+<table>
+<tr>
+  <th>シーケンス</th>
+  <th>出力</th>
+</tr>
+<tr>
+  <ti>%T</ti>
+  <ti>システムの時刻(HH:MM)</ti>
+</tr>
+<tr>
+  <ti>%*</ti>
+  <ti>システムの時刻(HH:MM:SS)</ti>
+</tr>
+<tr>
+  <ti>%D</ti>
+  <ti>システムの日付(YY-MM-DD)</ti>
+</tr>
+<tr>
+  <ti>%n</ti>
+  <ti>あなたのユーザー名</ti>
+</tr>
+<tr>
+  <ti>%B - %b</ti>
+  <ti>太字の開始 - 終了</ti>
+</tr>
+<tr>
+  <ti>%U - %u</ti>
+  <ti>下線の開始 - 終了</ti>
+</tr>
+<tr>
+  <ti>%d</ti>
+  <ti>カレントディレクトリ</ti>
+</tr>
+<tr>
+  <ti>%~</ti>
+  <ti>カレントディレクトリ(~からの相対パス)</ti>
+</tr>
+<tr>
+  <ti>%M</ti>
+  <ti>コンピュータのホスト名</ti>
+</tr>
+<tr>
+  <ti>%m</ti>
+  <ti>The computer's hostname (truncated before the first period)</ti>
+  <ti>コンピュータのホスト名(の始めのピリオドより前の部分)</ti>
+</tr>
+<tr>
+  <ti>%l</ti>
+  <ti>現在のあなたのtty</ti>
+</tr>
+</table>
+
+<p>
+これらのエスケープシーケンスは、単にPS1環境変数の一部として使用すれば、zshによって自動的に解釈されます。
+</p>
+
+<pre caption="より複雑なプロンプト">
+% <i>export PS1="[%* - %D] %d %% "</i>
+[08:44:23 - 06-02-18] /home/username %
+</pre>
+
+</body>
+</section>
+<section>
+<title>履歴</title>
+<body>
+
+<p>
+残念ながら、Gentooの標準でのzshの設定ではコマンド履歴機能を使うことができません。
+履歴が有効になっていないシェルを使って作業することは非常にイライラするものであるため、私たちは以下のコマンドを実行するべきです。
+</p>
+
+<pre caption="履歴の基本的な設定">
+% <i>export HISTSIZE=2000</i>
+% <i>export HISTFILE="$HOME/.history"</i>
+
+<comment>(以下のコマンドを実行しないと履歴は保存されません)</comment>
+% <i>export SAVEHIST=$HISTSIZE</i>
+</pre>
+
+<!-- does not work
+<p>
+履歴内のコマンドを上下の矢印キーで検索するのは、入力したいコマンドの初めの数文字を打ち込んだ後ではなおさらなのですが、非常に快適です。
+</p>
+
+<p>
+この機能を使えるようにするために、以下のコマンドを入力してください。
+</p>
+
+<pre caption="コンテキストサーチ[訳注:適切な訳語では無さそう]の設定">
+% <i>bindkey `tput kcuu1` history-beginning-search-backward >/dev/null 2>&amp;1</i>
+% <i>bindkey `tput kcud1` history-beginning-search-forward >/dev/null 2>&amp;1 </i>
+</pre>
+
+<p>
+上記の機能を試すために、以下のコマンドを試してください。
+</p>
+
+TODO: use commands that *are* in the history, i.e. commands from above samples
+
+<pre caption="コマンドの初めの何文字かを使った履歴の検索">
+<comment>(入力の後にエンターキーを打たないこと)</comment>
+% <i>vim /etc/</i>
+<comment>(ここで上矢印キーを打つ)</comment>
+% <i>vim /etc/fstab</i>
+<comment>(もう一度上矢印キーを打つ)</comment>
+% <i>vim /etc/X11/xorg.conf</i>
+</pre>
+-->
+
+<p>
+<c>hist_ignore_all_dups</c>オプションを設定することで、
+入力内容が重複する際には(単一のセッション内に<c>ls -l</c>が何度も実行される場合など)履歴を記録しないようにすることができます。
+</p>
+
+<pre caption="重複を無視する設定">
+% <i>setopt hist_ignore_all_dups</i>
+</pre>
+
+<p>
+特定の項目を履歴に記録しないようにするための、一つ以上のスペースに続けてコマンドを入力するという便利な工夫のやり方を説明します。
+</p>
+
+<pre caption="特定の項目を記録しないようにする設定">
+% <i>setopt hist_ignore_space</i>
+
+<comment>(このコマンドは記録されません。コマンドの前の余分なスペースに注意してください。)</comment>
+% <i> cat /proc/cpuinfo</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>雑多な設定</title>
+<body>
+
+<p>
+カレントディレクトリの移動のための飽き飽きするような<c>cd</c>コマンドの入力をしたくないなら、
+<c>autocd</c>オプションを指定するのが良いでしょう(例: <c>/etc</c>と、<c>cd /etc</c>の代わりに入力できます)。
+</p>
+
+<pre caption="autocdオプションの設定">
+% <i>setopt autocd</i>
+</pre>
+
+<p>
+bashと同じような標準的なグロブに不満がある場合、<c>extendedglob</c>オプションを指定することで拡張されたグロブ(正規表現に近いもの)を利用できます。
+</p>
+
+<pre caption="拡張されたグロブの設定">
+% <i>setopt extendedglob</i>
+</pre>
+
+<p>
+上記のオプションが設定されているなら、<c>cp ^*.(tar|bz2|gz)</c>といった拡張されたグロブによるクエリを使うことができます。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="savingsettings">
+<title>設定を保存する</title>
+<section>
+<title>zshの設定を保存する</title>
+<body>
+
+<p>
+一旦<c>zsh</c>を気に入るようにカスタマイズしてしまったなら、これらの設定を<c>zsh</c>のシステムの標準の設定として保存するのが得策です。
+そのために、<path>/etc/zsh/zshrc</path>スクリプトに設定を書くという方法が考えられます。
+代わりに、<path>~/.zshrc</path>を編集することで自分のアカウントのみに対する標準の設定とすることだってできます。
+</p>
+
+<pre caption="zshrcの例">
+#!/bin/zsh
+
+# comp
+autoload -U compinit
+compinit
+
+# correction
+setopt correctall
+
+# prompt
+autoload -U promptinit
+promptinit
+prompt gentoo
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>zshを標準のシェルにする</title>
+<section>
+<title>root権限を利用できる場合のユーザーの設定</title>
+<body>
+
+<p>
+<c>usermod</c>コマンドを使って特定のユーザーのシェルを変更することができます。
+</p>
+
+<pre caption="usermodを使ったzshへの移行の永続的な設定">
+# <i>usermod -s /bin/zsh userlogin</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>rootでないユーザーのための別の方法</title>
+<body>
+
+<p>
+もしシステム管理者が(それが何ら無理な要求ではないにも関わらず)あなたのシェルをzshに設定することを認めないならば、
+<c>bash</c>の起動時に<c>zsh</c>を実行するように設定するという手があります。<path>~/.bashrc</path>にちょっとした変更をしさえすれば十分です。
+</p>
+
+<pre caption="~/.bashrcの例">
+<comment>(Add the following to your ~/.bashrc)</comment>
+exec zsh
+</pre>
+
+<p>
+シェルを変更する他の方法として、<c>chsh</c>コマンド(ユーザーのログインシェルを変更するためのユーティリティ)を使うというものがあります。
+一般ユーザーは自分のアカウントのシェルを変更することしかできません。rootならば、全てのユーザーのログインシェルを変更することができます。
+</p>
+
+<pre caption="chshを使ったzshへの移行の永続的な設定">
+<comment>("username"をあなた自身のユーザー名で置き換えてください)</comment>
+$ <i>chsh -s /bin/zsh username</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+</guide>
