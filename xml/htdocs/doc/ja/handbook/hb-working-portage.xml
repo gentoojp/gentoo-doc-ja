@@ -14,10 +14,11 @@
 </abstract>
 
 
-<version>2</version>
-<date>2010-10-29</date>
-<!-- Original revision: 1.75 -->
+<version>4</version>
+<date>2011-10-26</date>
+<!-- Original revision: 1.78 -->
 <!-- Translator: kobayashi -->
+<!-- Translator: naota -->
 
 
 <section>
@@ -86,6 +87,12 @@ Portageツリーは一般に<uri link="http://rsync.samba.org/">rsync</uri>と�
 <pre caption="emerge-webrsyncを実行">
 # <i>emerge-webrsync</i>
 </pre>
+
+<p>
+<c>emerge-webrsync</c>を使うとGentooリリースエンジニアリングチームのGPG鍵でサインされているPortageツリーのスナップショットでツリーを更新できるという利点もあります。
+詳しくは<uri link="?part=2&amp;chap=3">Portageの機能</uri>のセクションの<uri
+link="?part=2&amp;chap=3#webrsync-gpg">検証済みのPortageツリースナップショットを取得する</uri>を参照してください。
+</p>
 
 </body>
 </subsection>
@@ -267,11 +274,23 @@ Portageツリーが更新されたら、<c>emerge --update world</c>でシステ
 Portageはインストールされているアプリケーションの新しいバージョンを検索します。
 しかし、これは<e>明示的に</e>インストールされたものしか確かめません（そうしたアプリケーションは<path>/var/lib/portage/world</path>にリストされています）。
 つまり、それらの依存関係は確認しないということです。
-システムの<e>個々のパッケージすべて</e>を更新したいときには<c>--deep</c>引数を与えてやります。
+明示的にインストールされたパッケージの依存も更新したいときには<c>--deep</c>引数を与えてやります。
+</p>
+
+<pre caption="システムを依存関係を含めて更新する">
+# <i>emerge --update --deep world</i>
+</pre>
+
+<p>
+これでも<e>全てのパッケージ</e>が更新されるわけではありません。
+システムにインストールされているパッケージの中にはコンパイルとビルドの間には必要ではあるものの、
+インストールが終わってしまえばもう必要ないようなパッケージもあります。
+Portageでは、そのようなパッケージを<e>build dependencies</e> (ビルド依存)と呼んでいます。
+これを更新に含めるには<c>--with-bdeps=y</c>を追加します。
 </p>
 
 <pre caption="システムの全てを更新する">
-# <i>emerge --update --deep world</i>
+# <i>emerge --update --deep --with-bdeps=y world</i>
 </pre>
 
 <p>
@@ -284,7 +303,7 @@ Portageはインストールされているアプリケーションの新しい�
 </p>
 
 <pre caption="完全な更新の実行">
-# <i>emerge --update --deep --newuse world</i>
+# <i>emerge --update --deep --newuse --with-bdeps=y world</i>
 </pre>
 
 </body>
@@ -552,6 +571,43 @@ Portageの最近のバージョンでは、些細なブロックについては�
   </li>
 
 </ul>
+
+</body>
+</subsection>
+<subsection id="USEdependency">
+<title>必要なUSEフラグの変更</title>
+<body>
+
+<pre caption="PortageがUSEフラグの変更が必要との警告を出しています">
+The following USE changes are necessary to proceed:
+#required by app-text/happypackage-2.0, required by happypackage (argument)
+>=app-text/feelings-1.0.0 test
+</pre>
+
+<p>
+<c>--autounmask</c>をつけていなければエラーメッセージは次のようになっているでしょう。
+</p>
+
+<pre caption="PortageがUSEフラグの変更が必要とのエラーを出しています">
+emerge: there are no ebuilds built with USE flags to satisfy "app-text/feelings[test]".
+!!! One of the following packages is required to complete your request:
+- app-text/feelings-1.0.0 (Change USE: +test)
+(dependency required by "app-text/happypackage-2.0" [ebuild])
+(dependency required by "happypackage" [argument])
+</pre>
+
+<p>
+こういった警告やエラーは、ただ単純に他のパッケージに依存しているだけでなく、
+そのパッケージが特定のUSEフラグ(や、複数のUSEフラグの組みあわせ)でビルドされていることを必要とするパッケージをインストールする時に起こります。
+上の例では<c>app-text/feelings</c>は<c>USE="test"</c>でビルドされていなければいけませんが、
+このUSEフラグはシステムで設定されていません。
+</p>
+
+<p>
+<path>/etc/make.conf</path>でグローバルUSEフラグに追加するか、
+または<path>/etc/portage/package.use</path>でパッケージごとのUSEフラグを設定することで、
+こういった警告やエラーを解決することができます。
+</p>
 
 </body>
 </subsection>
