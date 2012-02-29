@@ -4,14 +4,14 @@
 
 <!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
 
-<guide link="/doc/ja/xorg-config.xml">
+<guide>
 
 <title>X サーバー設定ガイド</title>
 
 <author title="Author">
-  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+  <mail link="swift"/>
 </author>
-<author title="Editor">
+<author title="Author">
   <mail link="nightmorph"/>
 </author>
 
@@ -24,7 +24,9 @@
 <author title="翻訳">
   <mail link="katanotsupqr@gmail.com">masuda</mail>
 </author>
-
+<author title="翻訳">
+  <mail link="naota@gentoo.org">naota</mail>
+</author>
 
 <abstract>
 Xorgはユーザーがグラフィカル環境を利用できるようになるXウィンドウサーバーです。このガイドではXorgとは何か、どのようにインストールするのか、そして様々な設定オプションは何かを説明します。
@@ -34,10 +36,10 @@ Xorgはユーザーがグラフィカル環境を利用できるようになるX
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 <license/>
 
-<version>1.18</version>
-<date>2008-11-09</date>
+<version>10</version>
+<date>2011-09-02</date>
 
-<!-- Original revision: 1.18 -->
+<!-- Original revision: 1.48 -->
 
 <chapter>
 <title>X ウィンドウサーバーとは何か？</title>
@@ -48,7 +50,7 @@ Xorgはユーザーがグラフィカル環境を利用できるようになるX
 <p>
 平均的なユーザーはコマンドを打つと考えることに脅えているかもしれません。
 なぜGentooや一般的なLinuxではしたいようにポイントしてクリックすることができないのでしょうか。
-よろしい、(大きな笑みで)、もちろんあなたはこれを行うことが可能です :-)
+よろしい、もちろんあなたはこれを行うことが可能です!
 Linuxは、既存のインストール済のシステム上にインストール可能な、様々な派手なユーザーインターフェースと環境を提供します。
 </p>
 
@@ -95,17 +97,163 @@ Xorgはハードウェアとあなたが実行したいソフトウェアとの�
 <chapter>
 <title>Xorgのインストール</title>
 <section>
-<title>emergeを使う</title>
 <body>
 
 <p>
-雑談はこれぐらいにして、仕事に取りかかりましょう。Xorgをインストールするには、<c>emerge xorg-x11</c>を実行するだけです。
-Xorgのインストールには時間がかかりますので、待っている間におやつを食べたくなるでしょう。
+Xorgをインストールする前に、システムの準備をします。
+まずは、入力デバイスとビデオカードをサポートするようにカーネルを設定します。
+そして正しいドライバとXorgのパッケージとがビルドされインストールされるように
+<path>/etc/make.conf</path>を準備します。
+</p>
+
+</body>
+</section>
+<section>
+<title>入力ドライバのサポート</title>
+<body>
+
+<p>
+デフォルトではXorgは<c>evdev</c>という一般的な入力ドライバを使います。
+カーネルの設定を変更して<c>evdev</c>のサポートを有効にしなくてはいけません。
+カーネルの設定方法がわからなければ、
+<uri link="/doc/en/kernel-config.xml">Kernel Configuration Guide</uri>
+<uri link="/doc/ja/kernel-config.xml">(日本語訳)</uri>を読んでください。
+</p>
+
+<pre caption="カーネルでevdevを有効にする">
+Device Drivers ---&gt;
+  Input device support ---&gt;
+  &lt;*&gt;  Event interface
+</pre>
+
+</body>
+</section>
+<section>
+<title>カーネルモードセッティング</title>
+<body>
+
+<p>
+最近のオープンソースのビデオドライバはカーネルモードセッティング(Kernel Modesetting, KMS)という機能に依存しています。
+KMSにより、グラフィカルなブートがより改善されちらつきが少なくなり、
+ユーザの切り替えが速くなり、フレームバッファコンソールが組み込まれ、
+コンソールからXorgへの切り替えがシームレスになるなどなどの機能が実現されています。
+KMSは過去のフレームバッファドライバと衝突するので、それらのドライバは<b>無効</b>にしなければいけません。
 </p>
 
 <p>
-Xorgをインストールする前に、
-2つの重要な変数を<path>/etc/make.conf</path>ファイルに設定しなくてはいけません。
+First, prepare your kernel for KMS. You need to do this step regardless of which
+Xorg video driver you're using.
+</p>
+
+<pre caption="Configuring framebuffers">
+Device Drivers ---&gt;
+  Graphics support ---&gt;
+    Support for frame buffer devices ---&gt;
+    <comment>(Disable all drivers, including VGA, Intel, nVidia, and ATI)</comment>
+
+    <comment>(Further down, enable basic console support. KMS uses this.)</comment>
+    Console display driver support ---&gt;
+      &lt;*&gt;  Framebuffer Console Support
+</pre>
+
+<p>
+Next, configure your kernel to use the proper KMS driver for your video card.
+Intel, nVidia, and AMD/ATI are the most common cards, so follow code listing for
+your card below.
+</p>
+
+<p>
+For Intel cards:
+</p>
+
+<pre caption="Intel settings">
+Device Drivers ---&gt;
+  Graphics support ---&gt;
+    /dev/agpgart (AGP Support) ---&gt;
+    &lt;*&gt;  Intel 440LX/BX/GX, I8xx and E7x05 chipset support
+    Direct Rendering Manager (XFree86 4.1.0 and higher DRI support) ---&gt;
+    &lt;*&gt;  Intel 830M, 845G, 852GM, 855GM, 865G (i915 driver)
+         i915 driver
+    [*]    Enable modesetting on intel by default
+</pre>
+
+<p>
+For nVidia cards:
+</p>
+
+<pre caption="nVidia settings">
+<comment>(Enable DRM)</comment>
+Device Drivers ---&gt;
+  Graphics support ---&gt;
+  &lt;*&gt;  Direct Rendering Manager ---&gt;
+
+<comment>(Nouveau is currently in the Staging drivers section)</comment>
+Device Drivers ---&gt;
+  Staging drivers ---&gt;
+  [ ]  Exclude Staging drivers from being built
+  &lt;*&gt;    Nouveau (nVidia) cards
+</pre>
+
+<p>
+For newer AMD/ATI cards (<uri link="/doc/en/ati-faq.xml">RadeonHD 2000 and
+up</uri>), you will need to emerge <c>radeon-ucode</c> or
+<c>linux-firmware</c>. Once you have installed one of these packages,
+configure your kernel as shown:
+</p>
+
+<pre caption="AMD/ATI settings">
+<comment>(Setup the kernel to use the radeon-ucode firmware)</comment>
+Device Drivers ---&gt;
+  Generic Driver Options ---&gt;
+  [*]  Include in-kernel firmware blobs in kernel binary
+  <comment># RadeonHD 2000, 3000, and 4000 series cards:</comment>
+  (radeon/R600_rlc.bin radeon/R700_rlc.bin) External firmware blobs
+  <comment># RadeonHD 5000, a.k.a Evergreen, and newer cards:</comment>
+  (radeon/CEDAR_me.bin radeon/CEDAR_pfp.bin radeon/CEDAR_rlc.bin
+   radeon/CYPRESS_me.bin radeon/CYPRESS_pfp.bin radeon/CYPRESS_rlc.bin
+   radeon/JUNIPER_me.bin radeon/JUNIPER_pfp.bin radeon/JUNIPER_rlc.bin
+   radeon/REDWOOD_me.bin radeon/REDWOOD_pfp.bin 
+   radeon/REDWOOD_rlc.bin) External firmware blobs
+  <comment># Radeon HD 6000 series Fusion APUs:</comment>
+  (radeon/PALM_me.bin radeon/PALM_pfp.bin radeon/SUMO2_me.bin
+   radeon/SUMO2_pfp.bin radeon/SUMO_me.bin radeon/SUMO_pfp.bin
+   radeon/SUMO_rlc.bin) External firmware blobs
+  <comment># Radeon HD 6400-6900 aka. Northern Islands:</comment>
+  (radeon/BARTS_mc.bin radeon/BARTS_me.bin radeon/BARTS_pfp.bin
+   radeon/BTC_rlc.bin radeon/CAICOS_mc.bin radeon/CAICOS_me.bin
+   radeon/CAICOS_pfp.bin radeon/CAYMAN_mc.bin radeon/CAYMAN_me.bin
+   radeon/CAYMAN_pfp.bin radeon/CAYMAN_rlc.bin radeon/TURKS_mc.bin
+   radeon/TURKS_me.bin radeon/TURKS_pfp.bin) External firmware blobs
+   (/lib/firmware/) Firmware blobs root directory
+
+<comment>(Enable Radeon KMS support)</comment>
+Device Drivers ---&gt;
+  Graphics support ---&gt;
+  &lt;*&gt;  Direct Rendering Manager ---&gt;
+  &lt;*&gt;    ATI Radeon
+  [*]      Enable modesetting on radeon by default
+</pre>
+
+<note>
+Old Radeon cards (X1900 series and older) don't need the <c>radeon-ucode</c>
+package or any firmware configuration. Just enable the Direct Rendering Manager
+and ATI Radeon modesetting.
+</note>
+
+<p>
+Now that you're done setting up KMS, continue with preparing
+<path>/etc/make.conf</path> in the next section.
+</p>
+
+</body>
+</section>
+<section>
+<title>make.conf configuration</title>
+<body>
+
+<p>
+Now that your kernel is prepared, you have to configure two important variables
+in the <path>/etc/make.conf</path> file before you can install Xorg.
 </p>
 
 <p>
