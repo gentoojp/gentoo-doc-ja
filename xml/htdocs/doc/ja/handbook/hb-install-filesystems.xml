@@ -2,12 +2,12 @@
 <!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-filesystems.xml,v 1.1 2008/07/06 15:45:03 shindo Exp $ -->
 <!DOCTYPE included SYSTEM "/dtd/guide.dtd">
 
-<!-- Original revision: 1.5 -->
+<!-- Original revision: 1.9 -->
 
 <included>
 
-<version>3</version>
-<date>2008-03-03</date>
+<version>7</version>
+<date>2011-09-17</date>
 
 <section id="filesystemsdesc">
 <title>Filesystems</title>
@@ -15,18 +15,18 @@
 
 <p test="contains('x86 Alpha',func:keyval('arch'))">
 Linuxカーネルでは様々なファイルシステムをサポートしています。
-ここではLinuxシステムの多くで共通して使われているext2、ext3、ReiserFS、XFS、JFSについて説明します。
+ここではLinuxシステムの多くで共通して使われているext2、ext3、ext4、ReiserFS、XFS、JFSについて説明します。
 </p>
 
 <p test="func:keyval('arch')='IA64'">
 Linuxカーネルでは様々なファイルシステムをサポートしています。
-ここではLinuxシステムの多くで共通して使われているvfat、ext2、ext3、ReiserFS、XFS、JFSについて説明します。
+ここではLinuxシステムの多くで共通して使われているvfat、ext2、ext3、ext4、ReiserFS、XFS、JFSについて説明します。
 </p>
 
 <p test="func:keyval('arch')='AMD64'">
 様々なファイルシステムが利用できます。
 amd64アーキテクチャではstableのものもあればそうでないものもあります。
-次のファイルシステム、ext2、ext3、XFSはstableです。
+次のファイルシステム、ext2、ext3、ext4、XFSはstableです。
 JFSとXFSは動作しますが、さらにテストが必要です。
 もし本当に冒険心があるなら、それらのファイルシステムを試すこともできます。
 </p>
@@ -34,20 +34,20 @@ JFSとXFSは動作しますが、さらにテストが必要です。
 <p test="func:keyval('arch')='arm'">
 様々なファイルシステムが利用できます。
 armアーキテクチャではstableのものもあればそうでないものもあります。
-次のファイルシステム、ext2、ext3、XFSはstableです。
+次のファイルシステム、ext2、ext3、ext4、XFSはstableです。
 JFSとXFSは動作しますが、さらにテストが必要です。
 もし本当に冒険心があるなら、それらのファイルシステムを試すこともできます。
 </p>
 
 <p test="func:keyval('arch')='HPPA'">
 様々なファイルシステムが利用できます。
-HPPAアーキテクチャではext2、ext3、XFS、ReiserFSがstableで見つかります。
+HPPAアーキテクチャではext2、ext3、ext4、XFS、ReiserFSがstableです。
 他のものは非常に実験的です。
 </p>
 
 <p test="func:keyval('arch')='MIPS'">
 様々なファイルシステムが利用できます。
-MPISアーキテクチャではReiserFS、ext2、ext3がstableで見つかります。
+MPISアーキテクチャではReiserFS、ext2、ext3、ext4がstableです。
 他のものは非常に実験的です。
 </p>
 
@@ -65,7 +65,7 @@ JFSとXFSのサポートはカーネルモジュールをとおして利用で�
 <p test="func:keyval('arch')='SPARC'">
 様々なファイルシステムが利用できます。
 一部はSPARCアーキテクチャでstableになっています。
-例えばext2、ext3は十分に動作することがわかっています。
+例えばext2、ext3、ext4は十分に動作することがわかっています。
 他のファイルシステムは正常に機能しない可能性があります。
 </p>
 
@@ -88,6 +88,8 @@ ia64システムのブートパーテイションは常にvfatでなければな
 現在、整合性のチェックをとても早く終わらせることのできる次世代のジャーナリングファイルシステムの選択肢があります。
 そのために一般的には非ジャーナリングファイルシステムより好まれています。
 ジャーナリングファイルシステムはファイルシステムの不整合状態の発生やシステム起動時の大幅な遅延を防ぎます。
+Gentooをとても小さいディスク(4GB未満)にインストールする場合は、
+<c>mke2fs -T small /dev/&lt;device&gt;</c>としてext2が十分な数のinodeを確保するようにしてください。
 </p>
 
 <p>
@@ -96,6 +98,20 @@ full data及びordered dataジャーナリングの様に優れたジャーナ�
 ほぼすべての状況下で高いパフォーマンスを上げることができるHtreeインデックスを使用しています。
 要するにext3は素晴らしいファイルシステムだということです。
 ext3はすべての目的、すべてのプラットフォームに推奨されるファイルシステムです。
+Gentooをとても小さいディスク(4GB未満)にインストールする場合は、
+<c>mke2fs -T small /dev/&lt;device&gt;</c>としてext3が十分な数のinodeを確保するようにしてください。
+</p>
+
+<p test="contains('x86 Alpha MIPS AMD64 arm IA64 SPARC HPPA',func:keyval('arch'))">
+<b>ext4</b>は新しい機能を追加し、パフォーマンスを改善し、
+最小限のディスク上のフォーマットの変更でサイズの上限を無くしているext3のフォークです。
+ext4では最大1EBのファイルシステムを管理でき、ファイルサイズの上限も16TBになっています。
+昔ながらのext2/3のブロックアロケーションビットマップの代わりに、
+<uri link="http://en.wikipedia.org/wiki/Extent_%28file_systems%29">extent</uri>を使い、
+大きなファイルでのパフォーマンスを改善しフラグメンテーションを減らしています。
+また、より洗練されたブロックアロケーションアルゴリズム(遅延アロケーションとマルチブロックアロケーション)を使い、
+ファイルシステムドライバがディスク上のデータレイアウトをより最適化しやすくしています。
+ext4は製品レベルのコードの安定性とほぼ十年前のファイルシステムの機能拡張の願望との折衷案のファイルシステムになります。
 </p>
 
 </body>
