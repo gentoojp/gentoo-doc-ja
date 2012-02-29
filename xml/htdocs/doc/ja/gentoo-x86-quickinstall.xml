@@ -3,8 +3,17 @@
 
 <!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
 
-<guide link="/doc/ja/gentoo-x86-quickinstall.xml">
+<guide>
 <title>Gentoo Linux x86クイックインストールガイド</title>
+
+<values>
+ <key id="raid+lvm">no</key>
+ <key id="root">/dev/sda3</key>
+</values>
+
+<author title="Author">
+  <mail link="neysx">Xavier Neys</mail>
+</author>
 <author title="Author">
   <mail link="swift@gentoo.org">Sven Vermeulen</mail>
 </author>
@@ -15,66 +24,75 @@
 <author title="翻訳">
   <mail link="solidsneak@hyper.cx">小林弘樹</mail>
 </author>
+<author title="翻訳">
+  <mail link="naota@gentoo.org">青田直大</mail>
+</author>
 
 <abstract>
-クイックインストールガイドは、Gentooをインストールする手順を簡潔にカバーしています。このガイドに従ってインストールする場合、Gentoo Linuxのインストールを経験している必要があります。
+クイックインストールガイドは、Gentooをインストールする手順を簡潔にカバーしています。
+stage3のインストールを時間をかけずに行なうことが目的です。
+このガイドに従ってインストールする場合、Gentoo Linuxのインストールを一度経験している必要があります。
 </abstract>
 
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 <license/>
 
-<version>2.10</version>
-<date>2006-02-18</date>
+<version>26</version>
+<date>2011-05-09</date>
 
-<!-- Original revision: 1.51 -->
+<!-- Original revision: 1.85 -->
+
+<chapter>
+<title>はじめに</title>
+<section>
+<body>
+
+<p>
+このガイドにはGentooのstage3インストールを完了するのに必要な全てのコマンドが記載してあります。
+stage3とPortageのスナップショットを取得するために、インターネットへの接続が必要になります。
+</p>
+
+<impo>
+新規ユーザは、インストールのプロセスをより良く解説している
+<uri link="/doc/en/handbook/index.xml">Handbook</uri>
+<uri link="/doc/ja/handbook/index.xml">(日本語訳)</uri>
+を読むべきです。クイックインストールガイドは、
+従うべきチェックリストだけが必要な経験値のあるユーザのためのものです。
+</impo>
+
+<p>
+以下のコマンドは、全て完了するのに2秒以上かかります。
+計測はAMD 2000 1.66 Ghzで512MBのメモリとハードウェアコントローラに2つのSATAディスクをつなげたマシンで行ないました。
+</p>
+
+<pre caption="テストマシンのスペック">
+<comment>(以下のスペックと必要時間の情報で、
+あなたのマシンでインストールを完了するのに必要な時間を見積もることができるでしょう。)</comment>
+
+# <i>grep bogo /proc/cpuinfo</i>
+bogomips       : 3337.81
+
+# <i>hdparm -tT /dev/sda</i>
+/dev/sda:
+ Timing cached reads:   1100 MB in  2.00 seconds = 549.97 MB/sec
+ Timing buffered disk reads:  224 MB in  3.01 seconds =  74.36 MB/sec
+
+# <i>grep MemTotal /proc/meminfo</i>
+MemTotal:       509248 kB
+</pre>
+
+</body>
+</section>
+</chapter>
 
 <chapter>
 <title>クイックインストールガイド</title>
+
 <section>
-<title>インストールメディア</title>
-<body>
-
-<p>
-<uri link="/main/en/mirrors.xml">ミラー</uri>(<uri link="/main/ja/mirrors.xml">日本語訳</uri>)からCDをダウンロードします。
-ISOファイルが<path>releases/&lt;architecture&gt;/&lt;release&gt;/installcd</path>にあります。
-<e>minimal</e>インストールCDはインターネットベースのインストールにのみ役立ちます。
-<e>universal</e>インストールCDはネットワーク無しでのインストールを行うことが出来ます。
-</p>
-
-<p>
-CDを<uri link="/doc/en/faq.xml#isoburning">焼いて</uri>(<uri link="/doc/ja/faq.xml#isoburning">日本語訳</uri>)起動します。
-起動画面で<c>F2</c>を押して利用可能な起動オプションを確認します。
-PCMCIAサポートが必要なら、起動後に<c>pcmcia</c>initスクリプトを起動します。
-</p>
-
-<p>
-インストールCDでは、<c>sshd</c>サーバを起動したり、追加ユーザを追加したり、<c>irssi</c>(コマンドラインのチャットクライアント)を起動したり、<c>lynx</c>や<c>links</c>でWebを閲覧することも出来ます。
-</p>
-
-</body>
+ <include href="gentoo-x86-quickinstall-media.xml"/>
 </section>
-<section>
-<title>ネットワーク設定</title>
-<body>
 
-<p>
-ネットワークの準備が整っていないのなら、<c>net-setup</c>を使ってネットワークの設定を行います。
-設定の前に<c>modprobe</c>でネットワークカードに対応したドライバを読み込む必要があるかもしれません。
-ADSLを使っているのなら、<c>adsl-setup</c>と<c>adsl-start</c>を使います。
-PPTPサポートが必要なら、まず<path>/etc/ppp/chap-secrets</path>と<path>/etc/ppp/options.pptp</path>を編集し、<c>pptp &lt;server&nbsp;ip&gt;</c>を使用します。
-</p>
-
-<p>
-無線LANを使うには、<c>iwconfig</c>を使って無線変数を設定し、<c>net-setup</c>をもう一度行うか、もしくは<c>ifconfig</c>、<c>dhcpcd</c>、<c>route</c>を手動で実行します。
-</p>
-
-<p>
-proxyを使用するには、<c>export http_proxy</c>、<c>ftp_proxy</c>、そして<c>RSYNC_PROXY</c>を使ってシステムを初期化することを忘れないでください。
-</p>
-
-</body>
-</section>
 <section>
 <title>ディスクの準備</title>
 <body>
@@ -84,257 +102,115 @@ proxyを使用するには、<c>export http_proxy</c>、<c>ftp_proxy</c>、そ�
 少なくともswapパーティション(タイプ82)と1つのLinuxパーティション(タイプ83)が必要です。
 </p>
 
+<pre caption="Create the partitions">
+livecd ~ # <i>fdisk /dev/sda</i>
+
+<comment>(The rest of this guide uses the following partitioning scheme)</comment>
+livecd ~ # <i>fdisk -l /dev/sda</i>
+
+Disk /dev/sda: 599.9 GB, 599978409984 bytes
+255 heads, 63 sectors/track, 72943 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *           1          12       96358+  83  Linux
+/dev/sda2              13         110      787185   82  Linux swap / Solaris
+/dev/sda3             111       72943   585031072+  83  Linux
+</pre>
+
 <p>
 <c>mke2fs</c>、<c>mke2fs -j</c>、<c>mkreiserfs</c>、<c>mkfs.xfs</c>、<c>mkfs.jfs</c>を利用してLinuxパーティションにファイルシステムを作成します。
 swapパーティションを<c>mkswap</c>と<c>swapon</c>を使って初期化します。
 </p>
+
+<pre caption="Create the file systems and activate swap">
+<comment>(ext2 is all you need on the /boot partition)</comment>
+livecd ~ # <i>mke2fs /dev/sda1</i>
+
+<comment>(Let's use ext3 on the main partition)</comment>
+livecd ~ # <i>mke2fs -j /dev/sda3</i>
+
+<comment>(Create and activate swap)</comment>
+livecd ~ # <i>mkswap /dev/sda2 &amp;&amp; swapon /dev/sda2</i>
+</pre>
 
 <p>
 新しく作成したファイルシステムを<path>/mnt/gentoo</path>にマウントします。
 必要なら他のマウントポイント用のディレクトリ(<path>/mnt/gentoo/boot</path>など)を作成します。
 </p>
 
-</body>
-</section>
-<section>
-<title>stageの設定</title>
-<body>
-
-<p>
-まず<c>date MMDDhhmmYYYY</c>を使って時刻を合わせます。
-次に、<uri link="/main/en/mirrors.xml">ミラー</uri>(<uri link="/main/ja/mirrors.xml">日本語訳</uri>)からstageをダウンロードするか、インストールCD(<path>/mnt/cdrom/stages</path>)にあるstageを使用します。
-<path>/mnt/gentoo</path>に行き、<c>tar&nbsp;-xvjpf&nbsp;&lt;stage&nbsp;tarball&gt;</c>でstageを解凍します。
-</p>
-
-<p>
-ネットワーク無しのインストールを行うのなら、CDからPortageのスナップショットをインストールします。
-<path>/mnt/gentoo/usr</path>に行き、<c>tar&nbsp;-xvjf&nbsp;/mnt/cdrom/snapshots/&lt;snapshot&gt;</c>を実行します。
-その他のユーザはPortageスナップショットをダウンロードし、同様にインストールします。
-</p>
-
-<p>
-ネットワーク無しのインストールなら、ソースコードファイルを<path>/mnt/cdrom/distfiles/</path>から<path>/mnt/gentoo/usr/portage/distfiles/</path>へコピーします。
-</p>
-
-<p>
-<path>/mnt/gentoo/etc/make.conf</path>を必要に合わせて(USEフラグ、CFLAGS、CXXFLAGS)編集します。この作業には<c>nano</c>エディタを使用することが出来ます。
-</p>
-
-</body>
-</section>
-<section>
-<title>Gentooベースシステムのインストール</title>
-<body>
-
-<p>
-まず<path>/proc</path>ファイルシステムをマウントし、<path>/etc/resolv.conf</path>ファイルを上書きしてGentoo環境にchrootします。
-</p>
-
-<pre caption="準備とchroot">
-# <i>mount -t proc none /mnt/gentoo/proc</i>
-# <i>cp /etc/resolv.conf /mnt/gentoo/etc/</i>
-# <i>chroot /mnt/gentoo /bin/bash</i>
-# <i>env-update</i> &amp;&amp; <i>source /etc/profile</i>
+<pre caption="Mount the file systems">
+livecd ~ # <i>mount /dev/sda3 /mnt/gentoo</i>
+livecd ~ # <i>mkdir /mnt/gentoo/boot</i>
+livecd ~ # <i>mount /dev/sda1 /mnt/gentoo/boot</i>
+livecd ~ # <i>cd /mnt/gentoo</i>
 </pre>
 
-<p>
-ネットワークインストールなら、<c>emerge --sync</c>を実行してPortageツリーを更新します。
-</p>
-
-<p>
-次に、<path>/etc/make.profile</path>が正しいプロファイルを指しているか確認します。
-ほとんどのユーザはデフォルトで問題ありませんが、別のカーネル向けの代わりのプロファイル(<path>2.4/</path>は2.4カーネルベースのプロファイル)があります。
-<c>ln -sfn</c>を使ってプロファイルを変更します。
-</p>
-
-<ul>
-  <li>
-    <path>/usr/portage</path>ディレクトリの<c>scripts/bootstrap.sh</c>を使ってブートストラップを行います(ネットワーク無しのインストールでは行うことは出来ません)
-  </li>
-  <li>
-    <c>emerge&nbsp;-e&nbsp;system</c>(デフォルトのCFLAGS/CXXFLAGSを変更していなければ<c>-N</c>)を使ってシステムのインストールを行います(ネットワーク無しのインストールでは行うことは出来ません)
-  </li>
-</ul>
-
 </body>
 </section>
+
 <section>
-<title>カーネルの設定</title>
+ <include href="gentoo-x86-quickinstall-stage.xml"/>
+</section>
+
+<section>
+<title>Kernel Configuration</title>
 <body>
 
 <p>
-<path>/usr/share/zoneinfo</path>から正しいファイルを<path>/etc/localtime</path>に上書きすることで、タイムゾーン情報を設定します。
+Install a kernel source (usually <c>gentoo-sources</c>), configure it, compile
+it and copy the <path>arch/i386/boot/bzImage</path> file to <path>/boot</path>.
 </p>
 
-<p>
-カーネルソースをインストール(ネットワーク無しのインストールでは<c>gentoo-sources</c>と<c>vanilla-sources</c>が利用できます)し、<path>/usr/src/linux</path>で<c>make menuconfig</c>を使って設定を行い、<c>make&nbsp;&amp;&amp;&nbsp;make&nbsp;modules_install</c>を行います。
-<path>arch/i386/boot/bzImage</path>ファイルを<path>/boot</path>へコピーします。
-<c>emerge&nbsp;genkernel</c>を行って<c>genkernel&nbsp;all</c>を使うことも出来ます。
-</p>
+<pre caption="Install a kernel source, compile it and install the kernel">
+livecd etc # <i>time emerge gentoo-sources</i>
 
-<p>
-Genkernelユーザは<c>emerge&nbsp;coldplug</c>と<c>rc-update&nbsp;add&nbsp;coldplug&nbsp;default</c>を行う必要があります。
-</p>
+real  2m51.435s
+user  0m58.220s
+sys   0m29.890s
+livecd etc # <i>cd /usr/src/linux</i>
+livecd linux # <i>make menuconfig</i>
+<comment>(Configure your kernel)</comment>
+livecd linux # <i>time make -j2</i>
 
-</body>
-</section>
-<section>
-<title>システムの設定</title>
-<body>
+<comment>(Elapsed time depends highly on the options you selected)</comment>
+real  3m51.962s
+user  3m27.060s
+sys   0m24.310s
 
-<p>
-<path>/etc/fstab</path>を編集します。例を以下に示します。
-</p>
-
-<pre caption="fstabの例">
-/dev/hda1   /boot     ext2    defaults,noatime     1 2
-/dev/hda2   none      swap    sw                   0 0
-/dev/hda3   /         ext3    noatime              0 1
-none        /proc     proc    defaults             0 0
-none        /dev/shm  tmpfs   nodev,nosuid,noexec  0 0
-/dev/cdroms/cdrom0    /mnt/cdrom    auto      noauto,user    0 0
+livecd linux # <i>make modules_install</i>
+livecd linux # <i>cp arch/i386/boot/bzImage /boot/kernel</i>
 </pre>
 
-<p>
-<path>/etc/conf.d/hostname</path>と<path>/etc/conf.d/domainname</path>を編集し、<c>rc-update&nbsp;add&nbsp;domainname&nbsp;default</c>を実行して、ネットワークを設定するために<path>/etc/conf.d/net</path>を編集します。
-<c>net.eth0</c>initスクリプトをデフォルトランレベルに追加します。
-複数のNICを持っているのなら、<c>net.eth0</c>initスクリプトへのシンボリックリンクを作成し、同様にデフォルトランレベルに追加します。
-</p>
-
-<p>
-<path>/etc/hosts</path>を編集します。以下に例を示します。
-</p>
-
-<pre caption="/etc/hostsの例">
-<comment>(静的IP)</comment>
-127.0.0.1     localhost
-192.168.0.5   jenny.homenetwork jenny
-192.168.0.6   benny.homenetwork benny
-192.168.0.7   tux.homenetwork tux
-
-<comment>(動的IP)</comment>
-127.0.0.1     localhost.homenetwork tux localhost
-</pre>
-
-<p>
-必要に応じて、<c>pcmcia-cs</c>をemergeしデフォルトランレベルに追加します。
-</p>
-
-<p>
-<c>passwd</c>を使ってrootパスワードを設定します。
-</p>
-
-<p>
-<path>/etc/rc.conf</path>、<path>/etc/conf.d/rc</path>、<path>/etc/conf.d/keymaps</path>、<path>/etc/conf.d/clock</path>で必要なシステム設定を行います。
-</p>
-
 </body>
 </section>
+
 <section>
-<title>システムツールのインストール</title>
+ <include href="gentoo-x86-quickinstall-system.xml"/>
+</section>
+
+<section id="reboot">
+<title>Reboot</title>
 <body>
 
 <p>
-2.4カーネルユーザは<c>emerge&nbsp;--unmerge&nbsp;udev</c>と<c>emerge&nbsp;devfsd</c>が必要です。
+Exit the chrooted environment, unmount all file systems and reboot:
 </p>
 
-<p>
-<c>syslog-ng</c>の様なシステムロガーをインストールし、デフォルトランレベルに追加します。
-<c>vixie-cron</c>の様なcronデーモンも同様にします(自由選択)。
-</p>
-
-<p>
-必要なファイルシステムツール(<c>xfsprogs</c>、<c>reiserfsprogs</c>、<c>jfsutils</c>)とネットワークツール(<c>dhcpcd</c>、<c>rp-pppoe</c>)をインストールします。
-</p>
-
-</body>
-</section>
-<section>
-<title>ブートローダの設定</title>
-<body>
-
-<p>
-<c>grub</c>か<c>lilo</c>をemergeします。
-<path>/boot/grub/grub.conf</path>か<path>/etc/lilo.conf</path>を好みに合わせて編集します。
-以下にそれぞれの例を示します。
-</p>
-
-<pre caption="grub.confの例">
-default 0
-timeout 30
-splashimage=(hd0,0)/grub/splash.xpm.gz
-
-<comment># genkernelユーザ</comment>
-title=Gentoo Linux 2.6.11-r3
-root (hd0,0)
-kernel /kernel-genkernel-x86-2.6.11-gentoo-r3 root=/dev/ram0 init=/linuxrc ramdisk=8192 real_root=/dev/hda3 udev
-initrd /initramfs-genkernel-x86-2.6.11-gentoo-r3
-
-<comment># genkernelユーザ以外 (initrd無し)</comment>
-title=Gentoo Linux 2.6.11 r3
-root (hd0,0)
-kernel /kernel-2.6.11-gentoo-r3 root=/dev/hda3
-
-<comment># デュアルブートを行いたい場合のみ</comment>
-title=Windows XP
-root (hd0,5)
-makeactive
-chainloader +1
+<pre caption="Reboot">
+livecd conf.d # <i>exit</i>
+livecd / # <i>umount -l /mnt/gentoo/dev{/shm,/pts,}</i>
+livecd / # <i>umount -l /mnt/gentoo{/proc,/boot,}</i>
+livecd / # <i>reboot</i>
+<comment>(Don't forget to remove the CD)</comment>
 </pre>
 
-<pre caption="lilo.confの例">
-boot=/dev/hda
-prompt
-timeout=50
-default=gentoo
-
-<comment># genkernelユーザ以外</comment>
-image=/boot/kernel-2.6.11-gentoo-r3
-  label=gentoo
-  read-only
-  root=/dev/hda3
-
-<comment># genkernelユーザ</comment>
-image=/boot/kernel-genkernel-x86-2.6.11-gentoo-r3
-  label=gentoo
-  read-only
-  root=/dev/ram0
-  append="init=/linuxrc ramdisk=8192 real_root=/dev/hda3 udev"
-  initrd=/boot/initramfs-genkernel-x86-2.6.11-gentoo-r3
-
-<comment># デュアルブート</comment>
-other=/dev/hda6
-  label=windows
-</pre>
-
-<p>
-GRUBユーザは<path>/proc/mounts</path>を<path>/etc/mtab</path>にコピーした後、<c>grub-install&nbsp;/dev/hda</c> を使ってGRUBをMBRにインストールする必要があります。
-LILOユーザは<c>/sbin/lilo</c>を実行します。
-</p>
-
-<p>
-chroot環境を抜け、全てのファイルシステムをマウント解除し、再起動します。
-</p>
-
 </body>
 </section>
+
 <section>
-<title>インストールの完了</title>
-<body>
-
-<p>
-<c>root</c>としてログインし、<c>useradd&nbsp;-m&nbsp;-G&nbsp;&lt;groups&gt;&nbsp;&lt;username&gt;</c>を使って毎日の作業に使うユーザを追加します。
-</p>
-
-<p>
-ネットワーク無しのインストールを行ったのなら、パッケージCDを<path>/mnt/cdrom</path>にマウントし、<c>emerge&nbsp;-k&nbsp;&lt;package&gt;</c>の後に<c>export&nbsp;PKGDIR="/mnt/cdrom"</c>追加して、<c>kde</c>の様な追加のソフトウェアをインストールします。
-</p>
-
-<p>
-Gentooをインストールしてくれてありがとう!
-</p>
-
-</body>
+ <include href="gentoo-x86-quickinstall-after-reboot.xml"/>
 </section>
+
 </chapter>	
 </guide>
