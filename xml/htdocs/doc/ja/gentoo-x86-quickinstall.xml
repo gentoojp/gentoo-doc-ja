@@ -3,17 +3,8 @@
 
 <!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
 
-<guide>
+<guide link="/doc/ja/gentoo-x86-quickinstall.xml">
 <title>Gentoo Linux x86クイックインストールガイド</title>
-
-<values>
- <key id="raid+lvm">no</key>
- <key id="root">/dev/sda3</key>
-</values>
-
-<author title="Author">
-  <mail link="neysx">Xavier Neys</mail>
-</author>
 <author title="Author">
   <mail link="swift@gentoo.org">Sven Vermeulen</mail>
 </author>
@@ -24,75 +15,66 @@
 <author title="翻訳">
   <mail link="solidsneak@hyper.cx">小林弘樹</mail>
 </author>
-<author title="翻訳">
-  <mail link="naota@gentoo.org">青田直大</mail>
-</author>
 
 <abstract>
-クイックインストールガイドは、Gentooをインストールする手順を簡潔にカバーしています。
-stage3のインストールを時間をかけずに行なうことが目的です。
-このガイドに従ってインストールする場合、Gentoo Linuxのインストールを一度経験している必要があります。
+クイックインストールガイドは、Gentooをインストールする手順を簡潔にカバーしています。このガイドに従ってインストールする場合、Gentoo Linuxのインストールを経験している必要があります。
 </abstract>
 
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 <license/>
 
-<version>26</version>
-<date>2011-05-09</date>
+<version>2.10</version>
+<date>2006-02-18</date>
 
-<!-- Original revision: 1.85 -->
-
-<chapter>
-<title>はじめに</title>
-<section>
-<body>
-
-<p>
-このガイドにはGentooのstage3インストールを完了するのに必要な全てのコマンドが記載してあります。
-stage3とPortageのスナップショットを取得するために、インターネットへの接続が必要になります。
-</p>
-
-<impo>
-新規ユーザは、インストールのプロセスをより良く解説している
-<uri link="/doc/en/handbook/index.xml">Handbook</uri>
-<uri link="/doc/ja/handbook/index.xml">(日本語訳)</uri>
-を読むべきです。クイックインストールガイドは、
-従うべきチェックリストだけが必要な経験値のあるユーザのためのものです。
-</impo>
-
-<p>
-以下のコマンドは、全て完了するのに2秒以上かかります。
-計測はAMD 2000 1.66 Ghzで512MBのメモリとハードウェアコントローラに2つのSATAディスクをつなげたマシンで行ないました。
-</p>
-
-<pre caption="テストマシンのスペック">
-<comment>(以下のスペックと必要時間の情報で、
-あなたのマシンでインストールを完了するのに必要な時間を見積もることができるでしょう。)</comment>
-
-# <i>grep bogo /proc/cpuinfo</i>
-bogomips       : 3337.81
-
-# <i>hdparm -tT /dev/sda</i>
-/dev/sda:
- Timing cached reads:   1100 MB in  2.00 seconds = 549.97 MB/sec
- Timing buffered disk reads:  224 MB in  3.01 seconds =  74.36 MB/sec
-
-# <i>grep MemTotal /proc/meminfo</i>
-MemTotal:       509248 kB
-</pre>
-
-</body>
-</section>
-</chapter>
+<!-- Original revision: 1.51 -->
 
 <chapter>
 <title>クイックインストールガイド</title>
-
 <section>
- <include href="gentoo-x86-quickinstall-media.xml"/>
-</section>
+<title>インストールメディア</title>
+<body>
 
+<p>
+<uri link="/main/en/mirrors.xml">ミラー</uri>(<uri link="/main/ja/mirrors.xml">日本語訳</uri>)からCDをダウンロードします。
+ISOファイルが<path>releases/&lt;architecture&gt;/&lt;release&gt;/installcd</path>にあります。
+<e>minimal</e>インストールCDはインターネットベースのインストールにのみ役立ちます。
+<e>universal</e>インストールCDはネットワーク無しでのインストールを行うことが出来ます。
+</p>
+
+<p>
+CDを<uri link="/doc/en/faq.xml#isoburning">焼いて</uri>(<uri link="/doc/ja/faq.xml#isoburning">日本語訳</uri>)起動します。
+起動画面で<c>F2</c>を押して利用可能な起動オプションを確認します。
+PCMCIAサポートが必要なら、起動後に<c>pcmcia</c>initスクリプトを起動します。
+</p>
+
+<p>
+インストールCDでは、<c>sshd</c>サーバを起動したり、追加ユーザを追加したり、<c>irssi</c>(コマンドラインのチャットクライアント)を起動したり、<c>lynx</c>や<c>links</c>でWebを閲覧することも出来ます。
+</p>
+
+</body>
+</section>
+<section>
+<title>ネットワーク設定</title>
+<body>
+
+<p>
+ネットワークの準備が整っていないのなら、<c>net-setup</c>を使ってネットワークの設定を行います。
+設定の前に<c>modprobe</c>でネットワークカードに対応したドライバを読み込む必要があるかもしれません。
+ADSLを使っているのなら、<c>adsl-setup</c>と<c>adsl-start</c>を使います。
+PPTPサポートが必要なら、まず<path>/etc/ppp/chap-secrets</path>と<path>/etc/ppp/options.pptp</path>を編集し、<c>pptp &lt;server&nbsp;ip&gt;</c>を使用します。
+</p>
+
+<p>
+無線LANを使うには、<c>iwconfig</c>を使って無線変数を設定し、<c>net-setup</c>をもう一度行うか、もしくは<c>ifconfig</c>、<c>dhcpcd</c>、<c>route</c>を手動で実行します。
+</p>
+
+<p>
+proxyを使用するには、<c>export http_proxy</c>、<c>ftp_proxy</c>、そして<c>RSYNC_PROXY</c>を使ってシステムを初期化することを忘れないでください。
+</p>
+
+</body>
+</section>
 <section>
 <title>ディスクの準備</title>
 <body>
