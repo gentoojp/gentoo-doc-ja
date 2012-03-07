@@ -1,5 +1,5 @@
 OPTS=-f xml \
-	-o inline="<mail> <sup> <keyval> <b> <path> <c> <e> <uri> <i> <pre><comment>" \
+	-o inline="<mail> <sup> <keyval> <b> <path> <c> <e> <uri> <i> <pre><comment> <brite>" \
 	-o attributes="caption" \
 	-o untranslated="<version> <date> <author> <mail> <values> <key>" \
 	-o placeholder="<license>"
