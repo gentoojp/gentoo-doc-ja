@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "POT-Creation-Date: 2012-02-22 22:53+0900\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2012-03-26 19:59-0500\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
@@ -174,29 +174,21 @@ msgid ""
 "apipa\"\n"
 msgstr ""
 "<comment># 以下のIPv4アドレスを追加します</comment>\n"
-"config_eth0=(\n"
-"\t\"192.168.0.2/24\"\n"
-"\t\"192.168.0.3/24\"\n"
-"\t\"192.168.0.4/24\"\n"
-")\n"
+"config_eth0=\"192.168.0.2/24\n"
+"192.168.0.3/24\n"
+"192.168.0.4/24\"\n"
 "\n"
 "<comment># 一つのIPv4アドレスと二つのIPv6アドレスを追加します</comment>\n"
-"config_eth0=(\n"
-"\t\"192.168.0.2/24\"\n"
-"\t\"4321:0:1:2:3:4:567:89ab\"\n"
-"\t\"4321:0:1:2:3:4:567:89ac\"\n"
-")\n"
+"config_eth0=\"192.168.0.2/24\n"
+"4321:0:1:2:3:4:567:89ab\n"
+"4321:0:1:2:3:4:567:89ac\"\n"
 "\n"
 "<comment># 既にインターフェースが有効になっていて、アドレスが割り当ててある場合は、何もしません。\n"
 "# インターフェースが無効になってしまっている場合、DHCP経由の新たなアドレスを割当てます。</comment>\n"
-"config_eth0=(\n"
-"\t\"noop\"\n"
-"\t\"dhcp\"\n"
-")\n"
-"fallback_eth0=(\n"
-"\t\"null\"\n"
-"\t\"apipa\"\n"
-")\n"
+"config_eth0=\"noop\n"
+"dhcp\"\n"
+"fallback_eth0=\"null\n"
+"apipa\"\n"
 
 #. type: Content of: <sections><section><body><note>
 #: en/handbook/hb-net-advanced.xml:97
@@ -246,7 +238,7 @@ msgid ""
 "what is called <e>net</e>.\n"
 msgstr ""
 "<path>/etc/init.d</path>にあるinitスクリプトは、特定のネットワークインターフェース、もしくはただ単にnetに依存することがあります。\n"
-"<c>net</c>サービスの意味を、<c>RC_NET_STRICT_CHECKING</c>変数を使用して異なる状況を示すように<path>/etc/conf.d/rc</path>で定義することができます。\n"
+"Gentooのinitシステムに含まれるすべてのネットワークインターフェイスは、<e>net</e>というものを提供します。\n"
 
 #. type: Content of: <sections><section><body><p>
 #: en/handbook/hb-net-advanced.xml:128
@@ -258,6 +250,9 @@ msgid ""
 "<path>net.eth1</path> and an init script depends on \"net\", then both must be\n"
 "enabled.\n"
 msgstr ""
+"もし<path>/etc/rc.conf</path>内で<c>rc_depend_strict=\"YES\"</c>と設定されているのであれば、netを提供するすべてのネットワークインターフェイスは\"net\"への依存が想定される前に有効になっている必要があります。\n"
+"言い換えると、もし<path>net.eth0</path>と<path>net.eth1</path>があって、initスクリプトが\"net\"に\n"
+"依存しているのであれば、両方とも有効になっていなければなりません。\n"
 
 #. type: Content of: <sections><section><body><p>
 #: en/handbook/hb-net-advanced.xml:136
@@ -267,6 +262,8 @@ msgid ""
 "dependency is marked as resolved the moment at least one network interface is\n"
 "brought up.\n"
 msgstr ""
+"一方で、もし<c>rc_depend_strict=\"NO\"</c>と設定されているのであれば、\n"
+"少なくとも1つのネットワークインターフェイスが開始されたときに\"net\"への依存は解決されていると解釈されます。　\n"
 
 #. type: Content of: <sections><section><body><p>
 #: en/handbook/hb-net-advanced.xml:142
@@ -288,7 +285,7 @@ msgstr ""
 msgid ""
 "The answer is defining an <c>rc_need_</c> setting in\n"
 "<path>/etc/conf.d/net</path>.\n"
-msgstr "この状況への答えは、<path>/etc/conf.d/net</path>に<c>depend()</c>関数を書くことです。\n"
+msgstr "この状況への答えは、<path>/etc/conf.d/net</path>内の<c>rc_need_</c>を定義することです。\n"
 
 #. type: Attribute 'caption' of: <sections><section><body><pre>
 #: en/handbook/hb-net-advanced.xml:154
@@ -300,7 +297,7 @@ msgstr "/etc/conf.d/netでのnet.br0の依存設定"
 #: en/handbook/hb-net-advanced.xml:155
 #, no-wrap
 msgid "rc_need_br0=\"net.eth0 net.eth1\"\n"
-msgstr ""
+msgstr "rc_need_br0=\"net.eth0 net.eth1\"\n"
 
 #. type: Content of: <sections><section><body><p>
 #: en/handbook/hb-net-advanced.xml:159
@@ -312,12 +309,16 @@ msgid ""
 "available when <path>net.br0</path> is up, not when the others are. So we need\n"
 "to tell that in <path>/etc/conf.d/net</path> as well:\n"
 msgstr ""
+"しかしながら、これだけでは十分ではありません。\n"
+"Gentooのネットワークに関するinitスクリプトはネットワーク利用可能時に、これをシステムへ通知するため<e>net</e>というvirtual依存を使用します。\n"
+"上記の場合では明らかに、他ではなく<path>net.br0</path>が開始されているときのみに、ネットワークが利用可能だと解釈されなければなりません。\n"
+"そのためにその旨を<path>/etc/conf.d/net</path>に追記する必要があります。\n"
 
 #. type: Attribute 'caption' of: <sections><section><body><pre>
 #: en/handbook/hb-net-advanced.xml:166
 #, no-wrap
 msgid "Updating virtual dependencies and provisions for networking"
-msgstr ""
+msgstr "virtual依存をアップデートしてネットワークを設定する\n"
 
 #. type: Content of: <sections><section><body><pre>
 #: en/handbook/hb-net-advanced.xml:167
@@ -327,6 +328,9 @@ msgid ""
 "rc_net_eth0_provide=\"!net\"\n"
 "rc_net_eth1_provide=\"!net\"\n"
 msgstr ""
+"rc_net_lo_provide=\"!net\"\n"
+"rc_net_eth0_provide=\"!net\"\n"
+"rc_net_eth1_provide=\"!net\"\n"
 
 #. type: Content of: <sections><section><body><p>
 #: en/handbook/hb-net-advanced.xml:173
@@ -339,6 +343,7 @@ msgid ""
 msgstr ""
 "依存関係についての詳しい解説は、Gentooハンドブックの<uri\n"
 "link=\"?part=2&amp;chap=4#doc_chap4\">Writing Init Scripts</uri>を参照してください。\n"
+"<path>/etc/rc.conf</path>に関しての詳細もそのファイルのコメント欄に記述されています。\n"
 
 #. type: Content of: <sections><section><title>
 #: en/handbook/hb-net-advanced.xml:183
