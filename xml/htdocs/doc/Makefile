@@ -6,7 +6,7 @@ OPTS=-f xml \
 
 SCRIPTS_DIR=scripts
 PO4A_UPDATEPO=po4a-updatepo -f xml $(OPTS)
-PO4A_TRANSLATE=po4a-translate -f xml $(OPTS) -L UTF-8
+PO4A_TRANSLATE=po4a-translate -f xml $(OPTS) -L UTF-8 -k 100
 GET_TRANSLATORS=$(SCRIPTS_DIR)/get_translators.pl
 GET_ORIGREV=$(SCRIPTS_DIR)/get_rev.pl
 
