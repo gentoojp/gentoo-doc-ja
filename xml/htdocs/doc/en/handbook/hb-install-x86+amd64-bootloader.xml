@@ -4,7 +4,7 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-bootloader.xml,v 1.23 2011/05/09 19:47:22 nightmorph Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-bootloader.xml,v 1.24 2012/03/27 17:47:19 swift Exp $ -->
 
 <sections>
 
@@ -187,23 +187,10 @@ boots your newly created kernel. Create <path>/boot/grub/grub.conf</path> with
 </pre>
 
 <p>
-Now we are going to write up a <path>grub.conf</path>. Below you'll find two
-possible <path>grub.conf</path> for the partitioning example we use in this
-guide. We've only extensively commented the first <path>grub.conf</path>. Make
+Now we are going to write up a <path>grub.conf</path>. Make
 sure you use <e>your</e> kernel image filename and, if appropriate, <e>your</e>
 initrd image filename.
 </p>
-
-<ul>
-  <li>
-    The first <path>grub.conf</path> is for people who have not used
-    <c>genkernel</c> to build their kernel
-  </li>
-  <li>
-    The second <path>grub.conf</path> is for people who have used
-    <c>genkernel</c> to build their kernel
-  </li>
-</ul>
 
 <note>
 Grub assigns device designations from the BIOS. If you change your BIOS
@@ -216,7 +203,7 @@ If your root filesystem is JFS, you <e>must</e> add " ro" to the <c>kernel</c>
 line since JFS needs to replay its log before it allows read-write mounting.
 </note>
 
-<pre caption="grub.conf for non-genkernel users">
+<pre caption="Example grub.conf">
 <comment># Which listing to boot as default. 0 is the first, 1 the second etc.</comment>
 default 0
 <comment># How many seconds to wait before the default listing is booted.</comment>
@@ -234,26 +221,11 @@ title Gentoo Linux <keyval id="kernel-version"/> (rescue)
 <comment># Partition where the kernel image (or operating system) is located</comment>
 root (hd0,0)
 kernel /boot/<keyval id="kernel-name"/> root=/dev/sda3 init=/bin/bb
+<comment># The initrd line is needed when you have built an initramfs (or used genkernel)</comment>
+initrd /boot/<keyval id="genkernel-initrd"/> 
 
 <comment># The next four lines are only if you dualboot with a Windows system.</comment>
 <comment># In this case, Windows is hosted on /dev/sda6.</comment>
-title Windows XP
-rootnoverify (hd0,5)
-makeactive
-chainloader +1
-</pre>
-
-<pre caption="grub.conf for genkernel users">
-default 0
-timeout 30
-splashimage=(hd0,0)/boot/grub/splash.xpm.gz
-
-title Gentoo Linux <keyval id="kernel-version"/>
-root (hd0,0)
-kernel /boot/<keyval id="genkernel-name"/> real_root=/dev/sda3
-initrd /boot/<keyval id="genkernel-initrd"/>
-
-<comment># Only in case you want to dual-boot</comment>
 title Windows XP
 rootnoverify (hd0,5)
 makeactive
@@ -475,17 +447,8 @@ consistency) and create the file.
 <p>
 Some sections ago we have asked you to remember the kernel-image name
 you have created. In the next example <path>lilo.conf</path> we use the
-example partitioning scheme. There are two separate parts:
+example partitioning scheme. 
 </p>
-
-<ul>
-  <li>
-    One for those who have not used <c>genkernel</c> to build their kernel
-  </li>
-  <li>
-    One for those who have used <c>genkernel</c> to build their kernel
-  </li>
-</ul>
 
 <p>
 Make sure you use <e>your</e> kernel image filename and, if appropriate,
@@ -504,24 +467,18 @@ prompt                    <comment># Give the user the chance to select another 
 timeout=50                <comment># Wait 5 (five) seconds before booting the default section</comment>
 default=gentoo            <comment># When the timeout has passed, boot the "gentoo" section</comment>
 
-<comment># For non-genkernel users</comment>
 image=/boot/<keyval id="kernel-name"/>
   label=gentoo            <comment># Name we give to this section</comment>
   read-only               <comment># Start with a read-only root. Do not alter!</comment>
   root=/dev/sda3          <comment># Location of the root filesystem</comment>
+<comment># The initrd line is only needed if you built an initramfs (or used genkernel)</comment>
+  initrd=/boot/<keyval id="genkernel-initrd"/>
 
 image=/boot/<keyval id="kernel-name"/>
   label=gentoo.rescue     <comment># Name we give to this section</comment>
   read-only               <comment># Start with a read-only root. Do not alter!</comment>
   root=/dev/sda3          <comment># Location of the root filesystem</comment>
   append="init=/bin/bb"   <comment># Launch the Gentoo static rescue shell</comment>
-
-<comment># For genkernel users</comment>
-image=/boot/<keyval id="genkernel-name"/>
-  label=gentoo
-  read-only
-  append="real_root=/dev/sda3"
-  initrd=/boot/<keyval id="genkernel-initrd"/>
 
 <comment># The next two lines are only if you dualboot with a Windows system.</comment>
 <comment># In this case, Windows is hosted on /dev/sda6.</comment>
