@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding="UTF-8"?>
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-filesystems.xml,v 1.9 2011/09/17 12:16:09 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-filesystems.xml,v 1.11 2012/04/22 11:00:49 swift Exp $ -->
 <!DOCTYPE included SYSTEM "/dtd/guide.dtd">
 
 <included>
 
-<version>7</version>
-<date>2011-09-17</date>
+<version>9</version>
+<date>2012-04-22</date>
 
 <section id="filesystemsdesc">
 <title>Filesystems</title>
@@ -88,8 +88,12 @@ thus generally preferred over their non-journaled counterparts. Journaled
 filesystems prevent long delays when you boot your system and your filesystem
 happens to be in an inconsistent state. If you intend to install Gentoo on a
 very small disk (less than 4GB), then you'll need to tell ext2 to reserve enough
-inodes when you create the filesystem by running <c>mke2fs -T small
-/dev/&lt;device&gt;</c>.
+inodes when you create the filesystem. The <c>mke2fs</c> application uses the
+"bytes-per-inode" setting to calculate how many inodes a file system should have.
+By running <c>mke2fs -T small /dev/&lt;device&gt;</c> the number of inodes will
+generally quadruple for a given file system as its "bytes-per-inode" reduces from 
+one every 16kB to one every 4kB. You can tune this even further by using
+<c>mke2fs -i &lt;ratio&gt; /dev/&lt;device&gt;</c>.
 </p>
 
 <p>
@@ -98,9 +102,14 @@ journaling for fast recovery in addition to other enhanced journaling modes like
 full data and ordered data journaling. It uses an HTree index that enables high
 performance in almost all situations. In short, ext3 is a very good and
 reliable filesystem. Ext3 is the recommended all-purpose all-platform
-filesystem. If you intend to install Gentoo on a very small disk (less than
-4GB), then you'll need to tell ext3 to reserve enough inodes when you create the
-filesystem by running <c>mke2fs -j -T small /dev/&lt;device&gt;</c>.
+filesystem. If you intend to install Gentoo on a
+very small disk (less than 4GB), then you'll need to tell ext3 to reserve enough
+inodes when you create the filesystem. The <c>mke2fs</c> application uses the
+"bytes-per-inode" setting to calculate how many inodes a file system should have.
+By running <c>mke2fs -j -T small /dev/&lt;device&gt;</c> the number of inodes will
+generally quadruple for a given file system as its "bytes-per-inode" reduces from 
+one every 16kB to one every 4kB. You can tune this even further by using
+<c>mke2fs -j -i &lt;ratio&gt; /dev/&lt;device&gt;</c>.
 </p>
 
 <p test="contains('x86 Alpha MIPS AMD64 arm IA64 SPARC HPPA',func:keyval('arch'))">
