@@ -4,12 +4,12 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-bootloader.xml,v 1.24 2012/03/27 17:47:19 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-bootloader.xml,v 1.26 2012/04/22 17:44:07 swift Exp $ -->
 
 <sections>
 
-<version>8</version>
-<date>2011-05-09</date>
+<version>10</version>
+<date>2012-04-22</date>
 
 <section>
 <title>Making your Choice</title>
@@ -221,8 +221,6 @@ title Gentoo Linux <keyval id="kernel-version"/> (rescue)
 <comment># Partition where the kernel image (or operating system) is located</comment>
 root (hd0,0)
 kernel /boot/<keyval id="kernel-name"/> root=/dev/sda3 init=/bin/bb
-<comment># The initrd line is needed when you have built an initramfs (or used genkernel)</comment>
-initrd /boot/<keyval id="genkernel-initrd"/> 
 
 <comment># The next four lines are only if you dualboot with a Windows system.</comment>
 <comment># In this case, Windows is hosted on /dev/sda6.</comment>
@@ -230,6 +228,19 @@ title Windows XP
 rootnoverify (hd0,5)
 makeactive
 chainloader +1
+</pre>
+
+<p>
+If, while building the Linux kernel, you opted to include an initramfs to boot
+from, then you will need to change the configuration by referring to this
+initramfs file and telling the initramfs where your real root device is at:
+</p>
+
+<pre caption="GRUB snippet for initramfs-enabled kernel builds">
+title Gentoo Linux <keyval id="kernel-version"/>
+root (hd0,0)
+kernel /boot/<keyval id="kernel-version"/> <i>real_</i>root=/dev/sda3
+<i>initrd /boot/<keyval id="genkernel-initrd"/></i>
 </pre>
 
 <p>
@@ -471,8 +482,6 @@ image=/boot/<keyval id="kernel-name"/>
   label=gentoo            <comment># Name we give to this section</comment>
   read-only               <comment># Start with a read-only root. Do not alter!</comment>
   root=/dev/sda3          <comment># Location of the root filesystem</comment>
-<comment># The initrd line is only needed if you built an initramfs (or used genkernel)</comment>
-  initrd=/boot/<keyval id="genkernel-initrd"/>
 
 image=/boot/<keyval id="kernel-name"/>
   label=gentoo.rescue     <comment># Name we give to this section</comment>
@@ -490,6 +499,20 @@ other=/dev/sda6
 If you use a different partitioning scheme and/or kernel image, adjust
 accordingly.
 </note>
+
+<p>
+If, while building the Linux kernel, you opted to include an initramfs to boot
+from, then you will need to change the configuration by referring to this
+initramfs file and telling the initramfs where your real root device is at:
+</p>
+
+<pre caption="LILO snippet for initramfs-enabled kernel builds">
+image=/boot/<keyval id="kernel-name"/>
+  label=gentoo
+  read-only
+  <i>real_</i>root=/dev/sda3
+  <i>initrd=/boot/<keyval id="genkernel-initrd" /></i>
+</pre>
 
 <p>
 If you need to pass any additional options to the kernel, add an
