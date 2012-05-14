@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/proj/en/gentoo-alt/prefix/bootstrap-freebsd.xml,v 1.36 2012/04/11 16:50:58 darkside Exp $ -->
+
+<guide link="/proj/en/gentoo-alt/prefix/bootstrap-freebsd.xml" lang="en">
+  <title>Gentoo Prefix Bootstrap Process for FreeBSD</title>
+  
+
+  <author title="Author">
+    <mail link="grobian@gentoo.org">Fabian Groffen</mail>
+  </author>
+  <author title="Author">
+    <mail link="fauli@gentoo.org">Christian Faulhammer</mail>
+  </author>
+
+  <abstract>
+    How to bootstrap Gentoo Prefix on your FreeBSD system
+  </abstract>
+
+
+  <!-- The content of this document is licensed under the CC-BY-SA license -->
+  <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+  <license/>
+
+  <version>2.49</version>
+  <date>2012-04-11</date>
+
+  <chapter>
+    <title>Bootstrapping on FreeBSD</title>
+
+    <section><!-- {{{ Introduction -->
+      <title>Introduction</title>
+      <body>
+        <p>
+          An off-the-shelf FreeBSD system is bare.  Very bare.
+          Whoever thought that bootstrapping on Solaris was hard,
+          FreeBSD makes it even harder.  The lack of tools like bash
+          and perl requires some pre-bootstrapping prior to the actual
+          bootstrapping process.  Alternatively you can install a Bash
+          through the ports system.  If you bootstrap on FreeBSD, make
+          sure the development tools are installed, which include
+          system headers and a compiler.  This bootstrap guide was
+          tested on a FreeBSD 8.2 x86_64 system.  Other architectures
+          should not differ too much.  Feel free to try it out on
+          other configurations and post to the <c>gentoo-alt</c>
+          mailing list for additional help.
+        </p>
+      </body>
+    </section><!-- }}} -->
+
+    <section><!-- {{{ Bootstrapping -->
+      <title>Bootstrapping</title>
+      <body>
+        <p>
+          As prerequisite, you need a GCC compiler, the GNU binutils
+          linker and system headers, such that source code can be
+          compiled into working executables.  Sufficient versions are
+          installed by installing the developer tools.
+        </p>
+        <p>
+          The first step is to choose a path to install into.  We refer
+          to this path as "prefix path", stored in the variable
+          <c>EPREFIX</c>.  A suggestion for your prefix path is
+          <path>$HOME/gentoo</path>.
+          Whatever you chose, make sure you set it in your environment:
+        </p>
+        <pre caption="Export EPREFIX variable">
+$ <i>export EPREFIX="$HOME/gentoo"</i>
+        </pre>
+        <note>
+          tcsh users can use <c>setenv EPREFIX "$HOME/gentoo"</c>
+          instead.
+        </note>
+        <p>
+          Next, add the following paths in your soon to be prefix to
+          your <c>PATH</c> environment.
+          <path>$EPREFIX/bin</path>,
+          <path>$EPREFIX/usr/bin</path>,
+          <path>$EPREFIX/tmp/bin</path> and
+          <path>$EPREFIX/tmp/usr/bin</path>.
+          Adding these paths makes sure that they will be available
+          later on in the process.
+        </p>
+        <pre caption="Add prefix paths to your PATH">
+$ <i>export PATH="$EPREFIX/usr/bin:$EPREFIX/bin:$EPREFIX/tmp/usr/bin:$EPREFIX/tmp/bin:$PATH"</i>
+        </pre>
+        <p>
+          Now the path is set, start with downloading the bootstrap
+          script from
+          <uri>http://overlays.gentoo.org/proj/alt/browser/trunk/prefix-overlay/scripts/bootstrap-bash.sh?format=txt</uri>
+          and
+          <uri>http://overlays.gentoo.org/proj/alt/browser/trunk/prefix-overlay/scripts/bootstrap-prefix.sh?format=txt</uri>.
+          From the directory where the bootstrap scripts were stored execute
+          the following commands:
+        </p>
+        <pre caption="Use the bootstrap script">
+$ <i>chmod 755 bootstrap-bash.sh bootstrap-prefix.sh</i>
+$ <i>mkdir $EPREFIX/tmp</i>
+$ <i>./bootstrap-bash.sh $EPREFIX/tmp</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX tree</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp make</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp wget</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp sed</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp python</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp coreutils8</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp findutils3</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp tar22</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp patch</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp gawk</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX portage</i>
+        </pre>
+        <note>
+          Please note that <c>python</c>, <c>sed</c>, <c>wget</c>
+          etc. are installed in <path>$EPREFIX/tmp</path>!
+          <c>patch</c> and the like are not typing errors but build
+          different versions that will compile out of the box on
+          FreeBSD.
+        </note>
+        <p>
+          The script will setup the <path>$EPREFIX</path>
+          directory, download a portage tree snapshot, unpack it and
+          download and install portage.  Afterwards it will try to setup
+          some sane defaults.  We continue with a little hack necessary
+          for a successful bootstrap.
+        </p>
+        <p>
+          Let your shell take notice of all just installed programs.
+        </p>
+        <pre caption="rehash in sh">
+$ <i>hash -r</i>
+        </pre>
+        <note>
+          tcsh users can use the <c>rehash</c> command.
+        </note>
+        <p>
+          We continue adding some necessary tools which will deal with
+          many errors and warnings you might see during emerging.
+        </p>
+        <pre caption="emerge sed">
+$ <i>emerge --oneshot sed</i>
+        </pre>
+        <p>
+          Next, we emerge the <c>bash</c> shell Portage heavily relies
+          on.  The same holds for <c>wget</c>, the download manager.
+          Since its dependencies cannot be compiled at this stage,
+          we ignore those for the moment.
+        </p>
+        <pre caption="emerge bash and wget">
+$ <i>emerge --oneshot --nodeps bash</i> (avoid deps that ship scripts with shebang /bin/sh)
+$ <i>emerge --oneshot --nodeps xz-utils</i>
+$ <i>emerge --oneshot --nodeps "&lt;wget-1.13.4-r1"</i> (until we fix #393277)
+        </pre>
+        <note>
+          It is safe to ignore the "1 config files in XXX need updating"
+          message that appears till the end of the bootstrap process.
+        </note>
+        <p>
+          Now, we will emerge a compiler which will use the GNU
+          linker.  This is a requirement for many packages that follow
+          in the bootstrap process, in particular Perl.  The packages
+          to emerge include the <c>baselayout</c> package.  Some, if
+          not many, scripts and tools within a Gentoo system assume
+          the availability of the <c>baselayout</c> package for all
+          communication using the Gentoo colour scheme.
+        </p>
+        <pre caption="emerge linker and compiler">
+$ <i>emerge --oneshot --nodeps baselayout-prefix</i>
+$ <i>emerge --oneshot --nodeps m4</i>
+$ <i>emerge --oneshot --nodeps flex</i>
+$ <i>emerge --oneshot --nodeps bison</i>
+$ <i>emerge --oneshot --nodeps binutils-config</i>
+$ <i>emerge --oneshot --nodeps binutils</i>
+$ <i>emerge --oneshot --nodeps gcc-config</i>
+$ <i>emerge --oneshot --nodeps "=gcc-4.2*"</i>
+        </pre>
+        <p>
+          We continue getting more tools in our Prefix.  We no longer
+          ignore dependencies all the time, so a lot of packages will be
+          emerged at this stage.  Slowly our Prefix gets more robust as
+          we progress here.
+        </p>
+        <pre caption="emerge several tools">
+$ <i>emerge --oneshot perl</i>
+$ <i>emerge --oneshot coreutils</i>
+$ <i>emerge --oneshot findutils</i>
+$ <i>emerge --oneshot tar</i>
+$ <i>emerge --oneshot grep</i>
+$ <i>emerge --oneshot patch</i>
+$ <i>emerge --oneshot gawk</i>
+$ <i>emerge --oneshot make</i>
+$ <i>emerge --oneshot --nodeps file</i>
+$ <i>emerge --oneshot --nodeps eselect</i>
+$ <i>emerge --oneshot pax-utils</i>
+        </pre>
+        <p>
+          Now we have a good bunch of programs that Portage needs, we
+          can replace the bootstrapped Portage by a properly installed
+          one, using Portage itself.  Also here a few dependencies are
+          first emerged, such as the language Portage is written in:
+          <c>python</c>.  We need to temporarily tell Portage that the
+          bootstrapped Portage can be overwritten.
+        </p>
+        <pre caption="emerge portage">
+$ <i>env FEATURES="-collision-protect" emerge --oneshot portage</i>
+        </pre>
+        <p>
+          Now we have emerged everything we bootstrapped before, we
+          remove the temporary directory and its use as it is no longer
+          necessary.
+        </p>
+        <pre caption="Remove tmp directory">
+$ <i>rm -Rf $EPREFIX/tmp/*</i>
+$ <i>hash -r</i>
+        </pre>
+        <p>
+          Before we do any further merges, we are going to update our
+          tree.  Updating the tree is done using:
+        </p>
+        <pre caption="Updating the tree">
+$ <i>emerge --sync</i>
+        </pre>
+        <note>
+          If you're behind a firewall that blocks rsync traffic, you can
+          try to run <c>${EPREFIX}/usr/sbin/emerge-webrsync</c> instead.
+        </note>
+        <p>
+          Next, we let Portage emerge all packages that complete a
+          system install that we eventually need to finalise this Prefix
+          installation.
+        </p>
+        <pre caption="emerge system">
+$ <i>USE=-git emerge -u system</i>
+        </pre>
+        <p>
+          Now is a good time to set the preferences for our soon to be
+          Prefix.  This includes customisations such as general
+          <c>USE</c>-flags, <c>CFLAGS</c> and <c>MAKEOPTS</c> in
+          <path>$EPREFIX/etc/portage/make.conf</path>.  Be conservative with
+          <c>CFLAGS</c>!  Note that the code below is an example, and is
+          meant for inspiration only.
+        </p>
+        <pre caption="Customising the Prefix installation - example">
+$ <i>echo 'USE="unicode nls"' >> $EPREFIX/etc/portage/make.conf</i>
+$ <i>echo 'CFLAGS="-O2 -pipe"' >> $EPREFIX/etc/portage/make.conf</i>
+$ <i>echo 'CXXFLAGS="${CFLAGS}"' >> $EPREFIX/etc/portage/make.conf</i>
+        </pre>
+        <p>
+          Since we have everything in place for a self-catered rebuild,
+          we can start the final stage to install the Prefix system.
+          This final stage recompiles everything in the system, but now
+          all packages can be compiled with tools from the Prefix,
+          instead of those from the host system.
+        </p>
+        <pre caption="Doing the final system installation">
+$ <i>emerge -e system</i>
+        </pre>
+        <p>
+          After <c>system</c> has emerged successfully, your Prefix will
+          be set up properly, and you can emerge the whichever tools you
+          choose from the Prefix tree.
+        </p>
+      </body>
+    </section><!-- }}} -->
+
+    <section><!-- {{{ Using the Prefix -->
+      <title>Using the Prefix</title>
+      <body>
+        <p>
+          To use your bootstrapped prefix environment, you best start a
+          shell from the prefix, such that your path and other
+          environment variables are set correctly.  To facilitate in
+          this, a small helper script can be created by the bootstrap
+          script.
+        </p>
+        <pre caption="Creating a start-script">
+$ <i>cd $EPREFIX/usr/portage/scripts</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX startscript</i>
+        </pre>
+        <p>
+          After running this, a script <c>startprefix</c> will be
+          present in <c>$EPREFIX</c>.  You can freely move the script to
+          e.g. your homedir for convenience.  Running the script will
+          drop you into a prefix shell, where for example <c>emerge</c>
+          is directly at your disposal.  Enjoy your prefix!
+        </p>
+      </body>
+    </section>
+
+  </chapter>
+
+</guide>
+
+<!-- vim: set expandtab ts=2 sw=2 foldmethod=marker foldenable spell spelllang=en_gb: -->
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->
