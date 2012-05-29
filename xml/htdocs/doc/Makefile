@@ -40,14 +40,17 @@ pofiles/%.po: en/%.xml
 ja/%.xml: pofiles/%.po
 	-@mkdir -p $(TMPBUILD)/`dirname $@`
 	-@touch $(TMPBUILD)/$@.author
-	echo "PO4A-HEADER:mode=before;position=<abstract>" \
-		> $(TMPBUILD)/$@.author
-	$(GET_TRANSLATORS) < $@ >> $(TMPBUILD)/$@.author
+	if fgrep -q '<abstract>' $(subst ja/,en/,$@); then \
+		echo "PO4A-HEADER:mode=before;position=<abstract>" \
+			> $(TMPBUILD)/$@.author; \
+		$(GET_TRANSLATORS) < $@ >> $(TMPBUILD)/$@.author; \
+		else rm -f $(TMPBUILD)/$@.author; fi
 	echo "PO4A-HEADER:mode=after;position=<date>;endboundary=</date>" \
 		> $(TMPBUILD)/$@.origrev
 	$(GET_ORIGREV) < $(subst ja/,en/,$@) >> $(TMPBUILD)/$@.origrev
 	$(PO4A_TRANSLATE) -m $(subst ja/,en/,$@) -p $< -l $(TMPBUILD)/$@ \
-		-a $(TMPBUILD)/$@.author -a $(TMPBUILD)/$@.origrev
+		$(shell test -e $(TMPBUILD)/$@.author && echo -a $(TMPBUILD)/$@.author) \
+		-a $(TMPBUILD)/$@.origrev
 	@test -e $(TMPBUILD)/$@ && mv _build/$@ $@
 
 clean:
