@@ -6,7 +6,7 @@ OPTS=-f xml \
 METADOC_OPTS=-f xml \
 	-o untranslated="<version> <member> <memberof> <bug> <lead>"
 
-SCRIPTS_DIR=scripts
+SCRIPTS_DIR=../doc/scripts
 PO4A_UPDATEPO=po4a-updatepo -f xml $(OPTS)
 PO4A_TRANSLATE=po4a-translate -f xml $(OPTS) -L UTF-8 -k 100
 GET_TRANSLATORS=$(SCRIPTS_DIR)/get_translators.pl
@@ -40,7 +40,7 @@ pofiles/%.po: en/%.xml
 ja/%.xml: pofiles/%.po
 	-@mkdir -p $(TMPBUILD)/`dirname $@`
 	-@touch $(TMPBUILD)/$@.author
-	echo "PO4A-HEADER:mode=before;position=<abstract>" \
+	echo "PO4A-HEADER:mode=before;position=<description>" \
 		> $(TMPBUILD)/$@.author
 	$(GET_TRANSLATORS) < $@ >> $(TMPBUILD)/$@.author
 	echo "PO4A-HEADER:mode=after;position=<date>;endboundary=</date>" \
