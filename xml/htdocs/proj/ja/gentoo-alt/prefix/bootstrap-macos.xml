@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/proj/ja/gentoo-alt/prefix/bootstrap-macos.xml,v 1.1 2012/07/18 12:01:44 naota Exp $ -->
+
+
+<guide link="/proj/en/gentoo-alt/prefix/bootstrap-macos.xml" lang="en">
+  <title>Gentoo Prefixブートストラップ手順 — Mac OS X編</title>
+  
+
+  <author title="Author">
+    <mail link="grobian@gentoo.org">Fabian Groffen</mail>
+  </author>
+
+    <author title="翻訳"><mail link="VED03370@nifty.ne.jp">松井鉄史</mail>
+  </author>
+
+<abstract>
+Mac OS XシステムでGentoo Prefixをブートストラップする方法
+  </abstract>
+
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+  
+  
+  <license/>
+
+  <version>1.41</version>
+  <date>2012-04-11</date>
+<!-- Original revision: 1.69 -->
+
+  <chapter>
+    <title>OS Xでブートストラップ</title>
+
+    <section><!-- {{{ Introduction -->
+
+      <title>はじめに</title>
+      <body>
+        <p>
+Apple Mac OS Xは当初Gentoo Portageのメインツリーでppc-macos
+キーワードの下、サポートされていました。
+しかし、そこで取られたアプローチはあまりにも多くの問題を引き起こし、
+そのことがprefix化されたPortageを作り出す背景となりました。
+        </p>
+        <p>
+OS Xでのブートストラップは比較的単純で、
+それはシステム自体がブートストラップに必要な大部分のツールを提供しているからです。
+        </p>
+      </body>
+    </section><!-- }}} -->
+
+
+    <section><!-- {{{ Bootstrapping -->
+
+      <title>ブートストラップ</title>
+      <body>
+        <p>
+前提条件として、Xcodeの最新版をインストールしておかなければなりません。
+Xcodeはコンパイラ・コレクションを提供します。
+ブートストラップはこれ無しでは(まだ)できるようになっていません。
+もし最新版以外のXcodeで問題が起こった場合には、まずはアップデートを試みて下さい。
+        </p>
+        <p>
+最初のステップはインストールするパスを決めることです。
+これ以降、このパスのことを「Prefixパス」と書きます。
+その値は<c>EPREFIX</c>変数に設定します。
+Prefixパスをどこにするか迷ったら
+<path>$HOME/Gentoo</path> や <path>$HOME/Library/Gentoo</path>
+にしてみてはいかがでしょうか。
+どこに決めたにしろ、その値を環境変数に設定することを忘れないで下さい。
+        </p>
+        <pre caption="EPREFIX 変数のエクスポート">
+$ <i>export EPREFIX="$HOME/Gentoo"</i>
+        </pre>
+        <note>
+tcshユーザーは代わりに<c>setenv EPREFIX "$HOME/Gentoo"</c>とします。
+        </note>
+        <p>
+次に、以下のこれからPrefixになるパスを<c>PATH</c>環境変数に追加します。
+          <path>$EPREFIX/bin</path>、
+          <path>$EPREFIX/usr/bin</path>、
+          <path>$EPREFIX/tmp/bin</path>、
+          <path>$EPREFIX/tmp/usr/bin</path>。
+これで確実にこれらのパスが以降の作業中に使われるようになります。
+        </p>
+        <pre caption="PrefixパスをPATHに追加">
+$ <i>export PATH="$EPREFIX/usr/bin:$EPREFIX/bin:$EPREFIX/tmp/usr/bin:$EPREFIX/tmp/bin:$PATH"</i>
+        </pre>
+        <p>
+64ビット版のPrefixをインストールしたいならば、
+次のように<c>CHOST</c>変数を設定します。
+Leopardでは<c>x86_64-apple-darwin9</c>、
+Snow Leopardでは<c>x86_64-apple-darwin10</c>です。
+もし、Lion上で32ビット版のPrefixをインストールしたいならば、
+<c>CHOST</c>変数に設定するのは<c>i686-apple-darwin11</c>です。
+これらの設定はOSのデフォルトに逆らって64ビット版(または32ビット版)Prefixにしたいとき
+<e>だけ</e>必要です!
+        </p>
+        <p>
+さて、パスを設定したので、まずはブートストラップ・スクリプトを
+          <uri>http://overlays.gentoo.org/proj/alt/browser/trunk/prefix-overlay/scripts/bootstrap-prefix.sh?format=txt</uri>
+からダウンロードしましょう。
+ブートストラップ・スクリプトを保存したディレクトリから次のコマンドを実行します。
+        </p>
+        <pre caption="ブートストラップ・スクリプトを使って">
+$ <i>chmod 755 bootstrap-prefix.sh</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX tree</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp make</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp wget</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp sed</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp python</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp coreutils</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp findutils</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp tar</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp patch259</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp grep</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp gawk</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp bash</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX portage</i>
+        </pre>
+        <note>
+<c>wget</c>、<c>sed</c>、<c>python</c>などが<path>$EPREFIX/tmp</path>
+にインストールされたことを心に留めておきましょう。
+        </note>
+        <p>
+ブートストラップ・スクリプトは<path>$EPREFIX</path>ディレクトリを準備し、
+Portageツリーのスナップショットをダウンロードして展開し、
+Portageをダウンロードしてインストールします。
+その後でいくつか当たり障りのないデフォルトを設定します。
+いくつかの新しいアプリケーションをインストールしたので、
+bashに全てのパスを見直すように指示します。
+        </p>
+        <pre caption="bashのリハッシュ">
+$ <i>hash -r</i>
+        </pre>
+        <note>
+tcshユーザーは<c>rehash</c>コマンドを使いましょう。
+        </note>
+        <p>
+さらにemergeの途中で見ることになるかもしれないたくさんのエラーや警告に対処するのに必要なツールをいくつか追加していきます。
+        </p>
+        <pre caption="emerge sed">
+$ <i>emerge --oneshot sed</i>
+        </pre>
+        <p>
+次に、Portageがどっぷり依存している<c>bash</c>をemergeします。
+ダウンロード・マネージャー<c>wget</c>も同様です。
+現段階ではまだ依存しているものまでコンパイルすることができないので、
+しばらく無視しておくことにします。
+pax-utilsはPortageがインストールするバイナリの正しさを調べられるようにしてくれます。
+        </p>
+        <pre caption="emerge bash, pax-utils, wget">
+$ <i>emerge --oneshot --nodeps bash</i> (#!/bin/shで始まるスクリプトをインストールする依存を回避)
+$ <i>emerge --oneshot pax-utils</i>
+$ <i>emerge --oneshot --nodeps xz-utils</i>
+$ <i>emerge --oneshot --nodeps "&lt;wget-1.13.4-r1"</i> (#393277 が修正されるまで)
+        </pre>
+        <note>
+ブートストラップ手順の最後まで"1 config files in XXX need updating"
+というメッセージが出てきても無視しておいて構いません。
+        </note>
+        <p>
+続いて、コンパイラとリンカをemergeし、
+Gentoo Prefix環境を使えるように準備します。
+emergeするパッケージには<c>baselayout</c>が含まれます。
+いくつものGentooシステムに含まれるスクリプトやツールが、
+Gentoo的なカラースキームを使った全ての対話的なやりとりに
+<c>baselayout</c>パッケージが使えることを前提にしています。
+        </p>
+        <pre caption="コンパイラおよびリンカに必要なもののemerge">
+$ <i>emerge --oneshot --nodeps sys-apps/baselayout-prefix</i>
+$ <i>emerge --oneshot --nodeps sys-devel/m4</i>
+$ <i>emerge --oneshot --nodeps sys-devel/flex</i>
+$ <i>emerge --oneshot --nodeps sys-devel/bison</i>
+$ <i>emerge --oneshot --nodeps sys-devel/binutils-config</i>
+        </pre>
+        <p>
+Xcodeのバージョンの違いにより、
+以下の手順に違いが出ますので<c>gcc --version</c>の出力をよく見て下さい。
+一行目に出て来るバージョンが<e>4.2.1</e>ならば、最新の<c>binutils-apple</c>
+をemergeする必要があります。
+そうでなければ<e>4.0.1</e>と出力されているはずで、この場合
+<c>=binutils-apple-3.2</c>をemergeしなければなりません。
+        </p>
+        <pre caption="リンカのemerge">
+$ <i>emerge --oneshot --nodeps "=sys-devel/binutils-apple-3.2"</i> (gcc 4.0.1の場合)
+$ <i>emerge --oneshot --nodeps sys-devel/binutils-apple</i>    (gcc 4.2.1の場合)
+        </pre>
+        <p>
+それではコンパイラに進みましょう。
+        </p>
+        <pre caption="コンパイラのemerge">
+$ <i>emerge --oneshot --nodeps sys-devel/gcc-config</i>
+$ <i>emerge --oneshot --nodeps sys-devel/gcc-apple</i>
+        </pre>
+        <p>
+Prefixに次々とツールが入れていきましょう。
+ここからは、依存関係をもう無視し続けないので、多くのパッケージがemergeされます。
+ゆっくりとですがPrefixもだんだんとしっかりとしたものになってきます。
+        </p>
+        <pre caption="いくつかのツールのemerge">
+$ <i>emerge --oneshot sys-apps/coreutils</i>
+$ <i>emerge --oneshot sys-apps/findutils</i>
+$ <i>emerge --oneshot '&lt;app-arch/tar-1.26-r1'</i>
+$ <i>emerge --oneshot sys-apps/grep</i>
+$ <i>emerge --oneshot sys-devel/patch</i>
+$ <i>emerge --oneshot sys-apps/gawk</i>
+$ <i>emerge --oneshot sys-devel/make</i>
+$ <i>emerge --oneshot --nodeps sys-apps/file</i>
+$ <i>emerge --oneshot --nodeps app-admin/eselect</i>
+        </pre>
+        <p>
+そろそろPortageが必要とするプログラムが一通りそろったので、
+ブートストラップされたPortageを適切にインストールされたPortageで、
+Portageそのものを使って置き換えます。
+またここでいくつかの依存パッケージが初めてemergeされます。
+例えばPortageの記述言語である<c>python</c>などです。
+ここでは一時的にPortageに対しブートストラップされたPortageを上書きしても良いと
+指示する必要があります。
+        </p>
+        <pre caption="emerge portage">
+$ <i>env FEATURES="-collision-protect" emerge --oneshot sys-apps/portage</i>
+        </pre>
+        <p>
+さぁ、ブートストラップしていたものは全てemergeしたので、
+もう要らなくなった一時的なディレクトリを削除し、
+そこにあったものを使うのを止めましょう。
+        </p>
+        <pre caption="tmpディレクトリの削除">
+$ <i>rm -Rf $EPREFIX/tmp/*</i>
+$ <i>hash -r</i>
+        </pre>
+        <p>
+さらにemergeを続けていく前に、ツリーを更新しましょう。
+ツリーの更新は次のようにします。
+        </p>
+        <pre caption="ツリーの更新">
+$ <i>emerge --sync</i>
+        </pre>
+        <note>
+もし、rsyncでの通信が遮断されるファイアウォールの中にいるならば、
+代わりに<c>${EPREFIX}/usr/sbin/emerge-webrsync</c>を実行してみて下さい。
+        </note>
+        <p>
+次に、Prefixのインストールを仕上げるのに最終的に必要なシステム・インストールを完遂する全てのパッケージをPortageにemergeさせます。
+        </p>
+        <pre caption="emerge system">
+$ <i>env USE=-git emerge -u system</i>
+        </pre>
+        <p>
+もうすぐ出来上がるPrefixに自分好みな設定をするには今が絶好のタイミングです。
+設定には<c>USE</c>フラグ、<c>CFLAGS</c>、<c>MAKEOPTS</c>を
+<path>$EPREFIX/etc/portage/make.conf</path>でカスタマイズすることも含まれます。
+<c>CFLAGS</c>に関してはひかえめに!
+以下の設定は単なる例で、こんな感じという雰囲気だけ伝えるものです。
+        </p>
+        <pre caption="Prefixインストールのカスタマイズ例">
+$ <i>echo 'USE="unicode nls"' >> $EPREFIX/etc/portage/make.conf</i>
+$ <i>echo 'CFLAGS="-O2 -pipe &lt;my-cpu-flags&gt;"' >> $EPREFIX/etc/portage/make.conf</i>
+$ <i>echo 'CXXFLAGS="${CFLAGS}"' >> $EPREFIX/etc/portage/make.conf</i>
+        </pre>
+        <note>
+上の例の中の<c>&lt;my-cpu-flags&gt;</c>はお使いのCPUに合わせて置き換える必要があります。
+IntelベースのMacユーザー(例えばMacBookやCoreDuo)はSSE命令が有効化されていないために起こるコンパイルエラーを避けるためにここには<c>-march=prescott</c>
+が含まれなければなりません。
+Core2Duoユーザーは<c>-march=core2</c>が使えます。
+PPCユーザーはCPUの別名をCPUに特化したチューニングを有効にするのに使えます。
+例えば<c>-mcpu=G5 -mtune=G5</c>のようにします。
+        </note>
+        <p>
+再ビルドを自力でまかなえるだけのものがそろったので、
+Prefixシステムのインストールの最後の段階を始められます。
+この最後の段階ではシステムの全てを再コンパイルします。
+ただし今までと違って全てのパッケージがApple製のツールではなく
+Prefixにあるツールを使ってコンパイルできるようになっています。
+        </p>
+        <pre caption="最後のシステムインストールをします">
+$ <i>emerge -e system</i>
+        </pre>
+        <p>
+<c>system</c>のemergeがつつがなく終われば、
+Prefixは正常にできあがったことになり、
+あとはPrefixツリーから好みで選んだものを何でもemergeすることができるようになります。
+        </p>
+      </body>
+    </section><!-- }}} -->
+
+
+    <section><!-- {{{ Using the Prefix -->
+
+      <title>Prefixの使用</title>
+      <body>
+        <p>
+ブートストラップの終わったPrefix環境を使う最も良い方法は
+パスやその他の環境変数が正しく設定されたPrefixのシェルを立ち上げることです。
+これを簡単に行うために、ちょっとした補助スクリプトをブートストラップ・スクリプトで作ることができます。
+        </p>
+        <pre caption="startスクリプトの作成">
+$ <i>cd $EPREFIX/usr/portage/scripts</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX startscript</i>
+        </pre>
+        <p>
+これを実行すると、<c>$EPREFIX</c>に<c>startprefix</c>スクリプトができます。
+このスクリプトはどこか他の場所に、例えばホームディレクトリに、動かしても構いません。
+スクリプトを実行するとPrefixシェルに移ることになり、
+そこでは例えば<c>emerge</c>が直ちに実行できるようになっています。
+Prefixを楽しみましょう!
+        </p>
+      </body>
+    </section>
+
+  </chapter>
+
+</guide>
+
+<!-- vim: set expandtab ts=2 sw=2 foldmethod=marker foldenable spell spelllang=en_gb: -->
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->
+
+
