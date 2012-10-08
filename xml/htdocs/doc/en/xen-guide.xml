@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/xen-guide.xml,v 1.13 2012/07/24 12:12:51 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/xen-guide.xml,v 1.14 2012/10/07 13:32:49 swift Exp $ -->
 
-<guide disclaimer="obsolete">
+<guide disclaimer="draft">
 <title>Configuring Gentoo with Xen</title>
 
 <author title="Author">
@@ -20,8 +20,8 @@ This guide describes how to start using Xen on your Gentoo system
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 <license/>
 
-<version>8</version>
-<date>2012-07-24</date>
+<version>9</version>
+<date>2012-10-07</date>
 
 <chapter>
 <title>Introduction</title>
@@ -114,7 +114,7 @@ packages.
 </p>
 
 <pre caption="Installing Xen">
-~# <i>emerge xen xen-tools xen-sources</i>
+~# <i>emerge xen xen-tools gentoo-sources</i>
 </pre>
 
 </body>
@@ -125,89 +125,64 @@ packages.
 
 <p>
 Next we'll build the Linux kernel with Xen support. This kernel, whose sources
-are available at <path>/usr/src/linux-2.6.x.z-xen</path>, will be our main
+are available at <path>/usr/src/linux</path>, will be our main
 running kernel (i.e. the one running domain 0). In the <c>XEN</c> section you'll
 find drivers for all kinds of input/output, each driver having a <e>backend</e>
 and <e>frontend</e> implementation available. For the domain 0 kernel you need
 to select the <e>backend</e> implementation: these are used by the other
 domains (who use the <e>frontend</e> drivers) to communicate directly with
-the hardware.
+the hardware. However, you should be able to configure the kernel to provide
+support for both frontend (guest) and backend (host) drivers.
 </p>
 
 <p>
-Of course, don't forget to select <c>Xen-compatible</c> at <c>Processor type and
-features</c>. If you're wondering about networking: each interface in a domain
+If you're wondering about networking: each interface in a domain
 has a point-to-point link to an interface on domain 0 (called
 <path>vifX.Y</path> where X is the domain number and Y the Yth interface of that
 domain), so you can configure your network the way you want (bridging, NAT,
 etc.)
 </p>
 
-<pre caption="Enabling Xen Support for i386 Kernels">
+<pre caption="Enabling Xen Support">
 Processor type and features  ---&gt;
-      Subarchitecture Type (Xen-compatible)
+    [*] Paravirtualized guest support ---&gt;
+        [*] Xen guest support
 </pre>
 
-<pre caption="Enabling Xen Support for x86_64 Kernels">
-Processor type and features  ---&gt;
-      Subarchitecture Type (PC-compatible)
-  [*] Enable Xen compatible kernel
-  [*] Support for hot-pluggable CPUs
-</pre>
-
-<pre caption="Domain-0 Kernel Config">
+<pre caption="Kernel Config">
 Bus options (PCI etc.)  ---&gt;
-  [*] PCI support
-  [ ]   Xen PCI Frontend Debugging
+    [*] Xen PCI Frontend
 
-Networking  ---&gt;
-  Networking options  ---&gt;
-    &lt;*&gt; 802.1d Ethernet Bridging
-    <comment>Only required by bridged networking.</comment>
+[*] Networking support ---&gt;
+    Networking options  ---&gt;
+        &lt;*&gt; 802.1d Ethernet Bridging
+	[*] Network packet filtering framework (Netfilter) ---&gt;
+	    [*] Advanced netfilter configuration
+	        [*] Bridged IP/ARP packets filtering
 
-XEN  ---&gt;
-  [*] Privileged Guest (domain 0)
-  &lt;*&gt; Backend driver support
-  &lt;*&gt;   Block-device backend driver
-  &lt;*&gt;   Network-device backend driver
-  &lt;*&gt;   PCI-device backend driver
-           PCI Backend Mode (Virtual PCI) ---&gt;
-  [*] Scrub memory before freeing it to Xen
-  [*] Disable serial port drivers
-      Xen version compatibility (3.0.4 and later)
-</pre>
-
-<pre caption="Domain-U Kernel Config">
-Bus options (PCI etc.)  ---&gt;
-  [ ] PCI support
-
-Device Drivers  ---&gt;
-  SCSI device support  ---&gt;
-    &lt; &gt; SCSI device support
-    <comment>Disabling SCSI support frees up the /dev/sd* device names
-    for use as Xen virtual block devices.</comment>
-
-XEN  ---&gt;
-  [ ] Privileged Guest (domain 0)
-  &lt;*&gt; Block-device frontend driver
-  &lt;*&gt; Network-device frontend driver
-  [*] Scrub memory before freeing it to Xen
-  [*] Disable serial port drivers
-      Xen version compatibility (3.0.4 and later)
+Device Drivers ---&gt;
+    [*] Block devices (NEW) ---&gt;
+        &lt;*&gt; Xen block-device backend driver
+    [*] Network device support ---&gt;
+        &lt;*&gt; Xen backend network device
+    Xen driver support ---&gt;
+        [*] Xen memory balloon driver (NEW)
+	[*]   Scrub pages before returning them to system (NEW)
+	&lt;*&gt; Xen /dev/xen/evtchn device (NEW)
+	[*] Backend driver support (NEW)
+	&lt;*&gt; Xen filesystem (NEW)
+	[*]   Create compatibility mount point /proc/xen (NEW)
+	[*] Create xen entries under /sys/hypervisor (NEW)
+	&lt;M&gt; userspace grant access device driver (NEW)
+	&lt;M&gt; user-space grant reference allocator driver (NEW)
+	&lt;M&gt; xen platform pci device driver (NEW)
 </pre>
 
 <p>
-A nice hint is to have the kernel make process store its intermediate object
-files elsewhere so that you can reuse the same kernel tree to build different
-configurations:
+The shown kernel configuration should allow the kernel image to boot both as a
+host as well as a guest. However, if you want to, you can slim down the guest
+image kernel considerably. Refer to the Xen documentation for more information.
 </p>
-
-<pre caption="Building the Kernel">
-~# <i>mkdir -p ~/build/dom0 ~/build/domU</i>
-~# <i>make O=~/build/dom0 menuconfig</i>
-<comment>(Configure the kernel)</comment>
-~# <i>make O=~/build/dom0 &amp;&amp; make O=~/build/dom0 modules_install</i>
-</pre>
 
 <p>
 Once the kernel is built you'll find the kernel image immediately in the
@@ -220,26 +195,16 @@ boot. For instance, for GRUB:
 </p>
 
 <pre caption="GRUB Configuration for Xen">
-title Xen 3.0 / Gentoo Linux 2.6.x.y
+title Xen Gentoo Linux 3.5
 root (hd0,0)
 kernel /boot/xen.gz
-module /boot/kernel-2.6.x.y-xen0 root=/dev/sda3
+module /boot/kernel-3.5.x.y-xen0 root=/dev/sda3
 </pre>
 
 <p>
-Now reboot your system into Xen. Once you are booted, you need to load the Xen
-daemon:
-</p>
-
-<pre caption="Loading the Xen daemon">
-~# <i>/etc/init.d/xend start</i>
-</pre>
-
-<p>
-Now check if you can do whatever you normally do on your system. If this is the
-case, you can edit your bootloader configuration to always boot into Xen and add
-the Xen deamon to the default runlevel so that it is started automatically
-next time you boot.
+Now reboot your system into Xen and check if you can do whatever you
+normally do on your system. If this is the case, you can edit your
+bootloader configuration to always boot into Xen.
 </p>
 
 <note>
@@ -259,24 +224,17 @@ you wish to start.
 <body>
 
 <p>
-Go to the Xen-powered Linux kernel source and update the configuration. It is
-wise to keep as many topics as possible similar to the main kernel except the
-<c>XEN</c> settings where drivers should now have their <e>frontend</e>
-implementation selected instead of the <e>backend</e>. Then build the kernel
+Go to the Xen-powered Linux kernel source and, if necessary, update the
+configuration. It is wise to keep as many topics as possible similar to
+the main kernel. Then build the kernel
 and place the resulting <path>vmlinuz</path> file where you want (we assume this
 is <path>/mnt/data/xen/kernel</path>):
 </p>
 
 <pre caption="Building the guest kernel">
 ~# <i>make O=~/build/domU</i>
-~# <i>cp ~/build/domU/vmlinuz /mnt/data/xen/kernel/kernel-2.6.x.y-xen</i>
+~# <i>cp ~/build/domU/vmlinuz /mnt/data/xen/kernel/kernel-3.5.x.y-xen</i>
 </pre>
-
-<p>
-It is also possible to create a single kernel image for both the administrative
-domain and the unpriviledged domain. More information about this can be found
-in the Xen user manual.
-</p>
 
 </body>
 </section>
@@ -293,13 +251,13 @@ Xen primarily for tests using a file based filesystem does have its advantages
 
 <p>
 You can create a file based filesystem using <c>dd</c> and <c>mke2fs</c> (or
-any other file system creation tool). For instance, to create a 2Gbyte ext3
+any other file system creation tool). For instance, to create a 4 Gbyte ext4
 filesystem:
 </p>
 
 <pre caption="Creating a file based filesystem">
-~# <i>dd if=/dev/zero of=/mnt/data/xen/disks/ext3root.img bs=1M count=2048</i>
-~# <i>mke2fs -j /mnt/data/xen/disks/ext3root.img</i>
+~# <i>dd if=/dev/zero of=/mnt/data/xen/disks/ext4root.img bs=1M count=4096</i>
+~# <i>mkfs.ext4 /mnt/data/xen/disks/ext4root.img</i>
 </pre>
 
 </body>
@@ -319,11 +277,11 @@ previously:
 <pre caption="Creating a domain configuration file">
 ~# <i>nano -w /mnt/data/xen/configs/gentoo</i>
 
-kernel = "/mnt/data/xen/kernel/kernel-2.6.x.y-xen"
+kernel = "/mnt/data/xen/kernel/kernel-3.5.x.y-xen"
 memory = 512
 name   = "gentoo"
 <comment>(Map the disk image to the virtual /dev/sda1)</comment>
-disk   = ['file:/mnt/data/xen/disks/ext3root.img,sda1,w']
+disk   = ['file:/mnt/data/xen/disks/ext4root.img,sda1,w']
 root   = "/dev/sda1 ro"
 </pre>
 
@@ -353,11 +311,11 @@ You can find example configuration files in <path>/etc/xen</path>.
 <p>
 Now we're all set and we can launch the new domain. If the disk image contained
 an operating system, we could just create and attach the domain using the
-<c>xm</c> command (Xen manager):
+<c>xl</c> command:
 </p>
 
 <pre caption="Creating and starting a new domain">
-~# <i>xm create /mnt/data/xen/configs/gentoo -c</i>
+~# <i>xl create /mnt/data/xen/configs/gentoo -c</i>
 </pre>
 
 <p>
@@ -369,7 +327,7 @@ Gentoo as you're used to.
 
 <p>
 If you want to disconnect from the domain, press <path>Ctrl+]</path>. You can
-always reconnect to the domains' console using <c>xm console gentoo</c>.
+always reconnect to the domains' console using <c>xl console gentoo</c>.
 However, there is only one console per domain, so only use it when you can't
 access the domain otherwise (for instance, through SSH).
 </p>
@@ -384,79 +342,11 @@ access the domain otherwise (for instance, through SSH).
 <body>
 
 <p>
-Xen supports at least two ways of configuring your (virtual) network:
-<e>routed</e> and <e>bridged</e>.
-</p>
-
-<p>
-When selecting the <e>routed</e> approach, the interface inside your
-unpriviledged domain is connected to the virtual interface on your
-administrative domain. On your administrative domain (domain 0), the virtual
-interface is linked together with <path>eth0</path>. The
-interface inside your unpriviledged domain should have an IP address on the same
-network as the interface on the administrative domain. Any communication to
-that IP address can only occur from the administrative domain, unless you set
-up specific routing rules.
-</p>
-
-<p>
-When selecting the <e>bridged</e> approach, your default network interface on
+Xen works best when using a bridged mode network configuration.
+This means that your default network interface on
 the administrative domain becomes a bridge which accepts connections to the
 virtual domains as well as to the IP address your administrative domain has.
 </p>
-
-</body>
-</section>
-<section>
-<title>Regular Routed Interfaces</title>
-<body>
-
-<p>
-Before you set up the interface on your unpriviledged domain, make sure that
-Xen's <path>netloop</path> and <path>netbk</path> drivers are loaded. A quick
-hint: if you have <path>netloop</path> as a module, load it with
-<c>nloopbacks=0</c> so that it doesn't create pointless interfaces to the
-loopback device. Then, edit your domain configuration file and add a <c>vif</c>
-instruction to it.
-</p>
-
-<pre caption="Configuring a virtual interface">
-~# <i>nano -w /mnt/data/xen/configs/gentoo</i>
-
-<comment>(Add the vif instruction)</comment>
-vif    = [ 'ip=192.168.1.101, vifname=veth1' ]
-</pre>
-
-<p>
-In the above example, the interface will be created for the unpriviledged domain
-(in which it will be called <path>eth0</path>) and Xen will ensure that address
-192.168.1.101 will be reachable from the administrative domain through interface
-<path>veth1</path>.
-</p>
-
-<p>
-This doesn't mean that the virtual <path>eth0</path> interface will
-automatically have IP 192.168.1.101 assigned to it, but rather that, if you
-don't give it that IP, it will not be connected with the administrative domain
-and thus cannot be reached.
-</p>
-
-<p>
-Now edit <path>/etc/xen/xend-config.sxp</path> as follows to select routed
-network configuration:
-</p>
-
-<pre caption="Editing xend-config.sxp">
-~# <i>nano -w /etc/xen/xend-config.sxp</i>
-
-<comment>(Comment out the following lines)</comment>
-<i>#</i>(network-script network-bridge)
-<i>#</i>(vif-script vif-bridge)
-
-<comment>(Enable the following lines)</comment>
-(network-script network-route)
-(vif-script vif-route)
-</pre>
 
 </body>
 </section>
@@ -465,62 +355,35 @@ network configuration:
 <body>
 
 <p>
-Unlike the routed interfaces you now need to load the <path>netloop</path>
-driver with <c>nloopbacks=1</c> (or higher) as the additional loopback devices
-are used to create the bridge. For the other modules you still need the
-<path>netbk</path> module as well as briding functionality (<path>bridge</path>
-module if build as such).
+Create a bridge interface by creating a new link to the networking init script
+as provided by Gentoo:
 </p>
 
-<p>
-Now edit your virtual domain and add the <c>vif</c> construct:
-</p>
-
-<pre caption="Configuring a virtual interface">
-~# <i>nano -w /mnt/data/xen/configs/gentoo</i>
-
-<comment>(Add the vif instruction)</comment>
-vif    = [ 'ip=192.168.1.101, vifname=veth0' ]
+<pre caption="Creating a bridge interface">
+# <i>cd /etc/init.d</i>
+# <i>ln -s net.lo net.br0</i>
 </pre>
 
 <p>
-Next edit <path>/etc/xen/xend-config.sxp</path> as follows to select bridged
-network configuration:
+Next, edit <path>/etc/conf.d/net</path> and setup the bridge:
 </p>
 
-<pre caption="Editing xend-config.sxp">
-~# <i>nano -w /etc/xen/xend-config.sxp</i>
+<pre caption="Enabling the bridge br0 interface">
+# <i>nano -w /etc/conf.d/net</i>
 
-<comment>(Enable the following lines)</comment>
-(network-script network-bridge)
-(vif-script vif-bridge)
-
-<comment>(Comment out the following lines if not done already)</comment>
-<i>#</i> (network-script network-route)
-<i>#</i> (vif-script vif-route)
+bridge_br0="eth0"
+config_br0="192.168.1.200 netmask 255.255.255.0 brd 192.168.1.255"
+routes_br0="default via 192.168.1.1"
 </pre>
 
 <p>
-By default, the bridge will contain whatever interface is configured to be the
-default interface (the device that is listed under the default route through
-<c>ip route list</c>). If you want to alter this behavior, edit the
-<path>xend-config.sxp</path> as follows:
+Finally, install the <e>net-misc/bridge-utils</e> package, and make sure the
+<path>net.br0</path> init script is loaded at boot.
 </p>
 
-<pre caption="Editing xend-config.sxp to change bridge configuration">
-~# <i>nano -w /etc/xen/xend-config.sxp</i>
-
-<comment>(Edit the network-script line)</comment>
-(network-script <i>'</i>network-bridge <i>netdev=eth0 bridge=xenbr0 vifnum=0'</i>)
-</pre>
-
-<p>
-Once the configuration is done, restart the <c>xend</c> init script to have Xen
-build the bridge:
-</p>
-
-<pre caption="Restarting the xend daemon">
-~# <i>/etc/init.d/xend restart</i>
+<pre caption="Finishing the bridge setup">
+# <i>emerge net-misc/bridge-utils</i>
+# <i>rc-update add net.br0 default</i>
 </pre>
 
 </body>
