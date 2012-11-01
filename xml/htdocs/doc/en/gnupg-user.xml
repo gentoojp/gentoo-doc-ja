@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding="UTF-8"?>
 <!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gnupg-user.xml,v 1.50 2012/07/09 04:34:16 nightmorph Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gnupg-user.xml,v 1.51 2012/10/31 18:44:41 swift Exp $ -->
 
 <guide>
 <title>GnuPG Gentoo User Guide</title>
@@ -24,8 +24,8 @@ communication.
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 <license/>
 
-<version>2</version>
-<date>2012-07-08</date>
+<version>3</version>
+<date>2012-10-31</date>
 
 <chapter>
 <title>Introduction</title>
@@ -61,8 +61,7 @@ have some sort of support for gpg, so having <e>crypt</e> in your USE variable
 is probably a good idea. If you wish to have an email client capable of using
 gnupg you can use pine (<c>emerge pinepgp</c>), mutt (<c>emerge mutt</c>),
 Mozilla Thunderbird (<c>emerge thunderbird</c>), evolution (evolution is
-a GNOME Microsoft Outlook work alike) and KDE's own KMail (KMail is part of the
-kdepim package).
+a GNOME Microsoft Outlook work alike) and KDE's own KMail.
 </p>
 
 <p>
@@ -507,13 +506,25 @@ Now your system is (almost) set to use the GPG agent.
 
 <p>
 If you use KDE as graphical environment, edit
-<path>/usr/kde/3.x/env/agent-startup.sh</path> (system-wide) or
-<path>~/.kde/env/gpgagent.sh</path> (local user) and add the following command
-to it to have KDE automatically starting the GPG agent:
+<path>/etc/kde/startup/agent-startup.sh</path> and uncomment the following
+(system-wide) or <path>~/.kde4/env/gpg-agent.sh</path> (local user) and add
+the following command to it to have KDE automatically starting the GPG agent:
 </p>
 
 <pre caption="Make KDE automatically start the GPG agent">
 eval "$(gpg-agent --daemon)"
+</pre>
+
+<p>
+Additionally, uncomment the following in
+<path>/etc/kde/shutdown/agent-shutdown.conf</path> (system-wide) or add it to
+<path>~/.kde4/shutdown/gpg-agent.sh</path> (local user):
+</p>
+
+<pre caption="Make KDE shut down the GPG agent">
+if [ -n "${GPG_AGENT_INFO}" ]; then
+  kill $(echo ${GPG_AGENT_INFO} | cut -d':' -f 2) &gt;/dev/null 2&gt;&amp;1
+fi
 </pre>
 
 <p>
