@@ -1,0 +1,401 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/initramfs-guide.xml,v 1.3 2012/07/24 12:12:51 swift Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoo Linux Initial RAM File System Guide</title>
+
+<author title="Author">
+  <mail link="swift@gentoo.org">Sven Vermeulen</mail>
+</author>
+
+<abstract>
+More and more systems require an initramfs to boot up properly. In this guide,
+we tackle the concepts of the initramfs as well as how to properly create and
+manage initramfs instances.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/3.0 -->
+<license/>
+
+<version>2</version>
+<date>2012-07-24</date>
+
+<chapter>
+<title>Initramfs concepts</title>
+<section>
+<title>Introduction</title>
+<body>
+
+<p>
+For many users, an initramfs system is of no concern. Their system uses a simple
+partitioning schema with no exotic drivers or setups (like encrypted file
+systems), so the Linux kernel is well able to hand over control to the
+<c>init</c> binary on their system. But for many systems, an initramfs is almost
+mandatory.
+</p>
+
+<p>
+The key concept to understanding what an initramfs is (or is needed for) is to
+understand how the Linux boot process works, even in a high-level approach.
+</p>
+
+</body>
+</section>
+<section>
+<title>Linux boot process</title>
+<body>
+
+<p>
+Once the Linux kernel has control over the system (which it gets after being
+loaded by the boot loader), it prepares its memory structures and drivers as
+well as it can. It then hands over control to an application (usually
+<c>init</c>) whose task it is to further prepare the system and make sure that,
+at the end of the boot process, all necessary services are running and the user
+is able to log on. The <c>init</c> application does that by launching, among
+other services, the <c>udev</c> daemon who will further load up and prepare the
+system based on the detected devices. When <c>udev</c> is launched, all
+remaining file systems that have not been mounted are mounted, and the remainder
+of services is started.
+</p>
+
+<p>
+For systems where all necessary files and tools reside on the same file system,
+the <c>init</c> application can perfectly control the further boot process. But
+when multiple file systems are defined (or more exotic installations are done),
+this might become a bit more tricky:
+</p>
+
+<ul>
+  <li>
+    When the <path>/usr</path> partition is on a separate file system, tools and
+    drivers that have files stored within <path>/usr</path> cannot be used
+    unless <path>/usr</path> is available. If those tools are needed to make
+    <path>/usr</path> available, then we cannot boot up the system.
+  </li>
+  <li>
+    If the root file system is encrypted, then the Linux kernel will not be able
+    to find the <c>init</c> application, resulting in an unbootable system.
+  </li>
+</ul>
+
+<p>
+The solution for this problem has since long been to use an <e>initrd</e>
+(initial root device).
+</p>
+
+</body>
+</section>
+<section>
+<title>The initial root disk</title>
+<body>
+
+<p>
+The <e>initrd</e> is an in-memory disk structure (ramdisk) that
+contains the necessary tools and scripts to mount the needed file systems before
+control is handed over to the <c>init</c> application on the root file system.
+The Linux kernel triggers the setup script (usually called <c>linuxrc</c> but
+that is not mandatory) on this root disk, which prepares the system, switches to
+the real root file system and then calls <c>init</c>.
+</p>
+
+<p>
+Although the initrd method is all that is needed, it had a few drawbacks:
+</p>
+
+<ul>
+  <li>
+    It is a full-fledged block device, requiring the overhead of an entire
+    file system on it, and has a fixed size. Choose an initrd that is too small,
+    and you won't be able to fit in all needed scripts. Make it too big, and
+    you're wasting memory.
+  </li>
+  <li>
+    Because it is a real device, it also consumes cache memory in the Linux
+    kernel and is prone to the memory- and file management methods in use (such
+    as paging), making it even worse in memory consumption.
+  </li>
+</ul>
+
+<p>
+To resolve these (for some perhaps hardly called) problems, the initramfs was
+created.
+</p>
+
+</body>
+</section>
+<section>
+<title>The initial ram file system</title>
+<body>
+
+<p>
+An <e>initramfs</e> is an initial ram file system based on <e>tmpfs</e>
+(a size-flexible, in-memory lightweight file system), which also didn't use a
+separate block device (so no caching was done and all overhead mentioned earlier
+disappears). Just like the initrd, it contains the tools and scripts needed to
+mount the file systems before the <c>init</c> binary on the real root file
+system is called. These tools can be decryption abstraction layers (for
+encrypted file systems), logical volume managers, software raid, bluetooth
+driver based file system loaders, etc.
+</p>
+
+<p>
+The content of the initramfs is made by creating a cpio archive. <c>cpio</c> is
+an old (but proven) file archiver solution (and its resulting archive files are
+called <e>cpio files</e>). You can definitely compare it to <c>tar</c>. The
+choice of <c>cpio</c> here was because it is easier to implement (code-wise) and
+supported (back then) device files (which <c>tar</c> couldn't). 
+</p>
+
+<p>
+All files, tools, libraries, configuration settings (if applicable), etc. are
+put into the cpio archive. This archive is then compressed using the <c>gzip</c>
+utility and stored alongside the Linux kernel. The boot loader will then offer
+it to the Linux kernel at boot time so the kernel knows an initramfs is needed.
+</p>
+
+<p>
+Once detected, the Linux kernel will create a tmpfs file system, extract the
+contents of the archive on it, and then launches the <c>init</c> script located
+in the root of the tmpfs file system. This script will then mount the real root
+file system (after making sure it can mount it, for instance by loading
+additional modules, preparing an encryption abstraction layer, etc.) as well as
+vital other file systems (such as <path>/usr</path> and <path>/var</path>).
+</p>
+
+<p>
+Once the root file system and the other vital file systems are mounted, the
+<c>init</c> script from the initramfs will switch the root towards the real root
+file system and finally call the <c>/sbin/init</c> on that system to continue
+the boot process.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Creating an initramfs</title>
+<section>
+<title>Introduction and bootloader configuration</title>
+<body>
+
+<p>
+To create an initramfs, it is important that you know what additional drivers,
+scripts and tools you need to boot your system. For instance, if you use LVM,
+then you will need to support LVM tools on the initramfs. Likewise, if you use
+software RAID, you need <c>mdadm</c>, etc.
+</p>
+
+<p>
+Some tools exist that help you create initramfs' (compressed cpio archives) for
+your system. But for those that want total control, you can easily create your
+own initramfs as well.
+</p>
+
+<p>
+Once created, you will need to adjust the bootloader configuration to tell it
+that an initramfs is to be used. For instance, if the initramfs file is stored
+as <path>/boot/initramfs-3.2.2-gentoo-r5</path>, then the configuration in
+<path>/boot/grub/grub.conf</path> could look like so:
+</p>
+
+<pre caption="Example entry in grub.conf for booting with an initramfs">
+title Gentoo Linux 3.2.2-r5
+root (hd0,0)
+kernel /boot/kernel-3.2.2-gentoo-r5
+initrd /boot/initramfs-3.2.2-gentoo-r5
+</pre>
+
+</body>
+</section>
+<section id="genkernel">
+<title>Using genkernel</title>
+<body>
+
+<p>
+Gentoo's kernel building utility, <c>genkernel</c>, can be used to generate an
+initramfs, even if you didn't use <c>genkernel</c> to configure and build your
+kernel. 
+</p>
+
+<p>
+To use <c>genkernel</c> for generating an initramfs, it is recommended that you
+include all necessary drivers and code that is needed to mount your
+<path>/</path> and <path>/usr</path> file systems in the kernel (and not as
+modules). Then, call <c>genkernel</c> as follows:
+</p>
+
+<pre caption="Running genkernel to setup an initramfs">
+# <i>genkernel --install --no-ramdisk-modules initramfs</i>
+</pre>
+
+<p>
+Depending on your system, you might want to add one or more of the following
+options:
+</p>
+
+<table>
+<tr>
+  <th>Option</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti>--disklabel</ti>
+  <ti>Add support for <c>LABEL=</c> settings in your <path>/etc/fstab</path></ti>
+</tr>
+<tr>
+  <ti>--dmraid</ti>
+  <ti>Add support for fake hardware RAID</ti>
+</tr>
+<tr>
+  <ti>--firmware</ti>
+  <ti>Add in firmware code found on the system</ti>
+</tr>
+<tr>
+  <ti>--gpg</ti>
+  <ti>Add in GnuPG support</ti>
+</tr>
+<tr>
+  <ti>--iscsi</ti>
+  <ti>Add support for iSCSI</ti>
+</tr>
+<tr>
+  <ti>--luks</ti>
+  <ti>Add support for luks encryption containers</ti>
+</tr>
+<tr>
+  <ti>--lvm</ti>
+  <ti>Add support for LVM</ti>
+</tr>
+<tr>
+  <ti>--mdadm</ti>
+  <ti>Add support for software RAID</ti>
+</tr>
+<tr>
+  <ti>--multipath</ti>
+  <ti>Add support for multiple I/O access towards a SAN</ti>
+</tr>
+<tr>
+  <ti>--zfs</ti>
+  <ti>Add support for ZFS</ti>
+</tr>
+</table>
+
+<p>
+When finished, the resulting initramfs file will be stored in your
+<path>/boot</path>.
+</p>
+
+</body>
+</section>
+<section id="dracut">
+<title>Using dracut</title>
+<body>
+
+<warn>
+At the time of writing, dracut is not marked stable yet, so you might need to
+unmask it before continuing.
+</warn>
+
+<p>
+The <c>dracut</c> utility is created for the sole purpose of managing initramfs
+files. It uses a highly modular approach on which support you want to include
+and which not.
+</p>
+
+<p>
+When you install <c>dracut</c>, you will need to take care to include support
+for the correct <c>DRACUT_MODULES</c>. This is a variable you can set in
+<path>/etc/portage/make.conf</path> to include support for specific setups:
+</p>
+
+<pre caption="Preparing to install dracut">
+DRACUT_MODULES="dmraid lvm syslog -biosdevname -btrfs -caps -crypt -crypt-gpg
+-dmsquash-live -gensplash -iscsi -livenet -mdraid -multipath -nbd -nfs -plymouth
+-ssh-client"
+</pre>
+
+<p>
+It is adviseable to set (or unset) those modules you need (and don't need).
+Afterwards, <c>emerge dracut</c> to install the utility on your system.
+</p>
+
+<p>
+The next step is to configure <c>dracut</c> by editing
+<path>/etc/dracut.conf</path>. In the configuration file, which is well
+commented, you can add in support for specific modules where needed.
+</p>
+
+<p>
+Once configured, create an initramfs by calling <c>dracut</c> as follows:
+</p>
+
+<pre caption="Calling dracut to generate an initramfs">
+# <i>dracut</i>
+</pre>
+
+<p>
+The resulting image supports generic system boots based on the configuration in
+<path>/etc/dracut.conf</path>. You can also opt to generate an initramfs
+specifically tailored to your system (in which <c>dracut</c> tries to detect the
+needed tools, drivers, etc. from your existing system). If you know that the
+needed support (code and drivers) is built in in your kernel (and not as
+module), then you can even add in <c>--no-kernel</c>:
+</p>
+
+<pre caption="Allowing dracut to generate a host-specific initramfs">
+# <i>dracut --host-only --no-kernel</i>
+</pre>
+
+<p>
+For more information, check out the <c>dracut</c> and <c>dracut.cmdline</c>
+manual pages.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Additional resources</title>
+<section>
+<title>Gentoo-specific</title>
+<body>
+
+<ul>
+  <li>
+    <uri link="http://en.gentoo-wiki.com/wiki/Initramfs">Initramfs</uri> on
+    Gentoo-wiki.com
+  </li>
+  <li>
+    <uri link="http://wiki.gentoo.org/wiki/Initramfs">Initramfs</uri> on the
+    official Gentoo Wiki
+  </li>
+  <li>
+    <uri link="http://wiki.gentoo.org/wiki/Dracut">Dracut</uri> on the official
+    Gentoo Wiki
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>General resources</title>
+<body>
+
+<ul>
+  <li>
+    <uri
+    link="https://www.kernel.org/doc/Documentation/filesystems/ramfs-rootfs-initramfs.txt">ramfs-rootfs-initramfs.txt</uri>
+    within the Linux kernel documentation
+  </li>
+</ul>
+
+</body>
+</section>
+</chapter>
+
+</guide>

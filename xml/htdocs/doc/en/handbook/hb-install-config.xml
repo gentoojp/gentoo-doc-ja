@@ -4,7 +4,7 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-config.xml,v 1.109 2012/02/22 21:27:45 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-config.xml,v 1.116 2012/10/06 20:16:10 swift Exp $ -->
 
 <sections>
 
@@ -14,8 +14,8 @@ you receive an overview of these files and an explanation on how to
 proceed.
 </abstract>
 
-<version>16</version>
-<date>2012-02-22</date>
+<version>22</version>
+<date>2012-10-06</date>
 
 <section>
 <title>Filesystem Information</title>
@@ -98,7 +98,7 @@ filesystem. It needs to be checked during boot, so we would write down:
 </p>
 
 <pre caption="An example /boot line for /etc/fstab">
-<keyval id="/boot"/>   /boot     ext2    defaults        1 2
+<keyval id="/boot"/>   /boot     ext2    defaults        0 2
 </pre>
 
 <p>
@@ -122,25 +122,19 @@ Now use the <e>example</e> below to create your <path>/etc/fstab</path>:
 </p>
 
 <pre caption="A full /etc/fstab example" test="func:keyval('arch')='HPPA'">
-<keyval id="/boot"/>   /boot        ext2    defaults,noatime     1 2
+<keyval id="/boot"/>   /boot        ext2    defaults,noatime     0 2
 /dev/sda3   none         swap    sw                   0 0
 /dev/sda4   /            ext3    noatime              0 1
 
 /dev/cdrom  /mnt/cdrom   auto    noauto,user          0 0
-
-proc        /proc        proc    defaults             0 0
-shm         /dev/shm     tmpfs   nodev,nosuid,noexec  0 0
 </pre>
 
 <pre caption="A full /etc/fstab example" test="func:keyval('arch')='Alpha' or func:keyval('arch')='MIPS' or func:keyval('arch')='x86' or func:keyval('arch')='AMD64'">
-<keyval id="/boot"/>   /boot        ext2    defaults,noatime     1 2
+<keyval id="/boot"/>   /boot        ext2    defaults,noatime     0 2
 /dev/sda2   none         swap    sw                   0 0
 /dev/sda3   /            ext3    noatime              0 1
 
 /dev/cdrom  /mnt/cdrom   auto    noauto,user          0 0
-
-proc        /proc        proc    defaults             0 0
-shm         /dev/shm     tmpfs   nodev,nosuid,noexec  0 0
 </pre>
 
 <pre caption="A full /etc/fstab example" test="func:keyval('arch')='SPARC'">
@@ -154,9 +148,6 @@ shm         /dev/shm     tmpfs   nodev,nosuid,noexec  0 0
 openprom    /proc/openprom  openpromfs  defaults             0 0
 
 /dev/cdrom  /mnt/cdrom      auto        noauto,user          0 0
-
-proc        /proc        proc    defaults             0 0
-shm         /dev/shm     tmpfs   nodev,nosuid,noexec  0 0
 </pre>
 
 <pre caption="A full /etc/fstab example" test="func:keyval('arch')='PPC' or
@@ -165,9 +156,6 @@ func:keyval('arch')='PPC64'">
 /dev/sda3   none         swap    sw                   0 0
 
 /dev/cdrom  /mnt/cdrom   auto    noauto,user          0 0
-
-proc        /proc        proc    defaults             0 0
-shm         /dev/shm     tmpfs   nodev,nosuid,noexec  0 0
 </pre>
 
 <p>
@@ -438,22 +426,17 @@ First we set the root password by typing:
 <body>
 
 <p>
-Gentoo uses <path>/etc/rc.conf</path> for general, system-wide configuration.
-Open up <path>/etc/rc.conf</path> and enjoy all the comments in that file :)
+Gentoo uses <path>/etc/rc.conf</path> to configure the services, startup,
+and shutdown of your system. Open up <path>/etc/rc.conf</path> and enjoy all
+the comments in the file.
 </p>
 
-<pre caption="Opening /etc/rc.conf">
+<pre caption="Configuring services">
 # <i>nano -w /etc/rc.conf</i>
 </pre>
 
 <p>
-When you're finished configuring <path>/etc/rc.conf</path>, save and exit. 
-</p>
-
-<p>
-As you can see, this file is well commented to help you set up the necessary
-configuration variables. You can configure your system to use unicode and
-define your default editor and your display manager (like gdm or kdm).
+When you're finished configuring these two files, save them and exit. 
 </p>
 
 <p>
@@ -505,6 +488,77 @@ further upgrades of the <c>sys-libs/timezone-data</c> package can update
 <path>/etc/localtime</path> automatically. For instance, if you used the
 Europe/Brussels timezone, you would write <c>Europe/Brussels</c> in the
 <path>/etc/timezone</path> file.
+</p>
+
+</body>
+</subsection>
+
+<subsection>
+<title>Configure locales</title>
+<body>
+
+<p>
+You will probably only use one or maybe two locales on your system. You have to
+specify locales you will need in <path>/etc/locale.gen</path>.
+</p>
+
+<pre caption="Opening /etc/locale.gen">
+# <i>nano -w /etc/locale.gen</i>
+</pre>
+
+<p>
+The following locales are an example to get both English (United States) and
+German (Germany) with the accompanying character formats (like UTF-8).
+</p>
+
+<pre caption="Specify your locales">
+en_US ISO-8859-1
+en_US.UTF-8 UTF-8
+de_DE ISO-8859-1
+de_DE@euro ISO-8859-15
+</pre>
+
+<note>
+You can select your desired locales in the list given by running <c>locale -a</c>.
+</note>
+
+<warn>
+We strongly suggest that you should use at least one UTF-8 locale because some
+applications may require it.
+</warn>
+
+<p>
+The next step is to run <c>locale-gen</c>. It will generates all the locales you
+have specified in the <path>/etc/locale.gen</path> file.
+</p>
+
+<pre caption="Running locale-gen">
+# <i>locale-gen</i>
+</pre>
+
+<p>
+Once done, you now have the possibility to set the system-wide locale settings
+in the <path>/etc/env.d/02locale</path> file:
+</p>
+
+<pre caption="Setting the default system locale in /etc/env.d/02locale">
+LANG="de_DE.UTF-8"
+LC_COLLATE="C"
+</pre>
+
+<p>
+And reload your environment:
+</p>
+
+<pre caption="Reload shell environment">
+# env-update &amp;&amp; source /etc/profile
+</pre>
+
+<p>
+We made a full <uri link="../guide-localization.xml#doc_chap3">Localization
+Guide</uri> to help you through this process. You can also read our detailed
+<uri link="../utf-8.xml#doc_chap2">UTF-8 Guide</uri> for very specific
+informations to enable UTF-8 on your system.
 </p>
 
 <p test="not(func:keyval('arch')='PPC64')">

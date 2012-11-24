@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding="UTF-8"?>
 <!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-sparc-netboot-howto.xml,v 1.13 2010/10/05 21:54:55 nightmorph Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-sparc-netboot-howto.xml,v 1.14 2012/07/08 23:09:11 nightmorph Exp $ -->
 
 <guide>
 <title>Gentoo Linux based Netboot HOWTO</title>
@@ -21,8 +21,8 @@ installation images.
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 <license/>
 
-<version>2</version>
-<date>2010-10-05</date>
+<version>3</version>
+<date>2012-07-08</date>
 
 <chapter>
 <title>Introduction</title>
@@ -198,9 +198,9 @@ For more options, consult <c>man 8 rarpd</c>.
 <body>
 
 <p>
-Here there are three options for a TFTP daemon, <c>net-ftp/atftp</c>,
-<c>net-ftp/netkit-tftp</c> and <c>net-ftp/tftp-hpa</c>. You only need to
-install one of the TFTP daemons for proper operation.
+Here there are two options for a TFTP daemon, <c>net-ftp/atftp</c> and
+<c>net-ftp/tftp-hpa</c>. You only need to install one of the TFTP daemons for
+proper operation.
 </p>
 
 <p>
@@ -284,93 +284,6 @@ An explanation of the above options (as taken from the man page);
 
 <p>
 For more options, consult <c>man 8 atftpd</c>.
-</p>
-
-</body>
-</section>
-<section>
-<title>The netkit-tftp Daemon</title>
-<body>
-
-<p>
-First, install the <c>netkit-tftp</c> package:
-</p>
-
-<pre caption="Installing netkit-tftp">
-# <i>emerge netkit-tftp</i>
-</pre>
-
-<p>
-Second, install <c>sys-apps/xinetd</c> if it is not currently present. After
-the <c>netkit-tftp</c> and <c>sys-apps/xinetd</c> packages have been
-installed, <c>netkit-tftp</c> will need to be configured. <c>netkit-tftp</c>
-needs to be run from <c>xinetd</c>, however it does not provide example scripts
-of its own. A sample <c>xinetd</c> file is provided below:
-</p>
-
-<pre caption="Sample /etc/xinetd.d/tftp file">
-service tftp
-{
-    protocol        = udp
-    port            = 69
-    socket_type     = dgram
-    wait            = yes
-    user            = nobody
-    group           = nobody
-    server          = /usr/sbin/in.tftpd
-    server_args     = /tftpboot
-    only_from       = 10.0.1.0
-    disable         = no
-}
-</pre>
-
-<note>
-This sample <c>xinetd</c> configuration file for tftp uses the line <c>disable =
-no</c>, which enables the service by default. This is opposite of the default
-way packages in Gentoo provide their respective <c>xinetd</c> configuration
-files, which have <c>disable</c> set to <c>yes</c>.
-</note>
-
-<p>
-An explanation of the above options which can be changed:
-</p>
-
-<ul>
-  <li><b>user</b>: the user in.tftpd requests are handled as</li>
-  <li><b>group</b>: the group in.tftpd requests are handled as</li>
-  <li>
-    <b>server_args</b>: the root directory for the TFTP daemon to serve files
-    from
-  </li>
-  <li>
-    <b>only_from</b>: tells xinetd which hosts to allow TFTP connections from
-  </li>
-</ul>
-
-<p>
-Additional information on <c>xinetd</c> configuration files can be found in
-<c>man 5 xinetd.conf</c>.
-</p>
-
-<p>
-If <c>xinetd</c> is running, you can send it the HUP signal to have it re-read
-its configuration files:
-</p>
-
-<pre caption="Sending HUP signal to xinetd">
-# <i>/bin/killall -HUP xinetd</i>
-</pre>
-
-<p>
-If <c>xinetd</c> is not running, start it with the init.d command:
-</p>
-
-<pre caption="Starting xinetd">
-# <i>/etc/init.d/xinetd start</i>
-</pre>
-
-<p>
-For more information, consult <c>man 8 in.tftpd</c>.
 </p>
 
 </body>

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/proj/en/gentoo-alt/prefix/ecopy.xml,v 1.5 2009/08/02 00:14:48 darkside Exp $ -->
+
+<guide link="/proj/en/gentoo-alt/prefix/ecopy.xml" lang="en">
+  <title>Importing ebuilds in Gentoo Prefix</title>
+
+  <author title="Author">
+    <mail link="darkside@gentoo.org">Jeremy Olexa</mail>
+  </author>
+
+  <abstract>
+    How to import ebuilds from main Gentoo into Gentoo Prefix
+  </abstract>
+
+
+  <!-- The content of this document is licensed under the CC-BY-SA license -->
+  <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+  <license/>
+
+  <version>1.2</version>
+  <date>2009-08-01</date>
+
+  <chapter>
+    <title>Importing ebuilds with ecopy</title>
+
+    <section><!-- {{{ introduction -->
+      <title>Introduction</title>
+      <body>
+        <p>
+          Ebuilds for Gentoo Prefix need some minor modifications from
+          those that exist in the "regular" Gentoo tree (known as the
+          gentoo-x86 tree).  Spelling out those modifications is out of
+          scope for this document, feel free to browse here:
+          <uri>http://www.gentoo.org/proj/en/gentoo-alt/prefix/techdocs.xml</uri>
+        </p>
+      </body>
+    </section><!-- }}} -->
+
+    <section><!-- {{{ ecopy -->
+      <title>The ecopy script</title>
+      <body>
+        <p>
+          <c>ecopy</c> is a script created by the Gentoo Prefix team, and
+          located in <c>${EPREFIX}/usr/portage/scripts</c>.  Its intention is
+          to  save people time and is mainly a wrapper for other scripts
+          which will be discussed later. Its usage can be described by
+          running: <c>ecopy</c> (without options).
+        </p>
+        <p><c>ecopy</c> expects the following:</p>
+        <ul>
+          <li>
+            Expects to be ran from the root of your overlay If you do
+            not know about overlays then please see:
+			<uri>http://www.gentoo.org/proj/en/devrel/handbook/handbook.xml?part=2&amp;chap=1#doc_chap6</uri>.
+          </li>
+          <li>
+            Expects to have one and only one valid category and package
+            as an argument. It should be in the form of "/" ie.
+            <c>app-office/openoffice</c>.
+          </li>
+          <li>
+            Expects an up-to-date Prefix tree to reliably have the
+            latest scripts.
+          </li>
+        </ul>
+        <p>
+          The use of <c>ecopy</c> is best explained by a simple example.
+        </p>
+        <pre caption="ecopy example">
+% <i>cd "${EPREFIX}"/usr/local/portage/my-overlay</i>
+% <i>ecopy app-office/openoffice</i>
+openoffice-3.1.0-r1.ebuild
+2009-08-01 18:41:23 URL:http://tinderbox.dev.gentoo.org/portage/app-office/openoffice/ChangeLog [98520/98520] -> "ChangeLog" [1]
+2009-08-01 18:41:23 URL:http://tinderbox.dev.gentoo.org/portage/app-office/openoffice/metadata.xml [704/704] -> "metadata.xml" [1]
+2009-08-01 18:41:24 URL:http://tinderbox.dev.gentoo.org/portage/app-office/openoffice/Manifest [17937/17937] -> "Manifest" [1]
+2009-08-01 18:41:24 URL:http://tinderbox.dev.gentoo.org/portage/app-office/openoffice/openoffice-3.1.0-r1.ebuild [13564/13564] -> "openoffice-3.1.0-r1.ebuild" [1]
+2009-08-01 18:41:25 URL:http://tinderbox.dev.gentoo.org/portage/app-office/openoffice/files/gentoo-3.1.0.diff [173/173] -> "files/gentoo-3.1.0.diff" [1]
+2009-08-01 18:41:25 URL:http://tinderbox.dev.gentoo.org/portage/app-office/openoffice/files/ooo-env_log.diff [617/617] -> "files/ooo-env_log.diff" [1]
+2009-08-01 18:41:25 URL:http://tinderbox.dev.gentoo.org/portage/app-office/openoffice/files/base64.diff [770/770] -> "files/base64.diff" [1]
+2009-08-01 18:41:25 URL:http://tinderbox.dev.gentoo.org/portage/app-office/openoffice/files/buildfix-gcc44.diff [611/611] -> "files/buildfix-gcc44.diff" [1]
+2009-08-01 18:41:25 URL:http://tinderbox.dev.gentoo.org/portage/app-office/openoffice/files/solenv.workaround-for-the-kde-mess.diff [17556/17556] -> "files/solenv.workaround-for-the-kde-mess.diff" [1]
+2009-08-01 18:41:26 URL:http://tinderbox.dev.gentoo.org/portage/app-office/openoffice/files/xulrunner-1.9.1.diff [325/325] -> "files/xulrunner-1.9.1.diff" [1]
+Processing openoffice-3.1.0-r1.ebuild
+  replacing ${D} -> ${ED} ... 2 occurences
+  replacing ${ROOT} -> ${EROOT} ... not found
+Processing openoffice-3.1.0-r1.ebuild ... ~amd64-linux ~x86-linux
+openoffice-3.1.0-r1.ebuild
+>>> Creating Manifest for usr/local/portage/my-overlay/app-office/openoffice
+&lt;snip for brevity&gt;</pre>
+        <p>
+          What is <c>ecopy</c> doing? In that above code snippet,
+          <c>ecopy</c> first directly downloads the required files from
+          <c>tinderbox.dev.gentoo.org</c>. Then, <c>ecopy</c>
+          runs <c>eapify</c> on the ebuild. <c>eapify</c> basically
+          does the needed gentoo-x86 -&gt; Prefix conversion.  This can
+          generally be automated and works right the first time about
+          85% of the time.  After <c>eapify</c>, some keyword cleanup is
+          done by <c>ecleankw</c> to make it match the Prefix keywords.
+          The Prefix keywords are more strictly defined than those of
+          the gentoo-x86 tree.  For more information on that see <uri
+            link="http://www.gentoo.org/proj/en/glep/glep-0053.html">GLEP
+            53</uri>. Last, <c>ecopy</c> re-digests the ebuild to
+          accommodate any changes.  Let it be known that you can do all
+          this manually as well because <c>ecopy</c> is just a wrapper script in
+          itself.
+        </p>
+        <p>
+          While <c>eapfiy</c> (the tool that does the actual
+          transformation of the ebuild) succeeds doing its job in many
+          cases, it cannot be trusted to always do the right thing.
+          Common mistakes made by <c>eapify</c> are related to either
+          adding or omission of the <c>${EPREFIX}</c> for some component
+          in the ebuild. <c>eapify</c> doesn't catch all instances of
+          what needs to be changed. If there is e.g. any path hardcoded
+          in the configure call you will need to prepend
+          <c>${EPREFIX}</c> to it.  Also, <c>${D}</c> can be improperly
+          expanded to <c>${ED}</c> in certain cases.  Manual review is
+          always necessary.  For more details on these issues see the
+          <e>Ebuild modifications</e> chapter of the <uri
+            link="http://www.gentoo.org/proj/en/gentoo-alt/prefix/techdocs.xml#doc_chap2">Gentoo
+            Prefix Techdocs</uri> page.
+        </p>
+      </body>
+    </section><!-- }}} -->
+    </chapter>
+    
+	<chapter>
+      <title>Bug Reporting</title>
+	<section>
+      <body>
+      <p>
+      Great, your package works...now what? The Gentoo Prefix team relies on
+      users submitting bug reports stating if a new package works. We simply do
+      not have the man power to get to our goal of having most of the packages
+      in the Prefix tree without your help.
+      </p>
+      <p>
+      When submitting bug reports, please follow these guidelines:
+      </p>
+      <ul>
+        <li>
+        Use the "Gentoo/Alt" Product with the "Prefix Support" component.
+        </li>
+        <li>
+        Include the method of your porting efforts. Did you use ecopy, manually,
+        etc.
+        </li>
+        <li>
+        Include which changes you made *after* ecopy, preferably using a 
+        diff -u
+        </li>
+        <li>
+        Include which patches you added, preferably attached uncompressed, not
+        bundled with anything else.
+        </li>
+        <li>
+        Include emerge --info, or at least what ARCH you are on. Otherwise, we
+        will commit the package and have to re-visit it to add your arch.
+        </li>
+        <li>
+        Do not submit reports about <c>ecopy</c> not porting your package
+        correctly, it is a best effort script only! Manual work probably is
+        needed.
+        </li>
+      </ul>
+      </body>
+	  </section>
+	  </chapter>
+
+</guide>
+
+<!-- vim: set expandtab ts=2 sw=2 foldmethod=marker foldenable: -->
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

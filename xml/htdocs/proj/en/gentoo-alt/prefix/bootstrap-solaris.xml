@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/proj/en/gentoo-alt/prefix/bootstrap-solaris.xml,v 1.87 2012/05/07 13:15:30 grobian Exp $ -->
+
+<guide link="/proj/en/gentoo-alt/prefix/bootstrap-solaris.xml" lang="en">
+  <title>Gentoo Prefix Bootstrap Process for Solaris</title>
+  
+
+  <author title="Author">
+    <mail link="grobian@gentoo.org">Fabian Groffen</mail>
+  </author>
+
+  <abstract>
+    How to bootstrap Gentoo Prefix on your Solaris system
+  </abstract>
+
+
+  <!-- The content of this document is licensed under the CC-BY-SA license -->
+  <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+  <license/>
+
+  <version>1.62</version>
+  <date>2012-05-07</date>
+
+  <chapter>
+    <title>Bootstrapping on Solaris</title>
+
+    <section><!-- {{{ Introduction -->
+      <title>Introduction</title>
+      <body>
+        <p>
+          Bootstrapping on Solaris 10 and higher is relatively simple if you
+          compare it to versions below 10.  It comes with bash3 and a
+          gcc-3.4.3 compiler by default, and with the download manager
+          wget.  If you still are in the process of installing Solaris,
+          make sure you install wget, to make things easier later on.
+        </p>
+        <p>
+          Though being relatively simple, Solaris is one of the more
+          "Spartan" platforms to bootstrap on, and for sure not as easy
+          as for instance a Linux distribution or Mac OS X.  However,
+          don't despair when things go wrong, it's just known to be
+          hard(er), but not impossible.  Feel free to ask in the
+          <c>gentoo-prefix</c> IRC channel, or mailing list.
+        </p>
+      </body>
+    </section><!-- }}} -->
+
+    <section><!-- {{{ Bootstrapping -->
+      <title>Bootstrapping</title>
+      <body>
+        <p>
+          As prerequisite, you have to have <c>gcc</c> and <c>wget</c>
+          installed.  If you didn't install <c>wget</c>, you have to
+          acquire the necessary files in another way, e.g. via a brower,
+          NFS, or <c>scp</c>.
+        </p>
+        <note>
+          <c>wget</c> and <c>gcc</c> are usually located in
+          <path>/usr/sfw/bin</path>.
+        </note>
+        <p>
+          The first step is to choose a path to install into.  We refer
+          to this path as "Prefix path", stored in the variable
+          <c>EPREFIX</c>.  Some suggestion for your Prefix path is
+          <path>$HOME/gentoo</path>.
+          Whatever you chose, make sure you set it in your environment:
+        </p>
+        <pre caption="Export EPREFIX variable">
+$ <i>export EPREFIX="$HOME/gentoo"</i>
+        </pre>
+        <note>
+          tcsh users can use <c>setenv EPREFIX "$HOME/gentoo"</c>
+          instead.
+        </note>
+        <p>
+          Next, add the following paths in your soon to be Prefix to
+          your <c>PATH</c> environment.
+          <path>$EPREFIX/bin</path>,
+          <path>$EPREFIX/usr/bin</path>,
+          <path>$EPREFIX/tmp/bin</path> and
+          <path>$EPREFIX/tmp/usr/bin</path>.
+          Adding these paths makes sure that they will be available
+          later on in the process.
+          Additionally, you need the following paths to find the gnu
+          compiler, linker, make and some other tools:
+          <path>/usr/sfw/bin</path>,
+          <path>/usr/sfw/&lt;arch&gt;-sun-solaris&lt;version&gt;/bin</path>,
+          <path>/usr/bin</path> and <path>/bin</path>.
+        </p>
+        <pre caption="Add Prefix and utility paths to your PATH on Solaris 10/x86">
+$ <i>export PATH="$EPREFIX/usr/bin:$EPREFIX/bin:$EPREFIX/tmp/usr/bin:$EPREFIX/tmp/bin:/usr/sfw/bin:/usr/sfw/i386-sun-solaris2.10/bin:/usr/sfw/sparc-sun-solaris2.10/bin:/usr/bin:/bin"</i>
+        </pre>
+        <note>
+          Solaris 11 users need <e>2.11</e> instead of <e>2.10</e> in
+          <e>xxxx-sun-solaris2.10</e> in <c>PATH</c> above.
+        </note>
+        <p>
+          If you want to end up with a 64-bits native Prefix
+          installation, then set your <c>CHOST</c> variable accordingly
+          to either <c>x86_64-pc-solaris2.10</c> or
+          <c>sparcv9-sun-solaris2.10</c> for Solaris 10.  You
+          <e>only</e> need to do this if you want a 64-bits native
+          Prefix!
+        </p>
+        <p>
+          Now the path is set, start with downloading the bootstrap
+          script from
+          <uri>http://overlays.gentoo.org/proj/alt/browser/trunk/prefix-overlay/scripts/bootstrap-prefix.sh?format=txt</uri>.
+          From the directory where the bootstrap script was stored execute
+          the following commands:
+        </p>
+        <pre caption="Use the bootstrap script">
+$ <i>chmod 755 bootstrap-prefix.sh</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX tree</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp make</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp wget</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp sed</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp coreutils</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp findutils</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp tar</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp patch</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp grep</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp gawk</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp bash</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp zlib</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX/tmp python</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX portage</i>
+        </pre>
+        <note>
+          Please note that <c>wget</c>, <c>sed</c>, <c>python</c>, etc.
+          are installed in <path>$EPREFIX/tmp</path>!
+        </note>
+        <p>
+          The script will setup the <path>$EPREFIX</path>
+          directory, download a portage tree snapshot, unpack it and
+          download and install portage.  Afterwards it will try to setup
+          some sane defaults.
+          Because we installed some new applications, we will instruct
+          bash to reconsider all paths we have:
+        </p>
+        <pre caption="rehash in bash">
+$ <i>hash -r</i>
+        </pre>
+        <note>
+          tcsh users can use the <c>rehash</c> command.
+        </note>
+        <p>
+          We continue adding some necessary tools which will deal with
+          many errors and warnings you might see during emerging.
+        </p>
+        <pre caption="emerge sed">
+$ <i>emerge --oneshot sed</i>
+        </pre>
+        <p>
+          Next, we emerge the <c>bash</c> shell Portage heavily relies
+          on.  The same holds for <c>wget</c>, the download manager.
+          Since its dependencies cannot be compiled at this stage,
+          we ignore those for the moment.
+        </p>
+        <pre caption="emerge bash">
+$ <i>emerge --oneshot --nodeps bash</i> (avoid deps that install scripts with shebang /bin/sh)
+        </pre>
+        <note>
+          It is safe to ignore the "1 config files in XXX need updating"
+          message that appears till the end of the bootstrap process.
+        </note>
+        <note>
+          If bash fails with an error message about missing 'yacc' then you can
+          run: ./bootstrap-prefix.sh $EPREFIX/tmp m4 ; ./bootstrap-prefix.sh $EPREFIX/tmp bison
+        </note>
+        <p>
+          Now, we will emerge a compiler which will use the gnu linker.
+          This is a requirement for many packages that follow in the
+          bootstrap process, in particular Perl.  The gcc compiler
+          shipped by Sun uses the Solaris native linker, which is as
+          "Spartan" as the whole system.  The packages to emerge include
+          the <c>baselayout</c> package.  Some, if not many, scripts and
+          tools within a Gentoo system assume the availability of the
+          <c>baselayout</c> package for all communication using the
+          Gentoo colour scheme.
+        </p>
+        <pre caption="emerge linker and compiler">
+$ <i>emerge --oneshot --nodeps sys-apps/baselayout-prefix</i>
+$ <i>emerge --oneshot --nodeps app-arch/xz-utils</i>
+$ <i>emerge --oneshot --nodeps sys-devel/m4</i>
+$ <i>emerge --oneshot --nodeps sys-devel/flex</i>
+$ <i>emerge --oneshot --nodeps sys-devel/bison</i>
+$ <i>emerge --oneshot --nodeps sys-devel/binutils-config</i>
+$ <i>emerge --oneshot --nodeps sys-devel/binutils</i>
+$ <i>emerge --oneshot --nodeps sys-devel/gcc-config</i>
+$ <i>emerge --oneshot --nodeps "=sys-devel/gcc-4.2*"</i>
+        </pre>
+        <p>
+          We continue getting more tools in our Prefix.  We no longer
+          ignore dependencies all the time, so a lot of packages will be
+          emerged at this stage.  Slowly our Prefix gets more robust as
+          we progress here.
+        </p>
+        <pre caption="emerge several tools">
+$ <i>emerge --oneshot sys-apps/coreutils</i>
+$ <i>emerge --oneshot sys-apps/findutils</i>
+$ <i>emerge --oneshot '&lt;app-arch/tar-1.26-r1'</i>
+$ <i>emerge --oneshot sys-apps/grep</i>
+$ <i>emerge --oneshot sys-devel/patch</i>
+$ <i>emerge --oneshot sys-apps/gawk</i>
+$ <i>emerge --oneshot sys-devel/make</i>
+$ <i>emerge --oneshot sys-libs/zlib</i>
+$ <i>emerge --oneshot --nodeps sys-apps/file</i>
+$ <i>emerge --oneshot --nodeps app-admin/eselect</i>
+$ <i>emerge --oneshot app-misc/pax-utils</i>
+$ <i>emerge --oneshot "&lt;net-misc/wget-1.13.4-r1"</i> (until we fix #393277)
+$ <i>emerge --oneshot virtual/os-headers</i>
+        </pre>
+        <p>
+          Now we have a good bunch of programs that Portage needs, we
+          can replace the bootstrapped Portage by a properly installed
+          one, using Portage itself.  Also here a few dependencies are
+          first emerged, such as the language Portage is written in:
+          <c>python</c>.  We need to temporarily tell Portage that the
+          bootstrapped Portage can be overwritten.
+        </p>
+        <pre caption="emerge portage">
+$ <i>env FEATURES="-collision-protect" emerge --oneshot sys-apps/portage</i>
+        </pre>
+        <p>
+          Now we have emerged everything we bootstrapped before, we
+          remove the temporary directory and its use as it is no longer
+          necessary.
+        </p>
+        <pre caption="remove tmp directory">
+$ <i>rm -Rf $EPREFIX/tmp/*</i>
+$ <i>hash -r</i>
+        </pre>
+        <p>
+          Before we do any further merges, we are going to update our
+          tree.  Updating the tree is done using:
+        </p>
+        <pre caption="Updating the tree">
+$ <i>emerge --sync</i>
+        </pre>
+        <note>
+          If you're behind a firewall that blocks rsync traffic, you can
+          try to run <c>${EPREFIX}/usr/sbin/emerge-webrsync</c> instead.
+        </note>
+        <p>
+          Before we can finish emerging the system set, we need to work
+          around a circular dependency of <c>gcc</c> on <c>mpc</c>, and
+          <c>mpc</c> on <c>gcc</c>.
+        </p>
+        <pre caption="emerge an older mpc">
+$ <i>emerge --oneshot "&lt;dev-libs/mpc-0.9"</i>
+        </pre>
+        <p>
+          Next, we let Portage emerge all packages that complete a
+          system install that we eventually need to finalise this Prefix
+          installation.
+        </p>
+        <pre caption="emerge system">
+$ <i>env USE=-git emerge -u system</i>
+        </pre>
+        <p>
+          Now is a good time to set the preferences for our soon to be
+          Prefix.  This includes customisations such as general
+          <c>USE</c>-flags, <c>CFLAGS</c> and <c>MAKEOPTS</c> in
+          <path>$EPREFIX/etc/portage/make.conf</path>.  Be conservative with
+          <c>CFLAGS</c>!  Note that the code below is an example, and is
+          meant for inspiration only.
+        </p>
+        <pre caption="Customising the Prefix installation - example">
+$ <i>echo 'USE="unicode nls"' >> $EPREFIX/etc/portage/make.conf</i>
+$ <i>echo 'CFLAGS="-O2 -pipe"' >> $EPREFIX/etc/portage/make.conf</i>
+$ <i>echo 'CXXFLAGS="${CFLAGS}"' >> $EPREFIX/etc/portage/make.conf</i>
+        </pre>
+        <p>
+          It is likely that you emerged a newer GCC than the 4.2 version
+          we used during the bootstrap.  Since we reinstall all
+          packages, we like to take advantage of this newer GCC.  By
+          default, this newer GCC will not be enabled.  Check the output
+          of <c>gcc-config -l</c>, and make sure that the newest
+          compiler is selected (marked by an asterisk).  Another GCC can
+          be selected by running <c>gcc-config &lt;number&gt;</c>.
+        </p>
+        <pre caption="activating the most recent compiler">
+$ <i>gcc-config -l</i>
+ [1] i386-pc-solaris2.10-4.2.4 *
+ [2] i386-pc-solaris2.10-4.5.3
+$ <i>gcc-config 2</i>
+ * Switching native-compiler to i386-pc-solaris2.10-4.5.3 ...
+$ <i>gcc-config -l</i>
+ [1] i386-pc-solaris2.10-4.2.4
+ [2] i386-pc-solaris2.10-4.5.3 *
+        </pre>
+        <p>
+          Since we have everything in place for a self-catered rebuild,
+          we can start the final stage to install the Prefix system.
+          This final stage recompiles everything in the system, but now
+          all packages can be compiled with tools from the Prefix,
+          instead of those from the host system.
+        </p>
+        <pre caption="doing the final system installation">
+$ <i>emerge -e system</i>
+        </pre>
+        <p>
+          After <c>system</c> has emerged successfully, your Prefix will
+          be set up properly, and you can emerge the whichever tools you
+          choose from the Prefix tree.
+        </p>
+      </body>
+    </section><!-- }}} -->
+
+    <section><!-- {{{ Using the Prefix -->
+      <title>Using the Prefix</title>
+      <body>
+        <p>
+          To use your bootstrapped Prefix environment, you best start a
+          shell from the Prefix, such that your path and other
+          environment variables are set correctly.  To facilitate in
+          this, a small helper script can be created by the bootstrap
+          script.
+        </p>
+        <pre caption="Creating a start-script">
+$ <i>cd $EPREFIX/usr/portage/scripts</i>
+$ <i>./bootstrap-prefix.sh $EPREFIX startscript</i>
+        </pre>
+        <p>
+          After running this, a script <c>startprefix</c> will be
+          present in <c>$EPREFIX</c>.  You can freely move the script to
+          e.g. your homedir for convenience.  Running the script will
+          drop you into a Prefix shell, where for example <c>emerge</c>
+          is directly at your disposal.  Enjoy your Prefix!
+        </p>
+      </body>
+    </section>
+
+  </chapter>
+
+</guide>
+
+<!-- vim: set expandtab ts=2 sw=2 foldmethod=marker foldenable spell spelllang=en_gb: -->
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->
