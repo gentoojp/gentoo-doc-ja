@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/proj/en/gentoo-alt/prefix/bootstrap.xml,v 1.48 2011/10/27 14:33:14 darkside Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/proj/en/gentoo-alt/prefix/bootstrap.xml,v 1.52 2012/10/28 15:21:06 swift Exp $ -->
 
-<guide redirect="index.xml#doc_chap2" lang="en">
+<guide lang="en">
   <title>Gentoo Prefix Bootstrap Process</title>
 
 
@@ -19,8 +19,8 @@
   <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
   <license/>
 
-  <version>1.91</version>
-  <date>2010-09-21</date>
+  <version>1.94</version>
+  <date>2012-10-01</date>
 
   <chapter>
     <title>Bootstrapping in general</title>
@@ -31,15 +31,17 @@
 
         <p>
           Bootstrapping is the process required to get Prefixed Portage
-          installed on your system.  Currently, we only have detailed
-          guides for Mac OS X and Solaris systems.  If you have another
-          system, you best go with the Solaris guide.  Systems known to
-          work are various Linux systems and FreeBSD.  Note that for
-          systems where <c>bash</c> is missing, you need to bootstrap it
-          first with the <c>bootstrap-bash.sh</c> script.  It can be
-          found next to <c>bootstrap-prefix.sh</c> as indicated by the
-          guides.  Windows users can get directly up to speed using the
-          Interix installers.
+          installed on your system.  For several years since its
+          existence, the Gentoo Prefix team has documented the exact
+          process for bootstrapping a system, on a per platform basis.
+          Those instructions often became outdated and differed in
+          subtle ways between platforms.  Because maintenance of this
+          became too high and errors became too much a barrier for new
+          users to join, the Gentoo Prefix team has switched to an
+          almost fully automated bootstrap process.  The old
+          step-by-step, and package-by-package instructions are no
+          longer supported, and all users are highly encouraged to use
+          the automated bootstrap process.
         </p>
 
       </body>
@@ -50,56 +52,99 @@
       <body>
 
         <p>
-          The <c>bootstrap-prefix.sh</c> script is a sort of kickstart
-          in the bootstrap process.  It automates downloading the
-          portage tree, installing portage and the necessary temporary
-          helper applications.  In addition it tries to setup a profile
-          and some settings where it can.
+          The <c>bootstrap-prefix.sh</c> script contains all the
+          necessary bits to bootstrap a Gentoo Prefix system.  It uses
+          a trial-and-error approach to avoid having to make assumptions
+          about the system being bootstrapped at where possible.
+        </p>
+
+        <p>
+          Simply running the <c>bootstrap-prefix.sh</c> script, launches
+          the interactive installer.  This installer will ask for some
+          information, and discuss some options based on the system
+          being bootstrapped on.  Running this interactive installer is
+          the easiest way to bootstrap a Gentoo Prefix system, since it
+          caters for the entire process up to the point where the Prefix
+          can be used.
+        </p>
+
+        <p>
+          In case the interactive installer is not desired due to
+          automation, or what reason else, the process of bootstrapping
+          can be performed in roughly 4 stages.  These stages are
+          performed by the interactive installer.  Running these stages
+          manually is not recommended, and only meant for special cases,
+          such as debugging problems, e.g. when the interactive
+          installer fails to finish the bootstrap.
         </p>
 
       </body>
     </section><!-- }}} -->
 
-    <section><!-- {{{ Targets -->
-      <title>Targets</title>
+    <section><!-- {{{ performing a bootstrap -->
+      <title>Performing a Gentoo Prefix bootstrap using the interactive installer (recommended)</title>
       <body>
 
         <p>
-          Choose one of the bootstrap targets below, to start
-          bootstrapping your system.
+          The <c>bootstrap-prefix.sh</c> requires a working version of
+          the GNU Bourne Again SHell (<c>bash</c>).  If you don't have
+          <c>bash</c> available on your system, you will have to
+          bootstrap a <c>bash</c> binary first.  Systems that often lack
+          <c>bash</c> are the *BSD systems such as FreeBSD.
+          If you don't have <c>bash</c> installed, download the
+          <c>bootstrap-bash.sh</c> script from
+          <uri>http://overlays.gentoo.org/proj/alt/browser/trunk/prefix-overlay/scripts/bootstrap-bash.sh?format=txt</uri>.
+          You can use <c>wget</c>, <c>curl</c>, <c>fetch</c> or
+          <c>ftp</c> if they are available.  Downloading the script with
+          a web-browser, and/or copying via scp/ftp/NFS is also fine.
+        </p>
+        <pre caption="Bootstrap bash (ONLY if no bash exists on the system)">
+$ <i>chmod 755 bootstrap-bash.sh</i>
+$ <i>./bootstrap-bash.sh /var/tmp/bash</i>
+$ <i>export PATH="/var/tmp/bash/usr/bin:${PATH}"</i>
+        </pre>
+        <note>
+          You ONLY have to bootstrap <c>bash</c> if you don't have
+          <c>bash</c> yet on your system!  It is NOT necessary to run
+          <c>bash</c> as your login shell.  <c>tcsh</c> users should use
+          <c>setenv PATH "/var/tmp/bash/bin:${PATH}"</c> to update their
+          path instead of the export.
+        </note>
+
+        <p>
+          Download the Gentoo Prefix bootstrap script from
+          <uri>http://overlays.gentoo.org/proj/alt/browser/trunk/prefix-overlay/scripts/bootstrap-prefix.sh?format=txt</uri>.
+          Like mentioned above, you can use various ways to obtain the
+          script and get it to a place where you can execute it.  Once
+          in position, preform the following commands:
+        </p>
+        <pre caption="Start the interactive bootstrap script">
+$ <i>chmod 755 bootstrap-prefix.sh</i>
+$ <i>./bootstrap-prefix.sh</i>
+(follow the instructions)
+        </pre>
+
+        <p>
+          That's all!  The script will guide you through the full
+          process, and tells you how to start your freshly bootstrapped
+          Gentoo Prefix system if it successfully runs up til the end.
+          In normal cases, you don't need any more than just this.  You
+          can stop reading here if this works fine for you.
         </p>
 
-        <ul>
-          <li>
-            <uri link="bootstrap-macos.xml">
-              Bootstrap process for Mac OS X users
-            </uri>
-          </li>
-          <li>
-            <uri link="bootstrap-solaris.xml">
-              Bootstrap process for Solaris 10 users
-            </uri> (Linux users will want to work off this guide)
-          </li>
-          <li>
-            <uri link="bootstrap-freebsd.xml">
-              Bootstrap process for FreeBSD 8.x users
-            </uri>
-          </li>
-          <li>
-            <uri link="http://distfiles.gentoo.org/experimental/prefix/x86-interix/">
-              ISO images and Documentation for the Windows (Interix)
-              port of Gentoo Prefix
-            </uri>
-          </li>
-<!--
-this is non-supported, non-working garbage currently
-          <li>
-            <uri link="bootstrap-linux.xml">
-              Bootstrap process for Linux users
-            </uri>
-          </li>
--->
-        </ul>
+      </body>
+    </section><!-- }}} -->
+
+    <section><!-- {{{ performing a manual bootstrap -->
+      <title>Performing a Gentoo Prefix manually</title>
+      <body>
+
+        <p>
+          If you want or need to perform a Gentoo Prefix bootstrap
+          manually, follow the <uri
+            link="bootstrap-solaris.xml">instructions for bootstrapping
+            on UNIX-like systems</uri>.
+        </p>
 
       </body>
     </section><!-- }}} -->
@@ -108,4 +153,3 @@ this is non-supported, non-working garbage currently
 </guide>
 
 <!-- vim: set expandtab ts=2 sw=2 foldmethod=marker foldenable: -->
-<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->
