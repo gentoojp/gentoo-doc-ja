@@ -4,7 +4,7 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-working-portage.xml,v 1.20 2012/03/08 17:55:19 naota Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-working-portage.xml,v 1.21 2012/11/28 06:17:41 naota Exp $ -->
 
 <sections>
 
@@ -13,11 +13,12 @@
 ユーザーが知っておくべき手順を「簡単に」説明します。
 </abstract>
 
-<version>4</version>
-<date>2011-10-26</date>
-<!-- Original revision: 1.78 -->
+<version>7</version>
+<date>2012-08-15</date>
+<!-- Original revision: 1.81 -->
 <!-- Translator: kobayashi -->
 <!-- Translator: naota -->
+<!-- Translator: unarist -->
 
 <section>
 <title>Portageへようこそ</title>
@@ -367,10 +368,10 @@ Portageツリーにある全てのパッケージには、ebuildに<c>LICENSE</c
 </p>
 
 <p>
-許可するライセンスを制御するのは、<c>ACCEPT_LICENSE</c>です。これは、<path>/etc/make.conf</path>のなかで設定されます。
+許可するライセンスを制御するのは、<c>ACCEPT_LICENSE</c>です。これは、<path>/etc/portage/make.conf</path>のなかで設定されます。
 </p>
 
-<pre caption="/etc/make.conf でのデフォルトの ACCEPT_LICENSE">
+<pre caption="/etc/portage/make.confでのデフォルトのACCEPT_LICENSE">
 ACCEPT_LICENSE="* -@EULA"
 </pre>
 
@@ -380,7 +381,7 @@ ACCEPT_LICENSE="* -@EULA"
 </p>
 
 <p>
-<c>ACCEPT_LICENSE</c>はシステム全体では<path>/etc/make.conf</path>で設定可能です。
+<c>ACCEPT_LICENSE</c>はシステム全体では<path>/etc/portage/make.conf</path>で設定可能です。
 また、パッケージごとに<path>/etc/portage/package.license</path>でも設定可能です。
 </p>
 
@@ -407,7 +408,7 @@ license_groupsの各行の一番初めの大文字で書かれた項目はライ
 次の例ではシステム全体で、GPL互換ライセンスグループと他のライセンスグループと個別ライセンスをいくつか許可しています。
 </p>
 
-<pre caption="/etc/make.conf での ACCEPT_LICENSE">
+<pre caption="/etc/portage/make.confでのACCEPT_LICENSE">
 ACCEPT_LICENSE="@GPL-COMPATIBLE @OSI-APPROVED @EULA atheros-hal BitstreamVera"
 </pre>
 
@@ -450,7 +451,9 @@ ebuildはそのバージョンごとにSLOTを宣言します。SLOTが異なる
 同一の機能を提供する実装の異なるパッケージもまた存在します。
 例えば、<c>metalogd</c>、<c>sysklogd</c>、<c>syslog-ng</c>は全てシステムロガーです。
 「システムロガー」の機能を必要とするアプリケーションは、例えば<c>metalogd</c>に依存することはできません。他のシステムロガーも同様に問題のない選択だからです。
-Portageは<e>virtuals</e>を考慮に入れます:他のアプリケーションが<c>virtual/syslog</c>に依存できるように、それぞれのシステムロガーは<c>virtual/syslog</c>を提供します。
+そこで、Portageは仮想パッケージを考慮に入れます。つまり、<c>virtual/logger</c>には、それぞれのシステムロガーが"排他的な"依存関係になるように登録されるのです。
+これにより、アプリケーションは<c>virtual/logger</c>なるパッケージに依存できるようになります。
+まだシステムロガーがインストールされていない場合、この仮想パッケージは依存関係を満足するように、登録されている先頭のシステムロガーをインストールしようとします。
 </p>
 
 <p>
@@ -565,7 +568,7 @@ Portageの最近のバージョンでは、些細なブロックについては�
   </li>
   <li>
     <b>license</b>はパッケージのライセンスが<c>ACCEPT_LICENSE</c>と合致しないことを意味します。
-    <path>/etc/make.conf</path>か<path>/etc/portage/package.license</path>に設定することで、
+    <path>/etc/portage/make.conf</path>か<path>/etc/portage/package.license</path>に設定することで、
     明示的にそのライセンスかライセンスグループを許可しなければいけません。
     詳しくは、<uri link="#license">ライセンス</uri>を参照してください。
   </li>
@@ -603,7 +606,7 @@ emerge: there are no ebuilds built with USE flags to satisfy "app-text/feelings[
 </p>
 
 <p>
-これを解決するには<path>/etc/make.conf</path>でグローバルUSEフラグに追加するか、
+これを解決するには<path>/etc/portage/make.conf</path>でグローバルUSEフラグに追加するか、
 または<path>/etc/portage/package.use</path>でパッケージごとのUSEフラグを設定してください。
 </p>
 
