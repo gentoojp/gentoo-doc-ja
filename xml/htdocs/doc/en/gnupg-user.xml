@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding="UTF-8"?>
 <!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gnupg-user.xml,v 1.51 2012/10/31 18:44:41 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gnupg-user.xml,v 1.52 2012/11/13 23:11:19 nightmorph Exp $ -->
 
 <guide>
 <title>GnuPG Gentoo User Guide</title>
@@ -14,6 +14,9 @@
 <author title="Editor">
   <mail link="swift@gentoo.org">Sven Vermeulen</mail>
 </author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
 
 <abstract>
 This small guide will teach you the basics of using GnuPG, a tool for secure 
@@ -24,8 +27,8 @@ communication.
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 <license/>
 
-<version>3</version>
-<date>2012-10-31</date>
+<version>4</version>
+<date>2012-11-13</date>
 
 <chapter>
 <title>Introduction</title>
@@ -93,17 +96,17 @@ This is free software, and you are welcome to redistribute it
 under certain conditions. See the file COPYING for details.
 
 Please select what kind of key you want:
-   (1) DSA and ElGamal (default)
-   (2) DSA (sign only)
-   (4) ElGamal (sign and encrypt)
-   (5) RSA (sign only)
+   (1) RSA and RSA (default)
+   (2) DSA and Elgamal
+   (3) DSA (sign only)
+   (4) RSA (sign only)
    Your selection? <i>1</i>
 </pre>
 
 <p>
 Here you can choose the type of key you want to use. Most users will go for the
-default DSA and ElGamal. Next is the key size - remember that bigger is better
-but don't use a size larger than 2048 with DSA/ElGamal keys. Generally 1024 is 
+default RSA and RSA. Next is the key size - remember that bigger is better
+but don't use a size larger than 2048 with DSA/ElGamal keys. Generally 2048 is 
 more than enough for normal email.
 </p>
 
@@ -112,13 +115,10 @@ After size comes the expiration date. Here smaller is better, but most users can
 go for a key that never expires or to something like 2 or 3 years.
 </p>
 
-<pre caption="Choosing key size" >
-DSA keypair will have 1024 bits.
-About to generate a new ELG-E keypair.
-              minimum keysize is  768 bits
-              default keysize is 1024 bits
-    highest suggested keysize is 2048 bits
-    What keysize do you want? (1024) <i>2048</i>
+<pre caption="Choosing key size">
+RSA keypair will have 1024 bits.
+RSA keys may be between 1024 and 4096 bits long.
+    What keysize do you want? (2048) <i>2048</i>
 Requested keysize is 2048 bits       
 Please specify how long the key should be valid.
          0 = key does not expire
@@ -139,9 +139,7 @@ address here.
 <pre caption="Entering user information" >
 Is this correct (y/n)? <i>y</i>
                         
-You need a User-ID to identify your key; the software constructs the user id
-from Real Name, Comment and Email Address in this form:
-"Heinrich Heine (Der Dichter) &lt;heinrichh@duesseldorf.de&gt;"
+GnuPG needs to construct a user ID to identify your key.
 
 Real name: <i>John Doe</i>
 Email address: <i>john@nowhere.someplace.flick</i>
@@ -157,8 +155,8 @@ Enter passphrase:
 
 <p>
 Now enter your key passphrase twice. It is a good idea to use a strong password.
-If someone ever gets hold of your private key and cracks your password, they 
-will be able to send messages signed by "you", making everyone believe the mails 
+If someone ever gets hold of your private key and cracks your password, they
+will be able to send messages signed by "you", making everyone believe the mails
 were sent by you.
 </p>
 
@@ -366,13 +364,13 @@ sig!3       75447B14 2002-12-08   John Doe (The Real John Doe) &lt;john@nowhe
 <p>
 Now that you have your key, it is probably a good idea to send it to the world
 key server. There are a lot of keyservers in the world and most of them exchange
-keys between them. Here we are going to send John Doe's key to the subkeys.pgp.net
-server. This uses HTTP, so if you need to use a proxy for HTTP traffic don't
-forget to set it (<c>export http_proxy=http://proxy_host:port/</c>). The command
-for sending the key is:  <c>gpg --keyserver subkeys.pgp.net --keyserver-options
-honor-http-proxy --send-key 75447B14</c> where <c>75447B14</c> is the key ID. 
-If you don't need a HTTP proxy you can remove the <e>--keyserver-options 
-honor-http-proxy</e>.
+keys between them. Here we are going to send John Doe's key to the
+subkeys.pgp.net server. This uses HTTP, so if you need to use a proxy for HTTP
+traffic don't forget to set it (<c>export
+http_proxy=http://proxy_host:port/</c>). The command for sending the key is:
+<c>gpg --keyserver subkeys.pgp.net --keyserver-options honor-http-proxy
+--send-key 75447B14</c> where <c>75447B14</c> is the key ID.  If you don't need
+a HTTP proxy you can remove the <e>--keyserver-options honor-http-proxy</e>.
 </p>
 
 <p>
@@ -449,7 +447,7 @@ course.
 </p>
 
 <p>
-Gentoo provides a few GPG agent applications. The <c>app-crypt/gnupg-1.9.*</c>
+Gentoo provides a few GPG agent applications. The <c>app-crypt/gnupg</c>
 package contains what could be considered the reference one, and will be the
 one we'll use in this document.
 </p>
@@ -457,30 +455,41 @@ one we'll use in this document.
 </body>
 </section>
 <section>
-<title>Installing and Configuring gpg-agent and pinentry</title>
+<title>Configuring gpg-agent and pinentry</title>
 <body>
 
 <p>
-You should install <c>gnupg-1.9.*</c>, which includes <c>gpg-agent</c>, and
-<c>pinentry</c>. <c>pinentry</c> is the helper application that gpg-agent uses
-to request the passphrase in a graphical window. It comes in three flavors: it
-can popup a window using the gtk+, Qt, or curses library (depending on the USE
-flag you set when emerging it).
+GnuPG includes <c>gpg-agent</c> and <c>pinentry</c>. <c>pinentry</c> is the
+helper application that gpg-agent uses to request the passphrase in a graphical
+window. It comes in three flavors: it can popup a window using the gtk+, Qt, or
+curses library (depending on your USE flags in
+<path>/etc/portage/make.conf</path>). 
 </p>
 
-<pre caption="Installing gpg-agent and pinentry">
-# <i>emerge \>=gnupg-1.9.20 pinentry</i>
+<p>
+If you installed <c>pinentry</c> with more than one popup window type, you can
+choose between them with <c>eselect-pinentry</c>:
+</p>
+
+<pre caption="Switching popup windows">
+# <i>eselect pinentry list</i>
+Available pinentry implementations:
+  [1]   pinentry-gtk-2 *
+  [2]   pinentry-curses
+  [3]   pinentry-qt4
+
+# <i>eselect pinentry set 1</i>
 </pre>
 
 <p>
-Next, create a file called <path>~/.gnupg/gpg-agent.conf</path> and enter the
+Now create a file called <path>~/.gnupg/gpg-agent.conf</path> and enter the
 following lines which define the default timeout of the passphrase (e.g. 30
 minutes) and the application to be called for when the passphrase should be
-retrieved the first time (e.g. the Qt version of pinentry).
+retrieved the first time (e.g. the gtk+ version of pinentry).
 </p>
 
 <pre caption="Editing ~/.gnupg/gpg-agent.conf">
-pinentry-program /usr/bin/pinentry-qt
+pinentry-program /usr/bin/pinentry-gtk-2
 no-grab
 default-cache-ttl 1800
 </pre>
@@ -505,10 +514,10 @@ Now your system is (almost) set to use the GPG agent.
 <body>
 
 <p>
-If you use KDE as graphical environment, edit
+If you use KDE as your graphical environment, edit
 <path>/etc/kde/startup/agent-startup.sh</path> and uncomment the following
-(system-wide) or <path>~/.kde4/env/gpg-agent.sh</path> (local user) and add
-the following command to it to have KDE automatically starting the GPG agent:
+(system-wide) or <path>~/.kde4/env/gpg-agent.sh</path> (local user) and add the
+following command to it to have KDE automatically starting the GPG agent:
 </p>
 
 <pre caption="Make KDE automatically start the GPG agent">
