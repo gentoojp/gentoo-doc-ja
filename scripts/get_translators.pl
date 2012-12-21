@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# -*- coding: utf-8; -*-
 
 my $in_author = 0;
 
