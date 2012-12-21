@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/proj/ja/gentoo-alt/prefix/bootstrap.xml,v 1.1 2012/12/21 17:08:25 naota Exp $ -->
+
+
+<guide lang="en">
+  <title>Gentoo Prefixブートストラップ手順</title>
+
+
+  <author title="Author">
+    <mail link="grobian@gentoo.org">Fabian Groffen</mail>
+  </author>
+  <author title="翻訳">
+    <mail link="VED03370@nifty.ne.jp">松井鉄史</mail>
+  </author>
+  
+<abstract>
+Gentoo Prefixをブートストラップする方法
+</abstract>
+
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+  
+  
+  <license/>
+
+  <version>1.94</version>
+  <date>2012-10-01</date>
+<!-- Original revision: 1.52 -->
+
+  <chapter>
+    <title>一般的なブートストラップ</title>
+
+    <section><!-- {{{ Global -->
+
+      <title>すべてのユーザーへ</title>
+      <body>
+
+        <p>
+          ブートストラップはお使いのシステムにprefix化されたPortageを
+          インストールするために必要な手順です。プロジェクト開始から数年間、
+          Gentoo Prefixチームはブートストラップするための正確な手順を、
+          プラットフォームごとという形で、文書化してきました。
+          これらの指示は古くなったりプラットフォーム間で微妙に食い違ったりすることが
+          しばしばありました。こうした状況はメンテナンスに手間が掛かりすぎ、
+          また発生するエラーが新規参入者への大きな障壁になりました。そのため、
+          Gentoo Prefixチームはほぼ全自動のブートストラップ手順に方針を変えました。
+          古い、手取り足取りこのパッケージあのパッケージという形のマニュアルは
+          もうサポートされません。
+          すべてのユーザーに自動ブートストラップを強くお薦めします。
+</p>
+
+      </body>
+    </section><!-- }}} -->
+
+
+    <section><!-- {{{ bootstrap script -->
+
+      <title>ブートストラップ・スクリプト</title>
+      <body>
+
+        <p>
+          <c>bootstrap-prefix.sh</c>スクリプトにGentoo Prefixシステムを
+          ブートストラップするのに必要な情報がすべて詰め込まれています。
+          試行錯誤してみる方針を採ることで可能な限りブートストラップしている
+          システムについての仮定を置くことを避けた作りになっています。
+        </p>
+
+        <p>
+          単純に<c>bootstrap-prefix.sh</c>スクリプトを走らせることで、
+          対話的インストーラーが起動します。このインストーラーはいくつかの
+          情報を尋ね、ブートストラップ中のシステムに基づいていくつかの選択肢を
+          提示します。この対話的インストーラーを走らせることがGentoo Prefixを
+          ブートストラップする最も簡単な方法で、というのもPrefixが使えるように
+          なるまでのすべての手順の面倒を見てくれるからです。
+        </p>
+
+        <p>
+        自動化などの理由で対話的インストーラーを利用したくない場合、
+        ブートストラップの手順は大きく4段階で遂行できます。
+        各段階は対話的インストーラーで実行されるものです。
+        これらの4段階を手動で実行することは推奨されません。
+        手動実行を考慮に入れて良いのは、
+        たとえば対話的インストーラーでのブートストラップが
+        失敗する問題のデバッグをするような特別な場合だけです。
+        </p>
+
+      </body>
+    </section><!-- }}} -->
+
+
+    <section><!-- {{{ performing a bootstrap -->
+
+      <title>対話的インストーラーを使ったGentoo Prefixのブートストラップ(推奨)</title>
+      <body>
+
+        <p>
+          <c>bootstrap-prefix.sh</c>は適切に動作するバージョンの
+          GNU Bourne Again SHell (<c>bash</c>)を必要とします。
+          お使いのシステムに<c>bash</c>がなければ、最初に
+          <c>bash</c>をブートストラップします。
+          通常<c>bash</c>を欠いているシステムとしてはFreeBSDのような
+          *BSDシステムがあります。
+          <c>bash</c>がインストールされていない場合、
+          <c>bootstrap-bash.sh</c>スクリプトを
+          <uri>http://overlays.gentoo.org/proj/alt/browser/trunk/prefix-overlay/scripts/bootstrap-bash.sh?format=txt</uri>
+          からダウンロードして下さい。
+          ダウンロードには<c>wget</c>、<c>curl</c>、<c>fetch</c>、<c>ftp</c>
+          が使えます。もちろんウェブブラウザーでダウンロードしたり、
+          scp/ftp/NFSでコピーしたりするのもありです。
+        </p>
+        <pre caption="bashのブートストラップ(システムにbashが存在しない場合のみ)">
+$ <i>chmod 755 bootstrap-bash.sh</i>
+$ <i>./bootstrap-bash.sh /var/tmp/bash</i>
+$ <i>export PATH="/var/tmp/bash/usr/bin:${PATH}"</i>
+</pre>
+        <note>
+          <c>bash</c>のブートストラップは<c>bash</c>がインストール
+          されていない場合「だけ」必要です!
+          ログインシェルが<c>bash</c>である必要は「ない」のです。
+          <c>tcsh</c>ユーザーはPATHの更新にexportの代わりに
+          <c>setenv PATH "/var/tmp/bash/bin:${PATH}"</c>
+          を使って下さい。
+        </note>
+
+        <p>
+          Gentoo Prefixブートストラップ・スクリプトを
+          <uri>http://overlays.gentoo.org/proj/alt/browser/trunk/prefix-overlay/scripts/bootstrap-prefix.sh?format=txt</uri>
+          からダウンロードします。
+          上でも書いた通り、スクリプトを入手して実行可能な場所に保存するには
+          様々な方法があります。適切な場所に置いたら、次のコマンドを実行して下さい。
+        </p>
+        <pre caption="対話的ブートストラップ・スクリプトの開始">
+$ <i>chmod 755 bootstrap-prefix.sh</i>
+$ <i>./bootstrap-prefix.sh</i>
+(スクリプトの指示に従って下さい)
+        </pre>
+
+        <p>
+          これで終わりです!
+          スクリプトの指示に従って問題なく最後まですべての手順を進められたら、
+          新しくブートストラップされたGentoo Prefixの起動方法が表示されます。
+          通常、これ以上のことは必要ありません。
+          うまくいった場合はここで読むのを止めて構いません。
+        </p>
+
+      </body>
+    </section><!-- }}} -->
+
+
+    <section><!-- {{{ performing a manual bootstrap -->
+
+      <title>Gentoo Prefixブートストラップの手動での実行</title>
+      <body>
+
+        <p>
+          もしGentoo Prefixブートストラップを手動で実行したい、もしくは
+          する必要がある場合、
+          <uri link="bootstrap-solaris.xml">UNIX系システム上のブートストラップ
+          手順</uri>に従って下さい。
+        </p>
+
+      </body>
+    </section><!-- }}} -->
+
+
+  </chapter>
+</guide>
+
+<!-- vim: set expandtab ts=2 sw=2 foldmethod=marker foldenable: -->
+
