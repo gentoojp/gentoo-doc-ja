@@ -24,11 +24,11 @@ pofiles/%.po: en/%.xml
 ja/%.xml: pofiles/%.po
 	-@mkdir -p $(TMPBUILD)/`dirname $@`
 	-@touch $(TMPBUILD)/$@.author
-	if fgrep -q '<abstract>' $(subst ja/,en/,$@); then \
+	if fgrep -q '<abstract>' $(subst ja/,en/,$@) && test -e $@; then \
 	        echo "PO4A-HEADER:mode=before;position=<abstract>" \
 	                > $(TMPBUILD)/$@.author; \
 	        $(GET_TRANSLATORS) < $@ >> $(TMPBUILD)/$@.author; \
-	elif fgrep -q '<description>' $(subst ja/,en/,$@); then \
+	elif fgrep -q '<description>' $(subst ja/,en/,$@) && test -e $@; then \
 		echo "PO4A-HEADER:mode=before;position=<description>" \
 			> $(TMPBUILD)/$@.author; \
 		$(GET_TRANSLATORS) < $@ >> $(TMPBUILD)/$@.author; \
@@ -37,7 +37,7 @@ ja/%.xml: pofiles/%.po
 	        > $(TMPBUILD)/$@.origrev
 	$(GET_ORIGREV) < $(subst ja/,en/,$@) >> $(TMPBUILD)/$@.origrev
 	$(PO4A_TRANSLATE) -m $(subst ja/,en/,$@) -p $< -l $(TMPBUILD)/$@ \
-	        $(shell test -e $(TMPBUILD)/$@.author && echo -a $(TMPBUILD)/$@.author) \
+	        $$(test -e $(TMPBUILD)/$@.author && echo -a $(TMPBUILD)/$@.author) \
 	        -a $(TMPBUILD)/$@.origrev
 	@test -e $(TMPBUILD)/$@ && mv _build/$@ $@
 
