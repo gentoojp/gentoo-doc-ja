@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding="UTF-8"?>
 <!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-ppc-faq.xml,v 1.72 2012/07/24 12:12:51 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-ppc-faq.xml,v 1.73 2012/12/28 15:58:18 josejx Exp $ -->
 
 <guide>
 <title>Gentoo Linux/PowerPC Frequently Asked Questions</title>
@@ -30,8 +30,8 @@ Gentoo/PPC mailing lists and from IRC.
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 <license/>
 
-<version>3</version>
-<date>2012-07-24</date>
+<version>4</version>
+<date>2012-12-29</date>
 
 <faqindex>
 <title>Questions</title>
@@ -253,12 +253,16 @@ Apple bootstrap partition?
 <body>
 
 <p>
-No. If you are not using a separate boot partition (<path>/boot</path>) then
+Maybe. If you are not using a separate boot partition (<path>/boot</path>) then
 you do not need this line and can safely just delete it from
 <path>/etc/fstab</path>. The Apple bootstrap partition is <e>not</e>
-<path>/boot</path> and is not related in any way. In general, Apple PowerPC
-machines do not need a separate <path>/boot</path> partition, and the bootstrap
-partition should not be mounted or referred to in your fstab.
+<path>/boot</path> and is not related in any way.
+</p>
+
+<p>If you are using a partition type that's not natively supported by the
+bootloader (such as ext4 and yaboot), you will need to use a separate boot
+partition. In this case, you will want to specify <path>/dev/BOOT</path> in
+your fstab.
 </p>
 
 </body>
@@ -323,17 +327,14 @@ booted, rerun <c>ybin -v</c> to fix the bootloader.
 </section>
 <section id="stupidclock">
 <title>
-I can't boot the InstallCD!  It stops while trying to set the hardware clock.
-What do I do?
+I want to set the hardware clock from Open Firmware, is that possible?
 </title>
 <body>
 
 <p>
-Unfortunately, there was a bug in some versions of the baselayout scripts.  To
-get the system booting, the hardware clock will need to be set.  To set the
-clock boot into Open Firmware (using the key combination of Apple + O + F).
-Once you are at the Open Firmware prompt, you can set the clock using the
-command below:
+To set the clock boot into Open Firmware (using the key combination of 
+Apple + O + F). Once you are at the Open Firmware prompt, you can set the clock
+using the command below:
 </p>
 
 <pre caption="Setting the clock at the open firmware prompt">
@@ -346,9 +347,8 @@ command below:
 </pre>
 
 <p>
-Open Firmware will return with an ok after the clock is set.  The system should
-boot normally now.  Type <c>mac-boot</c> to continue booting after the clock is
-set.
+Open Firmware will return with an ok after the clock is set. Type 
+<c>mac-boot</c> to continue booting after the clock is set.
 </p>
 
 </body>
@@ -468,6 +468,12 @@ To activate these settings:
 # <i>sysctl -p /etc/sysctl.conf</i>
 </pre>
 
+<p>
+Apple Powerbooks and iBooks that use the Appletouch driver, can alternatively
+configure multi-finger tapping to allow 2nd and 3rd button control. See the
+documentation for this driver for configuration options.
+</p>
+
 </body>
 </section>
 <section id="airport">
@@ -518,8 +524,8 @@ by the native b43 driver project.  It has been included in the 2.6.24 kernel.
 Note that the driver should select the proper driver between b43 and b43-legacy.
 The firmware used for these two drivers is different, with the legacy version
 supporting older 4306 cards.  If you have a 4306 card, build both, otherwise,
-it should be safe to only build b43. Also, to enable either driver, mac80211
-must be selected first.
+it should be safe to only build b43. To enable either driver, mac80211 must be
+selected first.
 </p>
 
 <pre caption="Adding b43 support to the kernel">
@@ -536,8 +542,10 @@ Device Drivers --&gt; Network device support --&gt;
 
 <p>
 After compiling your kernel, you'll need to emerge <c>b43-fwcutter</c> to
-install the firmware. For additional information, please see this
-<uri link="http://forums.gentoo.org/viewtopic-t-409194.html">forum post.</uri>
+install the firmware and get a copy of the firmware. The instructions for this
+are found at:
+<uri link="http://linuxwireless.org/en/users/Drivers/b43#Other_distributions_not_mentioned_above">
+linuxwireless.org</uri>, and follow the directions for extracting the firmware.
 </p>
 
 <p>
@@ -577,15 +585,9 @@ Further information about the installation can be found at
 <body>
 
 <p>
-Sleep (suspend to ram) works very well on all G3 iBooks and TiBooks. Recently, a
-kernel patch has been released that adds sleep support for G4 iBooks and Radeon
-based AlBooks. If you have one of these laptops, use gentoo-sources 2.6.11 (or
-newer) for built in support.
+Sleep used to work well with the User Mode Setting kernel drivers, but modern
+X servers using KMS do not sleep properly at this time.
 </p>
-
-<note>
-Note that the 12" PowerBook is not yet supported due to its nVidia chipset.
-</note>
 
 </body>
 </section>
@@ -907,21 +909,7 @@ all Java applications work with these Java versions yet.
 
 </body>
 </section>
-<section id="xorg">
-<title>Is there an easy way to configure X?</title>
-<body>
 
-<p>
-Simply emerge <c>xac</c>. Once the package has been emerged, run <c>xac</c> to
-generate the config for your setup. If you would like to set a keyboard layout,
-you can use the --kbd-layout option. Note that although <c>xac</c> does set up
-DRM for most users, you may need to change your kernel configuration and emerge
-additional drivers to support the suggested configuration.  Be sure that you've
-configured your kernel as shown in the question below for optimal performance.
-</p>
-
-</body>
-</section>
 <section id="drm">
 <title>What is required for DRM?</title>
 <body>
@@ -929,9 +917,9 @@ configured your kernel as shown in the question below for optimal performance.
 <p>
 When emerging xorg-server, make sure the dri use flag is enabled.  You should
 also set the VIDEO_CARDS variable in make.conf with your video card,
-VIDEO_CARDS="radeon" for radeon support, VIDEO_CARDS="nv" for nvidia support
-and so on.  For a backup option, add fbdev to the list of VIDEO_CARDS, this
-driver should always work.
+VIDEO_CARDS="radeon" for radeon support, VIDEO_CARDS="nouveau" for nvidia 
+support and so on.  For a backup option, add fbdev to the list of VIDEO_CARDS,
+this driver should always work.
 </p>
 
 <p>
@@ -939,61 +927,57 @@ Make sure in your kernel config you have the following options set:
 </p>
 
 <pre caption="Rage128 DRM kernel configuration">
-Device Drivers - Character devices ---&gt;
-  &lt;*&gt; /dev/agpgart (AGP Support)
-  [*] Apple UniNorth support
-  [*] Direct Rendering Manager (DRI support)
-  &lt;*&gt;   ATI Rage 128
 Device Drivers - Graphics Support ---&gt;
-  &lt;*&gt;   ATI Rage 128 display support
+  &lt;*&gt; /dev/agpgart (AGP Support)
+    [*] Apple UniNorth support
+  [*] Direct Rendering Manager (DRI support)
+    &lt;*&gt;   ATI Rage 128
+  -*- Support for frame buffer devices
+    &lt;*&gt;   ATI Rage 128 display support
 </pre>
 
 <pre caption="Radeon DRM kernel configuration">
-Device Drivers - Character devices ---&gt;
-  &lt;*&gt; /dev/agpgart (AGP Support)
-  [*] Apple UniNorth support
-  [*] Direct Rendering Manager (DRI support)
-  &lt;*&gt;   ATI Radeon
 Device Drivers - Graphics Support ---&gt;
-  &lt;*&gt;   ATI Radeon display support
+  &lt;*&gt; /dev/agpgart (AGP Support)
+    [*] Apple UniNorth support
+  [*] Direct Rendering Manager (DRI support)
+    &lt;*&gt;   ATI Radeon
+    [*]   Enable modesetting on radeon by default - NEW DRIVER
 </pre>
 
 <pre caption="nVidia kernel configuration">
 Device Drivers - Graphics Support ---&gt;
-  &lt;*&gt;   nVidia Framebuffer Support
+  &lt;*&gt; /dev/agpgart (AGP Support)
+    [*] Apple UniNorth support
+  [*] Direct Rendering Manager (DRI support)
+    &lt;*&gt; Nouveau (nVidia) cards
+    [*]   Support for backlight control
 </pre>
 
 <note>
-There is currently no support for DRM on nVidia cards since nVidia has not
-released any drivers for PPC and there are no open drivers for 3D acceleration.
+For nVidia and Radeon devices using KMS, be sure to disable the built in frame
+buffer devices, these prevent the KMS drivers from starting.
 </note>
-
-<p>
-Rebuild and install the kernel if necessary. After this, make sure you
-have booted to the native framebuffer (i.e. radeonfb or atyfb128 and
-<e>not</e> from offb or ofonly video), and run <c>xac</c>.
-</p>
 
 <impo>
 You may need to edit your <path>/etc/X11/xorg.conf</path> file depending on
-your card setup. Ensure that the device driver selected is either ati or your
-specific driver (r128 or radeon). Also check that the DRI extension is loaded
-and not commented out.
+your card setup. Ensure that the device driver selected is the specific driver
+for your device, (such as radeon or nouveau). Also check that the DRI extension
+is loaded and not commented out.
 </impo>
 
 </body>
 </section>
 <section id="noati">
 <title>
-I've installed X.org and configured it correctly, but the radeon driver is
-missing.  What's wrong?
+I've installed X.org and configured it correctly, but the radeon or nouveau 
+driver is missing.  What's wrong?
 </title>
 <body>
 
 <p>
-Add the appropriate VIDEO_CARDS line to <path>/etc/portage/make.conf</path> (specify
-r128 or radeon) and recompile <c>xorg-server</c> and <c>mesa</c> to rebuild the
-driver.
+Add the appropriate VIDEO_CARDS line to <path>/etc/portage/make.conf</path> and
+recompile <c>xorg-server</c> and <c>mesa</c> to build the drivers.
 </p>
 
 </body>
@@ -1031,13 +1015,8 @@ Option       "ForcePCIMode"
 </pre>
 
 <p>
-Also, there are some known issues with the composite extension, please disable
-this extension if you're having problems.
-</p>
-
-<p>
-Finally, if you are still having trouble, please try disabling dri in your
-xorg.conf and see if the problems go away.
+If you are still having trouble, please try disabling dri in your xorg.conf to 
+see if the problems go away.
 </p>
 
 </body>
@@ -1083,66 +1062,7 @@ select your CD drive. Make sure that "Digital audio extraction" is checked.
 
 </body>
 </section>
-<section id="mol">
-<title>Can I run Mac OS 9 or Mac OS X under Gentoo Linux?</title>
-<body>
 
-<p>
-Yes, as long as you are running Gentoo Linux on 32 bit PPC hardware, you can
-use <uri link="http://www.maconlinux.org/">Mac-on-Linux</uri> which allows you
-to run an instance of OS 9, OS X or Linux as a process on Linux. Simply
-<c>emerge mol</c> to install this package. MOL supports Mac OS 7.5.2 to 9.2.2,
-as well as any version of OS X. It can be run from a console framebuffer or run
-in a window on X.
-</p>
-
-<note>
-Currently, there is no support for running MOL on 64 bit PowerPC Processors.
-</note>
-
-<note>
-To run MOL fullscreen, you'll need to compile MOL with the fbcon use flag
-enabled and run it in a console framebuffer.
-</note>
-
-<p>
-For networking and sound you should install the drivers in the folder
-<path>MOL-Install</path> on your Mac OS X-Desktop. If errors with networking
-occur, make sure you have the following kernel options enabled:
-</p>
-
-<p>
-For OSX Networking:
-</p>
-
-<ul>
-  <li>Universal TUN/TAP device driver support (CONFIG_TUN)</li>
-</ul>
-
-<p>
-For the DHCP server:
-</p>
-
-<ul>
-  <li>Socket Filtering (CONFIG_FILTER)</li>
-  <li>Packet Socket (CONFIG_PACKET)</li>
-</ul>
-
-<p>
-For NAT:
-</p>
-
-<ul>
-  <li>Network packet filtering (CONFIG_NETFILTER)</li>
-  <li>Connection tracking (CONFIG_IP_NF_CONNTRACK)</li>
-  <li>IP tables support (CONFIG_IP_NF_IPTABLES)</li>
-  <li>Packet filtering (CONFIG_IP_NF_FILTER)</li>
-  <li>Full NAT (CONFIG_IP_NF_NAT)</li>
-  <li>MASQUERADE target support (CONFIG_IP_NF_TARGET_MASQUERADE)</li>
-</ul>
-
-</body>
-</section>
 <section id="ext">
 <title>Can I access my ext2/ext3 partitions from OSX?</title>
 <body>
@@ -1188,35 +1108,6 @@ the <uri link="/doc/en/cross-compiling-distcc.xml">DistCC Cross-compiling
 Guide</uri> to learn how. You may also want to read the <uri
 link="/proj/en/base/embedded/handbook/">Gentoo Embedded Handbook</uri> to learn
 more about cross-compiling.
-</p>
-
-</body>
-</section>
-<section id="gccsegfaults">
-<title>Why does gcc keep segfaulting during ebuilds?</title>
-<body>
-
-<p>
-If gcc segfaults during ebuilds, this probably isn't a bug with gcc and isn't
-even a problem with your hardware. Most of the time this problem is due to
-kernel preemption being enabled. Although this option is safe on x86, it can
-cause cache corruption on PPC which is why it is noticed most frequently during
-compiles. To prevent this from happening, simply recompile the kernel with
-preempt turned off. To check if preempt is enabled:
-</p>
-
-<pre caption="Check if preempt is enabled">
-$ <i>grep PREEMPT /usr/src/linux/.config</i>
-</pre>
-
-<p>
-If returns: "# CONFIG_PREEMPT is not set", then you should report the segfault
-as a bug.
-</p>
-
-<p>
-If it returns: "CONFIG_PREEMPT=y", then you'll need to disable it and rebuild
-your kernel.
 </p>
 
 </body>
