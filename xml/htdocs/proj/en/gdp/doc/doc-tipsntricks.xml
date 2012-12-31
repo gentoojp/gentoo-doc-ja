@@ -1,0 +1,396 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/proj/en/gdp/doc/doc-tipsntricks.xml,v 1.30 2010/12/06 12:07:01 nightmorph Exp $ -->
+
+<guide>
+<title>Documentation Development Tips &amp; Tricks</title>
+
+<author title="Author">
+  <mail link="neysx"/>
+</author>
+<author title="Author">
+  <mail link="swift"/>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+Some tips &amp; tricks that make the life for a Gentoo Documentation Developer
+easier
+</abstract>
+
+<license/>
+
+<version>6</version>
+<date>2010-12-06</date>
+
+<chapter>
+<title>Checking out the web site files</title>
+<section>
+<title>Using anonymous CVS</title>
+<body>
+
+<p>
+Contributors should use our <uri link="http://anoncvs.gentoo.org/">anonymous
+CVS server</uri>. It contains the same files as the official CVS that Gentoo
+developers use. The anonymous CVS repository is updated every hour.
+</p>
+
+<p>
+Create a dedicated directory for the sole purpose of developing documentation,
+then check out the web site files.
+</p>
+
+<pre caption="Checking out the web site files">
+$ <i>cvs -d :pserver:anonymous@anoncvs.gentoo.org/var/cvsroot co gentoo/xml</i>
+</pre>
+
+<p>
+To update your copy of the repository, run <c>cvs update -dP</c> in the
+<path>gentoo/xml</path> directory.
+</p>
+
+</body>
+</section>
+<section>
+<title>Live repository for Gentoo developers</title>
+<body>
+
+<p>
+If you haven't checked out the <c>gentoo</c> module yet, do it:
+</p>
+
+<pre caption="Checking out the gentoo module">
+$ <i>export CVSROOT=</i><comment>&lt;your nick&gt;</comment><i>@cvs.gentoo.org:/var/cvsroot</i>
+$ <i>cvs co gentoo/xml</i>
+</pre>
+
+<p>
+To update our copy of the repository, run <c>cvs update -dP</c> in the
+<path>gentoo/xml</path> directory.
+</p>
+
+</body>
+</section>
+<section>
+<title>Online CVS Repository</title>
+<body>
+
+<p>
+You can request our <uri link="http://sources.gentoo.org/">Online CVS
+Repository</uri> to provide the differences between individual versions. The
+main English repository is <uri
+link="http://sources.gentoo.org/gentoo/xml/htdocs/doc/en/">fully
+available</uri>. The online CVS repository is updated every hour.
+</p>
+
+</body>
+</section>
+</chapter>
+<chapter>
+<title>Setting up your local environment</title>
+<section>
+<title>Installing gorg</title>
+<body>
+
+<p>
+Our GuideXML documentation is transformed into HTML by the
+<uri link="gorg.xml">www-servers/gorg</uri> package. You need to install it.
+</p>
+
+<note>
+You need at least <c>gorg-0.6.3</c>. You may need to keyword it for your
+architecture.
+</note>
+
+<p>
+Follow the <uri link="gorg.xml">directions</uri> to configure gorg. You need to
+define the web root directory where you checked out our CVS repository
+(<path>.../gentoo/xml/htdocs</path>). The other parameters are only useful if
+you want to serve a local copy of <uri
+link="http://www.gentoo.org">www.gentoo.org</uri>.
+</p>
+
+</body>
+</section>
+<section>
+<title>Setting up your XML Environment</title>
+<body>
+
+<p>
+Your system needs to know where to find the DTDs that our documentation uses.
+Edit <path>/etc/xml/catalog</path> as root and add the following line:
+</p>
+
+<pre caption="/etc/xml/catalog addendum">
+&lt;rewriteURI uriStartString="/dtd/" rewritePrefix="<i>/usr/portage/metadata/dtd/</i>"/&gt;
+</pre>
+
+<note>
+You can also rewrite to the path where the DTDs have been checked out of CVS.
+</note>
+
+<p>
+If your <path>/etc/xml/catalog</path> is empty or does not contain any entry,
+you need to <e>insert</e> the <c>&lt;rewriteURI&gt;</c> element <e>inside</e>
+the <c>&lt;catalog&gt;</c> element:
+</p>
+
+<pre caption="Minimal /etc/xml/catalog">
+&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd"&gt;
+&lt;catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog"&gt;
+  &lt;rewriteURI uriStartString="/dtd/" rewritePrefix="<i>/usr/portage/metadata/dtd/</i>"/&gt;
+&lt;/catalog&gt;
+</pre>
+
+<p>
+Besides, some files may specify the on-line DTD with an uri like
+<path>http://www.gentoo.org/dtd/guide.dtd</path>. You can also rewrite those
+references and avoid slow accesses to the net at validation time:
+</p>
+
+<pre caption="Extra /etc/xml/catalog addendum">
+&lt;rewriteURI uriStartString="http://www.gentoo.org/dtd/" rewritePrefix="<i>/usr/portage/metadata/dtd/</i>"/&gt;
+</pre>
+
+</body>
+</section>
+<section>
+<title>Testing a Gentoo Guide</title>
+<body>
+
+<p>
+To test a Gentoo Guide, first use <c>xmllint</c> (from <c>dev-libs/libxml2</c>)
+to check if it uses valid XML:
+</p>
+
+<pre caption="Using xmllint to validate GuideXML">
+$ <i>xmllint --valid --noout alsa-guide.xml</i>
+</pre>
+
+<p>
+If <c>xmllint</c> returns without showing anything, then the file structure is
+valid. Next you need to convert it to HTML:
+</p>
+
+<pre caption="Converting to HTML">
+$ <i>gorg &lt; alsa-guide.xml > alsa-guide.html</i>
+</pre>
+
+<p>
+If no errors are displayed, you should be able to point your browser to
+<path>alsa-guide.html</path> to view the resulting document. If not, fix your
+guide until it works.
+</p>
+
+<note>
+In handbook chapters, links to other chapters will not be generated because
+on-line versions access handbook chapters via the master file, and the
+<c>chap</c> and <c>part</c> parameters.
+</note>
+
+</body>
+</section>
+<section>
+<title>Browsing your local copy of Gentoo's web site</title>
+<body>
+
+<p>
+Since you checked out a copy of Gentoo's web site out of our CVS, you can also
+use gorg to browse your local copy. Make sure you download the news index as
+explained <uri link="gorg.xml">in the guide</uri> if you want to see the same
+front page.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Frequently Asked Questions</title>
+<section>
+<title>How do I convert a file to UTF-8?</title>
+<body>
+
+<p>
+There are quite a few tools that help you. A popular one is
+<c>app-text/recode</c>. Another one is <c>iconv</c>, part of
+<c>sys-libs/glibc</c>.
+</p>
+
+<p>
+Recode's use is pretty straightforward. You tell it what character encoding is
+currently used by the document and to what encoding you want to convert the
+document.
+</p>
+
+<p>
+For instance, to convert a document from ISO-8859-15 (also known as Latin-9) to
+UTF-8, you can use:
+</p>
+
+<pre caption="Recoding a file">
+<comment>(l9 = ISO-8859-15, u8 = UTF-8)</comment>
+$ <i>recode l9..u8 file.xml</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Documentation Submission Tips</title>
+<section>
+<title>Check for correct &lt;guide&gt; tags</title>
+<body>
+
+<p>
+Make sure that the &lt;guide link&gt; attribute points to the correct location
+for the guide. This is generally <path>/doc/${LANG}/filename.xml</path>. If you
+have a translated document, always specify the absolute path to the document
+(e.g. <path>/doc/${LANG}/</path>). If you are writing a guide that uses the
+<c>guide</c> or <c>book</c> DTD, you may use either
+<path>/doc/${LANG}/filename.xml</path> or <path>filename.xml</path>. Generally,
+the GDP recommends the former specification.
+</p>
+
+</body>
+</section>
+<section>
+<title>Check links</title>
+<body>
+
+<p>
+You <e>must</e> verify that all hyperlinks in your document work. If it is a
+translated document, make sure that any links to other translated documents
+point to the existing files.
+</p>
+
+</body>
+</section>
+<section>
+<title>Check for tabs</title>
+<body>
+
+<p>
+Tabs are absolutely forbidden in GuideXML documents except when required (e.g.
+if the document instructs the user to use tabs). To check a document for tabs,
+run <c>grep "CTRL+V&lt;TAB&gt;" file.xml</c>. Fix any lines that <c>grep</c>
+prints out.
+</p>
+
+</body>
+</section>
+<section>
+<title>Bugzilla</title>
+<body>
+
+<p>
+Once you have finished your document, submit it to the Documentation Team using
+<uri
+link="http://bugs.gentoo.org/enter_bug.cgi?product=Documentation">Bugzilla</uri>.
+You don't have to mention information like platform, <c>emerge info</c>
+output, arch, steps to reproduce, etc. If you have a translated document, be
+sure to select the <uri
+link="http://bugs.gentoo.org/enter_bug.cgi?product=Doc%20Translations">Doc
+Translations</uri> component for your bug. Also, include a helpful summary
+for your translation using the preferred format: "[fr] New translation:
+/doc/fr/gnupg-user.xml". Replace <b>[fr]</b> with the two-letter code for your
+language.
+</p>
+
+<p>
+By default, <mail>docs-team@gentoo.org</mail> is the assignee of your bug;
+there's no need to change the assignee field.
+</p>
+
+<p>
+Attach files and patches to the bug using the "plain text (text/plain)"
+selection.  Do <e>not</e> select "XML source (application/xml)", even if you
+are submitting a <path>.xml</path> file. Patches should have the "Patch" option
+checked. Do not submit tarballs full of documents; attach each document and
+patch individually.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Commonly or Dangerous Made Mistakes</title>
+<section>
+<title>Forgetting the all-arch-aspect of the Gentoo Handbook</title>
+<body>
+
+<p>
+The files in <path>[gentoo]/xml/htdocs/doc/en/handbook</path> that do not end
+with a "-&lt;arch&gt;.xml" suffix are read by <e>all</e> handbooks, which means
+that whatever is listed inside must be cross-architectural.
+</p>
+
+<p>
+If you need to make modifications regarding your own architecture and you're
+afraid you need to place this in such a file, you might want to ask on
+<c>gentoo-doc@gentoo.org</c> first how to solve this. Sometimes there is a way
+without making it more difficult for other architectural users.
+</p>
+
+</body>
+</section>
+<section>
+<title>Not bumping version/date or doing it the wrong way</title>
+<body>
+
+<p>
+Conforming to the policy, you <e>must</e> bump a version/date when you make
+certain changes (most actually). Although the version is less important (the GDP
+lead will still kill you if you forget it) the date tells our users when the
+document was last modified.
+</p>
+
+<p>
+If you are making a <e>content</e> change to a document (such as instructions,
+code examples, etc.), then you must increment the version. For
+<e>non-content</e> changes (e.g. typo or GuideXML fixes), version bumping is
+usually unnecessary.
+</p>
+
+<p>
+When updating the handbook, only bump the date and version of the files you
+changed. Don't bump the handbook-<e>ARCH</e>.xml unless you actually changed
+its content.
+</p>
+
+<!-- Since 2007 or so we've been moving toward simple whole numbers;
+No need for complicated decimals 
+<p>
+Another common mistake is to update the version number as if it were a decimal
+number. It's not. <c>3.9</c> should become <c>3.10</c>, not <c>4.0</c>, nor
+<c>3.91</c>.
+</p>
+-->
+
+<p>
+Another common mistake is to update the version number using decimals. You
+shouldn't do this. The version is a simple whole number. Each update should
+increment it by one. <c>9</c> should become <c>10</c>, not <c>9.1</c>. For old
+documents not yet using the simpler whole number versioning, please increment
+it to the nearest whole number the next time you make a commit to it. So
+<c>4.67</c> should become <c>5</c>, <c>1.2</c> should become <c>2</c>, and so
+on.
+</p>
+
+<impo>
+The exception to this rule is <path>/doc/en/metadoc.xml</path>. Metadoc should
+still use the existing point version scheme. So <c>1.119</c> becomes
+<c>1.120</c>, not <c>2</c>.
+</impo>
+
+</body>
+</section>
+</chapter>
+
+</guide>

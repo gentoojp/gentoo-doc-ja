@@ -1,0 +1,122 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "dtd/guide.dtd">
+
+<guide link="proj/en/gdp/tests/fix_me.xml">
+
+<title>Gentoo 1.4 Upgrade Guide</title>
+
+	<author title = "Author">
+<mail link = "renee@tutu.fr">Renée Michù</mail>
+</author>
+
+<author title='editor'><mail link='nobody@here.com'>Gastòn Ledoÿeñ</mail></author>
+	<abstract>A method for upgrading older Gentoo installations in place to Gentoo 1.4</abstract>
+<version>v0.3</version>
+<date>October 2, 2004</date>
+  <license/>
+
+	<chapter>
+		<title>Before you begin</title>
+		<section>
+			<title>Ignore content</title>
+			<body>
+				<p>As mentioned <uri link = "offtopic">later on</uri>, you should not bother about the content of this document. Its sole purpose is to let you show that you can fix a totally broken GuideXML file and apply coding style. If you think it's taking too much of your time then you really need the practice.</p></body></section>
+		<section>
+			<title>General notes</title>
+			<body>
+				<p>Whenever the code listings suggest running the
+				<i>emerge</i> command, it is always a good idea to make a test
+				run of the command using the <i>-p</i> or <i>--pretend</c>
+				option to make sure that the command will do what you expect
+				it to do.</p>
+			</body>
+		</section>
+	</chapter>
+	<chapter>
+		<title>Upgrading in place</title>
+		<section>
+			<title>Get Portage as current as possible</title>
+			<body>
+				<p>Some of the syntax of current ebuilds is unreadable by
+				older versions of Portage. If you don't have at least Portage 2.0.44, try upgrading Portage.
+				<pre>
+	# <c>emerge --sync</c>
+	# <c>emerge -u portage</c>
+</pre>
+				<note>If your Portage version is very old, you may get an error message containing the phrase "unscriptable object".  Read and follow the instructions in
+				<path>/usr/portage/sys-apps/portage/files/README.RESCUE</path>.
+				Your Portage install should then be
+				current.</note></p>
+        You will find more information about Portage in our <uri link="doc/en/handbook/handbook-x86.xml?part=2&chap=1#doc_chap1">Handbook</uri>.
+</body></section>
+
+		<section>
+			<title>Preparing GCC for cohabitation</title>
+			<body>
+				<p>You will be installing a newer version of GCC during this upgrade.  Versions of GCC older than 2.95.3-r8 are not designed to have multiple versions of GCC installed.  You must therefore upgrade GCC to at least version 2.95.3-r8.  This will also have the beneficial side-effect of installing the <c>gcc-config</c> package on your system, which can be used to switch back and forth between various installed versions of GCC.</p>
+
+				<pre>
+# <i>emerge -u gcc</i>
+</pre>
+
+				<p>You can now check to see if gcc-config is working properly:</p>
+				<pre>
+# <i>gcc-config --get-current-profile</i>
+</pre>
+				<p>This should return i686-pc-linux-gnu-2.95.3 on most x86 systems. Older systems may return i586-pc-linux-gnu-2.95.3.</p>
+			</body>
+		</section>
+		<section>
+			<title>Installing GCC 3</title>
+			<body>
+<p>
+Edit <path>/usr/portage/sys-devel/gcc/gcc-3.2.2.ebuild</path> and search for the
+line containing <c>DEPEND</c>. Remove the <c>glibc</c> dependency and save the
+ebuild.
+</p>
+
+<pre caption="Editing gcc-3.2.2.ebuild">
+# vim /usr/portage/sys-devel/gcc/gcc-3.2.2.ebuild
+</pre>
+
+<pre>
+<codenote>install the latest GCC version on your system:</codenote>
+# <i>USE="-java" emerge /usr/portage/sys-devel/gcc/gcc-3.2.2.ebuild</i>
+</pre>
+			</body>
+		</section>
+		<section>
+			<title>Changing profiles</title>
+			<body>
+				<p>Now you need to change two sets of profiles: your
+				gcc-config profile and your Portage profile.</p>
+				<pre>
+# <i>cd /etc</i>
+# <i>rm make.profile</i>
+# <i>ln -s ../usr/portage/profiles/default-x86-1.4 make.profile</i> <comment>(Replace "x86" with your architecture)</comment>
+</pre>
+
+				<pre>
+# <i>gcc-config --list-profiles</i> <comment>(Note the one for the version you just emerged, use it below)</comment>
+# <i>gcc-config i686-pc-linux-gnu-3.2.2</i> <comment>(Replace with the version you noted above)</comment>
+</pre>
+			</body>
+		</section>
+    <section id="offtopic"><title>This has nothing to do with the above</title><body><p>
+    During the meeting:
+<ul>
+<li>Keep the meeting flowing. This means maintaining focus on the agenda and
+the objectives of the meeting.</li>
+<li>Keep the meeting within its allotted time frame (usually one hour)</li>
+<li>Allow the presentation of an agenda item by the person responsible for
+that item, before any questions and discussion is undertaken.</li>
+<li>Get responses from all members before moving onto the next agenda
+item.</li>
+<li>Briefly summarize unresolved business. This may include the result of
+the discussion, specific actions that are to be taken, who's responsible for
+working on what etc.</li>
+<li>Allow all attendees to be able to discuss their concerns after the
+agenda items have been discussed.</li>
+</ul></p>
+	</chapter>
+<guide>
