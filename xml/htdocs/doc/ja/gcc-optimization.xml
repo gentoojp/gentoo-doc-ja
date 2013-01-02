@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/gcc-optimization.xml,v 1.1 2012/04/27 06:35:33 naota Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/gcc-optimization.xml,v 1.2 2013/01/02 05:23:55 naota Exp $ -->
 
 <guide>
 <title>コンパイル最適化ガイド</title>
@@ -18,9 +18,9 @@
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 <license/>
 
-<version>3</version>
-<date>2012-04-22</date>
-<!-- Original revision: 1.19 -->
+<version>5</version>
+<date>2012-12-25</date>
+<!-- Original revision: 1.21 -->
 
 <chapter>
 <title>はじめに</title>
@@ -55,11 +55,11 @@ CFLAGSとCXXFLAGSは二通り使われ方があります。
 
 <p>
 しかしながら、この方法はPortageツリーの中にあるパッケージをインストールする際に使うべきではありません。
-二つ目は、CFLAGSとCXXFLAGSを<path>/etc/make.conf</path>で設定する方法です。
+二つ目は、CFLAGSとCXXFLAGSを<path>/etc/portage/make.conf</path>で設定する方法です。
 この方法を使えば、全てのパッケージはあなたが設定したフラグでコンパイルされるでしょう。
 </p>
 
-<pre caption="/etc/make.conf内のCFLAGS">
+<pre caption="/etc/portage/make.conf内のCFLAGS">
 CFLAGS="-march=athlon64 -O2 -pipe"
 CXXFLAGS="${CFLAGS}"
 </pre>
@@ -161,7 +161,7 @@ CPUが違えば、性能が異なり、異なる命令セットをサポート�
 </p>
 
 <p>
-たとえ<path>/etc/make.conf</path>に書いてあるCHOST変数を一般的なアーキテクチャに設定していても、
+たとえ<path>/etc/portage/make.conf</path>に書いてあるCHOST変数を一般的なアーキテクチャに設定していても、
 <c>-march</c>を設定すれば、プログラムは指定したプロセッサ向けに最適化されるでしょう。
 x86とx86-64のCPUは(とりわけ)<c>-march</c>フラグを使うべきです。
 </p>
@@ -178,7 +178,7 @@ $ <i>cat /proc/cpuinfo</i>
 では実際に<c>-march</c>を見てみましょう。この例は古いPentium IIIチップ向けです:
 </p>
 
-<pre caption="/etc/make.conf: Pentium III向け">
+<pre caption="/etc/portage/make.conf: Pentium III向け">
 CFLAGS="-march=pentium3"
 CXXFLAGS="${CFLAGS}"
 </pre>
@@ -188,7 +188,7 @@ CXXFLAGS="${CFLAGS}"
 
 </p>
 
-<pre caption="/etc/make.conf: AMD64向け">
+<pre caption="/etc/portage/make.conf: AMD64向け">
 CFLAGS="-march=athlon64"
 CXXFLAGS="${CFLAGS}"
 </pre>
@@ -270,7 +270,7 @@ link="http://gcc.gnu.org/onlinedocs/gcc-4.4.4/gcc/submodel-options.html#submodel
 <c>-O</c>の設定には5つあります。
 <c>-O0</c>、<c>-O1</c>、<c>-O2</c>、<c>-O3</c>、そして<c>-Os</c>です。
 これらの中からひとつだけ選び、
-<path>/etc/make.conf</path>の中で使ってみてください。
+<path>/etc/portage/make.conf</path>の中で使ってみてください。
 </p>
 
 <p>
@@ -383,10 +383,6 @@ GNU <c>gcc</c>マニュアルによれば、全てのアーキテクチャにお
 </p>
 
 <impo>
-<!--
-source for this info:
-http://www.coyotegulch.com/products/acovea/aco5p4gcc40.html
--->
 <c>-fomit-frame-pointer</c>と似ている<c>-momit-leaf-frame-pointer</c>フラグを組み合わせて<e>使わない</e>でください。
 後者のフラグを使うのはやめてください。<c>-fomit-frame-pointer</c>のみで十分です。
 そのうえ、<c>-momit-leaf-frame-pointer</c>はコードの性能に悪影響を及ぼすことがわかっています。
@@ -419,7 +415,7 @@ CPUがこれらをサポートしているかどうかは<c>cat /proc/cpuinfo</c
 
 <p>
 通常、正しい<c>-march</c>を使っている限り、
-これらのどのフラグも<path>/etc/make.conf</path>に加える必要はありません
+これらのどのフラグも<path>/etc/portage/make.conf</path>に加える必要はありません
 (例えば<c>-march=nocona</c>は<c>-msse3</c>を有効にします)。
 いくつかの注意すべき例外は、比較的新しいVIAとAMD64のCPUです。
 これらは(SSE3のような)命令をサポートしますが、<c>-march</c>では有効になりません。
@@ -520,7 +516,7 @@ if (optimize >= 3)
 <body>
 
 <p>
-しばしば、<path>/etc/make.conf</path>の中で、個々の<c>-O</c>レベルを指定すれば有効になるフラグを
+しばしば、<path>/etc/portage/make.conf</path>の中で、個々の<c>-O</c>レベルを指定すれば有効になるフラグを
 重複してCFLAGSやCXXFLAGSに設定していることがあります。
 これは時々よく知らずにやってしまうのですが、
 一方で(ebuildが行う)フラグの除去や置換を回避する為に行われることがあります。
@@ -565,7 +561,7 @@ CFLAGSは理由があって除去されるのです！
 開発者が許可していないフラグでパッケージをビルドすれば、
 大概は数々の問題に陥り続けることでしょう。
 Bugzillaに不具合を報告する際には、
-<path>/etc/make.conf</path>で使っているフラグは容易く見抜かれてしまうので、
+<path>/etc/portage/make.conf</path>で使っているフラグは容易く見抜かれてしまうので、
 余計なフラグを除いて再コンパイルする様に開発者に指示されるでしょう。
 初めから冗長なフラグを指定しないことで、再コンパイルする手間を省いてください！
 あなたが開発者よりよく知っていると根拠なく無意識に決めつけないでください。
@@ -621,13 +617,6 @@ link="/doc/ja/handbook/handbook-amd64.xml?part=3&amp;chap=6#doc_chap2">Gentoo
   </li>
   <li><c>man make.conf</c></li>
   <li><uri link="http://ja.wikipedia.org">Wikipedia</uri></li>
-  <li>
-    <uri link="http://www.coyotegulch.com/products/acovea/">Acovea</uri>(訳注: 現在リンク切れ)は、
-    コンパイラのフラグの相互作用および生成されるコードへの影響が、
-    どのように違うのか測定する場合に有用なベンチマークとテストが行えます。
-    もっとも、それによって提案されるフラグをシステム全体に使うことは適切ではありません。
-    Portageでも次のコマンドで利用可能です:<c>emerge acovea</c>.
-  </li>
   <li><uri link="http://forums.gentoo.org">Gentooフォーラム</uri></li>
 </ul>
 
