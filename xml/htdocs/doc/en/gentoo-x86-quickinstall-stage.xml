@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding="UTF-8"?>
 <!DOCTYPE included SYSTEM "/dtd/guide.dtd">
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-x86-quickinstall-stage.xml,v 1.15 2012/04/29 15:59:15 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-x86-quickinstall-stage.xml,v 1.16 2013/01/19 20:59:22 swift Exp $ -->
 
 <included>
 
-<version>14</version>
-<date>2012-02-29</date>
+<version>15</version>
+<date>2013-01-16</date>
 
 <section>
 <title>Setting Up The Stage</title>
@@ -54,31 +54,6 @@ user  1m2.920s
 sys   0m7.530s
 </pre>
 
-<p>
-Install the latest Portage snapshot. Proceed as for the stage3 archive: choose
-a nearby mirror from our <uri link="/main/en/mirrors.xml">list</uri>, download
-the latest snapshot and unpack it.
-</p>
-
-<pre caption="Download the latest Portage snapshot">
-livecd gentoo # <i>cd /mnt/gentoo/usr</i>
-livecd usr # <i>links http://www.gentoo.org/main/en/mirrors.xml</i>
-<comment>(Pick a mirror, move to the snapshots/ directory,
-highlight <b>portage-latest.tar.bz2</b> and press D to download it)</comment>
-
-<comment>(<b>Or</b> download it directly with wget without choosing a nearby mirror)</comment>
-livecd gentoo # <i>cd /mnt/gentoo/usr</i>
-livecd usr # <i>wget http://distfiles.gentoo.org/snapshots/portage-latest.tar.bz2</i>
-</pre>
-
-<pre caption="Unpack the Portage snapshot">
-livecd usr # <i>time tar xjf portage-lat*</i>
-
-real  0m40.523s
-user  0m28.280s
-sys   0m8.240s
-</pre>
-
 </body>
 </section>
 <section>
@@ -86,19 +61,28 @@ sys   0m8.240s
 <body>
 
 <p>
-Mount the <path>/proc</path> &amp; <path>/dev</path> file systems, copy over
-the <path>/etc/resolv.conf</path> file, then chroot into your Gentoo
-environment.
+Mount the <path>/proc</path>, <path>/dev</path>, and <path>/sys</path> file 
+systems, copy over the <path>/etc/resolv.conf</path> file, then chroot into 
+your Gentoo environment.
 </p>
 
 <pre caption="Chroot">
 livecd usr # <i>cd /</i>
 livecd / # <i>mount -t proc proc /mnt/gentoo/proc</i>
 livecd / # <i>mount --rbind /dev /mnt/gentoo/dev</i>
-livecd / # <i>cp -L /etc/resolv.conf /mnt/gentoo/etc/</i>
+livecd / # <i>mount --rbind /sys /mnt/gentoo/sys</i>
+livecd / # <i>cp -L /etc/resolv.conf /mnt/gentoo/etc/</i> 
 livecd / # <i>chroot /mnt/gentoo /bin/bash</i>
-livecd / # <i>env-update &amp;&amp; source /etc/profile</i>
->>> Regenerating /etc/ld.so.cache...
+livecd / # <i>source /etc/profile</i>
+</pre>
+
+<p>
+Fetch the latest portage snapshot from the mirrors using emerge-webrsync.
+</p>
+
+<pre caption="Running emerge-webrsync to install a Portage snapshot">
+livecd / # <i>mkdir /usr/portage</i>
+livecd / # <i>emerge-webrsync</i>
 </pre>
 
 </body>
@@ -120,6 +104,35 @@ livecd / # <i>echo "Europe/Brussels" &gt; /etc/timezone</i>
 
 livecd / # <i>date</i>
 Wed Mar  8 00:46:05 CET 2006
+</pre>
+
+</body>
+</section>
+<section>
+<title>Select your profile</title>
+<body>
+
+<p>
+Choose your profile using eselect. This is an example of the output you might 
+see.
+</p>
+
+<pre caption="Verifying System Profile">
+livecd / # <i>eselect profile list</i>
+Available profile symlink targets:
+  [1]    default/linux/x86/10.0 *
+  [2]    default/linux/x86/10.0/desktop
+  [3]    default/linux/x86/10.0/desktop/gnome
+  [4]    default/linux/x86/10.0/server
+</pre>
+
+<p>
+Choose the appropriate profile.  Keep in mind that default USE flags are 
+determined based on the profile you pick.
+</p>
+
+<pre caption="Changing Profile">
+livecd / # <i>eselect profile set 2</i>
 </pre>
 
 </body>
