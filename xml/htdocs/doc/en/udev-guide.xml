@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding="UTF-8"?>
 <!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/udev-guide.xml,v 1.58 2013/03/20 20:44:09 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/udev-guide.xml,v 1.59 2013/03/29 19:32:27 swift Exp $ -->
 
 <guide>
 <title>Gentoo udev Guide</title>
@@ -23,8 +23,8 @@ This document explains what udev is and how you can use udev to fit your needs.
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 <license/>
 
-<version>14</version>
-<date>2013-03-20</date>
+<version>15</version>
+<date>2013-03-29</date>
 
 <chapter>
 <title>What is udev?</title>
@@ -123,12 +123,13 @@ Device Drivers ---&gt;
   &lt; &gt; ATA/ATAPI/MFM/RLL support (DEPRECATED)
   <comment>(This is *absolutely* necessary for /dev to populate)</comment>
   Generic Driver Options ---&gt;
-    [*] Maintain a devtmpfs filesystem to mount at /dev
+    [*] Maintain a devtmpfs filesystem to mount at /dev (NEW)
 </pre>
 
 <p>
-If you use <c>genkernel</c>, you don't need to do anything special. Genkernel
-sets up udev by default.
+If you use <c>sys-kernel/genkernel</c>, you don't need to do anything special.
+Genkernel sets up udev by default. You can also try <c>sys-kernel/dracut</c>
+which is quite well integrated into Gentoo.
 </p>
 
 </body>
@@ -141,18 +142,39 @@ sets up udev by default.
 <body>
 
 <p>
-Documentation for using <uri link="http://www.freedesktop.org/wiki/Software/systemd/PredictableNetworkInterfaceNames">the new predictable network interface names.</uri>
+Documentation for using <uri 
+link="http://www.freedesktop.org/wiki/Software/systemd/PredictableNetworkInterfaceNames">the
+predictable network interface names</uri> introduced in 197, replacing the now
+deleted rule_generator's /etc/udev/rules.d/70-persistent-net.rules
 </p>
 
 <p>
-<uri link="http://webpages.charter.net/decibelshelp/LinuxHelp_UDEVPrimer.html">Decibel's
-UDEV Primer</uri> is an in-depth document about udev and Gentoo.
+<uri link="http://github.com/gentoo/eudev">Fork of the systemd git tree without
+systemd itself</uri> at github, with aims like longterm stable API, more POSIX
+than GNU, aimed much for minimal embedded but works on anything else too.
+You decide if it's up to date by looking at the repository's history, since
+this documentation might not be.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Known problems</title>
+<section>
+<body>
+
+<p>
+Stale <c>70-persistent-net.rules</c> (or other network rules) in
+<path>/etc/udev/rules.d</path> can prevent the predictable network naming from
+being enabled. Both <c>70-persistent-net.rules</c> and
+<c>70-persistent-cd.rules</c> are from the now deleted rule_generator
 </p>
 
 <p>
-<uri link="http://www.reactivated.net/udevrules.php">Writing udev rules</uri> by
-fellow Gentoo developer Daniel Drake is an excellent document to learn how to
-customize your udev installation.
+Init script called 'udev-postmount' should be removed from runlevels if it's
+still there.
 </p>
 
 </body>
