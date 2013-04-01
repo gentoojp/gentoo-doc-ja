@@ -3,8 +3,8 @@
 
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-x86+amd64-kernel.xml,v 1.11 2013/04/01 13:02:45 naota Exp $ -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-x86+amd64-kernel.xml,v 1.10 2011/11/14 08:00:32 naota Exp $ -->
 
 <sections>
 
@@ -13,36 +13,15 @@
 本章では、カーネルのコンフィギュレーション方法について説明します。
 </abstract>
 
-<version>14</version>
-<date>2011-11-05</date>
+<version>20</version>
+<date>2013-03-16</date>
 
-<!-- Original revision: 1.44 -->
+<!-- Original revision: 1.50 -->
 <!-- Translator: Taku Murakami -->
 <!-- Translator: masuda -->
 <!-- Translator: naota -->
+<!-- Translator: unarist -->
 
-<section>
-<title>タイムゾーン</title>
-<body>
-
-<p>
-システムが、どの地域に設置されているかを把握するため、
-まず初めにタイムゾーンを選択しなくてはいけません。
-nn<path>/usr/share/zoneinfo</path>でタイムゾーンを確認し、
-<path>/etc/localtime</path>へコピーします。
-なお、ファイル名が実際の地域を示しているわけではないので、
-<path>/usr/share/zoneinfo/Etc/GMT*</path>タイムゾーンは避けて下さい。
-例えば、<path>GMT-8</path>は実際にはGMT+8を示します。
-</p>
-
-<pre caption="タイムゾーン情報の設定">
-# <i>ls /usr/share/zoneinfo</i>
-<comment>(ここでは、GMTを使用することを想定しています)</comment>
-# <i>cp /usr/share/zoneinfo/GMT /etc/localtime</i>
-</pre>
-
-</body>
-</section>
 <section>
 <title>ソースをインストールする</title>
 <subsection>
@@ -50,7 +29,7 @@ nn<path>/usr/share/zoneinfo</path>でタイムゾーンを確認し、
 <body>
 
 <p>
-全のディストリビューションで中核となるのが、Linuxカーネルです。これは、
+全てのディストリビューションで中核となるのが、Linuxカーネルです。これは、
 ユーザプログラムとシステムハードウェアを仲介します。Gentooでは、
 使用可能なカーネルソースをユーザに複数提供しています。説明がついた詳細な一覧表が、
 <uri link="/doc/en/gentoo-kernel.xml">Gentoo Kernel
@@ -91,16 +70,16 @@ lrwxrwxrwx    1 root   root    12 Oct 13 11:04 /usr/src/linux -&gt; linux-<keyva
 
 <p>
 マニュアルでカーネルをコンフィギュレーションするなら、<uri
-link="#manual">デフォルト: マニュアルコンフィギュレーション</uri>へ進んで下さい。
+link="#manual">一般的な選択: マニュアルコンフィギュレーション</uri>へ進んで下さい。
 <c>genkernel</c>を使用するなら、
-代わりに<uri link="#genkernel">代替案: genkernelを使用する</uri>を読み進んで下さい。
+代わりに<uri link="#genkernel">もう一つの選択: genkernelを使用する</uri>を読み進んで下さい。
 </p>
 
 </body>
 </subsection>
 </section>
 <section id="manual">
-<title>デフォルト: マニュアルコンフィギュレーション</title>
+<title>一般的な選択: マニュアルコンフィギュレーション</title>
 <subsection>
 <title>はじめに</title>
 <body>
@@ -119,7 +98,7 @@ Linuxユーザが行うべきオペレーションの中で、最難関と見な
 <c>lspci</c>を含んだpciutils(<c>emerge pciutils</c>)をemergeすることで収集できます。
 そうすれば、chrootされた環境で、<c>lspci</c>を実行できます。
 なお、<c>lspci</c>によって出力される<e>pcilib</e>に関する警告は、
-無視して構いません(例えば、pcilib: cannot open/sys/bus/pci/devices)。あるいは、
+無視して構いません(例えば、pcilib: cannot open /sys/bus/pci/devices)。あるいは、
 <e>chrootされていない</e>環境から<c>lspci</c>を実行することも可能です。
 実行結果は同じになります。または、<c>lsmod</c>を実行し、
 インストールCDがどのカーネルモジュールを使用しているかを確認することもできます(有効にすべきモジュールを判断する上で、
@@ -205,6 +184,17 @@ Processor type and features ---&gt;
 
 </body>
 <body>
+
+<p>
+次に、重要なデバイスファイルをブートプロセスの初期段階から利用できるように、
+<e>Maintain a devtmpfs file system to mount at /dev</e>を選択してください。</p>
+
+<pre caption="devtmpfsサポートの有効化">
+Device Drivers ---&gt;
+  Generic Driver Options ---&gt;
+    [*] Maintain a devtmpfs filesystem to mount at /dev
+    [ ]   Automount devtmpfs at /dev, after the kernel mounted the rootfs
+</pre>
 
 <p>
 <c>File Systems</c>に移動し、使用するファイルシステムのサポートを選択します。
@@ -345,15 +335,15 @@ link="#compiling">コンパイルとインストール</uri>へ進んで下さ�
 # <i>cp arch/<keyval id="arch-sub"/>/boot/bzImage /boot/<keyval id="kernel-name"/></i>
 </pre>
 
-<p>
-では、<uri link="#kernel_modules">カーネルモジュール</uri>へ進みましょう。
-</p>
-
 </body>
 </subsection>
+<subsection>
+<include href="hb-install-initramfs.xml"/>
+</subsection>
+
 </section>
 <section id="genkernel">
-<title>代替案: genkernelを使用する</title>
+<title>もう一つの選択: genkernelを使用する</title>
 <body>
 
 <p>
@@ -398,7 +388,7 @@ genkernelでは、マニュアルでカーネルをコンフィギュレーシ�
 </pre>
 
 <p>
-<c>genkernel</c>が完了したら、カーネル -- モジュール全一式と<e>初期RAMディスク</e>(initramfs)
+<c>genkernel</c>が完了したら、カーネル -- モジュール一式と<e>初期RAMディスク</e>(initramfs)
 -- が作成されます。本書では、後ほどブートローダを設定する際に、カーネルとinitrdを使用します。
 ブートローダの設定ファイルを記述する際に必要となりますので、
 カーネルとinitrdのファイル名を書き留めておいて下さい。電源ボタンを押し、
