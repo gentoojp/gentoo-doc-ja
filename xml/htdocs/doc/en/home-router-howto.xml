@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/home-router-howto.xml,v 1.65 2011/10/30 11:56:08 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/home-router-howto.xml,v 1.66 2013/04/03 18:32:25 vapier Exp $ -->
 
 <guide lang="en">
 <title>Home Router Guide</title>
@@ -17,8 +17,8 @@ for connecting your home network to the internet.
 <!-- The content of this document is released into the public domain -->
 <license/>
 
-<version>2</version>
-<date>2011-10-30</date>
+<version>3</version>
+<date>2013-04-03</date>
 
 <chapter>
 <title>Introduction</title>
@@ -200,24 +200,19 @@ I hope you have it now!  Load up <path>/etc/conf.d/net</path> in your favorite
 editor and set it up.
 </p>
 
-<note>
-In order for the following net settings to work, you must have
-baselayout-1.12.9 or later installed on your system.
-</note>
-
 <pre caption="Setting up eth1">
 <comment>(Replace 'vla9h924' with your username and 'boogie' with your password)</comment>
 
 # <i>nano /etc/conf.d/net</i>
-<comment>Tell baselayout to use adsl over eth1 for ppp0:</comment>
-config_ppp0=( "ppp" )
+<comment>Tell openrc to use adsl over eth1 for ppp0:</comment>
+config_ppp0="ppp"
 link_ppp0="eth1"
-plugins_ppp0=( "pppoe" )
-pppd_ppp0=(
-  "defaultroute"
-  "usepeerdns"
+plugins_ppp0="pppoe"
+pppd_ppp0="
+  defaultroute
+  usepeerdns
   <comment>There may be other settings you want, see /usr/share/doc/openrc-*/net.example.bz2</comment>
-)
+"
 username_ppp0="vla9h924"
 password_ppp0="boogie"
 
@@ -261,13 +256,13 @@ gateway, and DNS servers.
 # <i>emerge dhcpcd</i>
 # <i>nano /etc/conf.d/net</i>
 <comment>You'll need an entry like so:</comment>
-config_eth1=( "dhcp" )
+config_eth1="dhcp"
 
 <comment>Static IP Users:</comment>
 # <i>nano /etc/conf.d/net</i>
 <comment>You'll need entries like so:</comment>
-config_eth1=( "66.92.78.102 broadcast 66.92.78.255 netmask 255.255.255.0" )
-routes_eth1=( "default gw 66.92.78.1" )
+config_eth1="66.92.78.102/24 brd 66.92.78.255"
+routes_eth1="default via 66.92.78.1"
 # <i>nano /etc/resolv.conf</i>
 <comment>Add one line per DNS server:</comment>
 nameserver 123.123.123.123
@@ -298,7 +293,7 @@ This step is a breeze compared to the previous one.
 <pre caption="Setting up eth0">
 # <i>nano /etc/conf.d/net</i>
 <comment>Add a line like the following:</comment>
-config_eth0=( "192.168.0.1 broadcast 192.168.0.255 netmask 255.255.255.0" )
+config_eth0="192.168.0.1/24 brd 192.168.0.255"
 # <i>rc-update add net.eth0 default</i>
 # <i>/etc/init.d/net.eth0 start</i>
 </pre>
