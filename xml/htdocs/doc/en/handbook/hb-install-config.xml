@@ -4,7 +4,7 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-config.xml,v 1.118 2013/02/23 18:38:22 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-config.xml,v 1.119 2013/05/06 14:24:20 swift Exp $ -->
 
 <sections>
 
@@ -14,8 +14,8 @@ you receive an overview of these files and an explanation on how to
 proceed.
 </abstract>
 
-<version>24</version>
-<date>2013-02-23</date>
+<version>25</version>
+<date>2013-05-06</date>
 
 <section>
 <title>Filesystem Information</title>
@@ -298,6 +298,13 @@ To enter your own IP address, netmask and gateway, you need
 to set both <c>config_eth0</c> and <c>routes_eth0</c>:
 </p>
 
+<note>
+This assumes that your network interface will be called eth0. This is, however,
+very system dependent. It is recommended to assume that the interface is named
+the same as the interface name when booted from the installation media <e>if</e>
+the installation media is sufficiently recent. 
+</note>
+
 <pre caption="Manually setting IP information for eth0">
 config_eth0="192.168.0.2 netmask 255.255.255.0 brd 192.168.0.255"
 routes_eth0="default via 192.168.0.1"
@@ -345,9 +352,32 @@ default runlevel.
 
 <p>
 If you have several network interfaces, you need to create the appropriate
-<path>net.eth1</path>, <path>net.eth2</path> etc. just like you did with
-<path>net.eth0</path>.
+<path>net.*</path> files just like you did with <path>net.eth0</path>.
 </p>
+
+<p>
+If you later find out the assumption about the network interface name (which we
+currently document as eth0) was wrong, then
+</p>
+
+<ol>
+<li>
+update the <path>/etc/conf.d/net</path> file with the correct interface name (like enp3s0
+instead of eth0),
+</li>
+<li>
+create new symbolic link (like <path>/etc/init.d/net.enp3s0</path>),
+</li>
+<li>
+remove the old symbolic link (<c>rm /etc/init.d/net.eth0</c>), 
+</li>
+<li>
+add the new one to the default runlevel, and
+</li>
+<li>
+remove the old one using <c>rc-update del net.eth0 default</c>.
+</li>
+</ol>
 
 </body>
 </subsection>

@@ -4,7 +4,7 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-net-advanced.xml,v 1.18 2011/08/19 16:07:30 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-net-advanced.xml,v 1.19 2013/05/06 14:24:20 swift Exp $ -->
 
 <sections>
 
@@ -13,8 +13,8 @@ Here we learn about how the configuration works - you need to know this
 before we learn about modular networking.
 </abstract>
 
-<version>11</version>
-<date>2011-08-19</date>
+<version>12</version>
+<date>2013-05-06</date>
 
 <section>
 <title>Advanced Configuration</title>
@@ -229,4 +229,134 @@ connects to an AP whose ESSID is My "\ NET)</comment>
 
 </body>
 </section>
+<section>
+<title>Network Interface Naming</title>
+<subsection>
+<title>How It Works</title>
+<body>
+
+<p>
+Network interface names are not chosen arbitrarily: the Linux kernel and the
+device manager (most sytems have udev as their device manager although others
+are available as well) choose the interface name through a fixed set of rules.
+</p>
+
+<p>
+When an interface card is detected on a system, the Linux kernel gathers the
+necessary data about this card. This includes:
+</p>
+
+<ol>
+  <li>
+    the onboard (on the interface itself) registered name of the network card,
+    which is later seen through the <c>ID_NET_NAME_ONBARD</c> parameter;
+  </li>
+  <li>
+    the slot in which the network card is plugged in, which is later seen
+    through the <c>ID_NET_NAME_SLOT</c> parameter; 
+  </li>
+  <li>
+    the path through which the network card device can be accessed, which is
+    later seen through the <c>ID_NET_NAME_PATH</c> parameter;
+  </li>
+  <li>
+    the (vendor-provided) MAC address of the card, which is later seen through
+    the <c>ID_NET_NAME_MAC</c> parameter;
+  </li>
+</ol>
+
+<p>
+Based on this information, the device manager decides how to name the interface
+on the system. By default, it uses the first hit of the above three parameters.
+For instance, if <c>ID_NET_NAME_ONBARD</c> is found and set to <c>eno1</c>, then
+the interface will be called eno1.
+</p>
+
+<p>
+If you know your interface name, you can see the values of the provided
+parameters using <c>udevadm</c>:
+</p>
+
+<pre caption="Reading the network interface card information">
+# <i>udevadm test-builtin net_id /sys/class/net/enp3s0 2>/dev/null</i>
+ID_NET_NAME_MAC=enxc80aa9429d76
+ID_OUI_FROM_DATABASE=Quanta Computer Inc.
+ID_NET_NAME_PATH=enp3s0
+</pre>
+
+<p>
+As the first (and actually only) hit of the top three parameters is the
+<c>ID_NET_NAME_PATH</c> one, its value is used as the interface name. If none of
+the parameters is found, then the system reverts back to the kernel-provided
+naming (eth0, eth1, etc.)
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Using the Old-style Kernel Naming</title>
+<body>
+
+<p>
+Before this change, network interface cards were named by the Linux kernel
+itself, depending on the order that drivers are loaded (amongst other, possibly
+more obscure reasons). This behavior can still be enabled by setting the
+<c>net.ifnames=0</c> boot option in the boot loader.
+</p>
+
+<p>
+Another way of disabling this behavior (and thus reverting back to the
+kernel-provided naming) is to create an empty udev rule named
+<path>80-net-name-slot.rules</path> which will then override the default
+provided one (with the same name) that is responsible for taking care of network
+interface naming.
+</p>
+
+<pre caption="Overriding the network naming scheme">
+# <i>ln -s /dev/null /etc/udev/rules.d/80-net-name-slot.rules</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Using your Own Names</title>
+<body>
+
+<p>
+The entire idea behind the change in naming is not to confuse people, but to
+make changing the names easier. Suppose you have two interfaces that are
+otherwise called eth0 and eth1. One is meant to access the network through a
+wire, the other one is for wireless access. With the support for interface
+naming, you can have these called lan0 (wired) and wifi0 (wireless - it is best
+to avoid using the previously well-known names like eth* and wlan* as those can
+still collide with your suggested names).
+</p>
+
+<p>
+All you need to do is to find out what the parameters are for the cards and then
+use this information to set up your own naming rule:
+</p>
+
+<pre caption="Setting the lan0 name for the current eth0 interface">
+# <i>udevadm test-builtin net_id /sys/class/net/eth0 2>/dev/null</i>
+ID_NET_NAME_MAC=enxc80aa9429d76
+ID_OUI_FROM_DATABASE=Quanta Computer Inc.
+
+# <i>vim /etc/udev/rules.d/70-net-name-use-custom.rules</i>
+<comment># First one uses MAC information</comment>
+SUBSYSTEM=="net", ACTION=="add", ENV{ID_NET_NAME_MAC}=="enxc80aa9429d76", NAME="lan0"
+<comment># Second one uses ID_NET_NAME_PATH information</comment>
+SUBSYSTEM=="net", ACTION=="add", ENV{ID_NET_NAME_PATH}=="enp3s0", NAME="wifi0"
+</pre>
+
+<p>
+Because the rules are triggered before the default one (rules are triggered in
+alphanumerical order, so 70 comes before 80) the names provided in the rule file
+will be used instead of the default ones.
+</p>
+
+</body>
+</subsection>
+</section>
+
 </sections>
