@@ -1,0 +1,448 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/xfce-config.xml,v 1.1 2013/05/28 01:28:01 naota Exp $ -->
+
+<guide lang="ja">
+<title>Xfce設定ガイド</title>
+
+<author title="Author">
+  <mail link="nightmorph"/>
+</author>
+<author title="翻訳">
+  <mail link="kudzunaoki@gmail.com">久住直樹</mail>
+</author>
+
+<abstract>
+このガイドでは軽量で速く、機能豊富なデスクトップ環境Xfceを広範囲にわたって紹介します。
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>13</version>
+<date>2012-07-24</date>
+<!-- Original revision: 1.45 -->
+
+<chapter>
+<title>導入</title>
+<section>
+<title>デスクトップ環境Xfce</title>
+<body>
+
+<p>
+<uri link="http://www.xfce.org">Xfce</uri> は速く、軽量なUnix系OS用デスクトップ環境です。生産的になれるようデザインされ、細かく設定可能でありながら、<uri
+link="http://www.freedesktop.org">Freedesktop</uri>仕様に合わせて作られています。
+</p>
+
+<p>
+<uri
+link="http://www.gnome.org">Gnome</uri>や<uri
+link="http://www.kde.org">KDE</uri>のような他のより重いデスクトップ環境に比べ、XFceはとても少ないリソースで動きます。
+加えて、機能ごとに分割可能で依存も少ないため、使用するハードディスク容量は少なく、より早くインストールできます。
+</p>
+
+<p>
+このガイドで紹介するのは最小限のXfceをインストールと設定をする方法だけではありません。軽く、速く、モジュール構成というXfceの哲学を損なわずに多機能のデスクトップ環境を作る方法も見ていきます。
+</p>
+
+<p>
+このガイドの最後の部分で新しいXfceにアップグレードするためのいくつかのコマンドを載せます。古いバージョンのXfceからアップグレードする人は従ってください。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Xfceのインストール</title>
+<section>
+<title>基本</title>
+<body>
+
+<p>
+まず最初にXorgを<uri link="/doc/en/xorg-config.xml">X Server Configuration Howto</uri> <uri link="/doc/ja/xorg-config.xml">（日本語訳）</uri>に合わせて設定します。</p>
+
+<p>
+次に<path>/etc/portage/make.conf</path>のUSEフラグをよく確認します。
+おそらく<c>USE="-gnome -kde -minimal -qt4 dbus jpeg lock session
+startup-notification thunar udev X"</c>の設定は最低でもしておきたいでしょう。
+</p>
+
+<p>
+<path>/etc/portage/make.conf</path>でUSEフラグを設定し終えたら、Xfceのインストール開始です。
+</p>
+
+<pre caption="Xfceのインストール">
+# <i>emerge -avt xfce4-meta</i>
+</pre>
+
+<p>
+次に、普段使うユーザを<c>cdrom</c>, <c>cdrw</c>, <c>usb</c> グループに入れ、カメラや光学ドライブやUSBメモリ等を使えるようにします。
+</p>
+
+<pre caption="ユーザをハードウェアグループに入れる">
+<comment>(usernameは実際のユーザ名で置き替える事)</comment>
+# <i>for x in cdrom cdrw usb ; do gpasswd -a username $x ; done</i>
+</pre>
+
+<p>
+続いて、環境変数をアップデートします。
+</p>
+
+<pre caption="環境変数のアップデート">
+# <i>env-update &amp;&amp; source /etc/profile</i>
+</pre>
+
+<p>
+新しいデスクトップ環境で作業を続けるためにグラフィカルなターミナルが必要になるでしょう。
+<c>x11-terms/terminal</c>はXfceで使うために作られているので良い選択となります。以下のようにしてインストールします。
+</p>
+
+<pre caption="ターミナルをインストールする">
+# <i>emerge x11-terms/terminal</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Xfceを設定する</title>
+<section>
+<title>Xfceを起動する</title>
+<body>
+
+<p>
+ここまででXfceはインストールされましたが、startxコマンドを実行した時のデフォルトのデスクトップ環境にするにはさらなる設定が必要です。
+rootをログアウトして通常ユーザでログオンしてください。
+</p>
+
+<pre caption="Xfceをデフォルトのデスクトップ環境に設定する">
+$ <i>echo "exec startxfce4" > ~/.xinitrc</i>
+</pre>
+
+<note>
+ConsoleKitをインストールしている場合、<path>~/.xinitrc</path>には代わりに<c>exec startxfce4 --with-ck-launch</c>を記述しなければなりません。
+そうしないと、いくつかのアプリケーションは動かないでしょう。
+また、次のコマンドをrootで実行してconsolekitをデフォルトランレベルに加えるべきでしょう。
+<c>rc-update add consolekit default</c>
+</note>
+
+<p>
+では<c>startx</c>でグラフィカルな環境を起動させましょう:
+</p>
+
+<pre caption="Xfceを起動する">
+$ <i>startx</i>
+</pre>
+
+<p>
+おめでとうございます、そしてようこそ新しいXfceデスクトップ環境へ。どうぞいろいろと触って探検してください。
+続けてXfceをあなたのニーズに合わせて設定する方法を読みましょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>セッションと起動</title>
+<body>
+
+<p>
+<c>k3b</c>, <c>nautilus</c>, <c>kmail</c>, <c>evolution</c>のような一般的なGnomeやKDEのアプリケーションをインストールした(あるいは、インストールしようとしている)場合、Xfceの開始時に適切なサービスを起動するよう設定しなければなりません。
+アプリケーションメニュー --> 設定 --> セッションと起動 へナビゲートしてください。"詳細"タブで適切なチェックボックスを選択してください。これによって少しXfceの起動にかかる時間が増えますが、KDEやGnomeアプリケーションのロードにかかる時間を減らせます。
+</p>
+
+<p>
+Xfceにはセッションの設定や動作しているプログラムを保存する機能がセッションと起動メニューの"一般"タブにあります。ログアウトする時に自動的に、あるいは毎回尋ねて保存します。
+この機能は設定を失敗した時にも有用です。間違えてパネルを消してしまいました？ 現在のセッションを保存するか尋ねられた時に"いいえ"を選択すれば、次回起動時には元通りの環境が出てきます。
+ログイン時に自動的にウェブブラウザやターミナル、メールクライアントを起動させたい？ ログアウト時にセッションを保存するだけで可能です。
+</p>
+
+<p>
+基本的な環境はインストールし設定を終えました。もっといろいろやりたいなら、続きも読んで！
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>追加アプリケーション</title>
+<section>
+<title>パネルプラグイン</title>
+<body>
+
+<p>
+この章では、日々Xfceを使うのに有用なプラグインとアプリケーションを紹介します。
+</p>
+
+<p>
+Portageで数多くのパネルプラグインが利用できます。<c>emerge --search xfce</c>で探してみましょう。
+一部はよく考える必要があるかもしれませんが、名前が内容を説明しています。
+使うには単純にそれらを<c>emerge</c>してください。パネルを右クリックした時の"新しいアイテムの追加"メニューの選択肢に加えられます。
+</p>
+
+<ul>
+  <li>
+    <c>xfce4-battery-plugin</c>はラップトップPCユーザに最適です。バッテリー残量、残り時間、電源の使用状態(ACかバッテリーか)、ファンの状態、警告の表示、そしてバッテリー残量に応じてコマンドを実行するよう設定する事も可能です。バッテリーの残りが尽きそうになったらハイバネートさせるためなどに利用できます。
+  </li>
+  <li>
+    <c>xfce4-verve-plugin</c>
+はパネルに埋め込まれた小さなコマンドラインです。コマンドを実行したい時に新しくターミナルを起動するよりも手軽です。
+  </li>
+  <li>
+    <c>xfce4-mount-plugin</c>は
+<path>/etc/fstab</path>に書かれたデバイスをクリックするだけでマウントする方法を提供します。
+  </li>
+  <li>
+    <c>xfce4-sensors-plugin</c>
+を使えばCPU温度、ファン回転数、ハードディスク温度、マザーボード電圧などのセンサーをモニターすることができます。
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>有用なプログラム</title>
+<body>
+
+<p>
+<c>xfce4-mixer</c>, <c>xfce4-taskmanager</c>, <c>xfwm4-themes</c>, <c>orage</c>,
+<c>leafpad</c>, <c>xfce4-power-manager</c>, <c>x11-terms/terminal</c>, <c>thunar</c>
+このような有用なアプリケーションやユーティリティを<c>emerge</c>する事を勧めます。
+</p>
+
+<p>
+<c>xfce4-mixer</c>はサウンドカードの音量調整プログラムです。すぐに音量変更できるように、パネルアプレットとしても利用できます。
+<c>xfce4-taskmanager</c> は実行中のプログラムとそのCPU、メモリ消費量を表示します。アイテムを右クリックしてアプリケーションを終了、中断、再開させたり、実行の優先度を変えてシステムのリソース配分を調整することもできます。
+</p>
+
+<p>
+<c>xfwm4-themes</c> はウィンドウマネージャの外観をいくつか追加します。デスクトップを仕上げるために<c>tango-icon-theme</c>などのもっと多様なアイコンテーマも入れたくなるかもしれません。
+</p>
+
+<p>
+<c>orage</c>は手軽なカレンダーです。
+<c>leafpad</c>はシンプルなテキストエディタで、とても素早く起動します。
+</p>
+
+<p>
+<c>xfce4-power-manager</c>は電力消費をモニターし管理するアプリケーションです。特にラップトップPCに重要でしょう。
+これは画面の輝度を調整し、バッテリー消費を抑えるか最大パフォーマンスを得るかを選択でき、さらに画面を閉じた時やボタンが押された時にハイバネート、サスペンド、シャットダウンののうちどの動作をするかを設定できます。
+<uri
+link="http://goodies.xfce.org/projects/applications/xfce4-power-manager">xfce4-power-manager</uri>はさらにバッテリー残量に応じて警告を出したり、マシンを止める事もできます。これを<c>emerge</c>するとパネルで輝度を変更したりバッテリー状態を確認したりするためのプラグインも共に入るでしょう。
+</p>
+
+<p>
+<c>x11-terms/terminal</c>はX11ターミナルエミュレータです。 素気ない<c>xterm</c>より使いやすく、設定できる内容も豊富です。
+<c>terminal</c>はUnicode、配色設定、擬似的な透過、Xfceの組み込み機能を利用した透過などを独自にサポートしています。
+パネルのターミナルランチャーで起動するターミナルを変更するにはランチャを右クリックして"プロパティ"で<path>xterm</path>を<path>/usr/bin/Terminal</path>に置きかえましょう。
+</p>
+
+<p>
+<c>thunar</c>はXfceの標準ファイルマネージャです。これは速く、パワフルでプラグインによって機能を追加できます。プラグインも<c>emerge</c>するだけでインストールできます。以下で見ていきましょう
+</p>
+
+<ul>
+  <li>
+    <c>thunar-archive-plugin</c>は右クリックメニューからアーカイブファイルの作成や展開を可能にします。<c>xarchiver</c>や<c>flie-roller</c>のようなGUIアプリケーションのための簡単な<uri
+    link="http://goodies.xfce.org/projects/thunar-plugins/thunar-archive-plugin">フロントエンド</uri>を提供するものです。
+  </li>
+  <li>
+    <c>tumbler</c>を導入すると画像やフォントなどのプレビューをThunarから見れます
+  </li>
+  <li>
+    <c>thunar-volman</c>はリムーバブルメディアやドライブを自動的に<uri
+    link="http://goodies.xfce.org/projects/thunar-plugins/thunar-volman">管理</uri>してくれます。
+  </li>
+</ul>
+
+<p>
+次に、Xfceの哲学に沿った軽量だけど有用なアプリケーションをいくつか紹介しましょう。
+</p>
+
+<p>
+<c>leafpad</c>は通常のテキストエディタとして十分かもしれませんが、もし多機能なワードプロセッサが必要だけれどOpenOfficeで環境を膨らませるのが嫌ならば<c>abiword</c>をemergeすると良いかもしれません。 <uri link="http://www.abisource.com">AbiWord</uri>は軽く、早く、きちんと標準的なドキュメントファイルを読み書きできます。
+</p>
+
+<p>
+<c>thunderbird</c>や<c>evolution</c>ほど多機能でなくとも、ちゃんとしたメールクライアントやニュースリーダが欲しくはないですか？ <c>claws-mail</c>が良い選択です。
+</p>
+
+<p>
+インターネットでチャットをするためには、ターミナル内で動く<c>irssi</c>は小さい、とても詳細に設定をできるIRCクライアントが素晴らしいでしょう。もしもっと様々な場面に対応したコンパクトなクライアントが欲しいのならば、<c>pidgin</c>はほぼ全てのプロトコルに対応しています。
+</p>
+
+<p>
+もし映像や音楽のプレイヤーが欲しければ<c>mplayer</c>と<uri link="/proj/en/desktop/sound/decibel.xml">decibel-audio-player</uri>を見てみましょう。ほとんどのフォーマットに対応しています。
+</p>
+
+<p>
+最後に、ウェブブラウザが必要でしょう。グラフィカルなウェブブラウザは他のアプリケーションに比べて多くのリソースを要求するでしょうが、それでも<c>firefox</c>や<c>midori</c>がいい選択です。他にも<c>opera</c>も速いと気にいるかもしれません。しかし<c>opera</c>は<c>firefox</c>ほど多くのアーキテクチャには対応していませんし、USEフラグをきちんと設定しないと多くの依存が生じます。
+</p>
+
+<pre caption="ウェブブラウザを追加する">
+<comment>(Mozilla Firefoxをインストールする)</comment>
+# <i>emerge firefox</i>
+<comment>(Midoriをインストールする)</comment>
+# <i>emerge midori</i>
+<comment>(Operaをインストールする)</comment>
+# <i>echo "www-client/opera gtk -kde" >> /etc/portage/package.use</i>
+# <i>emerge opera</i>
+</pre>
+
+<p>
+さて、デスクトップ環境を一通り仕上げるための提案は終わりました。次はXfceの使い心地を良くしていきましょう。
+</p>
+
+</body>
+</section>
+<section>
+<title>グラフィカルログイン</title>
+<body>
+
+<p>
+<c>startxfce4</c>を<path>~/.xinitrc</path>に書き込んだ事を覚えていますか？ デスクトップ環境を始めるにはログイン後に<c>startx</c>とタイプするだけで良くなりました。テキストベースの起動とログインをしたいのならこれで十分でしょうが、ディスプレイマネージャを使ってブート後に自動的にXfceも起動させ、グラフィカルにログインするようにしましょう。
+</p>
+
+<p>
+まずは、Xfceがブート時にロードされるようにしましょう。
+</p>
+
+<pre caption="デフォルトランレベルにxdmを追加する">
+# <i>rc-update add xdm default</i>
+</pre>
+
+<p>
+まだこれだけで終わりではありません。ディスプレイマネージャを選択して、適切な値を設定してやりましょう。Portageにはいくつかの選択肢が用意されてますが、このガイドでは<uri link="http://slim.berlios.de">SLiM</uri>(Simple Login Manager)を使用して解説します。
+</p>
+
+<p>
+<c>slim</c>は早く、軽く、依存が少ないです。Xfceにピッタリですね！
+</p>
+
+<pre caption="SLiM をインストールする">
+# <i>emerge -avt slim</i>
+</pre>
+
+<note>
+USEフラグの<c>branding</c>を設定していると、<c>slim-themes</c>パッケージを導入し、Gentoo Linuxテーマを含んだいくつかのログインテーマを選べるようになります。
+</note>
+
+<p>
+次に<path>/etc/conf.d/xdm</path>内で環境変数DISPLAYMANAGERを設定しましょう:
+</p>
+
+<pre caption="/etc/conf.d/xdmを編集する">
+DISPLAYMANAGER="slim"
+</pre>
+
+<p>
+SLiMは<path>/etc/env.d/90xsession</path>に<c>XSESSION="Xfce4"</c>を加える事で自動的にXfceを起動させます。
+</p>
+
+<pre caption="XSESSIONを設定する">
+# <i>echo XSESSION=\"Xfce4\" > /etc/env.d/90xsession</i>
+# <i>env-update &amp;&amp; source /etc/profile</i>
+</pre>
+
+</body>
+</section>
+<section>
+<title>デスクトップをより美しくする</title>
+<body>
+
+<p>
+デスクトップの外観は少し設定するだけで大きな効果が得られます。Xfceはあなたが現代のデスクトップ環境に期待する全ての設定項目を持っているでしょう。
+フォントのアンチエイリアス、色彩設定、たくさんのウィンドウ装飾、テーマ、それ以外にも様々。もしこれらだけでは足りないのなら、サードパーティのテーマ、アイコンセット、マウスカーソルや壁紙も使えます。
+</p>
+
+<p>
+様々な解像度向けの良いGentooの壁紙が <uri link="/main/en/graphics.xml">Gentoo ウェブサイト</uri>で手に入ります。
+もしアイコンやXfce向けのテーマを探しているのなら、<uri
+link="http://www.xfce-look.org/">Xfce-Look</uri>が膨大なコレクションを提供しています。
+サードパーティのテーマ等をダウンロードした時には、まず解凍してから適切なディレクトリに置く事が肝心です。アイコンは <path>/usr/share/icons/</path>へ、そしてテーマは<path>/usr/share/themes/</path>に。これらのディレクトリに置く事で全てのユーザがテーマやアイコンを利用できるようになります。個人だけでアイコン類をインストールしたいならば<path>~/.icons/</path>と<path>~/.themes/</path>が使えるでしょう。
+</p>
+
+<p>
+もしSLiMをディスプレイマネージャとしてインストールしたのならば、Portageの<c>slim-themes</c>パッケージにたくさんのテーマが入っています。さらに、SLiMの<uri link="http://slim.berlios.de/themes01.php">テーマページ</uri>を見ればさらに多くのテーマが見つかるでしょう。自分でSLiMのテーマを作る事も簡単です。<uri
+link="http://slim.berlios.de/themes_howto.php">Themes HowTo</uri>を読めばよいでしょう。
+</p>
+
+<p>
+最後に、Xfceは組み込みのウィンドウ透過機能が備わっています。
+このオプションはメニュー --> 設定 --> ウィンドウマネージャ で見つける事ができます。最高のパフォーマンスのためにはハードウェアレンダリング機能をサポートしたグラフィックカードとドライバが必要です。<c>xfce4</c>を<c>xcomposite</c>USEフラグ付きでemergeした事を確認し、<path>/etc/X11/xorg.conf</path>に次の通り追加しましょう。
+</p>
+
+<pre caption="xorg.confでcompositeを有効にする">
+Section "Extensions"
+    Option  "Composite"  "Enable"
+EndSection
+</pre>
+
+<p>
+これがXfceとXorg-X11での必要最小限の設定です。ハードウェアレンダリングの設定は個々のグラフィックカードに依存するのでこのガイドで説明できる範疇を越えています。<uri link="/doc/en/index.xml?catid=desktop">Desktop Documentation Resources</uri><uri link="/doc/ja/index.xml?catid=desktop">（日本語訳）</uri>のリストから文書を探してあなたのグラフィックカードにあったハードウェアレンダリングについて学んでください。
+</p>
+
+<p>
+一度Xfceのデスクトップを設定し終えたら、次にやるべき事はあなたの美しいデスクトップの写真を撮って他人に自慢する事です！ <c>xfce4-screenshooter</c>をインストールしてどこかにキャプチャを上げて賞賛させましょう。
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>まとめ</title>
+<section>
+<body>
+
+<p>
+ここまで読みすすめて来たあなたにおめでとう！　あなたは自分のコンピュータのための信頼できるアプリケーションと素早いデスクトップ環境をインストールし設定し終えました！
+</p>
+
+</body>
+</section>
+<section>
+<title>Xfceのアップグレード</title>
+<body>
+
+<p>
+あなたがXfceを過去のメジャーバージョン(4.x)からアップデートする場合、古いセッションのキャッシュとプロファイルは互換性が無いので削除する必要があります。
+ユーザ毎に次のコマンドで互換性のないキャッシュを消せるでしょう。
+</p>
+
+<pre caption="古いセッションキャッシュ、プロファイルを削除する">
+$ <i>rm -r ~/.cache/sessions</i>
+$ <i>rm -r ~/.config/xfce*</i>
+$ <i>rm -r ~/.config/Thunar</i>
+</pre>
+
+<p>
+ユーザは新しく輝かしいインタフェースに出会うことでしょうが、多くの設定を失うでしょう。残念ながら、我々の知る限り設定の移行方法はありません。
+</p>
+
+</body>
+</section>
+<section>
+<title>リンク集</title>
+<body>
+
+<p>
+Xfceの設定や利用にもっと助けが必要ですか？ もっと様々な軽量アプリケーションを紹介して欲しいですか？ もしそうならば次の場所が助けになるでしょう。
+</p>
+
+<ul>
+  <li><uri link="http://forums.gentoo.org">Gentoo Forums</uri></li>
+  <li>irc.freenode.net内の#xfceチャンネル(訳注：英語です)</li>
+  <li>
+	Xfceから提供されているヘルプやその他のドキュメントが<path>/usr/share/xfce4/doc/C/index.html</path>にあります。ブラウザで開いて読み進めてみてください。多くの"隠し"設定もヘルプには詳細に解説してあります。
+  </li>
+  <li><uri link="http://www.xfce.org">Xfceのホームページ</uri> <uri link="http://www.xfce.org/?lang=ja">（日本語版）</uri></li>
+</ul>
+
+</body>
+</section>
+</chapter>
+</guide>
