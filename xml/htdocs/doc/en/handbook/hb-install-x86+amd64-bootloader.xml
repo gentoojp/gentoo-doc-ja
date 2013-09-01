@@ -4,12 +4,12 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-bootloader.xml,v 1.28 2012/09/11 22:49:21 nightmorph Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-bootloader.xml,v 1.30 2013/08/15 17:05:38 swift Exp $ -->
 
 <sections>
 
-<version>12</version>
-<date>2012-09-11</date>
+<version>14</version>
+<date>2013-08-15</date>
 
 <section>
 <title>Making your Choice</title>
@@ -28,8 +28,15 @@ program is called a <e>bootloader</e>.
 <body test="contains('AMD64 x86', func:keyval('arch'))">
 <p>
 For <keyval id="arch"/>, Gentoo Linux provides <uri
-link="#grub">GRUB</uri> and <uri link="#lilo">LILO</uri>.
+link="#grub">GRUB</uri>, <uri link="#grub2">GRUB2</uri> and
+<uri link="#lilo">LILO</uri>.
 </p>
+
+<note>
+GRUB2 might not be stabilized at the moment of reading this. However,
+stabilization is due very soon so we temporarily document both GRUB and GRUB2
+and will remove the GRUB instructions after stabilization of GRUB2.
+</note>
 
 </body>
 <body>
@@ -109,7 +116,8 @@ Now, you should install the <uri link="#elilo">elilo bootloader</uri>.
 </p>
 
 <p test="not(func:keyval('arch')='IA64')">
-Now continue by installing <uri link="#grub">GRUB</uri> <e>or</e> <uri
+Now continue by installing <uri link="#grub">GRUB</uri>, <uri
+link="#grub2">GRUB2</uri> <e>or</e> <uri
 link="#lilo">LILO</uri>.
 </p>
 
@@ -117,7 +125,27 @@ link="#lilo">LILO</uri>.
 </subsection>
 </section>
 <section id="grub" test="contains('AMD64 x86',func:keyval('arch'))">
-<title>Default: Using GRUB</title>
+<title>Default: Using GRUB Legacy</title>
+<subsection>
+<title>What is Legacy?</title>
+<body>
+
+<p>
+GRUB has been reworked and a new release dubbed GRUB2 is made available. The new
+GRUB2 codebase is quite different from the current GRUB, which is why this GRUB
+version is now dubbed as "GRUB Legacy".
+</p>
+
+<p>
+We recommend to start with GRUB2 as soon as it is available. The migration of
+GRUB to GRUB2 is <uri link="/doc/en/grub2-migration.xml">documented
+online</uri>. The instructions in this section relate to "GRUB Legacy" and will
+disappear from the book soon after the stabilization of <uri
+link="#grub2">GRUB2</uri>.
+</p>
+
+</body>
+</subsection>
 <subsection>
 <title>Understanding GRUB's terminology</title>
 <body>
@@ -322,6 +350,16 @@ following command will work in both cases:
 
 <pre caption="Creating /etc/mtab">
 # <i>grep -v rootfs /proc/mounts &gt; /etc/mtab</i>
+</pre>
+
+<p>
+When using Linux virtio disks, we need to tell grub where to find the disks as
+the <c>grub-install</c> command will otherwise fail. This is done by adding the
+device definition to the <path>device.map</path> file:
+</p>
+
+<pre caption="Adding the virtio disk to the device map table">
+# <i>echo "(hd0)	/dev/vda" >> /boot/grub/device.map</i>
 </pre>
 
 <p>
@@ -564,6 +602,86 @@ You can now continue with <uri link="#reboot">Rebooting the System</uri>.
 </body>
 </subsection>
 </section>
+<section id="grub2" test="contains('AMD64 x86', func:keyval('arch'))">
+<title>Alternative: Using GRUB2</title>
+<subsection>
+<title>Installing GRUB2</title>
+<body>
+
+<p>
+GRUB2 is provided through the <c>sys-boot/grub</c> package. To deploy GRUB2, use
+the <e>SLOT</e> notation to tell Portage to install GRUB2. SLOTs are a feature
+of Gentoo Linux where multiple versions of the same package can be deployed
+simultaneously on a system. In our case, this means that GRUB Legacy and GRUB2
+can be installed on a system (software-wise) at the same time.
+</p>
+
+<note>
+GRUB2 might still be marked as ~<keyval id="arch" />. If that is the case, you
+can either wait and use <uri link="#grub">GRUB Legacy</uri> or unmask the
+package. This is explained in <uri
+link="handbook-amd64.xml?part=3&amp;chap=3#doc_chap2">Mixing Stable with
+Testing</uri>. Once GRUB2 is stabilized, the SLOT operator also is no longer
+mandatory.
+</note>
+
+<pre caption="Installing GRUB2">
+# <i>emerge grub:2</i>
+</pre>
+
+<p>
+The GRUB2 software is now installed on the system, but not activated yet.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Configuring GRUB2</title>
+<body>
+
+<p>
+First, let us install the necessary GRUB2 files in <path>/boot/grub2</path>.
+Assuming the first disk (the one where the system boots from) is
+<path>/dev/sda</path>, the following command will do this for us:
+</p>
+
+<pre caption="Installing the GRUB2 files in /boot/grub2">
+# <i>grub2-install /dev/sda</i>
+</pre>
+
+<p>
+Next, we can generate the GRUB2 configuration based on the user configuration
+specified in the <path>/etc/default/grub</path> file and
+<path>/etc/grub.d</path> scripts. In most cases, no configuration is needed
+by users as GRUB2 will automatically detect which kernel to boot (the highest
+one available in <path>/boot</path>) and what the root file system is.
+</p>
+
+<p>
+To generate the final GRUB2 configuration, run the <c>grub2-mkconfig</c>
+command:
+</p>
+
+<pre caption="Generating GRUB2 configuration">
+# <i>grub2-mkconfig -o /boot/grub2/grub.cfg</i>
+Generating grub.cfg ...
+Found linux image: /boot/<keyval id="kernel-name" />
+Found initrd image: /boot/<keyval id="genkernel-initrd" />
+done
+</pre>
+
+<p>
+The output of the command <e>must</e> mention that at least one Linux image is
+found, as those are needed to boot the system. If you use initramfs or used
+<c>genkernel</c> to build the kernel, the correct initrd image should be
+detected as well. If this is not the case, go to <path>/boot</path> and check
+the contents using the <c>ls</c> command. If the files are indeed missing, go
+back to the kernel configuration and installation instructions.
+</p>
+
+</body>
+</subsection>
+</section>
 <section id="elilo" test="func:keyval('arch')='IA64'">
 <title>Default: Installing elilo</title>
 <body>
@@ -650,7 +768,6 @@ Now continue with <uri link="#reboot">Rebooting the System</uri>.
 
 </body>
 </section>
-
 <section id="reboot">
 <title>Rebooting the System</title>
 <subsection>
