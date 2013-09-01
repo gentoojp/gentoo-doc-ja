@@ -4,7 +4,7 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-net-modules.xml,v 1.27 2011/10/23 09:46:14 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-net-modules.xml,v 1.28 2013/08/15 08:30:19 swift Exp $ -->
 
 <sections>
 
@@ -13,8 +13,8 @@ Gentoo provides you flexible networking - here you are told about choosing
 different DHCP clients, setting up bonding, bridging, VLANs and more.
 </abstract>
 
-<version>10</version>
-<date>2011-10-23</date>
+<version>11</version>
+<date>2013-08-15</date>
 
 <section>
 <title>Network Modules</title>
@@ -312,16 +312,29 @@ going to the same network, you can bond them together so your applications see
 just one interface but they really use both network cards.
 </p>
 
-<pre caption="bonding configuration in /etc/conf.d/net">
-<comment># To bond interfaces together</comment>
-slaves_bond0="eth0 eth1 eth2"
+<p>
+First, clear the configuration of the participating interfaces:
+</p>
 
-<comment># You may not want to assign an IP to the bonded interface</comment>
-config_bond0="null"
-
-<comment># Depend on eth0, eth1 and eth2 as they may require extra configuration</comment>
-rc_need_bond0="net.eth0 net.eth1 net.eth2"
+<pre caption="Clearing interface configuration in /etc/conf.d/net">
+config_eth0="null"
+config_eth1="null"
+config_eth2="null"
 </pre>
+
+<p>
+Next, define the bonding between the interfaces:
+</p>
+
+<pre caption="Define the bonding">
+slaves_bond0="eth0 eth1 eth2"
+config_bond0="192.168.100.4/24"
+</pre>
+
+<p>
+Remove the <path>net.eth*</path> services from the runlevels, create a
+<path>net.bond0</path> one and add that one to the correct runlevel.
+</p>
 
 </body>
 </section>
@@ -423,7 +436,8 @@ config_vpn0="192.168.0.2 peer 192.168.1.1"
 <body>
 
 <p>
-For VLAN support, emerge <c>net-misc/vconfig</c>.
+For VLAN support, emerge <c>net-misc/vconfig</c>. Also make sure that you use
+iproute2 as configuration module rather than ifconfig.
 </p>
 
 <p>
@@ -433,19 +447,35 @@ see members of the same VLAN even though they may share the same physical
 network.
 </p>
 
-<pre caption="VLAN configuration in /etc/conf.d/net">
-<comment># Specify the VLAN numbers for the interface like so</comment>
-<comment># Please ensure your VLAN IDs are NOT zero-padded</comment>
+<p>
+To configure VLANs, first specify the VLAN numbers in
+<path>/etc/conf.d/net</path> like so:
+</p>
+
+<pre caption="Specifying VLAN numbers">
 vlans_eth0="1 2"
+</pre>
 
-<comment># You can also configure the VLAN</comment>
-<comment># see for vconfig man page for more details</comment>
-vconfig_eth0="set_name_type VLAN_PLUS_VID_NO_PAD"
-vconfig_vlan1="set_flag 1" "set_egress_map 2 6"
+<p>
+Next, configure the interface for each VLAN:
+</p>
 
-<comment># Configure the interface as usual</comment>
-config_vlan1="172.16.3.1 netmask 255.255.254.0"
-config_vlan2="172.16.2.1 netmask 255.255.254.0"
+<pre caption="Interface configuration for each VLAN">
+config_eth0_1="172.16.3.1 netmask 255.255.254.0"
+routes_eth0_1="default via 172.16.3.254"
+
+config_eth0_2="172.16.2.1 netmask 255.255.254.0"
+routes_eth0_2="default via 172.16.2.254"
+</pre>
+
+<p>
+VLAN-specific configurations are handled by <c>vconfig</c> like so:
+</p>
+
+<pre caption="Configuring the VLANs">
+vlan1_name="vlan1"
+vlan1_ingress="2:6 3:5"
+eth0_vlan1_egress="1:2"
 </pre>
 
 <impo>
