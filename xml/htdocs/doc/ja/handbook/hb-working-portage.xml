@@ -4,7 +4,7 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-working-portage.xml,v 1.21 2012/11/28 06:17:41 naota Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-working-portage.xml,v 1.22 2013/11/30 09:49:16 naota Exp $ -->
 
 <sections>
 
@@ -13,9 +13,9 @@
 ユーザーが知っておくべき手順を「簡単に」説明します。
 </abstract>
 
-<version>7</version>
-<date>2012-08-15</date>
-<!-- Original revision: 1.81 -->
+<version>10</version>
+<date>2013-09-17</date>
+<!-- Original revision: 1.84 -->
 <!-- Translator: kobayashi -->
 <!-- Translator: naota -->
 <!-- Translator: unarist -->
@@ -201,12 +201,12 @@ Portageにソースをダウンロードするだけでインストールを行�
 <path>/etc/portage/package.use</path>によってパッケージごとに<c>doc</c>USEフラグを有効にする事をおすすめします。
 そうすれば、興味のあるパッケージの分だけドキュメントを取得できるようになります。
 このフラグをシステム全体で有効にしてしまうと、循環依存の問題を起こす原因となることが知られています。
-詳しくは、<uri link="?part=2&amp;chap=2">USEフラグ</uri>の章を読んでください。 
+詳しくは、<uri link="?part=2&amp;chap=2">USEフラグ</uri>の章を読んでください。
 </p>
 
 <p>
 パッケージがインストールされると、ドキュメントは一般的には<path>/usr/share/doc</path>ディレクトリの下のパッケージ名のディレクトリの中に置かれます。
-<c>app-portage/gentoolkit</c><uri link="/doc/en/gentoolkit.xml">パッケージ</uri>（<uri link="/doc/ja/gentoolkit.xml">日本語訳</uri>）の一部である<c>equery</c>ツールを利用すると、全てのインストールされたファイルの一覧を表示できます。
+<c>app-portage/gentoolkit</c><uri link="https://wiki.gentoo.org/wiki/Gentoolkit">パッケージ</uri>の一部である<c>equery</c>ツールを利用すると、全てのインストールされたファイルの一覧を表示できます。
 </p>
 
 <pre caption="パッケージドキュメントの位置">
@@ -368,16 +368,17 @@ Portageツリーにある全てのパッケージには、ebuildに<c>LICENSE</c
 </p>
 
 <p>
-許可するライセンスを制御するのは、<c>ACCEPT_LICENSE</c>です。これは、<path>/etc/portage/make.conf</path>のなかで設定されます。
+<c>ACCEPT_LICENSE</c>で許可するライセンスを制御します。これは、<path>/etc/portage/make.conf</path>で設定されます。
+次の例では<c>ACCEPT_LICENSE</c>のデフォルトを示しています。
 </p>
 
-<pre caption="/etc/portage/make.confでのデフォルトのACCEPT_LICENSE">
+<pre caption="/etc/portage/make.confでACCEPT_LICENSEを設定する">
 ACCEPT_LICENSE="* -@EULA"
 </pre>
 
 <p>
-この設定により、インストール中に使用許諾契約書に同意する行為が発生するようなパッケージは、<e>インストールされず、</e>
-使用許諾契約書がないパッケージが<e>インストールされます。</e>
+この設定により、インストール中に使用許諾契約に同意する行為が必要になるパッケージは<e>インストールできなくなります</e>が、
+その必要がないパッケージは<e>インストールできる</e>ようになります。
 </p>
 
 <p>
@@ -405,24 +406,17 @@ license_groupsの各行の一番初めの大文字で書かれた項目はライ
 
 <p>
 <c>ACCEPT_LICENSE</c>で定義されたライセンスグループは、<b>@</b>記号が先頭につきます。
-次の例ではシステム全体で、GPL互換ライセンスグループと他のライセンスグループと個別ライセンスをいくつか許可しています。
-</p>
+フリーソフトウェアとフリードキュメントだけをインストール可能にするという設定がよく使われています。
+その設定を行なうには、全ての許容されているライセンスを(<c>-*</c>を使って)削除し、
+<c>FREE</c>のグループのライセンスだけを以下のようにして許可します。</p>
 
-<pre caption="/etc/portage/make.confでのACCEPT_LICENSE">
-ACCEPT_LICENSE="@GPL-COMPATIBLE @OSI-APPROVED @EULA atheros-hal BitstreamVera"
-</pre>
-
-<p>
-もし、フリーなソフトウエアとフリーなドキュメントだけのシステムにしたい場合は、次のようにすればよいでしょう。
-</p>
-
-<pre caption="フリーのライセンスだけを使用する">
+<pre caption="フリーソフトウェアとフリードキュメントのライセンスだけを許可する/etc/portage/make.confの設定">
 ACCEPT_LICENSE="-* @FREE"
 </pre>
 
 <p>
-この場合の"フリー"とは、ほぼ<uri link="http://www.gnu.org/philosophy/free-sw.html">FSF</uri> と <uri link="http://www.opensource.org/docs/osd">OSI</uri>で定義されたものです。
-これらの定義に合致しないライセンスを持つパッケージはインストールされません。
+この場合の"フリー"とは、ほぼ<uri link="http://www.gnu.org/philosophy/free-sw.html">FSF</uri>と<uri link="http://www.opensource.org/docs/osd">OSI</uri>で定義されたものです。
+これらの定義に合致しないライセンスを持つパッケージはインストールできません。
 </p>
 
 </body>
@@ -487,7 +481,7 @@ Portageツリーにソフトウェアをコミットした開発者が別のア�
 <pre caption="ブロックされたパッケージに対するPortageの警告(--pretendを利用しない)">
 !!! Error: the mail-mta/postfix package conflicts with another package.
 !!!        both can't be installed on the same system together.
-!!!        Please use 'emerge --pretend' to determine blockers. 
+!!!        Please use 'emerge --pretend' to determine blockers.
 </pre>
 
 <p>
@@ -525,7 +519,7 @@ Portageの最近のバージョンでは、些細なブロックについては�
 <body>
 
 <pre caption="マスクされたパッケージに対するPortageの警告">
-!!! all ebuilds that could satisfy "bootsplash" have been masked. 
+!!! all ebuilds that could satisfy "bootsplash" have been masked.
 </pre>
 
 <pre caption="マスクされたパッケージに対するPortageの警告に関する理由">
@@ -620,7 +614,7 @@ emerge: there are no ebuilds built with USE flags to satisfy "app-text/feelings[
 emerge: there are no ebuilds to satisfy "&gt;=sys-devel/gcc-3.4.2-r4".
 
 !!! Problem with ebuild sys-devel/gcc-3.4.2-r2
-!!! Possibly a DEPEND/*DEPEND problem. 
+!!! Possibly a DEPEND/*DEPEND problem.
 </pre>
 
 <p>
@@ -672,10 +666,10 @@ Portageが(カテゴリー名をふくんだ)パッケージの候補を出力�
 <body>
 
 <pre caption="循環依存に対するPortageの警告">
-!!! Error: circular dependencies: 
+!!! Error: circular dependencies:
 
 ebuild / net-print/cups-1.1.15-r2 depends on ebuild / app-text/ghostscript-7.05.3-r1
-ebuild / app-text/ghostscript-7.05.3-r1 depends on ebuild / net-print/cups-1.1.15-r2 
+ebuild / app-text/ghostscript-7.05.3-r1 depends on ebuild / net-print/cups-1.1.15-r2
 </pre>
 
 <p>
