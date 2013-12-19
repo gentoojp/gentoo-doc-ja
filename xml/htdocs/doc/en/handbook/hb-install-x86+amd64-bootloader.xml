@@ -4,12 +4,12 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-bootloader.xml,v 1.32 2013/09/23 17:34:28 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-bootloader.xml,v 1.38 2013/12/18 10:13:54 swift Exp $ -->
 
 <sections>
 
-<version>16</version>
-<date>2013-09-23</date>
+<version>22</version>
+<date>2013-12-18</date>
 
 <section>
 <title>Making your Choice</title>
@@ -28,15 +28,9 @@ program is called a <e>bootloader</e>.
 <body test="contains('AMD64 x86', func:keyval('arch'))">
 <p>
 For <keyval id="arch"/>, Gentoo Linux provides <uri
-link="#grub">GRUB</uri>, <uri link="#grub2">GRUB2</uri> and
-<uri link="#lilo">LILO</uri>.
+link="#grub2">GRUB2</uri>, <uri link="#lilo">LILO</uri> and
+<uri link="#grub">GRUB Legacy</uri>.
 </p>
-
-<note>
-GRUB2 might not be stabilized at the moment of reading this. However,
-stabilization is due very soon so we temporarily document both GRUB and GRUB2
-and will remove the GRUB instructions after stabilization of GRUB2.
-</note>
 
 </body>
 <body>
@@ -124,8 +118,224 @@ link="#lilo">LILO</uri>.
 </body>
 </subsection>
 </section>
+<section id="grub2" test="contains('AMD64 x86', func:keyval('arch'))">
+<title>Default: Using GRUB2</title>
+<subsection>
+<title>Installing GRUB2</title>
+<body>
+
+<p>
+GRUB2 is provided through the <c>sys-boot/grub</c> package. 
+</p>
+
+<pre caption="Installing GRUB2">
+# <i>emerge sys-boot/grub</i>
+</pre>
+
+<p>
+The GRUB2 software is now installed on the system, but not activated yet.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Configuring GRUB2</title>
+<body>
+
+<p>
+First, let us install the necessary GRUB2 files in <path>/boot/grub</path>.
+Assuming the first disk (the one where the system boots from) is
+<path>/dev/sda</path>, the following command will do this for us:
+</p>
+
+<pre caption="Installing the GRUB2 files in /boot/grub">
+# <i>grub2-install /dev/sda</i>
+</pre>
+
+<p>
+Next, we can generate the GRUB2 configuration based on the user configuration
+specified in the <path>/etc/default/grub</path> file and
+<path>/etc/grub.d</path> scripts. In most cases, no configuration is needed
+by users as GRUB2 will automatically detect which kernel to boot (the highest
+one available in <path>/boot</path>) and what the root file system is.
+</p>
+
+<p>
+To generate the final GRUB2 configuration, run the <c>grub2-mkconfig</c>
+command:
+</p>
+
+<pre caption="Generating GRUB2 configuration">
+# <i>grub2-mkconfig -o /boot/grub/grub.cfg</i>
+Generating grub.cfg ...
+Found linux image: /boot/<keyval id="kernel-name" />
+Found initrd image: /boot/<keyval id="genkernel-initrd" />
+done
+</pre>
+
+<p>
+The output of the command <e>must</e> mention that at least one Linux image is
+found, as those are needed to boot the system. If you use initramfs or used
+<c>genkernel</c> to build the kernel, the correct initrd image should be
+detected as well. If this is not the case, go to <path>/boot</path> and check
+the contents using the <c>ls</c> command. If the files are indeed missing, go
+back to the kernel configuration and installation instructions.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="lilo" test="contains('AMD64 x86', func:keyval('arch'))">
+<title>Alternative: Using LILO</title>
+<subsection>
+<title>Installing LILO</title>
+<body>
+
+<p>
+LILO, the LInuxLOader, is the tried and true workhorse of Linux
+bootloaders. However, it lacks some features that GRUB has (which is
+also the reason why GRUB is currently gaining popularity). The reason
+why LILO is still used is that, on some systems, GRUB doesn't work and
+LILO does. Of course, it is also used because some people know LILO and
+want to stick with it. Either way, Gentoo supports both, and apparently
+you have chosen to use LILO.
+</p>
+
+<p>
+Installing LILO is a breeze; just use <c>emerge</c>.
+</p>
+
+<pre caption="Installing LILO">
+# <i>emerge lilo</i>
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Configuring LILO</title>
+<body>
+
+<p>
+To configure LILO, you must create <path>/etc/lilo.conf</path>. Fire up
+your favorite editor (in this handbook we use <c>nano</c> for
+consistency) and create the file.
+</p>
+
+<pre caption="Creating /etc/lilo.conf">
+# <i>nano -w /etc/lilo.conf</i>
+</pre>
+
+<p>
+Some sections ago we have asked you to remember the kernel-image name
+you have created. In the next example <path>lilo.conf</path> we use the
+example partitioning scheme. 
+</p>
+
+<p>
+Make sure you use <e>your</e> kernel image filename and, if appropriate,
+<e>your</e> initrd image filename.
+</p>
+
+<note>
+If your root filesystem is JFS, you <e>must</e> add a <c>append="ro"</c>
+line after each boot item since JFS needs to replay its log before it allows
+read-write mounting.
+</note>
+
+<pre caption="Example /etc/lilo.conf">
+boot=/dev/sda             <comment># Install LILO in the MBR</comment>
+prompt                    <comment># Give the user the chance to select another section</comment>
+timeout=50                <comment># Wait 5 (five) seconds before booting the default section</comment>
+default=gentoo            <comment># When the timeout has passed, boot the "gentoo" section</comment>
+
+image=/boot/<keyval id="kernel-name"/>
+  label=gentoo            <comment># Name we give to this section</comment>
+  read-only               <comment># Start with a read-only root. Do not alter!</comment>
+  root=/dev/sda4          <comment># Location of the root filesystem</comment>
+
+image=/boot/<keyval id="kernel-name"/>
+  label=gentoo.rescue     <comment># Name we give to this section</comment>
+  read-only               <comment># Start with a read-only root. Do not alter!</comment>
+  root=/dev/sda4          <comment># Location of the root filesystem</comment>
+  append="init=/bin/bb"   <comment># Launch the Gentoo static rescue shell</comment>
+
+<comment># The next two lines are only if you dualboot with a Windows system.</comment>
+<comment># In this example, Windows is hosted on /dev/sda6.</comment>
+other=/dev/sda6
+  label=windows
+</pre>
+
+<note>
+If you use a different partitioning scheme and/or kernel image, adjust
+accordingly.
+</note>
+
+<p>
+If, while building the Linux kernel, you opted to include an initramfs to boot
+from, then you will need to change the configuration by referring to this
+initramfs file and telling the initramfs where your real root device is at:
+</p>
+
+<pre caption="LILO snippet for initramfs-enabled kernel builds">
+image=/boot/<keyval id="kernel-name"/>
+  label=gentoo
+  read-only
+  <i>append="real_root=/dev/sda4"</i>
+  <i>initrd=/boot/<keyval id="genkernel-initrd" /></i>
+</pre>
+
+<p>
+If you need to pass any additional options to the kernel, add an
+<c>append</c> statement to the section. As an example, we add the
+<c>video</c> statement to enable framebuffer:
+</p>
+
+<pre caption="Using append to add kernel options">
+image=/boot/<keyval id="kernel-name"/>
+  label=gentoo
+  read-only
+  root=/dev/sda4
+  <i>append="video=uvesafb:mtrr,ywrap,1024x768-32@85"</i>
+</pre>
+
+<p>
+If you're using a 2.6.7 or higher kernel and you jumpered your harddrive
+because the BIOS can't handle large harddrives you'll need to append
+<c>sda=stroke</c>. Replace sda with the device that requires this option.
+</p>
+
+<p>
+<c>genkernel</c> users should know that their kernels use the same boot options
+as is used for the Installation CD. For instance, if you have SCSI devices, you
+should add <c>doscsi</c> as kernel option.
+</p>
+
+<p>
+Now save the file and exit. To finish up, you have to run <c>/sbin/lilo</c> so
+LILO can apply the <path>/etc/lilo.conf</path> to your system (i.e. install
+itself on the disk). Keep in mind that you'll also have to run
+<c>/sbin/lilo</c> every time you install a new kernel or make any changes to
+the menu.
+</p>
+
+<pre caption="Finishing the LILO installation">
+# <i>/sbin/lilo</i>
+</pre>
+
+<p>
+If you have more questions regarding LILO, please consult its <uri
+link="http://en.wikipedia.org/wiki/LILO_(boot_loader)">wikipedia page</uri>.
+</p>
+
+<p>
+You can now continue with <uri link="#reboot">Rebooting the System</uri>.
+</p>
+
+</body>
+</subsection>
+</section>
 <section id="grub" test="contains('AMD64 x86',func:keyval('arch'))">
-<title>Default: Using GRUB Legacy</title>
+<title>Alternative: Using GRUB Legacy</title>
 <subsection>
 <title>What is Legacy?</title>
 <body>
@@ -134,14 +344,6 @@ link="#lilo">LILO</uri>.
 GRUB has been reworked and a new release dubbed GRUB2 is made available. The new
 GRUB2 codebase is quite different from the current GRUB, which is why this GRUB
 version is now dubbed as "GRUB Legacy".
-</p>
-
-<p>
-We recommend to start with GRUB2 as soon as it is available. The migration of
-GRUB to GRUB2 is <uri link="/doc/en/grub2-migration.xml">documented
-online</uri>. The instructions in this section relate to "GRUB Legacy" and will
-disappear from the book soon after the stabilization of <uri
-link="#grub2">GRUB2</uri>.
 </p>
 
 </body>
@@ -153,8 +355,8 @@ link="#grub2">GRUB2</uri>.
 <p>
 The most critical part of understanding GRUB is getting comfortable with how
 GRUB refers to hard drives and partitions. Your Linux partition
-<path>/dev/sda1</path> will most likely be called <path>(hd0,0)</path> under
-GRUB. Notice the parentheses around the <path>hd0,0</path> - they are
+<path>/dev/sda2</path> will most likely be called <path>(hd0,1)</path> under
+GRUB. Notice the parentheses around the <path>hd0,1</path> - they are
 required.
 </p>
 
@@ -188,15 +390,15 @@ Having gotten the feel for that, it is time to install GRUB.
 <body>
 
 <p>
-To install GRUB, let's first emerge it:
+To install GRUB Legacy, let's first emerge it:
 </p>
 
 <impo test="func:keyval('arch')='AMD64'">
 If you are using a non-multilib <uri
-link="?part=1&amp;chap=6#doc_chap2">profile</uri>, you should <b>not</b> emerge
-<c>grub</c>, but instead you should emerge <c>grub-static</c>. If you plan to
-use a non-multilib profile <e>and</e> you have <b>disabled</b> IA-32 emulation
-in your kernel, then you should use <c>lilo</c>.
+link="?part=1&amp;chap=6#doc_chap2">profile</uri> and still intend to use the
+GRUB Legacy (instead of GRUB2), you should <b>not</b> emerge
+<c>grub:0</c>, but instead you should emerge <c>grub-static</c> (only possible
+if you have enabled IA-32 emulation).
 </impo>
 
 <pre caption="Installing GRUB">
@@ -238,16 +440,16 @@ default 0
 timeout 30
 <comment># Nice, fat splash-image to spice things up :)
 # Comment out if you don't have a graphics card installed</comment>
-splashimage=(hd0,0)/boot/grub/splash.xpm.gz
+splashimage=(hd0,1)/boot/grub/splash.xpm.gz
 
 title Gentoo Linux <keyval id="kernel-version"/>
 <comment># Partition where the kernel image (or operating system) is located</comment>
-root (hd0,0)
+root (hd0,1)
 kernel /boot/<keyval id="kernel-name"/> root=/dev/sda3
 
 title Gentoo Linux <keyval id="kernel-version"/> (rescue)
 <comment># Partition where the kernel image (or operating system) is located</comment>
-root (hd0,0)
+root (hd0,1)
 kernel /boot/<keyval id="kernel-name"/> root=/dev/sda3 init=/bin/bb
 
 <comment># The next four lines are only if you dualboot with a Windows system.</comment>
@@ -266,7 +468,7 @@ initramfs file and telling the initramfs where your real root device is at:
 
 <pre caption="GRUB snippet for initramfs-enabled kernel builds">
 title Gentoo Linux <keyval id="kernel-version"/>
-root (hd0,0)
+root (hd0,1)
 kernel /boot/<keyval id="kernel-version"/> <i>real_</i>root=/dev/sda3
 <i>initrd /boot/<keyval id="genkernel-initrd"/></i>
 </pre>
@@ -274,9 +476,9 @@ kernel /boot/<keyval id="kernel-version"/> <i>real_</i>root=/dev/sda3
 <p>
 If you used a different partitioning scheme and/or kernel image, adjust
 accordingly. However, make sure that anything that follows a GRUB-device (such
-as <path>(hd0,0)</path>) is relative to the mountpoint, not the root. In other
-words, <path>(hd0,0)/grub/splash.xpm.gz</path> is in reality
-<path>/boot/grub/splash.xpm.gz</path> since <path>(hd0,0)</path> is
+as <path>(hd0,1)</path>) is relative to the mountpoint, not the root. In other
+words, <path>(hd0,1)/grub/splash.xpm.gz</path> is in reality
+<path>/boot/grub/splash.xpm.gz</path> since <path>(hd0,1)</path> is
 <path>/boot</path>.
 </p>
 
@@ -417,7 +619,7 @@ The tab completion mechanism of GRUB can be used from within GRUB.
 For instance, if you type in "<c>root (</c>" followed by a TAB, you will
 be presented with a list of devices (such as <path>hd0</path>). If you
 type in "<c>root (hd0,</c>" followed by a TAB, you will receive a list
-of available partitions to choose from (such as <path>hd0,0</path>).
+of available partitions to choose from (such as <path>hd0,1</path>).
 </p>
 
 <p>
@@ -426,7 +628,7 @@ Now go on, configure GRUB, shall we? :-)
 </p>
 
 <pre caption="Installing GRUB in the MBR">
-grub&gt; <i>root (hd0,0)</i>    <comment>(Specify where your /boot partition resides)</comment>
+grub&gt; <i>root (hd0,1)</i>    <comment>(Specify where your /boot partition resides)</comment>
 grub&gt; <i>setup (hd0)</i>     <comment>(Install GRUB in the MBR)</comment>
 grub&gt; <i>quit</i>            <comment>(Exit the GRUB shell)</comment>
 </pre>
@@ -435,7 +637,7 @@ grub&gt; <i>quit</i>            <comment>(Exit the GRUB shell)</comment>
 If you want to install GRUB in a certain partition instead of the MBR,
 you have to alter the <c>setup</c> command so it points to the right
 partition. For instance, if you want GRUB installed in
-<path>/dev/sda3</path>, then the command becomes <c>setup (hd0,2)</c>.
+<path>/dev/sda4</path>, then the command becomes <c>setup (hd0,4)</c>.
 Few users however want to do this.
 </note>
 
@@ -453,235 +655,7 @@ Continue with <uri link="#reboot">Rebooting the System</uri>.
 </body>
 </subsection>
 </section>
-<section id="lilo" test="contains('AMD64 x86', func:keyval('arch'))">
-<title>Alternative: Using LILO</title>
-<subsection>
-<title>Installing LILO</title>
-<body>
 
-<p>
-LILO, the LInuxLOader, is the tried and true workhorse of Linux
-bootloaders. However, it lacks some features that GRUB has (which is
-also the reason why GRUB is currently gaining popularity). The reason
-why LILO is still used is that, on some systems, GRUB doesn't work and
-LILO does. Of course, it is also used because some people know LILO and
-want to stick with it. Either way, Gentoo supports both, and apparently
-you have chosen to use LILO.
-</p>
-
-<p>
-Installing LILO is a breeze; just use <c>emerge</c>.
-</p>
-
-<pre caption="Installing LILO">
-# <i>emerge lilo</i>
-</pre>
-
-</body>
-</subsection>
-<subsection>
-<title>Configuring LILO</title>
-<body>
-
-<p>
-To configure LILO, you must create <path>/etc/lilo.conf</path>. Fire up
-your favorite editor (in this handbook we use <c>nano</c> for
-consistency) and create the file.
-</p>
-
-<pre caption="Creating /etc/lilo.conf">
-# <i>nano -w /etc/lilo.conf</i>
-</pre>
-
-<p>
-Some sections ago we have asked you to remember the kernel-image name
-you have created. In the next example <path>lilo.conf</path> we use the
-example partitioning scheme. 
-</p>
-
-<p>
-Make sure you use <e>your</e> kernel image filename and, if appropriate,
-<e>your</e> initrd image filename.
-</p>
-
-<note>
-If your root filesystem is JFS, you <e>must</e> add a <c>append="ro"</c>
-line after each boot item since JFS needs to replay its log before it allows
-read-write mounting.
-</note>
-
-<pre caption="Example /etc/lilo.conf">
-boot=/dev/sda             <comment># Install LILO in the MBR</comment>
-prompt                    <comment># Give the user the chance to select another section</comment>
-timeout=50                <comment># Wait 5 (five) seconds before booting the default section</comment>
-default=gentoo            <comment># When the timeout has passed, boot the "gentoo" section</comment>
-
-image=/boot/<keyval id="kernel-name"/>
-  label=gentoo            <comment># Name we give to this section</comment>
-  read-only               <comment># Start with a read-only root. Do not alter!</comment>
-  root=/dev/sda3          <comment># Location of the root filesystem</comment>
-
-image=/boot/<keyval id="kernel-name"/>
-  label=gentoo.rescue     <comment># Name we give to this section</comment>
-  read-only               <comment># Start with a read-only root. Do not alter!</comment>
-  root=/dev/sda3          <comment># Location of the root filesystem</comment>
-  append="init=/bin/bb"   <comment># Launch the Gentoo static rescue shell</comment>
-
-<comment># The next two lines are only if you dualboot with a Windows system.</comment>
-<comment># In this case, Windows is hosted on /dev/sda6.</comment>
-other=/dev/sda6
-  label=windows
-</pre>
-
-<note>
-If you use a different partitioning scheme and/or kernel image, adjust
-accordingly.
-</note>
-
-<p>
-If, while building the Linux kernel, you opted to include an initramfs to boot
-from, then you will need to change the configuration by referring to this
-initramfs file and telling the initramfs where your real root device is at:
-</p>
-
-<pre caption="LILO snippet for initramfs-enabled kernel builds">
-image=/boot/<keyval id="kernel-name"/>
-  label=gentoo
-  read-only
-  <i>append="real_root=/dev/sda3"</i>
-  <i>initrd=/boot/<keyval id="genkernel-initrd" /></i>
-</pre>
-
-<p>
-If you need to pass any additional options to the kernel, add an
-<c>append</c> statement to the section. As an example, we add the
-<c>video</c> statement to enable framebuffer:
-</p>
-
-<pre caption="Using append to add kernel options">
-image=/boot/<keyval id="kernel-name"/>
-  label=gentoo
-  read-only
-  root=/dev/sda3
-  <i>append="video=uvesafb:mtrr,ywrap,1024x768-32@85"</i>
-</pre>
-
-<p>
-If you're using a 2.6.7 or higher kernel and you jumpered your harddrive
-because the BIOS can't handle large harddrives you'll need to append
-<c>sda=stroke</c>. Replace sda with the device that requires this option.
-</p>
-
-<p>
-<c>genkernel</c> users should know that their kernels use the same boot options
-as is used for the Installation CD. For instance, if you have SCSI devices, you
-should add <c>doscsi</c> as kernel option.
-</p>
-
-<p>
-Now save the file and exit. To finish up, you have to run <c>/sbin/lilo</c> so
-LILO can apply the <path>/etc/lilo.conf</path> to your system (i.e. install
-itself on the disk). Keep in mind that you'll also have to run
-<c>/sbin/lilo</c> every time you install a new kernel or make any changes to
-the menu.
-</p>
-
-<pre caption="Finishing the LILO installation">
-# <i>/sbin/lilo</i>
-</pre>
-
-<p>
-If you have more questions regarding LILO, please consult its <uri
-link="http://en.wikipedia.org/wiki/LILO_(boot_loader)">wikipedia page</uri>.
-</p>
-
-<p>
-You can now continue with <uri link="#reboot">Rebooting the System</uri>.
-</p>
-
-</body>
-</subsection>
-</section>
-<section id="grub2" test="contains('AMD64 x86', func:keyval('arch'))">
-<title>Alternative: Using GRUB2</title>
-<subsection>
-<title>Installing GRUB2</title>
-<body>
-
-<p>
-GRUB2 is provided through the <c>sys-boot/grub</c> package. To deploy GRUB2, use
-the <e>SLOT</e> notation to tell Portage to install GRUB2. SLOTs are a feature
-of Gentoo Linux where multiple versions of the same package can be deployed
-simultaneously on a system. In our case, this means that GRUB Legacy and GRUB2
-can be installed on a system (software-wise) at the same time.
-</p>
-
-<note>
-GRUB2 might still be marked as ~<keyval id="arch" />. If that is the case, you
-can either wait and use <uri link="#grub">GRUB Legacy</uri> or unmask the
-package. This is explained in <uri
-link="handbook-amd64.xml?part=3&amp;chap=3#doc_chap2">Mixing Stable with
-Testing</uri>. Once GRUB2 is stabilized, the SLOT operator also is no longer
-mandatory.
-</note>
-
-<pre caption="Installing GRUB2">
-# <i>emerge sys-boot/grub:2</i>
-</pre>
-
-<p>
-The GRUB2 software is now installed on the system, but not activated yet.
-</p>
-
-</body>
-</subsection>
-<subsection>
-<title>Configuring GRUB2</title>
-<body>
-
-<p>
-First, let us install the necessary GRUB2 files in <path>/boot/grub</path>.
-Assuming the first disk (the one where the system boots from) is
-<path>/dev/sda</path>, the following command will do this for us:
-</p>
-
-<pre caption="Installing the GRUB2 files in /boot/grub">
-# <i>grub2-install /dev/sda</i>
-</pre>
-
-<p>
-Next, we can generate the GRUB2 configuration based on the user configuration
-specified in the <path>/etc/default/grub</path> file and
-<path>/etc/grub.d</path> scripts. In most cases, no configuration is needed
-by users as GRUB2 will automatically detect which kernel to boot (the highest
-one available in <path>/boot</path>) and what the root file system is.
-</p>
-
-<p>
-To generate the final GRUB2 configuration, run the <c>grub2-mkconfig</c>
-command:
-</p>
-
-<pre caption="Generating GRUB2 configuration">
-# <i>grub2-mkconfig -o /boot/grub/grub.cfg</i>
-Generating grub.cfg ...
-Found linux image: /boot/<keyval id="kernel-name" />
-Found initrd image: /boot/<keyval id="genkernel-initrd" />
-done
-</pre>
-
-<p>
-The output of the command <e>must</e> mention that at least one Linux image is
-found, as those are needed to boot the system. If you use initramfs or used
-<c>genkernel</c> to build the kernel, the correct initrd image should be
-detected as well. If this is not the case, go to <path>/boot</path> and check
-the contents using the <c>ls</c> command. If the files are indeed missing, go
-back to the kernel configuration and installation instructions.
-</p>
-
-</body>
-</subsection>
-</section>
 <section id="elilo" test="func:keyval('arch')='IA64'">
 <title>Default: Installing elilo</title>
 <body>
