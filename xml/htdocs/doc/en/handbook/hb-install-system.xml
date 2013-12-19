@@ -4,7 +4,7 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-system.xml,v 1.138 2013/12/04 12:30:05 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-system.xml,v 1.143 2013/12/19 10:48:20 swift Exp $ -->
 
 <sections>
 
@@ -14,8 +14,8 @@ have a Gentoo base system at your disposal. This chapter describes how
 to progress to that state.
 </abstract>
 
-<version>30</version>
-<date>2013-12-04</date>
+<version>35</version>
+<date>2013-12-19</date>
 
 <section>
 <title>Chrooting</title>
@@ -173,6 +173,15 @@ and install it onto your system.
 <pre caption="Running emerge-webrsync to install a Portage snapshot">
 # <i>emerge-webrsync</i>
 </pre>
+
+<p>
+From this point onward, Portage might mention that certain updates are
+recommended to be executed. This is because certain system packages
+installed through the stage3 file might have newer versions available,
+and Portage is now aware of this because a new Portage snapshot is installed.
+You can safely ignore this for now and update after the Gentoo installation
+has finished.
+</p>
 
 </body>
 </subsection>
@@ -422,20 +431,140 @@ The Gentoo Handbook can then be followed with that page in mind.
 
 <p>
 Finally select your timezone so that your system knows where it is physically
-located. Look for your timezone in <path>/usr/share/zoneinfo</path>, then copy
-it to <path>/etc/localtime</path>. Please avoid the
-<path>/usr/share/zoneinfo/Etc/GMT*</path> timezones as their names do not
-indicate the expected zones. For instance, <path>GMT-8</path> is in fact
-GMT+8.
+located. Look for your timezone in <path>/usr/share/zoneinfo</path>, then
+write it in the <path>/etc/timezone</path> file.
 </p>
 
 <pre caption="Setting the timezone information">
 # <i>ls /usr/share/zoneinfo</i>
 <comment>(Suppose you want to use Europe/Brussels)</comment>
-# <i>cp /usr/share/zoneinfo/Europe/Brussels /etc/localtime</i>
-<comment>(Next set the timezone)</comment>
 # <i>echo "Europe/Brussels" &gt; /etc/timezone</i>
 </pre>
+
+<p>
+Please avoid the <path>/usr/share/zoneinfo/Etc/GMT*</path> timezones as their
+names do not indicate the expected zones. For instance, <path>GMT-8</path> is
+in fact GMT+8.
+</p>
+
+<p>
+Next, reconfigure the timezone-data package, which will update the
+<path>/etc/localtime</path> file for us, based on the <path>/etc/timezone</path>
+entry. The <path>/etc/localtime</path> file is used by the system C library
+to know the timezone the system is in.
+</p>
+
+<pre caption="Reconfiguring timezone-data">
+# <i>emerge --config sys-libs/timezone-data</i>
+</pre>
+
+</body>
+</section>
+
+<section>
+<title>Configure locales</title>
+<body>
+
+<p>
+You will probably only use one or maybe two locales on your system. You have to
+specify locales you will need in <path>/etc/locale.gen</path>.
+</p>
+
+<pre caption="Opening /etc/locale.gen">
+# <i>nano -w /etc/locale.gen</i>
+</pre>
+
+<p>
+The following locales are an example to get both English (United States) and
+German (Germany) with the accompanying character formats (like UTF-8).
+</p>
+
+<pre caption="Specify your locales">
+en_US ISO-8859-1
+en_US.UTF-8 UTF-8
+de_DE ISO-8859-1
+de_DE@euro ISO-8859-15
+</pre>
+
+<note>
+You can select your desired locales in the list given by running <c>locale -a</c>.
+</note>
+
+<warn>
+We strongly suggest that you should use at least one UTF-8 locale because some
+applications may require it.
+</warn>
+
+<p>
+The next step is to run <c>locale-gen</c>. It will generates all the locales you
+have specified in the <path>/etc/locale.gen</path> file.
+</p>
+
+<pre caption="Running locale-gen">
+# <i>locale-gen</i>
+</pre>
+
+<p>
+You can verify that your selected locales are available by running <c>locale -a</c>.
+</p>
+
+<p>
+Once done, you now have the possibility to set the system-wide locale settings.
+With <c>eselect locale list</c>, the available targets are displayed:
+</p>
+
+<pre caption="Displaying the available LANG settings">
+# <i>eselect locale list</i>
+Available targets for the LANG variable:
+  [1] C
+  [2] POSIX
+  [3] en_US
+  [4] en_US.iso88591
+  [5] en_US.utf8
+  [6] de_DE
+  [7] de_DE.iso88591
+  [8] de_DE.iso885915
+  [9] de_DE.utf8
+  [ ] (free form)
+</pre>
+
+<p>
+With <c>eselect locale set &lt;value&gt;</c> the correct locale can be set:
+</p>
+
+<pre caption="Setting the LANG variable">
+# <i>eselect locale set 9</i>
+</pre>
+
+<p>
+Manually, this can still be accomplished through the
+<path>/etc/env.d/02locale</path> file:
+</p>
+
+<pre caption="Setting the default system locale in /etc/env.d/02locale">
+LANG="de_DE.UTF-8"
+LC_COLLATE="C"
+</pre>
+
+<p>
+Make sure a locale is set, as you could otherwise get warnings and errors
+during kernel builds and other software deployments later in the installation.
+</p>
+
+<p>
+Don't forget to reload your environment:
+</p>
+
+<pre caption="Reload shell environment">
+# <i>env-update &amp;&amp; source /etc/profile</i>
+</pre>
+
+<p>
+We made a full <uri link="https://wiki.gentoo.org/wiki/Localization/HOWTO">Localization
+Guide</uri> to help you through this process. You can also read the detailed
+<uri link="https://wiki.gentoo.org/wiki/UTF-8">UTF-8 article</uri> for very specific
+informations to enable UTF-8 on your system.
+</p>
 
 </body>
 </section>
