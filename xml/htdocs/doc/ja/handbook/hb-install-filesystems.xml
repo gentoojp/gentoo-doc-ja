@@ -1,13 +1,13 @@
 <?xml version='1.0' encoding="UTF-8"?>
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-filesystems.xml,v 1.3 2012/06/13 00:50:10 naota Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-filesystems.xml,v 1.4 2013/12/19 17:49:25 naota Exp $ -->
 
 <!DOCTYPE included SYSTEM "/dtd/guide.dtd">
 
 <included>
 
-<version>9</version>
-<date>2012-04-22</date>
-<!-- Original revision: 1.11 -->
+<version>12</version>
+<date>2013-12-17</date>
+<!-- Original revision: 1.14 -->
 
 <section id="filesystemsdesc">
 <title>ファイルシステム</title>
@@ -52,13 +52,13 @@ MIPSアーキテクチャではReiserFS、ext2、ext3、ext4が安定してい�
 </p>
 
 <p test="func:keyval('arch')='PPC'">
-ext2、ext3、ReiserFS、XFSを含む様々なファイルシステムがPowerPCで利用できます。
+ext2、ext3、ext4、ReiserFS、XFSを含む様々なファイルシステムがPowerPCで利用できます。
 それらはそれぞれ長所と短所を持っています。
 </p>
 
 <note test="func:keyval('arch')='PPC64'">
 様々なファイルシステムが利用できます。
-ext2、ext3、ReiserFSのサポートはインストールCDのカーネルに組み込まれています。
+ext2、ext3、ext4、ReiserFSのサポートはインストールCDのカーネルに組み込まれています。
 JFSとXFSのサポートはカーネルモジュールをとおして利用できます。
 </note>
 
@@ -88,12 +88,6 @@ ia64システムのブートパーテイションは常にvfatでなければな
 いまでは、整合性チェックをとても速く終わらせることができるために、
 一般に非ジャーナリングファイルシステムよりも好まれる次世代のジャーナリングファイルシステムという素晴らしい選択肢があります。
 ジャーナリングファイルシステムはシステム起動時の大幅な遅延やファイルシステムの不整合状態の発生を防ぎます。
-Gentooをとても小さいディスク(4GB未満)にインストールする場合は、
-ext2が十分な数のinodeを確保するようにしてください。
-<c>mke2fs</c>は"byte-per-inode"(inodeあたりのバイト数)の設定をファイルシステムが持つべきinodeの数を計算するために使います。
-<c>mke2fs -T small /dev/&lt;device&gt;</c>とすると、
-"byte-per-inode"が16kBごとから4kBごとになるため、inodeの数は一般に4倍に増えます。
-<c>mke2fs -i &lt;ratio&gt; /dev/&lt;device&gt;</c>とすることで、さらに調整することもできます。
 </p>
 
 <p>
@@ -101,16 +95,9 @@ ext2が十分な数のinodeを確保するようにしてください。
 full data及びordered dataジャーナリングの様に優れたジャーナリングモードに加えて、素早い回復のためのメタデータジャーナルを提供します。
 ほぼすべての状況下で高いパフォーマンスを上げることができるHTreeインデックスを使用しています。
 要するにext3は素晴らしく、信頼性の高いファイルシステムだということです。
-ext3はすべての目的、すべてのプラットフォームに推奨されるファイルシステムです。
-Gentooをとても小さいディスク(4GB未満)にインストールする場合は、
-ext3が十分な数のinodeを確保するようにしてください。
-<c>mke2fs</c>は"byte-per-inode"(inodeあたりのバイト数)の設定をファイルシステムが持つべきinodeの数を計算するために使います。
-<c>mke2fs -j -T small /dev/&lt;device&gt;</c>とすると、
-"byte-per-inode"が16kBごとから4kBごとになるため、inodeの数は一般に4倍に増えます。
-<c>mke2fs -j -i &lt;ratio&gt; /dev/&lt;device&gt;</c>とすることで、さらに調整することもできます。
 </p>
 
-<p test="contains('x86 Alpha MIPS AMD64 arm IA64 SPARC HPPA',func:keyval('arch'))">
+<p test="contains('x86 Alpha MIPS AMD64 arm IA64 SPARC HPPA PPC PPC64',func:keyval('arch'))">
 <b>ext4</b>は新しい機能を追加し、パフォーマンスを改善し、
 わずかなディスク上のフォーマットの変更でサイズの上限を無くしているext3のフォークです。
 ext4では最大1EBのファイルシステムを管理でき、ファイルサイズの上限も16TBになっています。
@@ -120,6 +107,16 @@ ext4では最大1EBのファイルシステムを管理でき、ファイルサ�
 また、より洗練されたブロックアロケーションアルゴリズム(遅延アロケーションとマルチブロックアロケーション)を使い、
 ファイルシステムドライバがディスク上のデータレイアウトをより最適化しやすくしています。
 ext4は製品レベルのコードの安定性とほぼ十年来のファイルシステムの機能拡張の願望との折衷案といえます。
+ext4はすべての目的、すべてのプラットフォームに推奨されるファイルシステムです。
+</p>
+
+<p>
+Gentooをとても小さいディスク(4GB未満)にインストールする場合は、
+ext3が十分な数のinodeを確保するようにしてください。
+<c>mke2fs</c>は"byte-per-inode"(inodeあたりのバイト数)の設定をファイルシステムが持つべきinodeの数を計算するために使います。
+<c>mke2fs -j -T small /dev/&lt;device&gt;</c>とすると、
+"byte-per-inode"が16kBごとから4kBごとになるため、inodeの数は一般に4倍に増えます。
+<c>mke2fs -j -i &lt;ratio&gt; /dev/&lt;device&gt;</c>とすることで、さらに調整することもできます。
 </p>
 
 </body>
