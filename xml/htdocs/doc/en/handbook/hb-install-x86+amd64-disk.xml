@@ -4,7 +4,7 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-disk.xml,v 1.23 2013/04/11 18:25:12 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-disk.xml,v 1.32 2013/12/19 13:33:33 swift Exp $ -->
 
 <sections>
 
@@ -13,8 +13,8 @@ To be able to install Gentoo, you must create the necessary partitions.
 This chapter describes how to partition a disk for future usage.
 </abstract>
 
-<version>16</version>
-<date>2013-04-11</date>
+<version>24</version>
+<date>2013-12-18</date>
 
 <section>
 <title>Introduction to Block Devices</title>
@@ -31,34 +31,88 @@ This chapter describes how to partition a disk for future usage.
 Although it is theoretically possible to use a full disk to house your Linux
 system, this is almost never done in practice. Instead, full disk block devices
 are split up in smaller, more manageable block devices. On <keyval id="arch"/>
-systems, these are called <e>partitions</e>. 
+systems, these are called <e>partitions</e>. There are currently two standard
+partitioning technologies in use: MBR and GPT.
 </p>
 
 <p>
-Partitions are divided in three types:
-<e>primary</e>, <e>extended</e> and <e>logical</e>.
-</p>
-
-<p>
-A <e>primary</e> partition is a partition which has its information stored in
-the MBR (master boot record). As an MBR is very small (512 bytes) only four
-primary partitions can be defined (for instance, <path>/dev/sda1</path> to
+The <e>MBR (Master Boot Record)</e> setup uses 32-bit identifiers for
+partitions, and supports three partition types: <e>primary</e>, 
+<e>extended</e> and <e>logical</e>. Primary partitions have their information
+stored in the master boot record itself - a very small (usually 512 bytes)
+location at the very beginning of a disk. Due to this small space, only four
+primary partitions are supported (for instance, <path>/dev/sda1</path> to
 <path>/dev/sda4</path>).
 </p>
 
 <p>
-An <e>extended</e> partition is a special primary partition (meaning the
-extended partition must be one of the four possible primary partitions) which
-contains more partitions. Such a partition didn't exist originally, but as
-four partitions were too few, it was brought to life to extend the formatting
-scheme without losing backward compatibility.
+To support more partitions, one of the primary partitions can be marked as an
+extended partition. This partition can then contain logical partitions
+(partitions within a partition).
 </p>
 
 <p>
-A <e>logical</e> partition is a partition inside the extended partition. Their
-definitions aren't placed inside the MBR, but are declared inside the extended
-partition. 
+Each partition is limited to 2 TB in size (due to the 32-bit identifiers).
+Also, the MBR setup does not provide any backup-MBR, so if an application
+or user overwrites the MBR, all partition information is lost.
 </p>
+
+
+<p>
+The <e>GPT (GUID Partition table)</e> setup uses 64-bit identifiers for
+the partitions. The location in which it stores the partition information
+is also much bigger than the 512 bytes of an MBR, and there is no limit on
+the amount of partitions. Also the size of a partition is bounded by a much
+greater limit (more than a few ZB - yes, zetabytes).
+</p>
+
+<p>
+When a system's software interface between the operating system and firmware
+is UEFI (instead of BIOS), GPT is almost mandatory as compatibility issues will
+arise with MBR here.
+</p>
+
+<p>
+GPT also has the advantage that it has a backup GPT at the end of the disk,
+which can be used to recover damage of the primary GPT at the beginning. GPT
+also carries CRC32 checksums to detect errors in the header and partition
+tables.
+</p>
+
+</body>
+</subsection>
+<subsection id="gpt_or_mbr">
+<title>So, GPT or MBR?</title>
+<body>
+
+<p>
+From the description above, one might think that using GPT should always be the
+recommended approach. But there are a few caveats with this.
+</p>
+
+<p>
+Using GPT on a BIOS-based computer works, but you cannot dual-boot then with a
+Microsoft Windows operating system. The reason is that Microsoft Windows will
+boot in EFI mode if it detects a GPT partition label.
+</p>
+
+<p>
+Some buggy BIOSes or EFIs configured to boot in BIOS/CSM/legacy mode might also
+have problems with booting from GPT labeled disks. If that is the case, you 
+might be able to work around the problem by adding the boot/active flag on the
+protective MBR partition:
+</p>
+
+<pre caption="Enabling boot flag on protective MBR">
+# <i>fdisk /dev/sda</i>
+WARNING: GPT (GUID Partition Table) detected on '/dev/sda'! The util fdisk
+doesn't support GPT. Use GNU Parted.
+
+Command (m for help): <i>a</i>
+Partition number (1-4): <i>1</i>
+
+Command (m for help): <i>w</i>
+</pre>
 
 </body>
 </subsection>
@@ -84,7 +138,7 @@ but it is still good to know LVM2 is supported as well.
 
 <p>
 If you are not interested in drawing up a partitioning scheme for your system,
-you can use the partitioning scheme we use throughout this book:
+you can use the partitioning scheme we use throughout this book.
 </p>
 
 <table>
@@ -96,18 +150,24 @@ you can use the partitioning scheme we use throughout this book:
 </tr>
 <tr>
   <ti><path>/dev/sda1</path></ti>
-  <ti>ext2</ti>
-  <ti>32M</ti>
-  <ti>Boot partition</ti>
+  <ti>(bootloader)</ti>
+  <ti>2M</ti>
+  <ti>BIOS boot partition</ti>
 </tr>
 <tr>
   <ti><path>/dev/sda2</path></ti>
-  <ti>(swap)</ti>
-  <ti>512M</ti>
-  <ti>Swap partition</ti>
+  <ti>ext2</ti>
+  <ti>128M</ti>
+  <ti>Boot partition</ti>
 </tr>
 <tr>
   <ti><path>/dev/sda3</path></ti>
+  <ti>(swap)</ti>
+  <ti>512M or higher</ti>
+  <ti>Swap partition</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda4</path></ti>
   <ti>ext4</ti>
   <ti>Rest of the disk</ti>
   <ti>Root partition</ti>
@@ -117,9 +177,9 @@ you can use the partitioning scheme we use throughout this book:
 <p>
 If you are interested in knowing how big a partition should be, or even how 
 many partitions you need, read on. Otherwise continue now with partitioning 
-your disk by reading <uri link="#fdisk">Using fdisk to Partition your
-Disk</uri> or <uri link="#parted">Using parted to Partition your Disk</uri>
-(both are partitioning tools, <c>fdisk</c> is well known and stable,
+your disk by reading <uri link="#parted">Default: Using parted to Partition
+your Disk</uri> (or <uri link="#fdisk">Alternative: Using fdisk to Partition
+your Disk</uri>). Both are partitioning tools, <c>fdisk</c> is well known and stable,
 <c>parted</c> is a bit more recent but supports partitions larger than
 2TB).
 </p>
@@ -183,48 +243,290 @@ There is also a 15-partition limit for SCSI and SATA unless you use GPT
 labels.
 </p>
 
+</body>
+</subsection>
+<subsection>
+<title>What about swap space?</title>
+<body>
+
 <p>
-As an example partitioning, we show you one for a 20GB disk, used as a
-demonstration laptop (containing webserver, mailserver, gnome, ...):
+There is no perfect value for the swap partition. The purpose of swap space is
+to provide disk storage to the kernel when internal memory (RAM) is under
+pressure. A swap space allows for the kernel to move memory pages that are
+not likely to be accessed soon to disk (swap or page-out), freeing memory. Of
+course, if that memory is suddenly needed, these pages need to be put back in
+memory (page-in) which will take a while (as disks are very slow compared to
+internal memory).
 </p>
 
-<pre caption="Filesystem usage example">
-$ <i>df -h</i>
-Filesystem    Type    Size  Used Avail Use% Mounted on
-/dev/sda5     ext4    509M  132M  351M  28% /
-/dev/sda2     ext4    5.0G  3.0G  1.8G  63% /home
-/dev/sda7     ext4    7.9G  6.2G  1.3G  83% /usr
-/dev/sda8     ext4   1011M  483M  477M  51% /opt
-/dev/sda9     ext4    2.0G  607M  1.3G  32% /var
-/dev/sda1     ext2     51M   17M   31M  36% /boot
-/dev/sda6     swap    516M   12M  504M   2% &lt;not mounted&gt;
-<comment>(Unpartitioned space for future usage: 2 GB)</comment>
+<p>
+If you are not going to run memory intensive applications or you have lots of
+memory available, then you probably do not need much swap space. However, swap
+space is also used to store the entire memory in case of hibernation. If you
+plan on using hibernation, you will need a bigger swap space, often at least
+the amount of memory you have in your system.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>What is the BIOS boot partition?</title>
+<body>
+
+<p>
+A BIOS boot partition is a very small (1 to 2 MB) partition in which
+bootloaders like GRUB2 can put additional data that doesn't fit in the
+allocated storage (a few hundred bytes in case of MBR) and cannot place
+elsewhere.
+</p>
+
+<p>
+Such partitions are not always necessary, but considering the low space
+consumption and the difficulties we would have with documenting the plethora
+of partitioning differences otherwise, it is recommended to create it in
+either case.
+</p>
+
+<p>
+For completeness, we can say that the BIOS boot partition is needed when
+GPT partition layout is used with GRUB2, or when the MBR partition layout
+is used with GRUB2 when the first partition starts earlier than the 1 MB
+location on the disk.
+</p>
+
+</body>
+</subsection>
+</section>
+<section id="parted">
+<title>Default: Using parted to Partition your Disk</title>
+<subsection>
+<body>
+
+<p>
+In this chapter, we guide you through the creation of the example partition
+layout mentioned earlier in the instructions, but repeat here again for
+your convenience:
+</p>
+
+<table>
+<tr>
+  <th>Partition</th>
+  <th>Description</th>
+</tr>
+<tr>
+  <ti><path>/dev/sda1</path></ti>
+  <ti>BIOS boot partition</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda2</path></ti>
+  <ti>Boot partition</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda3</path></ti>
+  <ti>Swap partition</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda4</path></ti>
+  <ti>Root partition</ti>
+</tr>
+</table>
+
+<p>
+Change your partition layout according to your own preference.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Viewing the Current Partition Layout</title>
+<body>
+
+<p>
+The <c>parted</c> application offers a simple interface for partitioning your
+disks and supports very large partitions (more than 2 TB). Fire up
+<c>parted</c> on your disk (in our example, we use <path>/dev/sda</path>).
+We will ask <c>parted</c> to use optimum alignment:
+</p>
+
+<pre caption="Starting parted">
+# <i>parted -a optimal /dev/sda</i>
+GNU Parted 2.3
+Using /dev/sda
+Welcome to GNU Parted! Type 'help' to view a list of commands.
 </pre>
 
 <p>
-<path>/usr</path> is rather full (83% used) here, but once
-all software is installed, <path>/usr</path> doesn't tend to grow that much.
-Although allocating a few gigabytes of disk space for <path>/var</path> may
-seem excessive, remember that Portage uses this partition by default for
-compiling packages. If you want to keep <path>/var</path> at a more reasonable
-size, such as 1GB, you will need to alter your <c>PORTAGE_TMPDIR</c> variable
-in <path>/etc/portage/make.conf</path> to point to the partition with enough
-free space for compiling extremely large packages such as OpenOffice.
+Alignment means that partitions are started on well-known boundaries within
+the disk, ensuring that operations on the disk from the operating system level
+(retrieve pages from the disk) use the least amount of internal disk
+operations. Misaligned partitions might require the disk to fetch two pages
+instead of one even if the operating system asked for a single page.
+</p>
+
+<p>
+To find out about all options supported by <c>parted</c>, type <c>help</c> and
+press return.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Setting the GPT Label</title>
+<body>
+
+<p>
+Most disks on x86/amd64 are prepared using an <e>msdos</e> label. Using
+<c>parted</c>, we can put a GPT label on the disk using <c>mklabel gpt</c>:
+</p>
+
+<warn>
+Changing the partition type will remove all partitions from your disk. All data
+on the disk will be lost.
+</warn>
+
+<pre caption="Setting the GPT label">
+(parted) <i>mklabel gpt</i>
+</pre>
+
+<p>
+If you want the disk to have MBR layout, use <c>mklabel msdos</c>.
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Removing all Partitions</title>
+<body>
+
+<p>
+If this isn't done yet (for instance through the <c>mklabel</c> operation
+earlier, or because the disk is a freshly formatted one), we will first
+remove all existing partitions from the disk. Type <c>print</c> to view the
+current partitions, and <c>rm &lt;number&gt;</c> where &lt;number&gt; is the
+partition you want to remove.
+</p>
+
+<pre caption="Removing a partition from the disk">
+(parted) <i>rm 2</i>
+</pre>
+
+<p>
+Do the same for all other partitions that you don't need. However, make sure you
+do not make any mistakes here - <c>parted</c> executes the changes immediately
+(unlike <c>fdisk</c> which stages them, allowing a user to "undo" his changes
+before saving or exiting <c>fdisk</c>).
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>Creating the Partitions</title>
+<body>
+
+<p>
+Now let's create the partitions we mentioned earlier. Creating partitions with
+<c>parted</c> isn't very difficult - all we need to do is inform <c>parted</c>
+about the following settings:
+</p>
+
+<ul>
+  <li>
+    The <e>partition type</e> to use. This usually is <e>primary</e>.
+    If you use the <e>msdos</e> partition label, keep in mind that you can have
+    no more than 4 primary partitions. If you need more than 4 partitions, make
+    a partition <e>extended</e> and create <e>logical</e> partitions inside it.
+  </li>
+  <li>
+    The start location of a partition (which can be expressed in MB or GB)
+  </li>
+  <li>
+    The end location of the partition (which can be expressed in MB or GB)
+  </li>
+</ul>
+
+<p>
+First, we tell <c>parted</c> that the size unit we work with is megabytes
+(actually mebibytes, abbreviated as MiB which is the "standard" notation):
+</p>
+
+<pre caption="Using MiB units">
+(parted) <i>unit mib</i>
+</pre>
+
+<p>
+Now create a 2 MB partition that will be used by the GRUB2 bootloader later.
+We use the <c>mkpart</c> command for this, and inform <c>parted</c> to start
+from 1 MB and end at 3 MB (creating a partition of 2 MB in size).
+</p>
+
+<pre caption="Creating a 128 MB partition">
+(parted) <i>mkpart primary 1 3</i>
+(parted) <i>name 1 grub</i>
+(parted) <i>set 1 bios_grub on</i>
+(parted) <i>print</i>
+Model: Virtio Block Device (virtblk)
+Disk /dev/sda: 20480MiB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+
+Number   Start      End      Size     File system  Name   Flags
+ 1       1.00MiB    3.00MiB  2.00MiB               grub   bios_grub
+</pre>
+
+<p>
+Do the same for the boot partition (128 MB), swap partition (in the example,
+512 MB) and the root partition that spans the remaining disk (for which the
+end size is marked as <c>-1</c>, meaning the end of the disk minus one MB,
+which is the farthest a partition can go).
+</p>
+
+<pre caption="Creating other partitions">
+(parted) <i>mkpart primary 3 131</i>
+(parted) <i>name 2 boot</i>
+(parted) <i>mkpart primary 131 643</i>
+(parted) <i>name 3 swap</i>
+(parted) <i>mkpart primary 643 -1</i>
+(parted) <i>name 4 rootfs</i>
+</pre>
+
+<p>
+The end result looks like so:
+</p>
+
+<pre caption="Viewing the current partition layout">
+(parted) <i>print</i>
+Model: Virtio Block Device (virtblk)
+Disk /dev/sda: 20480MiB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+
+Number   Start      End      Size     File system  Name   Flags
+ 1       1.00MiB    3.00MiB  2.00MiB               grub   bios_grub
+ 2       3.00MiB    131MiB   128MiB                boot
+ 3       131MiB     643MiB   512MiB                swap
+ 4       643MiB     20479MiB 19836MiB              rootfs
+</pre>
+
+<p>
+When you are satisfied, use the <c>quit</c> command to exit <c>parted</c>.
 </p>
 
 </body>
 </subsection>
 </section>
 <section id="fdisk">
-<title>Using fdisk to Partition your Disk</title>
+<title>Alternative: Using fdisk to Partition your Disk</title>
 <subsection>
 <body>
 
 <impo>
 If your environment will deal with partitions larger than 2 TB, please
-use the <uri link="#parted">Using parted to Partition your Disk</uri>
+use the <uri link="#parted">Default: Using parted to Partition your Disk</uri>
 instructions instead. <c>fdisk</c> is not able to deal with larger
-partitions.
+partitions. Fdisk will also use the MBR partition layout. Alternative fdisk
+applications, like gdisk (which Gentoo provides through the gptfdisk package)
+exist that do support GPT, but might not be included on the Gentoo installation
+media.
 </impo>
 
 <p>
@@ -239,14 +541,18 @@ using <c>fdisk</c>. The example partition layout was mentioned earlier:
 </tr>
 <tr>
   <ti><path>/dev/sda1</path></ti>
-  <ti>Boot partition</ti>
+  <ti>BIOS boot partition</ti>
 </tr>
 <tr>
   <ti><path>/dev/sda2</path></ti>
-  <ti>Swap partition</ti>
+  <ti>Boot partition</ti>
 </tr>
 <tr>
   <ti><path>/dev/sda3</path></ti>
+  <ti>Swap partition</ti>
+</tr>
+<tr>
+  <ti><path>/dev/sda4</path></ti>
   <ti>Root partition</ti>
 </tr>
 </table>
@@ -359,16 +665,22 @@ same partitioning scheme!
 </body>
 </subsection>
 <subsection>
-<title>Creating the Boot Partition</title>
+<title>Creating the BIOS Boot Partition</title>
 <body>
 
 <p>
-We first create a small boot partition. Type <c>n</c> to create a new partition,
-then <c>p</c> to select a primary partition, followed by <c>1</c> to select the
-first primary partition. When prompted for the first cylinder, hit enter. When
-prompted for the last cylinder, type <c>+32M</c> to create a partition 32 Mbyte
+We first create a very small BIOS boot partition. Type <c>n</c> to create a new
+partition, then <c>p</c> to select a primary partition, followed by <c>1</c> to
+select the first primary partition. When prompted for the first sector, make sure
+it starts from <c>2048</c> (which is needed for the boot loader) and hit enter. When
+prompted for the last sector, type <c>+32M</c> to create a partition 32 Mbyte
 in size:
 </p>
+
+<note>
+The start from sector 2048 is a fail-safe in case the boot loader does not
+detect this partition as being available for its use.
+</note>
 
 <pre caption="Creating the boot partition">
 Command (m for help): <i>n</i>
@@ -377,9 +689,44 @@ Command action
   p   primary partition (1-4)
 <i>p</i>
 Partition number (1-4): <i>1</i>
-First cylinder (1-3876, default 1): <comment>(Hit Enter)</comment>
-Using default value 1
-Last cylinder or +size or +sizeM or +sizeK (1-3876, default 3876): <i>+32M</i>
+First sector (64-10486533532, default 64): <i>2048</i>
+Last sector, +sectors +size{M,K,G} (4096-10486533532, default 10486533532): <i>+2M</i>
+</pre>
+
+<p>
+Mark the partition for EFI purposes:
+</p>
+
+<pre caption="Marking the partition for EFI purposes">
+Command (m for help): <i>t</i>
+Selected partition 1
+Hex code (type L to list codes): <i>ef</i>
+Changed system type of partition 1 to ef (EFI (FAT-12/16/32))
+</pre>
+
+</body>
+</subsection>
+<subsection>
+<title>Creating the Boot Partition</title>
+<body>
+
+<p>
+We now create a small boot partition. Type <c>n</c> to create a new partition,
+then <c>p</c> to select a primary partition, followed by <c>2</c> to select the
+second primary partition. When prompted for the first sector, accept the default
+by hitting enter. When prompted for the last sector, type <c>+128M</c> to create a
+partition 128 Mbyte in size:
+</p>
+
+<pre caption="Creating the boot partition">
+Command (m for help): <i>n</i>
+Command action
+  e   extended
+  p   primary partition (1-4)
+<i>p</i>
+Partition number (1-4): <i>2</i>
+First sector (5198-10486533532, default 5198): <comment>(Hit enter)</comment>
+Last sector, +sectors +size{M,K,G} (4096-10486533532, default 10486533532): <i>+128M</i>
 </pre>
 
 <p>
@@ -394,7 +741,8 @@ Disk /dev/sda: 30.0 GB, 30005821440 bytes
 Units = cylinders of 15120 * 512 = 7741440 bytes
 
    Device Boot    Start       End    Blocks   Id  System
-/dev/sda1             1        14    105808+  83  Linux
+/dev/sda1             1         3      5198+  ef  EFI (FAT-12/16/32)
+/dev/sda2             3        14    105808+  83  Linux
 </pre>
 
 <p>
@@ -412,26 +760,17 @@ notice that an <e>*</e> is placed in the "Boot" column.
 <p>
 Let's now create the swap partition. To do this, type <c>n</c> to create a new 
 partition, then <c>p</c> to tell fdisk that you want a primary partition. Then 
-type <c>2</c> to create the second primary partition, <path>/dev/sda2</path> in
-our case. When prompted for the first cylinder, hit enter. When prompted for 
-the last cylinder, type <c>+512M</c> to create a partition 512MB in size. After
-you've done this, type <c>t</c> to set the partition type, <c>2</c> to select 
-the partition you just created and then type in <c>82</c> to set the partition 
-type to "Linux Swap". After completing these steps, typing <c>p</c> should
-display a partition table that looks similar to this:
+type <c>3</c> to create the third primary partition, <path>/dev/sda3</path> in
+our case. When prompted for the first sector, hit enter. When prompted for 
+the last sector, type <c>+512M</c> (or any other size you need for the swap
+space) to create a partition 512MB in size.
 </p>
 
-<pre caption="Partition listing after creating a swap partition">
-Command (m for help): <i>p</i>
-
-Disk /dev/sda: 30.0 GB, 30005821440 bytes
-240 heads, 63 sectors/track, 3876 cylinders
-Units = cylinders of 15120 * 512 = 7741440 bytes
-
-   Device Boot    Start       End    Blocks   Id  System
-/dev/sda1   *         1        14    105808+  83  Linux
-/dev/sda2            15        81    506520   82  Linux swap
-</pre>
+<p>
+After you've done this, type <c>t</c> to set the partition type, <c>3</c> to select 
+the partition you just created and then type in <c>82</c> to set the partition 
+type to "Linux Swap". 
+</p>
 
 </body>
 </subsection>
@@ -442,9 +781,9 @@ Units = cylinders of 15120 * 512 = 7741440 bytes
 <p>
 Finally, let's create the root partition. To do this, type <c>n</c> to create a 
 new partition, then <c>p</c> to tell fdisk that you want a primary partition. 
-Then type <c>3</c> to create the third primary partition, <path>/dev/sda3</path>
-in our case. When prompted for the first cylinder, hit enter. When prompted for
-the last cylinder, hit enter to create a partition that takes up the rest of the
+Then type <c>4</c> to create the fourth primary partition, <path>/dev/sda4</path>
+in our case. When prompted for the first sector, hit enter. When prompted for
+the last sector, hit enter to create a partition that takes up the rest of the
 remaining space on your disk. After completing these steps, typing <c>p</c> 
 should display a partition table that looks similar to this:
 </p>
@@ -457,9 +796,10 @@ Disk /dev/sda: 30.0 GB, 30005821440 bytes
 Units = cylinders of 15120 * 512 = 7741440 bytes
 
    Device Boot    Start       End    Blocks   Id  System
-/dev/sda1   *         1        14    105808+  83  Linux
-/dev/sda2            15        81    506520   82  Linux swap
-/dev/sda3            82      3876  28690200   83  Linux
+/dev/sda1             1         3      5198+  ef  EFI (FAT-12/16/32)
+/dev/sda2   *         3        14    105808+  83  Linux
+/dev/sda3            15        81    506520   82  Linux swap
+/dev/sda4            82      3876  28690200   83  Linux
 </pre>
 
 </body>
@@ -479,204 +819,6 @@ Command (m for help): <i>w</i>
 <p>
 Now that your partitions are created, you can continue with <uri
 link="#filesystems">Creating Filesystems</uri>.
-</p>
-
-</body>
-</subsection>
-</section>
-<section id="parted">
-<title>Using parted to Partition your Disk</title>
-<subsection>
-<body>
-
-<p>
-In this chapter, we guide you through the creation of the example partition
-layout mentioned earlier in the instructions. Unlike the previous chapter, we
-describe the method using the <c>parted</c> application instead. Both
-<c>parted</c> and <c>fdisk</c> offer the same functions, so if you partitioned
-your system using <c>fdisk</c> already, you can skip this section and continue
-with <uri link="#filesystems">Creating Filesystems</uri>.
-</p>
-
-<p>
-The example partition layout we use is shown in the next table:
-</p>
-
-<table>
-<tr>
-  <th>Partition</th>
-  <th>Description</th>
-</tr>
-<tr>
-  <ti><path>/dev/sda1</path></ti>
-  <ti>Boot partition</ti>
-</tr>
-<tr>
-  <ti><path>/dev/sda2</path></ti>
-  <ti>Swap partition</ti>
-</tr>
-<tr>
-  <ti><path>/dev/sda3</path></ti>
-  <ti>Root partition</ti>
-</tr>
-</table>
-
-<p>
-Change your partition layout according to your own preference.
-</p>
-
-</body>
-</subsection>
-<subsection>
-<title>Viewing the Current Partition Layout</title>
-<body>
-
-<p>
-The <c>parted</c> application is a somewhat more modern variant of
-<c>fdisk</c>. It offers a simpler interface for partitioning your disks and
-supports very large partitions (more than 2 TB). Fire up <c>parted</c> on your
-disk (in our example, we use <path>/dev/sda</path>):
-</p>
-
-<pre caption="Starting parted">
-# <i>parted /dev/sda</i>
-GNU Parted 2.3
-Using /dev/vda
-Welcome to GNU Parted! Type 'help' to view a list of commands.
-</pre>
-
-<p>
-To find out about all options supported by <c>parted</c>, type <c>help</c> and
-press return. For now, we just continue by asking <c>parted</c> to show the
-partitions currently in use on the selected disk. The <c>print</c> command can
-be used for that.
-</p>
-
-<pre caption="An example partition configuration shown by parted">
-(parted) <i>print</i>
-Model: SCSI Block Device
-Disk /dev/sda: 21.5GB
-Sector size (logical/physical): 512B/512B
-Partition Table: msdos
-
-Number  Start   End     Size    Type     File system     Flags
- 1      512B    2148MB  2148MB  primary  ext4
- 2      2148MB  3222MB  1074MB  primary  linux-swap(v1)
- 3      3222MB  21.5GB  18.3GB  primary                  lvm
-</pre>
-
-</body>
-</subsection>
-<subsection>
-<title>Optional: Setting the GPT Label</title>
-<body>
-
-<p>
-Most disks on x86/amd64 are prepared using an <e>msdos</e> label. However, if
-you plan on creating huge partitions (2 TB and more), you must use a <e>gpt</e>
-label (the <e>GUID Partition Type</e>) for your disk. Using <c>parted</c>, this
-can be accomplished with <c>mklabel gpt</c>:
-</p>
-
-<warn>
-Changing the partition type will remove all partitions from your disk. All data
-on the disk will be lost.
-</warn>
-
-<pre caption="Setting the GPT label">
-(parted) <i>mklabel gpt</i>
-</pre>
-
-</body>
-</subsection>
-<subsection>
-<title>Removing all Partitions</title>
-<body>
-
-<p>
-If this isn't done yet (for instance through the <c>mklabel</c> operation
-earlier, or because the disk is a freshly formatted one), we will first
-remove all existing partitions from the disk. Type <c>rm &lt;number&gt;</c>
-where &lt;number&gt; is the partition you want to remove.
-</p>
-
-<pre caption="Removing a partition from the disk">
-(parted) <i>rm 2</i>
-</pre>
-
-<p>
-Do the same for all other partitions that you don't need. However, make sure you
-do not make any mistakes here - <c>parted</c> executes the changes immediate
-(unlike <c>fdisk</c> which stages them, allowing a user to "undo" his changes
-before saving or exiting <c>fdisk</c>).
-</p>
-
-</body>
-</subsection>
-<subsection>
-<title>Creating the Partitions</title>
-<body>
-
-<p>
-Now let's create the partitions we mentioned earlier. Creating partitions with
-<c>parted</c> isn't very difficult - all we need to do is inform <c>parted</c>
-about the following settings:
-</p>
-
-<ul>
-  <li>
-    The <e>partition type</e> to use. This usually is <e>primary</e> in case you
-    are not going to have more than 4 partitions (with the <e>msdos</e>
-    partition label). Otherwise, you will need to make your fourth partition an
-    <e>extended</e> one which hosts the rest of the disk, and create
-    <e>logical</e> partitions inside it. If you use a <e>gpt</e>-labeled
-    partition, then there is no limit on the number of primary partitions.
-  </li>
-  <li>
-    The <e>file system type</e> to use. The <c>parted</c> application supports
-    most common file systems and knows which kind of partition ID it needs to
-    use for these partitions. This does <e>not</e> mean that <c>parted</c> will
-    create a file system on the partition (you can with the <c>mkpartfs</c>
-    command, but we'll use the regular <c>mkfs.*</c> commands later for this
-    purpose). The partition ID is often used by auto-detection tools to know
-    what to do with a particular partition.
-  </li>
-  <li>
-    The start location of a partition (which can be expressed in MB or GB)
-  </li>
-  <li>
-    The end location of the partition (which can be expressed in MB or GB)
-  </li>
-</ul>
-
-<p>
-One advantage of <c>parted</c> is that you can easily just use the partition
-sizes to automatically find the correct start and end location as you will see
-in the next example.
-</p>
-
-<pre caption="Creating the partitions">
-<comment># Create a 32 mbyte /boot partition</comment>
-(parted) <i>mkpart primary ext2 0 32mb</i>
-Warning: The resulting partition is not properly aligned for best performance.
-Ignore/Cancel? <i>i</i>
-
-<comment># Create a 512 mbyte swap partition</comment>
-(parted) <i>mkpart primary linux-swap 32mb 544mb</i>
-
-<comment># Create a partition that spans the remaining disk.
-# -1s (minus one s) means the end of the disk</comment>
-(parted) <i>mkpart primary ext4 544mb -1s</i>
-Warning: You requested a partition from 544MB to 21.5GB.
-The closest location we can manage is 544MB to 21.5GB.
-Is this still acceptable to you?
-Yes/No? <i>y</i>
-</pre>
-
-<p>
-You can now <c>print</c> the partition layout again to validate if everything is
-as expected. When you are satisfied, use the <c>quit</c> command to exit
-<c>parted</c>.
 </p>
 
 </body>
@@ -744,14 +886,14 @@ each possible filesystem:
 </table>
 
 <p>
-For instance, to have the boot partition (<path>/dev/sda1</path> in our
-example) in ext2 and the root partition (<path>/dev/sda3</path> in our example)
+For instance, to have the boot partition (<path>/dev/sda2</path> in our
+example) in ext2 and the root partition (<path>/dev/sda4</path> in our example)
 in ext4 (as in our example), you would use:
 </p>
 
 <pre caption="Applying a filesystem on a partition">
-# <i>mkfs.ext2 /dev/sda1</i>
-# <i>mkfs.ext4 /dev/sda3</i>
+# <i>mkfs.ext2 /dev/sda2</i>
+# <i>mkfs.ext4 /dev/sda4</i>
 </pre>
 
 <p>
@@ -770,7 +912,7 @@ volumes).
 </p>
 
 <pre caption="Creating a Swap signature">
-# <i>mkswap /dev/sda2</i>
+# <i>mkswap /dev/sda3</i>
 </pre>
 
 <p>
@@ -778,7 +920,7 @@ To activate the swap partition, use <c>swapon</c>:
 </p>
 
 <pre caption="Activating the swap partition">
-# <i>swapon /dev/sda2</i>
+# <i>swapon /dev/sda3</i>
 </pre>
 
 <p>
@@ -800,9 +942,9 @@ example we mount the root and boot partition:
 </p>
 
 <pre caption="Mounting partitions">
-# <i>mount /dev/sda3 /mnt/gentoo</i>
+# <i>mount /dev/sda4 /mnt/gentoo</i>
 # <i>mkdir /mnt/gentoo/boot</i>
-# <i>mount /dev/sda1 /mnt/gentoo/boot</i>
+# <i>mount /dev/sda2 /mnt/gentoo/boot</i>
 </pre>
 
 <note>
