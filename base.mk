@@ -21,7 +21,7 @@ update:
 pofiles/%.po: en/%.xml
 	$(PO4A_UPDATEPO) -m $< -p $@
 
-ja/%.xml: pofiles/%.po
+ja/%.xml: pofiles/%.po en/%.xml
 	-@mkdir -p $(TMPBUILD)/`dirname $@`
 	-@touch $(TMPBUILD)/$@.author
 	if fgrep -q '<abstract>' $(subst ja/,en/,$@) && test -e $@; then \
