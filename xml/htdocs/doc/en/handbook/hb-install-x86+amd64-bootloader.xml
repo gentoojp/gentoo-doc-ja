@@ -4,12 +4,12 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-bootloader.xml,v 1.38 2013/12/18 10:13:54 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-bootloader.xml,v 1.39 2013/12/31 20:29:23 swift Exp $ -->
 
 <sections>
 
-<version>22</version>
-<date>2013-12-18</date>
+<version>23</version>
+<date>2013-12-31</date>
 
 <section>
 <title>Making your Choice</title>
@@ -433,6 +433,14 @@ If your root filesystem is JFS, you <e>must</e> add " ro" to the <c>kernel</c>
 line since JFS needs to replay its log before it allows read-write mounting.
 </note>
 
+<note>
+If dualboot with Windows is used, the partitioning example used in this
+book will not be sufficient (our example uses all four primary partitions
+for Linux, whereas at least one would need to be extended if Windows is
+installed on a logical partition). Please proceed with caution and consider
+the listing to be an example that needs to be modified to suit your own needs.
+</note>
+
 <pre caption="Example grub.conf">
 <comment># Which listing to boot as default. 0 is the first, 1 the second etc.</comment>
 default 0
@@ -445,12 +453,12 @@ splashimage=(hd0,1)/boot/grub/splash.xpm.gz
 title Gentoo Linux <keyval id="kernel-version"/>
 <comment># Partition where the kernel image (or operating system) is located</comment>
 root (hd0,1)
-kernel /boot/<keyval id="kernel-name"/> root=/dev/sda3
+kernel /boot/<keyval id="kernel-name"/> root=/dev/sda4
 
 title Gentoo Linux <keyval id="kernel-version"/> (rescue)
 <comment># Partition where the kernel image (or operating system) is located</comment>
 root (hd0,1)
-kernel /boot/<keyval id="kernel-name"/> root=/dev/sda3 init=/bin/bb
+kernel /boot/<keyval id="kernel-name"/> root=/dev/sda4 init=/bin/bb
 
 <comment># The next four lines are only if you dualboot with a Windows system.</comment>
 <comment># In this case, Windows is hosted on /dev/sda6.</comment>
@@ -469,7 +477,7 @@ initramfs file and telling the initramfs where your real root device is at:
 <pre caption="GRUB snippet for initramfs-enabled kernel builds">
 title Gentoo Linux <keyval id="kernel-version"/>
 root (hd0,1)
-kernel /boot/<keyval id="kernel-version"/> <i>real_</i>root=/dev/sda3
+kernel /boot/<keyval id="kernel-version"/> <i>real_</i>root=/dev/sda4
 <i>initrd /boot/<keyval id="genkernel-initrd"/></i>
 </pre>
 
@@ -494,7 +502,7 @@ work whether you defined a separate <path>/boot</path> partition or not.
 <p>
 If you need to pass any additional options to the kernel, simply add them to the
 end of the kernel command. We're already passing one option
-(<c>root=/dev/sda3</c> or <c>real_root=/dev/sda3</c>), but you can pass others
+(<c>root=/dev/sda4</c> or <c>real_root=/dev/sda4</c>), but you can pass others
 as well, such as the <c>video</c> statement for framebuffer as we discussed
 previously.
 </p>
@@ -637,7 +645,7 @@ grub&gt; <i>quit</i>            <comment>(Exit the GRUB shell)</comment>
 If you want to install GRUB in a certain partition instead of the MBR,
 you have to alter the <c>setup</c> command so it points to the right
 partition. For instance, if you want GRUB installed in
-<path>/dev/sda4</path>, then the command becomes <c>setup (hd0,4)</c>.
+<path>/dev/sda4</path>, then the command becomes <c>setup (hd0,3)</c>.
 Few users however want to do this.
 </note>
 
