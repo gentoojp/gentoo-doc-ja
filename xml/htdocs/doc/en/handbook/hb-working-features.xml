@@ -4,7 +4,7 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-working-features.xml,v 1.43 2012/07/24 12:12:52 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-working-features.xml,v 1.49 2014/04/12 12:33:22 swift Exp $ -->
 
 <sections>
 
@@ -13,8 +13,8 @@ Discover the features Portage has, such as support for distributed compiling,
 ccache and more.
 </abstract>
 
-<version>7</version>
-<date>2012-07-24</date>
+<version>13</version>
+<date>2014-04-12</date>
 
 <section>
 <title>Portage Features</title>
@@ -48,7 +48,7 @@ for the FEATURES variable or grep it out:
 </p>
 
 <pre caption="Finding out the FEATURES that are already set">
-$ <i>emerge --info | grep FEATURES</i>
+$ <i>emerge --info | grep ^FEATURES=</i>
 </pre>
 
 </body>
@@ -69,7 +69,7 @@ faster compilation time.
 
 <p>
 You can find more information about <c>distcc</c> (and how to have it work 
-with Gentoo) in our <uri link="/doc/en/distcc.xml">Gentoo Distcc
+with Gentoo) in our <uri link="https://wiki.gentoo.org/wiki/Distcc">Gentoo Distcc
 Documentation</uri>.
 </p>
 
@@ -235,7 +235,7 @@ PATH="<i>/usr/lib/ccache/bin</i>:/opt/bin:${PATH}"
 
 <p>
 Portage supports the installation of prebuilt packages. Even though Gentoo does
-not provide prebuilt packages by itself (except for the GRP snapshots) Portage
+not provide prebuilt packages by itself Portage
 can be made fully aware of prebuilt packages.
 </p>
 
@@ -346,22 +346,18 @@ or packages in the tree you are downloading.
 To configure Portage, first create a truststore in which you download and accept
 the keys of the Gentoo Infrastructure responsible for signing the Portage tree
 snapshots. Of course, if you want to, you can validate this GPG key as per the
-<uri link="/doc/en/gnupg-user.xml#doc_chap2_sect4">proper guidelines</uri>
+<uri link="https://wiki.gentoo.org/wiki/GnuPG#Importing_keys">proper guidelines</uri>
 (like checking the key fingerprint). You can find the list of GPG keys used by
 the release engineering team on their <uri
 link="/proj/en/releng/index.xml">project page</uri>.
 </p>
 
-<!-- Key 0x239C75C4 is superceded by 0x96D8BF6D, but keep it in the documents
-     for a while to ensure continuity -->
-
 <pre caption="Creating a truststore for Portage">
 # <i>mkdir -p /etc/portage/gpg</i>
 # <i>chmod 0700 /etc/portage/gpg</i>
 <comment>(... Substitute the keys with those mentioned on the release engineering site ...)</comment>
-# <i>gpg --homedir /etc/portage/gpg --keyserver subkeys.pgp.net --recv-keys 0x239C75C4 0x96D8BF6D</i>
-# <i>gpg --homedir /etc/portage/gpg --edit-key 0x239C75C4 trust</i>
-# <i>gpg --homedir /etc/portage/gpg --edit-key 0x96D8BF6D trust</i>
+# <i>gpg --homedir /etc/portage/gpg --keyserver subkeys.pgp.net --recv-keys 0xDB6B8C1F96D8BF6D</i>
+# <i>gpg --homedir /etc/portage/gpg --edit-key 0xDB6B8C1F96D8BF6D trust</i>
 </pre>
 
 <p>
@@ -371,10 +367,15 @@ disabling updating the Portage tree using the regular <c>emerge --sync</c>
 method.
 </p>
 
-<pre caption="Updating Portage for signed tree validation">
+<pre caption="Updating make.conf">
 FEATURES="webrsync-gpg"
 PORTAGE_GPG_DIR="/etc/portage/gpg"
-SYNC=""
+</pre>
+
+<pre caption="Updating repos.conf">
+<comment># Make sure sync-type and sync-uri are commented out</comment>
+# sync-type = rsync
+# sync-uri = ...
 </pre>
 
 <p>
