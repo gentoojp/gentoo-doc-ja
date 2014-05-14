@@ -4,12 +4,13 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-config.xml,v 1.25 2011/11/06 22:52:57 naota Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-config.xml,v 1.26 2014/05/14 01:52:07 naota Exp $ -->
 
-<!-- Original revision: 1.108 -->
+<!-- Original revision: 1.130 -->
 <!-- Translator: Infonomad -->
 <!-- Translator: masuda -->
 <!-- Translator: naota -->
+<!-- Translator: unarist -->
 
 <sections>
 
@@ -18,17 +19,19 @@
 この章ではこれらのファイルの概要と編集の方法を説明します。
 </abstract>
 
-<version>15</version>
-<date>2011-10-30</date>
+<version>36</version>
+<date>2014-04-11</date>
 
 <section>
-<title>ファイルシステム情報</title>
+<title>ファイルシステム</title>
 <subsection>
-<title>fstabって何</title>
+<title>fstabって何?</title>
 <body>
 
 <p>
-Linuxにおいて、システムに使用されている全パーティションは<path>/etc/fstab</path>に記述されていなければなりません。このファイルにはそれぞれのパーティションのマウントポイント(ファイルシステムの構築のときに出てきた)、どのように、どんな特別なオプションでマウントされるか(自動的にマウントするか否か、ユーザーがマウントできるかどうか等)の情報が含まれます。
+Linuxにおいて、システムで使用している全てのパーティションは<path>/etc/fstab</path>に記載しなければなりません。
+このファイルには(ファイルシステムを構築するときに出てきた)各パーティションのマウントポイント、
+どのように、どんな特別なオプションでマウントされるか(自動的にマウントするか否か、ユーザーがマウントできるか等)の情報が含まれます。
 </p>
 
 </body>
@@ -38,12 +41,13 @@ Linuxにおいて、システムに使用されている全パーティション
 <body>
 
 <p>
-<path>/etc/fstab</path>は特別な構文を使います。各々のラインは6つのフィールドから成り、空白(スペース、タブもしくはその両方)で分けられています。各々のフィールドにはそれぞれの意味があります。
+<path>/etc/fstab</path>は特別な構文を使います。それぞれの行は6つのフィールドから成り、
+空白(スペース、タブもしくはその両方)で分けられています。各フィールドにはそれぞれの意味があります。
 </p>
 
 <ul>
 <li>
-  1番目のフィールドには<b>パーティション</b>が記述されています。(デバイスファイルのパス)
+  1番目のフィールドには<b>パーティション</b>(デバイスファイルへのパス)が記述されています。
 </li>
 <li>
   2番目のフィールドにはパーティションがマウントされるべき<b>マウントポイント</b>が記述されています。
@@ -52,24 +56,39 @@ Linuxにおいて、システムに使用されている全パーティション
   3番目のフィールドにはパーティションに使用されている<b>ファイルシステム</b>が記述されています。
 </li>
 <li>
-  4番目のフィールドにはパーティションを<c>マウント</c>するときに適用したい<b>マウントオプション</b>が記述されています。各々のファイルシステムにはそれぞれ独自のマウントオプションがあるので、全てのオプションを見るには頑張ってマウントのマニュアルを読んでください。(<c>man mount</c>)。複数のマウントオプションはコンマで分けられます。
+  4番目のフィールドには<c>mount</c>が使う<b>マウントオプション</b>が記述されています。
+  ファイルシステムにはそれぞれ独自のマウントオプションがあるので、詳しくはmountのmanページ(<c>man mount</c>)を参照してください。
+  複数のマウントオプションはコンマで区切ります。
 </li>
 <li>
-  5番目のフィールドは<c>dump</c>に使用され、そのパーティションが<b>dump</b>される必要があるかどうかを記述します。通常ここは<c>0</c>(ゼロ)のままで良いです。
+  5番目のフィールドは<c>dump</c>に使用され、そのパーティションが<b>dump</b>される必要があるかどうかを記述します。
+  通常ここは<c>0</c>(ゼロ)のままで良いです。
 </li>
 <li>
-  6番目のフィールドは<c>fsck</c>に使用され、システムが正常にシャットダウンしなかったときにどの順序でファイルシステムが<b>チェック</b>されるべきかを記述します。ルートパーティションは<c>1</c>に残りのパーティションは<c>2</c>にすべきでしょう。(もしくはもしファイルシステムのチェックが必要の無い場合は<c>0</c>にしてください)。
+  6番目のフィールドは<c>fsck</c>に使用され、システムが正常にシャットダウンしなかったときに
+  どの順序でファイルシステムが<b>チェック</b>されるべきかを記述します。
+  ルートパーティションは<c>1</c>に残りのパーティションは<c>2</c>にすべきでしょう。
+  (もしファイルシステムのチェックが必要無い場合は<c>0</c>にしてください)
 </li>
 </ul>
 
 <impo>
-Gentooが提供している元々の<path>/etc/fstab</path><e>有効なfstab</e>ではありません。
-自分のシステムの<path>/etc/fstab</path>を作成しなければなりません。
+Gentooが提供している元々の<path>/etc/fstab</path>は<e>有効なfstabではありません</e>。
+お使いのシステムにあわせて<path>/etc/fstab</path>を<b>作成しなければなりません</b>。
 </impo>
 
 <pre caption="/etc/fstabを開く">
 # <i>nano -w /etc/fstab</i>
 </pre>
+
+<p>
+ここでは、デフォルトのブロックデバイスファイルである<path>/dev/sd*</path>を
+パーティションとして使いますが、<path>/dev/disk/byid</path> (訳注: おそらく<path>/dev/disk/by-id</path>)や<path>/dev/disk/by-uuid</path>に
+置かれるシンボリックリンクを使うこともできます。ブロックデバイスファイルの名前が
+様々な要因(ディスクがどのように、どんな順番で接続されているか)で変化するのに対し、
+これらのリンクの名前が変わることはまずありません。
+とはいえディスクの順番を変えるつもりがないのであれば、ブロックデバイスファイルを使っても構わないでしょう。
+</p>
 
 </body>
 <body test="func:keyval('/boot')">
@@ -80,129 +99,133 @@ Gentooが提供している元々の<path>/etc/fstab</path><e>有効なfstab</e>
 </p>
 
 <p>
-ディフォルトの<keyval id="arch"/>パーティションの例では、よくあるように<path>/boot</path>が<path><keyval id="/boot"/></path>パーティション、ファイルシステムが<c>ext2</c>となっています。
-ブート中にチェックされる必要があります。
+<keyval id="arch"/>のパーティション分割の例では、大抵<path>/boot</path>が<path><keyval id="/boot"/></path>パーティション、
+ファイルシステムが<c>ext2</c>となっています。そしてこのパーティションはブート中にチェックされる必要があります。
 そこでこう書きます。
 </p>
 
-<pre caption="/etc/fstabでの/boot行の例">
-<keyval id="/boot"/>   /boot     ext2    defaults        1 2
+<pre caption="/etc/fstabでの/bootの例">
+<keyval id="/boot"/>   /boot     ext2    defaults        0 2
 </pre>
 
 <p>
-<path>/boot</path>自身のシステムのセキュリティを向上させるためにパーティションが自動的にマウントされたくないユーザーもいます。そういう方々は<c>defaults</c>の代わりに<c>noauto</c>にしてください。これはこのパーティションを使いたいときは毎回手動でマウントする必要があるという事です。
+システムのセキュリティを向上させるために、<path>/boot</path>パーティションを自動的にマウントされたくないユーザーもいます。
+そういう時は<c>defaults</c>の代わりに<c>noauto</c>にしてください。
+これはこのパーティションを使いたいときは毎回手動でマウントする必要があるという事です。
 </p>
 
 </body>
 <body>
 
 <p>
-パーティション分割の構成に合ったルールを追加し、CD-ROMドライブのためのルールを付け加えてください。
-そして、その他のパーティションやドライブがあれば、当然それらも忘れないでください。
+実際のパーティション構成にあわせたルールや、CD-ROMドライブのためのルールを追加してください。
+他にパーティションやドライブがあれば、それも忘れずに追加しておきましょう。
 </p>
 
 <p>
 ここで<path>/etc/fstab</path>を作るために、以下の<e>例</e>を使います。
 </p>
 
-<pre caption="完全な/etc/fstabの例" test="func:keyval('arch')='HPPA'">
-<keyval id="/boot"/>   /boot        ext2    defaults,noatime     1 2
+<pre caption="完全な/etc/fstabの例" test="func:keyval('arch')='HPPA' or func:keyval('arch')='x86' or func:keyval('arch')='AMD64'">
+<keyval id="/boot"/>   /boot        ext2    defaults,noatime     0 2
 /dev/sda3   none         swap    sw                   0 0
-/dev/sda4   /            ext3    noatime              0 1
+/dev/sda4   /            ext4    noatime              0 1
 
 /dev/cdrom  /mnt/cdrom   auto    noauto,user          0 0
-
-proc        /proc        proc    defaults             0 0
-shm         /dev/shm     tmpfs   nodev,nosuid,noexec  0 0
 </pre>
 
-<pre caption="完全な/etc/fstabの例" test="func:keyval('arch')='Alpha' or func:keyval('arch')='MIPS' or func:keyval('arch')='x86' or func:keyval('arch')='AMD64'">
-<keyval id="/boot"/>   /boot        ext2    defaults,noatime     1 2
+<pre caption="完全な/etc/fstabの例" test="func:keyval('arch')='Alpha' or func:keyval('arch')='MIPS'">
+<keyval id="/boot"/>   /boot        ext2    defaults,noatime     0 2
 /dev/sda2   none         swap    sw                   0 0
-/dev/sda3   /            ext3    noatime              0 1
+/dev/sda3   /            ext4    noatime              0 1
 
 /dev/cdrom  /mnt/cdrom   auto    noauto,user          0 0
-
-proc        /proc        proc    defaults             0 0
-shm         /dev/shm     tmpfs   nodev,nosuid,noexec  0 0
 </pre>
 
 <pre caption="完全な/etc/fstabの例" test="func:keyval('arch')='SPARC'">
-/dev/sda1   /               ext3        noatime              0 1
+/dev/sda1   /               ext4        noatime              0 1
 /dev/sda2   none            swap        sw                   0 0
-/dev/sda4   /usr            ext3        noatime              0 2
-/dev/sda5   /var            ext3        noatime              0 2
-/dev/sda6   /home           ext3        noatime              0 2
+/dev/sda4   /usr            ext4        noatime              0 2
+/dev/sda5   /var            ext4        noatime              0 2
+/dev/sda6   /home           ext4        noatime              0 2
 
-<comment># You must add the rules for openprom</comment>
+<comment># 必ずopenpromのためのルールを追加してください</comment>
 openprom    /proc/openprom  openpromfs  defaults             0 0
 
 /dev/cdrom  /mnt/cdrom      auto        noauto,user          0 0
-
-proc        /proc        proc    defaults             0 0
-shm         /dev/shm     tmpfs   nodev,nosuid,noexec  0 0
 </pre>
 
 <pre caption="完全な/etc/fstabの例" test="func:keyval('arch')='PPC' or
 func:keyval('arch')='PPC64'">
-/dev/sda4   /            ext3    noatime              0 1
+/dev/sda4   /            ext4    noatime              0 1
 /dev/sda3   none         swap    sw                   0 0
 
 /dev/cdrom  /mnt/cdrom   auto    noauto,user          0 0
-
-proc        /proc        proc    defaults             0 0
-shm         /dev/shm     tmpfs   nodev,nosuid,noexec  0 0
 </pre>
 
 <p>
-<c>auto</c>は<c>mount</c>にファイルシステムを推測させ(多数のファイルシステムの内の1つで作成され得るリムーバルメディアに推奨されます)、<c>user</c>は非rootユーザーがCDをマウントできるようにします。
+<c>auto</c>は<c>mount</c>にファイルシステムを推測させます
+(いろいろなファイルシステムが使われるリムーバブルメディアに適しています)。
+また、<c>user</c>は非rootユーザーがCDをマウントできるようにします。
 </p>
 
 <p>
-パフォーマンスを改善するのに多くのユーザーはマウントオプションとして
-noatimeオプションを付け加えたいと考えることがあります。
-アクセス時間が記録されないので、その結果はより高速なシステムになります(一般的にその記録はほとんど必要ありません)。
+パフォーマンスを改善するために、多くのユーザーはマウントオプションとして
+<c>noatime</c>オプションを付け加えたいと考えるでしょう。
+アクセス時間が記録されないので、結果としてより高速なシステムになります
+(一般的にこの記録はほとんど必要ありません)。
+TRIMコマンドが動くように<c>discard</c>オプション(現時点ではext4とbtrfsのみ)を
+使ってSSDをマウントする場合も、このオプションを付けるとよいでしょう。
 </p>
 
 <p>
-<path>/etc/fstab</path>を再チェックして、保存・終了して次に進んでください。
+<path>/etc/fstab</path>を再確認して、保存・終了して次に進んでください。
 </p>
 
 </body>
 </subsection>
 </section>
 <section>
-<title>ネットワーク情報</title>
+<title>ネットワーク</title>
 <subsection>
 <title>ホスト名、ドメイン名等</title>
 <body>
 
 <p>
-ユーザーが決めなければならない選択の一つは自分のPCの名前です。至極簡単に思えますが<e>多くの</e>ユーザーは自分のLinux-pcに適当な名前を見付けるのに苦労してます。事を早く進めるために、選んだ名前は後で変更できることを知っておいてください。判りやすいように、ここでは単にマシンを<c>tux</c>、ドメイン名を<c>homenetwork</c>と呼ぶことにします。
+さて、PCには名前をつけなければいけません。
+至極簡単に思えますが<e>多くの</e>ユーザーはPCに名前を付けるのに苦労しています。
+事を早く進めるために、選んだ名前は後で変更できることを知っておいてください。
+判りやすいように、ここでは単にマシンを<c>tux</c>、ドメイン名を<c>homenetwork</c>と呼ぶことにします。
 </p>
 
 <pre caption="ホスト名を設定">
 # <i>nano -w /etc/conf.d/hostname</i>
    
-<comment>(hostname変数に自分のホスト名を設定してください)</comment>
+<comment>(hostname変数にホスト名を設定してください)</comment>
 hostname="<i>tux</i>"
 </pre>
 
 <p>
 次に、<e>もし</e>ドメイン名が必要なら、<path>/etc/conf.d/net</path>に設定します。
-ISPやネットワーク管理者からそう言われているか、DHCPサーバは持っておらずDNSサーバを持っているときのみドメインが必要になります。
-もしネットワークにつなげるときDHCPの設定を行っていれば、DNSやドメイン名に悩む必要はありません。
+ISPやネットワーク管理者からそう言われているか、DNSサーバがありDHCPサーバがない場合には、ドメイン名が必要になります。
+もしネットワークにつなげるときDHCPの設定を行っていれば、DNSやドメイン名は気にしなくても構いません。
 </p>
 
-<pre caption="domain名を設定">
+<note>
+デフォルトでは<path>/etc/conf.d/net</path>が用意されていないので、
+このファイルはあなたが作成することになるでしょう。
+</note>
+
+<pre caption="ドメイン名を設定">
 # <i>nano -w /etc/conf.d/net</i>
    
-<comment>(dns_domain変数に自分のドメイン名を設定してください)</comment>
+<comment>(dns_domain変数にドメイン名を設定してください)</comment>
 dns_domain_lo="<i>homenetwork</i>"
 </pre>
 
 <note>
-ドメイン名を設定しないことを選択した場合、<path>/etc/issue</path>を編集することで、ログイン画面の"This is hostname.(none)"というメッセージを取り除くことができます。
+ドメイン名を設定しないことを選択した場合、<path>/etc/issue</path>を編集することで、
+ログイン画面の"This is hostname.(none)"というメッセージを取り除くことができます。
 そのファイルから文字列<c>.\O</c>を削除するだけです。
 </note>
 
@@ -213,42 +236,55 @@ dns_domain_lo="<i>homenetwork</i>"
 <pre caption="NISドメイン名を設定">
 # <i>nano -w /etc/conf.d/net</i>
    
-<comment>(nis_domain変数に自分のNISドメイン名を設定してください)</comment>
+<comment>(nis_domain変数にNISドメイン名を設定してください)</comment>
 nis_domain_lo="<i>my-nisdomain</i>"
 </pre>
 
 <note>
-DNSとNISの設定に関する情報がもっと欲しい場合は、<c>bzless</c>を使って<path>/usr/share/doc/openrc-*/net.example.bz2</path>の例を読んでみてください。
-DNS/NISの設定管理を楽にするため、<c>openresolv</c>をemergeしてもよいでしょう。
+DNSとNISの設定に関する詳しい情報が欲しい場合は、<c>bzless</c>を使って<path>/usr/share/doc/openrc-*/net.example.bz2</path>の例を読んでみてください。
+DNS/NISの設定管理のために、<c>openresolv</c>をemergeしてもよいでしょう。
 </note>
 
 </body>
 </subsection>
 <subsection>
-<title>ネットワークを設定する</title>
+<title>ネットワークを設定</title>
 <body>
 
 <p>
-「ねえ、もうそれは済んでるんだけど」って気持ちになる前に、Gentooのインストールの初めに設定したネットワークは単にインストール用のものだったことを思い出してください。今ここで自分のGentooシステムに永続的なネットワーク設定をしていきましょう。
+「ねえ、もうそれは済んでるんだけど」って気持ちになる前に、
+インストールの初めに設定したネットワークは単にインストール用のものだったことを思い出してください。
+今ここでGentooシステムに永続的なネットワーク設定をしていきましょう。
 </p>
 
 <note>
-bonding、ブリッジ、802.1Q VLANや無線ネットワークなどの高度な話題を含むもっと詳しい情報は<uri link="?part=4">Gentooネットワーク設定</uri>セクションで扱っています。
+bonding、ブリッジ、802.1Q VLANや無線ネットワークなどの高度な話題を含むもっと詳しい情報は
+<uri link="?part=4">Gentooネットワーク設定</uri>で扱っています。
 </note>
 
 <p>
-全てのネットワーク情報は<path>/etc/conf.d/net</path>に集められます。このファイルでは単純な構文が使われているのですが、もしネットワークを手動で設定する方法を知らなれば一見しただけではわからないでしょう。でも恐がらなくてもいいですよ。全て説明しますから。<path>/usr/share/doc/openrc-*/net.example.bz2</path>には様々な設定と多くのコメントつきの例があります。
+全てのネットワーク情報は<path>/etc/conf.d/net</path>に集められます。
+このファイルでは単純な構文が使われているのですが、もしネットワークを手動で設定する方法を知らなれば一見しただけではわからないでしょう。
+でも恐がらなくてもいいですよ。全て説明しますから。<path>/usr/share/doc/netifrc-*/net.example.bz2</path>には様々な設定と多くのコメントつきの例があります。
 </p>
+
+<p>
+まずは<c>netifrc</c>をインストールします。</p>
+
+<pre caption="netifrcのインストール">
+# <i>emerge --noreplace netifrc</i>
+</pre>
 
 <p>
 DHCPは標準で使用されています。
 DHCPを動作させるためには、DHCPクライアントをインストールする必要があります。
 これについては<uri link="?part=1&amp;chap=9#networking-tools">必要なシステムツールをインストールする</uri>に記述されています。
-忘れずにDHCPクライアントのインストールしてください。
+忘れずにDHCPクライアントをインストールしてください。
 </p>
 
 <p>
-もし特定のDHCPのオプションが必要だったり、絶対にDHCPを使いたくなかったりして自分のネットワーク接続の設定が必要ならば、好みのエディターで<path>/etc/conf.d/net</path>を開いてください(この例では<c>nano</c>が使われています)。
+もし特定のDHCPのオプションが必要だったり、絶対にDHCPを使いたくないために、ネットワーク接続の設定が必要な場合は、
+好みのエディターで<path>/etc/conf.d/net</path>を開いてください(この例では<c>nano</c>が使われています)。
 </p>
 
 <pre caption="編集のために/etc/conf.d/netを開く">
@@ -256,21 +292,17 @@ DHCPを動作させるためには、DHCPクライアントをインストール
 </pre>
 
 <p>
-下記のファイルを見て下さい。
+IPアドレス、ネットマスク、ゲートウェイは<c>config_eth0</c>と<c>routes_eth0</c>で設定します。
 </p>
 
-<pre caption="Default /etc/conf.d/net">
-# This blank configuration will automatically use DHCP for any net.*
-# scripts in /etc/init.d.  To create a more complete configuration,
-# please review /usr/share/doc/openrc-*/net.example.bz2 and save
-# your configuration in /etc/conf.d/net (this file :]!).
-</pre>
+<note>
+ここではネットワークインターフェイスがeth0であると仮定していますが、これはシステムによって違います。
+<e>もし</e>最近のインストールメディアから起動しているのであれば、
+インストール時と同じインターフェイス名が使われると思ってよいでしょう。
+詳しい情報は<uri link="?part=4&amp;chap=2#doc_chap4">ネットワークインターフェイス名</uri>を参照してください。
+</note>
 
-<p>
-自身のIPアドレス、ネットマスク、ゲートウェイを入れるには、<c>config_eth0</c>と<c>routes_eth0</c>の両方を設定する必要があります。
-</p>
-
-<pre caption="eth0のIP情報を手動で設定する">
+<pre caption="eth0のIPアドレス、ネットマスク、ゲートウェイを手動で設定する">
 config_eth0="192.168.0.2 netmask 255.255.255.0 brd 192.168.0.255"
 routes_eth0="default via 192.168.0.1"
 </pre>
@@ -279,17 +311,18 @@ routes_eth0="default via 192.168.0.1"
 DHCPを使用するなら、<c>config_eth0</c>を設定してください。
 </p>
 
-<pre caption="eth0のIPを自動で取得する">
+<pre caption="eth0のIPアドレスを自動で取得する">
 config_eth0="dhcp"
 </pre>
 
 <p>
-全ての有効なオプション項目は<path>/usr/share/doc/openrc-*/net.example.bz2</path>を読んでください。
-あなたの DHCP クライアントのmanページも読み、特別なDHCPオプションが必要かどうか確認してください。
+ここで使えるオプションは<path>/usr/share/doc/openrc-*/net.example.bz2</path>に書かれています。
+もし特別なDHCPオプションが必要なら、お使いのDHCPクライアントのmanページも読むようにしてください。
 </p>
 
 <p>
-もしいくつかのネットワークインターフェイスがあるなら、<c>config_eth1</c>、<c>config_eth2</c>のように上記ステップを繰り返してください。
+もし複数のネットワークインターフェイスがあるなら、
+<c>config_eth1</c>、<c>config_eth2</c>について上記ステップを繰り返してください。
 </p>
 
 <p>
@@ -299,46 +332,66 @@ config_eth0="dhcp"
 </body>
 </subsection>
 <subsection>
-<title>ブート時に自動でネットワークを始動させる</title>
+<title>ブート時に自動でネットワークに接続する</title>
 <body>
 
 <p>
-ブート時にネットワークインターフェースを有効にさせるには、それぞれのスクリプトをdefaultのランレベルに追加する必要があります。
+ブート時にネットワークインターフェースを有効にするために、
+それぞれのスクリプトをdefaultランレベルに追加する必要があります。
 </p>
 
-<pre caption="defaultのランレベルにnet.eth0を追加">
+<pre caption="defaultランレベルにnet.eth0を追加">
 # <i>cd /etc/init.d</i>
 # <i>ln -s net.lo net.eth0</i>
 # <i>rc-update add net.eth0 default</i>
 </pre>
 
 <p>
-もしいくつかのネットワークインターフェイスがあるなら、適当な<path>net.eth1</path>、<path>net.eth2</path>等の為に起動スクリプトを作成する必要があります。<path>net.eth0</path>の時と同様に作成してください。
+もし複数のネットワークインターフェイスがあるなら、<path>net.eth0</path>の時と同様に
+適切な<path>net.*</path>を作成する必要があります。
 </p>
+
+<p>
+もしネットワークインターフェイスの名前(ここではeth0)が間違っていることにあとで気づいた場合、
+</p>
+
+<ol>
+<li>
+<path>/etc/conf.d/net</path>を正しいインターフェイス名で修正し(例: eth0の代わりにenp3s0)、
+</li>
+<li>
+新しいシンボリックリンクを作り(例: <path>/etc/init.d/net.enp3s0</path>)、</li>
+<li>
+古いシンボリックリンクを削除し(例: <c>rm /etc/init.d/net.eth0</c>)、</li>
+<li>
+新しいシンボリックリンクをdefaultランレベルに追加して、</li>
+<li>
+古いシンボリックリンクを<c>rc-update del net.eth0 default</c>で削除してください。</li>
+</ol>
 
 </body>
 </subsection>
 <subsection>
-<title>ネットワーク情報を書き留める</title>
+<title>特別なホストの情報を書き出す</title>
 <body>
 
 <p>
-さてネットワークの情報に関してLinuxシステムに知らせる必要があります。これは<path>/etc/hosts</path>に定義され、自分のネームサーバーでは解決されないホストの為のホスト名とIPアドレスの解決に役立ちます。
-これを自分のシステムに定義する必要があります。
-自分自身で内部ネットワーク向けのDNSを設定したくない場合は、
-ネットワークに存在する、他のシステムも定義してもよいでしょう。
+ホスト名とIPアドレスの対応を<path>/etc/hosts</path>内に定義することで、
+ネームサーバでは不可能なホスト名からIPアドレスへの解決を補助します。
+ローカルネットワーク向けのDNSを構築しない場合は、
+そのローカルネットワーク上の他ホストのホスト名とIPアドレスの対応を定義してもよいでしょう。
 </p>
 
 <pre caption="/etc/hostsを開く">
 # <i>nano -w /etc/hosts</i>
 </pre>
 
-<pre caption="ネットワーク情報を書き込む">
-<comment>(これは現在のシステムを定義しています)</comment>
+<pre caption="ホスト名とIPアドレスの対応を書き込む">
+<comment>(現在設定しているPCを定義します)</comment>
 127.0.0.1     tux.homenetwork tux localhost
 
-<comment>(自分のネットワークで、以下のように定義した固定IPを持つ必要がある、
-別のシステムを定義します)</comment>
+<comment>(ローカルネットワーク上の他ホストを定義します。
+この場合、当該ホストは固定IPを持つ必要があります)</comment>
 192.168.0.5   jenny.homenetwork jenny
 192.168.0.6   benny.homenetwork benny
 </pre>
@@ -348,42 +401,35 @@ config_eth0="dhcp"
 </p>
 
 <p test="func:keyval('arch')='AMD64' or func:keyval('arch')='x86' or substring(func:keyval('arch'),1,3)='PPC'">
-もしPCMCIAが無ければ、<uri link="#sysinfo">システム情報</uri>に進むことができます。
+もしPCMCIAが無ければ、<uri link="#sysinfo">システムの情報</uri>に進むことができます。
 PCMCIAユーザーは続くPCMCIAの項目を読んでください。
 </p>
 
 </body>
 </subsection>
 <subsection test="func:keyval('arch')='AMD64' or func:keyval('arch')='x86' or substring(func:keyval('arch'),1,3)='PPC'">
-<title>自由選択:PCMCIAを作動させる</title>
+<title>自由選択:PCMCIAを使う</title>
 <body>
 
 <p>
-PCMCIAユーザーは最初に<c>pcmciautils</c>パッケージをインストールしなければなりません。</p>
+PCMCIAユーザーは最初に<c>pcmciautils</c>パッケージをインストールしなければなりません。
+</p>
 
 <pre caption="pcmciautilsのインストール">
 # <i>emerge pcmciautils</i>
-</pre>
-
-<p>
-<c>pcmcia-cs</c>がインストールされたら、<c>pcmcia</c>スクリプトを<e>default</e>のランレベルに追加します。
-</p>
-
-<pre caption="pcmciaスクリプトをdefaultのランレベルに追加">
-# <i>rc-update add pcmcia default</i>
 </pre>
 
 </body>
 </subsection>
 </section>
 <section id="sysinfo">
-<title>システム情報</title>
+<title>システムの情報</title>
 <subsection>
 <title>rootのパスワード</title>
 <body>
 
 <p>
-最初にrootのパスワードを入力して設定します。
+最初にrootのパスワードを設定します。
 </p>
 
 <pre caption="rootのパスワードを設定">
@@ -393,29 +439,25 @@ PCMCIAユーザーは最初に<c>pcmciautils</c>パッケージをインスト�
 </body>
 </subsection>
 <subsection>
-<title>システム情報</title>
+<title>システムの情報</title>
 <body>
 
 <p>
-Gentooでは<path>/etc/rc.conf</path>を一般的なシステム全般の設定として使用します。<path>/etc/rc.conf</path>を開いて、その中のコメントを読んで楽しんでください。:)
+Gentooではサービス、スタートアップ、シャットダウンを設定するために<path>/etc/rc.conf</path>を使用します。
+<path>/etc/rc.conf</path>を開いて、その中のコメントを読んで楽しんでください。
 </p>
 
-<pre caption="/etc/rc.confを開く">
+<pre caption="サービスを設定する">
 # <i>nano -w /etc/rc.conf</i>
 </pre>
 
 <p>
-<path>/etc/rc.conf</path>の設定が終われば、保存・終了してください。
+設定が終わったら、保存・終了してください。
 </p>
 
 <p>
-見て判るように、このファイルには必要な設定の値を決めるのに役立つ良いコメントがされてます。
-
-ユニコードを使って自分のシステムを設定し、標準のエディターとディスプレイマネージャー(gdmやkdmのような)を決める事ができます。
-</p>
-   
-<p>
-Gentooではキーボード設定を扱うのには<path>/etc/conf.d/keymaps</path>を使います。自分のキーボードを設定するにはこのファイルを編集してください。
+Gentooではキーボード設定を扱うために<path>/etc/conf.d/keymaps</path>を使います。
+キーボードを設定するにはこのファイルを編集してください。
 </p>
 
 <pre caption="/etc/conf.d/keymapsを開く">
@@ -423,7 +465,8 @@ Gentooではキーボード設定を扱うのには<path>/etc/conf.d/keymaps</pa
 </pre>
 	    
 <p>
-<c>keymap</c>の設定には特に注意してください。もし間違った<c>keymap</c>を選ぶとキーボードをタイプするときにとんでもなく変な結果になるでしょう。
+<c>keymap</c>の設定には特に注意してください。
+もし間違った<c>keymap</c>を選ぶとキーボードをタイプするときにとんでもなく変な結果になるでしょう。
 </p>
 
 <note test="substring(func:keyval('arch'),1,3)='PPC'">
@@ -431,46 +474,37 @@ PPCではほとんどのシステムでx86キーマップが使われます。
 </note>
 
 <p>
-<path>/etc/conf.d/keymaps</path>の設定が終われば、保存・終了してください。
+<path>/etc/conf.d/keymaps</path>の設定が完了したら、保存・終了してください。
 </p>
 
 <p>
-Gentooではクロックオプションの設定には<path>/etc/conf.d/hwclock</path>を使います。必要に応じてこのファイルを編集してください。
+Gentooではクロックオプションの設定に<path>/etc/conf.d/hwclock</path>を使います。必要に応じてこのファイルを編集してください。
 </p>
      
 <pre caption="/etc/conf.d/hwclockを開く">
 # <i>nano -w /etc/conf.d/hwclock</i>
 </pre>
- 
+
 <p>
 ハードウェアクロックにUTCを使っていないのなら、<c>clock="local"</c>をこのファイルに追加する必要があります。
-さもなければ、いくらか時間がずれてしまうでしょう。
+さもなければ、時間がずれてしまうでしょう。
 </p>
 
 <p>
-<path>/etc/conf.d/hwclock</path>の設定が終われば、保存・終了してください。
+<path>/etc/conf.d/hwclock</path>の設定が完了したら、保存・終了してください。
 </p>
 
-<p>
-さらに<c>sys-libs/timezone-data</c>パッケージを更新すると、自動的に<path>/etc/localtime</path>がアップデートされるよう、
-さきほど<path>/etc/localtime</path>へコピーしたタイムゾーンを<path>/etc/timezon</path>に書くべきです。
-例えば、もしタイムゾーンにGMTを使用しているとするなら、<c>GMT</c>と<path>/etc/timezon</path>に書きます。
-</p>
-
-<p test="not(func:keyval('arch')='PPC64')">
-IBM PPC64のシステム上にGentooをインストールしていなければ 、<uri link="?part=1&amp;chap=9">必要なシステムツールをインストールする</uri>に進んでください。
-</p>
-      
 </body>
 </subsection>
 <subsection test="func:keyval('arch')='PPC64'">
-<title>コンソールを設定する</title>
+<title>コンソールを設定</title>
 <body>
-	        
+
 <p>
-もし仮想コンソールを使っているなら、仮想コンソールでログインプロンプトを表示させるために<path>/etc/inittab</path>内の適切な行のコメントを外さなくてはなりません。
+もし仮想コンソールを使っているなら、仮想コンソールでログインプロンプトを表示させるために
+<path>/etc/inittab</path>内の適切な行のコメントを外さなくてはなりません。
 </p>
-	     
+
 <pre caption="/etc/inittabのhvcもしくはhvsiサポートを有効にする">
 hvc0:12345:respawn:/sbin/agetty -L 9600 hvc0
 hvsi:12345:respawn:/sbin/agetty -L 19200 hvsi0
@@ -479,7 +513,7 @@ hvsi:12345:respawn:/sbin/agetty -L 19200 hvsi0
 <p>
 <path>/etc/securetty</path>に適切なコンソール名が挙げられているかも確認しなければなりません。
 </p>
-	 
+
 <p>
 では、<uri link="?part=1&amp;chap=9">必要なシステムツールをインストールする</uri>に進みましょう。
 </p>
