@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/proj/en/gentoo-alt/prefix/techdocs.xml,v 1.17 2012/10/28 15:21:06 swift Exp $ -->
+
+<guide lang="en">
+  <title>Gentoo Prefix Techdocs</title>
+
+  <author title="Author">
+    <mail link="grobian@gentoo.org">Fabian Groffen</mail>
+  </author>
+
+  <abstract>
+    Technical documentation on Gentoo Prefix
+  </abstract>
+
+
+  <!-- The content of this document is licensed under the CC-BY-SA license -->
+  <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+  <license/>
+
+  <version>1.26</version>
+  <date>2012-03-24</date>
+
+  <chapter>
+    <title>Changes to Portage</title>
+
+    <section><!-- {{{ Global -->
+      <title>Global</title>
+      <body>
+
+        <p>
+          What does Gentoo Prefix do more?  For short, it allows to
+          install packages into an offset, without root privileges.  The
+          longer answer includes how this is done, and why.  To start
+          with the latter one, let's see how the land of the package
+          manager (Portage) looks like.
+        </p>
+        <p>
+          A package manager can be primary, or secondary.  In the first
+          case, the package manager is responsible for building the
+          (core) system, while in the latter case, the package manager
+          builds on top of an existing system to enhance it.  Please
+          note that this is by no means meant as a formal definition of
+          the general concept "package manager".  Within this document
+          it is used as entity that is natively responsible for managing
+          software packages on the OS it works on.  Effectively, this
+          means that Gentoo Portage is not the primary package manager
+          on Apple Mac OS X, Sun Solaris, Debian, Ubuntu, etc.  Gentoo
+          Portage is the primary package manager on its Gentoo GNU/Linux
+          distribution, and as such, the Gentoo Portage tree matches
+          this goal.
+        </p>
+        <p>
+          The Portage version we use in Gentoo Prefix is meant to be a
+          secondary package manager.  Therefore it doesn't require root
+          privileges, and has to install into another place than
+          <path>/</path>, because there the primary package manager is
+          already in charge.
+        </p>
+        <p>
+          This Portage version started as a set of patches by Michael
+          Haubenwallner, that were finally applied to a new branch of
+          portage development: Prefix.  In this branch, initially
+          managed by Brian Harring, then later by Kito Dietrich, lots of
+          development made Prefix portage into what it is currently.
+        </p>
+
+      </body>
+    </section><!-- }}} -->
+
+    <section><!-- {{{ Technical state -->
+      <title>Technical state</title>
+      <body>
+
+        <p>
+          The Portage version used in Gentoo Prefix resides in the
+          <path>prefix</path> branch of
+          the main Portage Subversion repository.  Its sources can be
+          inspected at
+          <uri>http://git.overlays.gentoo.org/gitweb/?p=proj/portage.git;a=shortlog;h=refs/heads/prefix</uri>.
+          <br />
+          Currently, the Portage in this branch code is very close to
+          the <c>trunk</c> in subversion.  Patches made in the
+          <c>trunk</c> usually apply cleanly to the <c>prefix</c>
+          branch.  Hence, it is easy to keep the two synchronised using
+          frequent merge operations.
+        </p>
+
+      </body>
+    </section><!-- }}} -->
+
+    <section><!-- {{{ Tree state -->
+      <title>Tree state</title>
+      <body>
+
+        <p>
+          Since the Gentoo Linux Portage tree is not compatible with
+          Gentoo Prefix, an overlay has been created, which is
+          currently hosted on
+          <uri>http://overlays.gentoo.org/proj/alt/browser/trunk/prefix-overlay</uri>.
+          This has the disadvantage of not inheriting all packages from
+          the main tree automatically.  Instead each package has to be
+          converted to be Prefix compatible.  Luckily for most packages
+          these changes are trivial, and can be automatically performed
+          by the <c>eapify</c> script, which can be found in the
+          <path>scripts</path> directory of the prefix-overlay.
+        </p>
+        <p>
+          Compared to the main tree, the Prefix tree is rather small.
+          Adding packages is usually a simple job, using the tools from
+          the <path>scripts</path> directory mentioned before.  Keeping
+          the packages synchronised with the main tree is also
+          facilitated by a script that is capable of applying the diffs
+          with some intelligence between revisions.  Also "cross-diffs",
+          diffs between versions to create a new ebuild version,
+          retaining as much changes as added in the previous version are
+          implemented, keeping the maintenance overhead rather low.
+          <br />
+          While the Prefix tree contains enough packages to bootstrap a
+          Prefix system, run some editor and read mail via <c>mutt</c>, it
+          currently lacks packages in a number of areas.  We are
+          constantly looking on how to expand on these areas, but mostly
+          rely on contributors doing the initial pioneer work.
+        </p>
+
+      </body>
+    </section><!-- }}} -->
+
+  </chapter>
+
+  <chapter>
+    <title>Ebuild modifications</title>
+
+    <section><!-- {{{ EPREFIX -->
+      <title>EPREFIX variable</title>
+      <body>
+        <p>
+          Since Portage will install in an offset, called a "prefix", in
+          some cases it might be necessary to directly handle with this
+          offset.  Some configure scripts for example require paths to
+          be given next to <c>--prefix</c>, <c>--libdir</c>, etc. (all
+          what <c>econf</c> covers), or some packages can't use
+          <c>econf</c> at all.  For those occasions the variable
+          <c>${EPREFIX}</c> is available in ebuilds and eclasses,
+          pointing to the root of the offset.  For an offset
+          <path>/Library/Gentoo</path> for example, the variable
+          <c>${EPREFIX}</c> would contain <path>/Library/Gentoo</path>.
+          This allows to easily use it for example like <c>econf
+            --with-some-app="${EPREFIX}"/usr/bin/some-app</c>.
+        </p>
+      </body>
+    </section><!-- }}} -->
+
+    <section><!-- {{{ ED and EROOT -->
+      <title>The variables ED and EROOT</title>
+      <body>
+        <p>
+          In normal ebuilds, <c>${D}</c> refers to the destination
+          directory in a temporary location before all files are
+          actually merged into the live filesystem.  Since in Gentoo
+          Prefix <c>configure</c> is run with <c>--prefix=${EPREFIX}/usr</c>
+          in principle no changes are required.  However,
+          for all modifications to the build image, as is common
+          practise in many ebuilds, <c>${D}${EPREFIX}</c> should be
+          used.  While this is a clean and logical result of using an
+          offset, it increases the burden of "porting" ebuilds.  For
+          this purpose the variable <c>${ED}</c> was introduced.  It
+          contains the value of <c>${D}${EPREFIX}/</c> and functions as
+          handy shortcut, which is easy to change.  Usually, all but one
+          occurrences of <c>${D}</c> in an ebuild (or eclass) have to be
+          replaced by <c>${ED}</c> to work properly in the prefix.
+          Remember that when using <c>make DESTDIR="${D}" install</c> the
+          <c>${D}</c> should in general <e>not</e> be changed, as
+          configure was called with <c>--prefix="${EPREFIX}"/usr</c>.
+        </p>
+        <p>
+          The variable <c>${ROOT}</c> has for the same purpose a
+          corresponding <c>${EROOT}</c> which contains
+          <c>${ROOT}${EPREFIX}</c>.  Often when <c>${ROOT}</c> is being
+          used, this can be replaced by <c>${EROOT}</c> to add Gentoo
+          Prefix support.
+        </p>
+        
+      </body>
+    </section><!-- }}} -->
+
+    <section><!-- {{{ EPREFIX or EROOT -->
+      <title>Using EPREFIX and EROOT</title>
+      <body>
+        <p>
+          Given that <c>${EROOT}</c> is <c>${ROOT}${EPREFIX}</c>, using
+          <c>${EROOT}</c> or <c>${EPREFIX}</c> is defined by the
+          following rule.  The rule is simple and automatable, whether
+          or not it is "correct", for Gentoo Prefix this rule always holds:
+        </p>
+        <p>
+          <e>If the main tree ebuild uses</e> <c>${ROOT}</c><e>, we
+          respect</e> <c>${ROOT}</c><e> and usually use</e>
+          <c>${EROOT}</c><e>, however if the main tree does not
+          use</e> <c>${ROOT}</c><e>, we only add the offset,</e>
+          <c>${EPREFIX}</c><e>.</e>
+        </p>
+        <p>
+          This rule basically means that you <e>never</e> add
+		  <c>${EROOT}</c> yourself, if there isn't a <c>${ROOT}</c> in
+          the main tree ebuild.  Repeating: whether or not that is
+          "correct", for Gentoo Prefix this rule always holds.  Rationale is
+          simple: if it is a bug, it is a bug that should be fixed
+          "upstream" (in the main tree), and that fix propagated to
+          Gentoo Prefix.  We don't want any extra differences between main
+          tree and Gentoo Prefix, to keep maintenance and the amount of
+          unrelated changes low.
+        </p>
+      </body>
+    </section><!-- }}} -->
+
+    <section><!-- {{{ prefix.eclass -->
+      <title>prefix.eclass</title>
+      <body>
+        <p>
+          In some cases, the offset prefix needs to be hardcoded into
+          files.  Examples are shebangs with arguments or references to
+          config files.  The <c>prefix.eclass</c> provides the function
+          <c>eprefixify</c>, which replaces each occurrence of
+          <c>@GENTOO_PORTAGE_EPREFIX@</c> with the offset prefix as
+          known by Portage.  To use the eprefixify function on files
+          (e.g. after patching), one needs to inherit the prefix eclass.
+        </p>
+      </body>
+    </section><!-- }}} -->
+
+    <section><!-- {{{ inter-revisions -->
+      <title>Ebuild inter-revisions</title>
+      <body>
+          <note>This subsection <b>only</b> applies to the Prefix Overlay, not
+            the main Gentoo Linux tree. </note>
+        <p>
+          Gentoo Prefix ebuilds are currently merged from the main tree,
+          and kept in sync.  This process is half automated using
+          scripts and in short takes differences from the main tree to
+          apply them on the Prefix tree.  This process assures that
+          changes made to the Prefix tree are not lost, where it still
+          is possible to merge most changes.  For this to work, the
+          ebuilds need to keep the same filename as in the main tree
+          though.  This way an ebuild in the Prefix tree can be compared
+          to the same ebuild in the main tree.  Since in Prefix also
+          fixes need to be pushed to users, a revision of an ebuild
+          cannot be simply bumped, since this would break
+          synchronisation and result in collisions when the main tree
+          does a revision bump too.  For this purpose,
+          <e>inter-revisions</e> have been implemented in Gentoo Prefix.
+          They allow to specify a higher version to an ebuild, while
+          maintaining the connection with the main tree.
+          Inter-revisions are simple sub-revisions of main revisions,
+          meaning that for every revision, a numbered sub-revision
+          (inter-revision) version can exist.  To make Portage
+          distinguish normal and inter-revisions, the latter ones start
+          with a 0 followed by the normal revision number.  The
+          inter-revision is added as dot and the number.  An example
+          inter-revision 2 of revision 3 would be <c>-r03.2</c>.  Note
+          that the inter-revision of a revision<e>less</e> ebuild is the
+          inter-revision of revision 0.  For example: <c>-r00.1</c>.
+        </p>
+        <p>
+          The effect of inter-revisions on Portage is that the
+          sub-revision part is taken into account when comparing the
+          versions.  A normal revision has a sub-revision of 0, hence
+          <c>-r01.1</c> is greater than <c>-r1</c>.  This allows to bump
+          a package in Prefix only.  For the update scripts, however,
+          the inter-revision is not taken into account.  Hence, when an
+          inter-revision ebuild is compared with the main tree, it is
+          compared to the revision part only, thereby not breaking the
+          connection between the Prefix tree and the main tree.
+        </p>
+      </body>
+    </section><!-- }}} -->
+  </chapter>
+
+  <chapter>
+    <title>Gentoo Prefix tree developer policies</title>
+
+    <section><!-- {{{ updating -->
+      <title>Main tree migrations</title>
+      <body>
+        <p>
+          In principle, all ebuilds in the Gentoo Prefix tree are modified
+          copies from their versions in the main tree, as used by Gentoo
+          Linux.  This means that each ebuild is copied and hence needs
+          to be kept in sync with the main tree version.  Since ebuilds
+          in the Prefix tree may have manual modifications (those not
+          automatically made by <c>eapify</c>), the process of keeping
+          the Prefix tree in sync with the main tree is not as straight
+          forward as simply re-copying and re-<c>eapify</c>ing.
+          Instead, a complex script, <c>eupdate</c> is used to apply the
+          differences made to an ebuild in the main tree, to the version
+          in the Prefix tree.  Also when new versions of ebuilds are
+          added to the main tree, the <c>eupdate</c> script derives a
+          new version in the Prefix tree, based on the differences
+          between the latest two versions of the ebuilds in the main
+          tree.  This process is called a <e>cross-diff</e>.  Both
+          updating strategies may fail depending on modifications made
+          to the ebuild in the Prefix tree.  In 90% of the cases, both
+          update strategies apply without problems, and semi-automatic
+          propagation relies on that to currently merge changes from the
+          main tree on a daily basis, with a limited investment of time
+          on (manually) resolving the conflicts.
+        </p>
+        <p>
+          Mainly because manually resolving conflicts is a tedious job,
+          the main policy in the Prefix tree with regard to
+          modifications made to the main tree version is sound and
+          simple: <b>avoid any change that is not strictly
+            necessary</b>!.  This boils down to the following concrete
+          rules that need to be taken into account.  Quoting of
+          variables is a often confusing job.  Underquoting results in
+          problems when spaces are being used, overquoting is just
+          unnecessary work.  In many cases, the quoting of variables is
+          done wrong in the main tree ebuilds, hence the problem is also
+          carried over onto the Prefix tree.  Fixing these quoting
+          problems should <e>not</e> be done, unless this is necessary
+          to solve a Prefix specific problem, which happens only in rare
+          cases.  Along the same line, adding or removing white space,
+          indenting, rewriting to make more optimal in execution and
+          similar changes which are not essentially necessary, should be
+          avoided.  To avoid differences in the <c>Changelog</c> file,
+          you should <e>not</e> use <c>echangelog</c> when committing
+          changes to ebuilds that are available in the main tree, and
+          hence subject to semi-automatic updating.  In fact each
+          <c>Changelog</c> entry added using <c>echangelog</c> makes a
+          conflict during updating, making the problem even worse.
+          Don't update the <c>ChangeLog</c>.
+        </p>
+        <p>
+          When changes need to be made, such as adding an <c>epatch</c>
+          line, or adding a platform specific statement, such as an
+          configure option, care needs to be taken to try to reduce the
+          size of the differences introduced.  The smaller the
+          difference, the bigger the chance that semi-automatic updating
+          succeeds without problems.
+        </p>
+        <p>
+          For files that have no CVS header, and hence cannot be kept in
+          sync, such as e.g. <c>metadata.xml</c> and many patches in the
+          <c>files/</c> directory the <c>eupdate</c> command just makes
+          sure it is equal to the version in the main tree.  For this
+          reason, keep in mind that changes to those files get lost upon
+          the next run of <c>eupdate</c>.  Since this is done almost
+          daily, the modifications disappear soon enough.  Only files
+          with a CVS <c>$ Header</c><c>:</c> <!-- no-expansion hack ;) -->
+          (such as ebuilds) can be changed in such a way that the
+          modifications are not lost.
+        </p>
+      </body>
+    </section>
+
+  </chapter>
+
+</guide>
+
+<!-- vim: set expandtab ts=2 sw=2 foldmethod=marker foldenable: -->
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

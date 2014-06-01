@@ -1,0 +1,280 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/proj/en/gdp/doc/gorg.xml,v 1.3 2012/05/07 20:40:40 nightmorph Exp $ -->
+
+<guide>
+<title>How to Install Gorg</title>
+
+<author title="Author">
+  <mail link="neysx"/>
+</author>
+<author title="Editor">
+  <mail link="nightmorph"/>
+</author>
+
+<abstract>
+This guide describes how to install and configure gorg.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
+<license/>
+
+<version>2</version>
+<date>2012-05-07</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<body>
+
+<p>
+Gorg is a back-end XSLT processor for an XML-based web site. XML source files
+are transformed and served on-the-fly. Output files and their dependencies are
+cached. Its main features are: 
+</p>
+
+<ul>
+  <li>Works with apache, lighttpd or webrick (ruby's own web server) </li>
+  <li>Uses efficient caching</li>
+  <li>
+    Generates consistent HTTP headers when several web nodes serve the same
+    content
+  </li>
+  <li>
+    Implements its own compression (aka mod_gzip), i.e. it does not rely on the
+    web server to compress its output
+  </li>
+  <li>Supports client-side caching</li>
+  <li>Your XSL can accept and write cookies</li>
+  <li>
+    Provides its own search engine (site indexing will be substantially updated
+    in a later version)
+  </li>
+</ul>
+
+<p>
+Gorg allows you to serve your own local copy of
+<uri>http://www.gentoo.org</uri>. It can use either a cgi or a fastcgi script
+with apache or lighttpd, or even use its own stand-alone web server. Its name is
+short for <b>G</b>entoo.<b>org</b> because it was created with Gentoo's site in
+mind when it was felt that a replacement for AxKit was required.
+</p>
+
+<p>
+Gorg has been tested on x86, amd64, alpha, sparc, ppc, mips &amp; hppa with the
+following packages:
+</p>
+
+<pre caption="Test environment">
+>=net-www/apache-2.0.55
+>=www-apache/mod_fcgid-1.0.8 
+
+>=dev-lang/ruby-1.8.4
+>=dev-libs/fcgi-2.4.0  
+>=dev-ruby/ruby-fcgi-0.8.6
+>=dev-libs/libxml2-2.6.23
+>=dev-libs/libxslt-1.1.15
+<comment>(In the unlikely case you want to fiddle with gorg's own search engine)</comment>
+>=dev-db/mysql-4.0.26 <comment>(up to and including 5.*)</comment>
+>=dev-ruby/ruby-dbi-0.0.21
+>=dev-ruby/mysql-ruby
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Installing Gorg</title>
+<section>
+<body>
+
+<p>
+Define your USE flags to allow apache with or without mod_fcgi, or not depending
+on how you want to use it. The <c>mysql</c> USE flag is only required for the
+integrated search engine.
+</p>
+
+<impo>
+You might have to keyword some dependencies for your architecture. You can
+keyword the required packages or accept a foreign architecture. gorg has been
+installed and tested on x86, amd64, alpha, sparc, ppc, mips &amp; hppa.
+</impo>
+
+<pre caption="Emerging gorg">
+<comment>(Check dependencies are available for your architecture)</comment>
+# <i>emerge -pv gorg</i>
+
+<comment>(Install gorg)</comment>
+# <i>emerge gorg</i>
+</pre>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Configuring Gorg</title>
+<section>
+<title>Configuring apache</title>
+<body>
+
+<note>
+You may skip this section if you are not going to use apache at all. 
+</note>
+
+<p>
+If you want to use fastcgi, which you should anyway, you'll need to add <c>-D
+FCGID</c> to the <c>APACHE2_OPTS</c> variable in
+<path>/etc/conf.d/apache2</path>.
+</p>
+
+<p>
+Then, integrate the apache configuration directives from the provided sample
+file <path>/etc/gorg/vhost.sample</path> into your own vhost configs, e.g.:
+<path>/etc/apache2/vhosts.d/10_gorg.conf</path>. Comments in the sample config
+file will guide you.
+</p>
+
+<p>
+Finally, copy or symlink the (c)cgi scripts from
+<path>/usr/lib/ruby/site_ruby/&lt;ruby-version&gt;/gorg/fcgi-bin/gorg.fcgi</path>
+and
+<path>/usr/lib/ruby/site_ruby/&lt;ruby-version&gt;/gorg/cgi-bin/{gorg,search}.cgi</path>
+into your web site (f)cgi directories and check they are executable. You
+should copy <path>search.cgi</path> only if you are going to use the integrated
+search engine.
+</p>
+
+</body>
+</section>
+<section>
+<title>Configuring gorg</title>
+<body>
+
+<p>
+Create a copy of the sample config file <path>/etc/gorg/gorg.conf.sample</path>
+named <path>/etc/gorg/gorg.conf</path> and <b>edit</b> it. Comments will help
+you define your own parameters. You need to define at least your web document
+root directory.
+</p>
+
+<p>
+If you do not want to use the default <path>/etc/gorg/gorg.conf</path> config
+file, you'll need to define an environment variable called <c>GORG_CONF</c> that
+points to the config file.
+</p>
+
+<impo>
+If you use caching, and it is recommended that you do so, do make sure that the
+cache directory defined in your config file has proper permissions. If you use
+apache, the apache user needs full access to that directory.
+</impo>
+
+</body>
+</section>
+<section>
+<title>Getting the missing files</title>
+<body>
+
+<p>
+Assuming you'll serve your local copy of CVS, or a copy if, or symlinks to it,
+you need to download some files from the <path>dyn</path> directory.
+</p>
+
+<pre caption="Get the missing files">
+<comment>(Go to your htdocs directory)</comment>
+$ <i>cd /path/to/your/document/root</i>
+/htdocs $ <i>cd dyn</i>
+/htdocs $ <i>wget -O news-index.xml http://www.gentoo.org/dyn/news-index.xml?passthru=1</i>
+/htdocs $ <i>cd ..</i>
+<comment>(Do the same for any other data you may need from the /dyn directory)</comment>
+</pre>
+
+<p>
+You also need to make the pictures available to your browser. The
+<path>images</path> directory is one level above <path>htdocs</path>. Just
+define a symlink to it and you're set.
+</p>
+
+<pre caption="Make a symlink to the pictures">
+/htdocs $ <i>ln -si ../images images</i>
+
+<comment>(It should look like this:)</comment>
+/htdocs $ <i>ls -l</i>
+drwxr-xr-x   3 neysx users  128 Sep 14 17:45 css
+drwxr-xr-x  31 neysx users  744 Oct 26 00:03 doc
+drwxr-xr-x   3 neysx users  544 Nov  2 16:53 dtd
+drwxr-xr-x   3 neysx users  168 Nov  3 16:24 dyn
+-rw-r--r--   1 neysx users 1406 Jun  7  2003 favicon.ico
+lrwxrwxrwx   1 neysx users   10 Oct 21 22:29 images -> ../images/
+-rw-r--r--   1 neysx users  190 Nov  9  2002 index.xml
+drwxr-xr-x  16 neysx users  384 Apr  1  2004 main
+drwxr-xr-x  17 neysx users 6960 Nov  3 15:34 news
+drwxr-xr-x   8 neysx users  192 Oct 23 14:52 proj
+drwxr-xr-x   4 neysx users   96 Sep 17 14:05 security
+drwxr-xr-x   3 neysx users  736 Nov  2 16:40 xsl
+</pre>
+
+<p>
+Your local CVS probably shows a few more entries, but at least those mentioned
+above should be available and kept up-to-date. Also remember to keep your
+<path>images</path> directory current.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>Running Gorg</title>
+<section>
+<title>The stand-alone web server</title>
+<body>
+
+<p>
+The easiest way to try it out is to run <c>gorg</c>. It should display something
+like:
+</p>
+
+<pre caption="Run gorg">
+$ <i>gorg</i>
+
+Starting the Gorg web server on port 8008
+
+Hit Ctrl-C or type "kill 31479" to stop it
+</pre>
+
+<p>
+Point your browser to <uri>http://localhost:8008</uri> and you should see your
+favorite site.
+</p>
+
+</body>
+</section>
+<section>
+<title>With apache</title>
+<body>
+
+<p>
+Restart apache (<c>/etc/init.d/apache2 restart</c>) and visit
+<uri>http://localhost</uri> assuming you're installing on your own
+workstation.
+</p>
+
+<p>
+If you used static fastcgi servers, you should see them with <c>top -u
+apache</c>.
+</p>
+
+<p>
+If it doesn't work, try the stand-alone web server (type <c>gorg</c>). If this
+doesn't work either, check your <path>/etc/gorg/gorg.conf</path> config file. If
+it does work, please check your apache config files and your logs.
+</p>
+
+</body>
+</section>
+</chapter>
+</guide>

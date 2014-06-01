@@ -4,36 +4,13 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-ia64-kernel.xml,v 1.26 2012/03/27 17:46:07 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-ia64-kernel.xml,v 1.33 2013/12/17 10:38:05 swift Exp $ -->
 
 <sections>
 
-<version>16</version>
-<date>2012-03-27</date>
+<version>23</version>
+<date>2013-12-17</date>
 
-<section>
-<title>Timezone</title>
-<body>
-
-<p>
-You first need to select your timezone so that your system knows where it is
-located. Look for your timezone in <path>/usr/share/zoneinfo</path>, then copy
-it to <path>/etc/localtime</path>. Please avoid the
-<path>/usr/share/zoneinfo/Etc/GMT*</path> timezones as their names do not
-indicate the expected zones. For instance, <path>GMT-8</path> is in fact
-GMT+8.
-</p>
-
-<pre caption="Setting the timezone information">
-# <i>ls /usr/share/zoneinfo</i>
-<comment>(Suppose you want to use Europe/Brussels)</comment>
-# <i>cp /usr/share/zoneinfo/Europe/Brussels /etc/localtime</i>
-<comment>(Next set the timezone)</comment>
-# <i>echo "Europe/Brussels" &gt; /etc/timezone</i>
-</pre>
-
-</body>
-</section>
 <section>
 <title>Installing the Sources</title>
 <subsection>
@@ -44,7 +21,7 @@ GMT+8.
 The core around which all distributions are built is the Linux kernel. It is the
 layer between the user programs and your system hardware. Gentoo provides its
 users several possible kernel sources. A full listing with description is
-available at the <uri link="/doc/en/gentoo-kernel.xml">Gentoo Kernel
+available at the <uri link="https://wiki.gentoo.org/wiki/Kernel/Overview">Gentoo Kernel
 Guide</uri>. 
 </p>
 
@@ -159,10 +136,22 @@ Processor type ---&gt;
 </pre>
 
 <p>
+Next select <e>Maintain a devtmpfs file system to mount at /dev</e> so that
+critical device files are already available early in the boot process.
+</p>
+
+<pre caption="Enabling devtmpfs support">
+Device Drivers ---&gt;
+  Generic Driver Options ---&gt;
+    [*] Maintain a devtmpfs filesystem to mount at /dev
+    [ ]   Automount devtmpfs at /dev, after the kernel mounted the rootfs
+</pre>
+
+<p>
 Now go to <c>File Systems</c> and select support for the filesystems you use.
-<e>Don't</e> compile them as modules, otherwise your Gentoo system will not be
-able to mount your partitions. Also select <c>Virtual memory</c> and <c>/proc
-file system</c>.
+<e>Don't</e> compile the file system you use for the root filesystem as module,
+otherwise your Gentoo system will not be able to mount your partition. Also
+select <c>Virtual memory</c> and <c>/proc file system</c>.
 </p>
 
 <pre caption="Selecting necessary file systems">
@@ -183,7 +172,9 @@ File systems ---&gt;
     &lt;*&gt; VFAT (Windows-95) fs support
 
 <comment>(Enable GPT partition label support if you used that previously</comment>
-  Partition Types ---&gt;
+-*- Enable the block layer --->
+    ...
+    Partition Types --->
     [*] Advanced partition selection
       ...
       [*] EFI GUID Partition support
@@ -255,15 +246,67 @@ the configuration and start the compilation process:
 </pre>
 
 <p>
-When the kernel has finished compiling, copy the kernel image to
-<path>/boot</path>. Use whatever name you feel is appropriate for your kernel
-choice and remember it as you will need it later on when you configure your
-bootloader. Remember to replace <c><keyval id="kernel-name"/></c> with the
-name and version of your kernel.
+When the kernel has finished compiling, copy the kernel image to <path>/</path>.
+Use whatever name you feel is appropriate for your kernel choice and remember it
+as you will need it later on when you configure your bootloader. Remember to
+replace <c>vmlinuz</c> with the name and version of your kernel.
 </p>
 
 <pre caption="Installing the kernel">
-# <i>cp vmlinux.gz /boot/<keyval id="kernel-name"/></i>
+# <i>cp vmlinux.gz /boot/vmlinuz</i>
+</pre>
+
+</body>
+</subsection>
+<subsection id="initramfs">
+<title>(Optional) Building an Initramfs</title>
+<body>
+
+<p>
+If you use a specific partition layout where important file system locations
+(like <path>/usr</path> or <path>/var</path>) are on separate partitions, then
+you will need to setup an initramfs so that this partition can be mounted before
+it is needed.
+</p>
+
+<p>
+Without an initramfs, you risk that the system will not boot up properly as the
+tools that are responsible for mounting the file systems need information that
+resides on those file systems. An initramfs will pull in the necessary files
+into an archive which is used right after the kernel boots, but before the
+control is handed over to the <c>init</c> tool. Scripts on the initramfs will
+then make sure that the partitions are properly mounted before the system
+continues booting.
+</p>
+
+<p>
+To install an initramfs, install <c>genkernel</c> first, then have it 
+generate an initramfs for you.
+</p>
+
+<pre caption="Building an initramfs">
+# <i>emerge genkernel</i>
+# <i>genkernel --bootdir=/. --no-mountboot --install initramfs</i>
+</pre>
+
+<p>
+If you need specific support in the initramfs, such as lvm or raid, add in the
+appropriate options to genkernel. See <c>genkernel --help</c> for more
+information, or the next example which enables support for LVM and software raid
+(mdadm):
+</p>
+
+<pre caption="Building an initramfs with support for LVM and software raid">
+# <i>genkernel --bootdir=/. --no-mountboot --lvm --mdadm --install initramfs</i>
+</pre>
+ 
+<p>
+The initramfs will be stored in <path>/</path>. You can find the file by simply
+listing the files starting with <path>initramfs</path>:
+</p>
+
+<pre caption="Checking the initramfs file name">
+# <i>ls /initramfs*</i>
 </pre>
 
 <p>
@@ -302,18 +345,18 @@ Now, let's see how to use genkernel. First, emerge the genkernel ebuild:
 </pre>
 
 <p>
-Now, compile your kernel sources by running <c>genkernel all</c>.  Be aware
+Now, compile your kernel sources by running <c>genkernel</c>.  Be aware
 though, as <c>genkernel</c> compiles a kernel that supports almost all hardware,
 this compilation will take quite a while to finish!
 </p>
 
 <note>
-Users of LVM2 will probably want to add <c>--lvm2</c> to the genkernel
+Users of LVM2 will probably want to add <c>--lvm</c> to the genkernel
 command-line.
 </note>
 
 <pre caption="Running genkernel">
-# <i>genkernel all</i>
+# <i>genkernel --bootdir=/. --no-mountboot all</i>
 </pre>
 
 <p>
@@ -327,7 +370,7 @@ before your "real" system starts up.
 </p>
 
 <pre caption="Checking the created kernel image name and initrd">
-# <i>ls /boot/kernel* /boot/initramfs*</i>
+# <i>ls /kernel* /initramfs*</i>
 </pre>
 
 </body>
