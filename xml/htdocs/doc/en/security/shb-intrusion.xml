@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/security/shb-intrusion.xml,v 1.6 2010/07/20 00:21:55 nightmorph Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/security/shb-intrusion.xml,v 1.8 2014/04/10 18:49:58 swift Exp $ -->
 <!DOCTYPE sections SYSTEM "/dtd/book.dtd">
 
 <!-- The content of this document is licensed under the CC-BY-SA license -->
@@ -7,8 +7,8 @@
 
 <sections>
 
-<version>2</version>
-<date>2010-07-19</date>
+<version>4</version>
+<date>2014-04-10</date>
 
 <section>
 <title>AIDE (Advanced Intrusion Detection Environment)</title>
@@ -331,109 +331,28 @@ it use the following examples.
 </p>
 
 <pre caption="/etc/conf.d/snort">
-PIDFILE=/var/run/snort_eth0.pid
+SNORT_IFACE="eth0"
+PIDFILE=/run/snort_eth0.pid
 MODE="full"
-NETWORK="10.0.0.0/24"
+NETWORK="192.168.0.0/24"
 LOGDIR="/var/log/snort"
-CONF=/etc/snort/snort.conf
-SNORT_OPTS="-D -s -u snort -dev -l $LOGDIR -h $NETWORK -c $CONF"
+SNORT_CONF=/etc/snort/snort.conf
+SNORT_OPTS="-q -D -u snort -d -l $LOGDIR -h $NETWORK -c $SNORT_CONF"
 </pre>
+
+<p>
+Copy <path>/etc/snort/snort.conf.distrib</path> to
+<path>/etc/snort/snort.conf</path>.
+</p>
 
 <pre caption="/etc/snort/snort.conf">
-<comment>(Step 1)</comment>
-var HOME_NET 10.0.0.0/24
-var EXTERNAL_NET any
-var SMTP $HOME_NET
-var HTTP_SERVERS $HOME_NET
-var SQL_SERVERS $HOME_NET
-var DNS_SERVERS [10.0.0.2/32,212.242.40.51/32]
-var RULE_PATH ./
-
-<comment>(Step 2)</comment>
-preprocessor frag2
-preprocessor stream4: detect_scans detect_state_problems detect_scans disable_evasion_alerts
-preprocessor stream4_reassemble: ports all
-preprocessor http_decode: 80 8080 unicode iis_alt_unicode double_encode iis_flip_slash full_whitespace
-preprocessor rpc_decode: 111 32771
-preprocessor bo: -nobrute
-preprocessor telnet_decode
-
-<comment>(Step 3)</comment>
-include classification.config
-
-<comment>(Step 4)</comment>
-include $RULE_PATH/bad-traffic.rules
-include $RULE_PATH/exploit.rules
-include $RULE_PATH/scan.rules
-include $RULE_PATH/finger.rules
-include $RULE_PATH/ftp.rules
-include $RULE_PATH/telnet.rules
-include $RULE_PATH/smtp.rules
-include $RULE_PATH/rpc.rules
-include $RULE_PATH/rservices.rules
-include $RULE_PATH/dos.rules
-include $RULE_PATH/ddos.rules
-include $RULE_PATH/dns.rules
-include $RULE_PATH/tftp.rules
-include $RULE_PATH/web-cgi.rules
-include $RULE_PATH/web-coldfusion.rules
-include $RULE_PATH/web-iis.rules
-include $RULE_PATH/web-frontpage.rules
-include $RULE_PATH/web-misc.rules
-include $RULE_PATH/web-attacks.rules
-include $RULE_PATH/sql.rules
-include $RULE_PATH/x11.rules
-include $RULE_PATH/icmp.rules
-include $RULE_PATH/netbios.rules
-include $RULE_PATH/misc.rules
-include $RULE_PATH/attack-responses.rules
-include $RULE_PATH/backdoor.rules
-include $RULE_PATH/shellcode.rules
-include $RULE_PATH/policy.rules
-include $RULE_PATH/porn.rules
-include $RULE_PATH/info.rules
-include $RULE_PATH/icmp-info.rules
-include $RULE_PATH/virus.rules
-# include $RULE_PATH/experimental.rules
-include $RULE_PATH/local.rules
+~# <i>cd /etc/snort &amp;&amp; cp snort.conf.distrib snort.conf</i>
 </pre>
 
-<pre caption="/etc/snort/classification.config">
-config classification: not-suspicious,Not Suspicious Traffic,3
-config classification: unknown,Unknown Traffic,3
-config classification: bad-unknown,Potentially Bad Traffic, 2
-config classification: attempted-recon,Attempted Information Leak,2
-config classification: successful-recon-limited,Information Leak,2
-config classification: successful-recon-largescale,Large Scale Information Leak,2
-config classification: attempted-dos,Attempted Denial of Service,2
-config classification: successful-dos,Denial of Service,2
-config classification: attempted-user,Attempted User Privilege Gain,1
-config classification: unsuccessful-user,Unsuccessful User Privilege Gain,1
-config classification: successful-user,Successful User Privilege Gain,1
-config classification: attempted-admin,Attempted Administrator Privilege Gain,1
-config classification: successful-admin,Successful Administrator Privilege Gain,1
-
-# NEW CLASSIFICATIONS
-config classification: rpc-portmap-decode,Decode of an RPC Query,2
-config classification: shellcode-detect,Executable code was detected,1
-config classification: string-detect,A suspicious string was detected,3
-config classification: suspicious-filename-detect,A suspicious filename was detected,2
-config classification: suspicious-login,An attempted login using a suspicious username was detected,2
-config classification: system-call-detect,A system call was detected,2
-config classification: tcp-connection,A TCP connection was detected,4
-config classification: trojan-activity,A Network Trojan was detected, 1
-config classification: unusual-client-port-connection,A client was using an unusual port,2
-config classification: network-scan,Detection of a Network Scan,3
-config classification: denial-of-service,Detection of a Denial of Service Attack,2
-config classification: non-standard-protocol,Detection of a non-standard protocol or event,2
-config classification: protocol-command-decode,Generic Protocol Command Decode,3
-config classification: web-application-activity,access to a potentially vulnerable web application,2
-config classification: web-application-attack,Web Application Attack,1
-config classification: misc-activity,Misc activity,3
-config classification: misc-attack,Misc Attack,2
-config classification: icmp-event,Generic ICMP event,3
-config classification: kickass-porn,SCORE! Get the lotion!,1
-</pre>
+<p>
+You might need to comment out the blacklist and whitelist entries
+if no lists are created.
+</p>
 
 <p>
 More information is at the <uri

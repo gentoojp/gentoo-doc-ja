@@ -4,12 +4,12 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-hppa-medium.xml,v 1.54 2011/11/27 18:17:23 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-hppa-medium.xml,v 1.62 2013/12/17 10:38:05 swift Exp $ -->
 
 <sections>
 
-<version>12</version>
-<date>2011-11-27</date>
+<version>19</version>
+<date>2013-12-17</date>
 
 <section>
 <title>Hardware Requirements</title>
@@ -119,7 +119,7 @@ major advantages and disadvantages of each Installation CD.
 
 <p>
 The Minimal Installation CD is called <c><keyval id="min-cd-name"/></c> and
-takes up only <keyval id="min-cd-size"/> MB of diskspace. You can use this
+takes up around <keyval id="min-cd-size"/> MB of diskspace. You can use this
 Installation CD to install Gentoo, but <e>only</e> with a working Internet
 connection.
 </p>
@@ -184,7 +184,7 @@ You might find a <e>Package CD</e> on one of our mirrors. This CD is not an
 Installation CD but an additional resource that can be exploited during a
 networkless installation. It contains prebuilt packages (also known as the GRP
 set) that allow you to easily and quickly install additional applications (such
-as OpenOffice.org, KDE, GNOME, ...) immediately after the networkless Gentoo
+as LibreOffice.org, KDE, GNOME, ...) immediately after the networkless Gentoo
 installation.
 </p>
 
@@ -206,8 +206,8 @@ Previously, the Gentoo Handbook described the installation using one of three
 stage tarballs. While Gentoo still offers stage1 and stage2 tarballs, the 
 official installation method uses the stage3 tarball. If you are interested in
 performing a Gentoo installation using a stage1 or stage2 tarball, please read
-the Gentoo FAQ on <uri link="/doc/en/faq.xml#stage12">How do I Install Gentoo
-Using a Stage1 or Stage2 Tarball?</uri>
+the Gentoo FAQ on <uri link="https://wiki.gentoo.org/wiki/FAQ#How_do_I_Install_Gentoo_Using_a_Stage1_or_Stage2_Tarball.3F">How
+do I Install Gentoo Using a Stage1 or Stage2 Tarball?</uri>
 </p>
 
 </body>
@@ -241,19 +241,31 @@ can write on a CD-R.
 
 <p>
 In case you wonder if your downloaded file is corrupted or not, you can check
-its MD5 checksum and compare it with the MD5 checksum we provide (such as
-<path><keyval id="min-cd-name"/>.DIGESTS</path>). You can check the MD5
-checksum with the <c>md5sum</c> tool under Linux/Unix or <uri
-link="http://www.etree.org/md5com.html">md5sum</uri> for Windows.
+its SHA-2 checksum and compare it with the SHA-2 checksum we provide (such as
+<path><keyval id="min-cd-name"/>.DIGESTS</path>). You can check the SHA-2 
+checksum with the <c>sha512sum</c> tool under Linux/Unix or <uri
+link="http://www.sinf.gr/en/hashcalc.html">Checksums calculator</uri> for Windows.
 </p>
+
+<pre caption="Verifying the SHA-2 checksum">
+$ <i>sha512sum -c &lt;downloaded iso.DIGESTS&gt;</i>
+</pre>
+
+<note>
+If you get the message that no properly formatted SHA checksum was found, take a
+look at the DIGESTS file yourself to see what the supported checksums are.
+</note>
 
 <p>
 Another way to check the validity of the downloaded file is to use GnuPG to
 verify the cryptographic signature that we provide (the file ending with
-<path>.asc</path>). Download the signature file and obtain the public keys:
+<path>.asc</path>). Download the signature file and obtain the public keys whose
+key ids can be found on the <uri link="/proj/en/releng/index.xml">release
+engineering project site</uri>.
 </p>
 
 <pre caption="Obtaining the public key">
+<comment>(... Substitute the key ids with those mentioned on the release engineering site ...)</comment>
 $ <i>gpg --keyserver subkeys.pgp.net --recv-keys 96D8BF6D 2D182910 17072058</i>
 </pre>
 
@@ -262,23 +274,21 @@ Now verify the signature:
 </p>
 
 <pre caption="Verify the files">
-<comment>(Verify the cryptographic signature)</comment>
 $ <i>gpg --verify &lt;downloaded iso.DIGESTS.asc&gt;</i>
-<comment>(Verify the checksum)</comment>
-$ <i>sha1sum -c &lt;downloaded iso.DIGESTS.asc&gt;</i>
+$ <i>sha512sum -c &lt;downloaded iso.DIGESTS.asc&gt;</i>
 </pre>
 
 <p>
 To burn the downloaded ISO(s), you have to select raw-burning. How you
 do this is highly program-dependent. We will discuss <c>cdrecord</c> and
 <c>K3B</c> here; more information can be found in our <uri
-link="/doc/en/faq.xml#isoburning">Gentoo FAQ</uri>.
+link="https://wiki.gentoo.org/wiki/FAQ#How_do_I_burn_an_ISO_file.3F">Gentoo FAQ</uri>.
 </p>
 
 <ul>
   <li>
-    With cdrecord, you simply type <c>cdrecord dev=/dev/hdc &lt;downloaded iso
-    file&gt;</c> (replace <path>/dev/hdc</path> with your CD-RW drive's device
+    With cdrecord, you simply type <c>cdrecord dev=/dev/sr0 &lt;downloaded iso
+    file&gt;</c> (replace <path>/dev/sr0</path> with your CD-RW drive's device
     path).
   </li>
   <li>

@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding="UTF-8"?>
 <!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-upgrading.xml,v 1.42 2011/09/04 17:53:40 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/gentoo-upgrading.xml,v 1.48 2013/12/09 11:15:07 swift Exp $ -->
 
-<guide>
+<guide disclaimer="obsolete" redirect="https://wiki.gentoo.org/wiki/Upgrading_Gentoo">
 <title>Gentoo Upgrading Guide</title>
 
 <author title="Author">
@@ -23,8 +23,8 @@ This document explains how new Gentoo releases affect existing installs.
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 <license/>
 
-<version>2.11</version>
-<date>2008-07-06</date>
+<version>7</version>
+<date>2013-07-24</date>
 
 <chapter>
 <title>Gentoo and Upgrades</title>
@@ -103,10 +103,10 @@ mapping for virtual packages, and the architecture on which the system is runnin
 
 <p>
 The profile in use is determined by the symbolic link
-<path>/etc/make.profile</path>, which points to a subdirectory of
+<path>/etc/portage/make.profile</path>, which points to a subdirectory of
 <path>/usr/portage/profiles</path> which holds the profile files.  For 
-instance, the default x86 2008.0 profile can be found 
-at <path>/usr/portage/profiles/default/linux/x86/2008.0</path>.
+instance, the default x86 13.0 profile can be found 
+at <path>/usr/portage/profiles/default/linux/x86/13.0</path>.
 The files in the parent directories are part of the profile as well (and 
 are therefore shared by different subprofiles). This is why we call these
 <e>cascaded profiles</e>.
@@ -158,7 +158,7 @@ that has been installed using the new release.
 <body>
 
 <p>
-If a release (such as 2008.0 for x86) introduces a new profile, you have the
+If a release (such as 13.0 for x86) introduces a new profile, you have the
 choice to migrate to the new profile.
 </p>
 
@@ -183,7 +183,7 @@ profile are.
 </p>
 
 <p>
-In the simplest case you only have to change the <path>/etc/make.profile</path>
+In the simplest case you only have to change the <path>/etc/portage/make.profile</path>
 symlink, in the worst case you may have to recompile your system from scratch
 while doing a neat voodoo dance.  Migration is usually covered in the release
 notes. You can also find <uri link="#instructions">instructions</uri> at the
@@ -205,6 +205,25 @@ command:
 <pre caption="Viewing supported profiles">
 # <i>eselect profile list</i>
 </pre>
+
+</body>
+</section>
+<section>
+<title>Upgrading from (too) old systems</title>
+<body>
+
+<p>
+Sometimes, systems are too old to easily upgrade. The upgrade path might need
+intermediate versions of software (such as portage) that does not exist anymore,
+and you might need to update the portage tree in steps (for instance incremental
+tree updates with steps of 3 to 4 months).
+</p>
+
+<p>
+To upgrade such systems, you can use a recent stage3 to update the system.
+Instructions for that are given in the <uri link="#old_system">Updating old
+systems</uri> section.
+</p>
 
 </body>
 </section>
@@ -239,8 +258,9 @@ If you'd still prefer to change profiles manually, then simply do the following:
 </p>
 
 <pre caption="Changing profiles manually">
-# <i>rm /etc/make.profile</i>
-# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/make.profile</i>
+# <i>rm /etc/portage/make.profile</i>
+# <i>cd /etc/portage</i>
+# <i>ln -s ../../usr/portage/profiles/</i>&lt;selected profile&gt;<i> make.profile</i>
 </pre>
 
 <note>
@@ -264,8 +284,8 @@ tasks. It is <e>not</e> meant to help set up general development environments.
 If you intend to upgrade to these profiles, you should be aware that they expect
 the system to be set to a Unicode locale by default; specifically that
 UNICODE="yes" is set in <path>/etc/rc.conf</path>. For this to work, you must
-have created a Unicode locale for your system to use. Please read our <uri
-link="/doc/en/utf-8.xml">UTF-8 guide</uri> to learn how to create the proper
+have created a Unicode locale for your system to use. Please read the <uri
+link="https://wiki.gentoo.org/wiki/UTF-8">UTF-8 article</uri> to learn how to create the proper
 locale.
 </p>
 
@@ -275,7 +295,7 @@ UNICODE="no" in <path>/etc/rc.conf</path>, and re-emerge <c>baselayout</c> (or
 wait until your next <c>baselayout</c> update) with the <c>-unicode</c> USE
 flag. You can set <c>-unicode</c> just for <c>baselayout</c>, or you can set it
 globally for all packages by adding it to your USE variable in
-<path>/etc/make.conf</path>.
+<path>/etc/portage/make.conf</path>.
 </p>
 
 <pre caption="Optional: removing Unicode support">
@@ -284,7 +304,7 @@ globally for all packages by adding it to your USE variable in
 # <i>emerge -a baselayout</i>
 
 <comment>(To remove Unicode support from your whole system)</comment>
-# <i>nano -w /etc/make.conf</i>
+# <i>nano -w /etc/portage/make.conf</i>
 USE="-unicode"
 # <i>emerge -a baselayout</i>
 </pre>
@@ -307,14 +327,14 @@ your profile.
 <body>
 
 <p>
-To switch to the 2006.0 profile, point the <path>/etc/make.profile</path>
+To switch to the 2006.0 profile, point the <path>/etc/portage/make.profile</path>
 symlink to the new location. Make sure your Portage is updated before you
 change your profile.
 </p>
 
 <pre caption="Changing to a 2006.0 profile">
-# <i>rm /etc/make.profile</i>
-# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/make.profile</i>
+# <i>rm /etc/portage/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/portage/make.profile</i>
 </pre>
 
 <p>
@@ -357,14 +377,14 @@ specific action needs to be performed.
 <body>
 
 <p>
-To switch to the 2005.1 profile, point the <path>/etc/make.profile</path>
+To switch to the 2005.1 profile, point the <path>/etc/portage/make.profile</path>
 symlink to the new location. Make sure your Portage is updated before you
 change your profile.
 </p>
 
 <pre caption="Changing to a 2005.1 profile">
-# <i>rm /etc/make.profile</i>
-# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/make.profile</i>
+# <i>rm /etc/portage/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/portage/make.profile</i>
 </pre>
 
 <p>
@@ -518,14 +538,14 @@ guides are linked from the table.
 </table>
 
 <p>
-To switch to the selected profile, point the <path>/etc/make.profile</path>
+To switch to the selected profile, point the <path>/etc/portage/make.profile</path>
 symlink to the new location. Make sure your Portage is updated before you change
 your profile!
 </p>
 
 <pre caption="Changing to a 2005.0 profile">
-# <i>rm /etc/make.profile</i>
-# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/make.profile</i>
+# <i>rm /etc/portage/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/</i>&lt;selected profile&gt;<i> /etc/portage/make.profile</i>
 </pre>
 
 <p>
@@ -552,7 +572,7 @@ Portage 2.0.51 or later).
 </p>
 
 <p>
-To switch to the 2004.3 profile, point the <path>/etc/make.profile</path>
+To switch to the 2004.3 profile, point the <path>/etc/portage/make.profile</path>
 symlink to the new location:
 </p>
 
@@ -560,10 +580,10 @@ symlink to the new location:
 Don't forget to upgrade Portage <e>before</e> you change your profile!!!
 </warn>
 
-<pre caption="Updating the /etc/make.profile symlink">
+<pre caption="Updating the /etc/portage/make.profile symlink">
 <comment>substitute &lt;arch&gt; with your arch</comment>
-# <i>rm /etc/make.profile</i>
-# <i>ln -s ../usr/portage/profiles/default-linux/&lt;arch&gt;/2004.3 /etc/make.profile</i>
+# <i>rm /etc/portage/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/default-linux/&lt;arch&gt;/2004.3 /etc/portage/make.profile</i>
 </pre>
 
 <p>
@@ -604,8 +624,8 @@ substitute <c>&lt;arch&gt;</c> with your respective architecture:
 </p>
 
 <pre caption="Updating Portage through the obsolete profile">
-# <i>rm /etc/make.profile</i>
-# <i>cd /etc</i>
+# <i>rm /etc/portage/make.profile</i>
+# <i>cd /etc/portage</i>
 # <i>ln -sf ../usr/portage/profiles/obsolete/&lt;arch&gt; make.profile</i>
 # <i>emerge -n '>=sys-apps/portage-2.0.51'</i>
 </pre>
@@ -617,7 +637,7 @@ substitute <c>&lt;arch&gt;</c> with your respective architecture:
 <body>
 
 <p>
-To switch to the 2004.2 profile, point the <path>/etc/make.profile</path> 
+To switch to the 2004.2 profile, point the <path>/etc/portage/make.profile</path> 
 symlink to the new location:
 </p>
 
@@ -625,10 +645,10 @@ symlink to the new location:
 Don't forget to upgrade Portage <e>before</e> you change your profile!!!
 </warn>
 
-<pre caption="Updating the /etc/make.profile symlink">
+<pre caption="Updating the /etc/portage/make.profile symlink">
 <comment>substitute &lt;arch&gt; with your arch</comment>
-# <i>rm /etc/make.profile</i>
-# <i>ln -s ../usr/portage/profiles/default-linux/&lt;arch&gt;/2004.2 /etc/make.profile</i>
+# <i>rm /etc/portage/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/default-linux/&lt;arch&gt;/2004.2 /etc/portage/make.profile</i>
 </pre>
 
 <p>
@@ -652,14 +672,14 @@ specific action needs to be performed.
 <body>
 
 <p>
-To switch to the 2004.0 profile, point the <path>/etc/make.profile</path> 
+To switch to the 2004.0 profile, point the <path>/etc/portage/make.profile</path> 
 symlink to the new location:
 </p>
 
-<pre caption="Updating the /etc/make.profile symlink">
+<pre caption="Updating the /etc/portage/make.profile symlink">
 <comment>substitute &lt;arch&gt; with your arch</comment>
-# <i>rm /etc/make.profile</i>
-# <i>ln -s ../usr/portage/profiles/default-&lt;arch&gt;-2004.0 /etc/make.profile</i>
+# <i>rm /etc/portage/make.profile</i>
+# <i>ln -s ../usr/portage/profiles/default-&lt;arch&gt;-2004.0 /etc/portage/make.profile</i>
 </pre>
 
 <p>
@@ -676,6 +696,86 @@ specific action needs to be performed.
 <p>
 The instructions for this upgrade are quite complex, you can find them
 <uri link="/doc/en/new-upgrade-to-gentoo-1.4.xml">here</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter id="old_system">
+<title>Updating old systems</title>
+<section>
+<title>Idea of the upgrade</title>
+<body>
+
+<p>
+The idea with this upgrade approach is that we create an intermediate build
+chroot in which a recent stage3 is extracted. Then, using the tools available in
+the stage3 chroot we upgrade the packages on the live system.
+</p>
+
+</body>
+</section>
+<section>
+<title>Preparing the intermediate build chroot</title>
+<body>
+
+<p>
+Let's first create the intermediate build chroot location, say
+<path>/mnt/build</path>, and extract a recent stage3 archive into it.
+</p>
+
+<pre caption="Preparing the intermediate build chroot">
+# <i>mkdir /mnt/build</i>
+# <i>tar -xf -C /mnt/build /path/to/stage3-somearch-somedate.tar.bz2</i>
+# <i>mount --rbind /dev /mnt/build/dev</i>
+# <i>mount --rbind /proc /mnt/build/proc</i>
+# <i>mount --rbind /sys /mnt/build/sys</i>
+</pre>
+
+<p>
+Next, we create a mount point inside this chroot environment, on which we then 
+bind-mount the live (old) environment.
+</p>
+
+<pre caption="Create host mountpoint">
+# <i>mkdir /mnt/build/mnt/host</i>
+# <i>mount --rbind / /mnt/build/mnt/host</i>
+</pre>
+
+<p>
+So now the live (old) system is also reachable within
+<path>/mnt/build/mnt/host</path>. This will allow us to reach the live (old)
+system and update the packages even when chrooted inside the intermediate build
+chroot.
+</p>
+
+</body>
+</section>
+<section>
+<title>Chroot and update</title>
+<body>
+
+<p>
+We now chroot into the intermediate build location, and start updating vital
+packages on the live system, until we can continue updating the live system from
+within the live system (rather than through the intermediate build chroot).
+</p>
+
+<pre caption="Chrooting and updating important packages">
+# <i>chroot /mnt/build</i>
+# <i>source /etc/profile</i>
+
+<comment># Now we start building packages onto the live system</comment>
+# <i>ROOT=/mnt/host emerge -1v portage</i>
+</pre>
+
+<p>
+Keep this chrooted session open and try to update the live system. When you hit
+failures, you can use this chrooted session to update packages using the build
+tools available in the intermediate build chroot (which includes recent glibc,
+gcc, etc.) Don't forget to prefix all <c>emerge</c> commands with
+<c>ROOT=/mnt/host</c> within the chroot!
 </p>
 
 </body>

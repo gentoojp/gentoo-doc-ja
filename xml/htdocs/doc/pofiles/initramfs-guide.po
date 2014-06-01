@@ -1,0 +1,650 @@
+# SOME DESCRIPTIVE TITLE
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2013-09-21 21:38+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. type: Content of: <guide><title>
+#: en/initramfs-guide.xml:7
+#, no-wrap
+msgid "Gentoo Linux Initial RAM File System Guide"
+msgstr ""
+
+#. type: Content of: <guide><abstract>
+#: en/initramfs-guide.xml:14
+#, no-wrap
+msgid ""
+"More and more systems require an initramfs to boot up properly. In this guide,\n"
+"we tackle the concepts of the initramfs as well as how to properly create and\n"
+"manage initramfs instances.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/initramfs-guide.xml:27
+#, no-wrap
+msgid "Initramfs concepts"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/initramfs-guide.xml:29
+#, no-wrap
+msgid "Introduction"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:33
+#, no-wrap
+msgid ""
+"For many users, an initramfs system is of no concern. Their system uses a simple\n"
+"partitioning schema with no exotic drivers or setups (like encrypted file\n"
+"systems), so the Linux kernel is well able to hand over control to the\n"
+"<c>init</c> binary on their system. But for many systems, an initramfs is almost\n"
+"mandatory.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:41
+#, no-wrap
+msgid ""
+"The key concept to understanding what an initramfs is (or is needed for) is to\n"
+"understand how the Linux boot process works, even in a high-level approach.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/initramfs-guide.xml:48
+#, no-wrap
+msgid "Linux boot process"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:52
+#, no-wrap
+msgid ""
+"Once the Linux kernel has control over the system (which it gets after being\n"
+"loaded by the boot loader), it prepares its memory structures and drivers as\n"
+"well as it can. It then hands over control to an application (usually\n"
+"<c>init</c>) whose task it is to further prepare the system and make sure that,\n"
+"at the end of the boot process, all necessary services are running and the user\n"
+"is able to log on. The <c>init</c> application does that by launching, among\n"
+"other services, the <c>udev</c> daemon who will further load up and prepare the\n"
+"system based on the detected devices. When <c>udev</c> is launched, all\n"
+"remaining file systems that have not been mounted are mounted, and the remainder\n"
+"of services is started.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:65
+#, no-wrap
+msgid ""
+"For systems where all necessary files and tools reside on the same file system,\n"
+"the <c>init</c> application can perfectly control the further boot process. But\n"
+"when multiple file systems are defined (or more exotic installations are done),\n"
+"this might become a bit more tricky:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/initramfs-guide.xml:73
+#, no-wrap
+msgid ""
+"    When the <path>/usr</path> partition is on a separate file system, tools and\n"
+"    drivers that have files stored within <path>/usr</path> cannot be used\n"
+"    unless <path>/usr</path> is available. If those tools are needed to make\n"
+"    <path>/usr</path> available, then we cannot boot up the system.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/initramfs-guide.xml:79
+#, no-wrap
+msgid ""
+"    If the root file system is encrypted, then the Linux kernel will not be able\n"
+"    to find the <c>init</c> application, resulting in an unbootable system.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:85
+#, no-wrap
+msgid ""
+"The solution for this problem has since long been to use an <e>initrd</e>\n"
+"(initial root device).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/initramfs-guide.xml:92
+#, no-wrap
+msgid "The initial root disk"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:96
+#, no-wrap
+msgid ""
+"The <e>initrd</e> is an in-memory disk structure (ramdisk) that\n"
+"contains the necessary tools and scripts to mount the needed file systems before\n"
+"control is handed over to the <c>init</c> application on the root file system.\n"
+"The Linux kernel triggers the setup script (usually called <c>linuxrc</c> but\n"
+"that is not mandatory) on this root disk, which prepares the system, switches to\n"
+"the real root file system and then calls <c>init</c>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:105
+#, no-wrap
+msgid "Although the initrd method is all that is needed, it had a few drawbacks:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/initramfs-guide.xml:110
+#, no-wrap
+msgid ""
+"    It is a full-fledged block device, requiring the overhead of an entire\n"
+"    file system on it, and has a fixed size. Choose an initrd that is too small,\n"
+"    and you won't be able to fit in all needed scripts. Make it too big, and\n"
+"    you're wasting memory.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/initramfs-guide.xml:116
+#, no-wrap
+msgid ""
+"    Because it is a real device, it also consumes cache memory in the Linux\n"
+"    kernel and is prone to the memory- and file management methods in use (such\n"
+"    as paging), making it even worse in memory consumption.\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:123
+#, no-wrap
+msgid ""
+"To resolve these (for some perhaps hardly called) problems, the initramfs was\n"
+"created.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/initramfs-guide.xml:130
+#, no-wrap
+msgid "The initial ram file system"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:134
+#, no-wrap
+msgid ""
+"An <e>initramfs</e> is an initial ram file system based on <e>tmpfs</e>\n"
+"(a size-flexible, in-memory lightweight file system), which also didn't use a\n"
+"separate block device (so no caching was done and all overhead mentioned earlier\n"
+"disappears). Just like the initrd, it contains the tools and scripts needed to\n"
+"mount the file systems before the <c>init</c> binary on the real root file\n"
+"system is called. These tools can be decryption abstraction layers (for\n"
+"encrypted file systems), logical volume managers, software raid, bluetooth\n"
+"driver based file system loaders, etc.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:145
+#, no-wrap
+msgid ""
+"The content of the initramfs is made by creating a cpio archive. <c>cpio</c> is\n"
+"an old (but proven) file archiver solution (and its resulting archive files are\n"
+"called <e>cpio files</e>). You can definitely compare it to <c>tar</c>. The\n"
+"choice of <c>cpio</c> here was because it is easier to implement (code-wise) and\n"
+"supported (back then) device files (which <c>tar</c> couldn't). \n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:153
+#, no-wrap
+msgid ""
+"All files, tools, libraries, configuration settings (if applicable), etc. are\n"
+"put into the cpio archive. This archive is then compressed using the <c>gzip</c>\n"
+"utility and stored alongside the Linux kernel. The boot loader will then offer\n"
+"it to the Linux kernel at boot time so the kernel knows an initramfs is needed.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:160
+#, no-wrap
+msgid ""
+"Once detected, the Linux kernel will create a tmpfs file system, extract the\n"
+"contents of the archive on it, and then launches the <c>init</c> script located\n"
+"in the root of the tmpfs file system. This script will then mount the real root\n"
+"file system (after making sure it can mount it, for instance by loading\n"
+"additional modules, preparing an encryption abstraction layer, etc.) as well as\n"
+"vital other file systems (such as <path>/usr</path> and <path>/var</path>).\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:169
+#, no-wrap
+msgid ""
+"Once the root file system and the other vital file systems are mounted, the\n"
+"<c>init</c> script from the initramfs will switch the root towards the real root\n"
+"file system and finally call the <c>/sbin/init</c> on that system to continue\n"
+"the boot process.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/initramfs-guide.xml:180
+#, no-wrap
+msgid "Creating an initramfs"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/initramfs-guide.xml:182
+#, no-wrap
+msgid "Introduction and bootloader configuration"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:186
+#, no-wrap
+msgid ""
+"To create an initramfs, it is important that you know what additional drivers,\n"
+"scripts and tools you need to boot your system. For instance, if you use LVM,\n"
+"then you will need to support LVM tools on the initramfs. Likewise, if you use\n"
+"software RAID, you need <c>mdadm</c>, etc.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:193
+#, no-wrap
+msgid ""
+"Some tools exist that help you create initramfs' (compressed cpio archives) for\n"
+"your system. But for those that want total control, you can easily create your\n"
+"own initramfs as well.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:199
+#, no-wrap
+msgid ""
+"Once created, you will need to adjust the bootloader configuration to tell it\n"
+"that an initramfs is to be used. For instance, if the initramfs file is stored\n"
+"as <path>/boot/initramfs-3.2.2-gentoo-r5</path>, then the configuration in\n"
+"<path>/boot/grub/grub.conf</path> could look like so:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/initramfs-guide.xml:205
+#, no-wrap
+msgid "Example entry in grub.conf for booting with an initramfs"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/initramfs-guide.xml:206
+#, no-wrap
+msgid ""
+"title Gentoo Linux 3.2.2-r5\n"
+"root (hd0,0)\n"
+"kernel /boot/kernel-3.2.2-gentoo-r5\n"
+"initrd /boot/initramfs-3.2.2-gentoo-r5\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/initramfs-guide.xml:215
+#, no-wrap
+msgid "Using genkernel"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:219
+#, no-wrap
+msgid ""
+"Gentoo's kernel building utility, <c>genkernel</c>, can be used to generate an\n"
+"initramfs, even if you didn't use <c>genkernel</c> to configure and build your\n"
+"kernel. \n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:225
+#, no-wrap
+msgid ""
+"To use <c>genkernel</c> for generating an initramfs, it is recommended that you\n"
+"include all necessary drivers and code that is needed to mount your\n"
+"<path>/</path> and <path>/usr</path> file systems in the kernel (and not as\n"
+"modules). Then, call <c>genkernel</c> as follows:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/initramfs-guide.xml:231
+#, no-wrap
+msgid "Running genkernel to setup an initramfs"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/initramfs-guide.xml:232
+#, no-wrap
+msgid "# <i>genkernel --install --no-ramdisk-modules initramfs</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:236
+#, no-wrap
+msgid ""
+"Depending on your system, you might want to add one or more of the following\n"
+"options:\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/initramfs-guide.xml:242
+#, no-wrap
+msgid "Option"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><th>
+#: en/initramfs-guide.xml:243
+#, no-wrap
+msgid "Description"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:246
+#, no-wrap
+msgid "--disklabel"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:247
+#, no-wrap
+msgid "Add support for <c>LABEL=</c> settings in your <path>/etc/fstab</path>"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:250
+#, no-wrap
+msgid "--dmraid"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:251
+#, no-wrap
+msgid "Add support for fake hardware RAID"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:254
+#, no-wrap
+msgid "--firmware"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:255
+#, no-wrap
+msgid "Add in firmware code found on the system"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:258
+#, no-wrap
+msgid "--gpg"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:259
+#, no-wrap
+msgid "Add in GnuPG support"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:262
+#, no-wrap
+msgid "--iscsi"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:263
+#, no-wrap
+msgid "Add support for iSCSI"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:266
+#, no-wrap
+msgid "--luks"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:267
+#, no-wrap
+msgid "Add support for luks encryption containers"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:270
+#, no-wrap
+msgid "--lvm"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:271
+#, no-wrap
+msgid "Add support for LVM"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:274
+#, no-wrap
+msgid "--mdadm"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:275
+#, no-wrap
+msgid "Add support for software RAID"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:278
+#, no-wrap
+msgid "--multipath"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:279
+#, no-wrap
+msgid "Add support for multiple I/O access towards a SAN"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:282
+#, no-wrap
+msgid "--zfs"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><table><tr><ti>
+#: en/initramfs-guide.xml:283
+#, no-wrap
+msgid "Add support for ZFS"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:288
+#, no-wrap
+msgid ""
+"When finished, the resulting initramfs file will be stored in your\n"
+"<path>/boot</path>.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/initramfs-guide.xml:295
+#, no-wrap
+msgid "Using dracut"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><warn>
+#: en/initramfs-guide.xml:299
+#, no-wrap
+msgid ""
+"At the time of writing, dracut is not marked stable yet, so you might need to\n"
+"unmask it before continuing.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:304
+#, no-wrap
+msgid ""
+"The <c>dracut</c> utility is created for the sole purpose of managing initramfs\n"
+"files. It uses a highly modular approach on which support you want to include\n"
+"and which not.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:310
+#, no-wrap
+msgid ""
+"When you install <c>dracut</c>, you will need to take care to include support\n"
+"for the correct <c>DRACUT_MODULES</c>. This is a variable you can set in\n"
+"<path>/etc/portage/make.conf</path> to include support for specific setups:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/initramfs-guide.xml:315
+#, no-wrap
+msgid "Preparing to install dracut"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/initramfs-guide.xml:316
+#, no-wrap
+msgid ""
+"DRACUT_MODULES=\"dmraid lvm syslog -biosdevname -btrfs -caps -crypt -crypt-gpg\n"
+"-dmsquash-live -gensplash -iscsi -livenet -mdraid -multipath -nbd -nfs -plymouth\n"
+"-ssh-client\"\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:322
+#, no-wrap
+msgid ""
+"It is adviseable to set (or unset) those modules you need (and don't need).\n"
+"Afterwards, <c>emerge dracut</c> to install the utility on your system.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:327
+#, no-wrap
+msgid ""
+"The next step is to configure <c>dracut</c> by editing\n"
+"<path>/etc/dracut.conf</path>. In the configuration file, which is well\n"
+"commented, you can add in support for specific modules where needed.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:333
+#, no-wrap
+msgid "Once configured, create an initramfs by calling <c>dracut</c> as follows:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/initramfs-guide.xml:336
+#, no-wrap
+msgid "Calling dracut to generate an initramfs"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/initramfs-guide.xml:337
+#, no-wrap
+msgid "# <i>dracut</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:341
+#, no-wrap
+msgid ""
+"The resulting image supports generic system boots based on the configuration in\n"
+"<path>/etc/dracut.conf</path>. You can also opt to generate an initramfs\n"
+"specifically tailored to your system (in which <c>dracut</c> tries to detect the\n"
+"needed tools, drivers, etc. from your existing system). If you know that the\n"
+"needed support (code and drivers) is built in in your kernel (and not as\n"
+"module), then you can even add in <c>--no-kernel</c>:\n"
+msgstr ""
+
+#. type: Attribute 'caption' of: <guide><chapter><section><body><pre>
+#: en/initramfs-guide.xml:349
+#, no-wrap
+msgid "Allowing dracut to generate a host-specific initramfs"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><pre>
+#: en/initramfs-guide.xml:350
+#, no-wrap
+msgid "# <i>dracut --host-only --no-kernel</i>\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><p>
+#: en/initramfs-guide.xml:354
+#, no-wrap
+msgid ""
+"For more information, check out the <c>dracut</c> and <c>dracut.cmdline</c>\n"
+"manual pages.\n"
+msgstr ""
+
+#. type: Content of: <guide><chapter><title>
+#: en/initramfs-guide.xml:363
+#, no-wrap
+msgid "Additional resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/initramfs-guide.xml:365
+#, no-wrap
+msgid "Gentoo-specific"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/initramfs-guide.xml:370
+#, no-wrap
+msgid ""
+"    <uri link=\"http://en.gentoo-wiki.com/wiki/Initramfs\">Initramfs</uri> on\n"
+"    Gentoo-wiki.com\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/initramfs-guide.xml:374
+#, no-wrap
+msgid ""
+"    <uri link=\"http://wiki.gentoo.org/wiki/Initramfs\">Initramfs</uri> on the\n"
+"    official Gentoo Wiki\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/initramfs-guide.xml:378
+#, no-wrap
+msgid ""
+"    <uri link=\"http://wiki.gentoo.org/wiki/Dracut\">Dracut</uri> on the official\n"
+"    Gentoo Wiki\n"
+"  "
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><title>
+#: en/initramfs-guide.xml:386
+#, no-wrap
+msgid "General resources"
+msgstr ""
+
+#. type: Content of: <guide><chapter><section><body><ul><li>
+#: en/initramfs-guide.xml:391
+#, no-wrap
+msgid ""
+"    <uri\n"
+"    link=\"https://www.kernel.org/doc/Documentation/filesystems/ramfs-rootfs-initramfs.txt\">ramfs-rootfs-initramfs.txt</uri>\n"
+"    within the Linux kernel documentation\n"
+"  "
+msgstr ""

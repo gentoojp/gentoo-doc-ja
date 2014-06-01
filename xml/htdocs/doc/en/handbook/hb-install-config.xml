@@ -4,7 +4,7 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-config.xml,v 1.109 2012/02/22 21:27:45 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-config.xml,v 1.130 2014/04/11 16:03:58 swift Exp $ -->
 
 <sections>
 
@@ -14,8 +14,8 @@ you receive an overview of these files and an explanation on how to
 proceed.
 </abstract>
 
-<version>16</version>
-<date>2012-02-22</date>
+<version>36</version>
+<date>2014-04-11</date>
 
 <section>
 <title>Filesystem Information</title>
@@ -82,6 +82,16 @@ fstab file</e>. You <b>have to create</b> your own <path>/etc/fstab</path>.
 # <i>nano -w /etc/fstab</i>
 </pre>
 
+<p>
+In the remainder of the text, we use the default <path>/dev/sd*</path> block
+device files as partition. You can also opt to use the symbolic links in the
+<path>/dev/disk/byid</path> or <path>/dev/disk/by-uuid</path>. These names are
+not likely to change, whereas the default block device files naming depends on
+a number of factors (such as how and in what order the disks are attached to
+your system). However, if you do not intend to fiddle with the disk ordering,
+you can continue with the default block device files safely.
+</p>
+
 </body>
 <body test="func:keyval('/boot')">
 
@@ -98,7 +108,7 @@ filesystem. It needs to be checked during boot, so we would write down:
 </p>
 
 <pre caption="An example /boot line for /etc/fstab">
-<keyval id="/boot"/>   /boot     ext2    defaults        1 2
+<keyval id="/boot"/>   /boot     ext2    defaults        0 2
 </pre>
 
 <p>
@@ -121,53 +131,41 @@ for those too.
 Now use the <e>example</e> below to create your <path>/etc/fstab</path>:
 </p>
 
-<pre caption="A full /etc/fstab example" test="func:keyval('arch')='HPPA'">
-<keyval id="/boot"/>   /boot        ext2    defaults,noatime     1 2
+<pre caption="A full /etc/fstab example" test="func:keyval('arch')='HPPA' or func:keyval('arch')='x86' or func:keyval('arch')='AMD64'">
+<keyval id="/boot"/>   /boot        ext2    defaults,noatime     0 2
 /dev/sda3   none         swap    sw                   0 0
-/dev/sda4   /            ext3    noatime              0 1
+/dev/sda4   /            ext4    noatime              0 1
 
 /dev/cdrom  /mnt/cdrom   auto    noauto,user          0 0
-
-proc        /proc        proc    defaults             0 0
-shm         /dev/shm     tmpfs   nodev,nosuid,noexec  0 0
 </pre>
 
-<pre caption="A full /etc/fstab example" test="func:keyval('arch')='Alpha' or func:keyval('arch')='MIPS' or func:keyval('arch')='x86' or func:keyval('arch')='AMD64'">
-<keyval id="/boot"/>   /boot        ext2    defaults,noatime     1 2
+<pre caption="A full /etc/fstab example" test="func:keyval('arch')='Alpha' or func:keyval('arch')='MIPS'">
+<keyval id="/boot"/>   /boot        ext2    defaults,noatime     0 2
 /dev/sda2   none         swap    sw                   0 0
-/dev/sda3   /            ext3    noatime              0 1
+/dev/sda3   /            ext4    noatime              0 1
 
 /dev/cdrom  /mnt/cdrom   auto    noauto,user          0 0
-
-proc        /proc        proc    defaults             0 0
-shm         /dev/shm     tmpfs   nodev,nosuid,noexec  0 0
 </pre>
 
 <pre caption="A full /etc/fstab example" test="func:keyval('arch')='SPARC'">
-/dev/sda1   /               ext3        noatime              0 1
+/dev/sda1   /               ext4        noatime              0 1
 /dev/sda2   none            swap        sw                   0 0
-/dev/sda4   /usr            ext3        noatime              0 2
-/dev/sda5   /var            ext3        noatime              0 2
-/dev/sda6   /home           ext3        noatime              0 2
+/dev/sda4   /usr            ext4        noatime              0 2
+/dev/sda5   /var            ext4        noatime              0 2
+/dev/sda6   /home           ext4        noatime              0 2
 
 <comment># You must add the rules for openprom</comment>
 openprom    /proc/openprom  openpromfs  defaults             0 0
 
 /dev/cdrom  /mnt/cdrom      auto        noauto,user          0 0
-
-proc        /proc        proc    defaults             0 0
-shm         /dev/shm     tmpfs   nodev,nosuid,noexec  0 0
 </pre>
 
 <pre caption="A full /etc/fstab example" test="func:keyval('arch')='PPC' or
 func:keyval('arch')='PPC64'">
-/dev/sda4   /            ext3    noatime              0 1
+/dev/sda4   /            ext4    noatime              0 1
 /dev/sda3   none         swap    sw                   0 0
 
 /dev/cdrom  /mnt/cdrom   auto    noauto,user          0 0
-
-proc        /proc        proc    defaults             0 0
-shm         /dev/shm     tmpfs   nodev,nosuid,noexec  0 0
 </pre>
 
 <p>
@@ -179,7 +177,10 @@ removable media as they can be created with one of many filesystems) and
 <p>
 To improve performance, most users would want to add the <c>noatime</c>
 mount option, which results in a faster system since access times
-aren't registered (you don't need those generally anyway).
+aren't registered (you don't need those generally anyway). This is also
+recommended for solid state drive (SSD) users, who should also enable
+the <c>discard</c> mount option (ext4 and btrfs only for now) which
+makes the TRIM command work.
 </p>
 
 <p>
@@ -217,6 +218,11 @@ have a DNS server but not a DHCP server. You don't need to worry about DNS or
 domainnames if your networking is setup for DHCP.
 </p>
 
+<note>
+The <path>/etc/conf.d/net</path> file does not exist by default, so you might
+need to create it.
+</note>
+
 <pre caption="Setting the domainname">
 # <i>nano -w /etc/conf.d/net</i>
 
@@ -244,7 +250,7 @@ nis_domain_lo="<i>my-nisdomain</i>"
 
 <note>
 For more information on configuring DNS and NIS, please read the examples
-provided in <path>/usr/share/doc/openrc-*/net.example.bz2</path> which
+provided in <path>/usr/share/doc/netifrc-*/net.example.bz2</path> which
 can be read using <c>bzless</c>. Also, you may want to emerge <c>openresolv</c>
 to help manage your DNS/NIS setup.
 </note>
@@ -273,8 +279,16 @@ All networking information is gathered in <path>/etc/conf.d/net</path>. It uses
 a straightforward yet not intuitive syntax if you don't know how to set up
 networking manually. But don't fear, we'll explain everything. A fully
 commented example that covers many different configurations is available in
-<path>/usr/share/doc/openrc-*/net.example.bz2</path>.
+<path>/usr/share/doc/netifrc-*/net.example.bz2</path>.
 </p>
+
+<p>
+Let's first install <c>netifrc</c>:
+</p>
+
+<pre caption="Installing netifrc">
+# <i>emerge --noreplace netifrc</i>
+</pre>
 
 <p>
 DHCP is used by default. For DHCP to work, you will need to install a DHCP
@@ -295,20 +309,17 @@ this example):
 </pre>
 
 <p>
-You will see the following file:
-</p>
-
-<pre caption="Default /etc/conf.d/net">
-# This blank configuration will automatically use DHCP for any net.*
-# scripts in /etc/init.d.  To create a more complete configuration,
-# please review /usr/share/doc/openrc-*/net.example.bz2 and save
-# your configuration in /etc/conf.d/net (this file :]!).
-</pre>
-
-<p>
 To enter your own IP address, netmask and gateway, you need
 to set both <c>config_eth0</c> and <c>routes_eth0</c>:
 </p>
+
+<note>
+This assumes that your network interface will be called eth0. This is, however,
+very system dependent. It is recommended to assume that the interface is named
+the same as the interface name when booted from the installation media <e>if</e>
+the installation media is sufficiently recent. More information can be found in
+<uri link="?part=4&amp;chap=2#doc_chap4">Network Interface Naming</uri>.
+</note>
 
 <pre caption="Manually setting IP information for eth0">
 config_eth0="192.168.0.2 netmask 255.255.255.0 brd 192.168.0.255"
@@ -324,7 +335,7 @@ config_eth0="dhcp"
 </pre>
 
 <p>
-Please read <path>/usr/share/doc/openrc-*/net.example.bz2</path> for a
+Please read <path>/usr/share/doc/netifrc-*/net.example.bz2</path> for a
 list of all available options. Be sure to also read your DHCP client manpage if
 you need to set specific DHCP options.
 </p>
@@ -357,9 +368,32 @@ default runlevel.
 
 <p>
 If you have several network interfaces, you need to create the appropriate
-<path>net.eth1</path>, <path>net.eth2</path> etc. just like you did with
-<path>net.eth0</path>.
+<path>net.*</path> files just like you did with <path>net.eth0</path>.
 </p>
+
+<p>
+If you later find out the assumption about the network interface name (which we
+currently document as eth0) was wrong, then
+</p>
+
+<ol>
+<li>
+update the <path>/etc/conf.d/net</path> file with the correct interface name (like enp3s0
+instead of eth0),
+</li>
+<li>
+create new symbolic link (like <path>/etc/init.d/net.enp3s0</path>),
+</li>
+<li>
+remove the old symbolic link (<c>rm /etc/init.d/net.eth0</c>), 
+</li>
+<li>
+add the new one to the default runlevel, and
+</li>
+<li>
+remove the old one using <c>rc-update del net.eth0 default</c>.
+</li>
+</ol>
 
 </body>
 </subsection>
@@ -438,22 +472,17 @@ First we set the root password by typing:
 <body>
 
 <p>
-Gentoo uses <path>/etc/rc.conf</path> for general, system-wide configuration.
-Open up <path>/etc/rc.conf</path> and enjoy all the comments in that file :)
+Gentoo uses <path>/etc/rc.conf</path> to configure the services, startup,
+and shutdown of your system. Open up <path>/etc/rc.conf</path> and enjoy all
+the comments in the file.
 </p>
 
-<pre caption="Opening /etc/rc.conf">
+<pre caption="Configuring services">
 # <i>nano -w /etc/rc.conf</i>
 </pre>
 
 <p>
-When you're finished configuring <path>/etc/rc.conf</path>, save and exit. 
-</p>
-
-<p>
-As you can see, this file is well commented to help you set up the necessary
-configuration variables. You can configure your system to use unicode and
-define your default editor and your display manager (like gdm or kdm).
+When you're finished configuring these two files, save them and exit. 
 </p>
 
 <p>
@@ -498,22 +527,9 @@ When you're finished configuring <path>/etc/conf.d/hwclock</path>, save and
 exit. 
 </p>
 
-<p>
-You should define the timezone that you previously copied to
-<path>/etc/localtime</path> in the <path>/etc/timezone</path> file so that
-further upgrades of the <c>sys-libs/timezone-data</c> package can update
-<path>/etc/localtime</path> automatically. For instance, if you used the
-Europe/Brussels timezone, you would write <c>Europe/Brussels</c> in the
-<path>/etc/timezone</path> file.
-</p>
-
-<p test="not(func:keyval('arch')='PPC64')">
-Please continue with <uri link="?part=1&amp;chap=9">Installing Necessary System
-Tools</uri>.
-</p>
-
 </body>
 </subsection>
+
 <subsection test="func:keyval('arch')='PPC64'">
 <title>Configuring the Console</title>
 <body>

@@ -4,7 +4,7 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-working-portage.xml,v 1.78 2011/10/26 19:46:19 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-working-portage.xml,v 1.85 2013/12/17 11:29:20 swift Exp $ -->
 
 <sections>
 
@@ -13,8 +13,8 @@ This chapter explains the "simple" steps a user definitely needs to know to
 maintain the software on his system.
 </abstract>
 
-<version>4</version>
-<date>2011-10-26</date>
+<version>11</version>
+<date>2013-12-17</date>
 
 <section>
 <title>Welcome to Portage</title>
@@ -223,7 +223,7 @@ Once the package installed, its documentation is generally found in a
 subdirectory named after the package under the <path>/usr/share/doc</path>
 directory. You can also list all installed files with the <c>equery</c> tool
 which is part of the <c>app-portage/gentoolkit</c> <uri
-link="/doc/en/gentoolkit.xml">package</uri>.
+link="https://wiki.gentoo.org/wiki/Gentoolkit">package</uri>.
 </p>
 
 <pre caption="Locating package documentation">
@@ -289,13 +289,13 @@ To keep your system in perfect shape (and not to mention install the latest
 security updates) you need to update your system regularly. Since Portage only
 checks the ebuilds in your Portage tree you first have to update your Portage
 tree. When your Portage tree is updated, you can update your system with
-<c>emerge --update world</c>. In the next example, we'll also use the
+<c>emerge --update @world</c>. In the next example, we'll also use the
 <c>--ask</c> switch which will tell Portage to display the list of packages it
 wants to upgrade and ask you if you want to continue:
 </p>
 
 <pre caption="Updating your system">
-# <i>emerge --update --ask world</i>
+# <i>emerge --update --ask @world</i>
 </pre>
 
 <p>
@@ -308,7 +308,7 @@ add the <c>--deep</c> argument:
 </p>
 
 <pre caption="Updating your system with dependencies">
-# <i>emerge --update --deep world</i>
+# <i>emerge --update --deep @world</i>
 </pre>
 
 <p>
@@ -320,7 +320,7 @@ is installed, these dependencies are no longer required. Portage calls those
 </p>
 
 <pre caption="Updating your entire system">
-# <i>emerge --update --deep --with-bdeps=y world</i>
+# <i>emerge --update --deep --with-bdeps=y @world</i>
 </pre>
 
 <p>
@@ -337,7 +337,7 @@ existing ones:
 </p>
 
 <pre caption="Performing a full update">
-# <i>emerge --update --deep --with-bdeps=y --newuse world</i>
+# <i>emerge --update --deep --with-bdeps=y --newuse @world</i>
 </pre>
 
 </body>
@@ -374,7 +374,7 @@ All this is handled with the following three commands:
 </p>
 
 <pre caption="Removing orphaned dependencies">
-# <i>emerge --update --deep --newuse world</i>
+# <i>emerge --update --deep --newuse @world</i>
 # <i>emerge --depclean</i>
 # <i>revdep-rebuild</i>
 </pre>
@@ -410,22 +410,23 @@ By default, Portage permits all licenses, except End User License Agreements
 
 <p>
 The variable that controls permitted licenses is <c>ACCEPT_LICENSE</c>, which
-can be set in <path>/etc/make.conf</path>:
+can be set in <path>/etc/portage/make.conf</path>. In the next example, this
+default value is shown:
 </p>
 
-<pre caption="Default ACCEPT_LICENSE in /etc/make.conf">
+<pre caption="Setting ACCEPT_LICENSE in /etc/portage/make.conf">
 ACCEPT_LICENSE="* -@EULA"
 </pre>
 
 <p>
 With this configuration, packages that require interaction during installation
-to approve their EULA <e>will not</e> be installed. Packages without an EULA
-<e>will</e> be installed.
+to approve their EULA <e>will not</e> be installable. Packages without an EULA
+<e>will</e> be installable.
 </p>
 
 <p>
-You can set <c>ACCEPT_LICENSE</c> globally in <path>/etc/make.conf</path>, or
-you can specify it on a per-package basis in
+You can set <c>ACCEPT_LICENSE</c> globally in <path>/etc/portage/make.conf</path>
+, or you can specify it on a per-package basis in
 <path>/etc/portage/package.license</path>.
 </p>
 
@@ -454,20 +455,13 @@ entry after that is an individual license.
 
 <p>
 License groups defined in <c>ACCEPT_LICENSE</c> are prefixed with an <b>@</b>
-sign. Here's an example of a system that globally permits the GPL-compatible
-license group, as well as a few other groups and individual licenses:
+sign. A commonly requested setting is to only allow the installation of free
+software and documentation. To accomplish this, we can remove all currently
+accepted licenses (using <c>-*</c>) and then only allow the licenses in the
+<c>FREE</c> group as follows:
 </p>
 
-<pre caption="ACCEPT_LICENSE in /etc/make.conf">
-ACCEPT_LICENSE="@GPL-COMPATIBLE @OSI-APPROVED @EULA atheros-hal BitstreamVera"
-</pre>
-
-<p>
-If you want only free software and documentation on your system, you might use
-the following setup:
-</p>
-
-<pre caption="Use only free licenses">
+<pre caption="Only allowing free software and documentation licenses in /etc/portage/make.conf">
 ACCEPT_LICENSE="-* @FREE"
 </pre>
 
@@ -475,7 +469,7 @@ ACCEPT_LICENSE="-* @FREE"
 In this case, "free" is mostly defined by the <uri
 link="http://www.gnu.org/philosophy/free-sw.html">FSF</uri> and <uri
 link="http://www.opensource.org/docs/osd">OSI</uri>. Any package whose license
-does not meet these requirements will not be installed on your system.
+does not meet these requirements will not be installable on your system.
 </p>
 
 </body>
@@ -508,8 +502,12 @@ differently. For instance, <c>metalogd</c>, <c>sysklogd</c> and <c>syslog-ng</c>
 are all system loggers. Applications that rely on the availability of "a system
 logger" cannot depend on, for instance, <c>metalogd</c>, as the other system
 loggers are as good a choice as any. Portage allows for <e>virtuals</e>: each
-system logger provides <c>virtual/syslog</c> so that applications can depend on
-<c>virtual/syslog</c>.
+system logger is listed as an "exclusive" dependency of the logging service in the
+<c>logger</c> virtual package of the <c>virtual</c> category, so that
+applications can depend on the <c>virtual/logger</c> package. When installed,
+the package will pull in the first logging package mentioned in the package,
+unless a logging package was already installed (in which case the virtual is
+satisfied).
 </p>
 
 <p>
@@ -640,7 +638,7 @@ available. There is always a reason why a package is masked:
   <li>
     <b>license</b> means that the package's license is not compatible with your
     <c>ACCEPT_LICENSE</c> setting. You must explicitly permit its license or
-    license group by setting it in <path>/etc/make.conf</path> or in
+    license group by setting it in <path>/etc/portage/make.conf</path> or in
     <path>/etc/portage/package.license</path>. Refer to <uri
     link="#license">Licenses</uri> to learn how licenses work.
   </li>
@@ -681,7 +679,7 @@ flag is not set on the system.
 
 <p>
 To resolve this, either add the requested USE flag to your global USE flags in
-<path>/etc/make.conf</path>, or set it for the specific package in
+<path>/etc/portage/make.conf</path>, or set it for the specific package in
 <path>/etc/portage/package.use</path>.
 </p>
 

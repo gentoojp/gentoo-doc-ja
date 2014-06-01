@@ -4,29 +4,29 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-working-portage.xml,v 1.19 2011/08/01 21:49:23 shindo Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-working-portage.xml,v 1.23 2013/12/19 18:24:21 naota Exp $ -->
 
 <sections>
 
 <abstract>
 この章では、システムにおけるソフトウェアの管理をしていくのに、
-ユーザーが知っておくべき「簡単な」手順を説明します。
+ユーザーが知っておくべき手順を「簡単に」説明します。
 </abstract>
 
-
-<version>2</version>
-<date>2010-10-29</date>
-<!-- Original revision: 1.75 -->
+<version>11</version>
+<date>2013-12-17</date>
+<!-- Original revision: 1.85 -->
 <!-- Translator: kobayashi -->
-
+<!-- Translator: naota -->
+<!-- Translator: unarist -->
 
 <section>
 <title>Portageへようこそ</title>
 <body>
 
 <p>
-PortageはもしかするとGentooのソフトウェア管理における最も注目すべき革新なものかもしれません。
-その高い柔軟性と非常に多くの機能で、たびたびLinuxで利用できる最高のソフトウェア管理ツールとされています。
+PortageはGentooのソフトウェア管理における最も注目すべき革新と言えるでしょう。
+その高い柔軟性と非常に多くの機能により、Linuxで利用できる最高のソフトウェア管理ツールとされることがよくあります。
 </p>
 
 <p>
@@ -53,14 +53,15 @@ $ <i>man emerge</i>
 <body>
 
 <p>
-パッケージについて話す場合、たいていは、私たちGentooユーザーがPortageツリーを通して利用可能なソフトウェアのタイトルを意味しています。
+パッケージについて話す場合、たいていは、GentooユーザーがPortageツリーを通して利用可能なソフトウェア名を意味しています。
 Portageツリーは<e>ebuild</e>という、Portageがソフトウェアを維持管理する(インストール、検索など)ために必要な全ての情報を含んだファイルのコレクションです。
 デフォルトでは、これらebuildは<path>/usr/portage</path>に置かれています。
 </p>
 
 <p>
-Porgageにソフトウェアタイトルに関して、何か実行するよう指示するときはいつでも、システムにあるebuildがベースに使われます。
-故に、Portageに新しいソフトウェアやセキュリティアップデートなどが知らされるように、定期的にebuildを更新することが重要です。
+Portageにソフトウェア名に関して、何か実行するよう指示するときはいつでも、システムにあるebuildがベースに使われます。
+そのため、システムのebuildを定期的に更新することが重要です。
+そうすれば、新しいソフトウェアやセキュリティアップデートなどを利用することができます。
 </p>
 
 </body>
@@ -70,22 +71,28 @@ Porgageにソフトウェアタイトルに関して、何か実行するよう�
 <body>
 
 <p>
-Portageツリーは一般に<uri link="http://rsync.samba.org/">rsync</uri>という高速ファイル転送ユーティリティで更新されます。
+Portageツリーは通常<uri link="http://rsync.samba.org/">rsync</uri>という高速差分ファイル転送ユーティリティで更新されます。
 更新はrsyncのフロントエンドを提供する<c>emerge</c>コマンドを使うという、とても簡単なものです。
 </p>
 
-<pre caption="Portageツリーの更新">
+<pre caption="Portageツリーを更新する">
 # <i>emerge --sync</i>
 </pre>
 
 <p>
-もしファイアーウォールの制限などによりrsyncが実行できないときには、毎日作成されるPortageツリーのスナップショットを利用することによってPortageを更新することができます。
+もしファイアーウォールの制限によりrsyncが実行できないときには、毎日作成されるPortageツリーのスナップショットを利用することによってPortageを更新することができます。
 <c>emerge-webrsync</c>ツールは自動的に最新のスナップショットを取得し、システムにインストールしてくれます。
 </p>
 
 <pre caption="emerge-webrsyncを実行">
 # <i>emerge-webrsync</i>
 </pre>
+
+<p>
+<c>emerge-webrsync</c>を使うとGentooリリースエンジニアリングチームのGPG鍵でサインされているPortageツリーのスナップショットでツリーを更新できるという利点もあります。
+詳しくは<uri link="?part=2&amp;chap=3">Portageの機能</uri>のセクションの<uri
+link="?part=2&amp;chap=3#webrsync-gpg">検証済みのPortageツリースナップショットを取得する</uri>を参照してください。
+</p>
 
 </body>
 </subsection>
@@ -97,20 +104,20 @@ Portageツリーは一般に<uri link="http://rsync.samba.org/">rsync</uri>と�
 <body>
 
 <p>
-Portageツリーからソフトウェアタイトルを検索するには、<c>emerge</c>に内蔵された検索能力を利用することができます。
-デフォルトでは、<c>emerge --search</c>は検索単語に(完全もしくは部分)一致したパッケージ名を返します。
+Portageツリーからソフトウェア名を検索するには、<c>emerge</c>に内蔵された検索能力を利用することができます。
+デフォルトでは、<c>emerge --search</c>は検索単語に(完全にもしくは部分的に)一致したパッケージ名を返します。
 </p>
 
 <p>
-例えば、"pdf"を名前に持つパッケージを検索するにはこうします。
+例えば、"pdf"を名前にふくむパッケージを検索するにはこうします。
 </p>
 
-<pre caption="pdfと名付けられたパッケージを検索">
+<pre caption="pdfを名前にふくむパッケージを検索">
 $ <i>emerge --search pdf</i>
 </pre>
 
 <p>
-もし詳細を検索したいのなら<c>--searchdesc</c>(もしくは <c>-S</c>)スイッチを使うことができます。
+もしパッケージの詳細な説明を検索したいのなら<c>--searchdesc</c>(もしくは <c>-S</c>)引数を使うことができます。
 </p>
 
 <pre caption="pdfに関連したパッケージを検索">
@@ -122,7 +129,7 @@ $ <i>emerge --searchdesc pdf</i>
 その内容が意味するところがわかるように、各フィールドにははっきりとラベル付けがされています。
 </p>
 
-<pre caption="'emerge --search'の結果の例">
+<pre caption="'emerge --search'の出力例">
 *  net-print/cups-pdf
       Latest version available: 1.5.2
       Latest version installed: [ Not Installed ]
@@ -139,7 +146,7 @@ $ <i>emerge --searchdesc pdf</i>
 <body>
 
 <p>
-一度好みのソフトウェアを見つけたら、<c>emerge</c>で簡単にインストールすることができます。ただパッケージの名前を追加するだけです。
+好みのソフトウェアを見つけたら、<c>emerge</c>で簡単にインストールすることができます。ただパッケージの名前を追加するだけです。
 例えば、<c>gnumeric</c>をインストールするにはこうします。
 </p>
 
@@ -148,11 +155,11 @@ $ <i>emerge --searchdesc pdf</i>
 </pre>
 
 <p>
-たくさんのアプリケーションがお互いに依存し合っているため、あるソフトウェアを確実にインストールしようとすると、
+たくさんのアプリケーションがお互いに依存し合っているため、あるソフトウェアをインストールしようとすると、
 結果的にいくつかの依存関係もインストールすることになるでしょう。
 ご心配なく、Portageは依存関係をうまく扱ってくれます。
-もしパッケージをインストールしたいときにPortageが何をインストール<e>しようとしている</e>か確かめたいときには、
-<c>--pretend</c>スイッチを追加します。例えばこのようにします。
+もしパッケージをインストールするときにPortageが何をインストール<e>しようとしている</e>か確かめたい場合には、
+<c>--pretend</c>引数を追加します。例えばこのようにします。
 </p>
 
 <pre caption="gnumericをインストールするふりをする">
@@ -160,10 +167,12 @@ $ <i>emerge --searchdesc pdf</i>
 </pre>
 
 <p>
-Portageにパッケージをインストールするよう要求したときは、必要なソースコードをインターネットからダウンロードし、
-デフォルトでは<path>/usr/portage/distfiles</path>に保持します。
-この後、解凍し、パッケージをコンパイルしてインストールします。
-Portageにソースをダウンロードするだけでインストールは行って欲しくないときには、<c>emerge</c>コマンドに<c>--fetchonly</c>コマンドを追加します。
+Portageにパッケージをインストールするよう要求したときは、
+必要なソースコードをインターネットからダウンロードし、
+デフォルトでは<path>/usr/portage/distfiles</path>に保存します。
+この後、ソースコードが展開され、コンパイルが実行されて、パッケージがインストールされます。
+Portageにソースをダウンロードするだけでインストールを行って欲しくないときには、
+<c>emerge</c>コマンドに<c>--fetchonly</c>コマンドを追加します。
 </p>
 
 <pre caption="gnumericのソースコードをダウンロード">
@@ -178,7 +187,7 @@ Portageにソースをダウンロードするだけでインストールは行�
 
 <p>
 多くのパッケージはドキュメントと共にインストールされます。
-<c>doc</c>USEフラグがパッケージのドキュメントをインストールするかしないかを定義する場合もあります。
+<c>doc</c>USEフラグでパッケージのドキュメントをインストールするかしないかが決まる場合もあります。
 現在の<c>doc</c>USEフラグを確認するには<c>emerge -vp &lt;package name&gt;</c>コマンドを使用します。
 </p>
 
@@ -189,15 +198,15 @@ Portageにソースをダウンロードするだけでインストールは行�
 </pre>
 
 <p>
-<c>doc</c>USEフラグを有効にするのに一番良い方法は、<path>/etc/portage/package.use</path>によってパッケージごとに行うやり方です。
-そのため、興味のあるパッケージの分だけドキュメントを取得できるようになります。
-このフラグを全体に有効にしてしまうと、循環依存の問題を起こす原因となることが知られています。
-詳しくは、<uri link="?part=2&amp;chap=2">USEフラグ</uri>の章を読んでください。 
+<path>/etc/portage/package.use</path>によってパッケージごとに<c>doc</c>USEフラグを有効にする事をおすすめします。
+そうすれば、興味のあるパッケージの分だけドキュメントを取得できるようになります。
+このフラグをシステム全体で有効にしてしまうと、循環依存の問題を起こす原因となることが知られています。
+詳しくは、<uri link="?part=2&amp;chap=2">USEフラグ</uri>の章を読んでください。
 </p>
 
 <p>
 パッケージがインストールされると、ドキュメントは一般的には<path>/usr/share/doc</path>ディレクトリの下のパッケージ名のディレクトリの中に置かれます。
-<c>app-portage/gentoolkit</c><uri link="/doc/en/gentoolkit.xml">パッケージ</uri>（<uri link="/doc/ja/gentoolkit.xml">日本語訳</uri>）の一部である<c>equery</c>ツールを利用すると、全てのインストールされたファイルの一覧を表示できます。
+<c>app-portage/gentoolkit</c><uri link="https://wiki.gentoo.org/wiki/Gentoolkit">パッケージ</uri>の一部である<c>equery</c>ツールを利用すると、全てのインストールされたファイルの一覧を表示できます。
 </p>
 
 <pre caption="パッケージドキュメントの位置">
@@ -226,13 +235,14 @@ media-libs/alsa-lib-1.0.14_rc1
 
 <p>
 システムからパッケージを削除したいときは、<c>emerge --unmerge</c>を利用します。
-これはPortageにパッケージによってインストールされた設定ファイル<e>をのぞく</e>全てのファイルを削除するよう命令します。
-設定ファイルを残しておくと、もう一度インストールしようと決めたときに作業を続けることが可能です。
+これはPortageにパッケージによってインストールされた全てのファイルを削除するよう命令します。
+ただし、インストール後に変更されたアプリケーションの<e>設定ファイルは削除されません</e>。
+設定ファイルを残しておくことで、再びインストールすれば、パッケージは適切に動作します。
 </p>
 
 <p>
-しかし、<brite>大きな警告</brite>があります:Portageは削除したいパッケージが他から必要とされているかを確認<e>しません</e>。
-とにかく、unmergeするとシステムを破壊する様な重要なパッケージを削除するときには気をつけろと言うことです。
+しかし、<brite>大きな警告</brite>があります:Portageは削除したいパッケージが他のパッケージから必要とされているかを確認<e>しません</e>。
+しかし、少なくともunmergeするとシステムを破壊する様な重要なパッケージを削除するときにはPortageに警告されます。
 </p>
 
 <pre caption="gnumericをシステムから削除">
@@ -241,7 +251,7 @@ media-libs/alsa-lib-1.0.14_rc1
 
 <p>
 システムからパッケージを削除するときには、インストール時に依存関係により自動的にインストールされたソフトウェアは残されます。
-Portageにある削除可能な依存関係を削除するには、<c>emerge</c>の<c>--depclean</c>機能を利用します。
+依存関係でインストールされたソフトウェアから削除可能なものを全て検索するには、<c>emerge</c>の<c>--depclean</c>引数を利用します。
 これについては後で話します。
 </p>
 
@@ -252,26 +262,38 @@ Portageにある削除可能な依存関係を削除するには、<c>emerge</c>
 <body>
 
 <p>
-システムを完全な形に保つ(もちろん最新のセキュリティアップデートをインストールすることも)には、システムを定期的に更新する必要があります。
+システムを完全な形に保つ(最新のセキュリティアップデートをインストールする様に言われない為にも)には、システムを定期的に更新する必要があります。
 Portageはツリーの中のebuildsのみ確認するので、最初にPortageツリーを更新しなければなりません。
-Portageツリーが更新されたら、<c>emerge --update world</c>でシステムを更新できます。
-次の例では<c>--ask</c>スイッチを使用しています。
+Portageツリーが更新されたら、<c>emerge --update @world</c>でシステムを更新できます。
+次の例では<c>--ask</c>引数を使用しています。
 これは、更新するパッケージの一覧をPortageに表示させ、続行するかを尋ねます。
 </p>
 
 <pre caption="システムを更新する">
-# <i>emerge --update --ask world</i>
+# <i>emerge --update --ask @world</i>
 </pre>
 
 <p>
 Portageはインストールされているアプリケーションの新しいバージョンを検索します。
 しかし、これは<e>明示的に</e>インストールされたものしか確かめません（そうしたアプリケーションは<path>/var/lib/portage/world</path>にリストされています）。
 つまり、それらの依存関係は確認しないということです。
-システムの<e>個々のパッケージすべて</e>を更新したいときには<c>--deep</c>引数を与えてやります。
+明示的にインストールされたパッケージの依存も更新したいときには<c>--deep</c>引数を与えてやります。
+</p>
+
+<pre caption="システムを依存関係を含めて更新する">
+# <i>emerge --update --deep @world</i>
+</pre>
+
+<p>
+これでも<e>全てのパッケージ</e>が更新されるわけではありません。
+システムにインストールされているパッケージの中にはコンパイルとビルドの間には必要ではあるものの、
+インストールが終わってしまえばもう必要ないようなパッケージもあります。
+Portageでは、そのようなパッケージを<e>build dependencies</e> (ビルド依存)と呼んでいます。
+これを更新に含めるには<c>--with-bdeps=y</c>を追加します。
 </p>
 
 <pre caption="システムの全てを更新する">
-# <i>emerge --update --deep world</i>
+# <i>emerge --update --deep --with-bdeps=y @world</i>
 </pre>
 
 <p>
@@ -280,11 +302,11 @@ Portageはインストールされているアプリケーションの新しい�
 
 <p>
 もし最近<uri link="?part=2&amp;chap=2">USEフラグ</uri>を変更したのなら、<c>--newuse</c>を追加したくなるでしょう。
-そうするとPortageは新しいパッケージのインストールか既にあるものの再コンパイルが必要かを確認します。
+そうするとPortageは新しいパッケージのインストールや既にインストールしたパッケージの再コンパイルが必要かを確認します。
 </p>
 
 <pre caption="完全な更新の実行">
-# <i>emerge --update --deep --newuse world</i>
+# <i>emerge --update --deep --newuse --with-bdeps=y @world</i>
 </pre>
 
 </body>
@@ -294,7 +316,7 @@ Portageはインストールされているアプリケーションの新しい�
 <body>
 
 <p>
-Portageツリーのいくらかのパッケージは実際には何も含まれていませんが、複数のパッケージをインストールするのに利用されるものがあります。
+Portageツリーのいくつかのパッケージには、それ自身は何のファイルもインストールしませんが、複数のパッケージをインストールするのに利用されるものがあります。
 例えば、<c>kde-meta</c>パッケージは、依存関係にある様々なKDE関連のパッケージを制御することで、システムに完全なKDE環境をインストールします。
 </p>
 
@@ -314,7 +336,7 @@ USEフラグに変更を加えたときも含めてまずシステムを完全�
 </p>
 
 <pre caption="残された依存関係を削除する">
-# <i>emerge --update --deep --newuse world</i>
+# <i>emerge --update --deep --newuse @world</i>
 # <i>emerge --depclean</i>
 # <i>revdep-rebuild</i>
 </pre>
@@ -330,88 +352,80 @@ USEフラグに変更を加えたときも含めてまずシステムを完全�
 </body>
 </subsection>
 </section>
-
 <section id="license">
 <title>ライセンス</title>
 <subsection>
 <body>
-  	 
- <p>
+
+<p>
 Portage バージョン2.1.7から、ソフトウェアのライセンスをもとにして、ソフトウェアのインストール可否を制御できます。
-Portageツリーにある全てパッケージで、ebuildに<c>LICENSE</c>項目が含まれています。
+Portageツリーにある全てのパッケージには、ebuildに<c>LICENSE</c>項目が含まれています。
 <c>emerge --search packagename</c>を実行すれば、パッケージのライセンスがわかります。
 </p>
-  	 
+
 <p>
 デフォルトでは、使用許諾契約書(EULA)に同意しなければならないものを除いて、Portageは全てのライセンスを許可します。
 </p>
-  	 
+
 <p>
-許可するライセンスをコントロールするのは、<c>ACCEPT_LICENSE</c>です。これは、<path>/etc/make.conf</path>のなかで定義されます。
+<c>ACCEPT_LICENSE</c>で許可するライセンスを制御します。これは、<path>/etc/portage/make.conf</path>で設定されます。
+次の例では<c>ACCEPT_LICENSE</c>のデフォルトを示しています。
 </p>
-  	 
-<pre caption="/etc/makc.conf でのデフォルト ACCEPT_LICENSE">
+
+<pre caption="/etc/portage/make.confでACCEPT_LICENSEを設定する">
 ACCEPT_LICENSE="* -@EULA"
 </pre>
-  	 
+
 <p>
-この設定により、インストール中に使用許諾契約書に同意する行為が発生するようなパッケージは、<e>インストールされず、</e>
-使用許諾契約書がないパッケージが<e>インストールされます。</e>
+この設定により、インストール中に使用許諾契約に同意する行為が必要になるパッケージは<e>インストールできなくなります</e>が、
+その必要がないパッケージは<e>インストールできる</e>ようになります。
 </p>
-  	 
+
 <p>
-<c>ACCEPT_LICENSE</c>はシステム全体では<path>/etc/make.conf</path>で定義可能です。
-また、パッケージごとに<path>/etc/portage/package.license</path>でも指定可能です。
+<c>ACCEPT_LICENSE</c>はシステム全体では<path>/etc/portage/make.conf</path>で設定可能です。
+また、パッケージごとに<path>/etc/portage/package.license</path>でも設定可能です。
 </p>
-  	 
+
 <p>
 たとえば、<c>app-crypt/truecrypt</c>に対して、<c>truecrypt-2.7</c>ライセンスを許可する場合、
 次の内容を<path>/etc/portage/package.license</path>に追加してください。
 </p>
-  	 
+
 <pre caption="package.licenseでtruecryptライセンスを指定する">
 app-crypt/truecrypt truecrypt-2.7
 </pre>
-  	 
+
 <p>
-これによって、<c>truecrypt-2.7</c>ライセンスになっているtruecryptがインストール可能になりますが、<c>truecrypt-2.8</c>はインストールされません。
+これによって、<c>truecrypt-2.7</c>ライセンスでのインストールは許可されますが、<c>truecrypt-2.8</c>ライセンスでのインストールは許可されません。
 </p>
-  	 
+
 <impo>
 各ライセンスは<path>/usr/portage/licenses</path>に置かれ、ライセンスグループは<path>/usr/portage/profiles/license_groups</path>に書かれています。
-license_groupsの各行で、大文字から始まる項目はライセンスグループの名前で、その後に個々のライセンスが並びます。
+license_groupsの各行の一番初めの大文字で書かれた項目はライセンスグループの名前で、その後に個々のライセンスが書かれています。
 </impo>
-  	 
+
 <p>
-<c>ACCEPT_LICENSE</c>で定義されたライセンスグループは、<b>@</b>記号が前につきます。
-次の例ではシステム全体で、他の個々のライセンスと同様に、GPL互換ライセンスグループを許可しています。
-</p>
-  	 
-<pre caption="/etc/make.conf での ACCEPT_LICENSE">
-ACCEPT_LICENSE="@GPL-COMPATIBLE @OSI-APPROVED @EULA atheros-hal BitstreamVera"
-</pre>
-  	 
-<p>
-もし、フリーソフトウエアとドキュメントだけのシステムにしたい場合は、次のようにすればよいでしょう。
-</p>
-  	 
-<pre caption="フリーのライセンスだけを使用する">
+<c>ACCEPT_LICENSE</c>で定義されたライセンスグループは、<b>@</b>記号が先頭につきます。
+フリーソフトウェアとフリードキュメントだけをインストール可能にするという設定がよく使われています。
+その設定を行なうには、全ての許容されているライセンスを(<c>-*</c>を使って)削除し、
+<c>FREE</c>のグループのライセンスだけを以下のようにして許可します。</p>
+
+<pre caption="フリーソフトウェアとフリードキュメントのライセンスだけを許可する/etc/portage/make.confの設定">
 ACCEPT_LICENSE="-* @FREE"
 </pre>
-  	 
+
 <p>
-この場合の"free"とは、ほぼ<uri link="http://www.gnu.org/philosophy/free-sw.html">FSF</uri> と <uri link="http://www.opensource.org/docs/osd">OSI</uri>で定義されたものです。
-これらの定義に合致しないライセンスを持つパッケージはインストールされません。
+この場合の"フリー"とは、ほぼ<uri link="http://www.gnu.org/philosophy/free-sw.html">FSF</uri>と<uri link="http://www.opensource.org/docs/osd">OSI</uri>で定義されたものです。
+これらの定義に合致しないライセンスを持つパッケージはインストールできません。
 </p>
-  	 
+
 </body>
 </subsection>
 </section>
-
 <section>
 <title>Portageが不満を言ったら</title>
 <subsection>
-<title>SLOT、Virtual、ブランチ、アーキテクチャ、そしてProfilesについて</title>
+<title>SLOT、Virtual、ブランチ、アーキテクチャ、そしてプロファイルについて</title>
 <body>
 
 <p>
@@ -420,36 +434,38 @@ ACCEPT_LICENSE="-* @FREE"
 </p>
 
 <p>
-Portageでは、一つのパッケージで複数のバージョンをシステム上に共存させることができます。
-他のディストリビューションがそれらの名前にバージョンを付けている(<c>freetype</c>と<c>freetype2</c>の様に)のに対し、
+Portageでは、同一のパッケージの異なるバージョンをシステム上に共存させることができます。
+他のディストリビューションが(<c>freetype</c>と<c>freetype2</c>の様に)それらの名前にバージョンを付けているのに対し、
 Portageは<e>SLOT</e>と呼ばれる技術を使っています。
-ebuildはそのバージョンの確かなSLOTを宣言します。異なったSLOTのebuildはシステムに共存できます。
+ebuildはそのバージョンごとにSLOTを宣言します。SLOTが異なるebuildはシステム上で共存できます。
 例えば、<c>freetype</c>パッケージは<c>SLOT="1"</c>と<c>SLOT="2"</c>のebuildを持っています。
 </p>
 
 <p>
-同じ機能を提供しますが異なった実装のパッケージもまた存在します。
+同一の機能を提供する実装の異なるパッケージもまた存在します。
 例えば、<c>metalogd</c>、<c>sysklogd</c>、<c>syslog-ng</c>は全てシステムロガーです。
 「システムロガー」の機能を必要とするアプリケーションは、例えば<c>metalogd</c>に依存することはできません。他のシステムロガーも同様に問題のない選択だからです。
-Portageは<e>virtuals</e>を考慮に入れます:他のアプリケーションが<c>virtual/syslog</c>に依存できるように、それぞれのシステムロガーは<c>virtual/syslog</c>を規定します。
+そこで、Portageは仮想パッケージを考慮に入れます。つまり、<c>virtual/logger</c>には、それぞれのシステムロガーが"排他的な"依存関係になるように登録されるのです。
+これにより、アプリケーションは<c>virtual/logger</c>なるパッケージに依存できるようになります。
+まだシステムロガーがインストールされていない場合、この仮想パッケージは依存関係を満足するように、登録されている先頭のシステムロガーをインストールしようとします。
 </p>
 
 <p>
 Portageツリーのソフトウェアは異なったブランチに所属することができます。
 デフォルトではシステムはGentooがstableだと思うもののみ受け付けます。
-ほとんどのコミットされた新しいソフトウェアのタイトルは、stableにされる前にもっとテストが必要だという意味のテストブランチに追加されます。
+ほとんどのコミットされた新しいソフトウェア名は、stableにされる前にもっとテストが必要だという意味のテストブランチに追加されます。
 これらのソフトウェアのebuildをPortageツリーで見かけても、Portageはstableブランチに置かれるまでは更新しようとしないでしょう。
 </p>
 
 <p>
-いくらかのソフトウェアは少しのアーキテクチャのみで利用可能です。
+いくつかのソフトウェアは特定のアーキテクチャでのみ利用可能な場合があります。
 すなわちそのソフトウェアは他のアーキテクチャでは動作しないか、もっとテストが必要か、
-Portageツリーにソフトウェアをコミットした開発者が異なったアーキテクチャで動作するかどうか確認できないかです。
+Portageツリーにソフトウェアをコミットした開発者が別のアーキテクチャで動作するかどうか確認できないかです。
 </p>
 
 <p>
-各々のGentooのインストールはある<c>プロファイル</c>と一緒になっています。
-それには、他の情報と一緒に、システムが正常に動作するために必要なパッケージのリストが含まれています。
+各々のGentooのインストールはある<c>プロファイル</c>に従っています。
+プロファイルには、システムが正常に動作するために必要なパッケージのリストなどが含まれています。
 </p>
 
 </body>
@@ -465,18 +481,18 @@ Portageツリーにソフトウェアをコミットした開発者が異なっ�
 <pre caption="ブロックされたパッケージに対するPortageの警告(--pretendを利用しない)">
 !!! Error: the mail-mta/postfix package conflicts with another package.
 !!!        both can't be installed on the same system together.
-!!!        Please use 'emerge --pretend' to determine blockers. 
+!!!        Please use 'emerge --pretend' to determine blockers.
 </pre>
 
 <p>
-ebuildはPortageの依存関係に関する特別なフィールドを含んでいます。
-依存関係には２つの種類があります: <c>DEPEND</c>によって宣言されたビルド依存と、<c>RDEPEND</c>よって宣言された実行時依存です。
+ebuildは、Portageにその依存関係についての情報を指示する特別なフィールドを含んでいます。
+依存関係には2つの種類があります: <c>DEPEND</c>によって宣言されたビルド依存と、<c>RDEPEND</c>によって宣言された実行時依存です。
 これらの依存関係で明示的に互換性<e>のない</e>パッケージまたはvirtualが指定されている場合、インストールがブロックされます。
 </p>
 
 <p>
 Portageの最近のバージョンでは、些細なブロックについてはユーザーへの注意を促すことなく対処することができますが、
-場合によっては、次に説明する方法で自身で修正しなければなりません。
+場合によっては、次に説明する方法でユーザー自身で解決しなければなりません。
 </p>
 
 <p>
@@ -486,12 +502,12 @@ Portageの最近のバージョンでは、些細なブロックについては�
 
 <p>
 <b>&lt;</b>media-video/mplayer-1.0_rc1-r2.のように特定のパッケージ識別子（atom）を伴いブロックされていることがあるかもしれません。
-この場合、ブロックしているパッケージをより新しいバージョンに更新すれば、ブロックを取り除くことができかもしれません。
+この場合、ブロックしているパッケージをより新しいバージョンに更新すれば、ブロックを取り除くことができるかもしれません。
 </p>
 
 <p>
-既にインストールされた2つのパッケージがお互いをブロックし合っていることもあります。
-このまれな場合は、何故それらをインストールする必要があるのかを知るべきです。
+2つのパッケージがインストールしようとして、お互いをブロックし合っていることもあります。
+このまれな場合には、何故それらをインストールする必要があるのかを調べてみてください。
 ほとんどの場合、1つのパッケージのみで事足ります。
 そうでなければ、<uri link="http://bugs.gentoo.org">Gentooのバグトラックシステム</uri>にバグを報告してください。
 </p>
@@ -503,7 +519,7 @@ Portageの最近のバージョンでは、些細なブロックについては�
 <body>
 
 <pre caption="マスクされたパッケージに対するPortageの警告">
-!!! all ebuilds that could satisfy "bootsplash" have been masked. 
+!!! all ebuilds that could satisfy "bootsplash" have been masked.
 </pre>
 
 <pre caption="マスクされたパッケージに対するPortageの警告に関する理由">
@@ -520,14 +536,14 @@ Portageの最近のバージョンでは、些細なブロックについては�
 
 <p>
 システムで利用できないパッケージをインストールしようとしたときに、このマスクエラーを受け取るでしょう。
-あなたはシステムで利用できる他のアプリケーションのインストールを試みるか、パッケージが利用可能になるまで待つかをするべきです。
+システムで利用できる他のアプリケーションのインストールを試すか、パッケージが利用可能になるまで待ちましょう。
 パッケージがマスクされているのにはいつも理由があります。
 </p>
 
 <ul>
   <li>
     <b>~arch keyword</b> はstableブランチに置くには十分なテストが行われていないことを意味します。
-    何日か何週間か待ってもう一度試してみてください。
+    数日か数週間か待ってもう一度試してみてください。
   </li>
   <li>
     <b>-arch keyword</b>か<b>-* keyword</b>はあなたのアーキテクチャでは動作しないことを意味します。
@@ -535,10 +551,10 @@ Portageの最近のバージョンでは、些細なブロックについては�
   </li>
   <li>
     <b>missing keyword</b>はあなたのアーキテクチャでは未だテストされていないことを意味します。
-     アーキテクチャのポーティングチームにテストするよう頼むか、彼らのために自分でテストして気付いたことを<uri link="http://bugs.gentoo.org">bugzilla</uri>まで報告してください。
+     アーキテクチャのポーティングチームにテストするよう頼むか、自分でテストして気付いたことを<uri link="http://bugs.gentoo.org">bugzilla</uri>まで報告してください。
   </li>
   <li>
-    <b>package.mask</b>はパッケージが壊れている、unstableもしくは非推奨であるということが判明していて、故意に利用禁止とマークされていることを意味します。
+    <b>package.mask</b>はパッケージが壊れている、不安定もしくは非推奨であるということが判明していて、意図的に利用禁止とマークされていることを意味します。
   </li>
   <li>
     <b>profile</b>はあなたのプロファイルには適当ではないことを意味します。
@@ -546,24 +562,59 @@ Portageの最近のバージョンでは、些細なブロックについては�
   </li>
   <li>
     <b>license</b>はパッケージのライセンスが<c>ACCEPT_LICENSE</c>と合致しないことを意味します。
-    <path>/etc/make.conf</path>か<path>/etc/portage/package.license</path>に定義することで、
+    <path>/etc/portage/make.conf</path>か<path>/etc/portage/package.license</path>に設定することで、
     明示的にそのライセンスかライセンスグループを許可しなければいけません。
     詳しくは、<uri link="#license">ライセンス</uri>を参照してください。
   </li>
-
 </ul>
 
 </body>
 </subsection>
-<subsection id="missingdependencies">
-<title>依存関係の喪失</title>
+<subsection id="USEdependency">
+<title>必要なUSEフラグの変更</title>
 <body>
 
-<pre caption="依存関係の喪失に対するPortageの警告">
+<pre caption="PortageがUSEフラグの変更が必要との警告を出しています">
+The following USE changes are necessary to proceed:
+#required by app-text/happypackage-2.0, required by happypackage (argument)
+>=app-text/feelings-1.0.0 test
+</pre>
+
+<p>
+<c>--autounmask</c>をつけていなければエラーメッセージは次のようになっているでしょう。
+</p>
+
+<pre caption="PortageがUSEフラグの変更が必要とのエラーを出しています">
+emerge: there are no ebuilds built with USE flags to satisfy "app-text/feelings[test]".
+!!! One of the following packages is required to complete your request:
+- app-text/feelings-1.0.0 (Change USE: +test)
+(dependency required by "app-text/happypackage-2.0" [ebuild])
+(dependency required by "happypackage" [argument])
+</pre>
+
+<p>
+こういった警告やエラーは、ただ単純に他のパッケージに依存しているだけでなく、
+そのパッケージが特定のUSEフラグ(や、複数のUSEフラグの組みあわせ)でビルドされていることを必要とするパッケージをインストールする時に起こります。
+上の例では<c>app-text/feelings</c>は<c>USE="test"</c>でビルドされていなければいけませんが、
+このUSEフラグはシステムで設定されていません。
+</p>
+
+<p>
+これを解決するには<path>/etc/portage/make.conf</path>でグローバルUSEフラグに追加するか、
+または<path>/etc/portage/package.use</path>でパッケージごとのUSEフラグを設定してください。
+</p>
+
+</body>
+</subsection>
+<subsection id="missingdependencies">
+<title>依存関係の欠落</title>
+<body>
+
+<pre caption="依存関係の欠落に対するPortageの警告">
 emerge: there are no ebuilds to satisfy "&gt;=sys-devel/gcc-3.4.2-r4".
 
 !!! Problem with ebuild sys-devel/gcc-3.4.2-r2
-!!! Possibly a DEPEND/*DEPEND problem. 
+!!! Possibly a DEPEND/*DEPEND problem.
 </pre>
 
 <p>
@@ -602,9 +653,10 @@ emerge: there are no ebuilds to satisfy "&gt;=sys-devel/gcc-3.4.2-r4".
 !!! one of the above fully-qualified ebuild names instead.
 </pre>
 
-<p>インストールしようとしているアプリケーション名が２つ以上と一致しています。
-正しいカテゴリー名を追加する必要があります。
-Portageは可能性のある一致した選択肢を知らせるでしょう。
+<p>
+インストールしようとしているアプリケーション名が2つ以上と一致しています。
+正しいカテゴリー名も追加する必要があります。
+Portageが(カテゴリー名をふくんだ)パッケージの候補を出力してくれます。
 </p>
 
 </body>
@@ -614,10 +666,10 @@ Portageは可能性のある一致した選択肢を知らせるでしょう。
 <body>
 
 <pre caption="循環依存に対するPortageの警告">
-!!! Error: circular dependencies: 
+!!! Error: circular dependencies:
 
 ebuild / net-print/cups-1.1.15-r2 depends on ebuild / app-text/ghostscript-7.05.3-r1
-ebuild / app-text/ghostscript-7.05.3-r1 depends on ebuild / net-print/cups-1.1.15-r2 
+ebuild / app-text/ghostscript-7.05.3-r1 depends on ebuild / net-print/cups-1.1.15-r2
 </pre>
 
 <p>
@@ -639,19 +691,19 @@ ebuild / app-text/ghostscript-7.05.3-r1 depends on ebuild / net-print/cups-1.1.1
 </pre>
 
 <p>
-Portageがアプリケーションのソースのダウンロードに失敗し、他のアプリケーションのインストールを続けようとしています。
+Portageがアプリケーションのソースのダウンロードに失敗し、(可能であれば)他のアプリケーションのインストールを続けようとしています。
 この失敗はミラーが正しく同期されていないか、ebuildが正しくない場所を示しているからかもしれません。
 ソースを置いているサーバーが何らかの理由でダウンしているのかもしれません。
 </p>
 
 <p>
-この問題がいつまでも続くようであれば１時間後にもう一度試してください。
+一時間程度空けて、もう一度確認してみましょう。
 </p>
 
 </body>
 </subsection>
 <subsection id="profileprotect">
-<title>システムプロファイルの保護</title>
+<title>システムプロファイルによるパッケージの保護</title>
 <body>
 
 <pre caption="プロファイルによって保護されたパッケージに対するPortageの警告">
@@ -661,20 +713,20 @@ Portageがアプリケーションのソースのダウンロードに失敗し�
 
 <p>
 あなたはシステムのコアの一部であるパッケージを削除しようとしました。
-それはプロファイルに必要であると載っているのでシステムから削除できません。
+しかし、プロファイルで必須であるとされているので、システムから削除するべきではありません。
 </p>
 
 </body>
 </subsection>
 <subsection id="digesterror">
-<title>ダイジェスト検証の失敗</title>
+<title>ダイジェストの検証失敗</title>
 <body>
 
 <p>
 ときどき、あるパッケージをemergeしようとして、次のようなメッセージと共に失敗することがあるかもしれません。
 </p>
 
-<pre caption="ダイジェスト検証の失敗">
+<pre caption="ダイジェストの検証失敗">
 &gt;&gt;&gt; checking ebuild checksums
 !!! Digest verification failed:
 </pre>
@@ -685,7 +737,7 @@ Portageがアプリケーションのソースのダウンロードに失敗し�
 </p>
 
 <p>
-Digestの検証に失敗するとき、そのパッケージをあなた自身で再度ダイジェスト作成しようとしては<e>いけません。</e>
+ダイジェストの検証に失敗するとき、そのパッケージをあなた自身でダイジェストを再度作成しようとしては<e>いけません。</e>
 この問題は<c>ebuild foo manifest</c>では修正されない上に、ほぼ間違いなく悪化します。
 </p>
 
@@ -693,18 +745,18 @@ Digestの検証に失敗するとき、そのパッケージをあなた自身�
 かわりに、1時間か2時間ツリーが安定するのを待っていてください。
 おそらくエラーはすぐに検知されると思いますが、修正がPortageツリーに流れるのに少し時間がかかります。
 待っている間、<uri link="http://bugs.gentoo.org">Bugzilla</uri>をチェックし、誰かがこの問題をすでに報告しているか調べてください。
-もし報告している人がいなければ、すぐ壊れているパッケージのバグ報告をしてください。
+もし報告している人がいなければ、壊れているパッケージのバグ報告をしてください。
 </p>
 
 <p>
-いったんバグが修正されたことを確認したら、再び同期し修正されたダイジェストを取得する必要があるでしょう。
+この問題が修正されたら、ダイジェストが修正されたツリーを再び同期しましょう。
 </p>
 
 <impo>
-これは何度もツリーの同期をしてもよいという意味では<e>ありません</e>！
-rsycnポリシーの中で述べられているように（<c>emerge --sync</c>を走らせたとき）、
-あまり頻繁に同期するユーザは接続を禁止されることになります！
-実際には次の定期的な同期まで待ち、そしてrsyncサーバに負荷をかけないようにしてください。
+何度もツリーの同期すれば良いという意味では<e>ありません</e>!
+rsyncポリシーで述べているように、必要以上にツリーの同期(<c>emerge --sync</c>)を行うユーザーは接続を禁止されます！
+もっとはっきり言えば、普段行っている頻度のまま次のツリーの同期まで我慢しましょう。
+そうすれば、rsyncサーバーに余計な負荷をかけずに済みます。
 </impo>
 
 </body>

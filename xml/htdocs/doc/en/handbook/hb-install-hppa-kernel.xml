@@ -4,36 +4,13 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-hppa-kernel.xml,v 1.50 2012/02/22 21:27:45 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-hppa-kernel.xml,v 1.55 2013/12/17 10:38:05 swift Exp $ -->
 
 <sections>
 
-<version>12</version>
-<date>2012-02-22</date>
+<version>17</version>
+<date>2013-12-17</date>
 
-<section>
-<title>Timezone</title>
-<body>
-
-<p>
-You first need to select your timezone so that your system knows where it is
-located. Look for your timezone in <path>/usr/share/zoneinfo</path>, then copy
-it to <path>/etc/localtime</path>. Please avoid the
-<path>/usr/share/zoneinfo/Etc/GMT*</path> timezones as their names do not
-indicate the expected zones. For instance, <path>GMT-8</path> is in fact
-GMT+8.
-</p>
-
-<pre caption="Setting the timezone information">
-# <i>ls /usr/share/zoneinfo</i>
-<comment>(Suppose you want to use Europe/Brussels)</comment>
-# <i>cp /usr/share/zoneinfo/Europe/Brussels /etc/localtime</i>
-<comment>(Next set the timezone)</comment>
-# <i>echo "Europe/Brussels" &gt; /etc/timezone</i>
-</pre>
-
-</body>
-</section>
 <section>
 <title>Installing the Sources</title>
 <subsection>
@@ -44,7 +21,7 @@ GMT+8.
 The core around which all distributions are built is the Linux kernel. It is the
 layer between the user programs and your system hardware. Gentoo provides its
 users several possible kernel sources. A full listing with description is
-available at the <uri link="/doc/en/gentoo-kernel.xml">Gentoo Kernel
+available at the <uri link="https://wiki.gentoo.org/wiki/Kernel/Overview">Gentoo Kernel
 Guide</uri>. 
 </p>
 
@@ -138,9 +115,9 @@ properly without additional tweaks).
 
 <p>
 First go to <c>File Systems</c> and select support for the filesystems you use.
-<e>Don't</e> compile them as modules, otherwise your Gentoo system will not be
-able to mount your partitions. Also select <c>Virtual memory</c> and <c>/proc
-file system</c>:
+<e>Don't</e> compile the file system you use for the root filesystem as module,
+otherwise your Gentoo system will not be able to mount your partition. Also
+select <c>Virtual memory</c> and <c>/proc file system</c>.
 </p>
 
 <pre caption="Selecting necessary file systems">
@@ -164,7 +141,7 @@ modem, you will need the following options in the kernel:
 
 <pre caption="Selecting PPPoE necessary drivers">
 Device Drivers ---&gt;
-  Networking support ---&gt;
+  Network device support ---&gt;
     &lt;*&gt; PPP (point-to-point protocol) support
     &lt;*&gt;   PPP support for async serial ports
     &lt;*&gt;   PPP support for sync tty ports
@@ -224,6 +201,18 @@ Graphics support ---&gt;
       [*] HP STI frame buffer device support
   Console display driver support ---&gt;
       [*] STI text console
+</pre>
+
+<p>
+Next select <e>Maintain a devtmpfs file system to mount at /dev</e> so that
+critical device files are already available early in the boot process.
+</p>
+
+<pre caption="Enabling devtmpfs support">
+Device Drivers ---&gt;
+  Generic Driver Options ---&gt;
+    [*] Maintain a devtmpfs filesystem to mount at /dev
+    [ ]   Automount devtmpfs at /dev, after the kernel mounted the rootfs
 </pre>
 
 <p>

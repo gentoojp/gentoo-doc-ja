@@ -1,0 +1,492 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/proj/en/gdp/doc/metadoc-guide.xml,v 1.8 2012/10/28 15:21:05 swift Exp $ -->
+
+<!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
+
+<guide>
+<title>Gentoo Metadoc XML Guide</title>
+
+<author title="Author">
+  <mail link="swift"/>
+</author>
+<author title="Editor">
+  <mail link="neysx@gentoo.org">Xavier Neys</mail>
+</author>
+<author title="Editor">
+  <mail link="nimiux"/>
+</author>
+
+<abstract>
+This guide informs developers how to use the Metadoc XML format that allows the
+Gentoo Documentation Project to keep its documentation in a hierarchical manner
+and allow more information to be stored about each document.
+</abstract>
+
+<!-- The content of this document is licensed under the CC-BY-SA license -->
+<!-- See http://creativecommons.org/licenses/by-sa/2.0 -->
+<license/>
+
+<version>3</version>
+<date>2011-09-04</date>
+
+<chapter>
+<title>Introduction</title>
+<section>
+<title>Why is MetadocXML Needed?</title>
+<body>
+
+<p>
+MetadocXML is not needed, it's an additional resource for the Gentoo
+Documentation Project to keep track of documents, even if they are located
+outside of the normal <path>[gentoo]/xml/htdocs/doc</path> scope.
+</p>
+
+<p>
+Thanks to MetadocXML, we can now
+</p>
+
+<ul>
+  <li>
+    track documents that are located inside project webspaces
+    (<path>/proj</path>) instead of the usual documentation repository
+    (<path>/doc</path>)
+  </li>
+  <li>
+    categorize documentation into various categories (or subcategories) with the
+    additional benefit that we can now automatically generate the documentation
+    index (and more)
+  </li>
+  <li>
+    track unofficial documentation team members (such as translators)
+  </li>
+  <li>
+    use parts of big documents (Handbooks) as individual guides on certain
+    topics
+  </li>
+  <li>
+    assign bugs to particular documents for quick reference and with the
+    possibility of masking out a document in case of a major showstopping bug
+  </li>
+  <li>
+    primitively check if a translated file is in sync with its English
+    counterpart or not
+  </li>
+</ul>
+
+<p>
+Note that the last advantage is primitive and will probably not be extended.
+Some translation teams use scripts based on <c>trads-doc</c> to manage
+translations, others use online translation management tools. If you are
+starting up translations for Gentoo, pop by on <c>#gentoo-doc</c> or ask the
+<c>gentoo-doc@gentoo.org</c> mailinglist for help.
+</p>
+
+<p>
+Translation teams that do not use MetadocXML yet don't need to worry - they will
+not lose any current functionality as it only builds upon the existing
+infrastructure - there are no changes to the GuideXML format that need
+MetadocXML.
+</p>
+
+</body>
+</section>
+<section>
+<title>How does MetadocXML Work?</title>
+<body>
+
+<p>
+There is one central file in which all meta information on the documentation is
+maintained. We call this file <path>metadoc.xml</path>. This file should be
+located inside your main repository (<path>/doc/${LANGUAGE}</path>) although
+this is not hard-coded.
+</p>
+
+<p>
+Inside this file, all meta information is stored:
+</p>
+
+<ul>
+  <li>Members of the team</li>
+  <li>Categories in which documents participate</li>
+  <li>Files that are covered</li>
+  <li>Documents that are covered</li>
+  <li>Bugs that are part of a document</li>
+</ul>
+
+<p>
+Next to <path>metadoc.xml</path>, one also can have a dynamically generated index
+file (usually called <path>index.xml</path>), an overview listing of all
+documentation (usually called <path>list.xml</path>) and an overview listing of
+all members, files and bugs (usually called <path>overview.xml</path>).
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>The metadoc.xml File</title>
+<section>
+<title>XML Structure</title>
+<body>
+
+<p>
+The <path>metadoc.xml</path> file is started with the usual XML initialisation
+code and Gentoo CVS header information:
+</p>
+
+<pre caption="XML Initialisation">
+&lt;?xml version='1.0' encoding="UTF-8"?&gt;
+&lt;!-- &#36;Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/metadoc.xml,v 1.25 2004/12/23 09:51:30 swift Exp &#36; --&gt;
+&lt;!DOCTYPE metadoc SYSTEM "/dtd/metadoc.dtd"&gt;
+</pre>
+
+<p>
+Then, one starts with the MetadocXML declaration.
+</p>
+
+<pre caption="English MetadocXML declaration">
+&lt;metadoc lang="<comment>en</comment>"&gt;
+</pre>
+
+<p>
+Translators should reference the main <path>/doc/en/metadoc.xml</path> in the
+<c>parent</c> attribute. This lets metadoc identify untranslated files and find
+out whether versions of translated versions and originals still match.
+</p>
+
+<pre caption="Translated MetadocXML declaration">
+&lt;metadoc lang="<comment>language code</comment>" parent="/doc/en/metadoc.xml"&gt;
+</pre>
+
+<p>
+Beneath the <c>metadoc</c> entity, the following entities should be declared (in
+the given order):
+</p>
+
+<ul>
+  <li>
+    <c>version</c> to help keep track of changes
+  </li>
+  <li>
+    <c>members</c> which declares all members of the given language team
+  </li>
+  <li>
+    <c>categories</c> which declares the possible categories used
+  </li>
+  <li>
+    <c>files</c> which contains all files covered by the Metadoc file
+  </li>
+  <li>
+    <c>docs</c> which contains all documents covered by the Metadoc file
+  </li>
+</ul>
+
+</body>
+</section>
+<section>
+<title>The Version Entity</title>
+<body>
+
+<p>
+The version number should be increased when a document or a file is added or
+removed, when a path is changed or on any update that might have an impact on
+translated versions.
+</p>
+
+</body>
+</section>
+<section>
+<title>The Members Entity</title>
+<body>
+
+<p>
+Inside the members entity, one can declare two 'types' of members: <c>lead</c>
+and <c>member</c>. A <c>lead</c> should be known by the Gentoo Developers
+Relations as it takes only the nickname of the Lead developer and looks it up in
+the Gentoo Memberlist. A <c>member</c> can either be a Gentoo Developer (in
+which case only a nickname is given) or a contributor.
+</p>
+
+<p>
+In case of a contributor, a <c>member</c> tag is given two attributes,
+<c>mail</c> and <c>fullname</c>, containing the contributor's e-mail address and
+full name.
+</p>
+
+<pre caption="Example use of the members entity">
+&lt;members&gt;
+  &lt;lead&gt;swift&lt;/lead&gt;
+  &lt;lead&gt;neysx&lt;/lead&gt;
+  &lt;member&gt;dertobi123&lt;/member&gt;
+  &lt;member mail="gentoo_contributor@gmail.com" fullname="John Doe"&gt;jdoe&lt;/member&gt;
+&lt;/members&gt;
+</pre>
+
+</body>
+</section>
+<section>
+<title>The Categories Entity</title>
+<body>
+
+<p>
+Inside the <c>categories</c> entity one only declares <c>cat</c> entities. Each
+<c>cat</c> entity covers one Category. It uses one mandatory parameter <c>id</c>
+which is used to reference the category. You can also define a parameter
+<c>parent</c> in case the category is a child of another category.
+</p>
+
+<p>
+In this case, the <c>parent</c> attribute references the <c>id</c> attribute of
+the parent category.
+</p>
+
+<pre caption="Example use of the categories entity">
+&lt;categories&gt;
+  &lt;cat id="faq"&gt;Frequently Asked Questions&lt;/cat&gt;
+  &lt;cat id="install"&gt;Installation Related Resources&lt;/cat&gt;
+  &lt;cat id="install_guides"&gt;Installation Guides&lt;/cat&gt;
+&lt;/categories&gt;
+</pre>
+
+</body>
+</section>
+<section>
+<title>The Files Entity</title>
+<body>
+
+<p>
+The <c>files</c> entity contains only <c>file</c> entities.
+</p>
+
+<p>
+Each <c>file</c> entity references a single XML file. It has a mandatory
+<c>id</c> attribute which should be seen as a primary key to lookup the file.
+Metadoc will compare the file name defined with the same <c>id</c> attribute in
+the metadoc's parent file (defined in the root element) to find out whether the
+file is a translation or an untranslated file. File names would be identical in
+the latter case.
+</p>
+
+<p>
+The metadoc file itself can be listed and will appear on the overview page.
+</p>
+
+<pre caption="Files entity examples">
+&lt;files&gt;
+  &lt;file id="metadoc"&gt;/doc/en/metadoc.xml&lt;/file&gt;
+  &lt;file id="ati-faq"&gt;/doc/en/ati-faq.xml&lt;/file&gt;
+&lt;/files&gt;
+</pre>
+
+</body>
+</section>
+<section>
+<title>The Docs Entity</title>
+<body>
+
+<p>
+The <c>docs</c> entity should only contain <c>doc</c> entities.
+</p>
+
+<p>
+Each <c>doc</c> entity has a mandatory <c>fileid</c> attribute, which refers to
+the <c>id</c> attribute of a <c>file</c> entity corresponding with the main file
+for the document.
+</p>
+
+<p>
+In case of a handbook chapter, the <c>doc</c> entity must contain a
+<c>bookref</c> entity which references the main handbook page (the top handbook
+XML file). This entity then contains two attributes, called <c>vpart</c> and
+<c>vchap</c> which refer to the corresponding part and chapter of the document
+inside the handbook.
+</p>
+
+<p>
+Inside the <c>doc</c> entity, two other entities are possible:
+</p>
+
+<ul>
+  <li>
+    One or more <c>memberof</c> entities, referring to the category or
+    categories in which the document is located (note that a document can be in
+    several categories at once)
+  </li>
+  <li>
+    One <c>bugs</c> entity containing one or more <c>bug</c> entities. A
+    <c>bug</c> entity refers to a bugnumber that covers a bug in the document.
+    In case of a major bug, one can add the attribute <c>stopper="yes"</c> to
+    the <c>bug</c> entity in order for the document not to appear on the
+    generated index page.
+  </li>
+</ul>
+
+<pre caption="Example Docs entity">
+<![CDATA[<docs>
+  <doc fileid="ldap-howto">
+    <memberof>sysadmin_specific</memberof>
+    <bugs>
+      <bug>102481</bug>
+      <bug stopper="yes">1151330</bug>
+    </bugs>
+  </doc>
+  <doc fileid="uml">
+    <memberof>sysadmin_general</memberof>
+  </doc>
+</docs>]]>
+</pre>
+
+</body>
+</section>
+<section>
+<title>Example metadoc.xml file</title>
+<body>
+
+<p>
+The Gentoo site uses a <path>metadoc.xml</path> file to aggregate information of
+all its documentation. You can view the current version one <uri
+link="/doc/en/metadoc.xml?passthru=1">online</uri>.
+</p>
+
+</body>
+</section>
+</chapter>
+
+<chapter>
+<title>The Additional MetadocXML Files</title>
+<section>
+<title>Automatically Generated Index</title>
+<body>
+
+<p>
+When you want an automatically generated index, you should start the document
+with the following code:
+</p>
+
+<pre caption="Dynamically Generated Index">
+&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;?xml-stylesheet href="/xsl/metadoc.xsl" type="text/xsl"?&gt;
+&lt;?xml-stylesheet href="/xsl/guide.xsl"   type="text/xsl"?&gt;
+
+&lt;!-- &#36;Header&#36; --&gt;
+
+&lt;!DOCTYPE dynamic SYSTEM "/dtd/metadoc.dtd"&gt;
+
+<comment>&lt;!-- Substitute "/doc/en/metadoc.xml" with the location of your metadoc file --&gt;</comment>
+&lt;dynamic metadoc="<i>/doc/en/metadoc.xml</i>"&gt;
+&lt;title&gt;<i>Gentoo Documentation Resources</i>&lt;/title&gt;
+&lt;intro&gt;
+
+<comment>(...)</comment>
+
+&lt;/intro&gt;
+
+&lt;catid&gt;<i>faq</i>&lt;/catid&gt;
+&lt;catid&gt;<i>install</i>&lt;/catid&gt;
+
+&lt;/dynamic&gt;
+</pre>
+
+<p>
+In between the <c>intro</c> tags you should write one or more sections which
+will always appear on the top of the page. You will probably want to write an
+introduction and some additional information for the reader to know who to
+contact in case of translation mishaps or other issues.
+</p>
+
+<p>
+Inside the <c>intro</c> tags you can use plain GuideXML starting from
+<c>section</c>.
+</p>
+
+<p>
+The <c>catid</c> tags refer to the main categories used by the dynamical index.
+You should list each possible non-child category that is declared in your
+metadoc file. <e>Do not list</e> categories that are children of another
+category.
+</p>
+
+</body>
+</section>
+<section>
+<title>Dynamically Generated List Document</title>
+<body>
+
+<p>
+A dynamically generated list document starts identically to a dynamically
+generated index file:
+</p>
+
+<pre caption="Dynamically generated list document">
+&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;?xml-stylesheet href="/xsl/metadoc.xsl" type="text/xsl"?&gt;
+&lt;?xml-stylesheet href="/xsl/guide.xsl"   type="text/xsl"?&gt;
+
+&lt;!-- &#36;Header&#36; --&gt;
+
+&lt;!DOCTYPE dynamic SYSTEM "/dtd/metadoc.dtd"&gt;
+
+<comment>&lt;!-- Substitute "/doc/en/metadoc.xml" with the location of your metadoc file --&gt;</comment>
+&lt;dynamic metadoc="<i>/doc/en/metadoc.xml</i>"&gt;
+&lt;title&gt;<i>Gentoo Documentation Listing</i>&lt;/title&gt;
+</pre>
+
+<p>
+However, there is no <c>intro</c> tag. What needs to be added are all the top
+categories used by the listing. To differentiate this from the index (which will
+also display the abstract information on each document) this happens between
+<c>list</c> tags inside <c>listing</c>:
+</p>
+
+<pre caption="Listing of categories">
+&lt;listing&gt;
+  &lt;list&gt;faq&lt;/list&gt;
+  &lt;list&gt;install&lt;/list&gt;
+&lt;/listing&gt;
+</pre>
+
+</body>
+</section>
+<section>
+<title>Dynamically Generated Overview Document</title>
+<body>
+
+<p>
+The overview document is started similarly as the two documents decribed above:
+</p>
+
+<pre caption="Dynamically generated overview document">
+&lt;?xml version='1.0' encoding='UTF-8'?&gt;
+&lt;?xml-stylesheet href="/xsl/metadoc.xsl" type="text/xsl"?&gt;
+&lt;?xml-stylesheet href="/xsl/guide.xsl"   type="text/xsl"?&gt;
+
+&lt;!-- &#36;Header&#36; --&gt;
+
+&lt;!DOCTYPE dynamic SYSTEM "/dtd/metadoc.dtd"&gt;
+
+<comment>&lt;!-- Substitute "/doc/en/metadoc.xml" with the location of your metadoc file --&gt;</comment>
+&lt;dynamic metadoc="<i>/doc/en/metadoc.xml</i>"&gt;
+&lt;title&gt;<i>Documentation Development Overview</i>&lt;/title&gt;
+</pre>
+
+<p>
+You can again write up a small introduction in GuideXML between the <c>intro</c>
+XML tags, starting from a <c>section</c> up. Once that is finished, a single tag
+<c>&lt;overview/&gt;</c> is sufficient.
+</p>
+
+<pre caption="Intro and overview tags">
+&lt;intro&gt;
+<comment>(...)</comment>
+&lt;/intro&gt;
+
+&lt;overview/&gt;
+</pre>
+
+</body>
+</section>
+</chapter>
+
+</guide>

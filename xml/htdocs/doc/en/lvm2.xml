@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding="UTF-8"?>
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/lvm2.xml,v 1.27 2011/12/26 15:22:40 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/lvm2.xml,v 1.32 2013/07/23 14:38:52 swift Exp $ -->
 <!DOCTYPE guide SYSTEM "/dtd/guide.dtd">
 
-<guide>
+<guide disclaimer="obsolete" redirect="https://wiki.gentoo.org/wiki/LVM">
 <title>Gentoo LVM2 installation</title>
 
 <author title="Author">
@@ -24,8 +24,9 @@ Manager version 2 (LVM2).
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 <license/>
 
-<version>4</version>
-<date>2011-12-26</date>
+<version>9</version>
+<!-- Last content edit: 2013-01-20 -->
+<date>2013/07/23</date>
 
 <chapter>
 <title>Introduction</title>
@@ -70,10 +71,6 @@ If you install LVM2 on a currently running system with some spare hard disk
 space, you will need to enable the LVM2 module (<path>dm-mod</path>) in the
 kernel. This module is available in <path>gentoo-sources</path>. Compiling
 your kernel and getting LVM2 to work is covered later in this guide.
-</p>
-
-<p>
-Not all 2.4 kernels provided by Gentoo support LVM2!
 </p>
 
 </body>
@@ -141,7 +138,9 @@ root partition under LVM management (which we do not recommend), see the
 resources section at the end of this guide for a link to a mini-howto on how to
 do this. The size of the root partition need not be large if you will keep
 <path>/opt /usr /home /var</path> and <path>/tmp</path> in an LVM2 Volume Group
-(vg). In this case, 1GB should be sufficient.
+(vg). In this case, 1GB should be sufficient. Note however that, if you have
+<path>/usr</path> or <path>/var</path> in an LVM2 volume group, you will need to
+boot the system with an initramfs.
 </p>
 
 <note>
@@ -150,6 +149,8 @@ LVM2 partition: <path>/etc</path>, <path>/lib</path>, <path>/mnt</path>,
 <path>/proc</path>, <path>/sbin</path>, <path>/dev</path>, and
 <path>/root</path>. This way, you would still be able to log into your system
 (crippled, but still somewhat usable, as root) if something goes terribly wrong.
+Also exclude <path>/usr</path> and <path>/var</path> from LVM2 if you do not
+want to boot with an initramfs.
 </note>
 
 <p>
@@ -207,7 +208,7 @@ one that rejects every device but our two SATA disks.
     filter = [ "a/.*/" ]
 <comment>(Replace it with the following one to scan
 /dev/sda and /dev/sdb and reject anything else)</comment>
-    filter = [ "a|/dev/hd[ab]|", "r/.*/" ]
+    filter = [ "a|/dev/sd[ab]|", "r/.*/" ]
 <comment>(Save the file and quit nano)</comment>
 # <i>vgscan</i>
   Reading all physical volumes.  This may take a while...
@@ -323,7 +324,7 @@ choice will work:
 
 <p>
 Mount your partitions as described in the handbook and mount your LVM2 logical
-volumes as if they were partitions. Replace the usual <path>/dev/hdxx</path>
+volumes as if they were partitions. Replace the usual <path>/dev/sdxx</path>
 with <path>/dev/vg/logical_volumename</path>.
 </p>
 
@@ -348,20 +349,10 @@ walk you through it again except to point out differences.
 
 <p>
 When configuring your kernel, make sure to configure your kernel to
-support LVM2 (not all 2.4 kernels do). Select the LVM2 module as follows:
+support LVM2. Select the LVM2 module as follows:
 </p>
 
-<pre caption="Selecting the LVM2 module in a 2.4.x kernel">
-Multi-device support (RAID and LVM)  ---&gt;
-  [*] Multiple devices driver support (RAID and LVM)
-  &lt; &gt;  RAID support
-<comment>(Note that LVM is not selected on purpose, this was for LVM1)</comment>
-  &lt; &gt;  Logical volume manager (LVM) support
-  &lt;M&gt;  Device-mapper support
-  &lt; &gt;   Mirror (RAID-1) support
-</pre>
-
-<pre caption="Selecting the LVM2 module in a 2.6.x kernel">
+<pre caption="Selecting the LVM2 module in the Linux kernel">
 Device Drivers  ---&gt;
  Multiple devices driver support (RAID and LVM) ---&gt;
    [*] Multiple devices driver support (RAID and LVM)
@@ -372,6 +363,23 @@ Device Drivers  ---&gt;
 <p>
 The compiled module is called <path>dm-mod.ko</path>
 </p>
+
+<p>
+Also build an initramfs if you have <path>/usr</path> or <path>/var</path> on an
+LVM-based partition. Don't forget to edit your boot loader to boot the system
+with the initramfs and add in <c>dolvm</c> as a boot parameter.
+</p>
+
+<pre caption="Building an initramfs">
+# <i>emerge genkernel</i>
+# <i>genkernel --lvm --install initramfs</i>
+# <i>nano -w /boot/grub/grub.conf</i>
+<comment>(...)</comment>
+title Gentoo Linux
+root (hd0,0)
+kernel /kernel-3.2.2-gentoo-r5 root=/dev/sda1 <i>dolvm</i>
+<i>initrd /initramfs-genkernel-x86_64-3.2.2-gentoo-r5</i>
+</pre>
 
 <p>
 Now, install the lvm2 package.
