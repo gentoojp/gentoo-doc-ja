@@ -286,7 +286,7 @@ box  | コンピュータ
 レビューが必要なPull Requestには"NeedReview"というラベルが付いています。
 [Issuesから検索](https://github.com/gentoojp/gentoo-doc-ja/issues?labels=NeedReview&page=1&state=open)
 し、レビューするPull Requestを見つけます。 Pull Requestのタイトルに翻訳
-対称のファイル名が書いているので、そのタイトルを見るか、あるいはコミッ
+対象のファイル名が書いているので、そのタイトルを見るか、あるいはコミッ
 トを見て対象の.poファイルを見つけます。レビュー者もこの.poファイルを編
 集することでレビューを行ないます。
 
