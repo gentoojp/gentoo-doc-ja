@@ -85,7 +85,7 @@ $ git checkout -b hb-install-bootconfig
 "Last-Translator" にあなたの名前と可能ならばメールアドレスを記載してく
 ださい。
 
-```Gettext Catalog
+```pot
 #, fuzzy
 msgid ""
 msgstr ""
@@ -110,7 +110,7 @@ msgstr ""
 います。現在の翻訳を確認して、英語と合わないところがあれば修正してくだ
 さい。この時 *"fuzzy" を取らないように注意してください。*
 
-```Gettext Catalog
+```pot
 #. type: Content of: <included><section><title>
 #: en/handbook/hb-install-bootconfig.xml:11
 #, fuzzy, no-wrap
@@ -123,7 +123,7 @@ msgidの原文に対応する翻訳を考えて、msgstrに記載してくださ
 らコピーする時は、*「"」のエスケープに気をつけてください。* また、翻訳
 後に上記のような*"fuzzyタグ"を付けるのを忘れないでください。*
 
-```Gettext Catalog
+```pot
 #. type: Content of: <sections><section><subsection><body><p>
 #: en/handbook/hb-install-about.xml:146
 #, no-wrap
@@ -139,7 +139,7 @@ msgstr ""
 の参考になるように残しているものです。これは翻訳更新後にはいらないもの
 ですので、*削除してください。*
 
-```Gettext Catalog
+```pot
 #, fuzzy
 #~ msgid "Now you have your Gentoo system, but what's next? \n"
 #~ msgstr "Gentooシステムは完成しましたが、次は何をすればいいのでしょう？\n"
@@ -177,7 +177,7 @@ pushが完了したらPull Requestを作ってください。検索しやすい�
 トに返信してください。この時*コメントは次のレビューの時のために残してお
 くようにしてください。*
 
-```Gettext Catalog
+```pot
 #  問題無いと思います。
 #. type: Content of: <sections><section><title>
 #: en/handbook/hb-install-system.xml:21
@@ -299,7 +299,7 @@ box  | コンピュータ
 者は fuzzyタグの残っている項目の翻訳をチェックし、OKだと思えばfuzzyタグ
 を削除します。
 
-```Gettext Catalog
+```pot
 #. type: Content of: <included><section><body><pre>
 #: en/handbook/hb-install-bootconfig.xml:121
 #, fuzzy, no-wrap
@@ -311,7 +311,7 @@ msgstr ""
 
 これを以下のようにして、fuzzyタグを取り除きます。
 
-```Gettext Catalog
+```pot
 #. type: Content of: <included><section><body><pre>
 #: en/handbook/hb-install-bootconfig.xml:121
 #, no-wrap
@@ -325,7 +325,7 @@ msgstr ""
 えば以下のようにコメントを書きます。この時 *fuzzyタグをとらないように注
 意してください。*
 
-```Gettext Catalog
+```pot
 #  naota: 日本語訳も"en"となっていますが、"ja"では?
 #. type: Content of: <included><section><body><pre>
 #: en/handbook/hb-install-bootconfig.xml:121
@@ -347,7 +347,7 @@ issueでのコメントでしてあげてください。(.poの中にコメン�
 れる可能性が高いと思います) この時にfuzzyタグを付けてあげるのもいいかも
 しれません。
 
-```Gettext Catalog
+```pot
 #. type: Content of: <sections><section><subsection><body><p>
 #: en/handbook/hb-install-about.xml:146
 #, no-wrap
@@ -363,7 +363,7 @@ PO-Revision-Date が更新されているか、 Last-Translator が更新され�
 かを確認してください。この部分も確認が終われば fuzzyタグを取ってあげて
 ください。
 
-```Gettext Catalog
+```pot
 #, fuzzy
 msgid ""
 msgstr ""
