@@ -51,27 +51,33 @@ Issueのタイトルは"<ファイル名>: なんたらかんたら"となって
 "hb-install-bootconfig: Update translation" というようなタイトルが付い
 ているはずです。
 
-他に翻訳している人がいないようであれば、自分が翻訳を開始することを
-Issueを作ってわかるようにしておきましょう。タイトルを"<ファイル名>:
-Update translation"といったように付けます。たとえば
-"/doc/ja/handbook/hb-install-bootconfig.xml" であれば
-"hb-install-bootconfig: Update translation" というように付けてください。
-また、ラベルに "translation"を付け、可能であれば自分を assignしておくと
-後々わかりくなります。
-
-### 翻訳の準備
-
-翻訳作業を始める前に(まだしていなければ) gentoojp/gentoo-doc-jaリポジト
-リを cloneしてください。手元に cloneができたら、ファイル名に対応するブ
-ランチ名でブランチを作ってください。たとえば
-"/doc/ja/handbook/hb-install-bootconfig.xml" の翻訳であれば以下のような
-コマンドで"hb-install-bootconfig"というブランチを作ることができます。
+他に翻訳している人がいないようであれば、自分が翻訳を開始することをPull
+Requestを作ってわかるようにしておきましょう。 まず、まだしていなければ
+gentoojp/gentoo-doc-jaリポジトリを cloneしてください。手元に cloneがで
+きたら、ファイル名に対応するブランチ名でブランチを作ってください。たと
+えば"/doc/ja/handbook/hb-install-bootconfig.xml" の翻訳であれば以下のよ
+うなコマンドで"hb-install-bootconfig"というブランチを作ることができます。
 
 ```ShellSession
 $ cd gentoo-doc-ja
 $ git checkout master && git pull origin master
 $ git checkout -b hb-install-bootconfig
 ```
+
+次にメタデータ(後述)や翻訳項目の更新をいくつか行なってコミットします。
+ここで作るPull Requestは、WIP (Work In Progress) Pull Request といって、
+**完成品でなくても構わないということに注意してください。** (git commit
+--allo-emptyを使った空のコミットでさえも構いません!) コミットが終わった
+ら、GitHubにpushします。push先はgentoojp/gentoo-doc-jaリポジトリで構い
+ません。もしpushできなければ、後述の「困ったことがあったら」を参考に
+GentooJPのメンバーに連絡をとってみてください。
+
+pushが完了したらPull Requestを作ってください。Pull Requestのタイトルを
+"WIP: <ファイル名>: Update translation"といったように付けます。たとえば
+"/doc/ja/handbook/hb-install-bootconfig.xml" であれば"WIP:
+hb-install-bootconfig: Update translation" というように付けてください。
+また、ラベルに "translation"を付け、可能であれば自分を assignしておくと
+後々わかりくなります。
 
 ### 翻訳する
 
@@ -156,17 +162,17 @@ msgstr ""
 - app-i18n/poedit
 - app-text/granslator
 
-### GitHubへのpushとPull Request
+### GitHubへのpushとPull Requestの編集
 
-一通り翻訳作業が終わったら、作業をcommitし、GitHubにpushしてレビューを
-受けます。この時commit logに"Fix #3"のようにissue番号を書いておくと便利
-です。push先はgentoojp/gentoo-doc-jaリポジトリで構いません。もしpushで
-きなければ、後述の「困ったことがあったら」を参考にGentooJPのメンバーに
-連絡をとってみてください。
+ある程度作業するごとに作業をcommitして、pushしてみてください。もしかす
+ると作業中の部分をレビューしてコメントを付けてもらえるかもしれません。
+この時commit logに"Update translation #3"のようにissue番号を書いておく
+と便利です。
 
-pushが完了したらPull Requestを作ってください。検索しやすいように、でき
-たPull Requestに "translation"と"NeedReview"のラベルを付けておいてくだ
-さい。
+全ての項目の翻訳作業が終わったら、全作業をcommitしGitHubにpushしてレ
+ビューを受けます。この段階でPull Requestからタイトルから"WIP: "の部分を
+外してください。また、検索しやすいように"NeedReview"のラベルも付けてく
+ださい。
 
 しばらくすると誰かがレビューを行なってくれるはずです。もししばらくして
 も反応がなかったら? 「困ったことがあったら」を参考につっついてみてくだ
@@ -285,10 +291,11 @@ box  | コンピュータ
 
 レビューが必要なPull Requestには"NeedReview"というラベルが付いています。
 [Issuesから検索](https://github.com/gentoojp/gentoo-doc-ja/issues?labels=NeedReview&page=1&state=open)
-し、レビューするPull Requestを見つけます。 Pull Requestのタイトルに翻訳
-対象のファイル名が書いているので、そのタイトルを見るか、あるいはコミッ
-トを見て対象の.poファイルを見つけます。レビュー者もこの.poファイルを編
-集することでレビューを行ないます。
+し、レビューするPull Requestを見つけます。(WIPのPull Requestのレビュー
+をしても構いません) Pull Requestのタイトルに翻訳対象のファイル名が書い
+ているので、そのタイトルを見るか、あるいはコミットを見て対象の.poファイ
+ルを見つけます。レビュー者もこの.poファイルを編集することでレビューを行
+ないます。
 
 レビュー者の仕事は以下の2つです。
 
