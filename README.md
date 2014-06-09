@@ -67,7 +67,7 @@ $ git checkout -b hb-install-bootconfig
 次にメタデータ(後述)や翻訳項目の更新をいくつか行なってコミットします。
 ここで作るPull Requestは、WIP (Work In Progress) Pull Request といって、
 **完成品でなくても構わないということに注意してください。** (git commit
---allo-emptyを使った空のコミットでさえも構いません!) コミットが終わった
+--allow-emptyを使った空のコミットでさえも構いません!) コミットが終わった
 ら、GitHubにpushします。push先はgentoojp/gentoo-doc-jaリポジトリで構い
 ません。もしpushできなければ、後述の「困ったことがあったら」を参考に
 GentooJPのメンバーに連絡をとってみてください。
@@ -77,7 +77,7 @@ pushが完了したらPull Requestを作ってください。Pull Requestのタ�
 "/doc/ja/handbook/hb-install-bootconfig.xml" であれば"WIP:
 hb-install-bootconfig: Update translation" というように付けてください。
 また、ラベルに "translation"を付け、可能であれば自分を assignしておくと
-後々わかりくなります。
+後々わかりやすくなります。
 
 ### 翻訳する
 
