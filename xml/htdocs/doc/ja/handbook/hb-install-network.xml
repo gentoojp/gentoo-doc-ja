@@ -4,9 +4,9 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-network.xml,v 1.17 2008/10/02 16:54:30 shindo Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-network.xml,v 1.18 2014/07/08 03:12:45 naota Exp $ -->
 
-<!-- Original revision: 1.54 -->
+<!-- Original revision: 1.57 -->
 <!-- Translator: nakano -->
 <!-- Translator: Taku Murakami-->
 
@@ -16,8 +16,8 @@
 最新版のソースコードをダウンロードできるようにするには、ネットワークを構成しなくてはいけません。
 </abstract>
 
-<version>5.1</version>
-<date>2008-09-26</date>
+<version>7</version>
+<date>2013-05-06</date>
 
 <section>
 <title>自動的なネットワークの検知</title>
@@ -51,6 +51,14 @@ eth0      Link encap:Ethernet  HWaddr 00:50:BA:8F:61:7A
           Interrupt:11 Base address:0xe800 
 </pre>
 
+<p>
+システム上のインタフェース名はeth0とは全く違ったものになっていることもあります。
+最近のインストールメディアではeno0、ens1やenp5s0といった一般的なネットワーク名が表示されるようになっています。
+<c>ifconfig</c>の出力を見て、ローカルネットワークのIPアドレスが割り当てられているものを探してください。</p>
+
+<p>
+このドキュメントの残りの部分では、インタフェース名をeth0と呼ぶことにします。</p>
+
 </body>
 </subsection>
 <subsection>
@@ -61,11 +69,11 @@ eth0      Link encap:Ethernet  HWaddr 00:50:BA:8F:61:7A
 インターネット接続にproxyを使用している場合には、
 インストール中にproxy情報について設定する必要があるかもしれません。
 proxyの設定はとても簡単です。
-proxyサーバーの情報を含むように値を設定するだけです。
+proxyサーバーの情報を環境変数として設定するだけです。
 </p>
 
 <p>
-多くの場合、proxyサーバーのホスト名を変数として定義するだけです。
+多くの場合、proxyサーバーのホスト名を環境変数として定義するだけです。
 例として、<e>proxy.gentoo.org</e>というサーバーにport <c>8080</c>で接続するとしましょう。
 </p>
 
@@ -79,10 +87,10 @@ proxyサーバーの情報を含むように値を設定するだけです。
 </pre>
 
 <p>
-proxyがユーザ名やパスワードを必要とするなら、次の文法で値を定義する必要があります。
+proxyがユーザ名やパスワードを必要とするなら、次の文法で環境変数を設定する必要があります。
 </p>
 
-<pre caption="proxy変数にユーザ名/パスワードを追加">
+<pre caption="proxy環境変数にユーザ名/パスワードを追加">
 http://<i>username</i>:<i>password</i>@proxy.gentoo.org:8080
 </pre>
 
@@ -118,7 +126,7 @@ DNSで名前が正しく解決できるか、といったことを確認する�
 
 <p>
 ネットワークが動いていない場合には、
-いくつかのインストールメディアでは<c>net-setup</c>(通常のネットワーク用)や、
+いくつかのインストールメディアでは<c>net-setup</c>(通常のネットワークやワイアレス用)や、
 <c>pppoe-setup</c>(ADSLユーザー用)、<c>pptp</c> (PPTPユーザー用-x86、amd64、
 alpha、ppc、そしてppc64で利用可能)が使用できます。
 </p>
@@ -185,9 +193,9 @@ link="?part=1&amp;chap=4">ディスクの準備</uri>
 インターネットに接続するためにPPPoEが必要な環境のために、
 インストールCD(どのバージョンでも)には、その接続を簡単にするための<c>ppp</c>
 が含まれています。
-それに付属している<c>pppoe-setup</c>スクリプトを接続を設定するために使用してください。
+その中の<c>pppoe-setup</c>スクリプトを使って接続を設定してください。
 そして、
-ADSLモデムに接続されたEthernetデバイス用に、ユーザ名、パスワード、
+ADSLモデムに接続されたEthernetデバイス名、ユーザ名、パスワード、
 DNSサーバーのIPアドレス、基本的なファイアウォールが必要か否かを入力します。
 </p>
 
@@ -230,7 +238,7 @@ PPTPサポートが必要なら、<c>pptpclient</c>というインストールCD
 </pre>
 
 <p>
-それから<path>/etc/ppp/options.pptp</path>を必要なら編集します。
+それから必要であれば<path>/etc/ppp/options.pptp</path>を編集します。
 </p>
 
 <pre caption="/etc/ppp/options.pptpの編集">
@@ -238,7 +246,7 @@ PPTPサポートが必要なら、<c>pptpclient</c>というインストールCD
 </pre>
 
 <p>
-これらが全部済んだら、ただ<c>pptp</c>を実行し(コマンドラインオプションと<path>options.pptp</path>の両方は設定できません)サーバーへ接続します。
+これらが全部済んだら、ただ<c>pptp</c>を(<path>options.pptp</path>では設定できないオプションを引数につけて)実行しサーバーへ接続します。
 </p>
 
 <pre caption="dial-inサーバーへ接続">
@@ -262,12 +270,12 @@ PPTPサポートが必要なら、<c>pptpclient</c>というインストールCD
 インストールCDは、ブートするときにすべてのハードウェアデバイスを検出、
 ハードウェアをサポートするための適切なカーネルモジュール(ドライバー)を読み込もうとします。
 大部分のケースでは、これはとても良く機能します。
-ただ、いくつかのケースでは、必要なカーネルモジュールが自動的に読み込まれません。
+ただ、必要なカーネルモジュールが自動的に読み込まれないこともあります。
 </p>
 
 <p>
 <c>net-setup</c>や<c>pppoe-setup</c>が失敗するというのは、
-ネットワークカードが見つからなかった可能性があります。
+ネットワークカードがすぐには見つからなかった可能性があります。
 この場合には、手動で適切なカーネルモジュールを読み込まないといけません。
 </p>
 
@@ -294,6 +302,7 @@ PPTPサポートが必要なら、<c>pptpclient</c>というインストールCD
 今ネットワークカードが検出されたかどうかチェックするために、
 <c>ifconfig</c>を使用してください。
 検出されたネットワークカードは次のように表示されるでしょう。
+(ここでもeth0を例として使います)
 </p>
 
 <pre caption="ネットワークが機能しているかテスト 成功した場合">
@@ -317,12 +326,17 @@ eth0: error fetching interface information: Device not found
 </pre>
 
 <p>
-もし、あなたのシステムに複数のネットワークカードが存在する場合には、
-その名前は<e>eth0</e>、<e>eth1</e>など、となります。
-動かしたいネットワークカードを確認してください。
-そして、このドキュメントを通してその名前を使用してください。
-このドキュメントでは、ネットワークカードは<e>eth0</e>を想定しています。
-</p>
+<path>/sys</path>ファイルシステムを使って、システムで有効な
+ネットワークインタフェースのリストを見ることができます:</p>
+
+<pre caption="有効なネットワークインタフェースを見る">
+# <i>ls /sys/class/net</i>
+dummy0  eth0  lo  sit0  tap0  wlan0
+</pre>
+
+<p>
+上記の例では、6つのインタフェースがあります。eth0がおそらく(有線の)Ethernetアダプタで、
+wlan0がワイアレスのアダプタでしょう。</p>
 
 <p>
 ネットワークが検出された場合には、
@@ -342,7 +356,7 @@ eth0: error fetching interface information: Device not found
   </li>
   <li>
     <uri link="#network_term">ネットワーク用語を理解する</uri>は、
-ネットワークについて知っておくべき情報を説明しています。
+    ネットワークについて知っておくべき情報を説明しています。
   </li>
   <li>
     <uri link="#ifconfig_route">ifconfigとrouteの設定</uri>は、ネットワークを手動で設定する方法の説明です。
@@ -359,25 +373,25 @@ eth0: error fetching interface information: Device not found
 DHCP (Dynamic Host Configuration Protocol)を使用すると、
 自動的にネットワーク情報
 (IPアドレス、ネットマスク、ブロードキャストアドレス、ゲートウェイ、
-ネームサーバーなど)を受けとることが可能になります。
-これはDHCPサーバーがネットワーク内に存在する場合にのみ動きます
-(または、プロバイダがDHCPサービスを提供している場合)。
+ネームサーバーなど)を受けとることができます。
+これはDHCPサーバーがネットワーク内に存在する場合
+(または、プロバイダがDHCPサービスを提供している場合)にのみ動きます。
 自動的にこのネットワークインタフェース情報を受け取るためには、
 <c>dhcpcd</c>を使用します。
 </p>
 
 <pre caption="dhcpcdを使用する">
 # <i>dhcpcd eth0</i>
-<comment>ネットワーク管理者によっては、hostnameとdomainnameは</comment>
-<comment>DHCPサーバーが提供するものを使うように、と要求するかもしれません。</comment>
+<comment>ネットワーク管理者によっては、hostnameとdomainnameを</comment>
+<comment>DHCPサーバーが提供するものに設定するように、と要求することがあります。</comment>
 <comment>このような場合には、下のコマンドを使ってください。</comment>
 # <i>dhcpcd -HD eth0</i>
 </pre>
 
 <p>
 もしこれが動いたら(<uri
-link="http://www.google.com">Google</uri>のように、
-いくつかのインターネットサーバーにpingしてみてくてください)、
+link="http://www.google.com">Google</uri>のような、
+インターネット上のサーバーにpingしてみてくてください)、
 先に進む用意ができたことになります。
 残りのセクションを飛ばして、<uri
 link="?part=1&amp;chap=4">ディスクの準備</uri>から続けてください。
@@ -390,7 +404,7 @@ link="?part=1&amp;chap=4">ディスクの準備</uri>から続けてください
 <body>
 
 <note>
-<c>iwconfig</c>コマンドが入っているはx86、AMD64、PPC用のインストールCDだけです。
+<c>iwconfig</c>コマンドが入っているはx86、amd64、ppcのインストールCDだけです。
 それ以外の場合にも、<uri
 link="ftp://ftp.linux-wlan.org/pub/linux-wlan-ng/README">linux-wlan-ng
 project</uri>の指示に従うことで動かすことができるでしょう。
@@ -400,7 +414,7 @@ project</uri>の指示に従うことで動かすことができるでしょう�
 もし無線LAN(802.11)用のカードを使用しているのなら、
 他のことをする前に、まず無線LANの設定をする必要があります。
 現在の無線LANの設定を見るために、<c>iwconfig</c>を使います。
-<c>iwconfig</c>を実行すると、次のような表示されるかもしれません。
+<c>iwconfig</c>を実行すると、次のような表示が出るでしょう。
 </p>
 
 <pre caption="現在の無線LAN設定の表示">
@@ -422,18 +436,18 @@ eth0      IEEE 802.11-DS  ESSID:"GentooNode"
 </note>
 
 <p>
-大部分のユーザーにとって、重要な設定の変更はESSID(無線LANネットワーク名と呼ばれている)またはWEPキーの2つだけです。
+大部分のユーザーにとって、重要な設定の変更はESSID(または、無線LANネットワーク名)またはWEPキーの2つだけです。
 上記リストに載っているESSIDとアクセスポイントアドレスがあなたのアクセスポイントになっていて、WEPを使っていない場合には、すでに無線LANは動いています。
-もし、ESSIDを変更したい場合や、WEPキーを加えたい場合には、次のコマンドを実行します。
+もし、ESSIDを変更したい場合や、WEPキーを追加したい場合には、次のコマンドを実行します。
 </p>
 
 <note>
-無線LANネットワークにWPAまたはWPA2が設定されている場合は、<c>wpa_supplicant</c>を使う必要があるでしょう。
+無線LANネットワークにWPAまたはWPA2が設定されている場合は、<c>wpa_supplicant</c>を使わなければいけないでしょう。
 GentooLinuxでの無線LANの構成に関するより詳しい情報は、
 Gentooハンドブックの<uri link="?part=4&amp;chap=4">ワイヤレスネットワーク</uri> の章をみてください。
 </note>
 
-<pre caption="ESSID/WEPキーの変更">
+<pre caption="ESSID/WEPキーの変更と追加">
 <comment>(ネットワーク名を"GentooNode"とセットしています)</comment>
 # <i>iwconfig eth0 essid GentooNode</i>
 
@@ -449,7 +463,7 @@ Gentooハンドブックの<uri link="?part=4&amp;chap=4">ワイヤレスネッ�
 一度無線LANが動いてしまえば、次章(<uri
 link="#network_term">ネットワーク用語を理解する</uri>)
 で記述されているIPレベルのネットワーク設定をすることができます。
-また、前述した<c>net-setup</c>を使用することもできます。
+または、前述した<c>net-setup</c>を使用することもできます。
 </p>
 
 </body>
@@ -501,7 +515,7 @@ IPアドレスはアクセス可能なネットワークすべての中でユニ
 <p>
 その分割は、先頭が1の連続で、それに続いて0の連続になる値を持つ<e>netmask</e>によって行なわれます。
 IPアドレスの1の部分をネットワーク部、0の部分をホスト部とします。
-通常に、ネットマスクはIPアドレスと同じように記述されます。
+他と同様に、ネットマスクはIPアドレスと同じように記述されます。
 </p>
 
 <pre caption="ネットワーク部/ホスト部の分割例">
@@ -537,21 +551,22 @@ Broadcast:  11000000 10101000 00000000 11111111
 インターネットに接続するためには、
 どのホストでインターネット接続を行なうのか知っている必要があります。
 このホストは<e>ゲートウェイ</e>と呼ばれています。
-このホストは普通のホストなので、普通のIPアドレスを持っています。
-(例えば192.168.0.1)
+このホストは普通のホストなので、(例えば192.168.0.1のような)普通のIPアドレスを持っています。
 </p>
 
 <p>
 すべてのホストがそのホスト自身のIPアドレスを持っていると前述しました。
 各ホストに名前で(IPアドレスの代わりに)アクセスすることができるように、
-名前(たとえば<e>dev.gentoo.gr.jp</e>)からIPアドレス(たとえば
+名前(たとえば<e>dev.gentoo.org</e>)からIPアドレス(たとえば
 <e>64.5.62.82</e>)に変換するサービスが必要です。
-そういったサービスをネームサーバーと呼んでいます。そのようなサービスを使用するためには、<e>ネームサーバー</e>を<path>/etc/resolv.conf</path>、定義する必要があります。
+そういったサービスをネームサーバーと呼びます。
+そのようなサービスを使用するためには、<e>ネームサーバー</e>を<path>/etc/resolv.conf</path>
+に設定する必要があります。
 </p>
 
 <p>
 場合によっては、ゲートウェイがネームサーバーを兼ねていることがあります。
-そうでなければ、プロバイダから提供されているネームサーバーを入力する必要があります。
+そうでなければ、プロバイダから提供されているネームサーバーを入力してください。
 </p>
 
 <p>
