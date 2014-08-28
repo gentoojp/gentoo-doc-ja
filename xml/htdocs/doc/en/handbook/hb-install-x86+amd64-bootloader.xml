@@ -4,12 +4,12 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-bootloader.xml,v 1.39 2013/12/31 20:29:23 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-bootloader.xml,v 1.41 2014/08/17 16:38:13 swift Exp $ -->
 
 <sections>
 
-<version>23</version>
-<date>2013-12-31</date>
+<version>25</version>
+<date>2014-08-17</date>
 
 <section>
 <title>Making your Choice</title>
@@ -26,6 +26,7 @@ program is called a <e>bootloader</e>.
 
 </body>
 <body test="contains('AMD64 x86', func:keyval('arch'))">
+
 <p>
 For <keyval id="arch"/>, Gentoo Linux provides <uri
 link="#grub2">GRUB2</uri>, <uri link="#lilo">LILO</uri> and
@@ -33,86 +34,10 @@ link="#grub2">GRUB2</uri>, <uri link="#lilo">LILO</uri> and
 </p>
 
 </body>
-<body>
-<p>
-But before we install the bootloader, we inform you how to configure
-framebuffer (assuming you want it of course). With framebuffer you can run the
-Linux command line with (limited) graphical features (such as using the nice
-bootsplash image Gentoo provides).
-</p>
-
-</body>
-</subsection>
-<subsection>
-<title>Optional: Framebuffer</title>
-<body>
+<body test="contains('IA64', func:keyval('arch'))">
 
 <p>
-<e>If</e> you have configured your kernel with framebuffer support (or you used
-<c>genkernel</c> default kernel configuration), you can activate it by adding a
-a <c>video</c> statement to your bootloader configuration file.
-</p>
-
-<p>
-First of all, you need to know your framebuffer device. You should have used
-<c>uvesafb</c> as the <e>VESA driver</e>.
-</p>
-
-<p>
-The <c>video</c> statement controls framebuffer display options. It needs to be
-given the framebuffer driver followed by the control statements you wish to
-enable. All variables are listed in
-<path>/usr/src/linux/Documentation/fb/uvesafb.txt</path>. The most-used options
-are:
-</p>
-
-<table>
-<tr>
-  <th>Control</th>
-  <th>Description</th>
-</tr>
-<tr>
-  <ti>ywrap</ti>
-  <ti>
-    Assume that the graphical card can wrap around its memory (i.e. continue at
-    the beginning when it has approached the end)
-  </ti>
-</tr>
-<tr>
-  <ti>mtrr:<c>n</c></ti>
-  <ti>
-    Setup MTRR registers. <c>n</c> can be:<br/>
-    0 - disabled<br/>
-    1 - uncachable<br/>
-    2 - write-back<br/>
-    3 - write-combining<br/>
-    4 - write-through
-  </ti>
-</tr>
-<tr>
-  <ti><c>mode</c></ti>
-  <ti>
-    Set up the resolution, color depth and refresh rate. For instance,
-    <c>1024x768-32@85</c> for a resolution of 1024x768, 32 bit color depth and a
-    refresh rate of 85 Hz.
-  </ti>
-</tr>
-</table>
-
-<p>
-The result could be something like
-<c>video=uvesafb:mtrr:3,ywrap,1024x768-32@85</c>. Write this setting down; you
-will need it shortly.
-</p>
-
-<p test="func:keyval('arch')='IA64'">
 Now, you should install the <uri link="#elilo">elilo bootloader</uri>.
-</p>
-
-<p test="not(func:keyval('arch')='IA64')">
-Now continue by installing <uri link="#grub">GRUB</uri>, <uri
-link="#grub2">GRUB2</uri> <e>or</e> <uri
-link="#lilo">LILO</uri>.
 </p>
 
 </body>
@@ -764,7 +689,7 @@ that one magical command you have been waiting for: <c>reboot</c>.
 # <i>exit</i>
 cdimage ~# <i>cd</i>
 cdimage ~# <i>umount -l /mnt/gentoo/dev{/pts,/shm,}</i>
-cdimage ~# <i>umount -l /mnt/gentoo{/boot,/sys,/proc,}</i>
+cdimage ~# <i>umount /mnt/gentoo{/boot,/sys,/proc,}</i>
 cdimage ~# <i>reboot</i>
 </pre>
 
@@ -772,7 +697,7 @@ cdimage ~# <i>reboot</i>
 # <i>exit</i>
 cdimage ~# <i>cd</i>
 cdimage ~# <i>umount -l /mnt/gentoo/dev{/shm,/pts,}</i>
-cdimage ~# <i>umount -l /mnt/gentoo{/boot,/proc,}</i>
+cdimage ~# <i>umount /mnt/gentoo{/boot,/sys,/proc,}</i>
 cdimage ~# <i>reboot</i>
 </pre>
 
