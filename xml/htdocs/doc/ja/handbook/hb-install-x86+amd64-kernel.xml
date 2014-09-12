@@ -3,7 +3,7 @@
 
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-x86+amd64-kernel.xml,v 1.11 2013/04/01 13:02:45 naota Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-install-x86+amd64-kernel.xml,v 1.12 2014/06/04 15:29:44 naota Exp $ -->
 
 
 <sections>
@@ -13,10 +13,10 @@
 本章では、カーネルのコンフィギュレーション方法について説明します。
 </abstract>
 
-<version>20</version>
-<date>2013-03-16</date>
+<version>26</version>
+<date>2014-06-01</date>
 
-<!-- Original revision: 1.50 -->
+<!-- Original revision: 1.56 -->
 <!-- Translator: Taku Murakami -->
 <!-- Translator: masuda -->
 <!-- Translator: naota -->
@@ -32,8 +32,8 @@
 全てのディストリビューションで中核となるのが、Linuxカーネルです。これは、
 ユーザプログラムとシステムハードウェアを仲介します。Gentooでは、
 使用可能なカーネルソースをユーザに複数提供しています。説明がついた詳細な一覧表が、
-<uri link="/doc/en/gentoo-kernel.xml">Gentoo Kernel
-Guide</uri><uri link="/doc/ja/gentoo-kernel.xml">(日本語訳)</uri>から入手できます。
+<uri link="https://wiki.gentoo.org/wiki/Kernel/Overview">Gentoo Kernel
+Guide</uri>から入手できます。
 </p>
 
 <p>
@@ -119,6 +119,10 @@ ncursesベースのコンフィギュレーションメニューが表示され�
 コンフィギュレーション項目がいくつか表示されますので、まずは、
 有効にすべきオプションをピックアップしていきましょう(そうしないと、
 Gentooが機能しなかったり、あるいは追加調整なしで正常に機能しません)。
+Gentoo Wikiに
+<uri link="https://wiki.gentoo.org/wiki/Kernel/Gentoo_Kernel_Configuration_Guide">
+Gentoo Kernel Configuration Guide</uri>というページもあります。
+このページもコンフィギュレーションの参考になるでしょう。
 </p>
 
 </body>
@@ -148,8 +152,8 @@ Gentooでは、マルチライブラリシステム(32ビット/64ビットコ�
 
 <note>
 マルチライブラリでないプロファイル(完全に64ビットのみのシステム)を使うつもりであれば、IA32エミュレーションを選択する必要はありません。
-しかし、<uri link="/doc/en/gentoo-amd64-faq.xml">マルチライブラリでないプロファイル</uri>
-<uri link="/doc/ja/gentoo-amd64-faq.xml">(日本語訳)</uri>に変更するための<uri
+しかし、<uri link="https://wiki.gentoo.org/wiki/AMD64/FAQ">マルチライブラリでないプロファイル</uri>
+に変更するための<uri
 link="?part=1&amp;chap=6#doc_chap2_sect2">ガイド</uri>に従い、また正しい<uri
 link="?part=1&amp;chap=10#doc_chap2_sect2">ブートローダ</uri>を選択するようにしましょう。
 </note>
@@ -198,7 +202,7 @@ Device Drivers ---&gt;
 
 <p>
 <c>File Systems</c>に移動し、使用するファイルシステムのサポートを選択します。
-但し、モジュールとしてコンパイル<e>してはいけません</e>。そうしないと、
+但し、rootファイルシステムとして使用するファイルシステムを、モジュールとしてコンパイル<e>してはいけません</e>。そうしないと、
 Gentooシステムはパーティションをマウントできません。また、<c>Virtual
 memory</c>と<c>/proc file system</c>を選択して下さい。
 </p>
@@ -325,15 +329,16 @@ link="#compiling">コンパイルとインストール</uri>へ進んで下さ�
 </pre>
 
 <p>
-カーネルのコンパイルが終了したら、カーネルイメージを<path>/boot</path>へコピーします。
-選択したカーネルにふさわしいと思うファイル名であれば、どんなものでも構いませんが、
-ブートローダを設定する際に後ほど必要となりますので、ファイル名は覚えておいて下さい。
-<c><keyval id="kernel-name"/></c>をカーネルの名称とバージョンに置き換える必要があります。
-</p>
+カーネルのコンパイルが終わったら、カーネルのイメージを<path>/boot</path>にコピーします。
+この作業は<c>make install</c>コマンドで実行されます:</p>
 
 <pre caption="カーネルのインストール">
-# <i>cp arch/<keyval id="arch-sub"/>/boot/bzImage /boot/<keyval id="kernel-name"/></i>
+# <i>make install</i>
 </pre>
+
+<p>
+このコマンドがカーネルイメージと<path>System.map</path>、そしてカーネルの設定ファイルを
+<path>/boot</path>にコピーします。</p>
 
 </body>
 </subsection>
@@ -380,7 +385,7 @@ genkernelでは、マニュアルでカーネルをコンフィギュレーシ�
 マニュアルでカーネルをコンフィギュレーションしなくてはいけません。その際は、
 <c>genkernel --menuconfig all</c>を実行しカーネル<e>自身</e>にファイルシステムのサポートを追加します(つまり、
 モジュールとしてでは<e>ありません</e>)。同様に、LVM2ユーザは、
-<c>--lvm2</c>を引数に追加する必要があるかもしれません。
+<c>--lvm</c>を引数に追加する必要があるでしょう。
 </p>
 
 <pre caption="genkernelの実行">

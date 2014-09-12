@@ -4,7 +4,7 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-kernel.xml,v 1.53 2013/12/17 10:38:05 swift Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/en/handbook/hb-install-x86+amd64-kernel.xml,v 1.58 2014/08/17 17:01:48 swift Exp $ -->
 
 <sections>
 
@@ -13,8 +13,8 @@ The Linux kernel is the core of every distribution. This chapter
 explains how to configure your kernel.
 </abstract>
 
-<version>23</version>
-<date>2013-12-17</date>
+<version>27</version>
+<date>2014-08-07</date>
 
 <section>
 <title>Installing the Sources</title>
@@ -109,7 +109,9 @@ will fire up an ncurses-based configuration menu.
 <p>
 You will be greeted with several configuration sections. We'll first list some
 options you must activate (otherwise Gentoo will not function, or not function
-properly without additional tweaks).
+properly without additional tweaks). We also have a <uri 
+link="https://wiki.gentoo.org/wiki/Kernel/Gentoo_Kernel_Configuration_Guide">Gentoo
+Kernel Configuration Guide</uri> on the Gentoo wiki that might help you further.
 </p>
 
 </body>
@@ -141,7 +143,7 @@ required.
 <note>
 If you plan to use a non-multilib profile (for a pure 64-bit system), then you
 don't have to select IA32 Emulation support. However, you'll also need to follow
-the <uri link="?part=1&amp;chap=6#doc_chap2_sect2">instructions</uri> for
+the <uri link="?part=1&amp;chap=6#doc_chap2_sect4">instructions</uri> for
 switching to a <uri link="https://wiki.gentoo.org/wiki/AMD64/FAQ">non-multilib
 profile</uri>, as well as choosing the correct <uri
 link="?part=1&amp;chap=10#doc_chap2_sect2">bootloader</uri>.
@@ -323,15 +325,17 @@ the configuration and start the compilation process:
 
 <p>
 When the kernel has finished compiling, copy the kernel image to
-<path>/boot</path>. Use whatever name you feel is appropriate for your kernel
-choice and remember it as you will need it later on when you configure your
-bootloader. Remember to replace <c><keyval id="kernel-name"/></c> with the
-name and version of your kernel.
+<path>/boot</path>. This is handled by the <c>make install</c> command:
 </p>
 
 <pre caption="Installing the kernel">
-# <i>cp arch/<keyval id="arch-sub"/>/boot/bzImage /boot/<keyval id="kernel-name"/></i>
+# <i>make install</i>
 </pre>
+
+<p>
+This will copy the kernel image into <path>/boot</path> together with the
+<path>System.map</path> file and the kernel configuration file.
+</p>
 
 </body>
 </subsection>
@@ -367,6 +371,26 @@ Now, let's see how to use genkernel. First, emerge the genkernel ebuild:
 <pre caption="Emerging genkernel">
 # <i>emerge genkernel</i>
 </pre>
+
+<p>
+Next, edit the <path>/etc/fstab</path> file so that the line containing
+<path>/boot</path> as second field has the first field pointing to the right
+device. If the partitioning example from the handbook is followed, then this
+device is most likely <path><keyval id="/boot"/></path> with the ext2 file
+system. This would make the entry in the file look like so:
+</p>
+
+<pre caption="Editing /etc/fstab for the /boot entry">
+# <i>nano -w /etc/fstab</i>
+...
+<keyval id="/boot"/>	/boot	ext2	defaults	0 2
+</pre>
+
+<p>
+The remainder of the <path>/etc/fstab</path> will be updated in the next section,
+but as <c>genkernel</c> reads this information we need to update the
+<path>/boot</path> line up front.
+</p>
 
 <p>
 Now, compile your kernel sources by running <c>genkernel all</c>. Be aware

@@ -4,10 +4,11 @@
 <!-- The content of this document is licensed under the CC-BY-SA license -->
 <!-- See http://creativecommons.org/licenses/by-sa/2.5 -->
 
-<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-net-advanced.xml,v 1.8 2011/08/19 08:56:49 shindo Exp $ -->
+<!-- $Header: /var/cvsroot/gentoo/xml/htdocs/doc/ja/handbook/hb-net-advanced.xml,v 1.9 2014/06/05 03:48:04 naota Exp $ -->
 
-<!-- Original revision: 1.15 -->
+<!-- Original revision: 1.23 -->
 <!-- Translator: igarashi -->
+<!-- Translator: naota -->
 
 <sections>
 
@@ -16,8 +17,8 @@
 モジュラーネットワーキングについて学ぶ前に、知っておく必要あります。
 </abstract>
 
-<version>8.1</version>
-<date>2009-02-12</date>
+<version>16</version>
+<date>2014-04-12</date>
 
 <section>
 <title>高度な設定</title>
@@ -75,29 +76,21 @@ config_eth0は、インターフェース(この場合は<c>eth0</c>)設定用�
 
 <pre caption="設定例">
 <comment># 以下のIPv4アドレスを追加します</comment>
-config_eth0=(
-	"192.168.0.2/24"
-	"192.168.0.3/24"
-	"192.168.0.4/24"
-)
+config_eth0="192.168.0.2/24
+192.168.0.3/24
+192.168.0.4/24"
 
 <comment># 一つのIPv4アドレスと二つのIPv6アドレスを追加します</comment>
-config_eth0=(
-	"192.168.0.2/24"
-	"4321:0:1:2:3:4:567:89ab"
-	"4321:0:1:2:3:4:567:89ac"
-)
+config_eth0="192.168.0.2/24
+4321:0:1:2:3:4:567:89ab
+4321:0:1:2:3:4:567:89ac"
 
 <comment># 既にインターフェースが有効になっていて、アドレスが割り当ててある場合は、何もしません。
 # インターフェースが無効になってしまっている場合、DHCP経由の新たなアドレスを割当てます。</comment>
-config_eth0=(
-	"noop"
-	"dhcp"
-)
-fallback_eth0=(
-	"null"
-	"apipa"
-)
+config_eth0="noop
+dhcp"
+fallback_eth0="null
+apipa"
 </pre>
 
 <note>
@@ -124,39 +117,19 @@ link="?part=4&amp;chap=3#dhcp">DHCP</uri>については後で記述します。
 
 <p>
 <path>/etc/init.d</path>にあるinitスクリプトは、特定のネットワークインターフェース、もしくはただ単にnetに依存することがあります。
-<c>net</c>サービスの意味を、<c>RC_NET_STRICT_CHECKING</c>変数を使用して異なる状況を示すように<path>/etc/conf.d/rc</path>で定義することができます。
+Gentooのinitシステムに含まれるすべてのネットワークインターフェイスは、<e>net</e>という仮想的なサービスを提供します。
 </p>
 
-<table>
-  <tr>
-    <th>値</th>
-    <th>説明</th>
-  </tr>
-  <tr>
-    <ti><c>none</c></ti>
-    <ti><path>net</path>サービスは常に起動されていると見なされます</ti>
-  </tr>
-  <tr>
-    <ti><c>no</c></ti>
-    <ti>
-      <path>net.lo</path>に加えて少なくとも一つの<path>net.*</path>サービスが起動していなければなりません。
-      WIFIと有線NICを持っていて、netサービスが起動しているように状況に応じて一つだけを起動させたいと思うノートブックのユーザによって利用されるでしょう。
-    </ti>
-  </tr>
-  <tr>
-    <ti><c>lo</c></ti>
-    <ti>
-      <c>no</c>オプションと同じですが、<path>net.lo</path>も数に含まれます。
-      起動時にどのインターフェースが起動するか気にしないユーザに便利です。
-    </ti>
-  </tr>
-  <tr>
-    <ti><c>yes</c></ti>
-    <ti>
-      <path>net</path>サービスが起動していると見なされるためには、すべてのネットワークインターフェースが起動していなければならない場合です。
-    </ti>
-  </tr>
-</table>
+<p>
+もし<path>/etc/rc.conf</path>内で<c>rc_depend_strict="YES"</c>と設定されているのであれば、netを提供するすべてのネットワークインターフェイスは"net"への依存が想定される前に有効になっている必要があります。
+言い換えると、もし<path>net.eth0</path>と<path>net.eth1</path>があって、initスクリプトが"net"に
+依存しているのであれば、両方とも有効になっていなければなりません。
+</p>
+
+<p>
+一方で、もし<c>rc_depend_strict="NO"</c>と設定されているのであれば、
+少なくとも1つのネットワークインターフェイスが開始されたときに"net"への依存は解決されていると解釈されます。　
+</p>
 
 <p>
 ですが、<path>net.eth0</path>と<path>net.eth1</path>に依存している<path>net.br0</path>の場合はどうでしょうか。
@@ -165,19 +138,31 @@ link="?part=4&amp;chap=3#dhcp">DHCP</uri>については後で記述します。
 </p>
 
 <p>
-この状況への答えは、<path>/etc/conf.d/net</path>に<c>depend()</c>関数を書くことです。
+この状況への答えは、<path>/etc/conf.d/net</path>内の<c>rc_need_</c>を定義することです。
 </p>
 
 <pre caption="/etc/conf.d/netでのnet.br0の依存設定">
-<comment># 現行のスクリプトに則って、すべての依存関係(use、after、before)が使用できます</comment>
-depend_br0() {
-	need net.eth0 net.eth1
-}
+rc_need_br0="net.eth0 net.eth1"
+</pre>
+
+<p>
+しかしながら、これだけでは十分ではありません。
+Gentooのネットワークに関するinitスクリプトはネットワーク利用可能時に、これをシステムへ通知するため<e>net</e>というvirtual依存を使用します。
+上記の場合では明らかに、他ではなく<path>net.br0</path>が開始されているときのみに、ネットワークが利用可能だと解釈されなければなりません。
+そのためにその旨を<path>/etc/conf.d/net</path>に追記する必要があります。
+</p>
+
+<pre caption="virtual依存をアップデートしてネットワークを設定する
+">
+rc_net_lo_provide="!net"
+rc_net_eth0_provide="!net"
+rc_net_eth1_provide="!net"
 </pre>
 
 <p>
 依存関係についての詳しい解説は、Gentooハンドブックの<uri
 link="?part=2&amp;chap=4#doc_chap4">Writing Init Scripts</uri>を参照してください。
+<path>/etc/rc.conf</path>に関しての詳細もそのファイルのコメント欄に記述されています。
 </p>
 
 </body>
@@ -226,6 +211,111 @@ dns_domain_My____NET="My "\\ NET"
 </pre>
 
 </body>
+</section>
+<section>
+<title>ネットワークインタフェースの名付け方</title>
+<subsection>
+<title>どのように動くのか</title>
+<body>
+
+<p>
+ネットワークインタフェースの名前は任意に選ばれているわけではありません。
+Linuxカーネルとデバイスマネージャ(ほとんどのシステムではudevを使っていますが、
+他のものも存在しています)が、決まったルールに基づいてインタフェースの名前を決定します。
+</p>
+
+<p>
+システムにインタフェースカードが検出されると、Linuxカーネルはこのカードについて必要な情報を収集します。
+この情報には以下のものがふくまれます</p>
+
+<ol>
+  <li>
+    オンボード(ネットワークカード自体)に登録されている名前。
+    これは <c>ID_NET_NAME_ONBOARD</c> パラメータで参照することができます。</li>
+  <li>
+    ネットワークカードが接続されているスロット。
+    これは <c>ID_NET_NAME_SLOT</c> で参照することができます。</li>
+  <li>
+    ネットワークカードデバイスにアクセスするためのパス。
+    <c>ID_NET_NAME_PATH</c> で参照することができます。</li>
+  <li>
+    (ベンダーが提供している)ネットワークカードのMACアドレス。
+    これは <c>ID_NET_NAME_MAC</c> で参照できます。</li>
+</ol>
+
+<p>
+これらの情報からデバイスマネージャはシステム上のネットワークインタフェースを、
+どのように名付けるかを決定します。デフォルトでは上記の最初の3つのパラメータ
+(<c>ID_NET_NAME_ONBOARD</c>, <c>_SLOT</c> or <c>_PATH</c>)から、
+最初にヒットしたものを選択します。 たとえば、<c>ID_NET_NAME_ONBOARD</c>が <c>eno1</c> と設定されていれば、
+そのインタフェースはeno1と呼ばれます。</p>
+
+<p>
+インターフェースの名前がわかっていれば、設定されているパラメータを<c>udevadm</c>
+コマンドを使って見ることができます。</p>
+
+<pre caption="ネットワークインタフェースカードの情報を読む">
+# <i>udevadm test-builtin net_id /sys/class/net/enp3s0 2>/dev/null</i>
+ID_NET_NAME_MAC=enxc80aa9429d76
+ID_OUI_FROM_DATABASE=Quanta Computer Inc.
+ID_NET_NAME_PATH=enp3s0
+</pre>
+
+<p>
+上記の3つのパラメータのうち最初にヒットする(実際には唯一の)パラメータが<c>ID_NET_NAME_PATH</c> なので、
+その値がインタフェースの名前として使用されます。どのパラメータも設定されていなければ、
+システムはカーネルが提供している名前(eth0、eth1など)を使用するようにフォールバックします。</p>
+
+</body>
+</subsection>
+<subsection>
+<title>古くからのカーネルの名前付けを使う</title>
+<body>
+
+<p>
+以上の変更が入る前までは、ネットワークインタフェースカードの名前はLinuxカーネルによって、
+ドライバが読みこまれる順番で(他にもよりあいまいな理由はあります)決定されていました。
+<c>net.ifnames=0</c>のブートパラメータを使うことで、この動作をいまでも有効にすることができます。
+</p>
+
+</body>
+</subsection>
+<subsection>
+<title>自分で付けた名前を使う</title>
+<body>
+
+<p>
+名前の付け方の変更の理由は人々を混乱させるためではなく、名前の変更を簡単にするためでした。
+いままではeth0、eth1と名付けられていた2つのインタフェースがあるとします。
+一つはケーブルを使って、もう一つはワイアレスでネットワークにアクセスするとします。
+インタフェースの名前を付けられるようになったので、
+これらをlan0(ケーブルを使用)、wifi0(ワイアレス)と名付けることができます。
+eth*やwlan*といった以前によく使われていた名前は、依然として衝突する可能性があるので避ける方が良いです。
+</p>
+
+<p>
+まずカードに設定されているパラメータがどうなっているのかを確認し、その情報を使って名前付けのルールを設定します。</p>
+
+<pre caption="いまのeth0にlan0という名前を付ける">
+# <i>udevadm test-builtin net_id /sys/class/net/eth0 2>/dev/null</i>
+ID_NET_NAME_MAC=enxc80aa9429d76
+ID_OUI_FROM_DATABASE=Quanta Computer Inc.
+
+# <i>vim /etc/udev/rules.d/76-net-name-use-custom.rules</i>
+<comment># 一つ目はMACの情報を使います</comment>
+SUBSYSTEM=="net", ACTION=="add", ENV{ID_NET_NAME_MAC}=="enxc80aa9429d76", NAME="lan0"
+<comment># 二つ目はID_NET_NAME_PATHの情報を使います</comment>
+SUBSYSTEM=="net", ACTION=="add", ENV{ID_NET_NAME_PATH}=="enp3s0", NAME="wifi0"
+</pre>
+
+<p>
+このルールはデフォルトのルールよりも前に適用される(ルールはアルファベット順に適用されるので、
+70が80よりも前に適用される)ので、このルールファイルがデフォルトの代わりに適用されます。
+ファイルに付けられる番号は76から79の間であるべきです。
+(ルールで使われる環境変数は75で始まるルールで設定され、フォールバックの名前付けは80で行なわれるからです)</p>
+
+</body>
+</subsection>
 </section>
 
 </sections>
